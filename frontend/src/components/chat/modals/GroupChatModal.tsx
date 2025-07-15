@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -47,6 +47,7 @@ interface GroupChatModalProps {
 
 const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { setError, setSuccess } = useApp();
+  const pageRef = useRef<HTMLElement>(null);
   const [groupName, setGroupName] = useState('');
   const [searchText, setSearchText] = useState('');
   const [konfis, setKonfis] = useState<Konfi[]>([]);
@@ -143,8 +144,14 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
   );
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={handleClose}>
-      <IonPage>
+    <IonModal 
+      isOpen={isOpen} 
+      onDidDismiss={handleClose}
+      presentingElement={pageRef.current || undefined}
+      canDismiss={true}
+      backdropDismiss={true}
+    >
+      <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonTitle>Gruppenchat erstellen</IonTitle>

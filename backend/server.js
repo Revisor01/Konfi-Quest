@@ -3164,4 +3164,115 @@ app.post('/api/chat/polls/:pollId/vote', verifyToken, (req, res) => {
   });
 });
 
+// Delete chat room
+app.delete('/api/chat/rooms/:roomId', verifyToken, (req, res) => {
+  const roomId = req.params.roomId;
+  const userId = req.user.id;
+  const userType = req.user.type;
+  
+  // First check if room exists and user has permission
+  const roomQuery = `
+    SELECT cr.*, cp.user_id as participant_user_id, cp.user_type as participant_user_type
+    FROM chat_rooms cr
+    LEFT JOIN chat_participants cp ON cr.id = cp.room_id 
+    WHERE cr.id = ?
+  `;
+  
+  db.all(roomQuery, [roomId], (err, roomData) => {
+    if (err) {
+      console.error('Error fetching room:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (roomData.length === 0) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    const room = roomData[0];
+    
+    // Only allow deletion of direct and group chats, not jahrgang or admin chats
+    if (room.type === 'jahrgang' || room.type === 'admin') {
+      return res.status(403).json({ error: 'Cannot delete system chats' });
+    }
+    
+    // Check permission: admin can delete anything, user must be participant
+    let hasPermission = false;
+    if (userType === 'admin') {
+      hasPermission = true;
+    } else {
+      // Check if user is participant
+      hasPermission = roomData.some(row => 
+        row.participant_user_id === userId && row.participant_user_type === userType
+      );
+    }
+    
+    if (!hasPermission) {
+      return res.status(403).json({ error: 'Permission denied' });
+    }
+    
+    // Delete room and all associated data
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      // Delete poll votes
+      db.run(`DELETE FROM chat_poll_votes WHERE poll_id IN (
+        SELECT p.id FROM chat_polls p 
+        JOIN chat_messages m ON p.message_id = m.id 
+        WHERE m.room_id = ?
+      )`, [roomId]);
+      
+      // Delete polls
+      db.run(`DELETE FROM chat_polls WHERE message_id IN (
+        SELECT id FROM chat_messages WHERE room_id = ?
+      )`, [roomId]);
+      
+      // Delete messages
+      db.run("DELETE FROM chat_messages WHERE room_id = ?", [roomId]);
+      
+      // Delete participants
+      db.run("DELETE FROM chat_participants WHERE room_id = ?", [roomId]);
+      
+      // Delete room
+      db.run("DELETE FROM chat_rooms WHERE id = ?", [roomId], function(err) {
+        if (err) {
+          console.error('Error deleting room:', err);
+          db.run("ROLLBACK");
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        db.run("COMMIT", (err) => {
+          if (err) {
+            console.error('Error committing transaction:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          res.json({ message: 'Room deleted successfully' });
+        });
+      });
+    });
+  });
+});
+
+// Mark room as read
+app.post('/api/chat/rooms/:roomId/mark-read', verifyToken, (req, res) => {
+  const roomId = req.params.roomId;
+  const userId = req.user.id;
+  const userType = req.user.type;
+  
+  // Update or insert read status
+  const query = `
+    INSERT OR REPLACE INTO chat_read_status (room_id, user_id, user_type, last_read_at)
+    VALUES (?, ?, ?, datetime('now'))
+  `;
+  
+  db.run(query, [roomId, userId, userType], function(err) {
+    if (err) {
+      console.error('Error marking room as read:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    res.json({ message: 'Room marked as read' });
+  });
+});
+
 // === ENDE CHAT SYSTEM ===

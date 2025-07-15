@@ -19,7 +19,13 @@ import {
   IonChip,
   IonButton,
   IonButtons,
-  IonText
+  IonText,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption
 } from '@ionic/react';
 import { 
   chatbubbles, 
@@ -27,7 +33,8 @@ import {
   person, 
   settings,
   add,
-  time
+  time,
+  trash
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
@@ -49,11 +56,11 @@ interface ChatRoom {
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoom) => void;
-  onCreateGroupChat: () => void;
+  onCreateNewChat: () => void;
 }
 
-const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroupChat }) => {
-  const { user, setError } = useApp();
+const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewChat }) => {
+  const { user, setError, setSuccess } = useApp();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -75,13 +82,32 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
     }
   };
 
+  const deleteRoom = async (room: ChatRoom) => {
+    if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
+
+    try {
+      await api.delete(`/chat/rooms/${room.id}`);
+      setSuccess(`Chat "${room.name}" gelöscht`);
+      await loadChatRooms();
+    } catch (err) {
+      setError('Fehler beim Löschen des Chats');
+      console.error('Error deleting chat room:', err);
+    }
+  };
+
   const filteredRooms = rooms.filter(room =>
     room.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const formatLastMessageTime = (dateString: string) => {
+    if (!dateString) return '';
+    
     const date = new Date(dateString);
     const now = new Date();
+    
+    // Prüfe auf gültiges Datum
+    if (isNaN(date.getTime())) return '';
+    
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) {
@@ -112,13 +138,16 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
 
   const getRoomSubtitle = (room: ChatRoom) => {
     if (room.type === 'jahrgang') {
-      return `Jahrgang ${room.jahrgang_name} • ${room.participant_count} Teilnehmer`;
+      const jahrgangText = room.jahrgang_name ? `Jahrgang ${room.jahrgang_name}` : 'Jahrgangschat';
+      const participantText = room.participant_count ? ` • ${room.participant_count} Teilnehmer:innen` : '';
+      return jahrgangText + participantText;
     }
     if (room.type === 'admin') {
       return 'Admin-Team Chat';
     }
     if (room.type === 'group') {
-      return `${room.participant_count} Teilnehmer`;
+      const participantText = room.participant_count ? `${room.participant_count} Teilnehmer:innen` : 'Gruppenchat';
+      return participantText;
     }
     return 'Direktnachricht';
   };
@@ -132,13 +161,11 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
-          {user?.type === 'admin' && (
-            <IonButtons slot="end">
-              <IonButton onClick={onCreateGroupChat}>
-                <IonIcon icon={add} />
-              </IonButton>
-            </IonButtons>
-          )}
+          <IonButtons slot="end">
+            <IonButton onClick={onCreateNewChat}>
+              <IonIcon icon={add} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
       
@@ -156,8 +183,46 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
+        {/* Chat Statistics Header */}
+        <IonCard style={{
+          margin: '16px',
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
+          color: 'white',
+          boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)'
+        }}>
+          <IonCardContent>
+            <IonGrid>
+              <IonRow>
+                <IonCol size="6">
+                  <div style={{ textAlign: 'center' }}>
+                    <IonIcon icon={chatbubbles} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                    <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                      {rooms.length}
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                      Chats
+                    </p>
+                  </div>
+                </IonCol>
+                <IonCol size="6">
+                  <div style={{ textAlign: 'center' }}>
+                    <IonIcon icon={chatbubbles} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                    <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                      {rooms.reduce((sum, room) => sum + room.unread_count, 0)}
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                      Ungelesen
+                    </p>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+          </IonCardContent>
+        </IonCard>
+
         {/* Search */}
-        <div style={{ padding: '16px', paddingBottom: '8px' }}>
+        <div style={{ padding: '0 16px 8px 16px' }}>
           <IonSearchbar
             value={searchText}
             onIonInput={(e) => setSearchText(e.detail.value!)}
@@ -169,28 +234,6 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
             }}
           />
         </div>
-
-        {/* Chat Statistics Card */}
-        <IonCard style={{ margin: '16px', marginTop: '8px' }}>
-          <IonCardContent>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: '0', fontSize: '1.2rem', fontWeight: '600' }}>
-                  Meine Chats
-                </h3>
-                <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: '0.9rem' }}>
-                  {rooms.length} Chaträume verfügbar
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <IonChip color="primary" style={{ margin: '0' }}>
-                  <IonIcon icon={chatbubbles} />
-                  <IonLabel>{rooms.reduce((sum, room) => sum + room.unread_count, 0)} ungelesen</IonLabel>
-                </IonChip>
-              </div>
-            </div>
-          </IonCardContent>
-        </IonCard>
 
         {/* Chat Rooms List */}
         <IonCard style={{ margin: '16px', marginTop: '8px' }}>
@@ -204,81 +247,94 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateGroup
             ) : (
               <IonList>
                 {filteredRooms.map((room) => (
-                  <IonItem 
-                    key={room.id} 
-                    button 
-                    onClick={() => onSelectRoom(room)}
-                    style={{ '--min-height': '70px' }}
-                  >
-                    <IonAvatar slot="start" style={{ 
-                      width: '48px', 
-                      height: '48px',
-                      backgroundColor: room.type === 'admin' ? '#7045f6' : 
-                                     room.type === 'jahrgang' ? '#3880ff' :
-                                     room.type === 'group' ? '#2dd36f' : '#ff6b35'
-                    }}>
-                      <IonIcon 
-                        icon={getRoomIcon(room)} 
-                        style={{ 
-                          fontSize: '1.5rem', 
-                          color: 'white'
-                        }} 
-                      />
-                    </IonAvatar>
-                    
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
-                        {room.name}
-                        {room.unread_count > 0 && (
-                          <IonBadge 
-                            color="danger" 
-                            style={{ 
-                              marginLeft: '8px',
-                              fontSize: '0.75rem',
-                              minWidth: '20px',
-                              height: '20px'
-                            }}
-                          >
-                            {room.unread_count > 99 ? '99+' : room.unread_count}
-                          </IonBadge>
-                        )}
-                      </h2>
-                      
-                      <p style={{ 
-                        margin: '0 0 4px 0', 
-                        fontSize: '0.85rem', 
-                        color: '#666' 
+                  <IonItemSliding key={room.id}>
+                    <IonItem 
+                      button 
+                      onClick={() => onSelectRoom(room)}
+                      style={{ '--min-height': '70px' }}
+                    >
+                      <IonAvatar slot="start" style={{ 
+                        width: '48px', 
+                        height: '48px',
+                        backgroundColor: room.type === 'admin' ? '#7045f6' : 
+                                       room.type === 'jahrgang' ? '#3880ff' :
+                                       room.type === 'group' ? '#2dd36f' : '#ff6b35',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
-                        {getRoomSubtitle(room)}
-                      </p>
+                        <IonIcon 
+                          icon={getRoomIcon(room)} 
+                          style={{ 
+                            fontSize: '1.5rem', 
+                            color: 'white'
+                          }} 
+                        />
+                      </IonAvatar>
                       
-                      {room.last_message && (
+                      <IonLabel>
+                        <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
+                          {room.name}
+                        </h2>
+                        
                         <p style={{ 
-                          margin: '0', 
-                          fontSize: '0.8rem', 
-                          color: '#999',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
+                          margin: '0 0 4px 0', 
+                          fontSize: '0.85rem', 
+                          color: '#666' 
                         }}>
-                          <strong>{room.last_message.sender_name}:</strong> {room.last_message.content}
+                          {getRoomSubtitle(room)}
                         </p>
-                      )}
-                    </IonLabel>
+                        
+                        {room.last_message && room.last_message.content && (
+                          <p style={{ 
+                            margin: '0', 
+                            fontSize: '0.8rem', 
+                            color: '#999',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            <strong>{room.last_message.sender_name}:</strong> {room.last_message.content}
+                          </p>
+                        )}
+                      </IonLabel>
 
-                    {room.last_message && (
-                      <div slot="end" style={{ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'flex-end',
-                        fontSize: '0.75rem',
-                        color: '#999'
-                      }}>
-                        <IonIcon icon={time} style={{ fontSize: '0.8rem', marginBottom: '2px' }} />
-                        {formatLastMessageTime(room.last_message.created_at)}
-                      </div>
+                      {room.unread_count > 0 && (
+                        <div slot="end" style={{ 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <div style={{
+                            backgroundColor: '#007aff',
+                            color: 'white',
+                            borderRadius: '12px',
+                            minWidth: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            padding: '0 6px'
+                          }}>
+                            {room.unread_count > 99 ? '99+' : room.unread_count}
+                          </div>
+                        </div>
+                      )}
+                    </IonItem>
+
+                    {(room.type === 'direct' || room.type === 'group') && (
+                      <IonItemOptions side="end">
+                        <IonItemOption 
+                          color="danger" 
+                          onClick={() => deleteRoom(room)}
+                        >
+                          <IonIcon icon={trash} />
+                        </IonItemOption>
+                      </IonItemOptions>
                     )}
-                  </IonItem>
+                  </IonItemSliding>
                 ))}
               </IonList>
             )}

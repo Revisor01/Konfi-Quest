@@ -29,7 +29,7 @@ import {
   camera, 
   document, 
   image,
-  bar_chart,
+  barChart,
   ellipsisVertical,
   download,
   trash,
@@ -86,6 +86,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   useEffect(() => {
     loadMessages();
+    markRoomAsRead();
     // Auto-refresh messages every 10 seconds
     const interval = setInterval(loadMessages, 10000);
     return () => clearInterval(interval);
@@ -107,6 +108,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       console.error('Error loading messages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markRoomAsRead = async () => {
+    try {
+      await api.post(`/chat/rooms/${room.id}/mark-read`);
+    } catch (err) {
+      // Silent fail - marking as read is not critical
+      console.error('Error marking room as read:', err);
     }
   };
 
@@ -336,36 +346,57 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               {message.content && (
                 <div style={{ marginBottom: '8px' }}>{message.content}</div>
               )}
-              <div style={{
-                border: '1px solid rgba(255,255,255,0.3)',
-                borderRadius: '8px',
-                padding: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <IonIcon 
-                  icon={message.file_name?.includes('.pdf') ? document : 
-                       message.file_name?.match(/\.(jpg|jpeg|png|gif)$/i) ? image : attach} 
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
-                    {message.file_name}
+              {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                // Inline Bild-Anzeige
+                <div style={{ marginBottom: '8px' }}>
+                  <img 
+                    src={`${api.defaults.baseURL}/chat/files/${message.file_path}`}
+                    alt={message.file_name}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '300px',
+                      borderRadius: '8px',
+                      objectFit: 'cover',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank')}
+                  />
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
+                    {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
                   </div>
-                  {message.file_size && (
-                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                      {formatFileSize(message.file_size)}
-                    </div>
-                  )}
                 </div>
-                <IonButton
-                  fill="clear"
-                  size="small"
-                  onClick={() => window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank')}
-                >
-                  <IonIcon icon={download} />
-                </IonButton>
-              </div>
+              ) : (
+                // Datei-Anhang für andere Dateitypen
+                <div style={{
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <IonIcon 
+                    icon={message.file_name?.includes('.pdf') ? document : attach} 
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                      {message.file_name}
+                    </div>
+                    {message.file_size && (
+                      <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                        {formatFileSize(message.file_size)}
+                      </div>
+                    )}
+                  </div>
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    onClick={() => window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank')}
+                  >
+                    <IonIcon icon={download} />
+                  </IonButton>
+                </div>
+              )}
             </div>
           ) : (
             <div>{message.content}</div>
@@ -534,7 +565,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         buttons={[
           {
             text: 'Umfrage erstellen',
-            icon: bar_chart,
+            icon: barChart,
             handler: () => setShowPollAlert(true)
           },
           {

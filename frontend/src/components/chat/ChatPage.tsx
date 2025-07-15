@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import ChatOverview from './ChatOverview';
-import ChatRoom from './ChatRoom';
-import GroupChatModal from './modals/GroupChatModal';
+import ChatRoomComponent from './ChatRoom';
+import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 
-interface ChatRoom {
+interface ChatRoomData {
   id: number;
   name: string;
   type: 'group' | 'direct' | 'jahrgang' | 'admin';
 }
 
 const ChatPage: React.FC = () => {
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
-  const [showGroupChatModal, setShowGroupChatModal] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoomData | null>(null);
+  const [showCreateChatModal, setShowCreateChatModal] = useState(false);
 
-  const handleSelectRoom = (room: ChatRoom) => {
+  const handleSelectRoom = (room: ChatRoomData) => {
     setSelectedRoom(room);
   };
 
@@ -21,12 +21,12 @@ const ChatPage: React.FC = () => {
     setSelectedRoom(null);
   };
 
-  const handleCreateGroupChat = () => {
-    setShowGroupChatModal(true);
+  const handleCreateNewChat = () => {
+    setShowCreateChatModal(true);
   };
 
-  const handleGroupChatCreated = () => {
-    setShowGroupChatModal(false);
+  const handleChatCreated = () => {
+    setShowCreateChatModal(false);
     // Refresh chat overview by going back if we're in a room
     if (selectedRoom) {
       setSelectedRoom(null);
@@ -35,7 +35,7 @@ const ChatPage: React.FC = () => {
 
   if (selectedRoom) {
     return (
-      <ChatRoom 
+      <ChatRoomComponent 
         room={selectedRoom} 
         onBack={handleBackToOverview}
       />
@@ -46,13 +46,13 @@ const ChatPage: React.FC = () => {
     <>
       <ChatOverview 
         onSelectRoom={handleSelectRoom}
-        onCreateGroupChat={handleCreateGroupChat}
+        onCreateNewChat={handleCreateNewChat}
       />
       
-      <GroupChatModal 
-        isOpen={showGroupChatModal}
-        onClose={() => setShowGroupChatModal(false)}
-        onSuccess={handleGroupChatCreated}
+      <SimpleCreateChatModal
+        isOpen={showCreateChatModal}
+        onClose={() => setShowCreateChatModal(false)}
+        onSuccess={handleChatCreated}
       />
     </>
   );
