@@ -1,4 +1,4 @@
-# KonfipointsNew - Konfi Quest
+# Konfi Quest
 
 Eine moderne Web-Anwendung zur Verwaltung von Konfirmandenpunkten mit React 19 + TypeScript + Ionic 8 Frontend und Express.js Backend.
 
