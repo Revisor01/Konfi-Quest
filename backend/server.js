@@ -738,6 +738,16 @@ db.serialize(() => {
   UNIQUE(poll_id, user_id, user_type, option_index)
 )`);
   
+  db.run(`CREATE TABLE IF NOT EXISTS chat_read_status (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  user_type TEXT NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+  last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+  UNIQUE(room_id, user_id, user_type)
+)`);
+  
   console.log('✅ Database schema ensured');
   
   // === DATABASE MIGRATIONS ===
@@ -847,6 +857,32 @@ db.serialize(() => {
       } else {
         console.log('✅ Migration 4: category column already exists');
       }
+    }
+  });
+  
+  // Migration 5: Check chat_read_status table exists
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_read_status'", (err, row) => {
+    if (err) {
+      console.error('Migration 5 check error:', err);
+    } else if (!row) {
+      console.log('⚡ Migration 5: Creating chat_read_status table...');
+      db.run(`CREATE TABLE IF NOT EXISTS chat_read_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        user_type TEXT NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+        last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+        UNIQUE(room_id, user_id, user_type)
+      )`, (err) => {
+        if (err) {
+          console.error('Migration 5 error:', err);
+        } else {
+          console.log('✅ Migration 5: chat_read_status table created');
+        }
+      });
+    } else {
+      console.log('✅ Migration 5: chat_read_status table already exists');
     }
   });
   
@@ -2474,8 +2510,8 @@ app.post('/api/chat/direct', verifyToken, (req, res) => {
     db.get(targetQuery, [target_user_id], (err, targetUser) => {
       if (err || !targetUser) return res.status(404).json({ error: 'Target user not found' });
       
-      const currentUserName = req.user.display_name || req.user.name;
-      const roomName = `${currentUserName} ↔ ${targetUser.name}`;
+      // Room name is just the target user's name (simplified)
+      const roomName = targetUser.name;
       
       // Create new direct room
       db.run("INSERT INTO chat_rooms (name, type, created_by) VALUES (?, 'direct', ?)",
@@ -2551,9 +2587,13 @@ app.post('/api/chat/rooms', verifyToken, (req, res) => {
               let participantCount = 0;
               const totalParticipants = participants.length;
               
-              participants.forEach(participantId => {
-                db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'konfi')",
-                  [roomId, participantId], (err) => {
+              participants.forEach(participant => {
+                // Support both old format (just ID) and new format (object with user_id and user_type)
+                const userId = typeof participant === 'object' ? participant.user_id : participant;
+                const userType = typeof participant === 'object' ? participant.user_type : 'konfi';
+                
+                db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, ?)",
+                  [roomId, userId, userType], (err) => {
                     if (err) console.error('Error adding participant:', err);
                     
                     participantCount++;

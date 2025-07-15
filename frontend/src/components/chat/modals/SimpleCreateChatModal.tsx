@@ -163,7 +163,15 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
 
     setCreating(true);
     try {
-      const participants = Array.from(selectedParticipants);
+      // Convert participant IDs from "type-id" format to objects
+      const participants = Array.from(selectedParticipants).map(participantId => {
+        const [type, id] = participantId.split('-');
+        return {
+          user_id: parseInt(id),
+          user_type: type
+        };
+      });
+
       const groupData = {
         name: groupName.trim(),
         type: 'group',

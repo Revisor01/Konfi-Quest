@@ -149,7 +149,8 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewCh
       const participantText = room.participant_count ? `${room.participant_count} Teilnehmer:innen` : 'Gruppenchat';
       return participantText;
     }
-    return 'Direktnachricht';
+    // Für Direktnachrichten: Nur den Namen anzeigen, ohne "Direktnachricht"
+    return '';
   };
 
   if (loading) {

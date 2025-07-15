@@ -13,8 +13,6 @@ import {
   IonLabel,
   IonList,
   IonAvatar,
-  IonActionSheet,
-  IonAlert,
   IonProgressBar,
   IonChip,
   IonText,
@@ -30,13 +28,18 @@ import {
   document, 
   image,
   barChart,
-  ellipsisVertical,
   download,
   trash,
-  checkmark
+  checkmark,
+  chatbubbles,
+  people
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import PollModal from './modals/PollModal';
+import ImageModal from './ImageModal';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface Message {
   id: number;
@@ -49,13 +52,13 @@ interface Message {
   file_name?: string;
   file_size?: number;
   message_type: 'text' | 'file' | 'poll';
-  poll_data?: {
-    question: string;
-    options: string[];
-    votes: number[];
-    user_vote?: number;
-    multiple_choice: boolean;
-  };
+  // Poll-Daten direkt in der Message
+  question?: string;
+  options?: string[];
+  votes?: any[];
+  multiple_choice?: boolean;
+  expires_at?: string;
+  poll_id?: number;
   deleted?: boolean;
 }
 
@@ -77,12 +80,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [showActionSheet, setShowActionSheet] = useState(false);
-  const [showPollAlert, setShowPollAlert] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{url: string, fileName: string} | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     loadMessages();
@@ -150,30 +153,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     }
   };
 
-  const createPoll = async () => {
-    if (!pollQuestion.trim() || pollOptions.filter(opt => opt.trim()).length < 2) {
-      setError('Bitte geben Sie eine Frage und mindestens 2 Antwortmöglichkeiten ein');
-      return;
-    }
+  const handlePollCreated = async () => {
+    setShowPollModal(false);
+    await loadMessages();
+  };
 
-    try {
-      const pollData = {
-        question: pollQuestion.trim(),
-        options: pollOptions.filter(opt => opt.trim()),
-        multiple_choice: false
-      };
+  const openImageModal = (imageUrl: string, fileName: string) => {
+    setSelectedImage({ url: imageUrl, fileName });
+    setShowImageModal(true);
+  };
 
-      await api.post(`/chat/rooms/${room.id}/polls`, pollData);
-      
-      setPollQuestion('');
-      setPollOptions(['', '']);
-      setShowPollAlert(false);
-      setSuccess('Umfrage erstellt');
-      await loadMessages();
-    } catch (err) {
-      setError('Fehler beim Erstellen der Umfrage');
-      console.error('Error creating poll:', err);
-    }
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImage(null);
   };
 
   const voteInPoll = async (messageId: number, optionIndex: number) => {
@@ -205,6 +197,33 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         return;
       }
       setSelectedFile(file);
+    }
+  };
+
+  const takePicture = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        quality: 90
+      });
+
+      if (photo.dataUrl) {
+        // Convert dataUrl to File
+        const response = await fetch(photo.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+        
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setError('Foto ist zu groß (max. 10MB)');
+          return;
+        }
+        
+        setSelectedFile(file);
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      setError('Kamera konnte nicht geöffnet werden');
     }
   };
 
@@ -297,49 +316,132 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             </div>
           )}
           
-          {message.message_type === 'poll' && message.poll_data ? (
-            <div>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-                📊 {message.poll_data.question}
+          {message.message_type === 'poll' && message.question && message.options ? (
+            <div style={{
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              padding: '16px',
+              marginTop: '8px'
+            }}>
+              <div style={{ 
+                fontWeight: 'bold', 
+                marginBottom: '12px',
+                fontSize: '1.1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                📊 {message.question}
               </div>
-              {message.poll_data.options.map((option, index) => {
-                const votes = message.poll_data!.votes[index] || 0;
-                const totalVotes = message.poll_data!.votes.reduce((sum, v) => sum + v, 0);
-                const percentage = totalVotes > 0 ? (votes / totalVotes) * 100 : 0;
-                const userVoted = message.poll_data!.user_vote === index;
+              
+              {message.expires_at && (
+                <div style={{
+                  fontSize: '0.8rem',
+                  opacity: 0.7,
+                  marginBottom: '12px'
+                }}>
+                  🕐 Läuft ab: {new Date(message.expires_at).toLocaleString('de-DE')}
+                </div>
+              )}
+              
+              {message.options.map((option, index) => {
+                // Stimmen für diese Option zählen
+                const optionVotes = message.votes?.filter(vote => vote.option_index === index) || [];
+                const totalVotes = message.votes?.length || 0;
+                const percentage = totalVotes > 0 ? (optionVotes.length / totalVotes) * 100 : 0;
+                
+                // Prüfen ob aktueller User abgestimmt hat
+                const userVoted = message.votes?.some(vote => 
+                  vote.user_id === user?.id && 
+                  vote.user_type === user?.type && 
+                  vote.option_index === index
+                );
                 
                 return (
-                  <div key={index} style={{ marginBottom: '4px' }}>
-                    <IonButton
-                      fill="clear"
-                      size="small"
+                  <div key={index} style={{ marginBottom: '8px' }}>
+                    <div
                       onClick={() => voteInPoll(message.id, index)}
                       style={{
-                        '--color': isOwnMessage ? 'white' : 'black',
-                        width: '100%',
-                        textAlign: 'left',
-                        justifyContent: 'flex-start',
+                        background: userVoted ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255,255,255,0.15)',
+                        border: userVoted ? '3px solid #28a745' : '2px solid rgba(255,255,255,0.4)',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        cursor: 'pointer',
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        transition: 'all 0.2s ease',
+                        boxShadow: userVoted ? '0 2px 8px rgba(40, 167, 69, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
                       }}
                     >
+                      {/* Progress Bar Background */}
                       <div style={{
                         position: 'absolute',
                         left: 0,
                         top: 0,
                         height: '100%',
                         width: `${percentage}%`,
-                        backgroundColor: userVoted ? '#28a745' : 'rgba(255,255,255,0.2)',
-                        transition: 'width 0.3s ease'
+                        backgroundColor: userVoted ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255,255,255,0.15)',
+                        transition: 'width 0.3s ease',
+                        borderRadius: '6px'
                       }} />
-                      <div style={{ position: 'relative', zIndex: 1 }}>
-                        {userVoted && <IonIcon icon={checkmark} style={{ marginRight: '8px' }} />}
-                        {option} ({votes})
+                      
+                      {/* Content */}
+                      <div style={{ 
+                        position: 'relative', 
+                        zIndex: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          {userVoted && (
+                            <IonIcon 
+                              icon={checkmark} 
+                              style={{ 
+                                marginRight: '8px',
+                                color: '#28a745',
+                                fontSize: '1.2rem'
+                              }} 
+                            />
+                          )}
+                          <span style={{ fontWeight: userVoted ? 'bold' : 'normal' }}>
+                            {option}
+                          </span>
+                        </div>
+                        
+                        <div style={{ 
+                          fontSize: '0.9rem',
+                          opacity: 0.8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          <span>{optionVotes.length}</span>
+                          <span style={{ fontSize: '0.8rem' }}>
+                            ({percentage.toFixed(0)}%)
+                          </span>
+                        </div>
                       </div>
-                    </IonButton>
+                    </div>
                   </div>
                 );
               })}
+              
+              {/* Poll Info */}
+              <div style={{
+                marginTop: '12px',
+                fontSize: '0.8rem',
+                opacity: 0.7,
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span>
+                  {message.multiple_choice ? 'Mehrfachauswahl möglich' : 'Nur eine Antwort'}
+                </span>
+                <span>
+                  {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}
+                </span>
+              </div>
             </div>
           ) : message.file_path ? (
             <div>
@@ -359,7 +461,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                       objectFit: 'cover',
                       cursor: 'pointer'
                     }}
-                    onClick={() => window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank')}
+                    onClick={() => openImageModal(`${api.defaults.baseURL}/chat/files/${message.file_path}`, message.file_name || '')}
                   />
                   <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
                     {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
@@ -434,7 +536,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   };
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
@@ -445,8 +547,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonTitle>{room.name}</IonTitle>
           {user?.type === 'admin' && (
             <IonButtons slot="end">
-              <IonButton onClick={() => setShowActionSheet(true)}>
-                <IonIcon icon={ellipsisVertical} />
+              <IonButton onClick={() => setShowPollModal(true)}>
+                <IonIcon icon={barChart} />
               </IonButton>
             </IonButtons>
           )}
@@ -462,9 +564,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         </IonRefresher>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <IonSpinner />
-          </div>
+          <LoadingSpinner message="Nachrichten werden geladen..." />
         ) : (
           <div style={{ paddingBottom: '80px' }}>
             {messages.map(renderMessage)}
@@ -519,6 +619,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonIcon icon={attach} />
         </IonButton>
         
+        <IonButton 
+          fill="clear" 
+          size="small"
+          onClick={takePicture}
+        >
+          <IonIcon icon={camera} />
+        </IonButton>
+        
         <IonTextarea
           value={messageText}
           onIonInput={(e) => setMessageText(e.detail.value!)}
@@ -554,66 +662,29 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           type="file"
           style={{ display: 'none' }}
           onChange={handleFileSelect}
-          accept="image/*,.pdf,.doc,.docx,.txt"
+          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.doc,.docx,.txt"
         />
       </div>
 
-      {/* Admin Action Sheet */}
-      <IonActionSheet
-        isOpen={showActionSheet}
-        onDidDismiss={() => setShowActionSheet(false)}
-        buttons={[
-          {
-            text: 'Umfrage erstellen',
-            icon: barChart,
-            handler: () => setShowPollAlert(true)
-          },
-          {
-            text: 'Abbrechen',
-            role: 'cancel'
-          }
-        ]}
+
+      {/* Poll Creation Modal */}
+      <PollModal
+        isOpen={showPollModal}
+        onClose={() => setShowPollModal(false)}
+        onSuccess={handlePollCreated}
+        roomId={room.id}
+        presentingElement={pageRef.current}
       />
 
-      {/* Poll Creation Alert */}
-      <IonAlert
-        isOpen={showPollAlert}
-        onDidDismiss={() => setShowPollAlert(false)}
-        header="Neue Umfrage"
-        inputs={[
-          {
-            name: 'question',
-            type: 'text',
-            placeholder: 'Frage eingeben...',
-            value: pollQuestion,
-            handler: (input) => setPollQuestion(input.value)
-          },
-          {
-            name: 'option1',
-            type: 'text',
-            placeholder: 'Antwort 1',
-            value: pollOptions[0],
-            handler: (input) => setPollOptions([input.value, pollOptions[1]])
-          },
-          {
-            name: 'option2',
-            type: 'text',
-            placeholder: 'Antwort 2',
-            value: pollOptions[1],
-            handler: (input) => setPollOptions([pollOptions[0], input.value])
-          }
-        ]}
-        buttons={[
-          {
-            text: 'Abbrechen',
-            role: 'cancel'
-          },
-          {
-            text: 'Erstellen',
-            handler: createPoll
-          }
-        ]}
-      />
+      {/* Image Modal */}
+      {selectedImage && (
+        <ImageModal
+          isOpen={showImageModal}
+          onClose={closeImageModal}
+          imageUrl={selectedImage.url}
+          fileName={selectedImage.fileName}
+        />
+      )}
     </IonPage>
   );
 };

@@ -141,13 +141,35 @@ Löscht einen Antrag. Konfis können nur eigene löschen.
 
 #### `GET /api/chat/rooms`
 Ruft alle zugänglichen Chaträume für den Nutzer ab.
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** Liste von Chatraum-Objekten mit `unread_count` und `last_message`.
+
+#### `POST /api/chat/rooms`
+**(Admin only)** Erstellt einen neuen Gruppen-Chatraum.
+*   **Authentifizierung:** Admin-Token.
+*   **Request Body:** `{ "name": "Raumname", "type": "group", "participants": [1, 2, 3] }`
+*   **Erfolgs-Response (201 Created):** `{ "room_id": 5, "created": true }`
 
 #### `POST /api/chat/direct`
 Erstellt (oder findet) einen 1-zu-1-Chatraum mit einem Ziel-Nutzer.
-*   **Body:** `{ "target_user_id": 1, "target_user_type": "admin" }`
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Request Body:** `{ "target_user_id": 1, "target_user_type": "admin" | "konfi" }`
+*   **Erfolgs-Response (200 OK):** `{ "room_id": 12, "created": true }`
+
+#### `DELETE /api/chat/rooms/:roomId`
+Löscht einen Chatraum (nur wenn User Teilnehmer ist oder Admin).
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** `{ "message": "Room deleted successfully" }`
+
+#### `GET /api/chat/admins`
+**(Konfi only)** Ruft alle verfügbaren Admins für Direktnachrichten ab.
+*   **Authentifizierung:** Konfi-Token.
+*   **Erfolgs-Response (200 OK):** `[{ "id": 1, "display_name": "Pastor Simon", "username": "admin" }]`
 
 #### `GET /api/chat/rooms/:roomId/messages`
 Ruft die Nachrichten eines Raumes ab (paginiert über `?limit=50&offset=0`).
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** Liste von Nachrichten-Objekten mit Sender-Details.
 
 #### `POST /api/chat/rooms/:roomId/messages`
 Sendet eine Nachricht (Text oder Datei).
@@ -155,20 +177,39 @@ Sendet eine Nachricht (Text oder Datei).
 *   **Request Body (`multipart/form-data`):**
     *   `content` (Text, optional): Nachrichtentext.
     *   `file` (Datei, optional): Anhang (max. 10 MB, diverse Typen erlaubt).
+    *   `message_type` (Text, optional): `text` | `file` | `poll` (Standard: `text`).
+
+#### `POST /api/chat/rooms/:roomId/mark-read`
+Markiert alle Nachrichten in einem Raum als gelesen.
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** `{ "message": "Room marked as read" }`
+
+#### `GET /api/chat/unread-counts`
+Ruft die Anzahl ungelesener Nachrichten für alle Chaträume ab.
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** `[{ "room_id": 1, "unread_count": 5 }]`
 
 #### `DELETE /api/chat/messages/:messageId`
 **(Admin only)** Löscht eine Nachricht für alle sichtbar (Soft-Delete).
+*   **Authentifizierung:** Admin-Token.
+*   **Erfolgs-Response (200 OK):** `{ "message": "Message deleted" }`
 
 #### `POST /api/chat/rooms/:roomId/polls`
 **(Admin only)** Erstellt eine Umfrage in einem Raum.
-*   **Body:** `{ "question": "...", "options": ["A", "B"], "multiple_choice": false }`
+*   **Authentifizierung:** Admin-Token.
+*   **Request Body:** `{ "question": "...", "options": ["A", "B"], "multiple_choice": false, "expires_at": "2024-12-31T23:59:59Z" }`
+*   **Erfolgs-Response (200 OK):** Umfrage-Objekt mit `message_id`.
 
-#### `POST /api/chat/polls/:pollId/vote`
-Stimmt bei einer Umfrage ab. `:pollId` ist die ID der Nachricht, die die Umfrage enthält.
-*   **Body:** `{ "option_index": 0 }`
+#### `POST /api/chat/polls/:messageId/vote`
+Stimmt bei einer Umfrage ab. `:messageId` ist die ID der Nachricht, die die Umfrage enthält.
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Request Body:** `{ "option_index": 0 }`
+*   **Erfolgs-Response (200 OK):** `{ "message": "Vote recorded" }`
 
 #### `GET /api/chat/files/:filename`
 Ruft eine im Chat hochgeladene Datei ab.
+*   **Authentifizierung:** Konfi- oder Admin-Token.
+*   **Erfolgs-Response (200 OK):** Datei-Stream.
 
 ---
 
