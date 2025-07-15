@@ -6,6 +6,12 @@ PODS:
   - CapacitorCamera (7.0.1):
     - Capacitor
   - CapacitorCordova (7.4.2)
+  - CapacitorFilesystem (7.1.2):
+    - Capacitor
+    - IONFilesystemLib (~> 1.0)
+  - CapacitorFileViewer (1.0.2):
+    - Capacitor
+    - IONFileViewerLib (~> 1.0.1)
   - CapacitorHaptics (7.0.1):
     - Capacitor
   - CapacitorKeyboard (7.0.1):
@@ -14,16 +20,25 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (7.0.1):
     - Capacitor
+  - IONFilesystemLib (1.0.0)
+  - IONFileViewerLib (1.0.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
+  - "CapacitorFileViewer (from `../../node_modules/@capacitor/file-viewer`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+
+SPEC REPOS:
+  trunk:
+    - IONFilesystemLib
+    - IONFileViewerLib
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -34,6 +49,10 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/camera"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
+  CapacitorFilesystem:
+    :path: "../../node_modules/@capacitor/filesystem"
+  CapacitorFileViewer:
+    :path: "../../node_modules/@capacitor/file-viewer"
   CapacitorHaptics:
     :path: "../../node_modules/@capacitor/haptics"
   CapacitorKeyboard:
@@ -48,11 +67,15 @@ SPEC CHECKSUMS:
   CapacitorApp: d63334c052278caf5d81585d80b21905c6f93f39
   CapacitorCamera: eb8687d8687fed853598ec9460d94bcd5e16babe
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
+  CapacitorFilesystem: 7b7e9bf177ce09657a667d935ca6f0eadbcfda54
+  CapacitorFileViewer: 4f6fcd47151b904e2d7cf57ebd7dd3739c10da9e
   CapacitorHaptics: 70e47470fa1a6bd6338cd102552e3846b7f9a1b3
   CapacitorKeyboard: 969647d0ca2e5c737d7300088e2517aa832434e2
   CapacitorShare: 58d6c2da63b093e8693287b2d36db92435538435
   CapacitorStatusBar: 275cbf2f4dfc00388f519ef80c7ec22edda342c9
+  IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
+  IONFileViewerLib: 9e6b09451afa7705545d4d20e2974b4f1555390c
 
-PODFILE CHECKSUM: 5e30d8afac19fa6f69598755d328ec158fb76de9
+PODFILE CHECKSUM: f6109c4f849d726b6b65788ffbbf0597c5151ded
 
 COCOAPODS: 1.15.2

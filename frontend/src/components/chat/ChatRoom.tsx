@@ -44,6 +44,8 @@ import LoadingSpinner from '../common/LoadingSpinner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { FileViewer } from '@capacitor/file-viewer';
 
 interface Message {
   id: number;
@@ -583,10 +585,52 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                       try {
                         await Haptics.impact({ style: ImpactStyle.Light });
                         const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
-                        // Öffne natives iOS Dokumenten-Menü
-                        window.open(fileUrl, '_blank');
+                        
+                        // Für PDF und andere Dokumente: Native File Viewer verwenden
+                        if (message.file_name?.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
+                          try {
+                            // Download file to local storage first
+                            const response = await fetch(fileUrl);
+                            const blob = await response.blob();
+                            const fileName = message.file_name || 'document';
+                            
+                            // Write to temporary directory
+                            const base64Data = await new Promise<string>((resolve) => {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                const base64 = (reader.result as string).split(',')[1];
+                                resolve(base64);
+                              };
+                              reader.readAsDataURL(blob);
+                            });
+                            
+                            const path = `temp/${fileName}`;
+                            await Filesystem.writeFile({
+                              path,
+                              data: base64Data,
+                              directory: Directory.Cache
+                            });
+                            
+                            // Get local file URI and open with native viewer
+                            const fileUri = await Filesystem.getUri({
+                              directory: Directory.Cache,
+                              path
+                            });
+                            
+                            await FileViewer.openDocumentFromLocalPath({
+                              path: fileUri.uri
+                            });
+                          } catch (viewerError) {
+                            console.warn('Native viewer failed, using fallback:', viewerError);
+                            window.open(fileUrl, '_blank');
+                          }
+                        } else {
+                          // Für andere Dateien: Standard Browser-Download
+                          window.open(fileUrl, '_blank');
+                        }
                       } catch (error) {
                         console.error('Error opening document:', error);
+                        setError('Fehler beim Öffnen der Datei');
                       }
                     }}
                   >
