@@ -2652,7 +2652,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
                 ELSE konfi.name 
               END 
               FROM chat_messages lm 
-              LEFT JOIN admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
+              LEFT JOIN admins admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
               LEFT JOIN konfis konfi ON lm.user_id = konfi.id AND lm.user_type = 'konfi'
               WHERE lm.room_id = r.id AND lm.deleted_at IS NULL 
               ORDER BY lm.created_at DESC LIMIT 1) as last_message_sender
@@ -2676,7 +2676,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
                 ELSE konfi.name 
               END 
               FROM chat_messages lm 
-              LEFT JOIN admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
+              LEFT JOIN admins admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
               LEFT JOIN konfis konfi ON lm.user_id = konfi.id AND lm.user_type = 'konfi'
               WHERE lm.room_id = r.id AND lm.deleted_at IS NULL 
               ORDER BY lm.created_at DESC LIMIT 1) as last_message_sender
