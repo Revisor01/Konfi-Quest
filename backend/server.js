@@ -2644,14 +2644,14 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
     // Admins see all rooms using chat_read_status table
     query = `
       SELECT r.*, j.name as jahrgang_name,
-              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
+              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') AND m.deleted_at IS NULL THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
               NULL as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
-      LEFT JOIN chat_messages m ON r.id = m.room_id AND m.deleted_at IS NULL
+      LEFT JOIN chat_messages m ON r.id = m.room_id
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
@@ -2660,7 +2660,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
     // Konfis see only their rooms using chat_read_status table
     query = `
       SELECT r.*, j.name as jahrgang_name,
-              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
+              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') AND m.deleted_at IS NULL THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
               NULL as last_message_sender
@@ -2668,7 +2668,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
-      LEFT JOIN chat_messages m ON r.id = m.room_id AND m.deleted_at IS NULL
+      LEFT JOIN chat_messages m ON r.id = m.room_id
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
