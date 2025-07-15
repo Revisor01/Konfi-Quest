@@ -32,7 +32,9 @@ import {
   trash,
   checkmark,
   chatbubbles,
-  people
+  people,
+  images,
+  folder
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
@@ -83,6 +85,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [showPollModal, setShowPollModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{url: string, fileName: string} | null>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -91,16 +94,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     loadMessages();
     markRoomAsRead();
     // Auto-refresh messages every 10 seconds
-    const interval = setInterval(loadMessages, 10000);
+    const interval = setInterval(() => {
+      loadMessages();
+      markRoomAsRead();
+    }, 10000);
     return () => clearInterval(interval);
   }, [room.id]);
 
   useEffect(() => {
-    // Scroll to bottom when new messages arrive
-    if (contentRef.current) {
+    // Scroll to bottom when new messages arrive, but only if auto-scroll is enabled
+    if (contentRef.current && shouldAutoScroll) {
       contentRef.current.scrollToBottom(300);
     }
-  }, [messages]);
+  }, [messages, shouldAutoScroll]);
 
   const loadMessages = async () => {
     try {
@@ -117,6 +123,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const markRoomAsRead = async () => {
     try {
       await api.post(`/chat/rooms/${room.id}/mark-read`);
+      console.log('Room marked as read:', room.id);
     } catch (err) {
       // Silent fail - marking as read is not critical
       console.error('Error marking room as read:', err);
@@ -170,11 +177,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   const voteInPoll = async (messageId: number, optionIndex: number) => {
     try {
+      setShouldAutoScroll(false); // Prevent auto-scroll when voting
       await api.post(`/chat/polls/${messageId}/vote`, { option_index: optionIndex });
       await loadMessages();
+      // Re-enable auto-scroll after a short delay
+      setTimeout(() => setShouldAutoScroll(true), 1000);
     } catch (err) {
       setError('Fehler beim Abstimmen');
       console.error('Error voting in poll:', err);
+      setShouldAutoScroll(true); // Re-enable on error
     }
   };
 
@@ -223,9 +234,37 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       }
     } catch (error) {
       console.error('Camera error:', error);
-      setError('Kamera konnte nicht geöffnet werden');
+      setError('Kamera-Zugriff fehlgeschlagen');
     }
   };
+
+  const selectFromGallery = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Photos,
+        quality: 90
+      });
+
+      if (photo.dataUrl) {
+        // Convert dataUrl to File
+        const response = await fetch(photo.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
+        
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setError('Foto ist zu groß (max. 10MB)');
+          return;
+        }
+        
+        setSelectedFile(file);
+      }
+    } catch (error) {
+      console.error('Gallery error:', error);
+      setError('Galerie-Zugriff fehlgeschlagen');
+    }
+  };
+
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -233,6 +272,62 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleLongPress = async (message: Message) => {
+    try {
+      if (navigator.share) {
+        let shareData: any = {
+          title: 'Nachricht aus Konfi Quest',
+        };
+
+        if (message.file_path) {
+          // For files, try to share the actual file if possible
+          const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
+          
+          try {
+            // Try to fetch and share the file as blob
+            const response = await fetch(fileUrl);
+            if (response.ok) {
+              const blob = await response.blob();
+              const file = new File([blob], message.file_name || 'file', { 
+                type: blob.type 
+              });
+              
+              shareData.files = [file];
+              shareData.title = message.file_name || 'Datei aus Konfi Quest';
+              if (message.content) {
+                shareData.text = message.content;
+              }
+            } else {
+              throw new Error('File fetch failed');
+            }
+          } catch (fileError) {
+            // Fallback to URL sharing if file sharing fails
+            console.warn('File sharing failed, falling back to URL:', fileError);
+            shareData.text = `${message.content || 'Datei'}: ${message.file_name}`;
+            shareData.url = fileUrl;
+          }
+        } else {
+          shareData.text = message.content;
+        }
+
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy to clipboard
+        const textToCopy = message.file_path 
+          ? `${message.content || 'Datei'}: ${message.file_name} - ${api.defaults.baseURL}/chat/files/${message.file_path}`
+          : message.content;
+          
+        await navigator.clipboard.writeText(textToCopy);
+        setSuccess('In Zwischenablage kopiert');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      if (error instanceof Error && error.name !== 'AbortError') {
+        setError('Fehler beim Teilen');
+      }
+    }
   };
 
   const formatMessageTime = (dateString: string) => {
@@ -297,14 +392,37 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           </IonAvatar>
         )}
         
-        <div style={{
-          maxWidth: '70%',
-          backgroundColor: isOwnMessage ? '#007aff' : '#e9ecef',
-          color: isOwnMessage ? 'white' : 'black',
-          borderRadius: '16px',
-          padding: '12px',
-          position: 'relative'
-        }}>
+        <div 
+          style={{
+            maxWidth: '70%',
+            backgroundColor: isOwnMessage ? '#007aff' : '#e9ecef',
+            color: isOwnMessage ? 'white' : 'black',
+            borderRadius: '16px',
+            padding: '12px',
+            position: 'relative',
+            cursor: 'pointer'
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            handleLongPress(message);
+          }}
+          onTouchStart={(e) => {
+            const timeoutId = setTimeout(() => {
+              handleLongPress(message);
+            }, 500);
+            
+            const cleanup = () => {
+              clearTimeout(timeoutId);
+              e.target.removeEventListener('touchend', cleanup);
+              e.target.removeEventListener('touchmove', cleanup);
+              e.target.removeEventListener('touchcancel', cleanup);
+            };
+            
+            e.target.addEventListener('touchend', cleanup);
+            e.target.addEventListener('touchmove', cleanup);
+            e.target.addEventListener('touchcancel', cleanup);
+          }}
+        >
           {!isOwnMessage && (
             <div style={{ 
               fontSize: '0.75rem', 
@@ -493,9 +611,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                   <IonButton
                     fill="clear"
                     size="small"
-                    onClick={() => window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank')}
+                    onClick={() => {
+                      const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
+                      if (message.file_name?.includes('.pdf')) {
+                        // For PDFs, try to open in native viewer
+                        window.open(fileUrl, '_blank');
+                      } else {
+                        // For other files, download
+                        window.open(fileUrl, '_blank');
+                      }
+                    }}
                   >
-                    <IonIcon icon={download} />
+                    <IonIcon icon={message.file_name?.includes('.pdf') ? document : download} />
                   </IonButton>
                 </div>
               )}
@@ -566,7 +693,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         {loading ? (
           <LoadingSpinner message="Nachrichten werden geladen..." />
         ) : (
-          <div style={{ paddingBottom: '80px' }}>
+          <div style={{ paddingBottom: '120px' }}>
             {messages.map(renderMessage)}
           </div>
         )}
@@ -619,13 +746,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonIcon icon={attach} />
         </IonButton>
         
-        <IonButton 
-          fill="clear" 
-          size="small"
-          onClick={takePicture}
-        >
-          <IonIcon icon={camera} />
-        </IonButton>
         
         <IonTextarea
           value={messageText}
@@ -651,8 +771,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         <IonButton 
           fill="solid" 
           shape="round"
+          size="small"
           disabled={(!messageText.trim() && !selectedFile) || uploading}
           onClick={sendMessage}
+          style={{
+            '--height': '28px',
+            '--min-height': '28px',
+            '--border-radius': '14px',
+            '--padding-start': '6px',
+            '--padding-end': '6px',
+            minWidth: '28px',
+            maxWidth: '28px',
+            fontSize: '14px'
+          }}
         >
           {uploading ? <IonSpinner /> : <IonIcon icon={send} />}
         </IonButton>
@@ -662,7 +793,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           type="file"
           style={{ display: 'none' }}
           onChange={handleFileSelect}
-          accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.doc,.docx,.txt"
+          accept="image/*,video/*,.pdf,.doc,.docx,.txt"
         />
       </div>
 
@@ -683,8 +814,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           onClose={closeImageModal}
           imageUrl={selectedImage.url}
           fileName={selectedImage.fileName}
+          presentingElement={pageRef.current || undefined}
         />
       )}
+
     </IonPage>
   );
 };

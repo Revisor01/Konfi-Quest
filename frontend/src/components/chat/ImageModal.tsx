@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   IonModal,
+  IonPage,
   IonContent,
   IonHeader,
   IonToolbar,
@@ -16,22 +17,29 @@ interface ImageModalProps {
   onClose: () => void;
   imageUrl: string;
   fileName: string;
+  presentingElement?: HTMLElement;
 }
 
-const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, imageUrl, fileName }) => {
+const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, imageUrl, fileName, presentingElement }) => {
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onClose}>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>{fileName}</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={onClose}>
-              <IonIcon icon={close} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
+    <IonModal 
+      isOpen={isOpen} 
+      onDidDismiss={onClose}
+      canDismiss={true}
+      backdropDismiss={true}
+    >
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>{fileName}</IonTitle>
+            <IonButtons slot="end">
+              <IonButton onClick={onClose}>
+                <IonIcon icon={close} />
+              </IonButton>
+            </IonButtons>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -49,7 +57,8 @@ const ImageModal: React.FC<ImageModalProps> = ({ isOpen, onClose, imageUrl, file
             }}
           />
         </div>
-      </IonContent>
+        </IonContent>
+      </IonPage>
     </IonModal>
   );
 };

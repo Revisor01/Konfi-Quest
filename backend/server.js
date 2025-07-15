@@ -2641,35 +2641,38 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
   let params;
   
   if (userType === 'admin') {
-    // Admins see all rooms
+    // Admins see all rooms using chat_read_status table
     query = `
       SELECT r.*, j.name as jahrgang_name,
-              COUNT(CASE WHEN m.created_at > COALESCE(p.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
+              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
-              (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time
+              (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
+              (SELECT sender_name FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
-      LEFT JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
+      LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
       LEFT JOIN chat_messages m ON r.id = m.room_id AND m.deleted_at IS NULL
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
     params = [userId, userType];
   } else {
-    // Konfis see only their rooms
+    // Konfis see only their rooms using chat_read_status table
     query = `
       SELECT r.*, j.name as jahrgang_name,
-              COUNT(CASE WHEN m.created_at > p.last_read_at THEN 1 END) as unread_count,
+              COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
-              (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time
+              (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
+              (SELECT sender_name FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
-      LEFT JOIN chat_messages m ON r.id = m.room_id AND m.created_at > p.last_read_at AND m.deleted_at IS NULL
+      LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
+      LEFT JOIN chat_messages m ON r.id = m.room_id AND m.deleted_at IS NULL
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
-    params = [userId, userType];
+    params = [userId, userType, userId, userType];
   }
   
   db.all(query, params, (err, rooms) => {
@@ -2677,7 +2680,29 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
       console.error('Error fetching chat rooms:', err);
       return res.status(500).json({ error: 'Database error' });
     }
-    res.json(rooms);
+    
+    // Process rooms to format last_message properly
+    const processedRooms = rooms.map(room => {
+      let processedRoom = { ...room };
+      
+      if (room.last_message && room.last_message_sender && room.last_message_time) {
+        processedRoom.last_message = {
+          content: room.last_message,
+          sender_name: room.last_message_sender,
+          created_at: room.last_message_time
+        };
+      } else {
+        processedRoom.last_message = null;
+      }
+      
+      // Remove the individual fields since we now have the structured last_message
+      delete processedRoom.last_message_sender;
+      delete processedRoom.last_message_time;
+      
+      return processedRoom;
+    });
+    
+    res.json(processedRooms);
   });
 });
 
@@ -3299,20 +3324,55 @@ app.post('/api/chat/rooms/:roomId/mark-read', verifyToken, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
   
-  // Update or insert read status
-  const query = `
-    INSERT OR REPLACE INTO chat_read_status (room_id, user_id, user_type, last_read_at)
-    VALUES (?, ?, ?, datetime('now'))
-  `;
-  
-  db.run(query, [roomId, userId, userType], function(err) {
+  // Ensure chat_read_status table exists first
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_read_status'", (err, row) => {
     if (err) {
-      console.error('Error marking room as read:', err);
+      console.error('Error checking chat_read_status table:', err);
       return res.status(500).json({ error: 'Database error' });
     }
     
-    res.json({ message: 'Room marked as read' });
+    if (!row) {
+      // Create table if it doesn't exist
+      db.run(`CREATE TABLE chat_read_status (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        room_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        user_type TEXT NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+        last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+        UNIQUE(room_id, user_id, user_type)
+      )`, (createErr) => {
+        if (createErr) {
+          console.error('Error creating chat_read_status table:', createErr);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        console.log('✅ chat_read_status table created on demand');
+        insertReadStatus();
+      });
+    } else {
+      insertReadStatus();
+    }
   });
+  
+  function insertReadStatus() {
+    // Update or insert read status
+    const query = `
+      INSERT OR REPLACE INTO chat_read_status (room_id, user_id, user_type, last_read_at)
+      VALUES (?, ?, ?, datetime('now'))
+    `;
+    
+    db.run(query, [roomId, userId, userType], function(err) {
+      if (err) {
+        console.error('Error marking room as read:', err);
+        console.error('Failed query:', query);
+        console.error('Parameters:', [roomId, userId, userType]);
+        return res.status(500).json({ error: 'Database error: ' + err.message });
+      }
+      
+      console.log(`✅ Room ${roomId} marked as read for user ${userId} (${userType})`);
+      res.json({ message: 'Room marked as read', affected: this.changes });
+    });
+  }
 });
 
 // === ENDE CHAT SYSTEM ===

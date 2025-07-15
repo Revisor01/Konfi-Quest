@@ -38,9 +38,10 @@ interface SimpleCreateChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  presentingElement?: HTMLElement;
 }
 
-const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, onClose, onSuccess, presentingElement }) => {
   const { user, setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   const [chatType, setChatType] = useState<'direct' | 'group' | ''>('');
@@ -178,14 +179,17 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
         participants: participants
       };
 
-      await api.post('/chat/rooms', groupData);
+      console.log('Creating group chat with data:', groupData);
+      const response = await api.post('/chat/rooms', groupData);
+      console.log('Group chat created successfully:', response.data);
       
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
       handleClose();
       onSuccess();
-    } catch (err) {
-      setError('Fehler beim Erstellen des Gruppenchats');
+    } catch (err: any) {
       console.error('Error creating group chat:', err);
+      console.error('Error response:', err.response?.data);
+      setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
     } finally {
       setCreating(false);
     }
@@ -221,7 +225,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
     <IonModal 
       isOpen={isOpen} 
       onDidDismiss={handleClose}
-      presentingElement={pageRef.current || undefined}
+      presentingElement={presentingElement || undefined}
       canDismiss={true}
       backdropDismiss={true}
     >

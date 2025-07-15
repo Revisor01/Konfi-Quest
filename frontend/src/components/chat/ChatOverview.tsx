@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -57,9 +57,15 @@ interface ChatRoom {
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoom) => void;
   onCreateNewChat: () => void;
+  onCreateNewChatWithRef?: (pageRef: HTMLElement | null) => void;
 }
 
-const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewChat }) => {
+interface ChatOverviewRef {
+  loadChatRooms: () => void;
+}
+
+const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, onCreateNewChatWithRef }, ref) => {
+  const pageRef = useRef<HTMLElement>(null);
   const { user, setError, setSuccess } = useApp();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,18 +75,23 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewCh
     loadChatRooms();
   }, []);
 
-  const loadChatRooms = async () => {
-    setLoading(true);
+  const loadChatRooms = async (silent: boolean = false) => {
+    if (!silent) setLoading(true);
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
     } catch (err) {
-      setError('Fehler beim Laden der Chaträume');
+      if (!silent) setError('Fehler beim Laden der Chaträume');
       console.error('Error loading chat rooms:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
+
+  // Expose loadChatRooms to parent component
+  React.useImperativeHandle(ref, () => ({
+    loadChatRooms
+  }));
 
   const deleteRoom = async (room: ChatRoom) => {
     if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
@@ -149,7 +160,9 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewCh
       const participantText = room.participant_count ? `${room.participant_count} Teilnehmer:innen` : 'Gruppenchat';
       return participantText;
     }
-    // Für Direktnachrichten: Nur den Namen anzeigen, ohne "Direktnachricht"
+    if (room.type === 'direct') {
+      return 'Direktnachricht';
+    }
     return '';
   };
 
@@ -158,12 +171,12 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewCh
   }
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onCreateNewChat}>
+            <IonButton onClick={() => onCreateNewChatWithRef ? onCreateNewChatWithRef(pageRef.current) : onCreateNewChat()}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>
@@ -344,6 +357,6 @@ const ChatOverview: React.FC<ChatOverviewProps> = ({ onSelectRoom, onCreateNewCh
       </IonContent>
     </IonPage>
   );
-};
+});
 
 export default ChatOverview;
