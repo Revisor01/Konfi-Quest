@@ -1,0 +1,217 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  IonPage, 
+  IonHeader, 
+  IonToolbar, 
+  IonTitle, 
+  IonContent, 
+  IonModal,
+  IonRefresher,
+  IonRefresherContent,
+  IonButtons,
+  IonButton,
+  IonIcon
+} from '@ionic/react';
+import { add } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
+import api from '../../../services/api';
+import KonfisView from '../KonfisView';
+import LoadingSpinner from '../../common/LoadingSpinner';
+import KonfiModal from '../modals/KonfiModal';
+import KonfiDetailView from '../views/KonfiDetailView';
+
+interface Konfi {
+  id: number;
+  name: string;
+  username?: string;
+  jahrgang?: string;
+  points?: {
+    gottesdienst: number;
+    gemeinde: number;
+  };
+  badgeCount?: number;
+  activities_count?: number;
+}
+
+interface Jahrgang {
+  id: number;
+  name: string;
+}
+
+interface Settings {
+  target_gottesdienst?: string;
+  target_gemeinde?: string;
+}
+
+interface Activity {
+  id: number;
+  name: string;
+  points: number;
+}
+
+const AdminKonfisPage: React.FC = () => {
+  const { setSuccess, setError } = useApp();
+  const pageRef = useRef<HTMLElement>(null);
+  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+  
+  // State
+  const [konfis, setKonfis] = useState<Konfi[]>([]);
+  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [settings, setSettings] = useState<Settings>({});
+  const [loading, setLoading] = useState(true);
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedKonfi, setSelectedKonfi] = useState<Konfi | null>(null);
+  const [showDetailView, setShowDetailView] = useState(false);
+
+  useEffect(() => {
+    loadData();
+    // Setze das presentingElement nach dem ersten Mount
+    setPresentingElement(pageRef.current);
+    
+    // Event-Listener für Updates aus KonfiDetailView
+    const handleKonfisUpdated = () => {
+      loadData();
+    };
+    
+    window.addEventListener('konfis-updated', handleKonfisUpdated);
+    
+    return () => {
+      window.removeEventListener('konfis-updated', handleKonfisUpdated);
+    };
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [konfisRes, jahrgaengeRes, activitiesRes, settingsRes] = await Promise.all([
+        api.get('/konfis'),
+        api.get('/jahrgaenge'),
+        api.get('/activities'),
+        api.get('/settings')
+      ]);
+      
+      setKonfis(konfisRes.data);
+      setJahrgaenge(jahrgaengeRes.data);
+      setActivities(activitiesRes.data);
+      setSettings(settingsRes.data);
+    } catch (err) {
+      setError('Fehler beim Laden der Daten');
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteKonfi = async (konfi: Konfi) => {
+    if (!window.confirm(`Konfi "${konfi.name}" wirklich löschen?`)) return;
+
+    try {
+      await api.delete(`/konfis/${konfi.id}`);
+      setSuccess(`Konfi "${konfi.name}" gelöscht`);
+      // Sofortige Aktualisierung
+      await loadData();
+    } catch (err) {
+      setError('Fehler beim Löschen');
+    }
+  };
+
+  const handleSelectKonfi = (konfi: Konfi) => {
+    setSelectedKonfi(konfi);
+    setShowDetailView(true);
+  };
+
+  const handleBackFromDetail = async () => {
+    setShowDetailView(false);
+    setSelectedKonfi(null);
+    // Daten aktualisieren beim Zurückkehren
+    await loadData();
+  };
+
+  const presentKonfiModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleAddKonfi = async (konfiData: any) => {
+    try {
+      const response = await api.post('/konfis', konfiData);
+      setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
+      setIsModalOpen(false);
+      // Sofortige Aktualisierung
+      await loadData();
+    } catch (err) {
+      setError('Fehler beim Hinzufügen');
+    }
+  };
+
+  if (showDetailView && selectedKonfi) {
+    return (
+      <KonfiDetailView 
+        konfi={selectedKonfi}
+        onBack={handleBackFromDetail}
+      />
+    );
+  }
+
+  return (
+    <IonPage ref={pageRef}>
+      <IonHeader translucent={true}>
+        <IonToolbar>
+          <IonTitle>Konfirmand:innen</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={presentKonfiModal}>
+              <IonIcon icon={add} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
+            <IonTitle size="large" style={{ color: 'black' }}>Konfirmand:innen</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        
+        <IonRefresher slot="fixed" onIonRefresh={(e) => {
+          loadData();
+          e.detail.complete();
+        }}>
+          <IonRefresherContent></IonRefresherContent>
+        </IonRefresher>
+        
+        {loading ? (
+          <LoadingSpinner message="Konfis werden geladen..." />
+        ) : (
+          <KonfisView 
+            konfis={konfis}
+            jahrgaenge={jahrgaenge}
+            settings={settings}
+            onUpdate={loadData}
+            onAddKonfiClick={presentKonfiModal}
+            onSelectKonfi={handleSelectKonfi}
+            onDeleteKonfi={handleDeleteKonfi}
+          />
+        )}
+      </IonContent>
+      
+      {/* Konfi Modal */}
+      <IonModal 
+        isOpen={isModalOpen} 
+        onDidDismiss={() => setIsModalOpen(false)}
+        presentingElement={presentingElement || undefined}
+        canDismiss={true}
+        backdropDismiss={true}
+      >
+        <KonfiModal 
+          jahrgaenge={jahrgaenge}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleAddKonfi}
+        />
+      </IonModal>
+    </IonPage>
+  );
+};
+
+export default AdminKonfisPage;
