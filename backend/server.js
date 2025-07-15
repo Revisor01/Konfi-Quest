@@ -3358,7 +3358,7 @@ app.post('/api/chat/rooms/:roomId/mark-read', verifyToken, (req, res) => {
     // Update or insert read status
     const query = `
       INSERT OR REPLACE INTO chat_read_status (room_id, user_id, user_type, last_read_at)
-      VALUES (?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, datetime('now', '+2 hours'))
     `;
     
     db.run(query, [roomId, userId, userType], function(err) {
