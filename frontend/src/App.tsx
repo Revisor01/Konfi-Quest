@@ -37,6 +37,7 @@ import { AppProvider, useApp } from './contexts/AppContext';
 import LoginView from './components/auth/LoginView';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import AdminKonfisPage from './components/admin/pages/AdminKonfisPage';
+import ChatPage from './components/chat/ChatPage';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -131,18 +132,7 @@ const AppContent: React.FC = () => {
                 <IonRouterOutlet>
                   <Redirect exact path="/admin" to="/admin/konfis" />
                   <Route exact path="/admin/konfis" component={AdminKonfisPage} />
-                  <Route exact path="/admin/chat" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Chat</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Chat List (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
+                  <Route exact path="/admin/chat" component={ChatPage} />
                   <Route exact path="/admin/activities" render={() => (
                     <IonPage>
                       <IonHeader>
@@ -268,6 +258,7 @@ const AppContent: React.FC = () => {
                       </IonContent>
                     </IonPage>
                   )} />
+                  <Route exact path="/konfi/chat" component={ChatPage} />
                   <Route exact path="/konfi/requests" render={() => (
                     <IonPage>
                       <IonHeader>
@@ -291,6 +282,10 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="badges" href="/konfi/badges">
                     <IonIcon icon={star} />
                     <IonLabel>Badges</IonLabel>
+                  </IonTabButton>
+                  <IonTabButton tab="chat" href="/konfi/chat">
+                    <IonIcon icon={chatbubbles} />
+                    <IonLabel>Chat</IonLabel>
                   </IonTabButton>
                   <IonTabButton tab="requests" href="/konfi/requests">
                     <IonIcon icon={person} />
