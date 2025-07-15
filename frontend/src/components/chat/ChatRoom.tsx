@@ -42,6 +42,8 @@ import PollModal from './modals/PollModal';
 import ImageModal from './ImageModal';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Share } from '@capacitor/share';
 
 interface Message {
   id: number;
@@ -276,52 +278,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   const handleLongPress = async (message: Message) => {
     try {
-      if (navigator.share) {
-        let shareData: any = {
-          title: 'Nachricht aus Konfi Quest',
-        };
-
-        if (message.file_path) {
-          // For files, try to share the actual file if possible
-          const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
-          
-          try {
-            // Try to fetch and share the file as blob
-            const response = await fetch(fileUrl);
-            if (response.ok) {
-              const blob = await response.blob();
-              const file = new File([blob], message.file_name || 'file', { 
-                type: blob.type 
-              });
-              
-              shareData.files = [file];
-              shareData.title = message.file_name || 'Datei aus Konfi Quest';
-              if (message.content) {
-                shareData.text = message.content;
-              }
-            } else {
-              throw new Error('File fetch failed');
-            }
-          } catch (fileError) {
-            // Fallback to URL sharing if file sharing fails
-            console.warn('File sharing failed, falling back to URL:', fileError);
-            shareData.text = `${message.content || 'Datei'}: ${message.file_name}`;
-            shareData.url = fileUrl;
-          }
-        } else {
-          shareData.text = message.content;
-        }
-
-        await navigator.share(shareData);
-      } else {
-        // Fallback: copy to clipboard
-        const textToCopy = message.file_path 
-          ? `${message.content || 'Datei'}: ${message.file_name} - ${api.defaults.baseURL}/chat/files/${message.file_path}`
-          : message.content;
-          
-        await navigator.clipboard.writeText(textToCopy);
-        setSuccess('In Zwischenablage kopiert');
-      }
+      // Native haptic feedback
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      
+      const textToCopy = message.file_path
+        ? `${message.content || 'Datei'}: ${message.file_name}`
+        : message.content;
+        
+      // Use Capacitor Share API for native sharing
+      await Share.share({
+        text: textToCopy,
+        title: 'Nachricht aus Konfi Quest'
+      });
     } catch (error) {
       console.error('Error sharing:', error);
       if (error instanceof Error && error.name !== 'AbortError') {
@@ -611,14 +579,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                   <IonButton
                     fill="clear"
                     size="small"
-                    onClick={() => {
-                      const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
-                      if (message.file_name?.includes('.pdf')) {
-                        // For PDFs, try to open in native viewer
+                    onClick={async () => {
+                      try {
+                        await Haptics.impact({ style: ImpactStyle.Light });
+                        const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
+                        // Öffne natives iOS Dokumenten-Menü
                         window.open(fileUrl, '_blank');
-                      } else {
-                        // For other files, download
-                        window.open(fileUrl, '_blank');
+                      } catch (error) {
+                        console.error('Error opening document:', error);
                       }
                     }}
                   >

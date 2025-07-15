@@ -73,6 +73,28 @@ npm start              # Production server
 npm run dev            # Development with nodemon
 ```
 
+### Remote Server Operations
+**Server**: ssh root@server.godsapp.de  
+**Repository Path**: /opt/Konfi-Quest/
+
+#### Deploy new version to production:
+```bash
+ssh root@server.godsapp.de
+cd /opt/Konfi-Quest/
+git pull && docker-compose down && docker-compose up -d --build
+```
+
+#### Test API directly on server:
+```bash
+# SSH into server first
+ssh root@server.godsapp.de
+cd /opt/Konfi-Quest/
+
+# Test API endpoints
+curl -H "Authorization: Bearer <token>" https://konfipoints.godsapp.de/api/chat/rooms
+curl -H "Authorization: Bearer <token>" https://konfipoints.godsapp.de/api/badges
+```
+
 ### Docker Operations (Backend Only)
 ```bash
 docker-compose up -d          # Start backend server
