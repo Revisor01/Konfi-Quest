@@ -2647,15 +2647,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
               COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
-              (SELECT CASE 
-                WHEN lm.user_type = 'admin' THEN admin.display_name 
-                ELSE konfi.name 
-              END 
-              FROM chat_messages lm 
-              LEFT JOIN admins admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
-              LEFT JOIN konfis konfi ON lm.user_id = konfi.id AND lm.user_type = 'konfi'
-              WHERE lm.room_id = r.id AND lm.deleted_at IS NULL 
-              ORDER BY lm.created_at DESC LIMIT 1) as last_message_sender
+              NULL as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
@@ -2671,15 +2663,7 @@ app.get('/api/chat/rooms', verifyToken, (req, res) => {
               COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') THEN 1 END) as unread_count,
               (SELECT content FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message,
               (SELECT created_at FROM chat_messages WHERE room_id = r.id AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1) as last_message_time,
-              (SELECT CASE 
-                WHEN lm.user_type = 'admin' THEN admin.display_name 
-                ELSE konfi.name 
-              END 
-              FROM chat_messages lm 
-              LEFT JOIN admins admin ON lm.user_id = admin.id AND lm.user_type = 'admin'
-              LEFT JOIN konfis konfi ON lm.user_id = konfi.id AND lm.user_type = 'konfi'
-              WHERE lm.room_id = r.id AND lm.deleted_at IS NULL 
-              ORDER BY lm.created_at DESC LIMIT 1) as last_message_sender
+              NULL as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
