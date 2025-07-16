@@ -19,7 +19,10 @@ import {
   IonAlert,
   IonSpinner,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption
 } from '@ionic/react';
 import { 
   close, 
@@ -349,45 +352,46 @@ const MembersModal: React.FC<MembersModalProps> = ({
               ) : (
                 <IonList>
                   {participants.map((participant) => (
-                    <IonItem key={`${participant.user_type}-${participant.user_id}`}>
-                      <IonAvatar slot="start" style={{ 
-                        width: '40px', 
-                        height: '40px',
-                        backgroundColor: participant.user_type === 'admin' ? '#7045f6' : '#3880ff'
-                      }}>
-                        <div style={{ 
-                          color: 'white', 
-                          fontSize: '0.8rem', 
-                          fontWeight: 'bold',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          height: '100%'
+                    <IonItemSliding key={`${participant.user_type}-${participant.user_id}`}>
+                      <IonItem>
+                        <IonAvatar slot="start" style={{ 
+                          width: '40px', 
+                          height: '40px',
+                          backgroundColor: participant.user_type === 'admin' ? '#7045f6' : '#3880ff'
                         }}>
-                          {participant.name.charAt(0).toUpperCase()}
-                        </div>
-                      </IonAvatar>
-                      
-                      <IonLabel>
-                        <h3>{participant.name}</h3>
-                        <p>
-                          {participant.user_type === 'admin' ? 'Admin' : 
-                           (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}
-                        </p>
-                      </IonLabel>
+                          <div style={{ 
+                            color: 'white', 
+                            fontSize: '0.8rem', 
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            height: '100%'
+                          }}>
+                            {participant.name.charAt(0).toUpperCase()}
+                          </div>
+                        </IonAvatar>
+                        
+                        <IonLabel>
+                          <h3>{participant.name}</h3>
+                          <p>
+                            {participant.user_type === 'admin' ? 'Admin' : 
+                             (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}
+                          </p>
+                        </IonLabel>
+                      </IonItem>
                       
                       {canManageMembers && (
-                        <IonButton 
-                          slot="end"
-                          fill="clear"
-                          color="danger"
-                          onClick={() => confirmRemoveUser(participant)}
-                          disabled={removing}
-                        >
-                          <IonIcon icon={trash} />
-                        </IonButton>
+                        <IonItemOptions side="end">
+                          <IonItemOption 
+                            color="danger" 
+                            onClick={() => confirmRemoveUser(participant)}
+                          >
+                            <IonIcon icon={trash} />
+                          </IonItemOption>
+                        </IonItemOptions>
                       )}
-                    </IonItem>
+                    </IonItemSliding>
                   ))}
                 </IonList>
               )}

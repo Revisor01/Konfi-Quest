@@ -94,11 +94,16 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   }));
 
   const deleteRoom = async (room: ChatRoom) => {
+    // Erste Bestätigung
     if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
+    
+    // Zweite Bestätigung mit Warnung
+    const confirmText = `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`;
+    if (!window.confirm(confirmText)) return;
 
     try {
       await api.delete(`/chat/rooms/${room.id}`);
-      setSuccess(`Chat "${room.name}" gelöscht`);
+      setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
       await loadChatRooms();
     } catch (err) {
       setError('Fehler beim Löschen des Chats');
