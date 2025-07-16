@@ -18,7 +18,8 @@ import {
   IonText,
   IonSpinner,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  IonActionSheet
 } from '@ionic/react';
 import { 
   arrowBack, 
@@ -34,12 +35,12 @@ import {
   chatbubbles,
   people,
   images,
-  folder
+  folder,
+  chevronForward
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 import PollModal from './modals/PollModal';
-import ImageModal from './ImageModal';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -87,9 +88,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<{url: string, fileName: string} | null>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
@@ -169,15 +170,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     await loadMessages();
   };
 
-  const openImageModal = (imageUrl: string, fileName: string) => {
-    setSelectedImage({ url: imageUrl, fileName });
-    setShowImageModal(true);
-  };
-
-  const closeImageModal = () => {
-    setShowImageModal(false);
-    setSelectedImage(null);
-  };
 
   const voteInPoll = async (messageId: number, optionIndex: number) => {
     try {
@@ -283,15 +275,61 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       // Native haptic feedback
       await Haptics.impact({ style: ImpactStyle.Medium });
       
-      const textToCopy = message.file_path
-        ? `${message.content || 'Datei'}: ${message.file_name}`
-        : message.content;
+      // Show action sheet with options
+      setSelectedMessage(message);
+      setShowActionSheet(true);
+    } catch (error) {
+      console.error('Error with long press:', error);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!selectedMessage) return;
+    
+    try {
+      if (selectedMessage.file_path) {
+        // For files, share the actual file natively
+        const fileUrl = `${api.defaults.baseURL}/chat/files/${selectedMessage.file_path}`;
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const fileName = selectedMessage.file_name || 'file';
         
-      // Use Capacitor Share API for native sharing
-      await Share.share({
-        text: textToCopy,
-        title: 'Nachricht aus Konfi Quest'
-      });
+        // Write to Documents directory for sharing
+        const base64Data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(blob);
+        });
+        
+        const path = `share/${fileName}`;
+        await Filesystem.writeFile({
+          path,
+          data: base64Data,
+          directory: Directory.Documents,
+          recursive: true
+        });
+        
+        // Get local file URI for sharing
+        const fileUri = await Filesystem.getUri({
+          directory: Directory.Documents,
+          path
+        });
+        
+        await Share.share({
+          title: 'Datei aus Konfi Quest',
+          text: selectedMessage.content || fileName,
+          url: fileUri.uri
+        });
+      } else {
+        // For text messages, share text content
+        await Share.share({
+          text: selectedMessage.content,
+          title: 'Nachricht aus Konfi Quest'
+        });
+      }
     } catch (error) {
       console.error('Error sharing:', error);
       if (error instanceof Error && error.name !== 'AbortError') {
@@ -549,7 +587,49 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                       objectFit: 'cover',
                       cursor: 'pointer'
                     }}
-                    onClick={() => openImageModal(`${api.defaults.baseURL}/chat/files/${message.file_path}`, message.file_name || '')}
+                    onClick={async () => {
+                      try {
+                        await Haptics.impact({ style: ImpactStyle.Light });
+                        const imageUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
+                        
+                        // Download image to local storage first
+                        const response = await fetch(imageUrl);
+                        const blob = await response.blob();
+                        const fileName = message.file_name || 'image.jpg';
+                        
+                        // Write to Documents directory
+                        const base64Data = await new Promise<string>((resolve) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            const base64 = (reader.result as string).split(',')[1];
+                            resolve(base64);
+                          };
+                          reader.readAsDataURL(blob);
+                        });
+                        
+                        const path = `temp/${fileName}`;
+                        await Filesystem.writeFile({
+                          path,
+                          data: base64Data,
+                          directory: Directory.Documents,
+                          recursive: true
+                        });
+                        
+                        // Get local file URI and open with native viewer
+                        const fileUri = await Filesystem.getUri({
+                          directory: Directory.Documents,
+                          path
+                        });
+                        
+                        await FileViewer.openDocumentFromLocalPath({
+                          path: fileUri.uri
+                        });
+                      } catch (error) {
+                        console.error('Error opening image:', error);
+                        // Fallback: open image in browser
+                        window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank');
+                      }
+                    }}
                   />
                   <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
                     {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
@@ -557,14 +637,71 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                 </div>
               ) : (
                 // Datei-Anhang für andere Dateitypen
-                <div style={{
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  padding: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
+                <div 
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease'
+                  }}
+                  onClick={async () => {
+                    try {
+                      await Haptics.impact({ style: ImpactStyle.Medium });
+                      const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
+                      
+                      // Für PDF und andere Dokumente: Native File Viewer verwenden
+                      if (message.file_name?.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
+                        try {
+                          // Download file to local storage first
+                          const response = await fetch(fileUrl);
+                          const blob = await response.blob();
+                          const fileName = message.file_name || 'document';
+                          
+                          // Write to Documents directory (not Cache)
+                          const base64Data = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const base64 = (reader.result as string).split(',')[1];
+                              resolve(base64);
+                            };
+                            reader.readAsDataURL(blob);
+                          });
+                          
+                          const path = `temp/${fileName}`;
+                          await Filesystem.writeFile({
+                            path,
+                            data: base64Data,
+                            directory: Directory.Documents,
+                            recursive: true
+                          });
+                          
+                          // Get local file URI and open with native viewer
+                          const fileUri = await Filesystem.getUri({
+                            directory: Directory.Documents,
+                            path
+                          });
+                          
+                          await FileViewer.openDocumentFromLocalPath({
+                            path: fileUri.uri
+                          });
+                        } catch (viewerError) {
+                          console.warn('Native viewer failed, using fallback:', viewerError);
+                          window.open(fileUrl, '_blank');
+                        }
+                      } else {
+                        // Für andere Dateien: Standard Browser-Download
+                        window.open(fileUrl, '_blank');
+                      }
+                    } catch (error) {
+                      console.error('Error opening document:', error);
+                      setError('Fehler beim Öffnen der Datei');
+                    }
+                  }}
+                >
                   <IonIcon 
                     icon={message.file_name?.includes('.pdf') ? document : attach} 
                   />
@@ -578,64 +715,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                       </div>
                     )}
                   </div>
-                  <IonButton
-                    fill="clear"
-                    size="small"
-                    onClick={async () => {
-                      try {
-                        await Haptics.impact({ style: ImpactStyle.Light });
-                        const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
-                        
-                        // Für PDF und andere Dokumente: Native File Viewer verwenden
-                        if (message.file_name?.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
-                          try {
-                            // Download file to local storage first
-                            const response = await fetch(fileUrl);
-                            const blob = await response.blob();
-                            const fileName = message.file_name || 'document';
-                            
-                            // Write to temporary directory
-                            const base64Data = await new Promise<string>((resolve) => {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                const base64 = (reader.result as string).split(',')[1];
-                                resolve(base64);
-                              };
-                              reader.readAsDataURL(blob);
-                            });
-                            
-                            const path = `temp/${fileName}`;
-                            await Filesystem.writeFile({
-                              path,
-                              data: base64Data,
-                              directory: Directory.Cache
-                            });
-                            
-                            // Get local file URI and open with native viewer
-                            const fileUri = await Filesystem.getUri({
-                              directory: Directory.Cache,
-                              path
-                            });
-                            
-                            await FileViewer.openDocumentFromLocalPath({
-                              path: fileUri.uri
-                            });
-                          } catch (viewerError) {
-                            console.warn('Native viewer failed, using fallback:', viewerError);
-                            window.open(fileUrl, '_blank');
-                          }
-                        } else {
-                          // Für andere Dateien: Standard Browser-Download
-                          window.open(fileUrl, '_blank');
-                        }
-                      } catch (error) {
-                        console.error('Error opening document:', error);
-                        setError('Fehler beim Öffnen der Datei');
-                      }
+                  <IonIcon 
+                    icon={chevronForward} 
+                    style={{ 
+                      fontSize: '1.2rem',
+                      opacity: 0.7
                     }}
-                  >
-                    <IonIcon icon={message.file_name?.includes('.pdf') ? document : download} />
-                  </IonButton>
+                  />
                 </div>
               )}
             </div>
@@ -651,24 +737,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           }}>
             {formatMessageTime(message.created_at)}
           </div>
-          
-          {user?.type === 'admin' && (
-            <IonButton
-              fill="clear"
-              size="small"
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                right: '-8px',
-                width: '24px',
-                height: '24px',
-                '--color': isOwnMessage ? 'white' : 'black'
-              }}
-              onClick={() => deleteMessage(message.id)}
-            >
-              <IonIcon icon={trash} style={{ fontSize: '0.8rem' }} />
-            </IonButton>
-          )}
         </div>
       </div>
     );
@@ -819,16 +887,38 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         presentingElement={pageRef.current}
       />
 
-      {/* Image Modal */}
-      {selectedImage && (
-        <ImageModal
-          isOpen={showImageModal}
-          onClose={closeImageModal}
-          imageUrl={selectedImage.url}
-          fileName={selectedImage.fileName}
-          presentingElement={pageRef.current || undefined}
-        />
-      )}
+      {/* Action Sheet für Longpress */}
+      <IonActionSheet
+        isOpen={showActionSheet}
+        onDidDismiss={() => {
+          setShowActionSheet(false);
+          setSelectedMessage(null);
+        }}
+        buttons={[
+          {
+            text: 'Teilen',
+            icon: 'share-outline',
+            handler: () => {
+              handleShare();
+            }
+          },
+          ...(user?.type === 'admin' ? [{
+            text: 'Löschen',
+            icon: 'trash-outline',
+            role: 'destructive' as const,
+            handler: () => {
+              if (selectedMessage) {
+                deleteMessage(selectedMessage.id);
+              }
+            }
+          }] : []),
+          {
+            text: 'Abbrechen',
+            icon: 'close-outline',
+            role: 'cancel' as const
+          }
+        ]}
+      />
 
     </IonPage>
   );

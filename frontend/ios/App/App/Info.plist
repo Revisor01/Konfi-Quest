@@ -45,5 +45,9 @@
 	<string>Diese App benötigt Zugriff auf die Kamera, um Fotos für Chat-Nachrichten aufzunehmen.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf die Fotobibliothek, um Bilder für Chat-Nachrichten auszuwählen.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

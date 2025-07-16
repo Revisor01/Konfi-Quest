@@ -14,7 +14,8 @@ import {
   IonInput,
   IonTextarea,
   IonToggle,
-  IonDatetime,
+  IonSelect,
+  IonSelectOption,
   IonList,
   IonCheckbox,
   IonText,
@@ -40,7 +41,7 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
   const [options, setOptions] = useState(['', '']);
   const [multipleChoice, setMultipleChoice] = useState(false);
   const [hasExpiration, setHasExpiration] = useState(false);
-  const [expirationDate, setExpirationDate] = useState('');
+  const [expirationHours, setExpirationHours] = useState(24);
   const [creating, setCreating] = useState(false);
 
   const handleClose = () => {
@@ -48,7 +49,7 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
     setOptions(['', '']);
     setMultipleChoice(false);
     setHasExpiration(false);
-    setExpirationDate('');
+    setExpirationHours(24);
     onClose();
   };
 
@@ -90,7 +91,7 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
         question: trimmedQuestion,
         options: validOptions,
         multiple_choice: multipleChoice,
-        expires_at: hasExpiration && expirationDate ? new Date(expirationDate).toISOString() : null
+        expires_in_hours: hasExpiration ? expirationHours : null
       };
 
       await api.post(`/chat/rooms/${roomId}/polls`, pollData);
@@ -233,17 +234,21 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
                 />
               </IonItem>
               
-              {/* Expiration Date Picker */}
+              {/* Expiration Duration Picker */}
               {hasExpiration && (
                 <IonItem style={{ marginTop: '12px' }}>
-                  <IonLabel position="stacked">Ablaufdatum</IonLabel>
-                  <IonDatetime
-                    value={expirationDate}
-                    onIonChange={(e) => setExpirationDate(e.detail.value as string)}
-                    min={new Date().toISOString()}
-                    presentation="date-time"
-                    preferWheel={false}
-                  />
+                  <IonLabel position="stacked">Ablaufzeit</IonLabel>
+                  <IonSelect
+                    value={expirationHours}
+                    onIonChange={(e) => setExpirationHours(e.detail.value)}
+                    interface="popover"
+                    placeholder="Wählen Sie eine Dauer"
+                  >
+                    <IonSelectOption value={1}>1 Stunde</IonSelectOption>
+                    <IonSelectOption value={8}>8 Stunden</IonSelectOption>
+                    <IonSelectOption value={24}>1 Tag</IonSelectOption>
+                    <IonSelectOption value={168}>7 Tage</IonSelectOption>
+                  </IonSelect>
                 </IonItem>
               )}
             </div>
