@@ -2588,17 +2588,26 @@ app.post('/api/chat/rooms', verifyToken, (req, res) => {
   }
   
   function createRoom() {
+    console.log('Creating room with:', { name, type, jahrgang_id, createdBy });
+    
     // Create the room
     db.run("INSERT INTO chat_rooms (name, type, jahrgang_id, created_by) VALUES (?, ?, ?, ?)",
       [name, type, jahrgang_id || null, createdBy], function(err) {
-        if (err) return res.status(500).json({ error: 'Database error' });
+        if (err) {
+          console.error('Room creation error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
         
         const roomId = this.lastID;
         
         // Add creator as participant
+        console.log('Adding creator as participant:', { roomId, createdBy, userType: req.user.type });
         db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, ?)",
           [roomId, createdBy, req.user.type], (err) => {
-            if (err) return res.status(500).json({ error: 'Database error' });
+            if (err) {
+              console.error('Creator participant error:', err);
+              return res.status(500).json({ error: 'Database error' });
+            }
             
             // Add other participants
             if (participants && participants.length > 0) {
@@ -2610,9 +2619,24 @@ app.post('/api/chat/rooms', verifyToken, (req, res) => {
                 const userId = typeof participant === 'object' ? participant.user_id : participant;
                 const userType = typeof participant === 'object' ? participant.user_type : 'konfi';
                 
+                console.log('Adding participant:', { roomId, userId, userType, participant });
+                
+                // Skip if it's the creator (already added)
+                if (userId === createdBy && userType === req.user.type) {
+                  console.log('Skipping creator duplicate');
+                  participantCount++;
+                  if (participantCount === totalParticipants) {
+                    res.json({ room_id: roomId, created: true });
+                  }
+                  return;
+                }
+                
                 db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, ?)",
                   [roomId, userId, userType], (err) => {
-                    if (err) console.error('Error adding participant:', err);
+                    if (err) {
+                      console.error('Error adding participant:', err);
+                      console.error('Participant data:', { roomId, userId, userType });
+                    }
                     
                     participantCount++;
                     if (participantCount === totalParticipants) {
