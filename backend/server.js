@@ -815,44 +815,55 @@ db.serialize(() => {
   });
   
   // Migration 3: Update chat_rooms table to allow 'group' type
-  console.log('⚡ Migration 3: Updating chat_rooms table to allow group type...');
-  
-  // SQLite doesn't support modifying CHECK constraints, so we need to recreate the table
-  db.run(`CREATE TABLE IF NOT EXISTS chat_rooms_new (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('jahrgang', 'admin', 'direct', 'group')),
-    jahrgang_id INTEGER,
-    created_by INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (jahrgang_id) REFERENCES jahrgaenge (id),
-    FOREIGN KEY (created_by) REFERENCES admins (id)
-  )`, (err) => {
-    if (err) {
-      console.error('Migration 3 error creating new table:', err);
-    } else {
-      // Copy data from old table to new table
-      db.run(`INSERT INTO chat_rooms_new (id, name, type, jahrgang_id, created_by, created_at)
-        SELECT id, name, type, jahrgang_id, created_by, created_at FROM chat_rooms`, (err) => {
+  // Check if migration is needed by testing if 'group' type is allowed
+  db.run(`INSERT INTO chat_rooms (name, type, created_by) VALUES ('test_group', 'group', 1)`, (err) => {
+    if (err && err.code === 'SQLITE_CONSTRAINT') {
+      console.log('⚡ Migration 3: Updating chat_rooms table to allow group type...');
+      
+      // SQLite doesn't support modifying CHECK constraints, so we need to recreate the table
+      db.run(`CREATE TABLE chat_rooms_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('jahrgang', 'admin', 'direct', 'group')),
+        jahrgang_id INTEGER,
+        created_by INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (jahrgang_id) REFERENCES jahrgaenge (id),
+        FOREIGN KEY (created_by) REFERENCES admins (id)
+      )`, (err) => {
         if (err) {
-          console.error('Migration 3 error copying data:', err);
+          console.error('Migration 3 error creating new table:', err);
         } else {
-          // Drop old table and rename new table
-          db.run(`DROP TABLE chat_rooms`, (err) => {
+          // Copy data from old table to new table
+          db.run(`INSERT INTO chat_rooms_new (id, name, type, jahrgang_id, created_by, created_at)
+            SELECT id, name, type, jahrgang_id, created_by, created_at FROM chat_rooms`, (err) => {
             if (err) {
-              console.error('Migration 3 error dropping old table:', err);
+              console.error('Migration 3 error copying data:', err);
             } else {
-              db.run(`ALTER TABLE chat_rooms_new RENAME TO chat_rooms`, (err) => {
+              // Drop old table and rename new table
+              db.run(`DROP TABLE chat_rooms`, (err) => {
                 if (err) {
-                  console.error('Migration 3 error renaming table:', err);
+                  console.error('Migration 3 error dropping old table:', err);
                 } else {
-                  console.log('✅ Migration 3: chat_rooms table updated to allow group type');
+                  db.run(`ALTER TABLE chat_rooms_new RENAME TO chat_rooms`, (err) => {
+                    if (err) {
+                      console.error('Migration 3 error renaming table:', err);
+                    } else {
+                      console.log('✅ Migration 3: chat_rooms table updated to allow group type');
+                    }
+                  });
                 }
               });
             }
           });
         }
       });
+    } else if (err) {
+      console.error('Migration 3 test error:', err);
+    } else {
+      // Test successful - delete the test record and skip migration
+      db.run(`DELETE FROM chat_rooms WHERE name = 'test_group' AND type = 'group'`);
+      console.log('✅ Migration 3: group type already allowed in chat_rooms table');
     }
   });
   
