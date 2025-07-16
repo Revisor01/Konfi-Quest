@@ -3470,4 +3470,154 @@ app.post('/api/chat/rooms/:roomId/mark-read', verifyToken, (req, res) => {
   }
 });
 
+// Get room participants
+app.get('/api/chat/rooms/:roomId/participants', verifyToken, (req, res) => {
+  const roomId = req.params.roomId;
+  const userId = req.user.id;
+  const userType = req.user.type;
+  
+  // Check if user has access to this room
+  const accessQuery = userType === 'admin' ? 
+    "SELECT 1 FROM chat_rooms WHERE id = ?" :
+    "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
+  const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
+  
+  db.get(accessQuery, accessParams, (err, access) => {
+    if (err || !access) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    // Get participants with their details
+    const query = `
+      SELECT 
+        cp.user_id,
+        cp.user_type,
+        cp.joined_at,
+        CASE 
+          WHEN cp.user_type = 'admin' THEN a.display_name
+          ELSE k.name
+        END as name,
+        CASE 
+          WHEN cp.user_type = 'admin' THEN NULL
+          ELSE k.jahrgang_id
+        END as jahrgang_id,
+        CASE 
+          WHEN cp.user_type = 'admin' THEN NULL
+          ELSE j.name
+        END as jahrgang_name
+      FROM chat_participants cp
+      LEFT JOIN admins a ON cp.user_type = 'admin' AND cp.user_id = a.id
+      LEFT JOIN konfis k ON cp.user_type = 'konfi' AND cp.user_id = k.id
+      LEFT JOIN jahrgaenge j ON k.jahrgang_id = j.id
+      WHERE cp.room_id = ?
+      ORDER BY cp.joined_at ASC
+    `;
+    
+    db.all(query, [roomId], (err, participants) => {
+      if (err) {
+        console.error('Error fetching participants:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json(participants);
+    });
+  });
+});
+
+// Add participant to room
+app.post('/api/chat/rooms/:roomId/participants', verifyToken, (req, res) => {
+  const roomId = req.params.roomId;
+  const { user_id, user_type } = req.body;
+  const requesterId = req.user.id;
+  const requesterType = req.user.type;
+  
+  // Only admins can add participants
+  if (requesterType !== 'admin') {
+    return res.status(403).json({ error: 'Only admins can add participants' });
+  }
+  
+  // Validate input
+  if (!user_id || !user_type) {
+    return res.status(400).json({ error: 'user_id and user_type are required' });
+  }
+  
+  if (!['admin', 'konfi'].includes(user_type)) {
+    return res.status(400).json({ error: 'Invalid user_type' });
+  }
+  
+  // Check if room exists and is a group chat
+  db.get("SELECT type FROM chat_rooms WHERE id = ?", [roomId], (err, room) => {
+    if (err || !room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    if (room.type !== 'group') {
+      return res.status(400).json({ error: 'Can only add participants to group chats' });
+    }
+    
+    // Check if user is already a participant
+    db.get("SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?", 
+      [roomId, user_id, user_type], (err, existing) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (existing) {
+          return res.status(409).json({ error: 'User is already a participant' });
+        }
+        
+        // Add participant
+        db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, ?)",
+          [roomId, user_id, user_type], function(err) {
+            if (err) {
+              console.error('Error adding participant:', err);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            res.json({ message: 'Participant added successfully' });
+          });
+      });
+  });
+});
+
+// Remove participant from room
+app.delete('/api/chat/rooms/:roomId/participants/:userId/:userType', verifyToken, (req, res) => {
+  const roomId = req.params.roomId;
+  const userId = parseInt(req.params.userId);
+  const userType = req.params.userType;
+  const requesterId = req.user.id;
+  const requesterType = req.user.type;
+  
+  // Only admins can remove participants
+  if (requesterType !== 'admin') {
+    return res.status(403).json({ error: 'Only admins can remove participants' });
+  }
+  
+  // Check if room exists and is a group chat
+  db.get("SELECT type FROM chat_rooms WHERE id = ?", [roomId], (err, room) => {
+    if (err || !room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    if (room.type !== 'group') {
+      return res.status(400).json({ error: 'Can only remove participants from group chats' });
+    }
+    
+    // Remove participant
+    db.run("DELETE FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?",
+      [roomId, userId, userType], function(err) {
+        if (err) {
+          console.error('Error removing participant:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Participant not found' });
+        }
+        
+        res.json({ message: 'Participant removed successfully' });
+      });
+  });
+});
+
 // === ENDE CHAT SYSTEM ===

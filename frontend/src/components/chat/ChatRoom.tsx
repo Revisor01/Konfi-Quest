@@ -41,6 +41,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 import PollModal from './modals/PollModal';
+import MembersModal from './modals/MembersModal';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -88,6 +89,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showPollModal, setShowPollModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -754,6 +756,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonTitle>{room.name}</IonTitle>
           {user?.type === 'admin' && (
             <IonButtons slot="end">
+              <IonButton onClick={() => setShowMembersModal(true)}>
+                <IonIcon icon={people} />
+              </IonButton>
               <IonButton onClick={() => setShowPollModal(true)}>
                 <IonIcon icon={barChart} />
               </IonButton>
@@ -884,6 +889,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         onClose={() => setShowPollModal(false)}
         onSuccess={handlePollCreated}
         roomId={room.id}
+        presentingElement={pageRef.current}
+      />
+
+      {/* Members Modal */}
+      <MembersModal
+        isOpen={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        onSuccess={() => {
+          // Refresh messages when members change
+          loadMessages();
+        }}
+        roomId={room.id}
+        roomType={room.type}
         presentingElement={pageRef.current}
       />
 
