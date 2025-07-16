@@ -379,7 +379,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         margin: '8px 16px',
         alignItems: 'flex-end'
       }}>
-        {!isOwnMessage && (
+        {!isOwnMessage && room.type !== 'direct' && (
           <IonAvatar style={{ 
             width: '32px', 
             height: '32px', 
@@ -431,7 +431,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             e.target.addEventListener('touchcancel', cleanup);
           }}
         >
-          {!isOwnMessage && (
+          {!isOwnMessage && room.type !== 'direct' && (
             <div style={{ 
               fontSize: '0.75rem', 
               fontWeight: 'bold', 

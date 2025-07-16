@@ -42,7 +42,11 @@ const ChatPage: React.FC = () => {
 
   const handleChatCreated = () => {
     setShowCreateChatModal(false);
-    // Refresh chat overview by going back if we're in a room
+    // Refresh chat overview
+    if (overviewRef.current) {
+      overviewRef.current.loadChatRooms();
+    }
+    // Go back to overview if we're in a room
     if (selectedRoom) {
       setSelectedRoom(null);
     }

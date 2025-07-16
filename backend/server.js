@@ -974,6 +974,17 @@ db.serialize(() => {
               [name, jahrgangRow.id, username, hashedPassword, password], function(err) {
                 if (!err) {
                   console.log(`✅ Konfi created: ${name} - Username: ${username} - Password: ${password}`);
+                  
+                  const konfiId = this.lastID;
+                  // Add konfi to jahrgang chat room
+                  db.get("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = ?", [jahrgangRow.id], (err, chatRoom) => {
+                    if (chatRoom) {
+                      db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'konfi')",
+                        [chatRoom.id, konfiId], (err) => {
+                          if (err) console.error('Error adding konfi to jahrgang chat:', err);
+                        });
+                    }
+                  });
                 }
               });
           }
@@ -1886,10 +1897,22 @@ app.post('/api/konfis', verifyToken, (req, res) => {
              return res.status(500).json({ error: 'Database error' });
            }
            
+           const konfiId = this.lastID;
+           
+           // Add konfi to jahrgang chat room
+           db.get("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = ?", [jahrgang_id], (err, chatRoom) => {
+             if (chatRoom) {
+               db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'konfi')",
+                 [chatRoom.id, konfiId], (err) => {
+                   if (err) console.error('Error adding konfi to jahrgang chat:', err);
+                 });
+             }
+           });
+           
            // Get jahrgang name
            db.get("SELECT name, confirmation_date FROM jahrgaenge WHERE id = ?", [jahrgang_id], (err, jahrgangRow) => {
              res.json({ 
-               id: this.lastID, 
+               id: konfiId, 
                name, 
                username,
                password,
