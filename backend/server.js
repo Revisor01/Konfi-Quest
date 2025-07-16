@@ -2392,13 +2392,27 @@ const chatUpload = multer({
   dest: path.join(uploadsDir, 'chat'),
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf|mp4|mov|avi|docx|txt/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const allowedExtensions = /\.(jpeg|jpg|png|gif|heic|webp|pdf|mp3|wav|m4a|mp4|mov|avi|docx|txt|pptx|xlsx|rtf|zip)$/i;
+    const extname = allowedExtensions.test(file.originalname);
     
-    if (mimetype && extname) {
+    // Check MIME types more specifically
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/heic', 'image/webp',
+      'application/pdf',
+      'audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/mp4',
+      'video/mp4', 'video/quicktime', 'video/x-msvideo',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx  
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
+      'text/plain', 'text/rtf', 'application/rtf',
+      'application/zip', 'application/x-zip-compressed'
+    ];
+    const mimetype = allowedMimeTypes.includes(file.mimetype);
+    
+    if (extname && mimetype) {
       return cb(null, true);
     } else {
+      console.log('Rejected file:', file.originalname, 'MIME:', file.mimetype);
       cb(new Error('Dateityp nicht erlaubt'));
     }
   }
@@ -2430,25 +2444,6 @@ const initializeChatRooms = () => {
         }
       });
     });
-  });
-  
-  // Create admin support room
-  db.get("SELECT id FROM chat_rooms WHERE type = 'admin' AND name = 'Admin Support'", [], (err, room) => {
-    if (!room) {
-      db.run("INSERT INTO chat_rooms (name, type, created_by) VALUES ('Admin Support', 'admin', 1)", function(err) {
-        if (!err) {
-          // Add all admins to the admin room
-          db.all("SELECT id FROM admins", [], (err, admins) => {
-            if (!err) {
-              admins.forEach(admin => {
-                db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'admin')",
-                  [this.lastID, admin.id]);
-              });
-            }
-          });
-        }
-      });
-    }
   });
 };
 
