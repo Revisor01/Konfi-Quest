@@ -28,7 +28,6 @@ const multer = require('multer');
 console.log('✅ Multer loaded');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 console.log('🔧 Setting up middleware...');
@@ -1050,13 +1049,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Konfi Points API running on port ${PORT}`);
-  console.log(`📊 Database: ${dbPath}`);
-  console.log(`🔐 Admin login: username=admin, password=pastor2025`);
-  console.log(`📁 Uploads directory: ${uploadsDir}`);
-});
 
 // Graceful shutdown
 process.on('SIGINT', () => {
