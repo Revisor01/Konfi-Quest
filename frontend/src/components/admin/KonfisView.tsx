@@ -255,11 +255,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
       {/* Konfis Liste */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardHeader>
-          <IonCardTitle>
-            Konfirmanden ({filteredAndSortedKonfis.length})
-          </IonCardTitle>
-        </IonCardHeader>
         <IonCardContent style={{ padding: '0' }}>
           <IonList>
             {filteredAndSortedKonfis.map((konfi) => (

@@ -7,6 +7,7 @@ import {
   IonContent,
   IonList,
   IonItem,
+  IonInput,
   IonLabel,
   IonBadge,
   IonIcon,
@@ -34,7 +35,8 @@ import {
   settings,
   add,
   time,
-  trash
+  trash,
+  search
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
@@ -240,19 +242,50 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           </IonCardContent>
         </IonCard>
 
-        {/* Search */}
-        <div style={{ padding: '0 16px 8px 16px' }}>
-          <IonSearchbar
-            value={searchText}
-            onIonInput={(e) => setSearchText(e.detail.value!)}
-            placeholder="Chaträume durchsuchen..."
-            style={{
+<IonCard style={{ margin: '16px' }}>
+  <IonCardContent style={{ padding: '16px' }}>
+    <IonGrid>
+      <IonRow>
+        <IonCol size="12">
+          <IonItem 
+            lines="none" 
+            style={{ 
               '--background': '#f8f9fa',
-              '--border-radius': '12px',
-              '--box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
+              '--border-radius': '8px',
+              marginBottom: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              '--padding-start': '12px',
+              '--padding-end': '12px',
+              '--min-height': '44px'
             }}
-          />
-        </div>
+          >
+            <IonIcon 
+              icon={search} 
+              slot="start" 
+              style={{ 
+                color: '#8e8e93',
+                marginRight: '8px',
+                fontSize: '1rem'
+              }} 
+            />
+            <IonInput
+              value={searchText}
+              onIonInput={(e) => setSearchText(e.detail.value!)}
+              placeholder="Chaträume durchsuchen..."
+              style={{ 
+                '--color': '#000',
+                '--placeholder-color': '#8e8e93'
+              }}
+            />
+            </IonItem>
+        </IonCol>
+      </IonRow>
+      </IonGrid>
+  </IonCardContent>
+</IonCard>
+    
+    
+
 
         {/* Chat Rooms List */}
         <IonCard style={{ margin: '16px', marginTop: '8px' }}>

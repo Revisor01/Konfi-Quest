@@ -1,0 +1,541 @@
+const express = require('express');
+const router = express.Router();
+
+// Events routes
+module.exports = (db, verifyToken) => {
+  
+  // Get all events
+  router.get('/', verifyToken, (req, res) => {
+    const query = `
+      SELECT e.*, 
+             COUNT(eb.id) as registered_count,
+             e.max_participants,
+             e.registration_opens_at,
+             e.registration_closes_at,
+             CASE 
+               WHEN datetime('now') < e.registration_opens_at THEN 'upcoming'
+               WHEN datetime('now') > e.registration_closes_at THEN 'closed'
+               ELSE 'open'
+             END as registration_status
+      FROM events e
+      LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
+      GROUP BY e.id
+      ORDER BY e.event_date ASC
+    `;
+    
+    db.all(query, (err, events) => {
+      if (err) {
+        console.error('Error fetching events:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(events);
+    });
+  });
+
+  // Get event details with participants
+  router.get('/:id', verifyToken, (req, res) => {
+    const eventId = req.params.id;
+    
+    // Get event details
+    db.get("SELECT * FROM events WHERE id = ?", [eventId], (err, event) => {
+      if (err) {
+        console.error('Error fetching event:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Get participants
+      const participantsQuery = `
+        SELECT eb.*, k.name as participant_name, k.jahrgang_id,
+               j.name as jahrgang_name
+        FROM event_bookings eb
+        JOIN konfis k ON eb.konfi_id = k.id
+        LEFT JOIN jahrgaenge j ON k.jahrgang_id = j.id
+        WHERE eb.event_id = ? AND eb.status = 'confirmed'
+        ORDER BY eb.created_at ASC
+      `;
+      
+      db.all(participantsQuery, [eventId], (err, participants) => {
+        if (err) {
+          console.error('Error fetching participants:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        res.json({
+          ...event,
+          participants,
+          available_spots: event.max_participants - participants.length
+        });
+      });
+    });
+  });
+
+  // Create new event
+  router.post('/', verifyToken, (req, res) => {
+    if (req.user.type !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const {
+      name,
+      description,
+      event_date,
+      location,
+      location_maps_url,
+      points,
+      category,
+      type,
+      max_participants,
+      registration_opens_at,
+      registration_closes_at,
+      has_timeslots,
+      timeslots,
+      is_series,
+      series_id
+    } = req.body;
+    
+    if (!name || !event_date || !max_participants) {
+      return res.status(400).json({ error: 'Name, event_date, and max_participants are required' });
+    }
+    
+    db.run(`INSERT INTO events (
+      name, description, event_date, location, location_maps_url, 
+      points, category, type, max_participants, registration_opens_at, 
+      registration_closes_at, has_timeslots, is_series, series_id, created_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [
+        name, description, event_date, location, location_maps_url,
+        points || 0, category || '', type || 'event', max_participants,
+        registration_opens_at, registration_closes_at, has_timeslots || 0,
+        is_series || 0, series_id, req.user.id
+      ], function(err) {
+        if (err) {
+          console.error('Error creating event:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        const eventId = this.lastID;
+        
+        // If has timeslots, create them
+        if (has_timeslots && timeslots && timeslots.length > 0) {
+          const timeslotQueries = timeslots.map(slot => {
+            return new Promise((resolve, reject) => {
+              db.run("INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants) VALUES (?, ?, ?, ?)",
+                [eventId, slot.start_time, slot.end_time, slot.max_participants], function(err) {
+                  if (err) reject(err);
+                  else resolve(this.lastID);
+                }
+              );
+            });
+          });
+          
+          Promise.all(timeslotQueries)
+            .then(() => {
+              res.json({ id: eventId, message: 'Event created successfully with timeslots' });
+            })
+            .catch(err => {
+              console.error('Error creating timeslots:', err);
+              res.status(500).json({ error: 'Event created but failed to create timeslots' });
+            });
+        } else {
+          res.json({ id: eventId, message: 'Event created successfully' });
+        }
+      }
+    );
+  });
+
+  // Update event
+  router.put('/:id', verifyToken, (req, res) => {
+    if (req.user.type !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { id } = req.params;
+    const {
+      name,
+      description,
+      event_date,
+      location,
+      location_maps_url,
+      points,
+      category,
+      type,
+      max_participants,
+      registration_opens_at,
+      registration_closes_at
+    } = req.body;
+    
+    db.run(`UPDATE events SET 
+      name = ?, description = ?, event_date = ?, location = ?, 
+      location_maps_url = ?, points = ?, category = ?, type = ?, 
+      max_participants = ?, registration_opens_at = ?, registration_closes_at = ?
+      WHERE id = ?`, 
+      [
+        name, description, event_date, location, location_maps_url,
+        points, category, type, max_participants, registration_opens_at,
+        registration_closes_at, id
+      ], function(err) {
+        if (err) {
+          console.error('Error updating event:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Event not found' });
+        }
+        res.json({ message: 'Event updated successfully' });
+      }
+    );
+  });
+
+  // Delete event
+  router.delete('/:id', verifyToken, (req, res) => {
+    if (req.user.type !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { id } = req.params;
+    
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      // Delete bookings
+      db.run("DELETE FROM event_bookings WHERE event_id = ?", [id]);
+      
+      // Delete timeslots
+      db.run("DELETE FROM event_timeslots WHERE event_id = ?", [id]);
+      
+      // Delete event
+      db.run("DELETE FROM events WHERE id = ?", [id], function(err) {
+        if (err) {
+          console.error('Error deleting event:', err);
+          db.run("ROLLBACK");
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (this.changes === 0) {
+          db.run("ROLLBACK");
+          return res.status(404).json({ error: 'Event not found' });
+        }
+        
+        db.run("COMMIT", (err) => {
+          if (err) {
+            console.error('Error committing transaction:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          res.json({ message: 'Event deleted successfully' });
+        });
+      });
+    });
+  });
+
+  // Book event
+  router.post('/:id/book', verifyToken, (req, res) => {
+    const eventId = req.params.id;
+    const konfiId = req.user.id;
+    const { timeslot_id } = req.body;
+    
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Only konfis can book events' });
+    }
+    
+    // Check if event exists and registration is open
+    db.get("SELECT * FROM events WHERE id = ?", [eventId], (err, event) => {
+      if (err) {
+        console.error('Error fetching event:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Check registration status
+      const now = new Date();
+      const opensAt = new Date(event.registration_opens_at);
+      const closesAt = new Date(event.registration_closes_at);
+      
+      if (now < opensAt) {
+        return res.status(400).json({ error: 'Registration not yet open' });
+      }
+      
+      if (now > closesAt) {
+        return res.status(400).json({ error: 'Registration is closed' });
+      }
+      
+      // Check if already booked
+      db.get("SELECT id FROM event_bookings WHERE event_id = ? AND konfi_id = ? AND status = 'confirmed'", 
+        [eventId, konfiId], (err, existing) => {
+          if (err) {
+            console.error('Error checking existing booking:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (existing) {
+            return res.status(409).json({ error: 'Already booked this event' });
+          }
+          
+          // Check available spots
+          db.get("SELECT COUNT(*) as count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'", 
+            [eventId], (err, result) => {
+              if (err) {
+                console.error('Error checking available spots:', err);
+                return res.status(500).json({ error: 'Database error' });
+              }
+              
+              if (result.count >= event.max_participants) {
+                return res.status(400).json({ error: 'Event is full' });
+              }
+              
+              // Create booking
+              db.run("INSERT INTO event_bookings (event_id, konfi_id, timeslot_id, status) VALUES (?, ?, ?, 'confirmed')",
+                [eventId, konfiId, timeslot_id], function(err) {
+                  if (err) {
+                    console.error('Error creating booking:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                  }
+                  
+                  res.json({ 
+                    id: this.lastID, 
+                    message: 'Event booked successfully',
+                    booking_id: this.lastID
+                  });
+                }
+              );
+            }
+          );
+        }
+      );
+    });
+  });
+
+  // Cancel booking
+  router.delete('/:id/book', verifyToken, (req, res) => {
+    const eventId = req.params.id;
+    const konfiId = req.user.id;
+    
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Only konfis can cancel bookings' });
+    }
+    
+    db.run("DELETE FROM event_bookings WHERE event_id = ? AND konfi_id = ?", 
+      [eventId, konfiId], function(err) {
+        if (err) {
+          console.error('Error canceling booking:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Booking not found' });
+        }
+        
+        res.json({ message: 'Booking canceled successfully' });
+      }
+    );
+  });
+
+  // Get user's bookings
+  router.get('/user/bookings', verifyToken, (req, res) => {
+    const konfiId = req.user.id;
+    
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Only konfis can view their bookings' });
+    }
+    
+    const query = `
+      SELECT eb.*, e.name as event_name, e.event_date, e.location
+      FROM event_bookings eb
+      JOIN events e ON eb.event_id = e.id
+      WHERE eb.konfi_id = ? AND eb.status = 'confirmed'
+      ORDER BY e.event_date ASC
+    `;
+    
+    db.all(query, [konfiId], (err, bookings) => {
+      if (err) {
+        console.error('Error fetching user bookings:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json(bookings);
+    });
+  });
+
+  // Create series events
+  router.post('/series', verifyToken, (req, res) => {
+    if (req.user.type !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const { 
+      name, 
+      description, 
+      dates, 
+      location, 
+      location_maps_url, 
+      points, 
+      category, 
+      type, 
+      max_participants, 
+      registration_opens_at, 
+      registration_closes_at 
+    } = req.body;
+    
+    if (!name || !dates || !Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ error: 'Name and dates array are required' });
+    }
+    
+    // Generate series ID
+    const seriesId = Date.now().toString();
+    
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      let completed = 0;
+      const total = dates.length;
+      let hasError = false;
+      
+      dates.forEach((date, index) => {
+        const eventName = `${name} - Termin ${index + 1}`;
+        
+        db.run(`INSERT INTO events (
+          name, description, event_date, location, location_maps_url, 
+          points, category, type, max_participants, registration_opens_at, 
+          registration_closes_at, is_series, series_id, created_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`, 
+          [
+            eventName, description, date, location, location_maps_url,
+            points || 0, category || '', type || 'event', max_participants,
+            registration_opens_at, registration_closes_at, seriesId, req.user.id
+          ], function(err) {
+            if (err) {
+              console.error('Error creating series event:', err);
+              hasError = true;
+              return;
+            }
+            
+            completed++;
+            
+            if (completed === total) {
+              if (hasError) {
+                db.run("ROLLBACK");
+                return res.status(500).json({ error: 'Error creating series events' });
+              } else {
+                db.run("COMMIT", (err) => {
+                  if (err) {
+                    console.error('Error committing transaction:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                  }
+                  res.json({ 
+                    message: 'Series events created successfully', 
+                    series_id: seriesId,
+                    events_created: total
+                  });
+                });
+              }
+            }
+          }
+        );
+      });
+    });
+  });
+
+  // Create group chat for event
+  router.post('/:id/chat', verifyToken, (req, res) => {
+    if (req.user.type !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const eventId = req.params.id;
+    
+    // Get event details
+    db.get("SELECT name FROM events WHERE id = ?", [eventId], (err, event) => {
+      if (err) {
+        console.error('Error fetching event:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      // Check if chat already exists
+      db.get("SELECT id FROM chat_rooms WHERE event_id = ?", [eventId], (err, existingChat) => {
+        if (err) {
+          console.error('Error checking existing chat:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (existingChat) {
+          return res.status(409).json({ error: 'Chat already exists for this event' });
+        }
+        
+        // Create chat room
+        const chatName = `${event.name} - Chat`;
+        db.run("INSERT INTO chat_rooms (name, type, event_id, created_by) VALUES (?, 'group', ?, ?)",
+          [chatName, eventId, req.user.id], function(err) {
+            if (err) {
+              console.error('Error creating chat room:', err);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            const chatRoomId = this.lastID;
+            
+            // Add admin as participant
+            db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'admin')",
+              [chatRoomId, req.user.id], (err) => {
+                if (err) {
+                  console.error('Error adding admin to chat:', err);
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                
+                // Add all event participants to chat
+                const participantsQuery = `
+                  SELECT DISTINCT konfi_id FROM event_bookings 
+                  WHERE event_id = ? AND status = 'confirmed'
+                `;
+                
+                db.all(participantsQuery, [eventId], (err, participants) => {
+                  if (err) {
+                    console.error('Error fetching participants:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                  }
+                  
+                  if (participants.length === 0) {
+                    return res.json({ 
+                      chat_room_id: chatRoomId, 
+                      message: 'Chat created but no participants to add yet' 
+                    });
+                  }
+                  
+                  let addedParticipants = 0;
+                  participants.forEach(participant => {
+                    db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'konfi')",
+                      [chatRoomId, participant.konfi_id], (err) => {
+                        if (err) {
+                          console.error('Error adding participant to chat:', err);
+                        }
+                        
+                        addedParticipants++;
+                        if (addedParticipants === participants.length) {
+                          res.json({ 
+                            chat_room_id: chatRoomId, 
+                            message: 'Chat created and participants added successfully',
+                            participants_added: participants.length
+                          });
+                        }
+                      }
+                    );
+                  });
+                });
+              }
+            );
+          }
+        );
+      });
+    });
+  });
+
+  return router;
+};
