@@ -925,6 +925,28 @@ const initializeDatabase = () => {
           console.log('✅ Migration 5: chat_read_status table already exists');
         }
       });
+
+      // Migration 6: Add event_id column to chat_rooms table
+      db.all("PRAGMA table_info(chat_rooms)", (err, columns) => {
+        if (err) {
+          console.error('Migration 6 check error:', err);
+        } else {
+          const hasEventId = columns.some(col => col.name === 'event_id');
+          
+          if (!hasEventId) {
+            console.log('⚡ Migration 6: Adding event_id column to chat_rooms table...');
+            db.run("ALTER TABLE chat_rooms ADD COLUMN event_id INTEGER", (err) => {
+              if (err) {
+                console.error('Migration 6 error:', err);
+              } else {
+                console.log('✅ Migration 6: event_id column added to chat_rooms');
+              }
+            });
+          } else {
+            console.log('✅ Migration 6: event_id column already exists in chat_rooms');
+          }
+        }
+      });
       
       // Only insert default data for new database
       if (!dbExists) {
