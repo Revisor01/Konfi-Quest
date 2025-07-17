@@ -81,7 +81,7 @@ module.exports = (db, verifyToken) => {
     
     db.run(`INSERT INTO activity_requests (
       konfi_id, activity_name, description, completed_date, 
-      category, photo_path, status
+      category, photo_filename, status
     ) VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
       [konfi_id, activity_name, description, date, category || 'gemeinde', photoPath],
       function(err) {
@@ -196,7 +196,7 @@ module.exports = (db, verifyToken) => {
     const requestId = req.params.id;
     
     // Get request details to delete photo
-    db.get("SELECT photo_path FROM activity_requests WHERE id = ?", [requestId], (err, request) => {
+    db.get("SELECT photo_filename FROM activity_requests WHERE id = ?", [requestId], (err, request) => {
       if (err) {
         console.error('Error fetching request for deletion:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -207,8 +207,8 @@ module.exports = (db, verifyToken) => {
       }
       
       // Delete associated photo
-      if (request.photo_path) {
-        const photoPath = path.join(uploadsDir, request.photo_path);
+      if (request.photo_filename) {
+        const photoPath = path.join(uploadsDir, request.photo_filename);
         if (fs.existsSync(photoPath)) {
           fs.unlinkSync(photoPath);
         }
@@ -234,17 +234,17 @@ module.exports = (db, verifyToken) => {
   router.get('/:id/photo', (req, res) => {
     const requestId = req.params.id;
     
-    db.get("SELECT photo_path FROM activity_requests WHERE id = ?", [requestId], (err, request) => {
+    db.get("SELECT photo_filename FROM activity_requests WHERE id = ?", [requestId], (err, request) => {
       if (err) {
         console.error('Error fetching request photo:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       
-      if (!request || !request.photo_path) {
+      if (!request || !request.photo_filename) {
         return res.status(404).json({ error: 'Photo not found' });
       }
       
-      const photoPath = path.join(uploadsDir, request.photo_path);
+      const photoPath = path.join(uploadsDir, request.photo_filename);
       
       if (fs.existsSync(photoPath)) {
         res.sendFile(photoPath);

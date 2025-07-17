@@ -1,4 +1,4 @@
-// routes/auth.js (KORRIGIERT)
+// routes/auth.js
 const express = require('express');
 const router = express.Router();
 
@@ -9,115 +9,47 @@ module.exports = (db, bcrypt, jwt, JWT_SECRET) => {
     res.json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
-  // Admin login
+  // Admin login - EXAKT AUS BACKUP
   router.post('/admin/login', (req, res) => {
     const { username, password } = req.body;
     
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
-    
-    // KORREKT: Abfrage nach password_hash
     db.get("SELECT * FROM admins WHERE username = ?", [username], (err, admin) => {
       if (err) {
-        console.error('Database error:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       
-      if (!admin) {
+      if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       
-      // KORREKT: bcrypt.compare für Passwort-Verifizierung
-      bcrypt.compare(password, admin.password_hash, (err, isMatch) => {
-        if (err) {
-          console.error('Bcrypt error:', err);
-          return res.status(500).json({ error: 'Server error' });
-        }
-        
-        if (!isMatch) {
-          return res.status(401).json({ error: 'Invalid credentials' });
-        }
-        
-        // Generate JWT token
-        const token = jwt.sign(
-          { 
-            id: admin.id, 
-            type: 'admin', 
-            display_name: admin.display_name 
-          }, 
-          JWT_SECRET, 
-          { expiresIn: '14d' }
-        );
-        
-        res.json({ 
-          token, 
-          user: { 
-            id: admin.id, 
-            username: admin.username, 
-            display_name: admin.display_name, 
-            type: 'admin' 
-          } 
-        });
-      });
+      const token = jwt.sign({ id: admin.id, type: 'admin', display_name: admin.display_name }, JWT_SECRET, { expiresIn: '14d' });
+      res.json({ token, user: { id: admin.id, username: admin.username, display_name: admin.display_name, type: 'admin' } });
     });
   });
 
-  // Konfi login
+  // Konfi login - EXAKT AUS BACKUP
   router.post('/konfi/login', (req, res) => {
     const { username, password } = req.body;
     
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
-    }
-    
-    // KORREKT: Abfrage nach password_hash UND password_plain
-    db.get(`SELECT k.*, j.name as jahrgang_name 
-            FROM konfis k 
-            LEFT JOIN jahrgaenge j ON k.jahrgang_id = j.id 
-            WHERE k.username = ?`, [username], (err, konfi) => {
+    db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
       if (err) {
-        console.error('Database error:', err);
         return res.status(500).json({ error: 'Database error' });
       }
       
-      if (!konfi) {
+      if (!konfi || !bcrypt.compareSync(password, konfi.password_hash)) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       
-      // KORREKT: bcrypt.compare für Passwort-Verifizierung
-      bcrypt.compare(password, konfi.password_hash, (err, isMatch) => {
-        if (err) {
-          console.error('Bcrypt error:', err);
-          return res.status(500).json({ error: 'Server error' });
-        }
-        
-        if (!isMatch) {
-          return res.status(401).json({ error: 'Invalid credentials' });
-        }
-        
-        // Generate JWT token
-        const token = jwt.sign({ 
+      const token = jwt.sign({ id: konfi.id, type: 'konfi' }, JWT_SECRET, { expiresIn: '24h' });
+      res.json({ 
+        token, 
+        user: { 
           id: konfi.id, 
-          type: 'konfi', 
-          display_name: konfi.name, 
-          jahrgang_id: konfi.jahrgang_id,
-          jahrgang_name: konfi.jahrgang_name 
-        }, JWT_SECRET, { expiresIn: '14d' });
-        
-        res.json({ 
-          token, 
-          user: { 
-            id: konfi.id, 
-            username: konfi.username, 
-            display_name: konfi.name, 
-            type: 'konfi',
-            jahrgang_id: konfi.jahrgang_id,
-            jahrgang_name: konfi.jahrgang_name,
-            gottesdienst_points: konfi.gottesdienst_points,
-            gemeinde_points: konfi.gemeinde_points
-          } 
-        });
+          name: konfi.name, 
+          username: konfi.username,
+          jahrgang: konfi.jahrgang_name,
+          type: 'konfi' 
+        } 
       });
     });
   });
