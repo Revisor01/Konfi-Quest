@@ -1,7 +1,7 @@
+// routes/jahrgaenge.js (KORRIGIERT)
 const express = require('express');
 const router = express.Router();
 
-// Jahrgänge routes
 module.exports = (db, verifyToken) => {
   
   // Get all jahrgänge
@@ -72,29 +72,29 @@ module.exports = (db, verifyToken) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
     
-    const { name, description, start_date, end_date } = req.body;
+    const { name, confirmation_date } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
     
-    db.run("INSERT INTO jahrgaenge (name, description, start_date, end_date) VALUES (?, ?, ?, ?)",
-      [name, description, start_date, end_date],
-      function(err) {
+    // KORREKT: Verwendung der confirmation_date aus der Datenbankstruktur
+    db.run("INSERT INTO jahrgaenge (name, confirmation_date) VALUES (?, ?)",
+      [name, confirmation_date], function(err) {
         if (err) {
           console.error('Error creating jahrgang:', err);
+          if (err.message.includes('UNIQUE constraint failed')) {
+            return res.status(409).json({ error: 'Jahrgang name already exists' });
+          }
           return res.status(500).json({ error: 'Database error' });
         }
         
-        res.json({
+        res.status(201).json({
           id: this.lastID,
           name,
-          description,
-          start_date,
-          end_date
+          confirmation_date
         });
-      }
-    );
+      });
   });
 
   // Update jahrgang
@@ -104,25 +104,26 @@ module.exports = (db, verifyToken) => {
     }
     
     const jahrgangId = req.params.id;
-    const { name, description, start_date, end_date } = req.body;
+    const { name, confirmation_date } = req.body;
     
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
     
-    db.run("UPDATE jahrgaenge SET name = ?, description = ?, start_date = ?, end_date = ? WHERE id = ?",
-      [name, description, start_date, end_date, jahrgangId],
-      function(err) {
+    db.run("UPDATE jahrgaenge SET name = ?, confirmation_date = ? WHERE id = ?",
+      [name, confirmation_date, jahrgangId], function(err) {
         if (err) {
           console.error('Error updating jahrgang:', err);
+          if (err.message.includes('UNIQUE constraint failed')) {
+            return res.status(409).json({ error: 'Jahrgang name already exists' });
+          }
           return res.status(500).json({ error: 'Database error' });
         }
         if (this.changes === 0) {
           return res.status(404).json({ error: 'Jahrgang not found' });
         }
         res.json({ message: 'Jahrgang updated successfully' });
-      }
-    );
+      });
   });
 
   // Delete jahrgang

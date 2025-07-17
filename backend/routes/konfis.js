@@ -1,8 +1,8 @@
+// routes/konfis.js (KORRIGIERT)
 const express = require('express');
 const router = express.Router();
 
-// Konfis routes
-module.exports = (db, verifyToken, generateRandomPassword) => {
+module.exports = (db, verifyToken, bcrypt, generateBiblicalPassword, checkAndAwardBadges) => {
   
   // Get all konfis
   router.get('/', verifyToken, (req, res) => {
@@ -86,7 +86,7 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
           
           // Get badges
           db.all(`SELECT b.*, kb.earned_at
-                  FROM badges b
+                  FROM custom_badges b
                   JOIN konfi_badges kb ON b.id = kb.badge_id
                   WHERE kb.konfi_id = ?
                   ORDER BY kb.earned_at DESC`, [konfiId], (err, badges) => {
@@ -113,43 +113,48 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
     
-    const { name, jahrgang_id, email, telefon, addresse, eltern, notizen } = req.body;
+    const { name, jahrgang_id } = req.body;
     
     if (!name || !jahrgang_id) {
       return res.status(400).json({ error: 'Name and jahrgang_id are required' });
     }
     
     // Generate username and password
-    const username = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-    const password = generateRandomPassword();
+    const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
+    const password = generateBiblicalPassword();
     
-    db.run(`INSERT INTO konfis (
-      name, username, password, jahrgang_id, email, telefon, 
-      addresse, eltern, notizen, gottesdienst_points, gemeinde_points
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`, 
-      [name, username, password, jahrgang_id, email, telefon, addresse, eltern, notizen],
-      function(err) {
-        if (err) {
-          console.error('Error creating konfi:', err);
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        res.json({
-          id: this.lastID,
-          name,
-          username,
-          password,
-          jahrgang_id,
-          email,
-          telefon,
-          addresse,
-          eltern,
-          notizen,
-          gottesdienst_points: 0,
-          gemeinde_points: 0
-        });
+    // KORREKT: Hashen des Passworts
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        console.error('Error hashing password:', err);
+        return res.status(500).json({ error: 'Server error' });
       }
-    );
+      
+      // KORREKT: Speichern sowohl password_hash als auch password_plain
+      db.run(`INSERT INTO konfis (
+        name, username, password_hash, password_plain, jahrgang_id, 
+        gottesdienst_points, gemeinde_points
+      ) VALUES (?, ?, ?, ?, ?, 0, 0)`, 
+        [name, username, hashedPassword, password, jahrgang_id], function(err) {
+          if (err) {
+            console.error('Error creating konfi:', err);
+            if (err.message.includes('UNIQUE constraint failed')) {
+              return res.status(409).json({ error: 'Username already exists' });
+            }
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          res.status(201).json({
+            id: this.lastID,
+            name,
+            username,
+            password, // Klartext für Admin-Ausgabe
+            jahrgang_id,
+            gottesdienst_points: 0,
+            gemeinde_points: 0
+          });
+        });
+    });
   });
 
   // Update konfi
@@ -159,18 +164,14 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
     }
     
     const konfiId = req.params.id;
-    const { name, jahrgang_id, email, telefon, addresse, eltern, notizen } = req.body;
+    const { name, jahrgang_id } = req.body;
     
     if (!name || !jahrgang_id) {
       return res.status(400).json({ error: 'Name and jahrgang_id are required' });
     }
     
-    db.run(`UPDATE konfis SET 
-      name = ?, jahrgang_id = ?, email = ?, telefon = ?, 
-      addresse = ?, eltern = ?, notizen = ? 
-      WHERE id = ?`,
-      [name, jahrgang_id, email, telefon, addresse, eltern, notizen, konfiId],
-      function(err) {
+    db.run(`UPDATE konfis SET name = ?, jahrgang_id = ? WHERE id = ?`,
+      [name, jahrgang_id, konfiId], function(err) {
         if (err) {
           console.error('Error updating konfi:', err);
           return res.status(500).json({ error: 'Database error' });
@@ -179,8 +180,7 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
           return res.status(404).json({ error: 'Konfi not found' });
         }
         res.json({ message: 'Konfi updated successfully' });
-      }
-    );
+      });
   });
 
   // Delete konfi
@@ -200,6 +200,7 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
       db.run("DELETE FROM konfi_badges WHERE konfi_id = ?", [konfiId]);
       db.run("DELETE FROM chat_participants WHERE user_id = ? AND user_type = 'konfi'", [konfiId]);
       db.run("DELETE FROM event_bookings WHERE konfi_id = ?", [konfiId]);
+      db.run("DELETE FROM activity_requests WHERE konfi_id = ?", [konfiId]);
       
       // Delete konfi
       db.run("DELETE FROM konfis WHERE id = ?", [konfiId], function(err) {
@@ -232,22 +233,32 @@ module.exports = (db, verifyToken, generateRandomPassword) => {
     }
     
     const konfiId = req.params.id;
-    const newPassword = generateRandomPassword();
+    const newPassword = generateBiblicalPassword();
     
-    db.run("UPDATE konfis SET password = ? WHERE id = ?", [newPassword, konfiId], function(err) {
+    // KORREKT: Hashen des neuen Passworts
+    bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
       if (err) {
-        console.error('Error regenerating password:', err);
-        return res.status(500).json({ error: 'Database error' });
+        console.error('Error hashing password:', err);
+        return res.status(500).json({ error: 'Server error' });
       }
       
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Konfi not found' });
-      }
-      
-      res.json({ 
-        message: 'Password regenerated successfully',
-        newPassword: newPassword
-      });
+      // KORREKT: Aktualisieren sowohl password_hash als auch password_plain
+      db.run("UPDATE konfis SET password_hash = ?, password_plain = ? WHERE id = ?", 
+        [hashedPassword, newPassword, konfiId], function(err) {
+          if (err) {
+            console.error('Error regenerating password:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Konfi not found' });
+          }
+          
+          res.json({ 
+            message: 'Password regenerated successfully',
+            newPassword: newPassword
+          });
+        });
     });
   });
 
