@@ -2434,6 +2434,74 @@ app.post('/api/konfis/:id/regenerate-password', verifyToken, (req, res) => {
          });
 });
 
+// === EVENTS SYSTEM ===
+
+// Events table creation
+db.run(`CREATE TABLE IF NOT EXISTS events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  event_date TEXT NOT NULL,
+  location TEXT,
+  location_maps_url TEXT,
+  points INTEGER DEFAULT 0,
+  category TEXT DEFAULT '',
+  type TEXT DEFAULT 'event',
+  max_participants INTEGER NOT NULL,
+  registration_opens_at TEXT,
+  registration_closes_at TEXT,
+  has_timeslots INTEGER DEFAULT 0,
+  is_series INTEGER DEFAULT 0,
+  series_id TEXT,
+  created_by INTEGER,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES admins(id)
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS event_timeslots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  max_participants INTEGER NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS event_bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  konfi_id INTEGER NOT NULL,
+  timeslot_id INTEGER,
+  status TEXT DEFAULT 'confirmed',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  FOREIGN KEY (konfi_id) REFERENCES konfis(id) ON DELETE CASCADE,
+  FOREIGN KEY (timeslot_id) REFERENCES event_timeslots(id) ON DELETE SET NULL
+)`);
+
+// Migration: Add event_id to chat_rooms if not exists
+db.all("PRAGMA table_info(chat_rooms)", (err, columns) => {
+  if (err) {
+    console.error('Error checking chat_rooms table:', err);
+    return;
+  }
+  
+  const hasEventId = columns.some(col => col.name === 'event_id');
+  if (!hasEventId) {
+    db.run("ALTER TABLE chat_rooms ADD COLUMN event_id INTEGER", (err) => {
+      if (err) {
+        console.error('Error adding event_id to chat_rooms:', err);
+      } else {
+        console.log('✅ Migration: event_id column added to chat_rooms');
+      }
+    });
+  }
+});
+
+// Events Route (extern)
+app.use('/api/events', require('./routes/events')(db, verifyToken));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
