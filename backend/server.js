@@ -3374,58 +3374,33 @@ app.delete('/api/chat/rooms/:roomId', verifyToken, (req, res) => {
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
-      // First, get all files that need to be deleted
-      db.all("SELECT file_path FROM chat_messages WHERE room_id = ? AND file_path IS NOT NULL", [roomId], (err, files) => {
+      // Delete poll votes
+      db.run(`DELETE FROM chat_poll_votes WHERE poll_id IN (
+        SELECT p.id FROM chat_polls p 
+        JOIN chat_messages m ON p.message_id = m.id 
+        WHERE m.room_id = ?
+      )`, [roomId]);
+      
+      // Delete polls
+      db.run(`DELETE FROM chat_polls WHERE message_id IN (
+        SELECT id FROM chat_messages WHERE room_id = ?
+      )`, [roomId]);
+      
+      // Delete messages
+      db.run("DELETE FROM chat_messages WHERE room_id = ?", [roomId]);
+      
+      // Delete participants
+      db.run("DELETE FROM chat_participants WHERE room_id = ?", [roomId]);
+      
+      // Delete room
+      db.run("DELETE FROM chat_rooms WHERE id = ?", [roomId], function(err) {
         if (err) {
-          console.error('Error fetching files to delete:', err);
+          console.error('Error deleting room:', err);
           db.run("ROLLBACK");
           return res.status(500).json({ error: 'Database error' });
         }
         
-        // Delete physical files
-        const fs = require('fs');
-        const path = require('path');
-        files.forEach(file => {
-          const filePath = path.join(__dirname, 'uploads', 'chat', file.file_path);
-          fs.unlink(filePath, (err) => {
-            if (err && err.code !== 'ENOENT') {
-              console.error('Error deleting file:', filePath, err);
-            } else {
-              console.log('Deleted file:', filePath);
-            }
-          });
-        });
-        
-        // Delete poll votes
-        db.run(`DELETE FROM chat_poll_votes WHERE poll_id IN (
-          SELECT p.id FROM chat_polls p 
-          JOIN chat_messages m ON p.message_id = m.id 
-          WHERE m.room_id = ?
-        )`, [roomId]);
-        
-        // Delete polls
-        db.run(`DELETE FROM chat_polls WHERE message_id IN (
-          SELECT id FROM chat_messages WHERE room_id = ?
-        )`, [roomId]);
-        
-        // Delete read status
-        db.run("DELETE FROM chat_read_status WHERE room_id = ?", [roomId]);
-        
-        // Delete messages
-        db.run("DELETE FROM chat_messages WHERE room_id = ?", [roomId]);
-        
-        // Delete participants
-        db.run("DELETE FROM chat_participants WHERE room_id = ?", [roomId]);
-        
-        // Delete room
-        db.run("DELETE FROM chat_rooms WHERE id = ?", [roomId], function(err) {
-          if (err) {
-            console.error('Error deleting room:', err);
-            db.run("ROLLBACK");
-            return res.status(500).json({ error: 'Database error' });
-          }
-          
-          db.run("COMMIT", (err) => {
+        db.run("COMMIT", (err) => {
           if (err) {
             console.error('Error committing transaction:', err);
             return res.status(500).json({ error: 'Database error' });
