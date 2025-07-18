@@ -5,12 +5,12 @@ import {
   IonToolbar, 
   IonTitle, 
   IonContent, 
-  IonModal,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
+  useIonModal,
   IonCard,
   IonCardHeader,
   IonCardContent,
@@ -29,7 +29,8 @@ import {
   createOutline, 
   trashOutline,
   checkmarkOutline,
-  closeOutline
+  closeOutline,
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -49,13 +50,22 @@ interface CategoryModalProps {
   category?: Category | null;
   onClose: () => void;
   onSuccess: () => void;
+  dismiss?: () => void;
 }
 
 const CategoryModal: React.FC<CategoryModalProps> = ({
   category,
   onClose,
-  onSuccess
+  onSuccess,
+  dismiss
 }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
   
@@ -104,6 +114,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       }
       
       onSuccess();
+      handleClose();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);
@@ -123,7 +134,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
             {category ? 'Kategorie bearbeiten' : 'Neue Kategorie'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -172,13 +183,22 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('categories');
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('categories');
   const { setSuccess, setError } = useApp();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
+
+  // Modal mit useIonModal Hook
+  const [presentCategoryModalHook, dismissCategoryModalHook] = useIonModal(CategoryModal, {
+    category: editCategory,
+    onClose: () => dismissCategoryModalHook(),
+    onSuccess: () => {
+      dismissCategoryModalHook();
+      loadCategories();
+    }
+  });
 
   const loadCategories = async () => {
     try {
@@ -218,22 +238,12 @@ const AdminCategoriesPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditCategory(null);
-    setIsModalOpen(true);
+    presentCategoryModalHook({ presentingElement });
   };
 
   const openEditModal = (category: Category) => {
     setEditCategory(category);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditCategory(null);
-  };
-
-  const handleModalSuccess = () => {
-    closeModal();
-    loadCategories();
+    presentCategoryModalHook({ presentingElement });
   };
 
   if (loading) {
@@ -255,6 +265,11 @@ const AdminCategoriesPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Kategorien</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={openCreateModal}>
@@ -363,19 +378,6 @@ const AdminCategoriesPage: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        {/* Category Modal */}
-        <IonModal 
-          isOpen={isModalOpen} 
-          onDidDismiss={closeModal}
-          presentingElement={presentingElement}
-          backdropDismiss={true}
-        >
-          <CategoryModal 
-            category={editCategory}
-            onClose={closeModal}
-            onSuccess={handleModalSuccess}
-          />
-        </IonModal>
       </IonContent>
     </IonPage>
   );

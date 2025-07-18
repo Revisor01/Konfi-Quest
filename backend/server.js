@@ -980,6 +980,79 @@ db.serialize(() => {
     }
   });
   
+  // Migration 6: Create activity_categories table for Multi-Select Categories
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='activity_categories'", (err, row) => {
+    if (err) {
+      console.error('Migration 6 check error:', err);
+    } else if (!row) {
+      console.log('⚡ Migration 6: Creating activity_categories table for Multi-Select Categories...');
+      db.run(`CREATE TABLE IF NOT EXISTS activity_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        activity_id INTEGER NOT NULL,
+        category_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (activity_id) REFERENCES activities (id) ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE,
+        UNIQUE(activity_id, category_id)
+      )`, (err) => {
+        if (err) {
+          console.error('Migration 6 error:', err);
+        } else {
+          console.log('✅ Migration 6: activity_categories table created');
+          
+          // Migrate existing category data from activities table to activity_categories table
+          console.log('⚡ Migration 6: Migrating existing activity categories...');
+          db.all("SELECT id, category FROM activities WHERE category IS NOT NULL AND category != ''", (err, activities) => {
+            if (err) {
+              console.error('Migration 6 data migration error:', err);
+            } else {
+              let migratedCount = 0;
+              let processedCount = 0;
+              
+              if (activities.length === 0) {
+                console.log('✅ Migration 6: No existing categories to migrate');
+                return;
+              }
+              
+              activities.forEach(activity => {
+                // Look for category in categories table
+                db.get("SELECT id FROM categories WHERE name = ?", [activity.category], (err, category) => {
+                  if (err) {
+                    console.error('Migration 6 category lookup error:', err);
+                  } else if (category) {
+                    // Insert relationship
+                    db.run("INSERT OR IGNORE INTO activity_categories (activity_id, category_id) VALUES (?, ?)", 
+                      [activity.id, category.id], (err) => {
+                        if (err) {
+                          console.error('Migration 6 insert error:', err);
+                        } else {
+                          migratedCount++;
+                        }
+                        processedCount++;
+                        
+                        if (processedCount === activities.length) {
+                          console.log(`✅ Migration 6: ${migratedCount} activity categories migrated`);
+                        }
+                      });
+                  } else {
+                    console.log(`⚠️  Migration 6: Category '${activity.category}' not found in categories table`);
+                    processedCount++;
+                    
+                    if (processedCount === activities.length) {
+                      console.log(`✅ Migration 6: ${migratedCount} activity categories migrated`);
+                    }
+                  }
+                });
+              });
+            }
+          });
+        }
+      });
+    } else {
+      console.log('✅ Migration 6: activity_categories table already exists');
+    }
+  });
+  
   // Only insert default data for new database
   if (!dbExists) {
     console.log('📝 Inserting default data...');
@@ -2202,11 +2275,47 @@ app.delete('/api/konfis/:id', verifyToken, (req, res) => {
 
 // Get all activities
 app.get('/api/activities', verifyToken, (req, res) => {
-  db.all("SELECT * FROM activities ORDER BY type, name", [], (err, rows) => {
+  // Get activities with their categories
+  db.all(`
+    SELECT a.*, 
+           GROUP_CONCAT(c.id) as category_ids,
+           GROUP_CONCAT(c.name) as category_names
+    FROM activities a
+    LEFT JOIN activity_categories ac ON a.id = ac.activity_id
+    LEFT JOIN categories c ON ac.category_id = c.id
+    GROUP BY a.id
+    ORDER BY a.type, a.name
+  `, [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' });
     }
-    res.json(rows);
+    
+    // Transform the data to include categories array
+    const activitiesWithCategories = rows.map(row => {
+      const categories = [];
+      if (row.category_ids) {
+        const ids = row.category_ids.split(',');
+        const names = row.category_names.split(',');
+        for (let i = 0; i < ids.length; i++) {
+          categories.push({
+            id: parseInt(ids[i]),
+            name: names[i]
+          });
+        }
+      }
+      
+      return {
+        id: row.id,
+        name: row.name,
+        points: row.points,
+        type: row.type,
+        category: row.category, // Keep for backward compatibility
+        categories: categories,
+        created_at: row.created_at
+      };
+    });
+    
+    res.json(activitiesWithCategories);
   });
 });
 
@@ -2216,7 +2325,7 @@ app.post('/api/activities', verifyToken, (req, res) => {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
-  const { name, points, type, category } = req.body;
+  const { name, points, type, category, category_ids } = req.body;
   
   if (!name || !points || !type) {
     return res.status(400).json({ error: 'Name, points and type are required' });
@@ -2226,6 +2335,7 @@ app.post('/api/activities', verifyToken, (req, res) => {
     return res.status(400).json({ error: 'Type must be gottesdienst or gemeinde' });
   }
 
+  // Create activity first
   db.run("INSERT INTO activities (name, points, type, category) VALUES (?, ?, ?, ?)",
          [name, points, type, category],
          function(err) {
@@ -2233,13 +2343,44 @@ app.post('/api/activities', verifyToken, (req, res) => {
              return res.status(500).json({ error: 'Database error' });
            }
            
-           res.json({ 
-             id: this.lastID, 
-             name, 
-             points,
-             type,
-             category
-           });
+           const activityId = this.lastID;
+           
+           // Add categories if provided
+           if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
+             const categoryPromises = category_ids.map(categoryId => {
+               return new Promise((resolve, reject) => {
+                 db.run("INSERT OR IGNORE INTO activity_categories (activity_id, category_id) VALUES (?, ?)",
+                   [activityId, categoryId], (err) => {
+                     if (err) reject(err);
+                     else resolve();
+                   });
+               });
+             });
+             
+             Promise.all(categoryPromises)
+               .then(() => {
+                 res.json({ 
+                   id: activityId, 
+                   name, 
+                   points,
+                   type,
+                   category,
+                   category_ids
+                 });
+               })
+               .catch(err => {
+                 console.error('Error adding categories:', err);
+                 res.status(500).json({ error: 'Database error adding categories' });
+               });
+           } else {
+             res.json({ 
+               id: activityId, 
+               name, 
+               points,
+               type,
+               category
+             });
+           }
          });
 });
 
@@ -2251,7 +2392,7 @@ app.put('/api/activities/:id', verifyToken, (req, res) => {
   }
   
   const activityId = req.params.id;
-  const { name, points, type, category } = req.body;
+  const { name, points, type, category, category_ids } = req.body;
   
   if (!name || !points || !type) {
     return res.status(400).json({ error: 'Name, points and type are required' });
@@ -2264,6 +2405,7 @@ app.put('/api/activities/:id', verifyToken, (req, res) => {
   // Handle category - can be empty string or null
   const categoryValue = category && category.trim() ? category.trim() : null;
   
+  // First update the activity
   db.run("UPDATE activities SET name = ?, points = ?, type = ?, category = ? WHERE id = ?", 
     [name, points, type, categoryValue, activityId], function(err) {
       if (err) {
@@ -2275,7 +2417,42 @@ app.put('/api/activities/:id', verifyToken, (req, res) => {
         return res.status(404).json({ error: 'Activity not found' });
       }
       
-      res.json({ message: 'Activity updated successfully' });
+      // Update categories if provided
+      if (category_ids && Array.isArray(category_ids)) {
+        // First remove all existing categories
+        db.run("DELETE FROM activity_categories WHERE activity_id = ?", [activityId], (err) => {
+          if (err) {
+            console.error('Error removing old categories:', err);
+            return res.status(500).json({ error: 'Database error removing categories' });
+          }
+          
+          // Then add new categories
+          if (category_ids.length > 0) {
+            const categoryPromises = category_ids.map(categoryId => {
+              return new Promise((resolve, reject) => {
+                db.run("INSERT OR IGNORE INTO activity_categories (activity_id, category_id) VALUES (?, ?)",
+                  [activityId, categoryId], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                  });
+              });
+            });
+            
+            Promise.all(categoryPromises)
+              .then(() => {
+                res.json({ message: 'Activity updated successfully' });
+              })
+              .catch(err => {
+                console.error('Error adding categories:', err);
+                res.status(500).json({ error: 'Database error adding categories' });
+              });
+          } else {
+            res.json({ message: 'Activity updated successfully' });
+          }
+        });
+      } else {
+        res.json({ message: 'Activity updated successfully' });
+      }
     });
 });
 

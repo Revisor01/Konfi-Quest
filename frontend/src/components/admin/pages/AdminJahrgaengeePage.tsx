@@ -5,12 +5,12 @@ import {
   IonToolbar, 
   IonTitle, 
   IonContent, 
-  IonModal,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
+  useIonModal,
   IonCard,
   IonCardHeader,
   IonCardContent,
@@ -30,7 +30,8 @@ import {
   trashOutline,
   checkmarkOutline,
   closeOutline,
-  people
+  people,
+  arrowBack
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -49,13 +50,22 @@ interface JahrgangModalProps {
   jahrgang?: Jahrgang | null;
   onClose: () => void;
   onSuccess: () => void;
+  dismiss?: () => void;
 }
 
 const JahrgangModal: React.FC<JahrgangModalProps> = ({
   jahrgang,
   onClose,
-  onSuccess
+  onSuccess,
+  dismiss
 }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
   
@@ -109,6 +119,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       }
       
       onSuccess();
+      handleClose();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);
@@ -128,7 +139,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             {jahrgang ? 'Jahrgang bearbeiten' : 'Neuer Jahrgang'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -189,18 +200,35 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 };
 
 const AdminJahrgaengeePage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('jahrgaenge');
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('jahrgaenge');
   const { setSuccess, setError } = useApp();
   
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
+
+  // Modal mit useIonModal Hook
+  const [presentJahrgangModalHook, dismissJahrgangModalHook] = useIonModal(JahrgangModal, {
+    jahrgang: editJahrgang,
+    onClose: () => dismissJahrgangModalHook(),
+    onSuccess: () => {
+      dismissJahrgangModalHook();
+      loadJahrgaenge();
+    }
+  });
 
   const loadJahrgaenge = async () => {
     try {
       const response = await api.get('/jahrgaenge');
-      setJahrgaenge(response.data);
+      // Transform backend data to match frontend interface
+      const jahrgaengeData = response.data.map((jahrgang: any) => ({
+        id: jahrgang.id,
+        name: jahrgang.name,
+        description: jahrgang.confirmation_date ? `Bestätigung: ${jahrgang.confirmation_date}` : '',
+        year: parseInt(jahrgang.name.split('/')[0]) || new Date().getFullYear(),
+        created_at: jahrgang.created_at
+      }));
+      setJahrgaenge(jahrgaengeData);
     } catch (error) {
       setError('Fehler beim Laden der Jahrgänge');
     } finally {
@@ -235,22 +263,12 @@ const AdminJahrgaengeePage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditJahrgang(null);
-    setIsModalOpen(true);
+    presentJahrgangModalHook({ presentingElement });
   };
 
   const openEditModal = (jahrgang: Jahrgang) => {
     setEditJahrgang(jahrgang);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditJahrgang(null);
-  };
-
-  const handleModalSuccess = () => {
-    closeModal();
-    loadJahrgaenge();
+    presentJahrgangModalHook({ presentingElement });
   };
 
   if (loading) {
@@ -272,6 +290,11 @@ const AdminJahrgaengeePage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Jahrgänge</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={openCreateModal}>
@@ -379,19 +402,6 @@ const AdminJahrgaengeePage: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        {/* Jahrgang Modal */}
-        <IonModal 
-          isOpen={isModalOpen} 
-          onDidDismiss={closeModal}
-          presentingElement={presentingElement}
-          backdropDismiss={true}
-        >
-          <JahrgangModal 
-            jahrgang={editJahrgang}
-            onClose={closeModal}
-            onSuccess={handleModalSuccess}
-          />
-        </IonModal>
       </IonContent>
     </IonPage>
   );

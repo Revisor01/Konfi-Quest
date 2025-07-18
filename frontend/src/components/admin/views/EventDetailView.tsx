@@ -14,12 +14,12 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonModal,
   IonRefresher,
   IonRefresherContent,
   IonText,
   IonChip,
-  IonAvatar
+  IonAvatar,
+  useIonModal
 } from '@ionic/react';
 import {
   arrowBack,
@@ -71,12 +71,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [eventData, setEventData] = useState<Event | null>(null);
+  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+
+  // Modal mit useIonModal Hook
+  const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
+    event: eventData,
+    onClose: () => dismissEventModalHook(),
+    onSuccess: () => {
+      dismissEventModalHook();
+      handleEditSuccess();
+    },
+    dismiss: () => dismissEventModalHook()
+  });
 
   useEffect(() => {
     loadEventData();
   }, [eventId]);
+
+  useEffect(() => {
+    // Setze das presentingElement nach dem ersten Mount
+    setPresentingElement(pageRef.current);
+  }, []);
 
   const loadEventData = async () => {
     setLoading(true);
@@ -133,7 +149,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleEditSuccess = () => {
-    setIsEditModalOpen(false);
     // Reload event data
     onBack();
   };
@@ -149,7 +164,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonButtons>
           <IonTitle>Event Details</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => setIsEditModalOpen(true)}>
+            <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={createOutline} />
             </IonButton>
           </IonButtons>
@@ -323,18 +338,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonCardContent>
         </IonCard>
 
-        {/* Edit Modal */}
-        <IonModal 
-          isOpen={isEditModalOpen} 
-          onDidDismiss={() => setIsEditModalOpen(false)}
-          backdropDismiss={true}
-        >
-          <EventModal 
-            event={eventData}
-            onClose={() => setIsEditModalOpen(false)}
-            onSuccess={handleEditSuccess}
-          />
-        </IonModal>
       </IonContent>
     </IonPage>
   );

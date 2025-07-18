@@ -223,14 +223,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={handleClose}
-      presentingElement={presentingElement || undefined}
-      canDismiss={true}
-      backdropDismiss={true}
-    >
-      <IonPage ref={pageRef}>
+    <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
@@ -398,27 +391,26 @@ const MembersModal: React.FC<MembersModalProps> = ({
             </>
           )}
         </IonContent>
+        
+        {/* Remove Confirmation Alert */}
+        <IonAlert
+          isOpen={showRemoveAlert}
+          onDidDismiss={() => setShowRemoveAlert(false)}
+          header="Mitglied entfernen"
+          message={`Möchten Sie ${userToRemove?.name} wirklich aus dem Chat entfernen?`}
+          buttons={[
+            {
+              text: 'Abbrechen',
+              role: 'cancel'
+            },
+            {
+              text: 'Entfernen',
+              role: 'destructive',
+              handler: removeUser
+            }
+          ]}
+        />
       </IonPage>
-
-      {/* Remove Confirmation Alert */}
-      <IonAlert
-        isOpen={showRemoveAlert}
-        onDidDismiss={() => setShowRemoveAlert(false)}
-        header="Mitglied entfernen"
-        message={`Möchten Sie ${userToRemove?.name} wirklich aus dem Chat entfernen?`}
-        buttons={[
-          {
-            text: 'Abbrechen',
-            role: 'cancel'
-          },
-          {
-            text: 'Entfernen',
-            role: 'destructive',
-            handler: removeUser
-          }
-        ]}
-      />
-    </IonModal>
   );
 };
 

@@ -19,7 +19,8 @@ import {
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
-  IonActionSheet
+  IonActionSheet,
+  useIonModal
 } from '@ionic/react';
 import { 
   arrowBack, 
@@ -88,8 +89,28 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [showPollModal, setShowPollModal] = useState(false);
-  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+
+  // Poll Modal mit useIonModal Hook
+  const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
+    onClose: () => dismissPollModalHook(),
+    onSuccess: () => {
+      dismissPollModalHook();
+      handlePollCreated();
+    },
+    roomId: room.id
+  });
+
+  // Members Modal mit useIonModal Hook
+  const [presentMembersModalHook, dismissMembersModalHook] = useIonModal(MembersModal, {
+    onClose: () => dismissMembersModalHook(),
+    onSuccess: () => {
+      dismissMembersModalHook();
+      loadMessages();
+    },
+    roomId: room.id,
+    roomType: room.type
+  });
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -107,6 +128,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     }, 10000);
     return () => clearInterval(interval);
   }, [room.id]);
+
+  useEffect(() => {
+    // Setze das presentingElement nach dem ersten Mount
+    setPresentingElement(pageRef.current);
+  }, []);
 
   useEffect(() => {
     // Scroll to bottom when new messages arrive, but only if auto-scroll is enabled
@@ -168,7 +194,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   };
 
   const handlePollCreated = async () => {
-    setShowPollModal(false);
     await loadMessages();
   };
 
@@ -756,10 +781,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonTitle>{room.name}</IonTitle>
           {user?.type === 'admin' && (
             <IonButtons slot="end">
-              <IonButton onClick={() => setShowMembersModal(true)}>
+              <IonButton onClick={() => presentMembersModalHook()}>
                 <IonIcon icon={people} />
               </IonButton>
-              <IonButton onClick={() => setShowPollModal(true)}>
+              <IonButton onClick={() => presentPollModalHook()}>
                 <IonIcon icon={barChart} />
               </IonButton>
             </IonButtons>
@@ -883,27 +908,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       </div>
 
 
-      {/* Poll Creation Modal */}
-      <PollModal
-        isOpen={showPollModal}
-        onClose={() => setShowPollModal(false)}
-        onSuccess={handlePollCreated}
-        roomId={room.id}
-        presentingElement={pageRef.current}
-      />
-
-      {/* Members Modal */}
-      <MembersModal
-        isOpen={showMembersModal}
-        onClose={() => setShowMembersModal(false)}
-        onSuccess={() => {
-          // Refresh messages when members change
-          loadMessages();
-        }}
-        roomId={room.id}
-        roomType={room.type}
-        presentingElement={pageRef.current}
-      />
 
       {/* Action Sheet für Longpress */}
       <IonActionSheet

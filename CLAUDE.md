@@ -241,6 +241,106 @@ const ModalComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 - Modal Component verwendet `IonPage` innerhalb des `IonModal`
 - `presentingElement={pageRef.current || undefined}` aktiviert das Backdrop
 
+## useIonModal Hook Pattern (Empfohlen)
+
+**Für konsistente iOS Card-Effekte und Tab-Navigation sollte immer der useIonModal Hook verwendet werden:**
+
+**1. Parent Component Setup:**
+```tsx
+import { useIonModal } from '@ionic/react';
+import { useModalPage } from '../contexts/ModalContext';
+
+const ParentPage: React.FC = () => {
+  const { pageRef, presentingElement } = useModalPage('pageName');
+  const [modalData, setModalData] = useState(null);
+  
+  // Modal Hook
+  const [presentModalHook, dismissModalHook] = useIonModal(ModalComponent, {
+    data: modalData,
+    onClose: () => dismissModalHook(),
+    onSuccess: () => {
+      dismissModalHook();
+      // Reload data oder andere Aktionen
+    },
+    dismiss: () => dismissModalHook()
+  });
+  
+  const openModal = () => {
+    setModalData(someData);
+    presentModalHook({ presentingElement: presentingElement });
+  };
+  
+  return (
+    <IonPage ref={pageRef}>
+      {/* Content */}
+      <IonButton onClick={openModal}>Modal öffnen</IonButton>
+    </IonPage>
+  );
+};
+```
+
+**2. Modal Component:**
+```tsx
+interface ModalProps {
+  data: any;
+  onClose: () => void;
+  onSuccess: () => void;
+  dismiss?: () => void;
+}
+
+const ModalComponent: React.FC<ModalProps> = ({ data, onClose, onSuccess, dismiss }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
+  
+  const handleSave = async () => {
+    try {
+      // Save logic
+      await onSuccess();
+      handleClose();
+    } catch (error) {
+      // Error handling
+    }
+  };
+  
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Modal Title</IonTitle>
+          <IonButtons slot="start">
+            <IonButton onClick={handleClose}>
+              <IonIcon icon={close} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent>
+        {/* Modal Content */}
+      </IonContent>
+    </IonPage>
+  );
+};
+```
+
+**Wichtige Punkte für iOS Card-Effekt:**
+1. **Immer useIonModal Hook verwenden** anstatt `<IonModal>` mit `isOpen`
+2. **presentingElement Parameter** beim Hook-Aufruf mitgeben: `presentModalHook({ presentingElement: presentingElement })`
+3. **dismiss Parameter** in Modal Props definieren für konsistente Schließung
+4. **handleClose Funktion** für unified close behavior
+5. **ModalContext verwenden** für pageRef und presentingElement Management
+
+**Beispiele aus der Codebase:**
+- ✅ KonfiDetailView Modals (ActivityModal, BonusModal)
+- ✅ AdminKonfisPage (KonfiModal)
+- ✅ AdminActivitiesPage (ActivityManagementModal)
+- ✅ AdminEventsPage (EventModal)
+- ✅ ChatPage (SimpleCreateChatModal)
+
 ## API Reference
 
 Comprehensive API documentation is available in `API Definitionen.md` including:

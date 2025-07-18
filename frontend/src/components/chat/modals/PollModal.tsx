@@ -26,14 +26,20 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
 interface PollModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   roomId: number;
-  presentingElement?: HTMLElement | null;
+  dismiss?: () => void;
 }
 
-const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomId, presentingElement }) => {
+const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismiss }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const { setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   
@@ -44,13 +50,12 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
   const [expirationHours, setExpirationHours] = useState(24);
   const [creating, setCreating] = useState(false);
 
-  const handleClose = () => {
+  const resetForm = () => {
     setQuestion('');
     setOptions(['', '']);
     setMultipleChoice(false);
     setHasExpiration(false);
     setExpirationHours(24);
-    onClose();
   };
 
   const addOption = () => {
@@ -97,8 +102,9 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
       await api.post(`/chat/rooms/${roomId}/polls`, pollData);
       
       setSuccess('Umfrage erstellt');
-      handleClose();
+      resetForm();
       onSuccess();
+      handleClose();
     } catch (err) {
       setError('Fehler beim Erstellen der Umfrage');
       console.error('Error creating poll:', err);
@@ -112,14 +118,7 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
   };
 
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={handleClose}
-      presentingElement={presentingElement || undefined}
-      canDismiss={true}
-      backdropDismiss={true}
-    >
-      <IonPage ref={pageRef}>
+    <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonTitle>Umfrage erstellen</IonTitle>
@@ -254,8 +253,7 @@ const PollModal: React.FC<PollModalProps> = ({ isOpen, onClose, onSuccess, roomI
             </div>
           </div>
         </IonContent>
-      </IonPage>
-    </IonModal>
+    </IonPage>
   );
 };
 

@@ -163,6 +163,7 @@ const EventModal: React.FC<EventModalProps> = ({
       }
       
       onSuccess();
+      handleClose();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);
