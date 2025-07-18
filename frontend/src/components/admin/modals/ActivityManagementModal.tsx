@@ -26,6 +26,7 @@ interface Activity {
   points: number;
   type: 'gottesdienst' | 'gemeinde';
   category?: string;
+  categories?: Category[];
 }
 
 interface Category {
@@ -67,7 +68,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     name: '',
     points: 1,
     type: 'gottesdienst' as 'gottesdienst' | 'gemeinde',
-    category: ''
+    category: '',
+    category_ids: [] as number[]
   });
 
 
@@ -81,7 +83,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: activityData.name,
         points: activityData.points,
         type: activityData.type,
-        category: activityData.category || ''
+        category: activityData.category || '',
+        category_ids: activityData.categories?.map((cat: Category) => cat.id) || []
       });
     } catch (error) {
       console.error('Error loading activity:', error);
@@ -101,7 +104,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: activity.name,
         points: activity.points,
         type: activity.type,
-        category: activity.category || ''
+        category: activity.category || '',
+        category_ids: activity.categories?.map((cat: Category) => cat.id) || []
       });
     } else {
       // Reset form for new activity
@@ -110,7 +114,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: '',
         points: 1,
         type: 'gottesdienst',
-        category: ''
+        category: '',
+        category_ids: []
       });
     }
   }, [activityId, activity]);
@@ -137,7 +142,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: formData.name.trim(),
         points: formData.points,
         type: formData.type,
-        category: formData.category.trim() || null
+        category: formData.category.trim() || null,
+        category_ids: formData.category_ids
       };
 
       if (currentActivity) {
@@ -242,7 +248,29 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           </IonItem>
 
           <IonItem>
-            <IonLabel position="stacked">Kategorie</IonLabel>
+            <IonLabel position="stacked">Kategorien (mehrere möglich)</IonLabel>
+            <IonSelect
+              value={formData.category_ids}
+              onIonChange={(e) => setFormData({ ...formData, category_ids: e.detail.value })}
+              placeholder="Kategorien wählen"
+              disabled={loading}
+              multiple={true}
+              interface="action-sheet"
+              interfaceOptions={{
+                header: 'Kategorien auswählen'
+              }}
+            >
+              {categories.map((category) => (
+                <IonSelectOption key={category.id} value={category.id}>
+                  {category.name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
+          </IonItem>
+          
+          {/* Backward compatibility: Single category select */}
+          <IonItem>
+            <IonLabel position="stacked">Alte Kategorie (für Kompatibilität)</IonLabel>
             <IonSelect
               value={formData.category}
               onIonChange={(e) => setFormData({ ...formData, category: e.detail.value })}

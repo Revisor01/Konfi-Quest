@@ -12,6 +12,8 @@ module.exports = (db, verifyToken) => {
              e.max_participants,
              e.registration_opens_at,
              e.registration_closes_at,
+             GROUP_CONCAT(c.id) as category_ids,
+             GROUP_CONCAT(c.name) as category_names,
              CASE 
                WHEN datetime('now') < e.registration_opens_at THEN 'upcoming'
                WHEN datetime('now') > e.registration_closes_at THEN 'closed'
@@ -19,16 +21,39 @@ module.exports = (db, verifyToken) => {
              END as registration_status
       FROM events e
       LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
+      LEFT JOIN event_categories ec ON e.id = ec.event_id
+      LEFT JOIN categories c ON ec.category_id = c.id
       GROUP BY e.id
       ORDER BY e.event_date ASC
     `;
     
-    db.all(query, (err, events) => {
+    db.all(query, (err, rows) => {
       if (err) {
         console.error('Error fetching events:', err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.json(events);
+      
+      // Transform the data to include categories array
+      const eventsWithCategories = rows.map(row => {
+        const categories = [];
+        if (row.category_ids) {
+          const ids = row.category_ids.split(',');
+          const names = row.category_names.split(',');
+          for (let i = 0; i < ids.length; i++) {
+            categories.push({
+              id: parseInt(ids[i]),
+              name: names[i]
+            });
+          }
+        }
+        
+        return {
+          ...row,
+          categories: categories
+        };
+      });
+      
+      res.json(eventsWithCategories);
     });
   });
 
@@ -87,6 +112,7 @@ module.exports = (db, verifyToken) => {
       location_maps_url,
       points,
       category,
+      category_ids,
       type,
       max_participants,
       registration_opens_at,
@@ -119,6 +145,24 @@ module.exports = (db, verifyToken) => {
         
         const eventId = this.lastID;
         
+        // Add categories if provided
+        const addCategories = () => {
+          if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
+            const categoryPromises = category_ids.map(categoryId => {
+              return new Promise((resolve, reject) => {
+                db.run("INSERT OR IGNORE INTO event_categories (event_id, category_id) VALUES (?, ?)",
+                  [eventId, categoryId], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                  });
+              });
+            });
+            
+            return Promise.all(categoryPromises);
+          }
+          return Promise.resolve();
+        };
+        
         // If has timeslots, create them
         if (has_timeslots && timeslots && timeslots.length > 0) {
           const timeslotQueries = timeslots.map(slot => {
@@ -132,16 +176,23 @@ module.exports = (db, verifyToken) => {
             });
           });
           
-          Promise.all(timeslotQueries)
+          Promise.all([...timeslotQueries, addCategories()])
             .then(() => {
               res.json({ id: eventId, message: 'Event created successfully with timeslots' });
             })
             .catch(err => {
-              console.error('Error creating timeslots:', err);
-              res.status(500).json({ error: 'Event created but failed to create timeslots' });
+              console.error('Error creating timeslots or categories:', err);
+              res.status(500).json({ error: 'Event created but failed to create timeslots or categories' });
             });
         } else {
-          res.json({ id: eventId, message: 'Event created successfully' });
+          addCategories()
+            .then(() => {
+              res.json({ id: eventId, message: 'Event created successfully' });
+            })
+            .catch(err => {
+              console.error('Error adding categories:', err);
+              res.status(500).json({ error: 'Event created but failed to add categories' });
+            });
         }
       }
     );

@@ -1053,6 +1053,79 @@ db.serialize(() => {
     }
   });
   
+  // Migration 7: Create event_categories table for Multi-Select Categories
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='event_categories'", (err, row) => {
+    if (err) {
+      console.error('Migration 7 check error:', err);
+    } else if (!row) {
+      console.log('⚡ Migration 7: Creating event_categories table for Multi-Select Categories...');
+      db.run(`CREATE TABLE IF NOT EXISTS event_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id INTEGER NOT NULL,
+        category_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+        FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE,
+        UNIQUE(event_id, category_id)
+      )`, (err) => {
+        if (err) {
+          console.error('Migration 7 error:', err);
+        } else {
+          console.log('✅ Migration 7: event_categories table created');
+          
+          // Migrate existing category data from events table to event_categories table
+          console.log('⚡ Migration 7: Migrating existing event categories...');
+          db.all("SELECT id, category FROM events WHERE category IS NOT NULL AND category != ''", (err, events) => {
+            if (err) {
+              console.error('Migration 7 data migration error:', err);
+            } else {
+              let migratedCount = 0;
+              let processedCount = 0;
+              
+              if (events.length === 0) {
+                console.log('✅ Migration 7: No existing event categories to migrate');
+                return;
+              }
+              
+              events.forEach(event => {
+                // Look for category in categories table
+                db.get("SELECT id FROM categories WHERE name = ?", [event.category], (err, category) => {
+                  if (err) {
+                    console.error('Migration 7 category lookup error:', err);
+                  } else if (category) {
+                    // Insert relationship
+                    db.run("INSERT OR IGNORE INTO event_categories (event_id, category_id) VALUES (?, ?)", 
+                      [event.id, category.id], (err) => {
+                        if (err) {
+                          console.error('Migration 7 insert error:', err);
+                        } else {
+                          migratedCount++;
+                        }
+                        processedCount++;
+                        
+                        if (processedCount === events.length) {
+                          console.log(`✅ Migration 7: ${migratedCount} event categories migrated`);
+                        }
+                      });
+                  } else {
+                    console.log(`⚠️  Migration 7: Category '${event.category}' not found in categories table`);
+                    processedCount++;
+                    
+                    if (processedCount === events.length) {
+                      console.log(`✅ Migration 7: ${migratedCount} event categories migrated`);
+                    }
+                  }
+                });
+              });
+            }
+          });
+        }
+      });
+    } else {
+      console.log('✅ Migration 7: event_categories table already exists');
+    }
+  });
+  
   // Only insert default data for new database
   if (!dbExists) {
     console.log('📝 Inserting default data...');

@@ -44,6 +44,7 @@ interface Activity {
   points: number;
   type: 'gottesdienst' | 'gemeinde';
   category?: string;
+  categories?: {id: number, name: string}[];
   created_at: string;
 }
 
