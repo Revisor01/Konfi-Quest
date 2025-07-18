@@ -30,9 +30,10 @@ interface ActivityModalProps {
   konfiId: number;
   onClose: () => void;
   onSave: () => Promise<void>;
+  dismiss?: () => void;
 }
 
-const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave }) => {
+const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [customName, setCustomName] = useState('');
@@ -41,6 +42,14 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave 
   const [comment, setComment] = useState('');
   const [useCustom, setUseCustom] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
 
   useEffect(() => {
     loadActivities();
@@ -79,7 +88,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave 
         });
       }
       await onSave();
-      onClose();
+      handleClose();
     } catch (err) {
       console.error('Error saving activity:', err);
     }
@@ -95,7 +104,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave 
         <IonToolbar>
           <IonTitle>Aktivität hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>

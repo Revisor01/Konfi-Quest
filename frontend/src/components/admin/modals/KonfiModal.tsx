@@ -26,11 +26,20 @@ interface KonfiModalProps {
   jahrgaenge: Jahrgang[];
   onClose: () => void;
   onSave: (konfiData: any) => void;
+  dismiss?: () => void;
 }
 
-const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave }) => {
+const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, dismiss }) => {
   const [name, setName] = useState('');
   const [jahrgang, setJahrgang] = useState('');
+
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
 
   const handleSave = () => {
     if (!name.trim() || !jahrgang) return;
@@ -51,7 +60,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave }) 
         <IonToolbar>
           <IonTitle>Konfi erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>

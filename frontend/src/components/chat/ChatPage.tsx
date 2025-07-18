@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { useIonModal } from '@ionic/react';
+import { useModalPage } from '../../contexts/ModalContext';
 import ChatOverview from './ChatOverview';
 import ChatRoomComponent from './ChatRoom';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
@@ -14,10 +16,23 @@ interface ChatRoomData {
 }
 
 const ChatPage: React.FC = () => {
+  const { pageRef, presentingElement } = useModalPage('chat');
   const [selectedRoom, setSelectedRoom] = useState<ChatRoomData | null>(null);
-  const [showCreateChatModal, setShowCreateChatModal] = useState(false);
-  const [modalPresentingElement, setModalPresentingElement] = useState<HTMLElement | null>(null);
   const overviewRef = useRef<ChatOverviewRef>(null);
+
+  // Modal mit useIonModal Hook - löst Tab-Navigation Problem
+  const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
+    onClose: () => dismissChatModalHook(),
+    onSuccess: () => {
+      dismissChatModalHook();
+      if (overviewRef.current) {
+        overviewRef.current.loadChatRooms();
+      }
+      if (selectedRoom) {
+        setSelectedRoom(null);
+      }
+    }
+  });
 
   const handleSelectRoom = (room: ChatRoomData) => {
     setSelectedRoom(room);
@@ -32,24 +47,9 @@ const ChatPage: React.FC = () => {
   };
 
   const handleCreateNewChat = () => {
-    setShowCreateChatModal(true);
-  };
-
-  const handleCreateNewChatWithRef = (pageRef: HTMLElement | null) => {
-    setModalPresentingElement(pageRef);
-    setShowCreateChatModal(true);
-  };
-
-  const handleChatCreated = () => {
-    setShowCreateChatModal(false);
-    // Refresh chat overview
-    if (overviewRef.current) {
-      overviewRef.current.loadChatRooms();
-    }
-    // Go back to overview if we're in a room
-    if (selectedRoom) {
-      setSelectedRoom(null);
-    }
+    presentChatModalHook({
+      presentingElement: presentingElement
+    });
   };
 
   if (selectedRoom) {
@@ -62,21 +62,12 @@ const ChatPage: React.FC = () => {
   }
 
   return (
-    <>
-      <ChatOverview 
-        ref={overviewRef}
-        onSelectRoom={handleSelectRoom}
-        onCreateNewChat={handleCreateNewChat}
-        onCreateNewChatWithRef={handleCreateNewChatWithRef}
-      />
-      
-      <SimpleCreateChatModal
-        isOpen={showCreateChatModal}
-        onClose={() => setShowCreateChatModal(false)}
-        onSuccess={handleChatCreated}
-        presentingElement={modalPresentingElement || undefined}
-      />
-    </>
+    <ChatOverview 
+      ref={overviewRef}
+      pageRef={pageRef}
+      onSelectRoom={handleSelectRoom}
+      onCreateNewChat={handleCreateNewChat}
+    />
   );
 };
 

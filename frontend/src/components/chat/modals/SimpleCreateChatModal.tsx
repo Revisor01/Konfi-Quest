@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  IonModal,
   IonPage,
   IonHeader,
   IonToolbar,
@@ -35,16 +34,23 @@ interface User {
 }
 
 interface SimpleCreateChatModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  presentingElement?: HTMLElement;
+  dismiss?: () => void;
 }
 
-const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, onClose, onSuccess, presentingElement }) => {
+const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { user, setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   const [chatType, setChatType] = useState<'direct' | 'group' | ''>('');
+
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const [users, setUsers] = useState<User[]>([]);
   const [existingChats, setExistingChats] = useState<any[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -58,13 +64,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (isOpen) {
-      loadExistingChats();
-      if (chatType) {
-        loadUsers();
-      }
+    loadExistingChats();
+    if (chatType) {
+      loadUsers();
     }
-  }, [isOpen, chatType]);
+  }, [chatType]);
 
   const loadExistingChats = async () => {
     try {
@@ -141,7 +145,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
       });
       
       setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
-      handleClose();
+      handleModalClose();
       onSuccess();
     } catch (err) {
       setError('Fehler beim Erstellen der Direktnachricht');
@@ -184,7 +188,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
       console.log('Group chat created successfully:', response.data);
       
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
-      handleClose();
+      handleModalClose();
       onSuccess();
     } catch (err: any) {
       console.error('Error creating group chat:', err);
@@ -195,13 +199,13 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
     }
   };
 
-  const handleClose = () => {
+  const handleModalClose = () => {
     setChatType('');
     setGroupName('');
     setSearchText('');
     setSelectedParticipants(new Set());
     setUsers([]);
-    onClose();
+    handleClose();
   };
 
   const filteredUsers = users.filter(user => {
@@ -222,14 +226,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
   };
 
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={handleClose}
-      presentingElement={presentingElement || undefined}
-      canDismiss={true}
-      backdropDismiss={true}
-    >
-      <IonPage ref={pageRef}>
+    <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonTitle>Neuen Chat erstellen</IonTitle>
@@ -367,17 +364,16 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ isOpen, o
             </>
           )}
         </IonContent>
-      </IonPage>
 
-      {/* Duplicate Alert */}
-      <IonAlert
-        isOpen={showDuplicateAlert}
-        onDidDismiss={() => setShowDuplicateAlert(false)}
-        header="Chat existiert bereits"
-        message={duplicateMessage}
-        buttons={['OK']}
-      />
-    </IonModal>
+        {/* Duplicate Alert */}
+        <IonAlert
+          isOpen={showDuplicateAlert}
+          onDidDismiss={() => setShowDuplicateAlert(false)}
+          header="Chat existiert bereits"
+          message={duplicateMessage}
+          buttons={['OK']}
+        />
+      </IonPage>
   );
 };
 

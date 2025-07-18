@@ -23,9 +23,17 @@ interface BonusModalProps {
   konfiId: number;
   onClose: () => void;
   onSave: () => Promise<void>;
+  dismiss?: () => void;
 }
 
-const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave }) => {
+const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const [name, setName] = useState('');
   const [points, setPoints] = useState<number>(1);
   const [reason, setReason] = useState('');
@@ -43,7 +51,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave }) => 
         completed_date: selectedDate
       });
       await onSave();
-      onClose();
+      handleClose();
     } catch (err) {
       console.error('Error saving bonus points:', err);
     }
@@ -62,7 +70,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave }) => 
         <IonToolbar>
           <IonTitle>Bonuspunkte hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>

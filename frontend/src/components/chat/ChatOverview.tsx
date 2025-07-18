@@ -59,15 +59,15 @@ interface ChatRoom {
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoom) => void;
   onCreateNewChat: () => void;
-  onCreateNewChatWithRef?: (pageRef: HTMLElement | null) => void;
+  pageRef?: React.RefObject<HTMLElement | null>;
 }
 
 interface ChatOverviewRef {
   loadChatRooms: () => void;
 }
 
-const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, onCreateNewChatWithRef }, ref) => {
-  const pageRef = useRef<HTMLElement>(null);
+const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, pageRef: externalPageRef }, ref) => {
+  const pageRef = externalPageRef || useRef<HTMLElement | null>(null);
   const { user, setError, setSuccess } = useApp();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={() => onCreateNewChatWithRef ? onCreateNewChatWithRef(pageRef.current) : onCreateNewChat()}>
+            <IonButton onClick={onCreateNewChat}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>

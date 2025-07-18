@@ -26,6 +26,7 @@ import {
   IonModal,
   IonAlert,
   useIonActionSheet,
+  useIonModal,
   IonItemSliding,
   IonItemOptions,
   IonItemOption
@@ -86,11 +87,11 @@ interface Activity {
 
 
 interface KonfiDetailViewProps {
-  konfi: Konfi;
+  konfiId: number;
   onBack: () => void;
 }
 
-const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
+const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) => {
   const { setSuccess, setError } = useApp();
   const [presentActionSheet] = useIonActionSheet();
   const pageRef = React.useRef<HTMLElement>(null);
@@ -98,17 +99,82 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
   
   const [activities, setActivities] = useState<Activity[]>([]);
   const [bonusEntries, setBonusEntries] = useState<any[]>([]);
-  const [currentKonfi, setCurrentKonfi] = useState<Konfi>(konfi);
+  const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordAlert, setShowPasswordAlert] = useState(false);
-  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
-  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
+  // Activity Modal mit useIonModal Hook
+  const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
+    konfiId: konfiId,
+    onClose: () => dismissActivityModalHook(),
+    onSave: async () => {
+      await loadKonfiData();
+      setSuccess('Aktivität hinzugefügt');
+      // Event für Parent-Update
+      window.dispatchEvent(new CustomEvent('konfis-updated'));
+      dismissActivityModalHook();
+    }
+  });
+
+  // Bonus Modal mit useIonModal Hook
+  const [presentBonusModalHook, dismissBonusModalHook] = useIonModal(BonusModal, {
+    konfiId: konfiId,
+    onClose: () => dismissBonusModalHook(),
+    onSave: async () => {
+      await loadKonfiData();
+      setSuccess('Bonuspunkte hinzugefügt');
+      // Event für Parent-Update
+      window.dispatchEvent(new CustomEvent('konfis-updated'));
+      dismissBonusModalHook();
+    }
+  });
+
+  // Photo Modal Component
+  const PhotoModal: React.FC<{onClose: () => void, photoUrl: string}> = ({ onClose, photoUrl }) => (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Foto</IonTitle>
+          <IonButtons slot="start">
+            <IonButton onClick={onClose}>
+              <IonIcon icon={close} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent>
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <img 
+            src={photoUrl} 
+            alt="Aktivitätsfoto" 
+            style={{ 
+              maxWidth: '100%', 
+              maxHeight: '100%', 
+              objectFit: 'contain',
+              borderRadius: '8px'
+            }}
+          />
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+
+  // Photo Modal mit useIonModal Hook
+  const [presentPhotoModalHook, dismissPhotoModalHook] = useIonModal(PhotoModal, {
+    onClose: () => {
+      if (selectedPhoto && selectedPhoto.startsWith('blob:')) {
+        URL.revokeObjectURL(selectedPhoto);
+      }
+      setSelectedPhoto(null);
+      dismissPhotoModalHook();
+    },
+    photoUrl: selectedPhoto || ''
+  });
 
   useEffect(() => {
     loadKonfiData();
-  }, [konfi.id]);
+  }, [konfiId]);
 
   useEffect(() => {
     // Setze das presentingElement nach dem ersten Mount
@@ -119,7 +185,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
     setLoading(true);
     try {
       const [konfiRes, requestsRes] = await Promise.all([
-        api.get(`/konfis/${konfi.id}`),
+        api.get(`/konfis/${konfiId}`),
         api.get('/activity-requests')
       ]);
       
@@ -129,7 +195,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
       
       // Konfi-Daten aktualisieren
       setCurrentKonfi({
-        ...konfi,
         ...konfiData,
         bonus: konfiData.totalBonus || konfiData.bonus || 0,
         bonusPoints: konfiData.totalBonus || konfiData.bonus || 0,
@@ -147,7 +212,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
       
       // Schwebende Anträge hinzufügen (nur diese können Fotos haben)
       const pendingRequests = (requestsRes.data || []).filter(
-        (req: any) => req.konfi_id === konfi.id && req.status === 'pending'
+        (req: any) => req.konfi_id === konfiId && req.status === 'pending'
       ).map((req: any) => {
         console.log('Request data:', req);
         console.log('Photo filename:', req.photo_filename);
@@ -175,11 +240,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
   };
 
   const getTotalPoints = () => {
+    if (!currentKonfi) return 0;
     // Bonuspunkte sind bereits in gottesdienst/gemeinde enthalten, nicht doppelt zählen
     return (currentKonfi.points?.gottesdienst || 0) + (currentKonfi.points?.gemeinde || 0);
   };
 
   const getBonusPoints = () => {
+    if (!currentKonfi) return 0;
     // Bonuspunkte aus bonusEntries berechnen
     const bonusFromEntries = bonusEntries.reduce((sum, bonus) => sum + (bonus.points || 0), 0);
     // Fallback auf konfi-Objekt
@@ -220,7 +287,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
     if (!window.confirm(`Aktivität "${activity.name}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/konfis/${konfi.id}/activities/${activity.id}`);
+      await api.delete(`/konfis/${konfiId}/activities/${activity.id}`);
       setSuccess(`Aktivität "${activity.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadKonfiData();
@@ -237,7 +304,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
     if (!window.confirm(`Bonuspunkte "${bonus.description}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/konfis/${konfi.id}/bonus-points/${bonus.id}`);
+      await api.delete(`/konfis/${konfiId}/bonus-points/${bonus.id}`);
       setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
       // Sofortige Aktualisierung
       await loadKonfiData();
@@ -252,9 +319,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
 
   const handlePasswordReset = async () => {
     try {
-      const response = await api.post(`/konfis/${konfi.id}/regenerate-password`);
+      const response = await api.post(`/konfis/${konfiId}/regenerate-password`);
       // Passwort sofort aktualisieren
-      setCurrentKonfi(prev => ({ ...prev, password: response.data.password }));
+      setCurrentKonfi(prev => prev ? { ...prev, password: response.data.password } : null);
       setSuccess(`Neues Passwort: ${response.data.password}`);
       // Parent-Update triggern
       window.dispatchEvent(new CustomEvent('konfis-updated'));
@@ -273,7 +340,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>{currentKonfi.name}</IonTitle>
+          <IonTitle>{currentKonfi?.name || 'Konfi Details'}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handlePasswordAction}>
               <IonIcon icon={key} />
@@ -291,7 +358,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
         </IonRefresher>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>{currentKonfi.name}</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>{currentKonfi?.name || 'Konfi Details'}</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -307,7 +374,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
           <IonCardContent>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <p style={{ margin: '0', opacity: 0.9, fontSize: '0.9rem' }}>
-                {currentKonfi.jahrgang} • @{currentKonfi.username}
+                {currentKonfi?.jahrgang} • @{currentKonfi?.username}
               </p>
             </div>
             <IonGrid>
@@ -316,7 +383,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
                   <div style={{ textAlign: 'center' }}>
                     <IonIcon icon={school} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                     <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {Number(currentKonfi.points?.gottesdienst) || 0}
+                      {Number(currentKonfi?.points?.gottesdienst) || 0}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                       Gottesdienst
@@ -327,7 +394,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
                   <div style={{ textAlign: 'center' }}>
                     <IonIcon icon={star} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                     <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {Number(currentKonfi.points?.gemeinde) || 0}
+                      {Number(currentKonfi?.points?.gemeinde) || 0}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                       Gemeinde
@@ -338,7 +405,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
                   <div style={{ textAlign: 'center' }}>
                     <IonIcon icon={trophy} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                     <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {currentKonfi.badgeCount || 0}
+                      {currentKonfi?.badgeCount || 0}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                       Badges
@@ -424,7 +491,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
             <IonButton 
               expand="block" 
               fill="outline" 
-              onClick={() => setIsBonusModalOpen(true)}
+              onClick={() => presentBonusModalHook({
+                presentingElement: presentingElement || undefined
+              })}
               style={{ marginTop: '16px' }}
             >
               <IonIcon icon={add} style={{ marginRight: '8px' }} />
@@ -459,7 +528,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
                             });
                             const photoUrl = URL.createObjectURL(response.data);
                             setSelectedPhoto(photoUrl);
-                            setShowPhotoModal(true);
+                            presentPhotoModalHook({
+              presentingElement: presentingElement || undefined
+            });
                           } catch (error) {
                             console.error('Error loading photo:', error);
                             setError('Foto konnte nicht geladen werden');
@@ -525,7 +596,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
             <IonButton 
               expand="block" 
               fill="outline" 
-              onClick={() => setIsActivityModalOpen(true)}
+              onClick={() => presentActivityModalHook({
+                presentingElement: presentingElement || undefined
+              })}
               style={{ marginTop: '16px' }}
             >
               <IonIcon icon={add} style={{ marginRight: '8px' }} />
@@ -541,117 +614,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfi, onBack }) => {
         isOpen={showPasswordAlert}
         onDidDismiss={() => setShowPasswordAlert(false)}
         header="Passwort"
-        message={`Aktuelles Passwort: ${currentKonfi.password || 'Nicht verfügbar'}`}
+        message={`Aktuelles Passwort: ${currentKonfi?.password || 'Nicht verfügbar'}`}
         buttons={['OK']}
       />
 
-      {/* Activity Modal */}
-      <IonModal 
-        isOpen={isActivityModalOpen} 
-        onDidDismiss={() => setIsActivityModalOpen(false)}
-        presentingElement={presentingElement || undefined}
-        canDismiss={true}
-        backdropDismiss={true}
-      >
-        <ActivityModal 
-          konfiId={konfi.id}
-          onClose={() => setIsActivityModalOpen(false)}
-          onSave={async () => {
-            await loadKonfiData();
-            setSuccess('Aktivität hinzugefügt');
-            // Event für Parent-Update
-            window.dispatchEvent(new CustomEvent('konfis-updated'));
-          }}
-        />
-      </IonModal>
 
-      {/* Bonus Modal */}
-      <IonModal 
-        isOpen={isBonusModalOpen} 
-        onDidDismiss={() => setIsBonusModalOpen(false)}
-        presentingElement={presentingElement || undefined}
-        canDismiss={true}
-        backdropDismiss={true}
-      >
-        <BonusModal 
-          konfiId={konfi.id}
-          onClose={() => setIsBonusModalOpen(false)}
-          onSave={async () => {
-            await loadKonfiData();
-            setSuccess('Bonuspunkte hinzugefügt');
-            // Event für Parent-Update
-            window.dispatchEvent(new CustomEvent('konfis-updated'));
-          }}
-        />
-      </IonModal>
 
-      {/* Photo Modal */}
-      <IonModal 
-        isOpen={showPhotoModal} 
-        onDidDismiss={() => {
-          if (selectedPhoto && selectedPhoto.startsWith('blob:')) {
-            URL.revokeObjectURL(selectedPhoto);
-          }
-          setShowPhotoModal(false);
-          setSelectedPhoto(null);
-        }}
-        presentingElement={presentingElement || undefined}
-        canDismiss={true}
-        backdropDismiss={true}
-      >
-        <IonPage>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Aktivitäts-Foto</IonTitle>
-              <IonButtons slot="start">
-                <IonButton onClick={() => {
-                  if (selectedPhoto && selectedPhoto.startsWith('blob:')) {
-                    URL.revokeObjectURL(selectedPhoto);
-                  }
-                  setShowPhotoModal(false);
-                  setSelectedPhoto(null);
-                }}>
-                  <IonIcon icon={close} />
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent className="ion-padding">
-            {selectedPhoto && (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center',
-                height: '100%'
-              }}>
-                <img 
-                  src={selectedPhoto} 
-                  alt="Aktivitäts-Foto"
-                  style={{ 
-                    maxWidth: '100%', 
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    borderRadius: '8px'
-                  }}
-                  onLoad={() => {
-                    console.log('Foto erfolgreich geladen:', selectedPhoto);
-                  }}
-                  onError={(e) => {
-                    console.error('Foto konnte nicht geladen werden:', selectedPhoto);
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement!.innerHTML = `
-                      <div style="text-align: center; color: #666;">
-                        <p>Foto konnte nicht geladen werden</p>
-                        <p style="font-size: 0.8rem; opacity: 0.7;">${selectedPhoto}</p>
-                      </div>
-                    `;
-                  }}
-                />
-              </div>
-            )}
-          </IonContent>
-        </IonPage>
-      </IonModal>
     </IonPage>
   );
 };

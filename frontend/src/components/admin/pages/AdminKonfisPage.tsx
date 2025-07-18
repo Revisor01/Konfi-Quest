@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useHistory } from 'react-router-dom';
 import { 
   IonPage, 
   IonHeader, 
   IonToolbar, 
   IonTitle, 
   IonContent, 
-  IonModal,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
-  IonIcon
+  IonIcon,
+  useIonModal
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
-import KonfiDetailView from '../views/KonfiDetailView';
 
 interface Konfi {
   id: number;
@@ -51,8 +52,8 @@ interface Activity {
 
 const AdminKonfisPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const pageRef = useRef<HTMLElement>(null);
-  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+  const history = useHistory();
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('konfis');
   
   // State
   const [konfis, setKonfis] = useState<Konfi[]>([]);
@@ -61,15 +62,20 @@ const AdminKonfisPage: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedKonfi, setSelectedKonfi] = useState<Konfi | null>(null);
-  const [showDetailView, setShowDetailView] = useState(false);
+  // Modal mit useIonModal Hook - löst Tab-Navigation Problem
+  const [presentKonfiModalHook, dismissKonfiModalHook] = useIonModal(KonfiModal, {
+    jahrgaenge: jahrgaenge,
+    onClose: () => dismissKonfiModalHook(),
+    onSave: (konfiData: any) => {
+      handleAddKonfi(konfiData);
+      dismissKonfiModalHook();
+    },
+    dismiss: () => dismissKonfiModalHook()
+  });
 
   useEffect(() => {
     loadData();
     // Setze das presentingElement nach dem ersten Mount
-    setPresentingElement(pageRef.current);
     
     // Event-Listener für Updates aus KonfiDetailView
     const handleKonfisUpdated = () => {
@@ -119,41 +125,25 @@ const AdminKonfisPage: React.FC = () => {
   };
 
   const handleSelectKonfi = (konfi: Konfi) => {
-    setSelectedKonfi(konfi);
-    setShowDetailView(true);
-  };
-
-  const handleBackFromDetail = async () => {
-    setShowDetailView(false);
-    setSelectedKonfi(null);
-    // Daten aktualisieren beim Zurückkehren
-    await loadData();
+    history.push(`/admin/konfis/${konfi.id}`);
   };
 
   const presentKonfiModal = () => {
-    setIsModalOpen(true);
+    presentKonfiModalHook({
+      presentingElement: presentingElement
+    });
   };
 
   const handleAddKonfi = async (konfiData: any) => {
     try {
       const response = await api.post('/konfis', konfiData);
       setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
-      setIsModalOpen(false);
       // Sofortige Aktualisierung
       await loadData();
     } catch (err) {
       setError('Fehler beim Hinzufügen');
     }
   };
-
-  if (showDetailView && selectedKonfi) {
-    return (
-      <KonfiDetailView 
-        konfi={selectedKonfi}
-        onBack={handleBackFromDetail}
-      />
-    );
-  }
 
   return (
     <IonPage ref={pageRef}>
@@ -195,21 +185,6 @@ const AdminKonfisPage: React.FC = () => {
           />
         )}
       </IonContent>
-      
-      {/* Konfi Modal */}
-      <IonModal 
-        isOpen={isModalOpen} 
-        onDidDismiss={() => setIsModalOpen(false)}
-        presentingElement={presentingElement || undefined}
-        canDismiss={true}
-        backdropDismiss={true}
-      >
-        <KonfiModal 
-          jahrgaenge={jahrgaenge}
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleAddKonfi}
-        />
-      </IonModal>
     </IonPage>
   );
 };

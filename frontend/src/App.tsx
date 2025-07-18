@@ -31,13 +31,23 @@ import {
   home,
   logOut,
   settings,
-  information
+  information,
+  flash,
+  pricetag,
+  school
 } from 'ionicons/icons';
 import { AppProvider, useApp } from './contexts/AppContext';
+import { ModalProvider } from './contexts/ModalContext';
 import LoginView from './components/auth/LoginView';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import AdminKonfisPage from './components/admin/pages/AdminKonfisPage';
+import AdminActivitiesPage from './components/admin/pages/AdminActivitiesPage';
+import AdminEventsPage from './components/admin/pages/AdminEventsPage';
+import AdminCategoriesPage from './components/admin/pages/AdminCategoriesPage';
+import AdminJahrgaengeePage from './components/admin/pages/AdminJahrgaengeePage';
 import ChatPage from './components/chat/ChatPage';
+import KonfiDetailView from './components/admin/views/KonfiDetailView';
+import EventDetailView from './components/admin/views/EventDetailView';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -110,41 +120,28 @@ const AppContent: React.FC = () => {
     <IonApp>
       <IonReactRouter>
         <IonRouterOutlet>
-          {/* External routes (no tab bar) */}
-          <Route path="/chat/:roomId" render={() => (
-            <IonPage>
-              <IonHeader>
-                <IonToolbar>
-                  <IonTitle>Chat Room</IonTitle>
-                </IonToolbar>
-              </IonHeader>
-              <IonContent>
-                <p>Chat Room (TODO: Implement)</p>
-              </IonContent>
-            </IonPage>
-          )} />
-          
           {/* Tab Routes */}
           <Route render={() => (
             user.type === 'admin' ? (
               // Admin Tabs
-              <IonTabs>
-                <IonRouterOutlet>
+              <ModalProvider>
+                <IonTabs>
+                  <IonRouterOutlet>
                   <Redirect exact path="/admin" to="/admin/konfis" />
                   <Route exact path="/admin/konfis" component={AdminKonfisPage} />
+                  <Route path="/admin/konfis/:id" render={(props) => {
+                    const konfiId = parseInt(props.match.params.id);
+                    return <KonfiDetailView konfiId={konfiId} onBack={() => props.history.goBack()} />;
+                  }} />
                   <Route exact path="/admin/chat" component={ChatPage} />
-                  <Route exact path="/admin/activities" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Aktivitäten</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Activities (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
+                  <Route exact path="/admin/activities" component={AdminActivitiesPage} />
+                  <Route path="/admin/events/:id" render={(props) => {
+                    const eventId = parseInt(props.match.params.id);
+                    return <EventDetailView eventId={eventId} onBack={() => props.history.goBack()} />;
+                  }} />
+                  <Route exact path="/admin/events" component={AdminEventsPage} />
+                  <Route exact path="/admin/categories" component={AdminCategoriesPage} />
+                  <Route exact path="/admin/jahrgaenge" component={AdminJahrgaengeePage} />
                   <Route exact path="/admin/badges" render={() => (
                     <IonPage>
                       <IonHeader>
@@ -165,6 +162,28 @@ const AppContent: React.FC = () => {
                         </IonToolbar>
                       </IonHeader>
                       <IonContent className="ion-padding">
+                        <IonCard>
+                          <IonCardHeader>
+                            <IonCardTitle>Verwaltung</IonCardTitle>
+                          </IonCardHeader>
+                          <IonCardContent>
+                            <IonItem button routerLink="/admin/categories">
+                              <IonIcon icon={pricetag} slot="start" color="primary" />
+                              <IonLabel>
+                                <h2>Kategorien</h2>
+                                <p>Kategorien für Aktivitäten und Events verwalten</p>
+                              </IonLabel>
+                            </IonItem>
+                            <IonItem button routerLink="/admin/jahrgaenge">
+                              <IonIcon icon={school} slot="start" color="primary" />
+                              <IonLabel>
+                                <h2>Jahrgänge</h2>
+                                <p>Konfirmanden-Jahrgänge verwalten</p>
+                              </IonLabel>
+                            </IonItem>
+                          </IonCardContent>
+                        </IonCard>
+
                         <IonCard>
                           <IonCardHeader>
                             <IonCardTitle>Konto</IonCardTitle>
@@ -219,6 +238,10 @@ const AppContent: React.FC = () => {
                     <IonIcon icon={calendar} />
                     <IonLabel>Aktivitäten</IonLabel>
                   </IonTabButton>
+                  <IonTabButton tab="admin-events" href="/admin/events">
+                    <IonIcon icon={flash} />
+                    <IonLabel>Events</IonLabel>
+                  </IonTabButton>
                   <IonTabButton tab="admin-badges" href="/admin/badges">
                     <IonIcon icon={star} />
                     <IonLabel>Badges</IonLabel>
@@ -228,7 +251,8 @@ const AppContent: React.FC = () => {
                     <IonLabel>Mehr</IonLabel>
                   </IonTabButton>
                 </IonTabBar>
-              </IonTabs>
+                </IonTabs>
+              </ModalProvider>
             ) : (
               // Konfi Tabs
               <IonTabs>

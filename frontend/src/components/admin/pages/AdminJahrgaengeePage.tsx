@@ -1,0 +1,400 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  IonPage, 
+  IonHeader, 
+  IonToolbar, 
+  IonTitle, 
+  IonContent, 
+  IonModal,
+  IonRefresher,
+  IonRefresherContent,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonCard,
+  IonCardHeader,
+  IonCardContent,
+  IonItem,
+  IonLabel,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  IonInput,
+  IonTextarea,
+  IonSpinner
+} from '@ionic/react';
+import { 
+  add, 
+  school, 
+  createOutline, 
+  trashOutline,
+  checkmarkOutline,
+  closeOutline,
+  people
+} from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
+import api from '../../../services/api';
+import LoadingSpinner from '../../common/LoadingSpinner';
+
+interface Jahrgang {
+  id: number;
+  name: string;
+  description?: string;
+  year: number;
+  created_at: string;
+}
+
+interface JahrgangModalProps {
+  jahrgang?: Jahrgang | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const JahrgangModal: React.FC<JahrgangModalProps> = ({
+  jahrgang,
+  onClose,
+  onSuccess
+}) => {
+  const { setSuccess, setError } = useApp();
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    year: new Date().getFullYear()
+  });
+
+  useEffect(() => {
+    if (jahrgang) {
+      setFormData({
+        name: jahrgang.name,
+        description: jahrgang.description || '',
+        year: jahrgang.year
+      });
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        year: new Date().getFullYear()
+      });
+    }
+  }, [jahrgang]);
+
+  const handleSubmit = async () => {
+    if (!formData.name.trim()) {
+      setError('Name ist erforderlich');
+      return;
+    }
+
+    if (formData.year < 2000 || formData.year > 2100) {
+      setError('Jahr muss zwischen 2000 und 2100 liegen');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+        year: formData.year
+      };
+
+      if (jahrgang) {
+        await api.put(`/jahrgaenge/${jahrgang.id}`, payload);
+        setSuccess('Jahrgang aktualisiert');
+      } else {
+        await api.post('/jahrgaenge', payload);
+        setSuccess('Jahrgang erstellt');
+      }
+      
+      onSuccess();
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError('Fehler beim Speichern des Jahrgangs');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>
+            {jahrgang ? 'Jahrgang bearbeiten' : 'Neuer Jahrgang'}
+          </IonTitle>
+          <IonButtons slot="start">
+            <IonButton onClick={onClose} disabled={loading}>
+              <IonIcon icon={closeOutline} />
+            </IonButton>
+          </IonButtons>
+          <IonButtons slot="end">
+            <IonButton 
+              onClick={handleSubmit} 
+              disabled={!formData.name.trim() || loading}
+              strong={true}
+            >
+              {loading ? (
+                <IonSpinner name="crescent" />
+              ) : (
+                <IonIcon icon={checkmarkOutline} />
+              )}
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent>
+        <div style={{ padding: '16px' }}>
+          <IonItem>
+            <IonLabel position="stacked">Name *</IonLabel>
+            <IonInput
+              value={formData.name}
+              onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+              placeholder="z.B. Jahrgang 2024/2025"
+              disabled={loading}
+            />
+          </IonItem>
+
+          <IonItem style={{ marginTop: '16px' }}>
+            <IonLabel position="stacked">Jahr *</IonLabel>
+            <IonInput
+              type="number"
+              value={formData.year}
+              onIonInput={(e) => setFormData({ ...formData, year: parseInt(e.detail.value!) || new Date().getFullYear() })}
+              min={2000}
+              max={2100}
+              disabled={loading}
+            />
+          </IonItem>
+
+          <IonItem style={{ marginTop: '16px' }}>
+            <IonLabel position="stacked">Beschreibung</IonLabel>
+            <IonTextarea
+              value={formData.description}
+              onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+              placeholder="Beschreibung des Jahrgangs..."
+              rows={3}
+              disabled={loading}
+            />
+          </IonItem>
+        </div>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+const AdminJahrgaengeePage: React.FC = () => {
+  const { pageRef, presentingElement } = useModalPage('jahrgaenge');
+  const { setSuccess, setError } = useApp();
+  
+  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
+
+  const loadJahrgaenge = async () => {
+    try {
+      const response = await api.get('/jahrgaenge');
+      setJahrgaenge(response.data);
+    } catch (error) {
+      setError('Fehler beim Laden der Jahrgänge');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJahrgaenge();
+  }, []);
+
+  const handleRefresh = async (event: CustomEvent) => {
+    await loadJahrgaenge();
+    (event.target as HTMLIonRefresherElement).complete();
+  };
+
+  const handleDelete = async (jahrgang: Jahrgang) => {
+    if (!window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
+    
+    try {
+      await api.delete(`/jahrgaenge/${jahrgang.id}`);
+      setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
+      loadJahrgaenge();
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        setError('Jahrgang kann nicht gelöscht werden - wird bereits von Konfis verwendet');
+      } else {
+        setError('Fehler beim Löschen des Jahrgangs');
+      }
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditJahrgang(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (jahrgang: Jahrgang) => {
+    setEditJahrgang(jahrgang);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditJahrgang(null);
+  };
+
+  const handleModalSuccess = () => {
+    closeModal();
+    loadJahrgaenge();
+  };
+
+  if (loading) {
+    return (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonTitle>Jahrgänge</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <LoadingSpinner fullScreen message="Jahrgänge werden geladen..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  return (
+    <IonPage ref={pageRef}>
+      <IonHeader translucent={true}>
+        <IonToolbar>
+          <IonTitle>Jahrgänge</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={openCreateModal}>
+              <IonIcon icon={add} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
+            <IonTitle size="large" style={{ color: 'black' }}>Jahrgänge</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent refreshingSpinner="crescent" />
+        </IonRefresher>
+
+        {/* Header Statistics Card */}
+        <IonCard style={{
+          margin: '16px',
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
+          color: 'white',
+          boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <div>
+                <IonIcon icon={school} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                  {jahrgaenge.length}
+                </h3>
+                <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                  Jahrgänge
+                </p>
+              </div>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+        {/* Jahrgaenge List */}
+        <IonCard style={{ margin: '16px', marginTop: '8px' }}>
+          <IonCardContent style={{ padding: '0' }}>
+            {jahrgaenge.length === 0 ? (
+              <IonItem lines="none">
+                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
+                  <p>Noch keine Jahrgänge angelegt</p>
+                </IonLabel>
+              </IonItem>
+            ) : (
+              jahrgaenge.map((jahrgang) => (
+                <IonItemSliding key={jahrgang.id}>
+                  <IonItem 
+                    button 
+                    onClick={() => openEditModal(jahrgang)}
+                    style={{ '--min-height': '60px' }}
+                  >
+                    <div slot="start" style={{ 
+                      width: '40px', 
+                      height: '40px',
+                      backgroundColor: '#007aff',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px'
+                    }}>
+                      <IonIcon 
+                        icon={school} 
+                        style={{ 
+                          fontSize: '1.2rem', 
+                          color: 'white'
+                        }} 
+                      />
+                    </div>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
+                        {jahrgang.name}
+                      </h2>
+                      <p style={{ 
+                        margin: '0', 
+                        fontSize: '0.85rem', 
+                        color: '#666' 
+                      }}>
+                        Jahr {jahrgang.year}
+                        {jahrgang.description && ` • ${jahrgang.description}`}
+                      </p>
+                    </IonLabel>
+                  </IonItem>
+                  
+                  <IonItemOptions side="end">
+                    <IonItemOption 
+                      color="danger" 
+                      onClick={() => handleDelete(jahrgang)}
+                    >
+                      <IonIcon icon={trashOutline} />
+                    </IonItemOption>
+                  </IonItemOptions>
+                </IonItemSliding>
+              ))
+            )}
+          </IonCardContent>
+        </IonCard>
+
+        {/* Jahrgang Modal */}
+        <IonModal 
+          isOpen={isModalOpen} 
+          onDidDismiss={closeModal}
+          presentingElement={presentingElement}
+          backdropDismiss={true}
+        >
+          <JahrgangModal 
+            jahrgang={editJahrgang}
+            onClose={closeModal}
+            onSuccess={handleModalSuccess}
+          />
+        </IonModal>
+      </IonContent>
+    </IonPage>
+  );
+};
+
+export default AdminJahrgaengeePage;
