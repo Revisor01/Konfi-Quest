@@ -802,30 +802,36 @@ db.serialize(() => {
   });
   
   // Migration 2: Populate categories table from existing activity categories
-  db.all("PRAGMA table_info(categories)", (err, columns) => {
-    if (!err && columns.length > 0) {
-      // Check if categories table is empty
-      db.get("SELECT COUNT(*) as count FROM categories", (err, row) => {
-        if (!err && row.count === 0) {
-          console.log('⚡ Migration 2: Populating categories table...');
-          
-          // Get unique categories from activities
-          db.all("SELECT DISTINCT category FROM activities WHERE category IS NOT NULL AND category != ''", (err, categories) => {
-            if (!err && categories.length > 0) {
-              const insertStmt = db.prepare("INSERT OR IGNORE INTO categories (name, type) VALUES (?, 'activity')");
-              
-              categories.forEach(cat => {
-                insertStmt.run(cat.category);
-              });
-              
-              insertStmt.finalize();
-              console.log(`✅ Migration 2: ${categories.length} categories populated`);
-            }
-          });
-        }
-      });
-    }
-  });
+  setTimeout(() => {
+    db.all("PRAGMA table_info(categories)", (err, columns) => {
+      if (!err && columns.length > 0) {
+        // Check if categories table is empty
+        db.get("SELECT COUNT(*) as count FROM categories", (err, row) => {
+          if (!err && row.count === 0) {
+            console.log('⚡ Migration: Populating categories table...');
+            
+            // Get unique categories from activities
+            db.all("SELECT DISTINCT category FROM activities WHERE category IS NOT NULL AND category != ''", (err, categories) => {
+              if (!err && categories.length > 0) {
+                const insertStmt = db.prepare("INSERT OR IGNORE INTO categories (name, type) VALUES (?, 'activity')");
+                
+                categories.forEach(cat => {
+                  insertStmt.run(cat.category);
+                });
+                
+                insertStmt.finalize();
+                console.log(`✅ Migration: ${categories.length} categories populated from activities`);
+              }
+            });
+          } else {
+            console.log(`✅ Categories table already has ${row.count} entries`);
+          }
+        });
+      } else {
+        console.log('⚠️ Categories table not found - will be created on next restart');
+      }
+    });
+  }, 1000);
   
   // Migration 3: Add is_special to activities table (if not exists)
   db.all("PRAGMA table_info(activities)", (err, columns) => {
