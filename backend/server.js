@@ -592,6 +592,15 @@ db.serialize(() => {
     FOREIGN KEY (jahrgang_id) REFERENCES jahrgaenge (id)
   )`);
 
+  // Categories table
+  db.run(`CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    type TEXT NOT NULL CHECK (type IN ('activity', 'event', 'both')) DEFAULT 'both',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   // Activities table
   db.run(`CREATE TABLE IF NOT EXISTS activities (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -792,7 +801,33 @@ db.serialize(() => {
     }
   });
   
-  // Migration 2: Add is_special to activities table (if not exists)
+  // Migration 2: Populate categories table from existing activity categories
+  db.all("PRAGMA table_info(categories)", (err, columns) => {
+    if (!err && columns.length > 0) {
+      // Check if categories table is empty
+      db.get("SELECT COUNT(*) as count FROM categories", (err, row) => {
+        if (!err && row.count === 0) {
+          console.log('⚡ Migration 2: Populating categories table...');
+          
+          // Get unique categories from activities
+          db.all("SELECT DISTINCT category FROM activities WHERE category IS NOT NULL AND category != ''", (err, categories) => {
+            if (!err && categories.length > 0) {
+              const insertStmt = db.prepare("INSERT OR IGNORE INTO categories (name, type) VALUES (?, 'activity')");
+              
+              categories.forEach(cat => {
+                insertStmt.run(cat.category);
+              });
+              
+              insertStmt.finalize();
+              console.log(`✅ Migration 2: ${categories.length} categories populated`);
+            }
+          });
+        }
+      });
+    }
+  });
+  
+  // Migration 3: Add is_special to activities table (if not exists)
   db.all("PRAGMA table_info(activities)", (err, columns) => {
     if (err) {
       console.error('Migration 2 check error:', err);
@@ -1687,6 +1722,122 @@ app.delete('/api/jahrgaenge/:id', verifyToken, (req, res) => {
       });
       
       res.json({ message: 'Jahrgang deleted successfully' });
+    });
+  });
+});
+
+// Categories CRUD APIs
+// Get all categories
+app.get('/api/categories', verifyToken, (req, res) => {
+  if (!req.user || req.user.type !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  db.all("SELECT * FROM categories ORDER BY name", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(rows);
+  });
+});
+
+// Create category
+app.post('/api/categories', verifyToken, (req, res) => {
+  if (!req.user || req.user.type !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const { name, description, type } = req.body;
+  
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+  
+  const validTypes = ['activity', 'event', 'both'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({ error: 'Invalid type' });
+  }
+  
+  db.run("INSERT INTO categories (name, description, type) VALUES (?, ?, ?)", [name.trim(), description || null, type || 'both'], function(err) {
+    if (err) {
+      if (err.code === 'SQLITE_CONSTRAINT') {
+        return res.status(400).json({ error: 'Category name already exists' });
+      }
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    res.json({ 
+      id: this.lastID,
+      name: name.trim(),
+      description: description || null,
+      type: type || 'both',
+      message: 'Category created successfully' 
+    });
+  });
+});
+
+// Update category
+app.put('/api/categories/:id', verifyToken, (req, res) => {
+  if (!req.user || req.user.type !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const categoryId = parseInt(req.params.id);
+  const { name, description, type } = req.body;
+  
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+  
+  const validTypes = ['activity', 'event', 'both'];
+  if (type && !validTypes.includes(type)) {
+    return res.status(400).json({ error: 'Invalid type' });
+  }
+  
+  db.run("UPDATE categories SET name = ?, description = ?, type = ? WHERE id = ?", [name.trim(), description || null, type || 'both', categoryId], function(err) {
+    if (err) {
+      if (err.code === 'SQLITE_CONSTRAINT') {
+        return res.status(400).json({ error: 'Category name already exists' });
+      }
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    
+    res.json({ message: 'Category updated successfully' });
+  });
+});
+
+// Delete category
+app.delete('/api/categories/:id', verifyToken, (req, res) => {
+  if (!req.user || req.user.type !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  const categoryId = parseInt(req.params.id);
+  
+  // Check if category is used in activities
+  db.get("SELECT COUNT(*) as count FROM activities WHERE category = (SELECT name FROM categories WHERE id = ?)", [categoryId], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (row.count > 0) {
+      return res.status(400).json({ error: 'Category cannot be deleted - it is used by activities' });
+    }
+    
+    db.run("DELETE FROM categories WHERE id = ?", [categoryId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Category not found' });
+      }
+      
+      res.json({ message: 'Category deleted successfully' });
     });
   });
 });
