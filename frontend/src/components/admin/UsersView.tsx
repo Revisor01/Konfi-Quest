@@ -276,12 +276,12 @@ const UsersView: React.FC<UsersViewProps> = ({
                 <IonItem 
                   button 
                   onClick={() => onSelectUser(user)}
-                  style={{ '--min-height': '80px', '--padding-start': '16px' }}
+                  style={{ '--min-height': '56px', '--padding-start': '16px' }}
                 >
                   <IonAvatar slot="start" style={{ marginRight: '12px' }}>
                     <div style={{
-                      width: '40px',
-                      height: '40px',
+                      width: '32px',
+                      height: '32px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       display: 'flex',
@@ -289,7 +289,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                       justifyContent: 'center',
                       color: 'white',
                       fontWeight: '600',
-                      fontSize: '0.9rem'
+                      fontSize: '0.8rem'
                     }}>
                       {getInitials(user.display_name)}
                     </div>
@@ -298,76 +298,71 @@ const UsersView: React.FC<UsersViewProps> = ({
                   <IonLabel>
                     <h2 style={{ 
                       fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
+                      fontSize: '1rem',
+                      margin: '0 0 2px 0'
                     }}>
                       {user.display_name}
                     </h2>
                     
-                    <p style={{ 
-                      margin: '0 0 6px 0',
-                      fontSize: '0.85rem',
-                      color: '#666',
-                      fontWeight: '500'
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      flexWrap: 'wrap',
+                      margin: '0'
                     }}>
-                      @{user.username} {user.email && `• ${user.email}`}
-                    </p>
-                    
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <IonChip 
+                      <span style={{ 
+                        fontSize: '0.8rem',
+                        color: '#666'
+                      }}>
+                        @{user.username}
+                      </span>
+                      
+                      <IonBadge 
                         color={getRoleColor(user.role_name)}
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': getRoleColor(user.role_name) === 'danger' ? 'rgba(245, 61, 61, 0.15)' : 
-                                         getRoleColor(user.role_name) === 'warning' ? 'rgba(255, 204, 0, 0.15)' : 
-                                         'rgba(56, 128, 255, 0.15)',
-                          '--color': getRoleColor(user.role_name) === 'danger' ? '#f53d3d' : 
-                                    getRoleColor(user.role_name) === 'warning' ? '#ffcc00' : 
-                                    '#3880ff'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
                         {user.role_display_name}
-                      </IonChip>
+                      </IonBadge>
                       
-                      <IonChip 
+                      <IonBadge 
                         color={getStatusColor(user.is_active)}
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': user.is_active ? 'rgba(45, 211, 111, 0.15)' : 'rgba(146, 146, 150, 0.15)',
-                          '--color': user.is_active ? '#2dd36f' : '#929296'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
                         {getStatusText(user.is_active)}
-                      </IonChip>
+                      </IonBadge>
                       
                       {user.assigned_jahrgaenge_count > 0 && (
-                        <IonChip 
+                        <IonBadge 
                           color="tertiary"
                           style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(112, 69, 246, 0.15)',
-                            '--color': '#7045f6'
+                            fontSize: '0.7rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px'
                           }}
                         >
-                          {user.assigned_jahrgaenge_count} {user.assigned_jahrgaenge_count === 1 ? 'Jahrgang' : 'Jahrgänge'}
-                        </IonChip>
+                          {user.assigned_jahrgaenge_count}J
+                        </IonBadge>
+                      )}
+                      
+                      {user.last_login_at && (
+                        <span style={{ 
+                          fontSize: '0.7rem',
+                          color: '#999',
+                          marginLeft: 'auto'
+                        }}>
+                          {formatDate(user.last_login_at)}
+                        </span>
                       )}
                     </div>
-                    
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.8rem',
-                      color: '#999'
-                    }}>
-                      Erstellt: {formatDate(user.created_at)} 
-                      {user.last_login_at && ` • Letzter Login: ${formatDateTime(user.last_login_at)}`}
-                    </p>
                   </IonLabel>
                 </IonItem>
 

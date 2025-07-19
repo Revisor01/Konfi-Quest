@@ -289,12 +289,12 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                 <IonItem 
                   button 
                   onClick={() => onSelectOrganization(organization)}
-                  style={{ '--min-height': '100px', '--padding-start': '16px' }}
+                  style={{ '--min-height': '64px', '--padding-start': '16px' }}
                 >
                   <IonAvatar slot="start" style={{ marginRight: '12px' }}>
                     <div style={{
-                      width: '50px',
-                      height: '50px',
+                      width: '36px',
+                      height: '36px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
                       display: 'flex',
@@ -302,7 +302,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       justifyContent: 'center',
                       color: 'white',
                       fontWeight: '600',
-                      fontSize: '1rem'
+                      fontSize: '0.85rem'
                     }}>
                       {getInitials(organization.display_name)}
                     </div>
@@ -311,123 +311,82 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   <IonLabel>
                     <h2 style={{ 
                       fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
+                      fontSize: '1rem',
+                      margin: '0 0 2px 0'
                     }}>
                       {organization.display_name}
                     </h2>
                     
-                    <p style={{ 
-                      margin: '0 0 6px 0',
-                      fontSize: '0.85rem',
-                      color: '#666',
-                      fontWeight: '500'
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      flexWrap: 'wrap',
+                      margin: '0'
                     }}>
-                      {organization.name} {organization.contact_email && `• ${organization.contact_email}`}
-                    </p>
-
-                    {organization.description && (
-                      <p style={{ 
-                        margin: '0 0 8px 0',
+                      <span style={{ 
                         fontSize: '0.8rem',
-                        color: '#555',
-                        fontStyle: 'italic'
+                        color: '#666'
                       }}>
-                        {organization.description}
-                      </p>
-                    )}
-                    
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <IonChip 
+                        {organization.name}
+                      </span>
+                      
+                      <IonBadge 
                         color={getStatusColor(organization.is_active)}
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': organization.is_active ? 'rgba(45, 211, 111, 0.15)' : 'rgba(146, 146, 150, 0.15)',
-                          '--color': organization.is_active ? '#2dd36f' : '#929296'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
                         {getStatusText(organization.is_active)}
-                      </IonChip>
+                      </IonBadge>
                       
-                      <IonChip 
+                      <IonBadge 
                         color={getOrganizationSizeColor(organization.konfi_count)}
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': getOrganizationSizeColor(organization.konfi_count) === 'success' ? 'rgba(45, 211, 111, 0.15)' : 
-                                         getOrganizationSizeColor(organization.konfi_count) === 'warning' ? 'rgba(255, 204, 0, 0.15)' : 
-                                         getOrganizationSizeColor(organization.konfi_count) === 'primary' ? 'rgba(56, 128, 255, 0.15)' : 
-                                         'rgba(146, 146, 150, 0.15)',
-                          '--color': getOrganizationSizeColor(organization.konfi_count) === 'success' ? '#2dd36f' : 
-                                    getOrganizationSizeColor(organization.konfi_count) === 'warning' ? '#ffcc00' : 
-                                    getOrganizationSizeColor(organization.konfi_count) === 'primary' ? '#3880ff' : 
-                                    '#929296'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
-                        {organization.konfi_count} Konfis
-                      </IonChip>
+                        {organization.konfi_count}K
+                      </IonBadge>
                       
-                      <IonChip 
+                      <IonBadge 
                         color="tertiary"
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': 'rgba(112, 69, 246, 0.15)',
-                          '--color': '#7045f6'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
-                        {organization.user_count} Benutzer
-                      </IonChip>
+                        {organization.user_count}U
+                      </IonBadge>
                       
                       {organization.activity_count > 0 && (
-                        <IonChip 
+                        <IonBadge 
                           color="primary"
                           style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(56, 128, 255, 0.15)',
-                            '--color': '#3880ff'
+                            fontSize: '0.7rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px'
                           }}
                         >
-                          {organization.activity_count} Aktivitäten
-                        </IonChip>
+                          {organization.activity_count}A
+                        </IonBadge>
                       )}
-
-                      {organization.badge_count > 0 && (
-                        <IonChip 
-                          color="warning"
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(255, 204, 0, 0.15)',
-                            '--color': '#ffcc00'
-                          }}
-                        >
-                          {organization.badge_count} Badges
-                        </IonChip>
+                      
+                      {organization.contact_email && (
+                        <span style={{ 
+                          fontSize: '0.7rem',
+                          color: '#999',
+                          marginLeft: 'auto'
+                        }}>
+                          {organization.contact_email}
+                        </span>
                       )}
                     </div>
-                    
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.8rem',
-                      color: '#999'
-                    }}>
-                      Erstellt: {formatDate(organization.created_at)}
-                      {organization.website && (
-                        <>
-                          {' • '}
-                          <IonIcon icon={globe} style={{ fontSize: '0.8rem', marginRight: '2px' }} />
-                          Website
-                        </>
-                      )}
-                    </p>
                   </IonLabel>
                 </IonItem>
 

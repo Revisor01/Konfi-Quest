@@ -271,11 +271,11 @@ const RolesView: React.FC<RolesViewProps> = ({
                 <IonItem 
                   button 
                   onClick={() => onSelectRole(role)}
-                  style={{ '--min-height': '80px', '--padding-start': '16px' }}
+                  style={{ '--min-height': '56px', '--padding-start': '16px' }}
                 >
                   <div slot="start" style={{ 
-                    width: '40px', 
-                    height: '40px',
+                    width: '32px', 
+                    height: '32px',
                     backgroundColor: getRoleTypeColor(role) === 'danger' ? '#f53d3d' :
                                     getRoleTypeColor(role) === 'warning' ? '#ffcc00' :
                                     getRoleTypeColor(role) === 'primary' ? '#3880ff' :
@@ -290,7 +290,7 @@ const RolesView: React.FC<RolesViewProps> = ({
                     <IonIcon 
                       icon={getRoleTypeIcon(role)} 
                       style={{ 
-                        fontSize: '1.2rem', 
+                        fontSize: '1rem', 
                         color: 'white'
                       }} 
                     />
@@ -299,95 +299,82 @@ const RolesView: React.FC<RolesViewProps> = ({
                   <IonLabel>
                     <h2 style={{ 
                       fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
+                      fontSize: '1rem',
+                      margin: '0 0 2px 0'
                     }}>
                       {role.display_name}
                       {role.is_system_role && (
                         <IonIcon 
                           icon={lockClosed} 
                           style={{ 
-                            fontSize: '0.9rem', 
-                            marginLeft: '8px',
+                            fontSize: '0.8rem', 
+                            marginLeft: '6px',
                             color: '#666'
                           }} 
                         />
                       )}
                     </h2>
                     
-                    {role.description && (
-                      <p style={{ 
-                        margin: '0 0 6px 0',
-                        fontSize: '0.85rem',
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      flexWrap: 'wrap',
+                      margin: '0'
+                    }}>
+                      <span style={{ 
+                        fontSize: '0.8rem',
                         color: '#666'
                       }}>
-                        {role.description}
-                      </p>
-                    )}
-                    
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <IonChip 
+                        {role.name}
+                      </span>
+                      
+                      <IonBadge 
                         color={getStatusColor(role.is_active)}
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': role.is_active ? 'rgba(45, 211, 111, 0.15)' : 'rgba(146, 146, 150, 0.15)',
-                          '--color': role.is_active ? '#2dd36f' : '#929296'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
                         {getStatusText(role.is_active)}
-                      </IonChip>
+                      </IonBadge>
                       
-                      <IonChip 
+                      <IonBadge 
                         color="primary"
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': 'rgba(56, 128, 255, 0.15)',
-                          '--color': '#3880ff'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
-                        {role.user_count} {role.user_count === 1 ? 'Benutzer' : 'Benutzer'}
-                      </IonChip>
+                        {role.user_count}U
+                      </IonBadge>
                       
-                      <IonChip 
+                      <IonBadge 
                         color="tertiary"
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': 'rgba(112, 69, 246, 0.15)',
-                          '--color': '#7045f6'
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
                         }}
                       >
-                        {role.permission_count} {role.permission_count === 1 ? 'Berechtigung' : 'Berechtigungen'}
-                      </IonChip>
+                        {role.permission_count}P
+                      </IonBadge>
                       
                       {role.is_system_role && (
-                        <IonChip 
+                        <IonBadge 
                           color="warning"
                           style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(255, 204, 0, 0.15)',
-                            '--color': '#ffcc00'
+                            fontSize: '0.7rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px'
                           }}
                         >
-                          System-Rolle
-                        </IonChip>
+                          System
+                        </IonBadge>
                       )}
                     </div>
-                    
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.8rem',
-                      color: '#999'
-                    }}>
-                      Rollenname: {role.name} • Erstellt: {formatDate(role.created_at)}
-                    </p>
                   </IonLabel>
                 </IonItem>
 
