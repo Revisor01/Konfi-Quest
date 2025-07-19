@@ -284,22 +284,12 @@ const checkAndAwardBadges = async (konfiId) => {
                   const categoryCountQuery = `
                     SELECT COUNT(*) as count FROM konfi_activities ka 
                     JOIN activities a ON ka.activity_id = a.id 
-                    WHERE ka.konfi_id = ? AND (
-                      a.category = ? OR 
-                      a.category LIKE ? OR 
-                      a.category LIKE ? OR 
-                      a.category LIKE ?
-                    )
+                    JOIN activity_categories ac ON a.id = ac.activity_id
+                    JOIN categories c ON ac.category_id = c.id
+                    WHERE ka.konfi_id = ? AND c.name = ?
                   `;
                   
-                  const category = criteria.required_category;
-                  const params = [
-                    konfiId, 
-                    category,                    // genau diese Kategorie
-                    `${category},%`,            // am Anfang
-                    `%,${category}`,            // am Ende  
-                    `%,${category},%`           // in der Mitte
-                  ];
+                  const params = [konfiId, criteria.required_category];
                   
                   db.get(categoryCountQuery, params, (err, result) => {
                     if (err) {
@@ -1409,9 +1399,9 @@ app.get('/api/badge-criteria-types', verifyToken, (req, res) => {
 
 // Get activity categories for badges
 app.get('/api/activity-categories', verifyToken, (req, res) => {
-  db.all("SELECT DISTINCT category FROM activities WHERE category IS NOT NULL AND category != '' ORDER BY category", [], (err, rows) => {
+  db.all("SELECT name FROM categories WHERE type = 'activity' ORDER BY name", [], (err, rows) => {
     if (err) return res.status(500).json({ error: 'Database error' });
-    const categories = rows.map(row => row.category);
+    const categories = rows.map(row => row.name);
     res.json(categories);
   });
 });

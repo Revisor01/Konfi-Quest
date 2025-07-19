@@ -34,7 +34,10 @@ import {
   information,
   flash,
   pricetag,
-  school
+  school,
+  document,
+  shield,
+  business
 } from 'ionicons/icons';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { ModalProvider } from './contexts/ModalContext';
@@ -45,6 +48,11 @@ import AdminActivitiesPage from './components/admin/pages/AdminActivitiesPage';
 import AdminEventsPage from './components/admin/pages/AdminEventsPage';
 import AdminCategoriesPage from './components/admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from './components/admin/pages/AdminJahrgaengeePage';
+import AdminBadgesPage from './components/admin/pages/AdminBadgesPage';
+import AdminActivityRequestsPage from './components/admin/pages/AdminActivityRequestsPage';
+import AdminUsersPage from './components/admin/pages/AdminUsersPage';
+import AdminRolesPage from './components/admin/pages/AdminRolesPage';
+import AdminOrganizationsPage from './components/admin/pages/AdminOrganizationsPage';
 import ChatPage from './components/chat/ChatPage';
 import KonfiDetailView from './components/admin/views/KonfiDetailView';
 import EventDetailView from './components/admin/views/EventDetailView';
@@ -142,18 +150,11 @@ const AppContent: React.FC = () => {
                   <Route exact path="/admin/events" component={AdminEventsPage} />
                   <Route exact path="/admin/categories" component={AdminCategoriesPage} />
                   <Route exact path="/admin/jahrgaenge" component={AdminJahrgaengeePage} />
-                  <Route exact path="/admin/badges" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Badges</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Badges (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
+                  <Route exact path="/admin/badges" component={AdminBadgesPage} />
+                  <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
+                  <Route exact path="/admin/users" component={AdminUsersPage} />
+                  <Route exact path="/admin/roles" component={AdminRolesPage} />
+                  <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
                   <Route exact path="/admin/settings" render={() => (
                     <IonPage>
                       <IonHeader>
@@ -164,11 +165,40 @@ const AppContent: React.FC = () => {
                       <IonContent className="ion-padding">
                         <IonCard>
                           <IonCardHeader>
-                            <IonCardTitle>Verwaltung</IonCardTitle>
+                            <IonCardTitle>System-Verwaltung</IonCardTitle>
+                          </IonCardHeader>
+                          <IonCardContent>
+                            <IonItem button routerLink="/admin/users">
+                              <IonIcon icon={people} slot="start" color="primary" />
+                              <IonLabel>
+                                <h2>Benutzer</h2>
+                                <p>Systembenutzer und Zugriffsrechte verwalten</p>
+                              </IonLabel>
+                            </IonItem>
+                            <IonItem button routerLink="/admin/roles">
+                              <IonIcon icon={shield} slot="start" color="tertiary" />
+                              <IonLabel>
+                                <h2>Rollen</h2>
+                                <p>Benutzerrollen und Berechtigungen verwalten</p>
+                              </IonLabel>
+                            </IonItem>
+                            <IonItem button routerLink="/admin/organizations">
+                              <IonIcon icon={business} slot="start" color="success" />
+                              <IonLabel>
+                                <h2>Organisationen</h2>
+                                <p>Gemeinden und Organisationen verwalten</p>
+                              </IonLabel>
+                            </IonItem>
+                          </IonCardContent>
+                        </IonCard>
+
+                        <IonCard>
+                          <IonCardHeader>
+                            <IonCardTitle>Inhalts-Verwaltung</IonCardTitle>
                           </IonCardHeader>
                           <IonCardContent>
                             <IonItem button routerLink="/admin/categories">
-                              <IonIcon icon={pricetag} slot="start" color="primary" />
+                              <IonIcon icon={pricetag} slot="start" color="warning" />
                               <IonLabel>
                                 <h2>Kategorien</h2>
                                 <p>Kategorien für Aktivitäten und Events verwalten</p>
@@ -245,6 +275,10 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="admin-badges" href="/admin/badges">
                     <IonIcon icon={star} />
                     <IonLabel>Badges</IonLabel>
+                  </IonTabButton>
+                  <IonTabButton tab="admin-requests" href="/admin/requests">
+                    <IonIcon icon={document} />
+                    <IonLabel>Anträge</IonLabel>
                   </IonTabButton>
                   <IonTabButton tab="admin-settings" href="/admin/settings">
                     <IonIcon icon={ellipsisHorizontal} />

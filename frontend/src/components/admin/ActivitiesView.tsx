@@ -235,24 +235,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   onClick={() => onSelectActivity(activity)}
                   style={{ '--min-height': '70px', '--padding-start': '16px' }}
                 >
-                  <div slot="start" style={{ 
-                    width: '40px', 
-                    height: '40px',
-                    backgroundColor: activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon 
-                      icon={getTypeIcon(activity.type)} 
-                      style={{ 
-                        fontSize: '1.2rem', 
-                        color: 'white'
-                      }} 
-                    />
-                  </div>
                   <IonLabel>
                     <h2 style={{ 
                       fontWeight: '600', 
@@ -263,32 +245,29 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     </h2>
                     
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      {activity.categories && activity.categories.length > 0 && 
-                        activity.categories.map((category, index) => (
-                          <IonChip 
-                            key={category.id}
-                            color="warning"
-                            style={{ 
-                              fontSize: '0.75rem', 
-                              height: '22px',
-                              opacity: 0.7,
-                              '--background': 'rgba(255, 204, 0, 0.15)',
-                              '--color': '#ffcc00'
-                            }}
-                          >
-                            {category.name}
-                          </IonChip>
-                        ))
-                      }
+                      <IonChip 
+                        color={getTypeColor(activity.type)}
+                        style={{ 
+                          fontSize: '0.75rem', 
+                          height: '22px',
+                          opacity: 0.7,
+                          '--background': activity.type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
+                          '--color': activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f'
+                        }}
+                      >
+                        {getTypeText(activity.type)} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                      </IonChip>
                     </div>
                     
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.85rem',
-                      color: '#666'
-                    }}>
-                      {getTypeText(activity.type)} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                    </p>
+                    {activity.categories && activity.categories.length > 0 && (
+                      <p style={{ 
+                        margin: '0',
+                        fontSize: '0.85rem',
+                        color: '#666'
+                      }}>
+                        {activity.categories.map(cat => cat.name).join(', ')}
+                      </p>
+                    )}
                     
                     {activity.description && (
                       <p style={{ 
