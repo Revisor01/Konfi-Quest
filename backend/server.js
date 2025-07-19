@@ -2614,13 +2614,21 @@ app.delete('/api/activities/:id', verifyToken, (req, res) => {
   const activityId = req.params.id;
 
   // Check if activity is used
-  db.get("SELECT COUNT(*) as count FROM konfi_activities WHERE activity_id = ?", [activityId], (err, row) => {
+  db.get(`SELECT COUNT(*) as count, 
+          GROUP_CONCAT(DISTINCT k.name) as konfi_names
+          FROM konfi_activities ka 
+          JOIN konfis k ON ka.konfi_id = k.id 
+          WHERE ka.activity_id = ?`, [activityId], (err, row) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' });
     }
     
     if (row.count > 0) {
-      return res.status(400).json({ error: 'Cannot delete activity that has been assigned to konfis' });
+      const konfiNames = row.konfi_names ? row.konfi_names.split(',').slice(0, 3) : [];
+      const moreKonfis = row.count > 3 ? ` und ${row.count - 3} weitere` : '';
+      return res.status(400).json({ 
+        error: `Aktivität kann nicht gelöscht werden. Sie ist bereits ${row.count} Mal vergeben an: ${konfiNames.join(', ')}${moreKonfis}` 
+      });
     }
 
     db.run("DELETE FROM activities WHERE id = ?", [activityId], function(err) {

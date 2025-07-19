@@ -262,34 +262,33 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       {activity.name}
                     </h2>
                     
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      gap: '8px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IonBadge 
-                          color={getTypeColor(activity.type)}
-                          style={{ fontSize: '0.75rem' }}
-                        >
-                          {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                        </IonBadge>
-                        
-                        {activity.categories && activity.categories.length > 0 && (
-                          <span style={{ 
-                            fontSize: '0.8rem', 
-                            color: '#666',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '120px'
-                          }}>
-                            {activity.categories.map(cat => cat.name).join(', ')}
-                          </span>
-                        )}
-                      </div>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                      {activity.categories && activity.categories.length > 0 && 
+                        activity.categories.map((category, index) => (
+                          <IonChip 
+                            key={category.id}
+                            color="warning"
+                            style={{ 
+                              fontSize: '0.75rem', 
+                              height: '22px',
+                              opacity: 0.7,
+                              '--background': 'rgba(255, 204, 0, 0.15)',
+                              '--color': '#ffcc00'
+                            }}
+                          >
+                            {category.name}
+                          </IonChip>
+                        ))
+                      }
                     </div>
+                    
+                    <p style={{ 
+                      margin: '0',
+                      fontSize: '0.85rem',
+                      color: '#666'
+                    }}>
+                      {getTypeText(activity.type)} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                    </p>
                     
                     {activity.description && (
                       <p style={{ 

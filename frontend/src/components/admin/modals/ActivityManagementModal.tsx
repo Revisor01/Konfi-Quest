@@ -71,18 +71,24 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   });
 
 
-  // Load activity by ID
+  // Load activity by ID from all activities
   const loadActivity = async (id: number) => {
     try {
-      const response = await api.get(`/activities/${id}`);
-      const activityData = response.data;
-      setCurrentActivity(activityData);
-      setFormData({
-        name: activityData.name,
-        points: activityData.points,
-        type: activityData.type,
-        category_ids: activityData.categories?.map((cat: Category) => cat.id) || []
-      });
+      const response = await api.get('/activities');
+      const activities = response.data;
+      const activityData = activities.find((act: Activity) => act.id === id);
+      
+      if (activityData) {
+        setCurrentActivity(activityData);
+        setFormData({
+          name: activityData.name,
+          points: activityData.points,
+          type: activityData.type,
+          category_ids: activityData.categories?.map((cat: Category) => cat.id) || []
+        });
+      } else {
+        setError('Aktivität nicht gefunden');
+      }
     } catch (error) {
       console.error('Error loading activity:', error);
       setError('Fehler beim Laden der Aktivität');

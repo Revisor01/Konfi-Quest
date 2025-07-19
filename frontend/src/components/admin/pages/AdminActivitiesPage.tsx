@@ -95,8 +95,12 @@ const AdminActivitiesPage: React.FC = () => {
       setSuccess(`Aktivität "${activity.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadActivities();
-    } catch (err) {
-      setError('Fehler beim Löschen');
+    } catch (err: any) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Fehler beim Löschen der Aktivität');
+      }
     }
   };
 
