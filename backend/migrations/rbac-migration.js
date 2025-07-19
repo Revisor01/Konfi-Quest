@@ -208,6 +208,8 @@ const runRBACMigration = (db) => {
           // Step 4: Create standard roles
           console.log('👥 Step 4: Creating standard roles...');
           
+          const roleIds = {}; // Move roleIds to outer scope
+          
           const roles = [
             { 
               name: 'admin', 
@@ -240,7 +242,6 @@ const runRBACMigration = (db) => {
           ];
           
           let rolesCreated = 0;
-          const roleIds = {};
           
           roles.forEach(role => {
             db.run(`INSERT OR IGNORE INTO roles (
@@ -272,9 +273,8 @@ const runRBACMigration = (db) => {
               }
             );
           });
-        }
-        
-        function migrateExistingAdmins() {
+          
+          function migrateExistingAdmins() {
           // Step 5: Migrate existing admins to users
           console.log('👤 Step 5: Migrating existing admins...');
           
@@ -326,6 +326,7 @@ const runRBACMigration = (db) => {
               });
             }
           });
+          }
         }
         
         function updateExistingTables() {
