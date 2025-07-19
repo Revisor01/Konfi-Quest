@@ -25,7 +25,6 @@ interface Activity {
   name: string;
   points: number;
   type: 'gottesdienst' | 'gemeinde';
-  category?: string;
   categories?: Category[];
 }
 
@@ -68,7 +67,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     name: '',
     points: 1,
     type: 'gottesdienst' as 'gottesdienst' | 'gemeinde',
-    category: '',
     category_ids: [] as number[]
   });
 
@@ -83,7 +81,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: activityData.name,
         points: activityData.points,
         type: activityData.type,
-        category: activityData.category || '',
         category_ids: activityData.categories?.map((cat: Category) => cat.id) || []
       });
     } catch (error) {
@@ -104,7 +101,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: activity.name,
         points: activity.points,
         type: activity.type,
-        category: activity.category || '',
         category_ids: activity.categories?.map((cat: Category) => cat.id) || []
       });
     } else {
@@ -114,7 +110,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: '',
         points: 1,
         type: 'gottesdienst',
-        category: '',
         category_ids: []
       });
     }
@@ -142,7 +137,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         name: formData.name.trim(),
         points: formData.points,
         type: formData.type,
-        category: formData.category.trim() || null,
         category_ids: formData.category_ids
       };
 
@@ -211,23 +205,16 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
           <IonItem>
             <IonLabel position="stacked">Punkte *</IonLabel>
-            <IonSelect
+            <IonInput
+              type="number"
               value={formData.points}
-              onIonChange={(e) => setFormData({ ...formData, points: e.detail.value })}
-              placeholder="Punkte wählen"
+              onIonInput={(e) => setFormData({ ...formData, points: parseInt(e.detail.value!) || 1 })}
+              placeholder="Punkte eingeben"
               disabled={loading}
-              interface="action-sheet"
-              interfaceOptions={{
-                header: 'Punkte auswählen'
-              }}
-            >
-              <IonSelectOption value={1}>1 Punkt</IonSelectOption>
-              <IonSelectOption value={2}>2 Punkte</IonSelectOption>
-              <IonSelectOption value={3}>3 Punkte</IonSelectOption>
-              <IonSelectOption value={4}>4 Punkte</IonSelectOption>
-              <IonSelectOption value={5}>5 Punkte</IonSelectOption>
-              <IonSelectOption value={10}>10 Punkte</IonSelectOption>
-            </IonSelect>
+              min={1}
+              max={50}
+              clearInput={true}
+            />
           </IonItem>
 
           <IonItem>
@@ -255,7 +242,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               placeholder="Kategorien wählen"
               disabled={loading}
               multiple={true}
-              interface="action-sheet"
+              interface="alert"
               interfaceOptions={{
                 header: 'Kategorien auswählen'
               }}
@@ -268,27 +255,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             </IonSelect>
           </IonItem>
           
-          {/* Backward compatibility: Single category select */}
-          <IonItem>
-            <IonLabel position="stacked">Alte Kategorie (für Kompatibilität)</IonLabel>
-            <IonSelect
-              value={formData.category}
-              onIonChange={(e) => setFormData({ ...formData, category: e.detail.value })}
-              placeholder="Kategorie wählen"
-              disabled={loading}
-              interface="action-sheet"
-              interfaceOptions={{
-                header: 'Kategorie auswählen'
-              }}
-            >
-              <IonSelectOption value="">Keine Kategorie</IonSelectOption>
-              {categories.map((category) => (
-                <IonSelectOption key={category.id} value={category.name}>
-                  {category.name}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
         </IonList>
       </IonContent>
     </IonPage>

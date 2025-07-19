@@ -18,19 +18,17 @@ import {
   IonItemOptions,
   IonItemOption,
   IonInput,
-  IonSelect,
-  IonSelectOption,
+  IonSegment,
+  IonSegmentButton,
   useIonActionSheet
 } from '@ionic/react';
 import { 
   add, 
   trash, 
   create, 
-  search, 
-  swapVertical, 
+  search,
   calendar,
   star,
-  person,
   home,
   people
 } from 'ionicons/icons';
@@ -43,7 +41,6 @@ interface Activity {
   description?: string;
   points: number;
   type: 'gottesdienst' | 'gemeinde';
-  category?: string;
   categories?: {id: number, name: string}[];
   created_at: string;
 }
@@ -66,25 +63,17 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
-  const [sortBy, setSortBy] = useState('name'); // 'name', 'points', 'type'
 
   const filteredAndSortedActivities = (() => {
-    let result = filterBySearchTerm(activities, searchTerm, ['name', 'description', 'category']);
+    let result = filterBySearchTerm(activities, searchTerm, ['name', 'description']);
     
     // Filter by type
     if (selectedType !== 'alle') {
       result = result.filter(activity => activity.type === selectedType);
     }
     
-    // Sortierung
-    if (sortBy === 'points') {
-      result = result.sort((a, b) => b.points - a.points);
-    } else if (sortBy === 'type') {
-      result = result.sort((a, b) => a.type.localeCompare(b.type));
-    } else {
-      // Default: nach Name sortieren
-      result = result.sort((a, b) => a.name.localeCompare(b.name));
-    }
+    // Sort by name
+    result = result.sort((a, b) => a.name.localeCompare(b.name));
     
     return result;
   })();
@@ -97,14 +86,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     return activities.filter(activity => activity.type === 'gemeinde');
   };
 
-  const getTotalPoints = () => {
-    return activities.reduce((sum, activity) => sum + activity.points, 0);
-  };
-
-  const getAveragePoints = () => {
-    if (activities.length === 0) return 0;
-    return Math.round(getTotalPoints() / activities.length);
-  };
 
   const getTypeColor = (type: string) => {
     switch (type) {
@@ -136,9 +117,9 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       <IonCard style={{
         margin: '16px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, #2dd36f 0%, #28ba62 100%)',
+        background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
         color: 'white',
-        boxShadow: '0 8px 32px rgba(45, 211, 111, 0.3)'
+        boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)'
       }}>
         <IonCardContent>
           <IonGrid>
@@ -156,23 +137,23 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={star} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                  <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                   <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getTotalPoints()}
+                    {getGemeindeActivities().length}
                   </h3>
                   <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Punkte gesamt
+                    Gemeinde
                   </p>
                 </div>
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={person} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                  <IonIcon icon={home} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                   <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getAveragePoints()}
+                    {getGottesdienstActivities().length}
                   </h3>
                   <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Ø Punkte
+                    Gottesdienst
                   </p>
                 </div>
               </IonCol>
@@ -181,88 +162,65 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         </IonCardContent>
       </IonCard>
 
-      {/* Controls Card */}
+      {/* Search and Filter */}
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '16px' }}>
-          <IonGrid>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem 
-                  lines="none" 
-                  style={{ 
-                    '--background': '#f8f9fa',
-                    '--border-radius': '8px',
-                    marginBottom: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    '--padding-start': '12px',
-                    '--padding-end': '12px',
-                    '--min-height': '44px'
-                  }}
-                >
-                  <IonIcon 
-                    icon={search} 
-                    slot="start" 
-                    style={{ 
-                      color: '#8e8e93',
-                      marginRight: '8px',
-                      fontSize: '1rem'
-                    }} 
-                  />
-                  <IonInput
-                    value={searchTerm}
-                    onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                    placeholder="Aktivität suchen..."
-                    style={{ 
-                      '--color': '#000',
-                      '--placeholder-color': '#8e8e93'
-                    }}
-                  />
-                </IonItem>
-              </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem button lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '8px', marginBottom: '12px' }} onClick={() => {
-                  presentActionSheet({
-                    header: 'Aktivitätstyp wählen',
-                    buttons: [
-                      { text: 'Alle Aktivitäten', handler: () => setSelectedType('alle') },
-                      { text: 'Gottesdienst', handler: () => setSelectedType('gottesdienst') },
-                      { text: 'Gemeinde', handler: () => setSelectedType('gemeinde') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}>
-                  <IonLabel>
-                    {selectedType === 'alle' ? 'Alle Aktivitäten' : 
-                     selectedType === 'gottesdienst' ? 'Gottesdienst' : 
-                     'Gemeinde'}
-                  </IonLabel>
-                </IonItem>
-              </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem button lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '8px' }} onClick={() => {
-                  presentActionSheet({
-                    header: 'Sortierung wählen',
-                    buttons: [
-                      { text: 'Nach Name sortieren', handler: () => setSortBy('name') },
-                      { text: 'Nach Punkte sortieren', handler: () => setSortBy('points') },
-                      { text: 'Nach Typ sortieren', handler: () => setSortBy('type') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}>
-                  <IonLabel>
-                    {sortBy === 'name' ? 'Nach Name sortieren' : 
-                     sortBy === 'points' ? 'Nach Punkte sortieren' : 
-                     'Nach Typ sortieren'}
-                  </IonLabel>
-                </IonItem>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+          {/* Search Bar */}
+          <IonItem 
+            lines="none" 
+            style={{ 
+              '--background': '#f8f9fa',
+              '--border-radius': '8px',
+              marginBottom: '16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              '--padding-start': '12px',
+              '--padding-end': '12px',
+              '--min-height': '44px'
+            }}
+          >
+            <IonIcon 
+              icon={search} 
+              slot="start" 
+              style={{ 
+                color: '#8e8e93',
+                marginRight: '8px',
+                fontSize: '1rem'
+              }} 
+            />
+            <IonInput
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Aktivität suchen..."
+              style={{ 
+                '--color': '#000',
+                '--placeholder-color': '#8e8e93'
+              }}
+            />
+          </IonItem>
+
+          {/* Tab Filter */}
+          <IonSegment 
+            value={selectedType} 
+            onIonChange={(e) => setSelectedType(e.detail.value as string)}
+            style={{ 
+              '--background': '#f8f9fa',
+              borderRadius: '8px',
+              padding: '4px'
+            }}
+          >
+            <IonSegmentButton value="alle">
+              <IonIcon icon={calendar} style={{ fontSize: '1rem', marginRight: '4px' }} />
+              <IonLabel>Alle</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="gemeinde">
+              <IonIcon icon={people} style={{ fontSize: '1rem', marginRight: '4px' }} />
+              <IonLabel>Gemeinde</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="gottesdienst">
+              <IonIcon icon={home} style={{ fontSize: '1rem', marginRight: '4px' }} />
+              <IonLabel>Gottesdienst</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
         </IonCardContent>
       </IonCard>
 
@@ -304,45 +262,33 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       {activity.name}
                     </h2>
                     
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <IonChip 
-                        color={getTypeColor(activity.type)}
-                        style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7
-                        }}
-                      >
-                        {getTypeText(activity.type)}
-                      </IonChip>
-                      
-                      <IonChip 
-                        color="tertiary"
-                        style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': 'rgba(112, 69, 246, 0.15)',
-                          '--color': '#7045f6'
-                        }}
-                      >
-                        {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                      </IonChip>
-                      
-                      {activity.category && (
-                        <IonChip 
-                          color="warning"
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(255, 204, 0, 0.15)',
-                            '--color': '#ffcc00'
-                          }}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      gap: '8px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <IonBadge 
+                          color={getTypeColor(activity.type)}
+                          style={{ fontSize: '0.75rem' }}
                         >
-                          {activity.category}
-                        </IonChip>
-                      )}
+                          {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                        </IonBadge>
+                        
+                        {activity.categories && activity.categories.length > 0 && (
+                          <span style={{ 
+                            fontSize: '0.8rem', 
+                            color: '#666',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            maxWidth: '120px'
+                          }}>
+                            {activity.categories.map(cat => cat.name).join(', ')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     {activity.description && (

@@ -1126,6 +1126,88 @@ db.serialize(() => {
     }
   });
   
+  // Migration 8: Remove old category columns from activities and events
+  console.log('⚡ Migration 8: Removing old category columns...');
+  
+  // Remove category from activities table
+  db.run(`CREATE TABLE activities_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    points INTEGER NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('gottesdienst', 'gemeinde')),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`, (err) => {
+    if (err && !err.message.includes('already exists')) {
+      console.error('Migration 8 activities new table error:', err);
+    } else {
+      db.run(`INSERT INTO activities_new SELECT id, name, points, type, created_at FROM activities`, (err) => {
+        if (err && !err.message.includes('no such table')) {
+          console.error('Migration 8 activities copy error:', err);
+        } else {
+          db.run(`DROP TABLE IF EXISTS activities`, (err) => {
+            if (err) {
+              console.error('Migration 8 activities drop error:', err);
+            } else {
+              db.run(`ALTER TABLE activities_new RENAME TO activities`, (err) => {
+                if (err && !err.message.includes('already exists')) {
+                  console.error('Migration 8 activities rename error:', err);
+                } else {
+                  console.log('✅ Migration 8: activities.category column removed');
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+  
+  // Remove category from events table
+  db.run(`CREATE TABLE events_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    event_date TEXT NOT NULL,
+    location TEXT,
+    location_maps_url TEXT,
+    points INTEGER DEFAULT 0,
+    type TEXT DEFAULT 'event',
+    max_participants INTEGER NOT NULL,
+    registration_opens_at TEXT,
+    registration_closes_at TEXT,
+    has_timeslots INTEGER DEFAULT 0,
+    is_series INTEGER DEFAULT 0,
+    series_id INTEGER,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES admins (id),
+    FOREIGN KEY (series_id) REFERENCES events (id)
+  )`, (err) => {
+    if (err && !err.message.includes('already exists')) {
+      console.error('Migration 8 events new table error:', err);
+    } else {
+      db.run(`INSERT INTO events_new SELECT id, name, description, event_date, location, location_maps_url, points, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, is_series, series_id, created_by, created_at FROM events`, (err) => {
+        if (err && !err.message.includes('no such table')) {
+          console.error('Migration 8 events copy error:', err);
+        } else {
+          db.run(`DROP TABLE IF EXISTS events`, (err) => {
+            if (err) {
+              console.error('Migration 8 events drop error:', err);
+            } else {
+              db.run(`ALTER TABLE events_new RENAME TO events`, (err) => {
+                if (err && !err.message.includes('already exists')) {
+                  console.error('Migration 8 events rename error:', err);
+                } else {
+                  console.log('✅ Migration 8: events.category column removed');
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+  
   // Only insert default data for new database
   if (!dbExists) {
     console.log('📝 Inserting default data...');
@@ -2382,7 +2464,6 @@ app.get('/api/activities', verifyToken, (req, res) => {
         name: row.name,
         points: row.points,
         type: row.type,
-        category: row.category, // Keep for backward compatibility
         categories: categories,
         created_at: row.created_at
       };
@@ -2398,7 +2479,7 @@ app.post('/api/activities', verifyToken, (req, res) => {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
-  const { name, points, type, category, category_ids } = req.body;
+  const { name, points, type, category_ids } = req.body;
   
   if (!name || !points || !type) {
     return res.status(400).json({ error: 'Name, points and type are required' });
@@ -2409,8 +2490,8 @@ app.post('/api/activities', verifyToken, (req, res) => {
   }
 
   // Create activity first
-  db.run("INSERT INTO activities (name, points, type, category) VALUES (?, ?, ?, ?)",
-         [name, points, type, category],
+  db.run("INSERT INTO activities (name, points, type) VALUES (?, ?, ?)",
+         [name, points, type],
          function(err) {
            if (err) {
              return res.status(500).json({ error: 'Database error' });
@@ -2437,7 +2518,6 @@ app.post('/api/activities', verifyToken, (req, res) => {
                    name, 
                    points,
                    type,
-                   category,
                    category_ids
                  });
                })
@@ -2450,8 +2530,7 @@ app.post('/api/activities', verifyToken, (req, res) => {
                id: activityId, 
                name, 
                points,
-               type,
-               category
+               type
              });
            }
          });
@@ -2465,7 +2544,7 @@ app.put('/api/activities/:id', verifyToken, (req, res) => {
   }
   
   const activityId = req.params.id;
-  const { name, points, type, category, category_ids } = req.body;
+  const { name, points, type, category_ids } = req.body;
   
   if (!name || !points || !type) {
     return res.status(400).json({ error: 'Name, points and type are required' });
@@ -2475,12 +2554,9 @@ app.put('/api/activities/:id', verifyToken, (req, res) => {
     return res.status(400).json({ error: 'Type must be gottesdienst or gemeinde' });
   }
   
-  // Handle category - can be empty string or null
-  const categoryValue = category && category.trim() ? category.trim() : null;
-  
-  // First update the activity
-  db.run("UPDATE activities SET name = ?, points = ?, type = ?, category = ? WHERE id = ?", 
-    [name, points, type, categoryValue, activityId], function(err) {
+  // Update the activity
+  db.run("UPDATE activities SET name = ?, points = ?, type = ? WHERE id = ?", 
+    [name, points, type, activityId], function(err) {
       if (err) {
         console.error('Database error updating activity:', err);
         return res.status(500).json({ error: 'Database error: ' + err.message });

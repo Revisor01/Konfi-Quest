@@ -111,7 +111,6 @@ module.exports = (db, verifyToken) => {
       location,
       location_maps_url,
       points,
-      category,
       category_ids,
       type,
       max_participants,
@@ -129,12 +128,12 @@ module.exports = (db, verifyToken) => {
     
     db.run(`INSERT INTO events (
       name, description, event_date, location, location_maps_url, 
-      points, category, type, max_participants, registration_opens_at, 
+      points, type, max_participants, registration_opens_at, 
       registration_closes_at, has_timeslots, is_series, series_id, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
       [
         name, description, event_date, location, location_maps_url,
-        points || 0, category || '', type || 'event', max_participants,
+        points || 0, type || 'event', max_participants,
         registration_opens_at, registration_closes_at, has_timeslots || 0,
         is_series || 0, series_id, req.user.id
       ], function(err) {
