@@ -1379,21 +1379,59 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Konfi Points API is running' });
 });
 
-// Admin login
+// Admin login - Enhanced for RBAC
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
   
-  db.get("SELECT * FROM admins WHERE username = ?", [username], (err, admin) => {
+  // First try new users table, then fallback to old admins table
+  db.get(`SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id,
+                 o.name as organization_name, o.slug as organization_slug,
+                 r.name as role_name, r.display_name as role_display_name
+          FROM users u
+          JOIN organizations o ON u.organization_id = o.id
+          LEFT JOIN roles r ON u.role_id = r.id
+          WHERE u.username = ? AND u.is_active = 1`, [username], (err, user) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' });
     }
     
-    if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    if (user && bcrypt.compareSync(password, user.password_hash)) {
+      // New RBAC user login
+      const token = jwt.sign({ 
+        id: user.id, 
+        type: 'admin', 
+        display_name: user.display_name,
+        organization_id: user.organization_id
+      }, JWT_SECRET, { expiresIn: '14d' });
+      
+      res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          username: user.username, 
+          display_name: user.display_name, 
+          organization_name: user.organization_name,
+          role_name: user.role_name,
+          role_display_name: user.role_display_name,
+          type: 'admin' 
+        } 
+      });
+      return;
     }
     
-    const token = jwt.sign({ id: admin.id, type: 'admin', display_name: admin.display_name }, JWT_SECRET, { expiresIn: '14d' });
-    res.json({ token, user: { id: admin.id, username: admin.username, display_name: admin.display_name, type: 'admin' } });
+    // Fallback to old admins table for backward compatibility
+    db.get("SELECT * FROM admins WHERE username = ?", [username], (err, admin) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      const token = jwt.sign({ id: admin.id, type: 'admin', display_name: admin.display_name }, JWT_SECRET, { expiresIn: '14d' });
+      res.json({ token, user: { id: admin.id, username: admin.username, display_name: admin.display_name, type: 'admin' } });
+    });
   });
 });
 
@@ -4234,3 +4272,23 @@ app.delete('/api/chat/rooms/:roomId/participants/:userId/:userType', verifyToken
 });
 
 // === ENDE CHAT SYSTEM ===
+
+// === RBAC SYSTEM ROUTES ===
+console.log('🔐 Loading RBAC middleware and routes...');
+
+// Import RBAC middleware
+const { verifyTokenRBAC, checkPermission, requireSameOrganization } = require('./middleware/rbac');
+
+// Import RBAC route modules
+const usersRoutes = require('./routes/users');
+const rolesRoutes = require('./routes/roles');
+const organizationsRoutes = require('./routes/organizations');
+
+// Use RBAC routes with /api prefix and correct parameters
+app.use('/api/users', usersRoutes(db, verifyTokenRBAC(db), checkPermission));
+app.use('/api/roles', rolesRoutes(db, verifyTokenRBAC(db), checkPermission));
+app.use('/api/organizations', organizationsRoutes(db, verifyTokenRBAC(db), checkPermission));
+
+console.log('✅ RBAC middleware and routes loaded successfully');
+
+// === ENDE RBAC SYSTEM ===
