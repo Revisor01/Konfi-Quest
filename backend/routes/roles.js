@@ -309,6 +309,90 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
   });
 
+  // Update role permissions
+  router.post('/:id/permissions', verifyToken, checkPermission('admin.permissions.manage'), (req, res) => {
+    const { id } = req.params;
+    const organizationId = req.user.organization_id;
+    const { permission_ids } = req.body;
+    
+    if (!Array.isArray(permission_ids)) {
+      return res.status(400).json({ error: 'permission_ids must be an array' });
+    }
+    
+    // Check if role exists in organization
+    db.get("SELECT id FROM roles WHERE id = ? AND organization_id = ?", [id, organizationId], (err, role) => {
+      if (err) {
+        console.error('Error checking role:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!role) {
+        return res.status(404).json({ error: 'Role not found in this organization' });
+      }
+      
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        
+        // Delete existing permissions
+        db.run("DELETE FROM role_permissions WHERE role_id = ?", [id], (err) => {
+          if (err) {
+            console.error('Error deleting role permissions:', err);
+            db.run("ROLLBACK");
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (permission_ids.length === 0) {
+            db.run("COMMIT", (err) => {
+              if (err) {
+                console.error('Error committing transaction:', err);
+                return res.status(500).json({ error: 'Database error' });
+              }
+              res.json({ 
+                message: 'All permissions removed from role',
+                permissions_updated: 0
+              });
+            });
+            return;
+          }
+          
+          // Add new permissions
+          let completed = 0;
+          let hasError = false;
+          
+          permission_ids.forEach(permissionId => {
+            db.run("INSERT INTO role_permissions (role_id, permission_id, granted) VALUES (?, ?, 1)",
+              [id, permissionId], (err) => {
+                if (err) {
+                  console.error('Error adding permission to role:', err);
+                  hasError = true;
+                }
+                
+                completed++;
+                if (completed === permission_ids.length) {
+                  if (hasError) {
+                    db.run("ROLLBACK");
+                    return res.status(500).json({ error: 'Failed to update some permissions' });
+                  } else {
+                    db.run("COMMIT", (err) => {
+                      if (err) {
+                        console.error('Error committing transaction:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                      }
+                      res.json({ 
+                        message: 'Role permissions updated successfully',
+                        permissions_updated: permission_ids.length
+                      });
+                    });
+                  }
+                }
+              }
+            );
+          });
+        });
+      });
+    });
+  });
+
   // Helper function to add permissions to role
   function addPermissionsToRole(roleId, permissions, callback) {
     if (permissions.length === 0) {

@@ -4283,11 +4283,13 @@ const { verifyTokenRBAC, checkPermission, requireSameOrganization } = require('.
 const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
+const permissionsRoutes = require('./routes/permissions');
 
 // Use RBAC routes with /api prefix and correct parameters
 app.use('/api/users', usersRoutes(db, verifyTokenRBAC(db), checkPermission));
 app.use('/api/roles', rolesRoutes(db, verifyTokenRBAC(db), checkPermission));
 app.use('/api/organizations', organizationsRoutes(db, verifyTokenRBAC(db), checkPermission));
+app.use('/api/permissions', permissionsRoutes(db, verifyTokenRBAC(db), checkPermission));
 
 console.log('✅ RBAC middleware and routes loaded successfully');
 
