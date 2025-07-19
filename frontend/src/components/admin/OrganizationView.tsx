@@ -46,7 +46,7 @@ interface Organization {
   display_name: string;
   description?: string;
   contact_email?: string;
-  website?: string;
+  website_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

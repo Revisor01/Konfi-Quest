@@ -44,7 +44,7 @@ interface Organization {
   display_name: string;
   description?: string;
   contact_email?: string;
-  website?: string;
+  website_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -75,7 +75,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     display_name: '',
     description: '',
     contact_email: '',
-    website: '',
+    website_url: '',
     is_active: true
   });
 
@@ -104,7 +104,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         display_name: orgData.display_name,
         description: orgData.description || '',
         contact_email: orgData.contact_email || '',
-        website: orgData.website || '',
+        website_url: orgData.website_url || '',
         is_active: orgData.is_active
       });
     } catch (err) {
@@ -131,13 +131,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     }
 
     // Validate website format if provided
-    if (formData.website.trim()) {
+    if (formData.website_url.trim()) {
       try {
-        const url = formData.website.trim();
+        const url = formData.website_url.trim();
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
-          formData.website = 'https://' + url;
+          formData.website_url = 'https://' + url;
         }
-        new URL(formData.website);
+        new URL(formData.website_url);
       } catch {
         setError('Ungültige Website-URL');
         return;
@@ -149,10 +149,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       // Prepare organization data
       const orgData: any = {
         name: formData.name.trim(),
+        slug: formData.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''),
         display_name: formData.display_name.trim(),
         description: formData.description.trim() || null,
         contact_email: formData.contact_email.trim() || null,
-        website: formData.website.trim() || null,
+        website_url: formData.website_url.trim() || null,
         is_active: formData.is_active
       };
 
@@ -279,8 +280,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonLabel position="stacked">Website</IonLabel>
               <IonInput
                 type="url"
-                value={formData.website}
-                onIonInput={(e) => setFormData({ ...formData, website: e.detail.value! })}
+                value={formData.website_url}
+                onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })}
                 placeholder="https://www.kirchspiel-west.de"
               />
             </IonItem>
