@@ -1131,30 +1131,37 @@ db.serialize(() => {
     if (hasCategory) {
       console.log('🔄 Migration 8: Migrating activities table...');
       
-      // Remove category from activities table
-      db.run(`CREATE TABLE activities_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        points INTEGER NOT NULL,
-        type TEXT NOT NULL CHECK (type IN ('gottesdienst', 'gemeinde')),
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`, (err) => {
-        if (err && !err.message.includes('already exists')) {
-          console.error('Migration 8 activities new table error:', err);
+      // Clean up any existing temp table first
+      db.run(`DROP TABLE IF EXISTS activities_new`, (err) => {
+        if (err) {
+          console.error('Migration 8 activities cleanup error:', err);
         } else {
-          db.run(`INSERT INTO activities_new SELECT id, name, points, type, created_at FROM activities`, (err) => {
+          // Remove category from activities table
+          db.run(`CREATE TABLE activities_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            points INTEGER NOT NULL,
+            type TEXT NOT NULL CHECK (type IN ('gottesdienst', 'gemeinde')),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )`, (err) => {
             if (err) {
-              console.error('Migration 8 activities copy error:', err);
+              console.error('Migration 8 activities new table error:', err);
             } else {
-              db.run(`DROP TABLE activities`, (err) => {
+              db.run(`INSERT INTO activities_new SELECT id, name, points, type, created_at FROM activities`, (err) => {
                 if (err) {
-                  console.error('Migration 8 activities drop error:', err);
+                  console.error('Migration 8 activities copy error:', err);
                 } else {
-                  db.run(`ALTER TABLE activities_new RENAME TO activities`, (err) => {
+                  db.run(`DROP TABLE activities`, (err) => {
                     if (err) {
-                      console.error('Migration 8 activities rename error:', err);
+                      console.error('Migration 8 activities drop error:', err);
                     } else {
-                      console.log('✅ Migration 8: activities.category column removed');
+                      db.run(`ALTER TABLE activities_new RENAME TO activities`, (err) => {
+                        if (err) {
+                          console.error('Migration 8 activities rename error:', err);
+                        } else {
+                          console.log('✅ Migration 8: activities.category column removed');
+                        }
+                      });
                     }
                   });
                 }
@@ -1180,43 +1187,50 @@ db.serialize(() => {
     if (hasCategory) {
       console.log('🔄 Migration 8: Migrating events table...');
       
-      // Remove category from events table
-      db.run(`CREATE TABLE events_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        event_date TEXT NOT NULL,
-        location TEXT,
-        location_maps_url TEXT,
-        points INTEGER DEFAULT 0,
-        type TEXT DEFAULT 'event',
-        max_participants INTEGER NOT NULL,
-        registration_opens_at TEXT,
-        registration_closes_at TEXT,
-        has_timeslots INTEGER DEFAULT 0,
-        is_series INTEGER DEFAULT 0,
-        series_id INTEGER,
-        created_by INTEGER,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (created_by) REFERENCES admins (id),
-        FOREIGN KEY (series_id) REFERENCES events (id)
-      )`, (err) => {
-        if (err && !err.message.includes('already exists')) {
-          console.error('Migration 8 events new table error:', err);
+      // Clean up any existing temp table first
+      db.run(`DROP TABLE IF EXISTS events_new`, (err) => {
+        if (err) {
+          console.error('Migration 8 events cleanup error:', err);
         } else {
-          db.run(`INSERT INTO events_new SELECT id, name, description, event_date, location, location_maps_url, points, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, is_series, series_id, created_by, created_at FROM events`, (err) => {
+          // Remove category from events table
+          db.run(`CREATE TABLE events_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            event_date TEXT NOT NULL,
+            location TEXT,
+            location_maps_url TEXT,
+            points INTEGER DEFAULT 0,
+            type TEXT DEFAULT 'event',
+            max_participants INTEGER NOT NULL,
+            registration_opens_at TEXT,
+            registration_closes_at TEXT,
+            has_timeslots INTEGER DEFAULT 0,
+            is_series INTEGER DEFAULT 0,
+            series_id INTEGER,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES admins (id),
+            FOREIGN KEY (series_id) REFERENCES events (id)
+          )`, (err) => {
             if (err) {
-              console.error('Migration 8 events copy error:', err);
+              console.error('Migration 8 events new table error:', err);
             } else {
-              db.run(`DROP TABLE events`, (err) => {
+              db.run(`INSERT INTO events_new SELECT id, name, description, event_date, location, location_maps_url, points, type, max_participants, registration_opens_at, registration_closes_at, has_timeslots, is_series, series_id, created_by, created_at FROM events`, (err) => {
                 if (err) {
-                  console.error('Migration 8 events drop error:', err);
+                  console.error('Migration 8 events copy error:', err);
                 } else {
-                  db.run(`ALTER TABLE events_new RENAME TO events`, (err) => {
+                  db.run(`DROP TABLE events`, (err) => {
                     if (err) {
-                      console.error('Migration 8 events rename error:', err);
+                      console.error('Migration 8 events drop error:', err);
                     } else {
-                      console.log('✅ Migration 8: events.category column removed');
+                      db.run(`ALTER TABLE events_new RENAME TO events`, (err) => {
+                        if (err) {
+                          console.error('Migration 8 events rename error:', err);
+                        } else {
+                          console.log('✅ Migration 8: events.category column removed');
+                        }
+                      });
                     }
                   });
                 }
