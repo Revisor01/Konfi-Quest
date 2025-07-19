@@ -42,14 +42,13 @@ module.exports = (db, verifyToken, checkPermission) => {
              COUNT(DISTINCT j.id) as jahrgang_count,
              COUNT(DISTINCT a.id) as activity_count,
              COUNT(DISTINCT e.id) as event_count,
-             COUNT(DISTINCT cb.id) as badge_count
+             0 as badge_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
       LEFT JOIN konfis k ON o.id = k.organization_id
       LEFT JOIN jahrgaenge j ON o.id = j.organization_id
       LEFT JOIN activities a ON o.id = a.organization_id
       LEFT JOIN events e ON o.id = e.organization_id
-      LEFT JOIN custom_badges cb ON o.id = cb.organization_id
       WHERE o.id = ?
       GROUP BY o.id
     `;
@@ -79,14 +78,13 @@ module.exports = (db, verifyToken, checkPermission) => {
              COUNT(DISTINCT j.id) as jahrgang_count,
              COUNT(DISTINCT a.id) as activity_count,
              COUNT(DISTINCT e.id) as event_count,
-             COUNT(DISTINCT cb.id) as badge_count
+             0 as badge_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
       LEFT JOIN konfis k ON o.id = k.organization_id
       LEFT JOIN jahrgaenge j ON o.id = j.organization_id
       LEFT JOIN activities a ON o.id = a.organization_id
       LEFT JOIN events e ON o.id = e.organization_id
-      LEFT JOIN custom_badges cb ON o.id = cb.organization_id
       WHERE o.id = ?
       GROUP BY o.id
     `;
