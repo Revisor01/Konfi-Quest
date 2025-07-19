@@ -1244,6 +1244,24 @@ db.serialize(() => {
     }
   });
   
+  // RBAC Migration: Transform existing system to multi-organization
+  console.log('🚀 Checking RBAC Migration...');
+  db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='organizations'`, (err, row) => {
+    if (err) {
+      console.error('RBAC check error:', err);
+    } else if (!row) {
+      console.log('🔄 Running RBAC Migration...');
+      const { runRBACMigration } = require('./migrations/rbac-migration');
+      runRBACMigration(db).then(() => {
+        console.log('✅ RBAC Migration completed successfully');
+      }).catch(err => {
+        console.error('❌ RBAC Migration failed:', err);
+      });
+    } else {
+      console.log('✅ RBAC Migration: organizations table already exists');
+    }
+  });
+  
   // Only insert default data for new database
   if (!dbExists) {
     console.log('📝 Inserting default data...');
@@ -2155,7 +2173,7 @@ app.get('/api/konfis', verifyToken, (req, res) => {
       
       // Get all activities for all konfis
       const activitiesQuery = `
-        SELECT ka.konfi_id, a.name, a.points, a.type, a.category, ka.completed_date as date, 
+        SELECT ka.konfi_id, a.name, a.points, a.type, ka.completed_date as date, 
                 COALESCE(adm.display_name, 'Unbekannt') as admin, ka.id
         FROM konfi_activities ka
         JOIN activities a ON ka.activity_id = a.id
@@ -2275,7 +2293,7 @@ app.get('/api/konfis/:id', verifyToken, (req, res) => {
     
     // Get activities separately
     const activitiesQuery = `
-  SELECT a.name, a.points, a.type, a.category, ka.completed_date as date, 
+  SELECT a.name, a.points, a.type, ka.completed_date as date, 
           COALESCE(adm.display_name, 'Unbekannt') as admin, ka.id
   FROM konfi_activities ka
   JOIN activities a ON ka.activity_id = a.id
