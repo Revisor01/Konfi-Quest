@@ -56,6 +56,10 @@ import AdminOrganizationsPage from './components/admin/pages/AdminOrganizationsP
 import ChatPage from './components/chat/ChatPage';
 import KonfiDetailView from './components/admin/views/KonfiDetailView';
 import EventDetailView from './components/admin/views/EventDetailView';
+import KonfiDashboardPage from './components/konfi/pages/KonfiDashboardPage';
+import KonfiBadgesPage from './components/konfi/pages/KonfiBadgesPage';
+import KonfiRequestsPage from './components/konfi/pages/KonfiRequestsPage';
+import KonfiProfilePage from './components/konfi/pages/KonfiProfilePage';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -289,46 +293,15 @@ const AppContent: React.FC = () => {
               </ModalProvider>
             ) : (
               // Konfi Tabs
-              <IonTabs>
+              <ModalProvider>
+                <IonTabs>
                 <IonRouterOutlet>
                   <Redirect exact path="/konfi" to="/konfi/dashboard" />
-                  <Route exact path="/konfi/dashboard" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Dashboard</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Konfi Dashboard (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
-                  <Route exact path="/konfi/badges" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Badges</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Konfi Badges (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
+                  <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
+                  <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
                   <Route exact path="/konfi/chat" component={ChatPage} />
-                  <Route exact path="/konfi/requests" render={() => (
-                    <IonPage>
-                      <IonHeader>
-                        <IonToolbar>
-                          <IonTitle>Anfragen</IonTitle>
-                        </IonToolbar>
-                      </IonHeader>
-                      <IonContent>
-                        <p>Konfi Requests (TODO: Implement)</p>
-                      </IonContent>
-                    </IonPage>
-                  )} />
+                  <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
+                  <Route exact path="/konfi/profile" component={KonfiProfilePage} />
                   <Redirect exact from="/" to="/konfi/dashboard" />
                 </IonRouterOutlet>
 
@@ -346,11 +319,16 @@ const AppContent: React.FC = () => {
                     <IonLabel>Chat</IonLabel>
                   </IonTabButton>
                   <IonTabButton tab="requests" href="/konfi/requests">
-                    <IonIcon icon={person} />
+                    <IonIcon icon={document} />
                     <IonLabel>Anfragen</IonLabel>
                   </IonTabButton>
+                  <IonTabButton tab="profile" href="/konfi/profile">
+                    <IonIcon icon={person} />
+                    <IonLabel>Profil</IonLabel>
+                  </IonTabButton>
                 </IonTabBar>
-              </IonTabs>
+                </IonTabs>
+              </ModalProvider>
             )
           )} />
         </IonRouterOutlet>
