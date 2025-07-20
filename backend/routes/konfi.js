@@ -14,13 +14,11 @@ module.exports = (db, verifyToken) => {
     
     // Get konfi basic info 
     const konfiQuery = `
-      SELECT k.*, j.name as jahrgang_name
+      SELECT k.*, j.name as jahrgang_name, j.confirmation_date
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
       WHERE k.id = ?
     `;
-    
-    // Simplified for now - tables might not exist yet
     
     db.get(konfiQuery, [konfiId], (err, konfi) => {
       if (err) {
@@ -32,12 +30,64 @@ module.exports = (db, verifyToken) => {
         return res.status(404).json({ error: 'Konfi not found' });
       }
       
-      // Return simplified dashboard data
-      res.json({
-        konfi: konfi,
-        recent_activities: [],
-        recent_badges: [],
-        total_points: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0)
+      // Get badges for this konfi
+      const badgesQuery = `
+        SELECT cb.id, cb.name, cb.description, cb.icon_name, cb.criteria_type, cb.criteria_value,
+               keb.earned_at
+        FROM custom_badges cb
+        LEFT JOIN konfi_earned_badges keb ON cb.id = keb.badge_id AND keb.konfi_id = ?
+        WHERE keb.earned_at IS NOT NULL
+        ORDER BY keb.earned_at DESC
+        LIMIT 3
+      `;
+      
+      db.all(badgesQuery, [konfiId], (err, badges) => {
+        if (err) {
+          console.error('Error fetching badges:', err);
+          badges = [];
+        }
+        
+        // Get ranking for jahrgang
+        const rankingQuery = `
+          SELECT k.id, k.display_name, 
+                 (k.gottesdienst_points + k.gemeinde_points) as points
+          FROM konfis k
+          WHERE k.jahrgang_id = ?
+          ORDER BY points DESC
+          LIMIT 3
+        `;
+        
+        db.all(rankingQuery, [konfi.jahrgang_id], (err, ranking) => {
+          if (err) {
+            console.error('Error fetching ranking:', err);
+            ranking = [];
+          }
+          
+          // Add initials to ranking
+          const rankingWithInitials = ranking.map(r => ({
+            ...r,
+            initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
+          }));
+          
+          // Calculate days to confirmation
+          let daysToConfirmation = null;
+          if (konfi.confirmation_date) {
+            const confirmationDate = new Date(konfi.confirmation_date);
+            const now = new Date();
+            const diffTime = confirmationDate.getTime() - now.getTime();
+            daysToConfirmation = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          }
+          
+          // Return dashboard data
+          res.json({
+            konfi: konfi,
+            recent_badges: badges,
+            ranking: rankingWithInitials,
+            total_points: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0),
+            days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
+            confirmation_date: konfi.confirmation_date
+          });
+        });
       });
     });
   });
@@ -51,7 +101,7 @@ module.exports = (db, verifyToken) => {
     const konfiId = req.user.id;
     
     const query = `
-      SELECT k.*, j.name as jahrgang_name
+      SELECT k.*, j.name as jahrgang_name, j.year as jahrgang_year
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
       WHERE k.id = ?
@@ -70,7 +120,66 @@ module.exports = (db, verifyToken) => {
       // Don't send sensitive data
       delete konfi.password_hash;
       
-      res.json(konfi);
+      // Get additional profile stats
+      const statsQuery = `
+        SELECT 
+          COUNT(DISTINCT keb.badge_id) as badge_count,
+          COUNT(DISTINCT ar.id) as activity_count,
+          COUNT(DISTINCT ker.event_id) as event_count,
+          COUNT(DISTINCT CASE WHEN ar.status = 'pending' THEN ar.id END) as pending_requests
+        FROM konfis k
+        LEFT JOIN konfi_earned_badges keb ON k.id = keb.konfi_id
+        LEFT JOIN activity_requests ar ON k.id = ar.konfi_id
+        LEFT JOIN konfi_event_registrations ker ON k.id = ker.konfi_id
+        WHERE k.id = ?
+      `;
+      
+      db.get(statsQuery, [konfiId], (err, stats) => {
+        if (err) {
+          console.error('Error fetching konfi stats:', err);
+          stats = { badge_count: 0, activity_count: 0, event_count: 0, pending_requests: 0 };
+        }
+        
+        // Get ranking position
+        const rankingQuery = `
+          SELECT COUNT(*) + 1 as rank_in_jahrgang,
+                 (SELECT COUNT(*) FROM konfis WHERE jahrgang_id = ?) as total_in_jahrgang
+          FROM konfis 
+          WHERE jahrgang_id = ? 
+          AND (gottesdienst_points + gemeinde_points) > ?
+        `;
+        
+        const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
+        
+        db.get(rankingQuery, [konfi.jahrgang_id, konfi.jahrgang_id, totalPoints], (err, ranking) => {
+          if (err) {
+            console.error('Error fetching ranking:', err);
+            ranking = { rank_in_jahrgang: null, total_in_jahrgang: null };
+          }
+          
+          // Mock progress overview for now (can be enhanced later)
+          const progressOverview = {
+            achievements: {
+              total_activities: stats.activity_count || 0,
+              total_events: stats.event_count || 0,
+              total_badges: stats.badge_count || 0
+            }
+          };
+          
+          res.json({
+            ...konfi,
+            total_points: totalPoints,
+            badge_count: stats.badge_count || 0,
+            activity_count: stats.activity_count || 0,
+            event_count: stats.event_count || 0,
+            pending_requests: stats.pending_requests || 0,
+            rank_in_jahrgang: ranking.rank_in_jahrgang,
+            total_in_jahrgang: ranking.total_in_jahrgang,
+            recent_activities: [], // Could be enhanced
+            progress_overview: progressOverview
+          });
+        });
+      });
     });
   });
 

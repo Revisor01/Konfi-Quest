@@ -242,37 +242,67 @@ const KonfiDashboardPage: React.FC = () => {
               Deine Badges
             </h2>
             
-            {dashboardData.recent_badges.length > 0 ? (
+            {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 ? (
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {dashboardData.recent_badges.map((badge, index) => (
-                  <IonBadge 
-                    key={index}
-                    color="warning"
-                    style={{ 
-                      padding: '8px 12px',
-                      fontSize: '0.9rem',
-                      borderRadius: '12px'
+                  <div 
+                    key={badge.id || index}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                      color: 'white',
+                      minWidth: '80px',
+                      boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)'
                     }}
                   >
-                    🏆 {badge.name || 'Badge'}
-                  </IonBadge>
+                    <div style={{ fontSize: '1.8rem', marginBottom: '4px' }}>
+                      {badge.icon_name || '🏆'}
+                    </div>
+                    <span style={{ 
+                      fontSize: '0.8rem', 
+                      fontWeight: '600',
+                      textAlign: 'center',
+                      lineHeight: '1.2'
+                    }}>
+                      {badge.name}
+                    </span>
+                  </div>
                 ))}
               </div>
             ) : (
-              <p style={{ 
-                textAlign: 'center', 
-                color: '#666', 
-                fontSize: '0.9rem',
-                margin: '0'
-              }}>
-                Noch keine Badges erreicht. Sammle Punkte um dein erstes Badge zu bekommen! 🎯
-              </p>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  fontSize: '3rem', 
+                  marginBottom: '12px', 
+                  opacity: 0.3 
+                }}>
+                  🏆
+                </div>
+                <p style={{ 
+                  color: '#666', 
+                  fontSize: '0.9rem',
+                  margin: '0 0 8px 0'
+                }}>
+                  Noch keine Badges erreicht
+                </p>
+                <p style={{ 
+                  color: '#999', 
+                  fontSize: '0.8rem',
+                  margin: '0'
+                }}>
+                  Sammle Punkte um dein erstes Badge zu bekommen! 🎯
+                </p>
+              </div>
             )}
           </IonCardContent>
         </IonCard>
 
         {/* Top 3 Ranking */}
-        {dashboardData.ranking && (
+        {dashboardData.ranking && dashboardData.ranking.length > 0 && (
           <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
             <IonCardContent style={{ padding: '20px' }}>
               <h2 style={{ 

@@ -456,7 +456,7 @@ const KonfiProfilePage: React.FC = () => {
         </IonCard>
 
         {/* Next Badge Progress */}
-        {profile.progress_overview.next_badge && (
+        {profile.progress_overview?.next_badge && (
           <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
             <IonCardContent>
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
