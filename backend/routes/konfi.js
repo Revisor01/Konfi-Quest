@@ -12,38 +12,15 @@ module.exports = (db, verifyToken) => {
     
     const konfiId = req.user.id;
     
-    // Get konfi basic info with points
+    // Get konfi basic info 
     const konfiQuery = `
-      SELECT k.*, j.name as jahrgang_name,
-             COALESCE(SUM(ar.points), 0) as total_points,
-             COALESCE(SUM(bp.points), 0) as bonus_points
+      SELECT k.*, j.name as jahrgang_name
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
-      LEFT JOIN activity_records ar ON k.id = ar.konfi_id
-      LEFT JOIN bonus_points bp ON k.id = bp.konfi_id
       WHERE k.id = ?
-      GROUP BY k.id
     `;
     
-    // Get recent activities
-    const activitiesQuery = `
-      SELECT ar.*, a.name as activity_name, a.points as activity_points
-      FROM activity_records ar
-      JOIN activities a ON ar.activity_id = a.id
-      WHERE ar.konfi_id = ?
-      ORDER BY ar.created_at DESC
-      LIMIT 5
-    `;
-    
-    // Get earned badges
-    const badgesQuery = `
-      SELECT keb.*, cb.name as badge_name, cb.icon, cb.color
-      FROM konfi_earned_badges keb
-      JOIN custom_badges cb ON keb.badge_id = cb.id
-      WHERE keb.konfi_id = ?
-      ORDER BY keb.earned_at DESC
-      LIMIT 5
-    `;
+    // Simplified for now - tables might not exist yet
     
     db.get(konfiQuery, [konfiId], (err, konfi) => {
       if (err) {
@@ -55,25 +32,12 @@ module.exports = (db, verifyToken) => {
         return res.status(404).json({ error: 'Konfi not found' });
       }
       
-      db.all(activitiesQuery, [konfiId], (err, activities) => {
-        if (err) {
-          console.error('Error fetching activities:', err);
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        db.all(badgesQuery, [konfiId], (err, badges) => {
-          if (err) {
-            console.error('Error fetching badges:', err);
-            return res.status(500).json({ error: 'Database error' });
-          }
-          
-          res.json({
-            konfi: konfi,
-            recent_activities: activities,
-            recent_badges: badges,
-            total_points: (konfi.total_points || 0) + (konfi.bonus_points || 0)
-          });
-        });
+      // Return simplified dashboard data
+      res.json({
+        konfi: konfi,
+        recent_activities: [],
+        recent_badges: [],
+        total_points: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0)
       });
     });
   });
