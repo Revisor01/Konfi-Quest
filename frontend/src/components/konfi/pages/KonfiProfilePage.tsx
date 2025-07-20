@@ -543,15 +543,15 @@ const KonfiProfilePage: React.FC = () => {
             
             <IonItem button onClick={() => {
               setEditData({
-                display_name: profile.display_name,
-                email: profile.email || ''
+                display_name: profile?.display_name || user?.display_name || '',
+                email: profile?.email || user?.email || ''
               });
               setIsEditModalOpen(true);
             }}>
               <IonIcon icon={person} slot="start" color="primary" />
               <IonLabel>
-                <h3>Profil bearbeiten</h3>
-                <p>Name und E-Mail ändern</p>
+                <h3>E-Mail-Adresse ändern</h3>
+                <p>{user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen'}</p>
               </IonLabel>
               <IonIcon icon={create} slot="end" style={{ color: '#ccc' }} />
             </IonItem>

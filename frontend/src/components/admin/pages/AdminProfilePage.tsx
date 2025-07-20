@@ -51,9 +51,9 @@ const AdminProfilePage: React.FC = () => {
     confirm: false
   });
 
-  // Email form state
+  // Email form state - Initialize with current user email if available
   const [emailData, setEmailData] = useState({
-    email: ''
+    email: user?.email || ''
   });
 
   const handleChangePassword = async () => {
@@ -174,11 +174,14 @@ const AdminProfilePage: React.FC = () => {
               Konto-Einstellungen
             </h3>
             
-            <IonItem button onClick={() => setIsEmailModalOpen(true)}>
+            <IonItem button onClick={() => {
+              setEmailData({ email: user?.email || '' });
+              setIsEmailModalOpen(true);
+            }}>
               <IonIcon icon={mail} slot="start" color="primary" />
               <IonLabel>
                 <h3>E-Mail-Adresse ändern</h3>
-                <p>E-Mail für Benachrichtigungen und Passwort-Reset</p>
+                <p>{user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen und Passwort-Reset'}</p>
               </IonLabel>
             </IonItem>
 

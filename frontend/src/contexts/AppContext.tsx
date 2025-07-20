@@ -6,6 +6,7 @@ interface User {
   type: 'admin' | 'konfi';
   display_name: string;
   username?: string;
+  email?: string;
 }
 
 interface AppContextType {
