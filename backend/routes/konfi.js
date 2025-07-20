@@ -89,11 +89,11 @@ module.exports = (db, verifyToken) => {
         
         const badgesQuery = `
           SELECT cb.id, cb.name, cb.description, cb.icon_name, cb.criteria_type, cb.criteria_value,
-                 keb.earned_at
+                 kb.earned_at
           FROM custom_badges cb
-          LEFT JOIN konfi_earned_badges keb ON cb.id = keb.badge_id AND keb.konfi_id = ?
-          WHERE keb.earned_at IS NOT NULL
-          ORDER BY keb.earned_at DESC
+          LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = ?
+          WHERE kb.earned_at IS NOT NULL
+          ORDER BY kb.earned_at DESC
           LIMIT 3
         `;
         
@@ -163,7 +163,7 @@ module.exports = (db, verifyToken) => {
     const konfiId = req.user.id;
     
     const query = `
-      SELECT k.*, k.name as display_name, j.name as jahrgang_name, j.year as jahrgang_year
+      SELECT k.*, k.name as display_name, j.name as jahrgang_name
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
       WHERE k.id = ?
@@ -309,10 +309,9 @@ module.exports = (db, verifyToken) => {
     
     // Simplified query to match existing table structure
     const query = `
-      SELECT a.*, c.name as category_name
+      SELECT a.*, a.name as title, a.category as category_name
       FROM activities a
-      LEFT JOIN categories c ON a.category_id = c.id
-      ORDER BY c.name, a.title
+      ORDER BY a.category, a.name
     `;
     
     db.all(query, (err, activities) => {
@@ -343,10 +342,10 @@ module.exports = (db, verifyToken) => {
       // Get all badges with earned status
       const query = `
         SELECT cb.*, 
-               CASE WHEN keb.konfi_id IS NOT NULL THEN 1 ELSE 0 END as earned,
-               keb.earned_at
+               CASE WHEN kb.konfi_id IS NOT NULL THEN 1 ELSE 0 END as earned,
+               kb.earned_at
         FROM custom_badges cb
-        LEFT JOIN konfi_earned_badges keb ON cb.id = keb.badge_id AND keb.konfi_id = ?
+        LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = ?
         ORDER BY earned DESC, cb.name
       `;
       
@@ -379,9 +378,9 @@ module.exports = (db, verifyToken) => {
       const statsQuery = `
         SELECT 
           COUNT(cb.id) as total_badges,
-          COUNT(keb.badge_id) as earned_badges
+          COUNT(kb.badge_id) as earned_badges
         FROM custom_badges cb
-        LEFT JOIN konfi_earned_badges keb ON cb.id = keb.badge_id AND keb.konfi_id = ?
+        LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = ?
       `;
       
       db.get(statsQuery, [konfiId], (err, stats) => {
