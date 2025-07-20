@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonContent,
@@ -21,6 +22,7 @@ import { loginWithAutoDetection } from '../../services/auth';
 
 const LoginView: React.FC = () => {
   const { setError, setSuccess, setUser } = useApp();
+  const history = useHistory();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,8 +37,14 @@ const LoginView: React.FC = () => {
     try {
       const user = await loginWithAutoDetection(username, password);
       setSuccess('Erfolgreich angemeldet');
-      // Don't reload, let App.tsx handle the routing based on user type
       setUser(user);
+      
+      // Explicit navigation based on user type
+      if (user.type === 'admin') {
+        history.replace('/admin/konfis');
+      } else {
+        history.replace('/konfi/dashboard');
+      }
     } catch (err: any) {
       setError('Ungültige Anmeldedaten: ' + (err.response?.data?.error || err.message));
     } finally {

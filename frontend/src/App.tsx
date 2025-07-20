@@ -141,7 +141,7 @@ const AppContent: React.FC = () => {
               <ModalProvider>
                 <IonTabs>
                   <IonRouterOutlet>
-                  <Redirect exact path="/admin" to="/admin/konfis" />
+                  <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
                   <Route exact path="/admin/konfis" component={AdminKonfisPage} />
                   <Route path="/admin/konfis/:id" render={(props) => {
                     const konfiId = parseInt(props.match.params.id);
@@ -238,7 +238,7 @@ const AppContent: React.FC = () => {
                     </IonPage>
                   )} />
                   <Route exact path="/admin/profile" component={AdminProfilePage} />
-                  <Redirect exact from="/" to="/admin/konfis" />
+                  <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
                 </IonRouterOutlet>
 
                 <IonTabBar slot="bottom">
@@ -278,14 +278,14 @@ const AppContent: React.FC = () => {
               <ModalProvider>
                 <IonTabs>
                 <IonRouterOutlet>
-                  <Redirect exact path="/konfi" to="/konfi/dashboard" />
+                  <Route exact path="/konfi" render={() => <Redirect to="/konfi/dashboard" />} />
                   <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
                   <Route exact path="/konfi/events" component={KonfiEventsPage} />
                   <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
                   <Route exact path="/konfi/chat" component={ChatPage} />
                   <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
                   <Route exact path="/konfi/profile" component={KonfiProfilePage} />
-                  <Redirect exact from="/" to="/konfi/dashboard" />
+                  <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
                 </IonRouterOutlet>
 
                 <IonTabBar slot="bottom">
