@@ -13,6 +13,7 @@ interface AppContextType {
   loading: boolean;
   error: string;
   success: string;
+  setUser: (user: User | null) => void;
   setError: (error: string) => void;
   setSuccess: (success: string) => void;
   clearMessages: () => void;
@@ -45,6 +46,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loading,
     error,
     success,
+    setUser,
     setError,
     setSuccess,
     clearMessages,
