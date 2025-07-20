@@ -1435,33 +1435,7 @@ app.post('/api/admin/login', (req, res) => {
   });
 });
 
-// Konfi login
-app.post('/api/konfi/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
-    if (!konfi || !bcrypt.compareSync(password, konfi.password_hash)) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    
-    const token = jwt.sign({ id: konfi.id, type: 'konfi', display_name: konfi.name }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ 
-      token, 
-      user: { 
-        id: konfi.id, 
-        name: konfi.name,
-        display_name: konfi.name, 
-        username: konfi.username,
-        jahrgang: konfi.jahrgang_name,
-        type: 'konfi' 
-      } 
-    });
-  });
-});
+// Note: Konfi login is now handled in routes/konfi.js module
 
 // === BADGE MANAGEMENT ===
 
