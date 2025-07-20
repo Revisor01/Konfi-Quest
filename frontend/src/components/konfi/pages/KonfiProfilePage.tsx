@@ -214,7 +214,8 @@ const KonfiProfilePage: React.FC = () => {
     });
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | undefined) => {
+    if (!name) return '??';
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -326,7 +327,7 @@ const KonfiProfilePage: React.FC = () => {
                   fontWeight: '600',
                   fontSize: '1.5rem'
                 }}>
-                  {getInitials(profile.display_name)}
+                  {getInitials(profile.display_name || profile.name)}
                 </div>
               </IonAvatar>
               
