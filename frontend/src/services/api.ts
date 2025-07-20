@@ -23,10 +23,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('konfi_token');
-      localStorage.removeItem('konfi_user');
-      window.location.href = '/';
+      // Don't redirect during login attempts
+      const isLoginRequest = error.config?.url?.includes('/login');
+      if (!isLoginRequest) {
+        // Token expired or invalid
+        localStorage.removeItem('konfi_token');
+        localStorage.removeItem('konfi_user');
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
