@@ -207,7 +207,7 @@ const KonfiProfilePage: React.FC = () => {
           handler: () => {
             localStorage.removeItem('konfi_token');
             localStorage.removeItem('konfi_user');
-            window.location.reload();
+            window.location.href = '/';
           }
         }
       ]

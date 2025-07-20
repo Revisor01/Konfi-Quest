@@ -115,11 +115,18 @@ module.exports = (db, verifyToken, checkPermission) => {
       contact_email,
       contact_phone,
       address,
-      website_url
+      website_url,
+      admin_username,
+      admin_password,
+      admin_display_name
     } = req.body;
     
     if (!name || !slug || !display_name) {
       return res.status(400).json({ error: 'Name, slug, and display_name are required' });
+    }
+    
+    if (!admin_username || !admin_password || !admin_display_name) {
+      return res.status(400).json({ error: 'Admin username, password, and display name are required' });
     }
     
     db.run(`INSERT INTO organizations (
@@ -140,12 +147,13 @@ module.exports = (db, verifyToken, checkPermission) => {
         
         // Create default roles for the organization
         const defaultRoles = [
-          { name: 'admin', display_name: 'Pastor', description: 'Vollzugriff auf alle Funktionen', is_system_role: 1 },
-          { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: 1 },
-          { name: 'helper', display_name: 'Helfer:in', description: 'Kann zugewiesene Jahrgänge anzeigen', is_system_role: 1 }
+          { name: 'admin', display_name: 'Hauptamt', description: 'Vollzugriff auf alle Funktionen', is_system_role: 1 },
+          { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: 1 }
         ];
         
         let rolesCreated = 0;
+        let adminRoleId = null;
+        
         defaultRoles.forEach(role => {
           db.run(`INSERT INTO roles (organization_id, name, display_name, description, is_system_role) 
                   VALUES (?, ?, ?, ?, ?)`,
@@ -156,16 +164,46 @@ module.exports = (db, verifyToken, checkPermission) => {
                 return;
               }
               
+              if (role.name === 'admin') {
+                adminRoleId = this.lastID;
+              }
+              
               rolesCreated++;
               if (rolesCreated === defaultRoles.length) {
-                res.json({ 
-                  id: organizationId, 
-                  message: 'Organization created successfully with default roles' 
-                });
+                createAdminUser();
               }
             }
           );
         });
+        
+        function createAdminUser() {
+          const bcrypt = require('bcrypt');
+          const saltRounds = 10;
+          
+          bcrypt.hash(admin_password, saltRounds, (err, hashedPassword) => {
+            if (err) {
+              console.error('Error hashing password:', err);
+              return res.status(500).json({ error: 'Failed to create admin user' });
+            }
+            
+            db.run(`INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active) 
+                    VALUES (?, ?, ?, ?, ?, ?, 1)`,
+              [organizationId, adminRoleId, admin_username, contact_email, hashedPassword, admin_display_name],
+              function(err) {
+                if (err) {
+                  console.error('Error creating admin user:', err);
+                  return res.status(500).json({ error: 'Organization created but failed to create admin user' });
+                }
+                
+                res.json({ 
+                  id: organizationId, 
+                  admin_user_id: this.lastID,
+                  message: 'Organization created successfully with default roles and admin user' 
+                });
+              }
+            );
+          });
+        }
       }
     );
   });

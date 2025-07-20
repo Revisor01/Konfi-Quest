@@ -76,7 +76,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     description: '',
     contact_email: '',
     website_url: '',
-    is_active: true
+    is_active: true,
+    admin_username: '',
+    admin_password: '',
+    admin_display_name: ''
   });
 
   // Organization data
@@ -95,17 +98,22 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     
     setLoading(true);
     try {
+      console.log('Loading organization:', organizationId);
       const response = await api.get(`/organizations/${organizationId}`);
       const orgData = response.data;
+      console.log('Organization data received:', orgData);
       
       setOrganization(orgData);
       setFormData({
-        name: orgData.name,
-        display_name: orgData.display_name,
+        name: orgData.name || '',
+        display_name: orgData.display_name || '',
         description: orgData.description || '',
         contact_email: orgData.contact_email || '',
         website_url: orgData.website_url || '',
-        is_active: orgData.is_active
+        is_active: orgData.is_active !== undefined ? orgData.is_active : true,
+        admin_username: '',
+        admin_password: '',
+        admin_display_name: ''
       });
     } catch (err) {
       setError('Fehler beim Laden der Organisation');
@@ -119,6 +127,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     if (!formData.name.trim() || !formData.display_name.trim()) {
       setError('Name und Anzeigename sind erforderlich');
       return;
+    }
+
+    // Validate admin fields for new organizations
+    if (!isEditMode) {
+      if (!formData.admin_username.trim() || !formData.admin_password.trim() || !formData.admin_display_name.trim()) {
+        setError('Admin-Benutzername, Passwort und Name sind erforderlich');
+        return;
+      }
     }
 
     // Validate email format if provided
@@ -157,12 +173,19 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         is_active: formData.is_active
       };
 
+      // Add admin data for new organizations
+      if (!isEditMode) {
+        orgData.admin_username = formData.admin_username.trim();
+        orgData.admin_password = formData.admin_password.trim();
+        orgData.admin_display_name = formData.admin_display_name.trim();
+      }
+
       if (isEditMode) {
         await api.put(`/organizations/${organizationId}`, orgData);
         setSuccess('Organisation erfolgreich aktualisiert');
       } else {
         await api.post('/organizations', orgData);
-        setSuccess('Organisation erfolgreich erstellt');
+        setSuccess('Organisation und Administrator erfolgreich erstellt');
       }
 
       onSuccess();
@@ -317,76 +340,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonCardContent>
         </IonCard>
 
-        {/* Statistiken (nur im Edit-Modus) */}
+        {/* Info (nur im Edit-Modus) */}
         {isEditMode && organization && (
           <IonCard>
-            <IonCardHeader>
-              <IonCardTitle>
-                <IonIcon icon={analytics} style={{ marginRight: '8px' }} />
-                Statistiken
-              </IonCardTitle>
-            </IonCardHeader>
             <IonCardContent>
-              <IonGrid>
-                <IonRow>
-                  <IonCol size="6">
-                    <div style={{ textAlign: 'center', padding: '16px' }}>
-                      <IonIcon icon={people} style={{ fontSize: '2rem', color: '#667eea', marginBottom: '8px' }} />
-                      <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#667eea' }}>
-                        {organization.user_count}
-                      </h3>
-                      <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>
-                        Benutzer
-                      </p>
-                    </div>
-                  </IonCol>
-                  <IonCol size="6">
-                    <div style={{ textAlign: 'center', padding: '16px' }}>
-                      <IonIcon icon={people} style={{ fontSize: '2rem', color: '#2dd36f', marginBottom: '8px' }} />
-                      <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#2dd36f' }}>
-                        {organization.konfi_count}
-                      </h3>
-                      <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>
-                        Konfis
-                      </p>
-                    </div>
-                  </IonCol>
-                </IonRow>
-                <IonRow>
-                  <IonCol size="4">
-                    <div style={{ textAlign: 'center', padding: '8px' }}>
-                      <h4 style={{ margin: '0', fontSize: '1.2rem', color: '#3880ff' }}>
-                        {organization.activity_count}
-                      </h4>
-                      <p style={{ margin: '0', fontSize: '0.8rem', color: '#666' }}>
-                        Aktivitäten
-                      </p>
-                    </div>
-                  </IonCol>
-                  <IonCol size="4">
-                    <div style={{ textAlign: 'center', padding: '8px' }}>
-                      <h4 style={{ margin: '0', fontSize: '1.2rem', color: '#ffcc00' }}>
-                        {organization.event_count}
-                      </h4>
-                      <p style={{ margin: '0', fontSize: '0.8rem', color: '#666' }}>
-                        Events
-                      </p>
-                    </div>
-                  </IonCol>
-                  <IonCol size="4">
-                    <div style={{ textAlign: 'center', padding: '8px' }}>
-                      <h4 style={{ margin: '0', fontSize: '1.2rem', color: '#ff6b35' }}>
-                        {organization.badge_count}
-                      </h4>
-                      <p style={{ margin: '0', fontSize: '0.8rem', color: '#666' }}>
-                        Badges
-                      </p>
-                    </div>
-                  </IonCol>
-                </IonRow>
-              </IonGrid>
-
-              <IonItem lines="none" style={{ marginTop: '16px' }}>
+              <IonItem lines="none">
                 <IonLabel>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <IonChip 
@@ -406,18 +364,53 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonCard>
         )}
 
-        {/* Hinweise für neue Organisation */}
+        {/* Admin-Erstellung für neue Organisation */}
         {!isEditMode && (
           <IonCard>
+            <IonCardHeader>
+              <IonCardTitle>
+                <IonIcon icon={checkmark} style={{ marginRight: '8px' }} />
+                Administrator-Zugang
+              </IonCardTitle>
+            </IonCardHeader>
             <IonCardContent>
-              <IonItem lines="none">
-                <IonIcon icon={checkmark} slot="start" color="success" />
+              <IonItem>
+                <IonLabel position="stacked">Admin-Benutzername *</IonLabel>
+                <IonInput
+                  value={formData.admin_username || ''}
+                  onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })}
+                  placeholder="admin"
+                  required
+                />
+              </IonItem>
+
+              <IonItem>
+                <IonLabel position="stacked">Admin-Passwort *</IonLabel>
+                <IonInput
+                  type="password"
+                  value={formData.admin_password || ''}
+                  onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })}
+                  placeholder="Sicheres Passwort"
+                  required
+                />
+              </IonItem>
+
+              <IonItem>
+                <IonLabel position="stacked">Admin-Name *</IonLabel>
+                <IonInput
+                  value={formData.admin_display_name || ''}
+                  onIonInput={(e) => setFormData({ ...formData, admin_display_name: e.detail.value! })}
+                  placeholder="Pastor Müller"
+                  required
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--background': 'rgba(56, 128, 255, 0.1)', marginTop: '16px' }}>
+                <IonIcon icon={checkmark} slot="start" color="primary" />
                 <IonLabel>
-                  <IonText color="success">
-                    <h3>Nach dem Erstellen</h3>
-                    <p>
-                      Nach dem Erstellen der Organisation wird automatisch eine Standard-Rollenverwaltung 
-                      eingerichtet. Sie können dann Benutzer zur Organisation hinzufügen.
+                  <IonText color="primary">
+                    <p style={{ fontWeight: '500' }}>
+                      Ein Administrator-Account wird automatisch mit Vollzugriff erstellt.
                     </p>
                   </IonText>
                 </IonLabel>

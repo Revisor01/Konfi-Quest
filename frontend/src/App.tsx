@@ -223,7 +223,7 @@ const AppContent: React.FC = () => {
                               if (window.confirm('Möchten Sie sich wirklich abmelden?')) {
                                 localStorage.removeItem('konfi_token');
                                 localStorage.removeItem('konfi_user');
-                                window.location.reload();
+                                window.location.href = '/';
                               }
                             }}>
                               <IonIcon icon={logOut} slot="start" color="danger" />

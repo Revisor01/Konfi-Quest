@@ -130,7 +130,11 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
 
       // Set selected permissions
       if (roleData.permissions) {
-        const permissionIds = new Set<number>(roleData.permissions.map((p: Permission) => p.id));
+        const permissionIds = new Set<number>(
+          roleData.permissions
+            .filter((p: any) => p.granted === 1)
+            .map((p: any) => p.id)
+        );
         setSelectedPermissions(permissionIds);
       }
     } catch (err) {

@@ -38,6 +38,7 @@ export const loginWithAutoDetection = async (username: string, password: string)
     console.warn('Admin-Login fehlgeschlagen:', adminError?.response?.data || adminError.message);
     
     try {
+      console.log('Versuche Konfi-Login mit:', { username, password });
       const response = await api.post('/konfi/login', { username, password });
       console.log('Konfi-Login erfolgreich:', response.data);
       const { token, user } = response.data;
@@ -49,8 +50,13 @@ export const loginWithAutoDetection = async (username: string, password: string)
       
       return user;
     } catch (konfiError: any) {
-      console.warn('Konfi-Login fehlgeschlagen:', konfiError?.response?.data || konfiError.message);
-      throw new Error('Login fehlgeschlagen');
+      console.error('Konfi-Login fehlgeschlagen:', {
+        status: konfiError?.response?.status,
+        statusText: konfiError?.response?.statusText,
+        data: konfiError?.response?.data,
+        message: konfiError.message
+      });
+      throw new Error('Login fehlgeschlagen: ' + (konfiError?.response?.data?.error || konfiError.message));
     }
   }
 };
