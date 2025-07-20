@@ -312,6 +312,10 @@ const AppContent: React.FC = () => {
                     <IonIcon icon={home} />
                     <IonLabel>Dashboard</IonLabel>
                   </IonTabButton>
+                  <IonTabButton tab="chat" href="/konfi/chat">
+                    <IonIcon icon={chatbubbles} />
+                    <IonLabel>Chat</IonLabel>
+                  </IonTabButton>
                   <IonTabButton tab="events" href="/konfi/events">
                     <IonIcon icon={calendar} />
                     <IonLabel>Events</IonLabel>

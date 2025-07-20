@@ -3553,6 +3553,8 @@ app.get('/api/chat/rooms/:roomId/messages', verifyToken, (req, res) => {
     
     const messagesQuery = `
       SELECT m.*, 
+              m.user_id as sender_id,
+              m.user_type as sender_type,
               CASE 
                 WHEN m.user_type = 'admin' THEN a.display_name
                 ELSE k.name
@@ -3680,6 +3682,8 @@ app.post('/api/chat/rooms/:roomId/messages', verifyToken, chatUpload.single('fil
       // Get the sent message with sender info
       const messageQuery = `
         SELECT m.*, 
+                m.user_id as sender_id,
+                m.user_type as sender_type,
                 CASE 
                   WHEN m.user_type = 'admin' THEN a.display_name
                   ELSE k.name
@@ -3904,6 +3908,8 @@ app.post('/api/chat/rooms/:roomId/polls', verifyToken, (req, res) => {
         // Get the complete poll data with sender info
         const pollQuery = `
           SELECT m.*, 
+                  m.user_id as sender_id,
+                  m.user_type as sender_type,
                   CASE 
                     WHEN m.user_type = 'admin' THEN a.display_name
                     ELSE k.name
