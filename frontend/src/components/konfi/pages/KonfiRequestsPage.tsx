@@ -642,24 +642,10 @@ const KonfiRequestsPage: React.FC = () => {
                   : 'Du hast noch keine Anträge eingereicht'
                 }
               </p>
-              {!searchTerm.trim() && (
-                <IonButton 
-                  fill="outline" 
-                  onClick={() => setIsCreateModalOpen(true)}
-                >
-                  Ersten Antrag erstellen
-                </IonButton>
-              )}
             </IonCard>
           )}
         </div>
 
-        {/* FAB */}
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton onClick={() => setIsCreateModalOpen(true)}>
-            <IonIcon icon={add} />
-          </IonFabButton>
-        </IonFab>
 
         {/* Create Request Modal */}
         <IonModal isOpen={isCreateModalOpen} onDidDismiss={() => setIsCreateModalOpen(false)}>

@@ -327,7 +327,7 @@ const KonfiProfilePage: React.FC = () => {
                   fontWeight: '600',
                   fontSize: '1.5rem'
                 }}>
-                  {getInitials(profile.display_name || profile.name)}
+                  {getInitials(profile.display_name)}
                 </div>
               </IonAvatar>
               
