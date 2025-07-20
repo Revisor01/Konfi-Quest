@@ -87,17 +87,10 @@ module.exports = (db, verifyToken) => {
     const konfiId = req.user.id;
     
     const query = `
-      SELECT k.*, j.name as jahrgang_name,
-             COALESCE(SUM(ar.points), 0) as activity_points,
-             COALESCE(SUM(bp.points), 0) as bonus_points,
-             COUNT(DISTINCT keb.badge_id) as badge_count
+      SELECT k.*, j.name as jahrgang_name
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
-      LEFT JOIN activity_records ar ON k.id = ar.konfi_id
-      LEFT JOIN bonus_points bp ON k.id = bp.konfi_id
-      LEFT JOIN konfi_earned_badges keb ON k.id = keb.konfi_id
       WHERE k.id = ?
-      GROUP BY k.id
     `;
     
     db.get(query, [konfiId], (err, konfi) => {
@@ -113,10 +106,7 @@ module.exports = (db, verifyToken) => {
       // Don't send sensitive data
       delete konfi.password_hash;
       
-      res.json({
-        ...konfi,
-        total_points: (konfi.activity_points || 0) + (konfi.bonus_points || 0)
-      });
+      res.json(konfi);
     });
   });
 
