@@ -78,9 +78,9 @@ module.exports = (db, verifyToken) => {
       }
       
       // Check if badges table exists and get badges for this konfi
+      let badges = [];
+      
       db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='custom_badges'", (err, result) => {
-        let badges = [];
-        
         if (err || !result) {
           // Table doesn't exist, skip badges and continue with ranking
           continueWithRanking();
@@ -88,7 +88,7 @@ module.exports = (db, verifyToken) => {
         }
         
         const badgesQuery = `
-          SELECT cb.id, cb.name, cb.description, cb.icon_name, cb.criteria_type, cb.criteria_value,
+          SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
                  kb.earned_at
           FROM custom_badges cb
           LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = ?
