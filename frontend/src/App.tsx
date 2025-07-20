@@ -57,6 +57,7 @@ import ChatPage from './components/chat/ChatPage';
 import KonfiDetailView from './components/admin/views/KonfiDetailView';
 import EventDetailView from './components/admin/views/EventDetailView';
 import KonfiDashboardPage from './components/konfi/pages/KonfiDashboardPage';
+import KonfiEventsPage from './components/konfi/pages/KonfiEventsPage';
 import KonfiBadgesPage from './components/konfi/pages/KonfiBadgesPage';
 import KonfiRequestsPage from './components/konfi/pages/KonfiRequestsPage';
 import KonfiProfilePage from './components/konfi/pages/KonfiProfilePage';

@@ -20,7 +20,7 @@ import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
 const LoginView: React.FC = () => {
-  const { setError, setSuccess } = useApp();
+  const { setError, setSuccess, setUser } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
