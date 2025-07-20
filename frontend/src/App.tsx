@@ -53,6 +53,7 @@ import AdminActivityRequestsPage from './components/admin/pages/AdminActivityReq
 import AdminUsersPage from './components/admin/pages/AdminUsersPage';
 import AdminRolesPage from './components/admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from './components/admin/pages/AdminOrganizationsPage';
+import AdminProfilePage from './components/admin/pages/AdminProfilePage';
 import ChatPage from './components/chat/ChatPage';
 import KonfiDetailView from './components/admin/views/KonfiDetailView';
 import EventDetailView from './components/admin/views/EventDetailView';
@@ -224,32 +225,11 @@ const AppContent: React.FC = () => {
                             <IonCardTitle>Konto</IonCardTitle>
                           </IonCardHeader>
                           <IonCardContent>
-                            <IonItem button onClick={() => {
-                              if (window.confirm('Möchten Sie sich wirklich abmelden?')) {
-                                localStorage.removeItem('konfi_token');
-                                localStorage.removeItem('konfi_user');
-                                window.location.href = '/';
-                              }
-                            }}>
-                              <IonIcon icon={logOut} slot="start" color="danger" />
-                              <IonLabel color="danger">
-                                <h2>Abmelden</h2>
-                                <p>Von Konfi Quest abmelden</p>
-                              </IonLabel>
-                            </IonItem>
-                          </IonCardContent>
-                        </IonCard>
-
-                        <IonCard>
-                          <IonCardHeader>
-                            <IonCardTitle>App-Info</IonCardTitle>
-                          </IonCardHeader>
-                          <IonCardContent>
-                            <IonItem>
-                              <IonIcon icon={information} slot="start" color="primary" />
+                            <IonItem button routerLink="/admin/profile">
+                              <IonIcon icon={person} slot="start" color="primary" />
                               <IonLabel>
-                                <h2>Konfi Quest</h2>
-                                <p>Version 2.0 - Ionic 8</p>
+                                <h2>Profil</h2>
+                                <p>Passwort und E-Mail ändern</p>
                               </IonLabel>
                             </IonItem>
                           </IonCardContent>
@@ -257,6 +237,7 @@ const AppContent: React.FC = () => {
                       </IonContent>
                     </IonPage>
                   )} />
+                  <Route exact path="/admin/profile" component={AdminProfilePage} />
                   <Redirect exact from="/" to="/admin/konfis" />
                 </IonRouterOutlet>
 

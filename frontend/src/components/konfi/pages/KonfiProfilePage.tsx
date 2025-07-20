@@ -154,11 +154,16 @@ const KonfiProfilePage: React.FC = () => {
     }
 
     try {
-      await api.put('/konfi/profile', {
-        display_name: editData.display_name.trim(),
-        email: editData.email.trim() || null
-      });
-      setSuccess('Profil erfolgreich aktualisiert');
+      // Update email if changed
+      if (editData.email.trim() !== (profile?.email || '')) {
+        await api.post('/auth/update-email', {
+          email: editData.email.trim() || null
+        });
+      }
+      
+      // Note: display_name update would need a separate endpoint
+      // For now, we'll just update the email
+      setSuccess('E-Mail erfolgreich aktualisiert');
       setIsEditModalOpen(false);
       await loadProfile();
     } catch (err: any) {
@@ -183,9 +188,9 @@ const KonfiProfilePage: React.FC = () => {
     }
 
     try {
-      await api.put('/konfi/profile/password', {
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password
+      await api.post('/auth/change-password', {
+        currentPassword: passwordData.current_password,
+        newPassword: passwordData.new_password
       });
       setSuccess('Passwort erfolgreich geändert');
       setIsPasswordModalOpen(false);
