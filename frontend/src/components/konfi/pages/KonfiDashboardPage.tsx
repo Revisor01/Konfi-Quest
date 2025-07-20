@@ -14,7 +14,8 @@ import {
   IonCol,
   IonIcon,
   IonBadge,
-  IonAvatar
+  IonAvatar,
+  IonProgressBar
 } from '@ionic/react';
 import {
   star,
@@ -135,93 +136,195 @@ const KonfiDashboardPage: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        {/* Points Overview */}
+        {/* Points Overview with Progress Bars */}
+        <IonGrid style={{ padding: '0 16px' }}>
+          <IonRow>
+            <IonCol size="12" sizeMd="6">
+              <IonCard style={{ borderRadius: '16px', height: '100%' }}>
+                <IonCardContent style={{ padding: '20px' }}>
+                  <h3 style={{ 
+                    fontWeight: '600', 
+                    margin: '0 0 12px 0',
+                    color: '#3498db',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <IonIcon icon={sparkles} style={{ fontSize: '1.2rem' }} />
+                    Gottesdienst
+                  </h3>
+                  <div style={{ 
+                    fontSize: '2rem', 
+                    fontWeight: '700',
+                    color: '#3498db',
+                    marginBottom: '8px'
+                  }}>
+                    {dashboardData.konfi.gottesdienst_points}/10
+                  </div>
+                  <IonProgressBar 
+                    value={Math.min(dashboardData.konfi.gottesdienst_points / 10, 1)}
+                    style={{ 
+                      height: '8px', 
+                      borderRadius: '4px',
+                      '--progress-background': dashboardData.konfi.gottesdienst_points >= 10 ? '#2dd36f' : 
+                                             dashboardData.konfi.gottesdienst_points >= 7.5 ? '#ffc409' : '#3498db'
+                    }}
+                  />
+                  {dashboardData.konfi.gottesdienst_points >= 10 && (
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      color: '#2dd36f', 
+                      marginTop: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <IonIcon icon={star} style={{ fontSize: '0.8rem' }} />
+                      Ziel erreicht!
+                    </div>
+                  )}
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+            
+            <IonCol size="12" sizeMd="6">
+              <IonCard style={{ borderRadius: '16px', height: '100%' }}>
+                <IonCardContent style={{ padding: '20px' }}>
+                  <h3 style={{ 
+                    fontWeight: '600', 
+                    margin: '0 0 12px 0',
+                    color: '#e74c3c',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <IonIcon icon={heart} style={{ fontSize: '1.2rem' }} />
+                    Gemeinde
+                  </h3>
+                  <div style={{ 
+                    fontSize: '2rem', 
+                    fontWeight: '700',
+                    color: '#e74c3c',
+                    marginBottom: '8px'
+                  }}>
+                    {dashboardData.konfi.gemeinde_points}/10
+                  </div>
+                  <IonProgressBar 
+                    value={Math.min(dashboardData.konfi.gemeinde_points / 10, 1)}
+                    style={{ 
+                      height: '8px', 
+                      borderRadius: '4px',
+                      '--progress-background': dashboardData.konfi.gemeinde_points >= 10 ? '#2dd36f' : 
+                                             dashboardData.konfi.gemeinde_points >= 7.5 ? '#ffc409' : '#e74c3c'
+                    }}
+                  />
+                  {dashboardData.konfi.gemeinde_points >= 10 && (
+                    <div style={{ 
+                      fontSize: '0.8rem', 
+                      color: '#2dd36f', 
+                      marginTop: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <IonIcon icon={star} style={{ fontSize: '0.8rem' }} />
+                      Ziel erreicht!
+                    </div>
+                  )}
+                </IonCardContent>
+              </IonCard>
+            </IonCol>
+          </IonRow>
+        </IonGrid>
+
+        {/* Total Points Card */}
+        <IonCard style={{
+          margin: '16px',
+          borderRadius: '20px',
+          background: 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)',
+          color: 'white',
+          boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)'
+        }}>
+          <IonCardContent style={{ padding: '32px 24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', fontWeight: '700', marginBottom: '8px' }}>
+              {dashboardData.total_points}
+            </div>
+            <div style={{ fontSize: '1.1rem', marginBottom: '16px' }}>
+              Gesamtpunkte
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '24px',
+              fontSize: '0.9rem',
+              opacity: 0.9
+            }}>
+              <span>📖 {dashboardData.konfi.gottesdienst_points}</span>
+              <span>🤝 {dashboardData.konfi.gemeinde_points}</span>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+        {/* Quick Actions */}
         <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
           <IonCardContent style={{ padding: '20px' }}>
-            <h2 style={{ 
-              fontSize: '1.2rem', 
+            <h3 style={{ 
+              fontSize: '1.1rem', 
               fontWeight: '600', 
-              margin: '0 0 16px 0',
-              textAlign: 'center'
+              margin: '0 0 16px 0'
             }}>
-              <IonIcon icon={star} style={{ marginRight: '8px', color: '#FFD700' }} />
-              Deine Punkte
-            </h2>
-            
+              Schnell-Aktionen
+            </h3>
             <IonGrid>
               <IonRow>
-                <IonCol size="4">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={heart} style={{ 
-                      fontSize: '2rem', 
-                      color: '#e74c3c', 
-                      marginBottom: '8px' 
-                    }} />
-                    <h3 style={{ 
-                      margin: '0', 
-                      fontSize: '1.8rem', 
-                      fontWeight: '700',
-                      color: '#e74c3c'
-                    }}>
-                      {dashboardData.konfi.gemeinde_points}
-                    </h3>
-                    <p style={{ 
-                      margin: '0', 
-                      fontSize: '0.8rem', 
-                      color: '#666' 
-                    }}>
-                      Gemeinde
-                    </p>
+                <IonCol size="6">
+                  <div 
+                    style={{
+                      background: 'linear-gradient(135deg, #3880ff 0%, #3171e0 100%)',
+                      color: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(56, 128, 255, 0.3)'
+                    }}
+                    onClick={() => {
+                      // TODO: Navigation zu Anträge
+                      window.location.href = '/konfi/requests';
+                    }}
+                  >
+                    <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                      Aktivität beantragen
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9, marginTop: '4px' }}>
+                      Neue Punkte beantragen
+                    </div>
                   </div>
                 </IonCol>
-                
-                <IonCol size="4">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={sparkles} style={{ 
-                      fontSize: '2rem', 
-                      color: '#3498db', 
-                      marginBottom: '8px' 
-                    }} />
-                    <h3 style={{ 
-                      margin: '0', 
-                      fontSize: '1.8rem', 
-                      fontWeight: '700',
-                      color: '#3498db'
-                    }}>
-                      {dashboardData.konfi.gottesdienst_points}
-                    </h3>
-                    <p style={{ 
-                      margin: '0', 
-                      fontSize: '0.8rem', 
-                      color: '#666' 
-                    }}>
-                      Gottesdienst
-                    </p>
-                  </div>
-                </IonCol>
-                
-                <IonCol size="4">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={trophy} style={{ 
-                      fontSize: '2rem', 
-                      color: '#f39c12', 
-                      marginBottom: '8px' 
-                    }} />
-                    <h3 style={{ 
-                      margin: '0', 
-                      fontSize: '1.8rem', 
-                      fontWeight: '700',
-                      color: '#f39c12'
-                    }}>
-                      {dashboardData.total_points}
-                    </h3>
-                    <p style={{ 
-                      margin: '0', 
-                      fontSize: '0.8rem', 
-                      color: '#666' 
-                    }}>
-                      Gesamt
-                    </p>
+                <IonCol size="6">
+                  <div 
+                    style={{
+                      background: 'linear-gradient(135deg, #ffc409 0%, #ffb300 100%)',
+                      color: 'white',
+                      padding: '16px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(255, 196, 9, 0.3)'
+                    }}
+                    onClick={() => {
+                      // TODO: Navigation zu Badges
+                      window.location.href = '/konfi/badges';
+                    }}
+                  >
+                    <IonIcon icon={trophy} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                    <div style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                      Meine Badges
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9, marginTop: '4px' }}>
+                      Erreichte Auszeichnungen
+                    </div>
                   </div>
                 </IonCol>
               </IonRow>
@@ -236,42 +339,59 @@ const KonfiDashboardPage: React.FC = () => {
               fontSize: '1.2rem', 
               fontWeight: '600', 
               margin: '0 0 16px 0',
-              textAlign: 'center'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
             }}>
-              <IonIcon icon={trophy} style={{ marginRight: '8px', color: '#FFD700' }} />
-              Deine Badges
+              <IonIcon icon={trophy} style={{ color: '#FFD700' }} />
+              Meine Badges
             </h2>
             
             {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 ? (
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {dashboardData.recent_badges.map((badge, index) => (
-                  <div 
-                    key={badge.id || index}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      padding: '12px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                      color: 'white',
-                      minWidth: '80px',
-                      boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)'
-                    }}
-                  >
-                    <div style={{ fontSize: '1.8rem', marginBottom: '4px' }}>
-                      {badge.icon_name || '🏆'}
+              <div>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  {dashboardData.recent_badges.slice(0, 6).map((badge, index) => (
+                    <div 
+                      key={badge.id || index}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                        color: 'white',
+                        minWidth: '70px',
+                        boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)'
+                      }}
+                    >
+                      <div style={{ fontSize: '1.5rem', marginBottom: '4px' }}>
+                        {badge.icon_name || '🏆'}
+                      </div>
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        fontWeight: '600',
+                        textAlign: 'center',
+                        lineHeight: '1.2'
+                      }}>
+                        {badge.name}
+                      </span>
                     </div>
-                    <span style={{ 
-                      fontSize: '0.8rem', 
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      lineHeight: '1.2'
-                    }}>
-                      {badge.name}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                {dashboardData.recent_badges.length > 6 && (
+                  <p style={{ 
+                    textAlign: 'center', 
+                    fontSize: '0.9rem', 
+                    color: '#3880ff',
+                    margin: '0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => window.location.href = '/konfi/badges'}
+                  >
+                    Alle Badges im Badge-Bereich ansehen →
+                  </p>
+                )}
               </div>
             ) : (
               <div style={{ textAlign: 'center' }}>
