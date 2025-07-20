@@ -64,7 +64,7 @@ module.exports = (db, verifyToken) => {
       function continueWithRanking() {
         // Get ranking for jahrgang
         const rankingQuery = `
-          SELECT k.id, k.display_name, 
+          SELECT k.id, k.name as display_name, 
                  (k.gottesdienst_points + k.gemeinde_points) as points
           FROM konfis k
           WHERE k.jahrgang_id = ?
@@ -116,7 +116,7 @@ module.exports = (db, verifyToken) => {
     const konfiId = req.user.id;
     
     const query = `
-      SELECT k.*, j.name as jahrgang_name, j.year as jahrgang_year
+      SELECT k.*, k.name as display_name, j.name as jahrgang_name, j.year as jahrgang_year
       FROM konfis k 
       JOIN jahrgaenge j ON k.jahrgang_id = j.id
       WHERE k.id = ?

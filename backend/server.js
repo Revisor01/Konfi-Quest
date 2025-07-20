@@ -1448,12 +1448,13 @@ app.post('/api/konfi/login', (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    const token = jwt.sign({ id: konfi.id, type: 'konfi' }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ id: konfi.id, type: 'konfi', display_name: konfi.name }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ 
       token, 
       user: { 
         id: konfi.id, 
-        name: konfi.name, 
+        name: konfi.name,
+        display_name: konfi.name, 
         username: konfi.username,
         jahrgang: konfi.jahrgang_name,
         type: 'konfi' 
