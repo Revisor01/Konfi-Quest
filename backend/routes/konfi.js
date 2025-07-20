@@ -307,11 +307,13 @@ module.exports = (db, verifyToken) => {
       return res.status(403).json({ error: 'Konfi access required' });
     }
     
-    // Simplified query to match existing table structure
+    // Updated query for normalized schema with activity_categories junction table
     const query = `
-      SELECT a.*, a.name as title, a.category as category_name
+      SELECT a.*, a.name as title, c.name as category_name
       FROM activities a
-      ORDER BY a.category, a.name
+      LEFT JOIN activity_categories ac ON a.id = ac.activity_id
+      LEFT JOIN categories c ON ac.category_id = c.id
+      ORDER BY c.name, a.name
     `;
     
     db.all(query, (err, activities) => {
