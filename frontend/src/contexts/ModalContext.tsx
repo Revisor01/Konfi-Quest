@@ -45,6 +45,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const currentPath = location.pathname;
     let currentTabId = '';
     
+    // Admin Routes
     if (currentPath.includes('/admin/konfis')) currentTabId = 'konfis';
     else if (currentPath.includes('/admin/chat')) currentTabId = 'chat';
     else if (currentPath.includes('/admin/activities')) currentTabId = 'activities';
@@ -53,6 +54,13 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/jahrgaenge')) currentTabId = 'jahrgaenge';
     else if (currentPath.includes('/admin/badges')) currentTabId = 'badges';
     else if (currentPath.includes('/admin/settings')) currentTabId = 'settings';
+    // Konfi Routes
+    else if (currentPath.includes('/konfi/dashboard')) currentTabId = 'dashboard';
+    else if (currentPath.includes('/konfi/events')) currentTabId = 'events';
+    else if (currentPath.includes('/konfi/requests')) currentTabId = 'requests';
+    else if (currentPath.includes('/konfi/badges')) currentTabId = 'badges';
+    else if (currentPath.includes('/konfi/chat')) currentTabId = 'chat';
+    else if (currentPath.includes('/konfi/profile')) currentTabId = 'profile';
     
     return tabPresentingElements.get(currentTabId);
   };
