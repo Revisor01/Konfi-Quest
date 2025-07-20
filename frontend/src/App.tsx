@@ -298,6 +298,7 @@ const AppContent: React.FC = () => {
                 <IonRouterOutlet>
                   <Redirect exact path="/konfi" to="/konfi/dashboard" />
                   <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
+                  <Route exact path="/konfi/events" component={KonfiEventsPage} />
                   <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
                   <Route exact path="/konfi/chat" component={ChatPage} />
                   <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
@@ -310,13 +311,13 @@ const AppContent: React.FC = () => {
                     <IonIcon icon={home} />
                     <IonLabel>Dashboard</IonLabel>
                   </IonTabButton>
+                  <IonTabButton tab="events" href="/konfi/events">
+                    <IonIcon icon={calendar} />
+                    <IonLabel>Events</IonLabel>
+                  </IonTabButton>
                   <IonTabButton tab="badges" href="/konfi/badges">
                     <IonIcon icon={star} />
                     <IonLabel>Badges</IonLabel>
-                  </IonTabButton>
-                  <IonTabButton tab="chat" href="/konfi/chat">
-                    <IonIcon icon={chatbubbles} />
-                    <IonLabel>Chat</IonLabel>
                   </IonTabButton>
                   <IonTabButton tab="requests" href="/konfi/requests">
                     <IonIcon icon={document} />

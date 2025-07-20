@@ -35,7 +35,8 @@ const LoginView: React.FC = () => {
     try {
       const user = await loginWithAutoDetection(username, password);
       setSuccess('Erfolgreich angemeldet');
-      window.location.reload();
+      // Don't reload, let App.tsx handle the routing based on user type
+      setUser(user);
     } catch (err: any) {
       setError('Ungültige Anmeldedaten: ' + (err.response?.data?.error || err.message));
     } finally {
