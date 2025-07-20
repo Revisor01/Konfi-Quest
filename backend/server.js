@@ -51,7 +51,7 @@ const SMTP_CONFIG = {
 };
 
 // Create reusable transporter object using SMTP transport
-const transporter = nodemailer.createTransporter(SMTP_CONFIG);
+const transporter = nodemailer.createTransport(SMTP_CONFIG);
 
 // Verify SMTP connection configuration
 transporter.verify(function(error, success) {
