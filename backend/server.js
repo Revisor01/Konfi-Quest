@@ -4285,11 +4285,17 @@ const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
 const permissionsRoutes = require('./routes/permissions');
 
+// Import Konfi route module
+const konfiRoutes = require('./routes/konfi');
+
 // Use RBAC routes with /api prefix and correct parameters
 app.use('/api/users', usersRoutes(db, verifyTokenRBAC(db), checkPermission));
 app.use('/api/roles', rolesRoutes(db, verifyTokenRBAC(db), checkPermission));
 app.use('/api/organizations', organizationsRoutes(db, verifyTokenRBAC(db), checkPermission));
 app.use('/api/permissions', permissionsRoutes(db, verifyTokenRBAC(db), checkPermission));
+
+// Use Konfi routes with standard token verification
+app.use('/api/konfi', konfiRoutes(db, verifyToken));
 
 console.log('✅ RBAC middleware and routes loaded successfully');
 
