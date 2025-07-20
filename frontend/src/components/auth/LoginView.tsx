@@ -85,6 +85,15 @@ const LoginView: React.FC = () => {
               Konfi Quest
             </h1>
             
+            <p style={{
+              fontSize: '1.1rem',
+              opacity: 0.9,
+              margin: '0',
+              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+            }}>
+              Dein Abenteuer in der Gemeinde
+            </p>
+            
           </div>
 
           {/* Login Card */}
