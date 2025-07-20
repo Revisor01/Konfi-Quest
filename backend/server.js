@@ -27,9 +27,40 @@ console.log('📁 Loading Multer...');
 const multer = require('multer');
 console.log('✅ Multer loaded');
 
+console.log('📧 Loading Nodemailer...');
+const nodemailer = require('nodemailer');
+console.log('✅ Nodemailer loaded');
+
+console.log('🔐 Loading crypto for password reset tokens...');
+const crypto = require('crypto');
+console.log('✅ Crypto loaded');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
+
+// SMTP Configuration
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || 'server.godsapp.de',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || 'team@konfi-quest.de',
+    pass: process.env.SMTP_PASS || 'NkqFQuTx$877Si!6Pp'
+  }
+};
+
+// Create reusable transporter object using SMTP transport
+const transporter = nodemailer.createTransporter(SMTP_CONFIG);
+
+// Verify SMTP connection configuration
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('❌ SMTP connection failed:', error);
+  } else {
+    console.log('✅ SMTP server ready for messages');
+  }
+});
 
 console.log('🔧 Setting up middleware...');
 
@@ -1241,6 +1272,79 @@ db.serialize(() => {
       });
     } else {
       console.log('✅ Migration 8: events table already migrated');
+    }
+  });
+  
+  // Migration 9: Add email columns to konfis and admins tables for password reset
+  console.log('🔄 Migration 9: Adding email columns...');
+  
+  // Add email to konfis table
+  db.all("PRAGMA table_info(konfis)", (err, columns) => {
+    if (err) {
+      console.error('Migration 9 konfis check error:', err);
+    } else {
+      const hasEmail = columns.some(col => col.name === 'email');
+      
+      if (!hasEmail) {
+        console.log('⚡ Migration 9: Adding email column to konfis table...');
+        db.run("ALTER TABLE konfis ADD COLUMN email TEXT", (err) => {
+          if (err) {
+            console.error('Migration 9 konfis error:', err);
+          } else {
+            console.log('✅ Migration 9: email column added to konfis table');
+          }
+        });
+      } else {
+        console.log('✅ Migration 9: email column already exists in konfis table');
+      }
+    }
+  });
+  
+  // Add email to admins table  
+  db.all("PRAGMA table_info(admins)", (err, columns) => {
+    if (err) {
+      console.error('Migration 9 admins check error:', err);
+    } else {
+      const hasEmail = columns.some(col => col.name === 'email');
+      
+      if (!hasEmail) {
+        console.log('⚡ Migration 9: Adding email column to admins table...');
+        db.run("ALTER TABLE admins ADD COLUMN email TEXT", (err) => {
+          if (err) {
+            console.error('Migration 9 admins error:', err);
+          } else {
+            console.log('✅ Migration 9: email column added to admins table');
+          }
+        });
+      } else {
+        console.log('✅ Migration 9: email column already exists in admins table');
+      }
+    }
+  });
+  
+  // Create password_resets table for reset tokens
+  db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='password_resets'", (err, row) => {
+    if (err) {
+      console.error('Migration 9 password_resets check error:', err);
+    } else if (!row) {
+      console.log('⚡ Migration 9: Creating password_resets table...');
+      db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        user_type TEXT NOT NULL CHECK (user_type IN ('admin', 'konfi')),
+        token TEXT NOT NULL UNIQUE,
+        expires_at DATETIME NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        used_at DATETIME NULL
+      )`, (err) => {
+        if (err) {
+          console.error('Migration 9 password_resets table error:', err);
+        } else {
+          console.log('✅ Migration 9: password_resets table created');
+        }
+      });
+    } else {
+      console.log('✅ Migration 9: password_resets table already exists');
     }
   });
   
@@ -4271,6 +4375,12 @@ app.use('/api/permissions', permissionsRoutes(db, verifyTokenRBAC(db), checkPerm
 
 // Use Konfi routes with standard token verification
 app.use('/api/konfi', konfiRoutes(db, verifyToken));
+
+// === EMAIL & PASSWORD SYSTEM ===
+console.log('🔐 Loading Email & Password routes...');
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
+console.log('✅ Email & Password routes loaded successfully');
 
 console.log('✅ RBAC middleware and routes loaded successfully');
 
