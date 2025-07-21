@@ -384,7 +384,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Check user permissions
-  router.get('/:id/permissions', verifyToken, (req, res) => {
+  router.get('/:id/permissions', rbacVerifier, (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     

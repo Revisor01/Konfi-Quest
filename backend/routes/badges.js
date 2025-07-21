@@ -390,7 +390,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
 // Route für Admin-Verwaltung von Badges
 module.exports = (db, rbacVerifier, checkPermission) => {
   
-  router.get('/criteria-types', verifyToken, (req, res) => {
+  router.get('/criteria-types', rbacVerifier, (req, res) => {
     res.json(CRITERIA_TYPES);
   });
   

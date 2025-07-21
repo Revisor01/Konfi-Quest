@@ -69,7 +69,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get current organization details
-  router.get('/current', verifyToken, (req, res) => {
+  router.get('/current', rbacVerifier, (req, res) => {
     const organizationId = req.user.organization_id;
     
     const query = `
@@ -331,7 +331,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get organization statistics
-  router.get('/:id/stats', verifyToken, (req, res) => {
+  router.get('/:id/stats', rbacVerifier, (req, res) => {
     const { id } = req.params;
     
     // Check if user can view this organization's stats
