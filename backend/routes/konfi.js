@@ -226,11 +226,11 @@ module.exports = (db, rbacMiddleware) => {
     
     // Simplified query to match existing table structure
     const query = `
-      SELECT ar.*, a.title as activity_title, a.points as activity_points
+      SELECT ar.*, a.name as activity_title, a.points as activity_points
       FROM activity_requests ar
       LEFT JOIN activities a ON ar.activity_id = a.id
       WHERE ar.konfi_id = ?
-      ORDER BY ar.submitted_at DESC
+      ORDER BY ar.created_at DESC
     `;
     
     db.all(query, [konfiId], (err, requests) => {
@@ -250,18 +250,18 @@ module.exports = (db, rbacMiddleware) => {
     }
     
     const konfiId = req.user.id;
-    const { activity_id, description, photo_path } = req.body;
+    const { activity_id, description, photo_filename } = req.body;
     
     if (!activity_id) {
       return res.status(400).json({ error: 'Activity ID is required' });
     }
     
     const insertQuery = `
-      INSERT INTO activity_requests (konfi_id, activity_id, description, photo_path, status)
+      INSERT INTO activity_requests (konfi_id, activity_id, comment, photo_filename, status)
       VALUES (?, ?, ?, ?, 'pending')
     `;
     
-    db.run(insertQuery, [konfiId, activity_id, description, photo_path], function(err) {
+    db.run(insertQuery, [konfiId, activity_id, description, photo_filename], function(err) {
       if (err) {
         console.error('Error creating activity request:', err);
         return res.status(500).json({ error: 'Database error' });
