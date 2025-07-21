@@ -77,7 +77,62 @@ const KonfiBadgesPage: React.FC = () => {
 
       const badgeData: BadgeData = badgesResponse.data;
       const konfiData = konfiResponse.data;
-      const currentTotalPoints = (konfiData.gottesdienst_points || 0) + (konfiData.gemeinde_points || 0);
+      
+      // Check if API has calculated points or if we need to calculate from activities
+      let currentGottesdienstPoints = konfiData.gottesdienst_points;
+      let currentGemeindePoints = konfiData.gemeinde_points;
+      let currentTotalPoints = konfiData.total_points;
+      
+      // If points are null/undefined, calculate from activities + bonus
+      if (currentGottesdienstPoints === null || currentGottesdienstPoints === undefined || 
+          currentGemeindePoints === null || currentGemeindePoints === undefined) {
+        
+        console.log('📊 Badge API points are null, calculating from activities + bonus');
+        
+        // Base points from activities
+        const baseGottesdienstPoints = konfiData.activities
+          ?.filter((activity: any) => activity.type === 'gottesdienst')
+          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
+        
+        const baseGemeindePoints = konfiData.activities
+          ?.filter((activity: any) => activity.type === 'gemeinde')
+          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
+        
+        // Bonus points categorized by type - use bonusPoints (not bonus_points!)
+        let bonusGottesdienstPoints = 0;
+        let bonusGemeindePoints = 0;
+        
+        if (konfiData.bonusPoints && Array.isArray(konfiData.bonusPoints)) {
+          bonusGottesdienstPoints = konfiData.bonusPoints
+            .filter((bonus: any) => bonus.type === 'gottesdienst')
+            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
+          
+          bonusGemeindePoints = konfiData.bonusPoints
+            .filter((bonus: any) => bonus.type === 'gemeinde')
+            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
+        }
+        
+        // Total per category (activities + bonus)
+        currentGottesdienstPoints = baseGottesdienstPoints + bonusGottesdienstPoints;
+        currentGemeindePoints = baseGemeindePoints + bonusGemeindePoints;
+        currentTotalPoints = currentGottesdienstPoints + currentGemeindePoints;
+        
+        console.log('📊 Badge calculated points with bonus by category:', {
+          baseGottesdienst: baseGottesdienstPoints,
+          baseGemeinde: baseGemeindePoints,
+          bonusGottesdienst: bonusGottesdienstPoints,
+          bonusGemeinde: bonusGemeindePoints,
+          finalGottesdienst: currentGottesdienstPoints,
+          finalGemeinde: currentGemeindePoints,
+          total: currentTotalPoints,
+          activities: konfiData.activities?.length || 0,
+          bonusEntries: konfiData.bonus_points?.length || 0
+        });
+      } else {
+        // Use API points directly
+        currentTotalPoints = currentTotalPoints || (currentGottesdienstPoints + currentGemeindePoints);
+        console.log('📊 Badge using API points:', { currentGottesdienstPoints, currentGemeindePoints, currentTotalPoints });
+      }
 
       // Process all available badges
       const processedBadges: Badge[] = badgeData.available
@@ -94,10 +149,16 @@ const KonfiBadgesPage: React.FC = () => {
               progressPoints = Math.min(currentTotalPoints, badge.criteria_value);
               progressPercentage = (progressPoints / badge.criteria_value) * 100;
             } else if (badge.criteria_type === 'gottesdienst_points') {
-              progressPoints = Math.min(konfiData.gottesdienst_points || 0, badge.criteria_value);
+              progressPoints = Math.min(currentGottesdienstPoints, badge.criteria_value);
               progressPercentage = (progressPoints / badge.criteria_value) * 100;
             } else if (badge.criteria_type === 'gemeinde_points') {
-              progressPoints = Math.min(konfiData.gemeinde_points || 0, badge.criteria_value);
+              progressPoints = Math.min(currentGemeindePoints, badge.criteria_value);
+              progressPercentage = (progressPoints / badge.criteria_value) * 100;
+            } else if (badge.criteria_type === 'both_categories') {
+              // For both_categories, show progress as minimum of both
+              const gottesdienstProgress = Math.min(currentGottesdienstPoints, badge.criteria_value);
+              const gemeindeProgress = Math.min(currentGemeindePoints, badge.criteria_value);
+              progressPoints = Math.min(gottesdienstProgress, gemeindeProgress);
               progressPercentage = (progressPoints / badge.criteria_value) * 100;
             }
           }

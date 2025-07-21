@@ -35,6 +35,8 @@ interface DashboardData {
     jahrgang_name: string;
     gottesdienst_points: number;
     gemeinde_points: number;
+    activities?: any[];
+    bonus_points?: any[];
   };
   total_points: number;
   recent_badges: any[];
@@ -112,15 +114,81 @@ const KonfiDashboardPage: React.FC = () => {
       }
       
       // Build dashboard data
+      // Check if API has calculated points or if we need to calculate from activities
+      let gottesdienstPoints = konfiData.gottesdienst_points;
+      let gemeindePoints = konfiData.gemeinde_points;
+      let totalPoints = konfiData.total_points;
+      
+      // If points are null/undefined, calculate from activities + bonus
+      if (gottesdienstPoints === null || gottesdienstPoints === undefined || 
+          gemeindePoints === null || gemeindePoints === undefined) {
+        
+        console.log('📊 API points are null, calculating from activities + bonus');
+        
+        // Base points from activities
+        const baseGottesdienstPoints = konfiData.activities
+          ?.filter((activity: any) => activity.type === 'gottesdienst')
+          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
+        
+        const baseGemeindePoints = konfiData.activities
+          ?.filter((activity: any) => activity.type === 'gemeinde')
+          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
+        
+        // Bonus points categorized by type - use bonusPoints (not bonus_points!)
+        let bonusGottesdienstPoints = 0;
+        let bonusGemeindePoints = 0;
+        
+        if (konfiData.bonusPoints && Array.isArray(konfiData.bonusPoints)) {
+          bonusGottesdienstPoints = konfiData.bonusPoints
+            .filter((bonus: any) => bonus.type === 'gottesdienst')
+            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
+          
+          bonusGemeindePoints = konfiData.bonusPoints
+            .filter((bonus: any) => bonus.type === 'gemeinde')
+            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
+        }
+        
+        console.log('🔍 Bonus points debug (FIXED):', {
+          bonusPointsRaw: konfiData.bonusPoints,
+          bonusPointsLength: konfiData.bonusPoints?.length || 0,
+          gottesdienst: bonusGottesdienstPoints,
+          gemeinde: bonusGemeindePoints,
+          total: bonusGottesdienstPoints + bonusGemeindePoints
+        });
+        
+        // Total per category (activities + bonus)
+        gottesdienstPoints = baseGottesdienstPoints + bonusGottesdienstPoints;
+        gemeindePoints = baseGemeindePoints + bonusGemeindePoints;
+        totalPoints = gottesdienstPoints + gemeindePoints;
+        
+        console.log('📊 Calculated points with bonus by category:', {
+          baseGottesdienst: baseGottesdienstPoints,
+          baseGemeinde: baseGemeindePoints,
+          bonusGottesdienst: bonusGottesdienstPoints,
+          bonusGemeinde: bonusGemeindePoints,
+          finalGottesdienst: gottesdienstPoints,
+          finalGemeinde: gemeindePoints,
+          total: totalPoints,
+          activities: konfiData.activities?.length || 0,
+          bonusEntries: konfiData.bonus_points?.length || 0
+        });
+      } else {
+        // Use API points directly
+        totalPoints = totalPoints || (gottesdienstPoints + gemeindePoints);
+        console.log('📊 Using API points:', { gottesdienstPoints, gemeindePoints, totalPoints });
+      }
+
       const mockDashboardData: DashboardData = {
         konfi: {
           id: konfiData.id,
           name: konfiData.name,
           jahrgang_name: konfiData.jahrgang_name,
-          gottesdienst_points: konfiData.gottesdienst_points || 0,
-          gemeinde_points: konfiData.gemeinde_points || 0
+          gottesdienst_points: gottesdienstPoints,
+          gemeinde_points: gemeindePoints,
+          activities: konfiData.activities,
+          bonus_points: konfiData.bonus_points
         },
-        total_points: konfiData.total_points || ((konfiData.gottesdienst_points || 0) + (konfiData.gemeinde_points || 0)),
+        total_points: totalPoints,
         recent_badges: badgesData.earned ? badgesData.earned.slice(0, 4) : [],
         next_event: nextEvent ? {
           id: nextEvent.id,
@@ -411,105 +479,71 @@ const KonfiDashboardPage: React.FC = () => {
         )}
 
 
-        {/* Badges Vorschau */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardContent style={{ padding: '20px' }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px'
+        {/* Badge-Sammlung - Vereinfacht */}
+        <IonCard style={{ 
+          margin: '16px', 
+          borderRadius: '20px',
+          background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
+          color: '#8B4513',
+          boxShadow: '0 10px 30px rgba(255, 215, 0, 0.3)'
+        }}>
+          <IonCardContent style={{ padding: '24px', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🏆</div>
+            <h3 style={{ 
+              margin: '0 0 16px 0', 
+              fontSize: '1.4rem', 
+              fontWeight: '700'
             }}>
-              <h3 style={{ 
-                fontSize: '1.1rem', 
-                fontWeight: '600', 
-                margin: '0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <div style={{ fontSize: '1.2rem' }}>🏆</div>
-                Badges
-              </h3>
-              <span 
-                style={{ 
-                  fontSize: '0.9rem', 
-                  color: '#3880ff',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-                onClick={() => window.location.href = '/konfi/badges'}
-              >
-                Alle ansehen →
-              </span>
+              Badge-Sammlung
+            </h3>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr', 
+              gap: '20px',
+              marginBottom: '20px'
+            }}>
+              <div>
+                <div style={{ 
+                  fontSize: '2.5rem', 
+                  fontWeight: '800', 
+                  marginBottom: '4px' 
+                }}>
+                  {dashboardData.recent_badges?.length || 0}
+                </div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                  Badges erhalten
+                </div>
+              </div>
+              <div>
+                <div style={{ 
+                  fontSize: '2.5rem', 
+                  fontWeight: '800', 
+                  marginBottom: '4px' 
+                }}>
+                  {dashboardData.recent_badges?.filter((badge: any) => badge.is_hidden).length || 0}
+                </div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                  Geheime entdeckt
+                </div>
+              </div>
             </div>
             
-            {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 ? (
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', 
-                gap: '10px',
-                justifyItems: 'center'
-              }}>
-                {dashboardData.recent_badges.slice(0, 4).map((badge, index) => (
-                  <div 
-                    key={badge.id || index}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      padding: '12px 8px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                      color: 'white',
-                      width: '70px',
-                      boxShadow: '0 4px 15px rgba(255, 215, 0, 0.3)',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => window.location.href = '/konfi/badges'}
-                  >
-                    <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>
-                      {badge.icon || '🏆'}
-                    </div>
-                    <span style={{ 
-                      fontSize: '0.6rem', 
-                      fontWeight: '600',
-                      textAlign: 'center',
-                      lineHeight: '1.1'
-                    }}>
-                      {badge.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ 
-                textAlign: 'center',
-                padding: '20px 0'
-              }}>
-                <div style={{ 
-                  fontSize: '3rem', 
-                  marginBottom: '12px', 
-                  opacity: 0.3 
-                }}>
-                  🏆
-                </div>
-                <p style={{ 
-                  color: '#666', 
-                  fontSize: '0.9rem',
-                  margin: '0 0 8px 0'
-                }}>
-                  Noch keine Badges erreicht
-                </p>
-                <p style={{ 
-                  color: '#999', 
-                  fontSize: '0.8rem',
-                  margin: '0'
-                }}>
-                  Sammle Punkte für dein erstes Badge! 🎯
-                </p>
-              </div>
-            )}
+            <div 
+              style={{ 
+                background: 'rgba(139, 69, 19, 0.1)',
+                color: '#8B4513',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => window.location.href = '/konfi/badges'}
+            >
+              🎯 Alle Badges ansehen →
+            </div>
           </IonCardContent>
         </IonCard>
 
@@ -587,6 +621,135 @@ const KonfiDashboardPage: React.FC = () => {
                 </p>
               </>
             )}
+          </IonCardContent>
+        </IonCard>
+
+        {/* Points Details Anzeige */}
+        <IonCard style={{ 
+          margin: '16px', 
+          borderRadius: '16px',
+          background: '#f8f9fa'
+        }}>
+          <IonCardContent style={{ padding: '20px' }}>
+            <h3 style={{ 
+              fontSize: '1.1rem', 
+              fontWeight: '600', 
+              margin: '0 0 16px 0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#333'
+            }}>
+              📊 Deine Punkte im Detail
+            </h3>
+            
+            {/* Punkte-Übersicht */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginBottom: '8px' 
+              }}>
+                <span style={{ color: '#666' }}>📖 Gottesdienst-Punkte:</span>
+                <strong style={{ color: '#333' }}>{dashboardData.konfi.gottesdienst_points}</strong>
+              </div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginBottom: '8px' 
+              }}>
+                <span style={{ color: '#666' }}>🤝 Gemeinde-Punkte:</span>
+                <strong style={{ color: '#333' }}>{dashboardData.konfi.gemeinde_points}</strong>
+              </div>
+              <hr style={{ margin: '12px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                fontSize: '1.1rem' 
+              }}>
+                <span style={{ fontWeight: '600', color: '#333' }}>🏆 Gesamt:</span>
+                <strong style={{ color: '#3880ff', fontSize: '1.2rem' }}>{dashboardData.total_points}</strong>
+              </div>
+            </div>
+
+            {/* Aktivitäten Details */}
+            {dashboardData.konfi.activities && dashboardData.konfi.activities.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ 
+                  fontSize: '0.95rem', 
+                  fontWeight: '600', 
+                  margin: '0 0 12px 0',
+                  color: '#333'
+                }}>
+                  🎯 Deine Aktivitäten:
+                </h4>
+                {dashboardData.konfi.activities.map((activity: any, index: number) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '6px',
+                    fontSize: '0.85rem',
+                    padding: '4px 0'
+                  }}>
+                    <span style={{ color: '#666' }}>
+                      {activity.type === 'gottesdienst' ? '📖' : '🤝'} {activity.name}
+                    </span>
+                    <span style={{ 
+                      fontWeight: '500',
+                      color: activity.type === 'gottesdienst' ? '#8b5cf6' : '#10b981'
+                    }}>
+                      +{activity.points}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Bonus-Punkte Details */}
+            {dashboardData.konfi.bonus_points && Array.isArray(dashboardData.konfi.bonus_points) && dashboardData.konfi.bonus_points.length > 0 && (
+              <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ 
+                  fontSize: '0.95rem', 
+                  fontWeight: '600', 
+                  margin: '0 0 12px 0',
+                  color: '#333'
+                }}>
+                  ⭐ Deine Bonuspunkte:
+                </h4>
+                {dashboardData.konfi.bonus_points.map((bonus: any, index: number) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '6px',
+                    fontSize: '0.85rem',
+                    padding: '4px 0'
+                  }}>
+                    <span style={{ color: '#666' }}>
+                      {bonus.type === 'gottesdienst' ? '📖' : '🤝'} {bonus.description}
+                    </span>
+                    <span style={{ 
+                      fontWeight: '500',
+                      color: '#ffa500'
+                    }}>
+                      +{bonus.points}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div style={{ 
+              fontSize: '0.8rem', 
+              color: '#999', 
+              textAlign: 'center',
+              fontStyle: 'italic',
+              marginTop: '12px'
+            }}>
+              {dashboardData.konfi.activities?.length || 0} Aktivitäten • 
+              {dashboardData.konfi.bonus_points?.length || 0} Bonus-Einträge
+            </div>
           </IonCardContent>
         </IonCard>
       </IonContent>
