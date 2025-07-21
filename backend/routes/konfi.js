@@ -7,50 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Konfi-specific routes
 module.exports = (db, verifyToken) => {
-  
-  // Konfi login
-  router.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
-      if (err) {
-        console.error('Konfi login database error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      
-      if (!konfi) {
-        console.log(`Konfi login failed: user '${username}' not found`);
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      
-      if (!bcrypt.compareSync(password, konfi.password_hash)) {
-        console.log(`Konfi login failed: wrong password for user '${username}'`);
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      
-      console.log(`Konfi login successful: user '${username}' (${konfi.name})`);
-      
-      const token = jwt.sign({ 
-        id: konfi.id, 
-        type: 'konfi', 
-        display_name: konfi.name,
-        organization_id: konfi.organization_id 
-      }, JWT_SECRET, { expiresIn: '24h' });
-      
-      res.json({ 
-        token, 
-        user: { 
-          id: konfi.id, 
-          name: konfi.name,
-          display_name: konfi.name, 
-          username: konfi.username,
-          jahrgang: konfi.jahrgang_name,
-          type: 'konfi' 
-        } 
-      });
-    });
-  });
-  
+
   // Get konfi dashboard data
   router.get('/dashboard', verifyToken, (req, res) => {
     if (req.user.type !== 'konfi') {
