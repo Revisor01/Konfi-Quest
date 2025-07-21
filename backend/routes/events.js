@@ -74,11 +74,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
       // Get participants
       const participantsQuery = `
-        SELECT eb.*, k.name as participant_name, k.jahrgang_id,
+        SELECT eb.*, u.display_name as participant_name, kp.jahrgang_id,
                j.name as jahrgang_name
         FROM event_bookings eb
-        JOIN konfis k ON eb.konfi_id = k.id
-        LEFT JOIN jahrgaenge j ON k.jahrgang_id = j.id
+        JOIN users u ON eb.konfi_id = u.id
+        LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+        LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         WHERE eb.event_id = ? AND eb.status = 'confirmed'
         ORDER BY eb.created_at ASC
       `;

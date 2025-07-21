@@ -124,10 +124,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       return res.status(400).json({ error: 'Das neue Passwort muss mindestens 6 Zeichen lang sein' });
     }
     
-    const table = userType === 'admin' ? 'admins' : 'konfis';
-    
-    // Get current user
-    db.get(`SELECT * FROM ${table} WHERE id = ?`, [userId], (err, user) => {
+    // Get current user from users table
+    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
       if (err || !user) {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
@@ -140,14 +138,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       // Hash new password
       const hashedPassword = bcrypt.hashSync(newPassword, 10);
       
-      // Update password (and password_plain for konfis)
-      const updateQuery = userType === 'konfi' 
-        ? `UPDATE ${table} SET password_hash = ?, password_plain = ? WHERE id = ?`
-        : `UPDATE ${table} SET password_hash = ? WHERE id = ?`;
-      
-      const params = userType === 'konfi' 
-        ? [hashedPassword, newPassword, userId]
-        : [hashedPassword, userId];
+      // Update password in users table
+      const updateQuery = `UPDATE users SET password_hash = ? WHERE id = ?`;
+      const params = [hashedPassword, userId];
       
       db.run(updateQuery, params, function(err) {
         if (err) {
@@ -177,9 +170,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
     }
     
-    const table = userType === 'admin' ? 'admins' : 'konfis';
-    
-    db.run(`UPDATE ${table} SET email = ? WHERE id = ?`, [email, userId], function(err) {
+    db.run(`UPDATE users SET email = ? WHERE id = ?`, [email, userId], function(err) {
       if (err) {
         console.error('Email update error:', err);
         return res.status(500).json({ error: 'Fehler beim Aktualisieren der E-Mail-Adresse' });
@@ -198,33 +189,35 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     }
     
-    // Check in both tables
-    const queries = [
-      { query: 'SELECT id, email, name FROM admins WHERE email = ?', type: 'admin' },
-      { query: 'SELECT id, email, name FROM konfis WHERE email = ?', type: 'konfi' }
-    ];
+    // Check in users table with role-based type determination
+    const query = `
+      SELECT u.id, u.email, u.display_name as name, r.name as role_name
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      WHERE u.email = ?
+    `;
     
-    let userFound = false;
-    let completed = 0;
-    
-    queries.forEach(({ query, type }) => {
-      db.get(query, [email], async (err, user) => {
-        completed++;
+    db.get(query, [email], async (err, user) => {
+      if (err) {
+        console.error('Password reset query error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (user) {
+        // Determine user type based on role
+        const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
         
-        if (user && !userFound) {
-          userFound = true;
-          
-          // Generate reset token
-          const token = generateResetToken();
-          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-          
-          // Save reset token
-          db.run('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES (?, ?, ?, ?)',
-            [user.id, type, token, expiresAt], async (err) => {
-            if (err) {
-              console.error('Reset token save error:', err);
-              return res.status(500).json({ error: 'Fehler beim Erstellen des Reset-Tokens' });
-            }
+        // Generate reset token
+        const token = generateResetToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        
+        // Save reset token
+        db.run('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES (?, ?, ?, ?)',
+          [user.id, userType, token, expiresAt], async (err) => {
+          if (err) {
+            console.error('Reset token save error:', err);
+            return res.status(500).json({ error: 'Fehler beim Erstellen des Reset-Tokens' });
+          }
             
             // Send reset email
             const resetUrl = `https://konfipoints.godsapp.de/reset-password?token=${token}`;
@@ -249,22 +242,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
               </div>
             `;
             
-            const emailSent = await sendEmail(email, 'Konfi Quest - Passwort zurücksetzen', emailHtml);
-            
-            if (emailSent) {
-              console.log(`✅ Password reset email sent to ${email} for ${type} ${user.name}`);
-              res.json({ message: 'Password-Reset-E-Mail wurde gesendet' });
-            } else {
-              res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
-            }
-          });
+          const emailSent = await sendEmail(email, 'Konfi Quest - Passwort zurücksetzen', emailHtml);
           
-        } else if (completed === queries.length && !userFound) {
-          // All queries completed, no user found
-          // Don't reveal if email exists or not for security
-          res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
-        }
-      });
+          if (emailSent) {
+            console.log(`✅ Password reset email sent to ${email} for ${userType} ${user.name}`);
+            res.json({ message: 'Password-Reset-E-Mail wurde gesendet' });
+          } else {
+            res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
+          }
+        });
+      } else {
+        // Don't reveal if email exists or not for security
+        res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
+      }
     });
   });
 
@@ -287,17 +277,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
         return res.status(400).json({ error: 'Ungültiger oder abgelaufener Reset-Token' });
       }
       
-      const table = resetRecord.user_type === 'admin' ? 'admins' : 'konfis';
       const hashedPassword = bcrypt.hashSync(newPassword, 10);
       
-      // Update password
-      const updateQuery = resetRecord.user_type === 'konfi' 
-        ? `UPDATE ${table} SET password_hash = ?, password_plain = ? WHERE id = ?`
-        : `UPDATE ${table} SET password_hash = ? WHERE id = ?`;
-      
-      const params = resetRecord.user_type === 'konfi' 
-        ? [hashedPassword, newPassword, resetRecord.user_id]
-        : [hashedPassword, resetRecord.user_id];
+      // Update password in users table
+      const updateQuery = `UPDATE users SET password_hash = ? WHERE id = ?`;
+      const params = [hashedPassword, resetRecord.user_id];
       
       db.run(updateQuery, params, function(err) {
         if (err) {

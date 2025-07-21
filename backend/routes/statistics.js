@@ -8,8 +8,22 @@ module.exports = (db, rbacMiddleware) => {
   // Get konfi statistics
   router.get('/', verifyTokenRBAC, (req, res) => {
     const queries = {
-      totalPoints: "SELECT SUM(gottesdienst_points + gemeinde_points) as total FROM konfis",
-      mostActiveKonfi: "SELECT name, (gottesdienst_points + gemeinde_points) as total_points FROM konfis ORDER BY total_points DESC LIMIT 1",
+      totalPoints: `
+        SELECT SUM(kp.gottesdienst_points + kp.gemeinde_points) as total 
+        FROM konfi_profiles kp
+        JOIN users u ON kp.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'konfi'
+      `,
+      mostActiveKonfi: `
+        SELECT u.display_name as name, (kp.gottesdienst_points + kp.gemeinde_points) as total_points 
+        FROM konfi_profiles kp
+        JOIN users u ON kp.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'konfi'
+        ORDER BY total_points DESC 
+        LIMIT 1
+      `,
       mostPopularActivity: `
         SELECT a.name, COUNT(*) as count 
         FROM konfi_activities ka 
@@ -19,7 +33,12 @@ module.exports = (db, rbacMiddleware) => {
         LIMIT 1
       `,
       totalActivities: "SELECT COUNT(*) as count FROM konfi_activities",
-      totalKonfis: "SELECT COUNT(*) as count FROM konfis"
+      totalKonfis: `
+        SELECT COUNT(*) as count 
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'konfi'
+      `
     };
 
     const results = {};
@@ -43,8 +62,11 @@ module.exports = (db, rbacMiddleware) => {
   // Get konfi ranking (anonymized for konfis)
   router.get('/ranking', verifyTokenRBAC, (req, res) => {
     const query = `
-      SELECT id, name, (gottesdienst_points + gemeinde_points) as total_points
-      FROM konfis 
+      SELECT u.id, u.display_name as name, (kp.gottesdienst_points + kp.gemeinde_points) as total_points
+      FROM users u
+      JOIN konfi_profiles kp ON u.id = kp.user_id
+      JOIN roles r ON u.role_id = r.id
+      WHERE r.name = 'konfi'
       ORDER BY total_points DESC
     `;
     

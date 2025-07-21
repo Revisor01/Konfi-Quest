@@ -46,7 +46,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // DELETE a jahrgang
   router.delete('/:id', rbacVerifier, checkPermission('admin.jahrgaenge.delete'), (req, res) => {
     const jahrgangId = req.params.id;
-    db.get("SELECT COUNT(*) as count FROM konfis WHERE jahrgang_id = ?", [jahrgangId], (err, row) => {
+    db.get("SELECT COUNT(*) as count FROM konfi_profiles WHERE jahrgang_id = ?", [jahrgangId], (err, row) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       if (row.count > 0) return res.status(409).json({ error: `Cannot delete: ${row.count} konfis are assigned to this jahrgang.` });
 

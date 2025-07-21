@@ -80,8 +80,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
     db.all("SELECT * FROM custom_badges WHERE is_active = 1", [], (err, badges) => {
       if (err) return reject(err);
       
-      // Get konfi data
-      db.get("SELECT * FROM konfis WHERE id = ?", [konfiId], (err, konfi) => {
+      // Get konfi data from users + konfi_profiles
+      const konfiQuery = `
+        SELECT kp.*, u.display_name as name
+        FROM konfi_profiles kp
+        JOIN users u ON kp.user_id = u.id
+        WHERE kp.user_id = ?
+      `;
+      db.get(konfiQuery, [konfiId], (err, konfi) => {
         if (err) return reject(err);
         if (!konfi) return resolve(0);
         

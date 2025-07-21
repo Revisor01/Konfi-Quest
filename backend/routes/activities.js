@@ -118,12 +118,13 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // Pfad: GET /api/activities/requests
   router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), (req, res) => {
       const query = `
-        SELECT ar.*, k.name as konfi_name, a.name as activity_name, a.points as activity_points,
-               u.display_name as approved_by_name
+        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
+               u_approved.display_name as approved_by_name
         FROM activity_requests ar
-        JOIN konfis k ON ar.konfi_id = k.id
+        JOIN users u_konfi ON ar.konfi_id = u_konfi.id
+        JOIN konfi_profiles kp ON u_konfi.id = kp.user_id
         JOIN activities a ON ar.activity_id = a.id
-        LEFT JOIN users u ON ar.approved_by = u.id
+        LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = ?
         ORDER BY ar.created_at DESC
       `;
@@ -150,7 +151,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       if (status === 'approved') {
         await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date) VALUES (?, ?, ?, ?)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date]);
         const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
-        await db.run(`UPDATE konfis SET ${pointField} = ${pointField} + ? WHERE id = ?`, [request.points, request.konfi_id]);
+        await db.run(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + ? WHERE user_id = ?`, [request.points, request.konfi_id]);
         newBadges = await checkAndAwardBadges(request.konfi_id);
       }
       res.json({ message: 'Request status updated', newBadges });
@@ -179,7 +180,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date) VALUES (?, ?, ?, ?)", [konfiId, activityId, req.user.id, date]);
       
       const pointField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
-      await db.run(`UPDATE konfis SET ${pointField} = ${pointField} + ? WHERE id = ?`, [activity.points, konfiId]);
+      await db.run(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + ? WHERE user_id = ?`, [activity.points, konfiId]);
       
       const newBadges = await checkAndAwardBadges(konfiId);
       res.json({ message: 'Activity assigned successfully', newBadges });
@@ -200,7 +201,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       await db.run("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date) VALUES (?, ?, ?, ?, ?, ?)", [konfiId, points, type, description, req.user.id, date]);
       
       const pointField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
-      await db.run(`UPDATE konfis SET ${pointField} = ${pointField} + ? WHERE id = ?`, [points, konfiId]);
+      await db.run(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + ? WHERE user_id = ?`, [points, konfiId]);
       
       const newBadges = await checkAndAwardBadges(konfiId);
       res.json({ message: 'Bonus points assigned successfully', newBadges });
