@@ -521,21 +521,6 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// SQLite Database Setup
-const dbPath = path.join(__dirname, 'data', 'konfi.db');
-const dbExists = fs.existsSync(dbPath);
-
-if (!dbExists) {
-  console.log('📊 Creating new database...');
-} else {
-  console.log('📊 Using existing database...');
-}
-
-const db = new sqlite3.Database(dbPath);
-
-// Initialize Database with correct schema
-db.serialize(() => {
-
 // Routes
 
 // Health check
