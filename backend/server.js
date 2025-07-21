@@ -2218,8 +2218,6 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Konfi Points API running on port ${PORT}`);
-  console.log(`📊 Database: ${dbPath}`);
-  console.log(`🔐 Admin login: username=admin, password=pastor2025`);
   console.log(`📁 Uploads directory: ${uploadsDir}`);
 });
 
