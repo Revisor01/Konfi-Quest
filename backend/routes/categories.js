@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
 
   // GET all categories for the admin's organization
-  router.get('/', verifyToken, checkPermission('admin.categories.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.categories.view'), (req, res) => {
     const query = "SELECT * FROM categories WHERE organization_id = ? ORDER BY name";
     db.all(query, [req.user.organization_id], (err, rows) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -13,7 +13,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // POST a new category
-  router.post('/', verifyToken, checkPermission('admin.categories.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.categories.create'), (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
 
@@ -28,7 +28,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // PUT (update) a category
-  router.put('/:id', verifyToken, checkPermission('admin.categories.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.categories.edit'), (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required' });
 
@@ -44,7 +44,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // DELETE a category
-  router.delete('/:id', verifyToken, checkPermission('admin.categories.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.categories.delete'), (req, res) => {
     const categoryId = req.params.id;
     // Prüfen, ob die Kategorie noch in Verwendung ist
     const checkQuery = `

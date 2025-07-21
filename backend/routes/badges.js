@@ -388,14 +388,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
 };
 
 // Route für Admin-Verwaltung von Badges
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
   router.get('/criteria-types', verifyToken, (req, res) => {
     res.json(CRITERIA_TYPES);
   });
   
   // GET all badges for admin management view
-  router.get('/', verifyToken, checkPermission('admin.badges.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.badges.view'), (req, res) => {
     
     const badgeQuery = `
       SELECT cb.*, 
@@ -422,7 +422,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // POST a new badge
-  router.post('/', verifyToken, checkPermission('admin.badges.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.badges.create'), (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
@@ -446,7 +446,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // PUT (update) a badge by ID
-  router.put('/:id', verifyToken, checkPermission('admin.badges.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.badges.edit'), (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden } = req.body;
     
     const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
@@ -470,7 +470,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // DELETE a badge by ID
-  router.delete('/:id', verifyToken, checkPermission('admin.badges.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.badges.delete'), (req, res) => {
     db.serialize(() => {
         db.run("BEGIN TRANSACTION");
         db.run("DELETE FROM konfi_badges WHERE badge_id = ?", [req.params.id]);
@@ -495,5 +495,8 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
   });
 
+  // Export the checkAndAwardBadges function
+  router.checkAndAwardBadges = checkAndAwardBadges;
+  
   return router;
 };

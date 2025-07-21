@@ -3,10 +3,10 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 
 // User management routes
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get users in current organization
-  router.get('/', verifyToken, checkPermission('admin.users.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
     const organizationId = req.user.organization_id;
     
     const query = `
@@ -32,7 +32,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Get single user with details
-  router.get('/:id', verifyToken, checkPermission('admin.users.view'), (req, res) => {
+  router.get('/:id', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     
@@ -81,7 +81,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Create new user
-  router.post('/', verifyToken, checkPermission('admin.users.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.users.create'), (req, res) => {
     const organizationId = req.user.organization_id;
     const {
       username,
@@ -134,7 +134,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Update user
-  router.put('/:id', verifyToken, checkPermission('admin.users.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.users.edit'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const {
@@ -234,7 +234,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Delete user
-  router.delete('/:id', verifyToken, checkPermission('admin.users.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.users.delete'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     

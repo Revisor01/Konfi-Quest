@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Organizations routes
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get all organizations (super admin only)
-  router.get('/', verifyToken, checkPermission('admin.organizations.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.organizations.view'), (req, res) => {
     const query = `
       SELECT o.*, 
              COUNT(DISTINCT u.id) as user_count,
@@ -27,7 +27,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Get single organization by ID
-  router.get('/:id', verifyToken, checkPermission('admin.organizations.view'), (req, res) => {
+  router.get('/:id', rbacVerifier, checkPermission('admin.organizations.view'), (req, res) => {
     const { id } = req.params;
     
     // Check if user can view this organization
@@ -106,7 +106,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Create new organization (super admin only)
-  router.post('/', verifyToken, checkPermission('admin.organizations.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.organizations.create'), (req, res) => {
     const {
       name,
       slug,
@@ -209,7 +209,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Update organization
-  router.put('/:id', verifyToken, checkPermission('admin.organizations.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.organizations.edit'), (req, res) => {
     const { id } = req.params;
     const {
       name,
@@ -254,7 +254,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Delete organization (super admin only)
-  router.delete('/:id', verifyToken, checkPermission('admin.organizations.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.organizations.delete'), (req, res) => {
     const { id } = req.params;
     
     db.serialize(() => {

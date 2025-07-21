@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Roles management routes
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get all roles in current organization
-  router.get('/', verifyToken, checkPermission('admin.roles.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
     const organizationId = req.user.organization_id;
     
     const query = `
@@ -31,7 +31,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Get single role with permissions
-  router.get('/:id', verifyToken, checkPermission('admin.roles.view'), (req, res) => {
+  router.get('/:id', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     
@@ -79,7 +79,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Create new role
-  router.post('/', verifyToken, checkPermission('admin.roles.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.roles.create'), (req, res) => {
     const organizationId = req.user.organization_id;
     const {
       name,
@@ -129,7 +129,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Update role
-  router.put('/:id', verifyToken, checkPermission('admin.roles.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.roles.edit'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const {
@@ -227,7 +227,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // Delete role
-  router.delete('/:id', verifyToken, checkPermission('admin.roles.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.roles.delete'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     

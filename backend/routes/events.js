@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Events routes
-module.exports = (db, verifyToken) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
-  // Get all events
-  router.get('/', verifyToken, (req, res) => {
+  // Get all events (read-only, accessible to all authenticated users)
+  router.get('/', rbacVerifier, (req, res) => {
     const query = `
       SELECT e.*, 
              COUNT(eb.id) as registered_count,
@@ -58,7 +58,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get event details with participants
-  router.get('/:id', verifyToken, (req, res) => {
+  router.get('/:id', rbacVerifier, (req, res) => {
     const eventId = req.params.id;
     
     // Get event details
@@ -99,10 +99,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Create new event
-  router.post('/', verifyToken, (req, res) => {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+  router.post('/', rbacVerifier, checkPermission('admin.events.create'), (req, res) => {
     
     const {
       name,
@@ -198,10 +195,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Update event
-  router.put('/:id', verifyToken, (req, res) => {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+  router.put('/:id', rbacVerifier, checkPermission('admin.events.edit'), (req, res) => {
     
     const { id } = req.params;
     const {
@@ -241,10 +235,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Delete event
-  router.delete('/:id', verifyToken, (req, res) => {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+  router.delete('/:id', rbacVerifier, checkPermission('admin.events.delete'), (req, res) => {
     
     const { id } = req.params;
     
@@ -282,7 +273,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Book event
-  router.post('/:id/book', verifyToken, (req, res) => {
+  router.post('/:id/book', rbacVerifier, (req, res) => {
     const eventId = req.params.id;
     const konfiId = req.user.id;
     const { timeslot_id } = req.body;
@@ -362,7 +353,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Cancel booking
-  router.delete('/:id/book', verifyToken, (req, res) => {
+  router.delete('/:id/book', rbacVerifier, (req, res) => {
     const eventId = req.params.id;
     const konfiId = req.user.id;
     
@@ -387,7 +378,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get user's bookings
-  router.get('/user/bookings', verifyToken, (req, res) => {
+  router.get('/user/bookings', rbacVerifier, (req, res) => {
     const konfiId = req.user.id;
     
     if (req.user.type !== 'konfi') {
@@ -413,10 +404,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Create series events
-  router.post('/series', verifyToken, (req, res) => {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+  router.post('/series', rbacVerifier, checkPermission('admin.events.create'), (req, res) => {
     
     const { 
       name, 
@@ -492,10 +480,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Create group chat for event
-  router.post('/:id/chat', verifyToken, (req, res) => {
-    if (req.user.type !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
+  router.post('/:id/chat', rbacVerifier, checkPermission('admin.events.edit'), (req, res) => {
     
     const eventId = req.params.id;
     

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Enhanced token verification with RBAC support
 const verifyTokenRBAC = (db) => {
@@ -28,7 +28,8 @@ const verifyTokenRBAC = (db) => {
                o.is_active as organization_active
         FROM users u
         JOIN organizations o ON u.organization_id = o.id
-        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN user_roles ur ON u.id = ur.user_id
+        LEFT JOIN roles r ON ur.role_id = r.id
         WHERE u.id = ?
       `;
       
@@ -55,7 +56,8 @@ const verifyTokenRBAC = (db) => {
       const permissionsQuery = `
         SELECT p.name
         FROM users u
-        JOIN roles r ON u.role_id = r.id
+        JOIN user_roles ur ON u.id = ur.user_id
+        JOIN roles r ON ur.role_id = r.id
         JOIN role_permissions rp ON r.id = rp.role_id
         JOIN permissions p ON rp.permission_id = p.id
         WHERE u.id = ? AND rp.granted = 1

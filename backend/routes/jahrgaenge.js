@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
 
   // GET all jahrgaenge for the admin's organization
-  router.get('/', verifyToken, checkPermission('admin.jahrgaenge.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.jahrgaenge.view'), (req, res) => {
     const query = "SELECT * FROM jahrgaenge WHERE organization_id = ? ORDER BY name DESC";
     db.all(query, [req.user.organization_id], (err, rows) => {
       if (err) return res.status(500).json({ error: 'Database error' });
@@ -13,7 +13,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // POST a new jahrgang
-  router.post('/', verifyToken, checkPermission('admin.jahrgaenge.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.jahrgaenge.create'), (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
@@ -28,7 +28,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // PUT (update) a jahrgang
-  router.put('/:id', verifyToken, checkPermission('admin.jahrgaenge.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.jahrgaenge.edit'), (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
@@ -44,7 +44,7 @@ module.exports = (db, verifyToken, checkPermission) => {
   });
 
   // DELETE a jahrgang
-  router.delete('/:id', verifyToken, checkPermission('admin.jahrgaenge.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.jahrgaenge.delete'), (req, res) => {
     const jahrgangId = req.params.id;
     db.get("SELECT COUNT(*) as count FROM konfis WHERE jahrgang_id = ?", [jahrgangId], (err, row) => {
       if (err) return res.status(500).json({ error: 'Database error' });

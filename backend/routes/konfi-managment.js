@@ -1,20 +1,12 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
-function generateBiblicalPassword() {
-    // Diese Funktion wird hier gebraucht
-    const BIBLE_BOOKS = ['Genesis', 'Exodus', /* ... alle Bücher ... */];
-    const book = BIBLE_BOOKS[Math.floor(Math.random() * BIBLE_BOOKS.length)];
-    const chapter = Math.floor(Math.random() * 50) + 1;
-    const verse = Math.floor(Math.random() * 30) + 1;
-    return `${book}${chapter},${verse}`;
-}
-
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
 
     // GET all konfis for the admin's organization
-    router.get('/', verifyToken, checkPermission('admin.konfis.view'), (req, res) => {
+    router.get('/', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
         const query = `
             SELECT k.id, k.name, k.username, k.password_plain, k.gottesdienst_points, k.gemeinde_points,
                    j.name as jahrgang_name, j.id as jahrgang_id
@@ -33,7 +25,7 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
 
     // GET a single konfi by ID
-    router.get('/:id', verifyToken, checkPermission('admin.konfis.view'), (req, res) => {
+    router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
         const query = `
             SELECT k.*, j.name as jahrgang_name
             FROM konfis k
@@ -51,7 +43,7 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
 
     // POST (create) a new konfi
-    router.post('/', verifyToken, checkPermission('admin.konfis.create'), (req, res) => {
+    router.post('/', rbacVerifier, checkPermission('admin.konfis.create'), (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name and Jahrgang are required' });
@@ -78,7 +70,7 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
 
     // PUT (update) a konfi
-    router.put('/:id', verifyToken, checkPermission('admin.konfis.edit'), (req, res) => {
+    router.put('/:id', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name and Jahrgang are required' });
@@ -96,7 +88,7 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
 
     // DELETE a konfi
-    router.delete('/:id', verifyToken, checkPermission('admin.konfis.delete'), (req, res) => {
+    router.delete('/:id', rbacVerifier, checkPermission('admin.konfis.delete'), (req, res) => {
         const konfiId = req.params.id;
         db.serialize(() => {
             db.run("BEGIN TRANSACTION");
@@ -123,7 +115,7 @@ module.exports = (db, verifyToken, checkPermission) => {
     });
 
     // Regenerate password for a konfi
-    router.post('/:id/regenerate-password', verifyToken, checkPermission('admin.konfis.reset_password'), (req, res) => {
+    router.post('/:id/regenerate-password', rbacVerifier, checkPermission('admin.konfis.reset_password'), (req, res) => {
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 

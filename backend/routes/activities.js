@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Dieses Modul fasst die Admin-Verwaltung von Aktivitäten, Anträgen und Bonuspunkten zusammen.
-module.exports = (db, verifyToken, checkPermission, checkAndAwardBadges, upload) => {
+module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload) => {
 
   // ====================================================================
   // ACTIVITIES MANAGEMENT (Masterliste)
@@ -10,7 +10,7 @@ module.exports = (db, verifyToken, checkPermission, checkAndAwardBadges, upload)
 
   // GET all activities
   // Pfad: GET /api/activities/
-  router.get('/', verifyToken, checkPermission('admin.activities.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.activities.view'), (req, res) => {
     const query = `
       SELECT a.*, 
              GROUP_CONCAT(c.id) as category_ids,
@@ -48,7 +48,7 @@ module.exports = (db, verifyToken, checkPermission, checkAndAwardBadges, upload)
 
   // POST a new activity
   // Pfad: POST /api/activities/
-  router.post('/', verifyToken, checkPermission('admin.activities.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.activities.create'), (req, res) => {
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
     if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Type must be gottesdienst or gemeinde' });
@@ -72,7 +72,7 @@ module.exports = (db, verifyToken, checkPermission, checkAndAwardBadges, upload)
 
   // PUT (update) an activity
   // Pfad: PUT /api/activities/:id
-  router.put('/:id', verifyToken, checkPermission('admin.activities.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.activities.edit'), (req, res) => {
     const activityId = req.params.id;
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
@@ -96,7 +96,7 @@ module.exports = (db, verifyToken, checkPermission, checkAndAwardBadges, upload)
 
   // DELETE an activity
   // Pfad: DELETE /api/activities/:id
-  router.delete('/:id', verifyToken, checkPermission('admin.activities.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.activities.delete'), (req, res) => {
     const activityId = req.params.id;
     db.get(`SELECT COUNT(*) as count FROM konfi_activities WHERE activity_id = ?`, [activityId], (err, row) => {
         if (err) return res.status(500).json({ error: 'Database error' });

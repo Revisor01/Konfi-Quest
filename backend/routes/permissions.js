@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 // Permissions routes
-module.exports = (db, verifyToken, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get all available permissions
-  router.get('/', verifyToken, checkPermission('admin.roles.view'), (req, res) => {
+  router.get('/', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
     const query = `
       SELECT id, name, display_name, description, module
       FROM permissions
