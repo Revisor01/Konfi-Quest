@@ -95,8 +95,8 @@ const verifyTokenRBAC = (db) => {
         organization_slug: user.organization_slug,
         permissions: permissions,
         assigned_jahrgaenge: assignedJahrgaenge,
-        type: 'user', // For backward compatibility
-        is_super_admin: user.role_name === 'super_admin'
+        type: user.role_name === 'konfi' ? 'konfi' : 'admin', // Set correct type for backward compatibility  
+        is_super_admin: user.role_name === 'super_admin' || user.role_name === 'admin'
       };
       
       // Update last login
