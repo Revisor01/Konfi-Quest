@@ -282,7 +282,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get available permissions
-  router.get('/permissions/available', verifyToken, checkPermission('admin.roles.view'), (req, res) => {
+  router.get('/permissions/available', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
     const query = `
       SELECT id, name, display_name, description, module
       FROM permissions
@@ -310,7 +310,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Update role permissions
-  router.post('/:id/permissions', verifyToken, checkPermission('admin.permissions.manage'), (req, res) => {
+  router.post('/:id/permissions', rbacVerifier, checkPermission('admin.permissions.manage'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const { permission_ids } = req.body;

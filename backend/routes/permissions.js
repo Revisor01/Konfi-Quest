@@ -24,7 +24,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get permissions grouped by module
-  router.get('/grouped', verifyToken, checkPermission('admin.roles.view'), (req, res) => {
+  router.get('/grouped', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
     const query = `
       SELECT id, name, display_name, description, module
       FROM permissions

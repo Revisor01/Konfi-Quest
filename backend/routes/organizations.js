@@ -300,7 +300,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get organization users
-  router.get('/:id/users', verifyToken, checkPermission('admin.users.view'), (req, res) => {
+  router.get('/:id/users', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
     const { id } = req.params;
     
     // Check if user can view this organization's users

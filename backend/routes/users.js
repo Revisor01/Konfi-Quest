@@ -274,7 +274,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Assign jahrgaenge to user
-  router.post('/:id/jahrgaenge', verifyToken, checkPermission('admin.jahrgaenge.assign'), (req, res) => {
+  router.post('/:id/jahrgaenge', rbacVerifier, checkPermission('admin.jahrgaenge.assign'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -360,7 +360,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get user's jahrgang assignments
-  router.get('/:id/jahrgaenge', verifyToken, checkPermission('admin.users.view'), (req, res) => {
+  router.get('/:id/jahrgaenge', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     

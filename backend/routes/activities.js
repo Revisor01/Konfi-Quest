@@ -116,7 +116,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // GET all activity requests for an organization
   // Pfad: GET /api/activities/requests
-  router.get('/requests', verifyToken, checkPermission('admin.requests.view'), (req, res) => {
+  router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), (req, res) => {
       const query = `
         SELECT ar.*, k.name as konfi_name, a.name as activity_name, a.points as activity_points,
                u.display_name as approved_by_name
@@ -135,7 +135,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // PUT (update) an activity request status
   // Pfad: PUT /api/activities/requests/:id
-  router.put('/requests/:id', verifyToken, checkPermission('admin.requests.approve'), async (req, res) => {
+  router.put('/requests/:id', rbacVerifier, checkPermission('admin.requests.approve'), async (req, res) => {
     const requestId = req.params.id;
     const { status, admin_comment } = req.body;
     if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
@@ -167,7 +167,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   
   // Assign activity to a konfi
   // Pfad: POST /api/activities/assign-activity
-  router.post('/assign-activity', verifyToken, checkPermission('admin.konfis.assign_points'), async (req, res) => {
+  router.post('/assign-activity', rbacVerifier, checkPermission('admin.konfis.assign_points'), async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi ID and Activity ID are required' });
     const date = completed_date || new Date().toISOString().split('T')[0];
@@ -191,7 +191,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // Assign bonus points to a konfi
   // Pfad: POST /api/activities/assign-bonus
-  router.post('/assign-bonus', verifyToken, checkPermission('admin.konfis.assign_points'), async (req, res) => {
+  router.post('/assign-bonus', rbacVerifier, checkPermission('admin.konfis.assign_points'), async (req, res) => {
     const { konfiId, points, type, description, completed_date } = req.body;
     if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'All fields are required' });
     const date = completed_date || new Date().toISOString().split('T')[0];
