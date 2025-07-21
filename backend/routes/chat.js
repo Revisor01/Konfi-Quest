@@ -4,7 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 
-module.exports = (db, verifyToken, uploadsDir) => {
+module.exports = (db, rbacMiddleware, uploadsDir) => {
+  const { verifyTokenRBAC } = rbacMiddleware;
 // Chat file upload setup
 const chatUpload = multer({ 
   dest: path.join(uploadsDir, 'chat'),
@@ -39,7 +40,7 @@ const chatUpload = multer({
 // === CHAT API ENDPOINTS ===
 
 // Get admins for direct contact (konfis only)
-router.get('/admins', verifyToken, (req, res) => {
+router.get('/admins', verifyTokenRBAC, (req, res) => {
   if (req.user.type !== 'konfi') {
     return res.status(403).json({ error: 'Konfi access required' });
   }
@@ -51,7 +52,7 @@ router.get('/admins', verifyToken, (req, res) => {
 });
 
 // Create or get direct chat room
-router.post('/direct', verifyToken, (req, res) => {
+router.post('/direct', verifyTokenRBAC, (req, res) => {
   const { target_user_id, target_user_type } = req.body;
   
   if (!target_user_id || !target_user_type) {
@@ -119,7 +120,7 @@ router.post('/direct', verifyToken, (req, res) => {
 });
 
 // Create new chat room
-router.post('/rooms', verifyToken, (req, res) => {
+router.post('/rooms', verifyTokenRBAC, (req, res) => {
   const { type, name, participants, jahrgang_id } = req.body;
   const createdBy = req.user.id;
   
@@ -238,7 +239,7 @@ router.post('/rooms', verifyToken, (req, res) => {
 });
 
 // Get chat rooms for user
-router.get('/rooms', verifyToken, (req, res) => {
+router.get('/rooms', verifyTokenRBAC, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
   
@@ -312,7 +313,7 @@ router.get('/rooms', verifyToken, (req, res) => {
 });
 
 // Get messages for a room
-router.get('/rooms/:roomId/messages', verifyToken, (req, res) => {
+router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const limit = parseInt(req.query.limit) || 50;
   const offset = parseInt(req.query.offset) || 0;
@@ -405,8 +406,8 @@ router.get('/rooms/:roomId/messages', verifyToken, (req, res) => {
   });
 });
 
-// Send message - KORRIGIERT mit verifyToken ZUERST
-router.post('/rooms/:roomId/messages', verifyToken, chatUpload.single('file'), (req, res) => {
+// Send message - KORRIGIERT mit verifyTokenRBAC
+router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), (req, res) => {
   const roomId = req.params.roomId;
   const { content, message_type = 'text', reply_to } = req.body;
   const userId = req.user.id;
@@ -490,7 +491,7 @@ router.post('/rooms/:roomId/messages', verifyToken, chatUpload.single('file'), (
 });
 
 // Delete message (only for admins)
-router.delete('/messages/:messageId', verifyToken, (req, res) => {
+router.delete('/messages/:messageId', verifyTokenRBAC, (req, res) => {
   const messageId = req.params.messageId;
   const userId = req.user.id;
   const userType = req.user.type;
@@ -528,7 +529,7 @@ router.delete('/messages/:messageId', verifyToken, (req, res) => {
 });
 
 // Mark room as read
-router.put('/rooms/:roomId/read', verifyToken, (req, res) => {
+router.put('/rooms/:roomId/read', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const userId = req.user.id;
   const userType = req.user.type;
@@ -558,7 +559,7 @@ router.put('/rooms/:roomId/read', verifyToken, (req, res) => {
 });
 
 // Get unread counts for all rooms
-router.get('/unread-counts', verifyToken, (req, res) => {
+router.get('/unread-counts', verifyTokenRBAC, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
   
@@ -613,7 +614,7 @@ router.get('/files/:filename', (req, res) => {
 });
 
 // Create poll for a room
-router.post('/rooms/:roomId/polls', verifyToken, (req, res) => {
+router.post('/rooms/:roomId/polls', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const { question, options, multiple_choice = false, expires_in_hours } = req.body;
   const userId = req.user.id;
@@ -738,7 +739,7 @@ router.post('/rooms/:roomId/polls', verifyToken, (req, res) => {
 });
 
 // Vote on a poll
-router.post('/polls/:pollId/vote', verifyToken, (req, res) => {
+router.post('/polls/:pollId/vote', verifyTokenRBAC, (req, res) => {
   const pollId = req.params.pollId;
   const { option_index } = req.body;
   const userId = req.user.id;
@@ -841,7 +842,7 @@ router.post('/polls/:pollId/vote', verifyToken, (req, res) => {
 });
 
 // Delete chat room
-router.delete('/rooms/:roomId', verifyToken, (req, res) => {
+router.delete('/rooms/:roomId', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const userId = req.user.id;
   const userType = req.user.type;
@@ -930,7 +931,7 @@ router.delete('/rooms/:roomId', verifyToken, (req, res) => {
 });
 
 // Mark room as read
-router.post('/rooms/:roomId/mark-read', verifyToken, (req, res) => {
+router.post('/rooms/:roomId/mark-read', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const userId = req.user.id;
   const userType = req.user.type;
@@ -987,7 +988,7 @@ router.post('/rooms/:roomId/mark-read', verifyToken, (req, res) => {
 });
 
 // Get room participants
-router.get('/rooms/:roomId/participants', verifyToken, (req, res) => {
+router.get('/rooms/:roomId/participants', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const userId = req.user.id;
   const userType = req.user.type;
@@ -1041,7 +1042,7 @@ router.get('/rooms/:roomId/participants', verifyToken, (req, res) => {
 });
 
 // Add participant to room
-router.post('/rooms/:roomId/participants', verifyToken, (req, res) => {
+router.post('/rooms/:roomId/participants', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const { user_id, user_type } = req.body;
   const requesterId = req.user.id;
@@ -1097,7 +1098,7 @@ router.post('/rooms/:roomId/participants', verifyToken, (req, res) => {
 });
 
 // Remove participant from room
-router.delete('/rooms/:roomId/participants/:userId/:userType', verifyToken, (req, res) => {
+router.delete('/rooms/:roomId/participants/:userId/:userType', verifyTokenRBAC, (req, res) => {
   const roomId = req.params.roomId;
   const userId = parseInt(req.params.userId);
   const userType = req.params.userType;

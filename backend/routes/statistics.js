@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 // Statistics routes for konfis and admins
-module.exports = (db, verifyToken) => {
+module.exports = (db, rbacMiddleware) => {
+  const { verifyTokenRBAC } = rbacMiddleware;
   
   // Get konfi statistics
-  router.get('/', verifyToken, (req, res) => {
+  router.get('/', verifyTokenRBAC, (req, res) => {
     const queries = {
       totalPoints: "SELECT SUM(gottesdienst_points + gemeinde_points) as total FROM konfis",
       mostActiveKonfi: "SELECT name, (gottesdienst_points + gemeinde_points) as total_points FROM konfis ORDER BY total_points DESC LIMIT 1",
@@ -40,7 +41,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get konfi ranking (anonymized for konfis)
-  router.get('/ranking', verifyToken, (req, res) => {
+  router.get('/ranking', verifyTokenRBAC, (req, res) => {
     const query = `
       SELECT id, name, (gottesdienst_points + gemeinde_points) as total_points
       FROM konfis 

@@ -6,10 +6,11 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Konfi-specific routes
-module.exports = (db, verifyToken) => {
+module.exports = (db, rbacMiddleware) => {
+  const { verifyTokenRBAC } = rbacMiddleware;
 
   // Get konfi dashboard data
-  router.get('/dashboard', verifyToken, (req, res) => {
+  router.get('/dashboard', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -18,10 +19,13 @@ module.exports = (db, verifyToken) => {
     
     // Get konfi basic info 
     const konfiQuery = `
-      SELECT k.*, j.name as jahrgang_name, j.confirmation_date
-      FROM konfis k 
-      JOIN jahrgaenge j ON k.jahrgang_id = j.id
-      WHERE k.id = ?
+      SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
+             kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date
+      FROM users u
+      JOIN konfi_profiles kp ON u.id = kp.user_id
+      JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+      JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ? AND r.name = 'konfi'
     `;
     
     db.get(konfiQuery, [konfiId], (err, konfi) => {
@@ -68,10 +72,12 @@ module.exports = (db, verifyToken) => {
       function continueWithRanking() {
         // Get ranking for jahrgang
         const rankingQuery = `
-          SELECT k.id, k.name as display_name, 
-                 (k.gottesdienst_points + k.gemeinde_points) as points
-          FROM konfis k
-          WHERE k.jahrgang_id = ?
+          SELECT u.id, u.display_name, 
+                 (kp.gottesdienst_points + kp.gemeinde_points) as points
+          FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = ? AND r.name = 'konfi'
           ORDER BY points DESC
           LIMIT 3
         `;
@@ -112,7 +118,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get konfi profile
-  router.get('/profile', verifyToken, (req, res) => {
+  router.get('/profile', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -120,10 +126,13 @@ module.exports = (db, verifyToken) => {
     const konfiId = req.user.id;
     
     const query = `
-      SELECT k.*, k.name as display_name, j.name as jahrgang_name
-      FROM konfis k 
-      JOIN jahrgaenge j ON k.jahrgang_id = j.id
-      WHERE k.id = ?
+      SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
+             kp.jahrgang_id, kp.password_plain, j.name as jahrgang_name
+      FROM users u
+      JOIN konfi_profiles kp ON u.id = kp.user_id
+      JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+      JOIN roles r ON u.role_id = r.id
+      WHERE u.id = ? AND r.name = 'konfi'
     `;
     
     db.get(query, [konfiId], (err, konfi) => {
@@ -136,8 +145,7 @@ module.exports = (db, verifyToken) => {
         return res.status(404).json({ error: 'Konfi not found' });
       }
       
-      // Don't send sensitive data
-      delete konfi.password_hash;
+      // Don't send sensitive data - password_plain is already excluded from SELECT
       
       // Get additional profile stats (simplified to avoid missing tables)
       const statsQuery = `
@@ -146,9 +154,11 @@ module.exports = (db, verifyToken) => {
           COUNT(DISTINCT ar.id) as activity_count,
           0 as event_count,
           COUNT(DISTINCT CASE WHEN ar.status = 'pending' THEN ar.id END) as pending_requests
-        FROM konfis k
-        LEFT JOIN activity_requests ar ON k.id = ar.konfi_id
-        WHERE k.id = ?
+        FROM users u
+        JOIN konfi_profiles kp ON u.id = kp.user_id
+        JOIN roles r ON u.role_id = r.id
+        LEFT JOIN activity_requests ar ON u.id = ar.konfi_id
+        WHERE u.id = ? AND r.name = 'konfi'
       `;
       
       db.get(statsQuery, [konfiId], (err, stats) => {
@@ -160,10 +170,16 @@ module.exports = (db, verifyToken) => {
         // Get ranking position
         const rankingQuery = `
           SELECT COUNT(*) + 1 as rank_in_jahrgang,
-                 (SELECT COUNT(*) FROM konfis WHERE jahrgang_id = ?) as total_in_jahrgang
-          FROM konfis 
-          WHERE jahrgang_id = ? 
-          AND (gottesdienst_points + gemeinde_points) > ?
+                 (SELECT COUNT(*) 
+                  FROM users u2 
+                  JOIN konfi_profiles kp2 ON u2.id = kp2.user_id 
+                  JOIN roles r2 ON u2.role_id = r2.id 
+                  WHERE kp2.jahrgang_id = ? AND r2.name = 'konfi') as total_in_jahrgang
+          FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = ? AND r.name = 'konfi'
+          AND (kp.gottesdienst_points + kp.gemeinde_points) > ?
         `;
         
         const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
@@ -201,7 +217,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get konfi's activity requests
-  router.get('/requests', verifyToken, (req, res) => {
+  router.get('/requests', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -228,7 +244,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Submit new activity request
-  router.post('/requests', verifyToken, (req, res) => {
+  router.post('/requests', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -259,7 +275,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get available activities for requests
-  router.get('/activities', verifyToken, (req, res) => {
+  router.get('/activities', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -284,7 +300,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get konfi's badges
-  router.get('/badges', verifyToken, (req, res) => {
+  router.get('/badges', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -320,7 +336,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get badge statistics for konfi
-  router.get('/badges/stats', verifyToken, (req, res) => {
+  router.get('/badges/stats', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -354,7 +370,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Get konfi's events
-  router.get('/events', verifyToken, (req, res) => {
+  router.get('/events', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -382,7 +398,7 @@ module.exports = (db, verifyToken) => {
   });
 
   // Register for event
-  router.post('/events/:id/register', verifyToken, (req, res) => {
+  router.post('/events/:id/register', verifyTokenRBAC, (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }

@@ -174,9 +174,9 @@ app.get('/api/health', (req, res) => {
 
 // Public-facing & Konfi-specific routes (use simple verifyToken for read-only)
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
-app.use('/api/konfi', konfiRoutes(db, verifyToken));
-app.use('/api/chat', chatRoutes(db, verifyToken, uploadsDir));
-app.use('/api/statistics', statisticsRoutes(db, verifyToken));
+app.use('/api/konfi', konfiRoutes(db, rbacMiddleware));
+app.use('/api/chat', chatRoutes(db, rbacMiddleware, uploadsDir));
+app.use('/api/statistics', statisticsRoutes(db, rbacMiddleware));
 
 // Admin routes requiring RBAC
 app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission));

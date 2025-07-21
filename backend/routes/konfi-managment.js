@@ -8,12 +8,15 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     // GET all konfis for the admin's organization
     router.get('/', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
         const query = `
-            SELECT k.id, k.name, k.username, k.password_plain, k.gottesdienst_points, k.gemeinde_points,
+            SELECT u.id, u.display_name as name, u.username, kp.password_plain, 
+                   kp.gottesdienst_points, kp.gemeinde_points,
                    j.name as jahrgang_name, j.id as jahrgang_id
-            FROM konfis k
-            JOIN jahrgaenge j ON k.jahrgang_id = j.id
-            WHERE k.organization_id = ?
-            ORDER BY j.name DESC, k.name
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+            LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+            WHERE r.name = 'konfi' AND u.organization_id = ?
+            ORDER BY j.name DESC, u.display_name
         `;
         db.all(query, [req.user.organization_id], (err, rows) => {
             if (err) {
@@ -27,17 +30,19 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     // GET a single konfi by ID
     router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
         const query = `
-            SELECT k.*, j.name as jahrgang_name
-            FROM konfis k
-            JOIN jahrgaenge j ON k.jahrgang_id = j.id
-            WHERE k.id = ? AND k.organization_id = ?
+            SELECT u.id, u.display_name as name, u.username, kp.password_plain,
+                   kp.gottesdienst_points, kp.gemeinde_points,
+                   j.name as jahrgang_name, j.id as jahrgang_id
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+            LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+            WHERE r.name = 'konfi' AND u.id = ? AND u.organization_id = ?
         `;
         db.get(query, [req.params.id, req.user.organization_id], (err, konfi) => {
             if (err) return res.status(500).json({ error: 'Database error' });
             if (!konfi) return res.status(404).json({ error: 'Konfi not found' });
 
-            // Passwort-Hash nicht senden
-            delete konfi.password_hash;
             res.json(konfi);
         });
     });
@@ -53,19 +58,54 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         const hashedPassword = bcrypt.hashSync(password, 10);
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
-        const query = `INSERT INTO konfis 
-            (name, jahrgang_id, username, password_hash, password_plain, organization_id) 
-            VALUES (?, ?, ?, ?, ?, ?)`;
-        
-        db.run(query, [name, jahrgang_id, username, hashedPassword, password, req.user.organization_id], function(err) {
-            if (err) {
-                if (err.code === 'SQLITE_CONSTRAINT') {
-                    return res.status(409).json({ error: 'Username already exists' });
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            
+            // Get konfi role ID
+            db.get("SELECT id FROM roles WHERE name = 'konfi' AND organization_id = ?", [req.user.organization_id], (err, role) => {
+                if (err || !role) {
+                    db.run("ROLLBACK");
+                    return res.status(500).json({ error: 'Konfi role not found' });
                 }
-                console.error("Error creating konfi:", err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            res.status(201).json({ id: this.lastID, username, password, message: 'Konfi created successfully' });
+                
+                // Create user entry
+                const userQuery = `INSERT INTO users 
+                    (username, display_name, password_hash, role_id, organization_id) 
+                    VALUES (?, ?, ?, ?, ?)`;
+                
+                db.run(userQuery, [username, name, hashedPassword, role.id, req.user.organization_id], function(err) {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        if (err.code === 'SQLITE_CONSTRAINT') {
+                            return res.status(409).json({ error: 'Username already exists' });
+                        }
+                        console.error("Error creating user:", err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    const userId = this.lastID;
+                    
+                    // Create konfi profile entry
+                    const profileQuery = `INSERT INTO konfi_profiles 
+                        (user_id, jahrgang_id, password_plain, gottesdienst_points, gemeinde_points) 
+                        VALUES (?, ?, ?, 0, 0)`;
+                    
+                    db.run(profileQuery, [userId, jahrgang_id, password], function(err) {
+                        if (err) {
+                            db.run("ROLLBACK");
+                            console.error("Error creating konfi profile:", err);
+                            return res.status(500).json({ error: 'Database error' });
+                        }
+                        
+                        db.run("COMMIT", (err) => {
+                            if (err) {
+                                return res.status(500).json({ error: 'Commit failed' });
+                            }
+                            res.status(201).json({ id: userId, username, password, message: 'Konfi created successfully' });
+                        });
+                    });
+                });
+            });
         });
     });
 
@@ -77,34 +117,74 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         }
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
-        const query = `UPDATE konfis SET name = ?, jahrgang_id = ?, username = ? 
-                       WHERE id = ? AND organization_id = ?`;
-        
-        db.run(query, [name, jahrgang_id, username, req.params.id, req.user.organization_id], function(err) {
-            if (err) { /* ... Error Handling ... */ }
-            if (this.changes === 0) return res.status(404).json({ error: 'Konfi not found' });
-            res.json({ message: 'Konfi updated successfully' });
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            
+            // Update user table
+            const userQuery = `UPDATE users SET display_name = ?, username = ? 
+                               WHERE id = ? AND organization_id = ?`;
+            
+            db.run(userQuery, [name, username, req.params.id, req.user.organization_id], function(err) {
+                if (err) {
+                    db.run("ROLLBACK");
+                    console.error("Error updating user:", err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                if (this.changes === 0) {
+                    db.run("ROLLBACK");
+                    return res.status(404).json({ error: 'Konfi not found' });
+                }
+                
+                // Update konfi profile table
+                const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = ? 
+                                      WHERE user_id = ?`;
+                
+                db.run(profileQuery, [jahrgang_id, req.params.id], function(err) {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        console.error("Error updating konfi profile:", err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    db.run("COMMIT", (err) => {
+                        if (err) {
+                            return res.status(500).json({ error: 'Commit failed' });
+                        }
+                        res.json({ message: 'Konfi updated successfully' });
+                    });
+                });
+            });
         });
     });
 
     // DELETE a konfi
     router.delete('/:id', rbacVerifier, checkPermission('admin.konfis.delete'), (req, res) => {
-        const konfiId = req.params.id;
+        const userId = req.params.id;
         db.serialize(() => {
             db.run("BEGIN TRANSACTION");
-            // Wir müssen sicherstellen, dass wir nur Konfis aus der eigenen Organisation löschen
-            db.get("SELECT id FROM konfis WHERE id = ? AND organization_id = ?", [konfiId, req.user.organization_id], (err, konfi) => {
-                if (err || !konfi) {
+            
+            // Check if user exists and is a konfi in the admin's organization
+            db.get(`SELECT u.id FROM users u 
+                    JOIN roles r ON u.role_id = r.id 
+                    WHERE u.id = ? AND u.organization_id = ? AND r.name = 'konfi'`, 
+                   [userId, req.user.organization_id], (err, user) => {
+                if (err || !user) {
                     db.run("ROLLBACK");
                     return res.status(404).json({ error: 'Konfi not found' });
                 }
                 
-                // Jetzt sicher löschen
-                db.run("DELETE FROM konfi_activities WHERE konfi_id = ?", [konfiId]);
-                db.run("DELETE FROM bonus_points WHERE konfi_id = ?", [konfiId]);
-                db.run("DELETE FROM konfi_badges WHERE konfi_id = ?", [konfiId]);
-                db.run("DELETE FROM activity_requests WHERE konfi_id = ?", [konfiId]);
-                db.run("DELETE FROM konfis WHERE id = ?", [konfiId]);
+                // Delete related data (foreign key references updated to user_id)
+                db.run("DELETE FROM konfi_activities WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM bonus_points WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM konfi_badges WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM activity_requests WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM chat_participants WHERE user_id = ? AND user_type = 'konfi'", [userId]);
+                
+                // Delete konfi_profile (will cascade to user due to foreign key)
+                db.run("DELETE FROM konfi_profiles WHERE user_id = ?", [userId]);
+                
+                // Delete user
+                db.run("DELETE FROM users WHERE id = ?", [userId]);
                 
                 db.run("COMMIT", (err) => {
                     if (err) return res.status(500).json({ error: 'Commit failed' });
@@ -119,13 +199,41 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
-        db.run("UPDATE konfis SET password_hash = ?, password_plain = ? WHERE id = ? AND organization_id = ?",
-            [hashedPassword, newPassword, req.params.id, req.user.organization_id],
-            function(err) {
-                if (err) return res.status(500).json({ error: 'Database error' });
-                if (this.changes === 0) return res.status(404).json({ error: 'Konfi not found' });
-                res.json({ message: 'Password regenerated successfully', password: newPassword });
-            });
+        db.serialize(() => {
+            db.run("BEGIN TRANSACTION");
+            
+            // Update password in users table
+            db.run(`UPDATE users SET password_hash = ? 
+                    WHERE id = ? AND organization_id = ?`,
+                [hashedPassword, req.params.id, req.user.organization_id],
+                function(err) {
+                    if (err) {
+                        db.run("ROLLBACK");
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    if (this.changes === 0) {
+                        db.run("ROLLBACK");
+                        return res.status(404).json({ error: 'Konfi not found' });
+                    }
+                    
+                    // Update plain password in konfi_profiles table
+                    db.run("UPDATE konfi_profiles SET password_plain = ? WHERE user_id = ?",
+                        [newPassword, req.params.id],
+                        function(err) {
+                            if (err) {
+                                db.run("ROLLBACK");
+                                return res.status(500).json({ error: 'Database error' });
+                            }
+                            
+                            db.run("COMMIT", (err) => {
+                                if (err) {
+                                    return res.status(500).json({ error: 'Commit failed' });
+                                }
+                                res.json({ message: 'Password regenerated successfully', password: newPassword });
+                            });
+                        });
+                });
+        });
     });
 
     return router;

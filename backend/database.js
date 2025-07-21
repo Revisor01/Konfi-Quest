@@ -806,13 +806,35 @@ function initializeDatabase() {
         const { runRBACMigration } = require('./migrations/rbac-migration');
         runRBACMigration(db).then(() => {
           console.log('✅ RBAC Migration completed successfully');
+          // Run Konfi Profiles Migration after RBAC Migration
+          runKonfiProfilesMigration(db);
         }).catch(err => {
           console.error('❌ RBAC Migration failed:', err);
         });
       } else {
         console.log('✅ RBAC Migration: organizations table already exists');
+        // Check if Konfi Profiles Migration is needed
+        runKonfiProfilesMigration(db);
       }
     });
+    
+    function runKonfiProfilesMigration(db) {
+      db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='konfi_profiles'`, (err, row) => {
+        if (err) {
+          console.error('Konfi Profiles check error:', err);
+        } else if (!row) {
+          console.log('🔄 Running Konfi Profiles Migration...');
+          const { runKonfiProfilesMigration } = require('./migrations/konfi-profiles-migration');
+          runKonfiProfilesMigration(db).then(() => {
+            console.log('✅ Konfi Profiles Migration completed successfully');
+          }).catch(err => {
+            console.error('❌ Konfi Profiles Migration failed:', err);
+          });
+        } else {
+          console.log('✅ Konfi Profiles Migration: konfi_profiles table already exists');
+        }
+      });
+    }
     
     // Only insert default data for new database
     if (!dbExists) {

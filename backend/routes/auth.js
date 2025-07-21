@@ -33,89 +33,79 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
 
   // ===== UNIFIED LOGIN ENDPOINTS =====
   
-  // Auto-detection login - tries admin first, then konfi
+  // Unified RBAC login - works for both admins and konfis
   router.post('/login', (req, res) => {
     const { username, password } = req.body;
     
-    console.log(`🔐 Auto-login attempt for: ${username}`);
+    console.log(`🔐 RBAC login attempt for: ${username}`);
     
-    // First try admin login (new users table, then fallback to old admins table)
-    db.get(`SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email,
-                   o.name as organization_name, o.slug as organization_slug,
-                   r.name as role_name
-            FROM users u 
-            LEFT JOIN organizations o ON u.organization_id = o.id
-            LEFT JOIN roles r ON u.role_id = r.id
-            WHERE u.username = ?`, [username], (err, user) => {
-      
-      if (user && bcrypt.compareSync(password, user.password_hash)) {
-        // Admin login successful
-        console.log(`✅ Admin login successful: ${username} (${user.display_name})`);
-        
-        const token = jwt.sign({ 
-          id: user.id, 
-          type: 'admin', 
-          display_name: user.display_name,
-          email: user.email,
-          organization_id: user.organization_id
-        }, JWT_SECRET, { expiresIn: '24h' });
-        
-        return res.json({ 
-          token, 
-          user: { 
-            id: user.id, 
-            display_name: user.display_name, 
-            username: user.username,
-            email: user.email,
-            organization: user.organization_name,
-            role_name: user.role_name,
-            type: 'admin'
-          } 
-        });
+    // Try login via unified users table (both admins and konfis)
+    const userQuery = `
+      SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email,
+             o.name as organization_name, o.slug as organization_slug,
+             r.name as role_name, r.display_name as role_display_name,
+             kp.jahrgang_id, j.name as jahrgang_name,
+             kp.gottesdienst_points, kp.gemeinde_points
+      FROM users u 
+      LEFT JOIN organizations o ON u.organization_id = o.id
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+      LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+      WHERE u.username = ?
+    `;
+    
+    db.get(userQuery, [username], (err, user) => {
+      if (err) {
+        console.error('Login database error:', err);
+        return res.status(500).json({ error: 'Database error' });
       }
       
-      // Admin login failed, try konfi login
-      db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
-          if (err) {
-            console.error('Konfi login database error:', err);
-            return res.status(500).json({ error: 'Database error' });
-          }
-          
-          if (!konfi) {
-            console.log(`❌ Login failed: user '${username}' not found in any table`);
-            return res.status(401).json({ error: 'Invalid credentials' });
-          }
-          
-          if (!bcrypt.compareSync(password, konfi.password_hash)) {
-            console.log(`❌ Login failed: wrong password for user '${username}'`);
-            return res.status(401).json({ error: 'Invalid credentials' });
-          }
-          
-          // Konfi login successful
-          console.log(`✅ Konfi login successful: ${username} (${konfi.name})`);
-          
-          const token = jwt.sign({ 
-            id: konfi.id, 
-            type: 'konfi', 
-            display_name: konfi.name,
-            email: konfi.email,
-            organization_id: konfi.organization_id 
-          }, JWT_SECRET, { expiresIn: '24h' });
-          
-          res.json({ 
-            token, 
-            user: { 
-              id: konfi.id, 
-              name: konfi.name,
-              display_name: konfi.name, 
-              username: konfi.username,
-              email: konfi.email,
-              jahrgang: konfi.jahrgang_name,
-              type: 'konfi' 
-            } 
-          });
-        });
+      if (!user) {
+        console.log(`❌ Login failed: user '${username}' not found`);
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      if (!bcrypt.compareSync(password, user.password_hash)) {
+        console.log(`❌ Login failed: wrong password for user '${username}'`);
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      
+      // Determine user type based on role
+      const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
+      
+      console.log(`✅ ${userType} login successful: ${username} (${user.display_name})`);
+      
+      const token = jwt.sign({ 
+        id: user.id, 
+        type: userType, 
+        display_name: user.display_name,
+        email: user.email,
+        organization_id: user.organization_id,
+        role_name: user.role_name
+      }, JWT_SECRET, { expiresIn: '24h' });
+      
+      const responseUser = {
+        id: user.id, 
+        display_name: user.display_name, 
+        username: user.username,
+        email: user.email,
+        organization: user.organization_name,
+        role_name: user.role_name,
+        type: userType
+      };
+      
+      // Add konfi-specific data if user is konfi
+      if (userType === 'konfi') {
+        responseUser.jahrgang = user.jahrgang_name;
+        responseUser.gottesdienst_points = user.gottesdienst_points || 0;
+        responseUser.gemeinde_points = user.gemeinde_points || 0;
+      }
+      
+      res.json({ 
+        token, 
+        user: responseUser
       });
+    });
   });
 
   // ===== PASSWORD MANAGEMENT =====
