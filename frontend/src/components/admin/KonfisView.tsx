@@ -43,6 +43,11 @@ interface Konfi {
   name: string;
   username?: string;
   jahrgang?: string;
+  jahrgang_name?: string; // Backend liefert jahrgang_name
+  // Backend liefert diese Felder:
+  gottesdienst_points?: number;
+  gemeinde_points?: number;
+  // Legacy support für alte Struktur:
   points?: {
     gottesdienst: number;
     gemeinde: number;
@@ -95,8 +100,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     // Sortierung
     if (sortBy === 'points') {
       result = result.sort((a, b) => {
-        const totalA = (a.points?.gottesdienst || 0) + (a.points?.gemeinde || 0);
-        const totalB = (b.points?.gottesdienst || 0) + (b.points?.gemeinde || 0);
+        const totalA = getTotalPoints(a);
+        const totalB = getTotalPoints(b);
         return totalB - totalA; // Absteigende Reihenfolge
       });
     } else {
@@ -110,7 +115,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const showGemeindeTarget = parseInt(settings.target_gemeinde || '10') > 0;
 
   const getTotalPoints = (konfi: Konfi) => {
-    return (konfi.points?.gottesdienst || 0) + (konfi.points?.gemeinde || 0);
+    // Support both new backend structure and legacy structure
+    const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
+    const gemeinde = konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0;
+    return gottesdienst + gemeinde;
   };
 
   const getProgressColor = (current: number, target: number) => {
@@ -285,7 +293,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             '--color': '#3880ff'
                           }}
                         >
-                          G: {konfi.points?.gottesdienst || 0}/{settings.target_gottesdienst}
+                          G: {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
                         </IonChip>
                       )}
                       
@@ -300,7 +308,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             '--color': '#2dd36f'
                           }}
                         >
-                          Gem: {konfi.points?.gemeinde || 0}/{settings.target_gemeinde}
+                          Gem: {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
                         </IonChip>
                       )}
                       
@@ -323,7 +331,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                       fontSize: '0.85rem',
                       color: '#666'
                     }}>
-                      {konfi.jahrgang} • {konfi.badgeCount || 0} Badges
+                      {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
                     </p>
                   </IonLabel>
 

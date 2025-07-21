@@ -26,6 +26,11 @@ interface Konfi {
   name: string;
   username?: string;
   jahrgang?: string;
+  jahrgang_name?: string; // Backend liefert jahrgang_name
+  // Backend liefert diese Felder:
+  gottesdienst_points?: number;
+  gemeinde_points?: number;
+  // Legacy support für alte Struktur:
   points?: {
     gottesdienst: number;
     gemeinde: number;

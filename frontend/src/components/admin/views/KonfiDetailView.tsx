@@ -60,7 +60,12 @@ interface Konfi {
   name: string;
   username?: string;
   jahrgang?: string;
+  jahrgang_name?: string; // Backend liefert jahrgang_name
   password?: string;
+  // Backend liefert diese Felder:
+  gottesdienst_points?: number;
+  gemeinde_points?: number;
+  // Legacy support für alte Struktur:
   points?: {
     gottesdienst: number;
     gemeinde: number;
@@ -186,7 +191,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     try {
       const [konfiRes, requestsRes] = await Promise.all([
         api.get(`/admin/konfis/${konfiId}`),
-        api.get('/activities/requests')
+        api.get('/admin/activities/requests')
       ]);
       
       console.log('Konfi data loaded:', konfiRes.data);
@@ -241,8 +246,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
   const getTotalPoints = () => {
     if (!currentKonfi) return 0;
-    // Bonuspunkte sind bereits in gottesdienst/gemeinde enthalten, nicht doppelt zählen
-    return (currentKonfi.points?.gottesdienst || 0) + (currentKonfi.points?.gemeinde || 0);
+    // Support both new backend structure and legacy structure
+    const gottesdienst = currentKonfi.gottesdienst_points ?? currentKonfi.points?.gottesdienst ?? 0;
+    const gemeinde = currentKonfi.gemeinde_points ?? currentKonfi.points?.gemeinde ?? 0;
+    return gottesdienst + gemeinde;
   };
 
   const getBonusPoints = () => {
@@ -374,7 +381,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           <IonCardContent>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <p style={{ margin: '0', opacity: 0.9, fontSize: '0.9rem' }}>
-                {currentKonfi?.jahrgang} • @{currentKonfi?.username}
+                {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} • @{currentKonfi?.username}
               </p>
             </div>
             <IonGrid>
@@ -383,7 +390,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <div style={{ textAlign: 'center' }}>
                     <IonIcon icon={school} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                     <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {Number(currentKonfi?.points?.gottesdienst) || 0}
+                      {currentKonfi?.gottesdienst_points ?? currentKonfi?.points?.gottesdienst ?? 0}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                       Gottesdienst
@@ -394,7 +401,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <div style={{ textAlign: 'center' }}>
                     <IonIcon icon={star} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                     <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {Number(currentKonfi?.points?.gemeinde) || 0}
+                      {currentKonfi?.gemeinde_points ?? currentKonfi?.points?.gemeinde ?? 0}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                       Gemeinde
