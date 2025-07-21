@@ -74,7 +74,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   // Load activity by ID from all activities
   const loadActivity = async (id: number) => {
     try {
-      const response = await api.get('/activities');
+      const response = await api.get('/admin/activities');
       const activities = response.data;
       const activityData = activities.find((act: Activity) => act.id === id);
       

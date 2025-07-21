@@ -125,7 +125,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setRoles(rolesResponse.data);
 
       // Load jahrgaenge
-      const jahrgaengeResponse = await api.get('/jahrgaenge');
+      const jahrgaengeResponse = await api.get('/admin/jahrgaenge');
       setJahrgaenge(jahrgaengeResponse.data);
     } catch (err) {
       console.error('Error loading initial data:', err);

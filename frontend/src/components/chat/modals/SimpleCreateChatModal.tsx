@@ -83,7 +83,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     setLoading(true);
     try {
       const [konfisRes, adminsRes] = await Promise.all([
-        api.get('/konfis'),
+        api.get('/admin/konfis'),
         api.get('/admin/users').catch(() => ({ data: [] }))
       ]);
       

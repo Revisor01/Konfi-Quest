@@ -3,10 +3,16 @@ import { checkAuth } from '../services/auth';
 
 interface User {
   id: number;
-  type: 'admin' | 'konfi';
+  type: 'admin' | 'konfi' | 'user';
   display_name: string;
   username?: string;
   email?: string;
+  organization?: string;
+  organization_id?: number;
+  roles?: string[];
+  role_name?: string;
+  jahrgang?: string;
+  is_super_admin?: boolean;
 }
 
 interface AppContextType {

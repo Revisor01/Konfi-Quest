@@ -93,9 +93,9 @@ const AdminKonfisPage: React.FC = () => {
     setLoading(true);
     try {
       const [konfisRes, jahrgaengeRes, activitiesRes, settingsRes] = await Promise.all([
-        api.get('/konfis'),
-        api.get('/jahrgaenge'),
-        api.get('/activities'),
+        api.get('/admin/konfis'),
+        api.get('/admin/jahrgaenge'),
+        api.get('/admin/activities'),
         api.get('/settings')
       ]);
       
@@ -115,7 +115,7 @@ const AdminKonfisPage: React.FC = () => {
     if (!window.confirm(`Konfi "${konfi.name}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/konfis/${konfi.id}`);
+      await api.delete(`/admin/konfis/${konfi.id}`);
       setSuccess(`Konfi "${konfi.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadData();
@@ -136,7 +136,7 @@ const AdminKonfisPage: React.FC = () => {
 
   const handleAddKonfi = async (konfiData: any) => {
     try {
-      const response = await api.post('/konfis', konfiData);
+      const response = await api.post('/admin/konfis', konfiData);
       setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
       // Sofortige Aktualisierung
       await loadData();

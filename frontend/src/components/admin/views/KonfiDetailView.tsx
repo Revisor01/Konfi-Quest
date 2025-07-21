@@ -185,7 +185,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     setLoading(true);
     try {
       const [konfiRes, requestsRes] = await Promise.all([
-        api.get(`/konfis/${konfiId}`),
+        api.get(`/admin/konfis/${konfiId}`),
         api.get('/activity-requests')
       ]);
       
@@ -287,7 +287,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     if (!window.confirm(`Aktivität "${activity.name}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/konfis/${konfiId}/activities/${activity.id}`);
+      await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
       setSuccess(`Aktivität "${activity.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadKonfiData();
@@ -304,7 +304,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     if (!window.confirm(`Bonuspunkte "${bonus.description}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/konfis/${konfiId}/bonus-points/${bonus.id}`);
+      await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
       setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
       // Sofortige Aktualisierung
       await loadKonfiData();
@@ -319,7 +319,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
   const handlePasswordReset = async () => {
     try {
-      const response = await api.post(`/konfis/${konfiId}/regenerate-password`);
+      const response = await api.post(`/admin/konfis/${konfiId}/regenerate-password`);
       // Passwort sofort aktualisieren
       setCurrentKonfi(prev => prev ? { ...prev, password: response.data.password } : null);
       setSuccess(`Neues Passwort: ${response.data.password}`);

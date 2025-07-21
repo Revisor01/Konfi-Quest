@@ -219,7 +219,7 @@ const AdminJahrgaengeePage: React.FC = () => {
 
   const loadJahrgaenge = async () => {
     try {
-      const response = await api.get('/jahrgaenge');
+      const response = await api.get('/admin/jahrgaenge');
       // Transform backend data to match frontend interface
       const jahrgaengeData = response.data.map((jahrgang: any) => ({
         id: jahrgang.id,

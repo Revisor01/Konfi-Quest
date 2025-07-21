@@ -66,7 +66,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
     setLoading(true);
     try {
       const [konfisRes, adminsRes] = await Promise.all([
-        api.get('/konfis'),
+        api.get('/admin/konfis'),
         api.get('/admin/users') // Assuming this endpoint exists
       ]);
       

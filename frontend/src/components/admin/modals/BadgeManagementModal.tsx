@@ -108,7 +108,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const loadInitialData = async () => {
     try {
       // Load activities
-      const activitiesResponse = await api.get('/activities');
+      const activitiesResponse = await api.get('/admin/activities');
       setActivities(activitiesResponse.data);
 
       // Load categories for badges
@@ -128,7 +128,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     
     setLoading(true);
     try {
-      const response = await api.get('/badges');
+      const response = await api.get('/admin/badges');
       const badges = response.data;
       const badge = badges.find((b: Badge) => b.id === badgeId);
       
@@ -203,7 +203,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         await api.put(`/badges/${badgeId}`, badgeData);
         setSuccess('Badge erfolgreich aktualisiert');
       } else {
-        await api.post('/badges', badgeData);
+        await api.post('/admin/badges', badgeData);
         setSuccess('Badge erfolgreich erstellt');
       }
 

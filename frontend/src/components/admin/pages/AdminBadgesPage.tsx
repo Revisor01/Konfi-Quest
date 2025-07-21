@@ -80,7 +80,7 @@ const AdminBadgesPage: React.FC = () => {
   const loadBadges = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/badges');
+      const response = await api.get('/admin/badges');
       setBadges(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Badges');

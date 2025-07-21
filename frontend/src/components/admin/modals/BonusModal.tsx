@@ -44,7 +44,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
     if (!name.trim() || points <= 0) return;
 
     try {
-      await api.post(`/konfis/${konfiId}/bonus-points`, {
+      await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
         points: points,
         type: type,
         description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,

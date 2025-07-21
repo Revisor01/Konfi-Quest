@@ -108,7 +108,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const loadAllUsers = async () => {
     try {
       const [konfisRes, adminsRes] = await Promise.all([
-        api.get('/konfis'),
+        api.get('/admin/konfis'),
         api.get('/admin/users').catch(() => ({ data: [] }))
       ]);
       

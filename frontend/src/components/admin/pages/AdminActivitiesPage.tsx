@@ -77,7 +77,7 @@ const AdminActivitiesPage: React.FC = () => {
   const loadActivities = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/activities');
+      const response = await api.get('/admin/activities');
       setActivities(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');

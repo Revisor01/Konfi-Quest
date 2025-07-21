@@ -42,13 +42,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
     // First try admin login (new users table, then fallback to old admins table)
     db.get(`SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email,
                    o.name as organization_name, o.slug as organization_slug,
-                   GROUP_CONCAT(DISTINCT r.name) as roles
+                   r.name as role_name
             FROM users u 
             LEFT JOIN organizations o ON u.organization_id = o.id
-            LEFT JOIN user_roles ur ON u.id = ur.user_id
-            LEFT JOIN roles r ON ur.role_id = r.id
-            WHERE u.username = ?
-            GROUP BY u.id`, [username], (err, user) => {
+            LEFT JOIN roles r ON u.role_id = r.id
+            WHERE u.username = ?`, [username], (err, user) => {
       
       if (user && bcrypt.compareSync(password, user.password_hash)) {
         // Admin login successful
@@ -70,39 +68,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
             username: user.username,
             email: user.email,
             organization: user.organization_name,
-            roles: user.roles ? user.roles.split(',') : [],
+            role_name: user.role_name,
             type: 'admin'
           } 
         });
       }
       
-      // Admin login failed, try old admins table
-      db.get("SELECT * FROM admins WHERE username = ?", [username], (err, oldAdmin) => {
-        if (oldAdmin && bcrypt.compareSync(password, oldAdmin.password_hash)) {
-          // Old admin login successful  
-          console.log(`✅ Old admin login successful: ${username}`);
-          
-          const token = jwt.sign({ 
-            id: oldAdmin.id, 
-            type: 'admin', 
-            display_name: oldAdmin.name || oldAdmin.username,
-            email: oldAdmin.email
-          }, JWT_SECRET, { expiresIn: '24h' });
-          
-          return res.json({ 
-            token, 
-            user: { 
-              id: oldAdmin.id, 
-              display_name: oldAdmin.name || oldAdmin.username, 
-              username: oldAdmin.username,
-              email: oldAdmin.email,
-              type: 'admin'
-            } 
-          });
-        }
-        
-        // Admin login failed, try konfi login
-        db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
+      // Admin login failed, try konfi login
+      db.get("SELECT k.*, j.name as jahrgang_name FROM konfis k JOIN jahrgaenge j ON k.jahrgang_id = j.id WHERE k.username = ?", [username], (err, konfi) => {
           if (err) {
             console.error('Konfi login database error:', err);
             return res.status(500).json({ error: 'Database error' });
@@ -143,7 +116,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
           });
         });
       });
-    });
   });
 
   // ===== PASSWORD MANAGEMENT =====

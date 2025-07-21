@@ -57,7 +57,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
 
   const loadActivities = async () => {
     try {
-      const response = await api.get('/activities');
+      const response = await api.get('/admin/activities');
       setActivities(response.data);
     } catch (err) {
       console.error('Error loading activities:', err);
@@ -75,14 +75,14 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           category: 'custom'
         });
         
-        await api.post(`/konfis/${konfiId}/activities`, {
+        await api.post(`/admin/konfis/${konfiId}/activities`, {
           activityId: activityRes.data.id,
           completed_date: selectedDate
         });
       } else {
         // Predefined activity
         if (!selectedActivity) return;
-        await api.post(`/konfis/${konfiId}/activities`, {
+        await api.post(`/admin/konfis/${konfiId}/activities`, {
           activityId: selectedActivity,
           completed_date: selectedDate
         });

@@ -67,7 +67,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
     setLoading(true);
     try {
       const [konfisRes, adminsRes] = await Promise.all([
-        api.get('/konfis'),
+        api.get('/admin/konfis'),
         api.get('/admin/users').catch(() => ({ data: [] })) // Fallback if endpoint doesn't exist
       ]);
       

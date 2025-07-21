@@ -2,14 +2,21 @@ import api from './api';
 
 interface User {
   id: number;
-  type: 'admin' | 'konfi';
+  type: 'admin' | 'konfi' | 'user';
   display_name: string;
   username?: string;
+  email?: string;
+  organization?: string;
+  organization_id?: number;
+  roles?: string[];
+  role_name?: string;
+  jahrgang?: string;
+  is_super_admin?: boolean;
 }
 
 export const login = async (username: string, password: string, type: 'admin' | 'konfi'): Promise<User> => {
-  const endpoint = type === 'admin' ? '/admin/login' : '/konfi/login';
-  const response = await api.post(endpoint, { username, password });
+  // Use unified login endpoint with auto-detection
+  const response = await api.post('/auth/login', { username, password });
   const { token, user } = response.data;
 
   if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
@@ -24,46 +31,26 @@ export const loginWithAutoDetection = async (username: string, password: string)
   console.log('Login starten…', { username, password });
   
   try {
-    const response = await api.post('/admin/login', { username, password });
-    console.log('Admin-Login erfolgreich:', response.data);
+    const response = await api.post('/auth/login', { username, password });
+    console.log('Login erfolgreich:', response.data);
     const { token, user } = response.data;
     
-    if (!token || !user) throw new Error('Fehlender Token oder Benutzer (Admin)');
+    if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
     
     localStorage.setItem('konfi_token', token);
     localStorage.setItem('konfi_user', JSON.stringify(user));
     
     return user;
-  } catch (adminError: any) {
-    console.warn('Admin-Login fehlgeschlagen:', adminError?.response?.data || adminError.message);
-    
-    try {
-      console.log('Versuche Konfi-Login mit:', { username, password });
-      console.log('Making request to:', '/konfi/login');
-      console.log('API base URL:', api.defaults.baseURL);
-      
-      const response = await api.post('/konfi/login', { username, password });
-      console.log('Konfi-Login Response erhalten:', response);
-      console.log('Konfi-Login erfolgreich:', response.data);
-      const { token, user } = response.data;
-      
-      if (!token || !user) throw new Error('Fehlender Token oder Benutzer (Konfi)');
-      
-      localStorage.setItem('konfi_token', token);
-      localStorage.setItem('konfi_user', JSON.stringify(user));
-      
-      return user;
-    } catch (konfiError: any) {
-      console.error('Konfi-Login fehlgeschlagen:', {
-        status: konfiError?.response?.status,
-        statusText: konfiError?.response?.statusText,
-        data: konfiError?.response?.data,
-        message: konfiError.message,
-        code: konfiError.code,
-        fullError: konfiError
-      });
-      throw new Error('Login fehlgeschlagen: ' + (konfiError?.response?.data?.error || konfiError.message));
-    }
+  } catch (error: any) {
+    console.error('Login fehlgeschlagen:', {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      message: error.message,
+      code: error.code,
+      fullError: error
+    });
+    throw new Error('Login fehlgeschlagen: ' + (error?.response?.data?.error || error.message));
   }
 };
 
