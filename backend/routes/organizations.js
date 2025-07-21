@@ -9,10 +9,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const query = `
       SELECT o.*, 
              COUNT(DISTINCT u.id) as user_count,
-             COUNT(DISTINCT k.id) as konfi_count
+             COUNT(DISTINCT kp.user_id) as konfi_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
-      LEFT JOIN konfis k ON o.id = k.organization_id
+      LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
       GROUP BY o.id
       ORDER BY o.created_at DESC
     `;
@@ -38,14 +38,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const query = `
       SELECT o.*, 
              COUNT(DISTINCT u.id) as user_count,
-             COUNT(DISTINCT k.id) as konfi_count,
+             COUNT(DISTINCT kp.user_id) as konfi_count,
              COUNT(DISTINCT j.id) as jahrgang_count,
              COUNT(DISTINCT a.id) as activity_count,
              COUNT(DISTINCT e.id) as event_count,
              COUNT(DISTINCT cb.id) as badge_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
-      LEFT JOIN konfis k ON o.id = k.organization_id
+      LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
       LEFT JOIN jahrgaenge j ON o.id = j.organization_id
       LEFT JOIN activities a ON o.id = a.organization_id
       LEFT JOIN events e ON o.id = e.organization_id
@@ -75,14 +75,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const query = `
       SELECT o.*, 
              COUNT(DISTINCT u.id) as user_count,
-             COUNT(DISTINCT k.id) as konfi_count,
+             COUNT(DISTINCT kp.user_id) as konfi_count,
              COUNT(DISTINCT j.id) as jahrgang_count,
              COUNT(DISTINCT a.id) as activity_count,
              COUNT(DISTINCT e.id) as event_count,
              COUNT(DISTINCT cb.id) as badge_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
-      LEFT JOIN konfis k ON o.id = k.organization_id
+      LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
       LEFT JOIN jahrgaenge j ON o.id = j.organization_id
       LEFT JOIN activities a ON o.id = a.organization_id
       LEFT JOIN events e ON o.id = e.organization_id
@@ -261,7 +261,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       db.run("BEGIN TRANSACTION");
       
       // Check if organization has any data
-      db.get("SELECT COUNT(*) as count FROM konfis WHERE organization_id = ?", [id], (err, result) => {
+      db.get("SELECT COUNT(*) as count FROM konfi_profiles WHERE organization_id = ?", [id], (err, result) => {
         if (err) {
           db.run("ROLLBACK");
           return res.status(500).json({ error: 'Database error' });
@@ -340,12 +340,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
     
     const statsQueries = {
-      konfis: "SELECT COUNT(*) as count FROM konfis WHERE organization_id = ?",
+      konfis: "SELECT COUNT(*) as count FROM konfi_profiles WHERE organization_id = ?",
       activities: "SELECT COUNT(*) as count FROM activities WHERE organization_id = ?",
       events: "SELECT COUNT(*) as count FROM events WHERE organization_id = ?",
       badges: "SELECT COUNT(*) as count FROM custom_badges WHERE organization_id = ?",
-      requests: "SELECT COUNT(*) as count FROM activity_requests ar JOIN konfis k ON ar.konfi_id = k.id WHERE k.organization_id = ?",
-      pending_requests: "SELECT COUNT(*) as count FROM activity_requests ar JOIN konfis k ON ar.konfi_id = k.id WHERE k.organization_id = ? AND ar.status = 'pending'"
+      requests: "SELECT COUNT(*) as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.konfi_id = kp.user_id WHERE kp.organization_id = ?",
+      pending_requests: "SELECT COUNT(*) as count FROM activity_requests ar JOIN konfi_profiles kp ON ar.konfi_id = kp.user_id WHERE kp.organization_id = ? AND ar.status = 'pending'"
     };
     
     const stats = {};
