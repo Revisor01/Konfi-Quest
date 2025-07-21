@@ -78,7 +78,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     
     setLoading(true);
     try {
-      const response = await api.get('/activity-requests');
+      const response = await api.get('/activities/requests');
       const requests = response.data;
       const foundRequest = requests.find((r: ActivityRequest) => r.id === requestId);
       
@@ -101,7 +101,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      await api.put(`/activity-requests/${request.id}`, {
+      await api.put(`/activities/requests/${request.id}`, {
         status: 'approved',
         admin_comment: adminComment
       });
@@ -124,7 +124,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      await api.put(`/activity-requests/${request.id}`, {
+      await api.put(`/activities/requests/${request.id}`, {
         status: 'rejected',
         admin_comment: adminComment
       });

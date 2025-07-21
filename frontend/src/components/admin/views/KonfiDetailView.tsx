@@ -186,7 +186,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     try {
       const [konfiRes, requestsRes] = await Promise.all([
         api.get(`/admin/konfis/${konfiId}`),
-        api.get('/activity-requests')
+        api.get('/activities/requests')
       ]);
       
       console.log('Konfi data loaded:', konfiRes.data);

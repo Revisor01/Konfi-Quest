@@ -71,8 +71,8 @@ const KonfiBadgesPage: React.FC = () => {
 
       // Get current konfi data for progress calculation
       const [badgesResponse, konfiResponse] = await Promise.all([
-        api.get(`/konfis/${user.id}/badges`),
-        api.get(`/konfis/${user.id}`)
+        api.get(`/konfi/badges`),
+        api.get(`/konfi/profile`)
       ]);
 
       const badgeData: BadgeData = badgesResponse.data;

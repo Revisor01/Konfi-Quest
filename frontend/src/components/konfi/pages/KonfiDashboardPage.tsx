@@ -75,8 +75,8 @@ const KonfiDashboardPage: React.FC = () => {
       
       // Use existing endpoints to get dashboard data
       const [konfiResponse, badgesResponse, eventsResponse] = await Promise.all([
-        api.get(`/konfis/${user.id}`),
-        api.get(`/konfis/${user.id}/badges`).catch(() => ({ data: { earned: [], available: [] } })), // Fallback für Badges
+        api.get(`/konfi/profile`),
+        api.get(`/konfi/badges`).catch(() => ({ data: { earned: [], available: [] } })), // Fallback für Badges
         api.get('/events').catch(() => ({ data: [] })) // Get events to find next registered event and confirmation
       ]);
       
