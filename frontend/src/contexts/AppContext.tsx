@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
+import { Badge } from '@capawesome/capacitor-badge';
 
 export interface ChatNotifications {
   totalUnreadCount: number;
@@ -54,7 +55,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [chatNotificationsLoading, setChatNotificationsLoading] = useState(true);
 
   // Chat notification functions
-  const refreshChatNotifications = async () => {
+  const refreshChatNotifications = useCallback(async () => {
     if (!user) return;
     
     try {
@@ -75,12 +76,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         totalUnreadCount: totalUnread,
         unreadByRoom
       });
+      
+      // Update app icon badge
+      try {
+        if (totalUnread > 0) {
+          await Badge.set({ count: totalUnread });
+        } else {
+          await Badge.clear();
+        }
+      } catch (badgeError) {
+        console.log('Badge not available:', badgeError);
+      }
     } catch (err) {
       console.error('Error loading chat notifications:', err);
     } finally {
       setChatNotificationsLoading(false);
     }
-  };
+  }, [user]);
 
   const markChatRoomAsRead = (roomId: number) => {
     setChatNotifications(prev => {

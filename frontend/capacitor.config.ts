@@ -1,3 +1,5 @@
+/// <reference types="@capawesome/capacitor-badge" />
+
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -7,7 +9,11 @@ const config: CapacitorConfig = {
   plugins: {
     Keyboard: {
       resize: 'ionic'
-    }
+    },
+    Badge: {
+      persist: true,
+      autoClear: false,
+    },
   }
 };
 
