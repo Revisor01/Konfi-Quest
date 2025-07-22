@@ -65,6 +65,7 @@ const RolesView: React.FC<RolesViewProps> = ({
   onSelectRole,
   onDeleteRole
 }) => {
+  const { user } = useApp();
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
