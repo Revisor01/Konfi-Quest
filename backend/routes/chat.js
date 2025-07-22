@@ -39,7 +39,7 @@ const chatUpload = multer({
 
 // === UTILITY FUNCTIONS ===
 
-// Ensure admin is in all their assigned jahrgang chats
+// Ensure admin is in all their assigned jahrgang chats (and remove from unassigned ones)
 const ensureAdminJahrgangChatMembership = (db, adminId) => {
   // Get admin's jahrgang assignments
   const assignmentsQuery = `
@@ -50,8 +50,31 @@ const ensureAdminJahrgangChatMembership = (db, adminId) => {
   `;
   
   db.all(assignmentsQuery, [adminId], (err, assignments) => {
-    if (err || !assignments.length) return;
+    if (err) return;
     
+    const assignedJahrgangIds = assignments ? assignments.map(a => a.jahrgang_id) : [];
+    
+    // First: Remove admin from jahrgang chats they're no longer assigned to
+    const removeQuery = `
+      DELETE FROM chat_participants 
+      WHERE user_id = ? AND user_type = 'admin' AND room_id IN (
+        SELECT cr.id FROM chat_rooms cr 
+        WHERE cr.type = 'jahrgang' 
+        ${assignedJahrgangIds.length > 0 ? 
+          `AND cr.jahrgang_id NOT IN (${assignedJahrgangIds.map(() => '?').join(',')})` : 
+          ''
+        }
+      )
+    `;
+    
+    const removeParams = [adminId, ...assignedJahrgangIds];
+    db.run(removeQuery, removeParams, function(err) {
+      if (!err && this.changes > 0) {
+        console.log(`Removed admin ${adminId} from ${this.changes} unassigned jahrgang chat(s)`);
+      }
+    });
+    
+    // Second: Add admin to assigned jahrgang chats
     assignments.forEach(assignment => {
       // Check if jahrgang chat exists
       const chatExistsQuery = `
@@ -88,7 +111,7 @@ const ensureAdminJahrgangChatMembership = (db, adminId) => {
   });
 };
 
-// Ensure konfi is in their jahrgang chat
+// Ensure konfi is in their jahrgang chat (and remove from others)
 const ensureKonfiJahrgangChatMembership = (db, konfiId) => {
   // Get konfi's jahrgang from konfi_profiles
   const jahrgangQuery = `
@@ -99,7 +122,39 @@ const ensureKonfiJahrgangChatMembership = (db, konfiId) => {
   `;
   
   db.get(jahrgangQuery, [konfiId], (err, jahrgang) => {
-    if (err || !jahrgang) return;
+    if (err) return;
+    
+    // First: Remove konfi from wrong jahrgang chats
+    if (jahrgang) {
+      const removeQuery = `
+        DELETE FROM chat_participants 
+        WHERE user_id = ? AND user_type = 'konfi' AND room_id IN (
+          SELECT cr.id FROM chat_rooms cr 
+          WHERE cr.type = 'jahrgang' AND cr.jahrgang_id != ?
+        )
+      `;
+      
+      db.run(removeQuery, [konfiId, jahrgang.jahrgang_id], function(err) {
+        if (!err && this.changes > 0) {
+          console.log(`Removed konfi ${konfiId} from ${this.changes} wrong jahrgang chat(s)`);
+        }
+      });
+    } else {
+      // No jahrgang assigned - remove from all jahrgang chats
+      const removeAllQuery = `
+        DELETE FROM chat_participants 
+        WHERE user_id = ? AND user_type = 'konfi' AND room_id IN (
+          SELECT cr.id FROM chat_rooms cr WHERE cr.type = 'jahrgang'
+        )
+      `;
+      
+      db.run(removeAllQuery, [konfiId], function(err) {
+        if (!err && this.changes > 0) {
+          console.log(`Removed konfi ${konfiId} from all jahrgang chats (no assignment)`);
+        }
+      });
+      return;
+    }
     
     // Check if jahrgang chat exists
     const chatExistsQuery = `
