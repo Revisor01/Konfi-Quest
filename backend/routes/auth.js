@@ -41,7 +41,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
     
     // Try login via unified users table (both admins and konfis)
     const userQuery = `
-      SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email,
+      SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
              o.name as organization_name, o.slug as organization_slug,
              r.name as role_name, r.display_name as role_display_name,
              kp.jahrgang_id, j.name as jahrgang_name,
