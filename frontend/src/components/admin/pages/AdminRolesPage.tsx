@@ -97,7 +97,7 @@ const AdminRolesPage: React.FC = () => {
     if (!window.confirm(`Rolle "${role.display_name}" (${role.name}) wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/admin/roles/${role.id}`);
+      await api.delete(`/roles/${role.id}`);
       setSuccess(`Rolle "${role.display_name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadRoles();

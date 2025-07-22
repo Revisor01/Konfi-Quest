@@ -117,7 +117,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
     
     setLoading(true);
     try {
-      const response = await api.get(`/admin/roles/${roleId}`);
+      const response = await api.get(`/roles/${roleId}`);
       const roleData = response.data;
       
       setRole(roleData);
@@ -172,10 +172,10 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
       // Create or update role
       let roleIdForPermissions = roleId;
       if (isEditMode) {
-        await api.put(`/admin/roles/${roleId}`, roleData);
+        await api.put(`/roles/${roleId}`, roleData);
         setSuccess('Rolle erfolgreich aktualisiert');
       } else {
-        const response = await api.post('/admin/roles', roleData);
+        const response = await api.post('/roles', roleData);
         roleIdForPermissions = response.data.id;
         setSuccess('Rolle erfolgreich erstellt');
       }
@@ -183,7 +183,7 @@ const RoleManagementModal: React.FC<RoleManagementModalProps> = ({
       // Update permissions
       const permissionIds = Array.from(selectedPermissions);
       if (roleIdForPermissions) {
-        await api.post(`/admin/roles/${roleIdForPermissions}/permissions`, {
+        await api.post(`/roles/${roleIdForPermissions}/permissions`, {
           permission_ids: permissionIds
         });
       }
