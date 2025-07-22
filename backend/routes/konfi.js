@@ -226,7 +226,7 @@ module.exports = (db, rbacMiddleware) => {
     
     // Simplified query to match existing table structure
     const query = `
-      SELECT ar.*, a.name as activity_title, a.points as activity_points
+      SELECT ar.*, a.name as activity_name, a.points as activity_points
       FROM activity_requests ar
       LEFT JOIN activities a ON ar.activity_id = a.id
       WHERE ar.konfi_id = ?
@@ -282,7 +282,7 @@ module.exports = (db, rbacMiddleware) => {
     
     // Updated query for normalized schema with activity_categories junction table
     const query = `
-      SELECT a.*, a.name as title, c.name as category_name
+      SELECT a.*, a.name, c.name as category_name
       FROM activities a
       LEFT JOIN activity_categories ac ON a.id = ac.activity_id
       LEFT JOIN categories c ON ac.category_id = c.id
@@ -382,7 +382,7 @@ module.exports = (db, rbacMiddleware) => {
              CASE WHEN ker.konfi_id IS NOT NULL THEN 1 ELSE 0 END as registered,
              ker.registered_at
       FROM events e
-      LEFT JOIN konfi_event_registrations ker ON e.id = ker.event_id AND ker.konfi_id = ?
+      LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = ?
       WHERE e.is_active = 1 AND e.event_date >= date('now')
       ORDER BY e.event_date, e.start_time
     `;
@@ -407,7 +407,7 @@ module.exports = (db, rbacMiddleware) => {
     const eventId = req.params.id;
     
     // Check if already registered
-    db.get('SELECT id FROM konfi_event_registrations WHERE konfi_id = ? AND event_id = ?', 
+    db.get('SELECT id FROM event_bookings WHERE user_id = ? AND event_id = ?', 
       [konfiId, eventId], (err, existing) => {
       if (err) {
         console.error('Error checking registration:', err);
@@ -419,7 +419,7 @@ module.exports = (db, rbacMiddleware) => {
       }
       
       // Register for event
-      db.run('INSERT INTO konfi_event_registrations (konfi_id, event_id) VALUES (?, ?)',
+      db.run('INSERT INTO event_bookings (user_id, event_id, status, booking_date) VALUES (?, ?, "confirmed", datetime("now"))','
         [konfiId, eventId], function(err) {
         if (err) {
           console.error('Error registering for event:', err);

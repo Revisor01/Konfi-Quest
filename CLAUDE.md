@@ -1,364 +1,257 @@
-# CLAUDE.md
+# CLAUDE.md - Konfipoints/Konfi Quest System
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## ⚠️ KRITISCHE REGELN FÜR CLAUDE CODE
 
-## Project Overview
+1. **NIEMALS das Backend ändern, nur Frontend anpassen** (außer bei kritischen Bugs)
+2. **Neue RBAC-Struktur verwenden** - Alte Strukturen sind deprecated
+3. **Alle API-Calls mit /admin/ prefix für Admin-Funktionen**
+4. **Deutsche Entwicklungssprache verwenden**
+5. **Legacy `points.gottesdienst` Struktur ist TOT - verwende `gottesdienst_points`**
 
-KonfipointsNew (Konfi Quest) is a modern web-based management system for confirmation points in the evangelical church. This is a clean project structure with React 19 + TypeScript + Ionic 8 frontend and Express.js backend.
+---
 
-## Project Structure
+## Aktuelle Systemarchitektur (Juli 2025)
 
+### Backend: Node.js Express mit RBAC System
+- **Database**: SQLite mit neuer RBAC-Struktur
+- **Authentication**: JWT mit `verifyTokenRBAC` middleware
+- **Port**: 5000 (Docker: 8623)
+- **API Base**: https://konfipoints.godsapp.de/api
+
+### Frontend: React 19 + Ionic 8 + TypeScript
+- **Framework**: React 19 mit Ionic React 8
+- **Build**: Vite 5.2 
+- **State**: React Context (`AppContext`)
+- **Dev Port**: 5173
+
+---
+
+## Neue RBAC Datenbankstruktur (VERWENDEN!)
+
+### Kern-Tabellen:
+```sql
+-- Alle Benutzer (Admin + Konfis)
+users: id, display_name, username, role_id, organization_id
+
+-- Konfi-spezifische Daten
+konfi_profiles: user_id, gottesdienst_points, gemeinde_points, jahrgang_id
+
+-- Aktivitäten
+konfi_activities: konfi_id, activity_id, completed_date, admin_id
+
+-- Bonus Points
+bonus_points: konfi_id, points, type, description, admin_id
+
+-- Badges
+konfi_badges: konfi_id, badge_id, awarded_date
+
+-- Events
+event_bookings: user_id, event_id, status, booking_date
 ```
-KonfipointsNew/
-├── frontend/          # React 19 + TypeScript + Ionic 8 frontend
-├── backend/           # Express.js API server
-├── API Definitionen.md # Complete API specification
-├── docker-compose.yml # Container orchestration
-└── CLAUDE.md         # This file
+
+### ❌ DEPRECATED (NICHT VERWENDEN):
+- `admins` tabelle → Ersetzt durch `users` mit role='admin'
+- `konfis` tabelle → Ersetzt durch `users` + `konfi_profiles`
+
+---
+
+## API Endpoints (Admin) - AKTUELL GÜLTIG
+
+### Konfi Management
+- `GET /api/admin/konfis` - Alle Konfis mit badgeCount ✅
+- `GET /api/admin/konfis/:id` - Einzelner Konfi mit activities, bonusPoints ✅
+- `POST /api/admin/konfis` - Neuer Konfi erstellen ✅
+- `PUT /api/admin/konfis/:id` - Konfi bearbeiten ✅
+- `DELETE /api/admin/konfis/:id` - Konfi löschen ✅
+- `POST /api/admin/konfis/:id/regenerate-password` - Passwort neu generieren ✅
+
+### Activities & Bonus (NEU IMPLEMENTIERT)
+- `POST /api/admin/konfis/:id/activities` - Aktivität hinzufügen ✅
+- `DELETE /api/admin/konfis/:id/activities/:activityId` - Aktivität löschen ✅
+- `POST /api/admin/konfis/:id/bonus-points` - Bonuspunkte hinzufügen ✅
+- `DELETE /api/admin/konfis/:id/bonus-points/:bonusId` - Bonuspunkte löschen ✅
+
+### Activity Requests
+- `GET /api/admin/activities/requests` - Alle Anträge ✅
+
+### Other Resources
+- `GET /api/admin/activities` - Alle Aktivitäten ✅
+- `GET /api/admin/jahrgaenge` - Alle Jahrgänge ✅
+- `GET /api/settings` - System Settings ✅
+
+---
+
+## Frontend Datenstrukturen (AKTUELL)
+
+### Konfi Interface - SO VERWENDEN:
+```typescript
+interface Konfi {
+  id: number;
+  name: string;
+  username?: string;
+  jahrgang_name?: string;        // ✅ Backend liefert jahrgang_name
+  gottesdienst_points?: number;  // ✅ Backend neue Struktur
+  gemeinde_points?: number;      // ✅ Backend neue Struktur  
+  badgeCount?: number;           // ✅ Jetzt verfügbar
+  password?: string;             // ✅ Für Admin Views
+}
 ```
 
-## Architecture
+### ✅ RICHTIGE Implementierung:
+```typescript
+const getTotalPoints = (konfi: Konfi) => {
+  const gottesdienst = konfi.gottesdienst_points ?? 0;
+  const gemeinde = konfi.gemeinde_points ?? 0;
+  return gottesdienst + gemeinde;
+};
 
-### Frontend (React 19 + Ionic 8 + TypeScript)
-- **Main Framework**: React 19 with TypeScript and Ionic React 8 for mobile-first UI
-- **Build Tool**: Vite 5.2 with TypeScript support
-- **Mobile Platform**: Capacitor 7.4 for iOS deployment
-- **State Management**: React Context API (`AppContext`) for global state
-- **Entry Point**: `src/App.tsx` → Tab-based navigation for admin and konfi users
-- **Testing**: Vitest for unit tests, Cypress for E2E tests
-- **Linting**: ESLint 9.x with TypeScript ESLint
+// Anzeige
+{konfi.jahrgang_name} • {konfi.badgeCount || 0} Badges
+G: {konfi.gottesdienst_points ?? 0}/{settings.target_gottesdienst}
+Gem: {konfi.gemeinde_points ?? 0}/{settings.target_gemeinde}
+```
 
-### Backend (Node.js + Express)
-- **API Server**: Express.js with JWT authentication
-- **Database**: SQLite3 for data persistence
-- **Authentication**: Two-tier system (admin/konfi) with biblical password generation
-- **File Uploads**: Multer for image handling
-- **Port**: 5000 (exposed as 8623 in Docker)
-- **API Base URL**: https://konfipoints.godsapp.de/api
+### ❌ FALSCH (Legacy - NICHT verwenden):
+```typescript
+// ❌ NIEMALS SO:
+konfi.points?.gottesdienst  // TOT
+konfi.points?.gemeinde     // TOT
+konfi.jahrgang            // Backend liefert jahrgang_name
+```
 
-### Key Components Structure
-- `frontend/src/components/admin/`: Admin dashboard and management views
-- `frontend/src/components/konfi/`: Konfi (confirmation student) views  
-- `frontend/src/components/auth/`: Authentication components
-- `frontend/src/components/chat/`: Chat functionality (planned)
-- `frontend/src/components/common/`: Shared UI components
-- `frontend/src/services/`: API service layer with axios
-- `frontend/src/contexts/`: React Context providers
-- `frontend/src/hooks/`: Custom React hooks (planned)
+---
 
-## Development Commands
+## Modals korrekt verwenden
 
-### Frontend Development
+### ✅ IMMER so (useIonModal Hook):
+```typescript
+const [presentModal, dismissModal] = useIonModal(MyModal, {
+  onClose: () => dismissModal(),
+  onSuccess: () => { 
+    dismissModal(); 
+    loadData(); // Daten neu laden
+  }
+});
+
+// Öffnen
+presentModal({ presentingElement: presentingElement });
+```
+
+### ❌ NIEMALS `<IonModal isOpen={state}>` verwenden!
+
+---
+
+## Entwicklungskommandos
+
+### Backend starten:
 ```bash
-cd frontend
-npm run dev              # Vite development server (port 5173)
-npm run build            # TypeScript compilation and Vite build
-npm run preview          # Preview production build
-npm run lint             # ESLint check
-npm run test.unit        # Vitest unit tests  
-npm run test.e2e         # Cypress E2E tests
+cd backend && npm start
 ```
 
-### iOS Development
+### Frontend development:
 ```bash
-cd frontend
-npm run build && npx cap sync ios  # Build and sync with Xcode
-# Then open and build in Xcode manually
+cd frontend && npm run dev
 ```
 
-### Backend Development
-```bash
-cd backend
-npm start              # Production server
-npm run dev            # Development with nodemon
-```
-
-### Remote Server Operations
-**Server**: ssh root@server.godsapp.de  
-**Repository Path**: /opt/Konfi-Quest/
-
-#### Deploy new version to production:
+### Deployment:
 ```bash
 ssh root@server.godsapp.de
 cd /opt/Konfi-Quest/
 git pull && docker-compose down && docker-compose up -d --build
 ```
 
-#### Test API directly on server:
-```bash
-# SSH into server first
-ssh root@server.godsapp.de
-cd /opt/Konfi-Quest/
+---
 
-# Test API endpoints
-curl -H "Authorization: Bearer <token>" https://konfipoints.godsapp.de/api/chat/rooms
-curl -H "Authorization: Bearer <token>" https://konfipoints.godsapp.de/api/badges
+## Häufige Probleme & Lösungen
+
+### 1. 403 Forbidden Errors
+- RBAC middleware prüfen in `middleware/rbac.js`
+- JWT Token und Organization ID prüfen
+- Permissions in Database validieren
+
+### 2. "Daten werden nicht angezeigt"
+**GRUND**: Legacy Datenstruktur verwendet!
+**LÖSUNG**: 
+- ✅ `konfi.gottesdienst_points` verwenden
+- ✅ `konfi.gemeinde_points` verwenden  
+- ✅ `konfi.jahrgang_name` verwenden
+- ✅ `konfi.badgeCount` ist verfügbar
+
+### 3. Modal 404 Errors
+**GRUND**: Falsche API Routes
+**LÖSUNG**:
+- ✅ `/api/admin/konfis/:id/activities` 
+- ✅ `/api/admin/konfis/:id/bonus-points`
+
+### 4. Database Errors
+- `konfi_event_registrations` → `event_bookings` verwenden
+- `a.title` → `a.name` verwenden
+
+---
+
+## Database Schema Mapping
+
+### User/Konfi Queries:
+```sql
+-- Alle Konfis laden
+SELECT u.id, u.display_name as name, u.username, 
+       kp.gottesdienst_points, kp.gemeinde_points,
+       j.name as jahrgang_name,
+       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
+FROM users u
+JOIN roles r ON u.role_id = r.id
+LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+WHERE r.name = 'konfi' AND u.organization_id = ?
 ```
 
-### Docker Operations (Backend Only)
-```bash
-docker-compose up -d          # Start backend server
-docker-compose up --build -d  # Rebuild and start backend
-docker-compose down           # Stop backend service
+---
+
+## Typische API Aufrufe
+
+```typescript
+// ✅ Konfis laden (mit badges)
+const konfis = await api.get('/admin/konfis');
+
+// ✅ Einzelnen Konfi laden (komplett mit activities, bonusPoints)
+const konfi = await api.get(`/admin/konfis/${id}`);
+
+// ✅ Aktivität hinzufügen
+await api.post(`/admin/konfis/${konfiId}/activities`, {
+  activity_id: activityId,
+  completed_date: date,
+  comment: comment
+});
+
+// ✅ Bonuspunkte hinzufügen
+await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
+  points: points,
+  type: 'gottesdienst', // oder 'gemeinde'
+  description: description
+});
 ```
 
-## Key Technical Details
+---
 
-### Authentication System
-- Admin login: `admin` / `pastor2025`
-- Konfi passwords: Generated biblical references (e.g., `Johannes3,16`)
-- JWT tokens with role-based access (`admin` vs `konfi`)
-- Auto-detection login: tries admin first, then konfi
+## System Status (Juli 2025)
 
-### API Integration
-- **Base URL**: https://konfipoints.godsapp.de/api
-- **Auth Token Example**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidHlwZSI6ImFkbWluIiwiZGlzcGxheV9uYW1lIjoiUGFzdG9yIFNpbW9uIEx1dGhlIiwiaWF0IjoxNzUyMzUzOTM3LCJleHAiOjE3NTM1NjM1Mzd9.StuYdxqfGwrmykmKBu6G7G3EaTtW2ydJvnWfOFjXpEU`
-- **Test Command**: `curl -H "Authorization: Bearer <token>" https://konfipoints.godsapp.de/api/badges`
-- **JWT Handling**: Automatic token injection via axios interceptors
-- **Error Handling**: 401 responses automatically redirect to login
+### ✅ FUNKTIONIERT:
+- RBAC System komplett migriert
+- Badge Counts in Übersicht und Details
+- Activity/Bonus CRUD Operations
+- Admin Konfi Management
+- Punkte werden korrekt angezeigt
+- Modal System mit useIonModal
 
-### Database Schema
-- SQLite database with tables for konfis, activities, badges, jahrgaenge (year groups)
-- Foreign key relationships between konfis and their activities/points
-- Admin tracking for point assignments
+### 🔄 IN ARBEIT:
+- Events Sektion für KonfiDetailView
+- Legacy Code cleanup
 
-### Mobile Integration
-- Capacitor 7.4 plugins for app functionality
-- iOS-specific configuration in `frontend/ios/` directory
-- Ionic 8 setupIonicReact with iOS mode by default
+### ❌ DEPRECATED:
+- Alte `points.gottesdienst` Struktur
+- `admins`/`konfis` Tabellen
+- `<IonModal isOpen>` Pattern
 
-### State Management
-- `AppContext` provides global state for user authentication
-- Loading states managed per data type
-- Error/success message handling with auto-clear timers
+---
 
-## Important Files
-
-### Configuration
-- `frontend/capacitor.config.ts`: Capacitor/iOS configuration
-- `frontend/package.json`: Dependencies including React 19, Ionic 8, TypeScript
-- `frontend/vite.config.ts`: Build configuration
-- `frontend/eslint.config.js`: Linting rules
-- `frontend/cypress.config.ts`: E2E testing configuration
-- `frontend/ionic.config.json`: Ionic project configuration
-- `backend/package.json`: Backend dependencies and scripts
-- `backend/server.js`: Main API server with all endpoints
-
-### Core Components
-- `frontend/src/App.tsx`: Main app with tab navigation
-- `frontend/src/contexts/AppContext.tsx`: Global state management
-- `frontend/src/services/api.ts`: Axios-based API service with auth interceptors
-- `frontend/src/services/auth.ts`: Authentication service with auto-detection
-
-## Git Branch Strategy
-- Currently on `ios` branch for iOS-specific development
-- Main development focus on clean implementation
-
-## Testing
-- **Unit Tests**: Vitest with @testing-library/react
-- **E2E Tests**: Cypress configured for localhost:5173
-- **Command**: `npm run test.unit` or `npm run test.e2e`
-
-## Common Development Patterns
-
-### Code Style
-- Use TypeScript strict mode
-- Leverage Ionic 8 components for UI consistency
-- Follow React 19 patterns and hooks
-- Use Axios interceptors for API communication
-- Prefer functional components with hooks
-
-### API Communication
-- All API calls through centralized `api.ts` service
-- JWT tokens automatically injected via interceptors
-- Error handling with context-based messaging
-- Auto-redirect on 401 unauthorized responses
-
-## Ionic Modal Implementation Pattern
-
-### Korrekte IonModal Backdrop Implementation
-
-Für Modals mit korrektem Backdrop-Verhalten muss folgendes Pattern verwendet werden:
-
-**1. Parent Component (Page-Level):**
-```tsx
-// WICHTIG: Parent Component muss IonPage verwenden!
-const ParentPage: React.FC = () => {
-  const pageRef = React.useRef(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  return (
-    <IonPage ref={pageRef}>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Page Title</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="app-gradient-background" fullscreen>
-        {/* Page Content */}
-      </IonContent>
-      
-      {/* Modal */}
-      <IonModal 
-        isOpen={isModalOpen} 
-        onDidDismiss={() => setIsModalOpen(false)}
-        presentingElement={pageRef.current || undefined}
-        canDismiss={true}
-        backdropDismiss={true}
-      >
-        <ModalComponent onClose={() => setIsModalOpen(false)} />
-      </IonModal>
-    </IonPage>
-  );
-};
-```
-
-**2. Modal Component:**
-```tsx
-// Modal Component muss IonPage innerhalb des Modals verwenden
-const ModalComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Modal Title</IonTitle>
-          <IonButtons slot="start">
-            <IonButton onClick={onClose}>Abbrechen</IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        {/* Modal Content */}
-      </IonContent>
-    </IonPage>
-  );
-};
-```
-
-**Kritische Punkte:**
-- Parent Component MUSS `IonPage` als Root-Element verwenden
-- `pageRef` ist essentiell für `presentingElement`
-- Modal Component verwendet `IonPage` innerhalb des `IonModal`
-- `presentingElement={pageRef.current || undefined}` aktiviert das Backdrop
-
-## useIonModal Hook Pattern (Empfohlen)
-
-**Für konsistente iOS Card-Effekte und Tab-Navigation sollte immer der useIonModal Hook verwendet werden:**
-
-**1. Parent Component Setup:**
-```tsx
-import { useIonModal } from '@ionic/react';
-import { useModalPage } from '../contexts/ModalContext';
-
-const ParentPage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('pageName');
-  const [modalData, setModalData] = useState(null);
-  
-  // Modal Hook
-  const [presentModalHook, dismissModalHook] = useIonModal(ModalComponent, {
-    data: modalData,
-    onClose: () => dismissModalHook(),
-    onSuccess: () => {
-      dismissModalHook();
-      // Reload data oder andere Aktionen
-    },
-    dismiss: () => dismissModalHook()
-  });
-  
-  const openModal = () => {
-    setModalData(someData);
-    presentModalHook({ presentingElement: presentingElement });
-  };
-  
-  return (
-    <IonPage ref={pageRef}>
-      {/* Content */}
-      <IonButton onClick={openModal}>Modal öffnen</IonButton>
-    </IonPage>
-  );
-};
-```
-
-**2. Modal Component:**
-```tsx
-interface ModalProps {
-  data: any;
-  onClose: () => void;
-  onSuccess: () => void;
-  dismiss?: () => void;
-}
-
-const ModalComponent: React.FC<ModalProps> = ({ data, onClose, onSuccess, dismiss }) => {
-  const handleClose = () => {
-    if (dismiss) {
-      dismiss();
-    } else {
-      onClose();
-    }
-  };
-  
-  const handleSave = async () => {
-    try {
-      // Save logic
-      await onSuccess();
-      handleClose();
-    } catch (error) {
-      // Error handling
-    }
-  };
-  
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Modal Title</IonTitle>
-          <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
-              <IonIcon icon={close} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        {/* Modal Content */}
-      </IonContent>
-    </IonPage>
-  );
-};
-```
-
-**Wichtige Punkte für iOS Card-Effekt:**
-1. **Immer useIonModal Hook verwenden** anstatt `<IonModal>` mit `isOpen`
-2. **presentingElement Parameter** beim Hook-Aufruf mitgeben: `presentModalHook({ presentingElement: presentingElement })`
-3. **dismiss Parameter** in Modal Props definieren für konsistente Schließung
-4. **handleClose Funktion** für unified close behavior
-5. **ModalContext verwenden** für pageRef und presentingElement Management
-
-**Beispiele aus der Codebase:**
-- ✅ KonfiDetailView Modals (ActivityModal, BonusModal)
-- ✅ AdminKonfisPage (KonfiModal)
-- ✅ AdminActivitiesPage (ActivityManagementModal)
-- ✅ AdminEventsPage (EventModal)
-- ✅ ChatPage (SimpleCreateChatModal)
-
-## API Reference
-
-Comprehensive API documentation is available in `API Definitionen.md` including:
-- Authentication endpoints
-- Konfi management (CRUD operations)
-- Activity and badge systems
-- Chat functionality
-- Admin management tools
-- File upload handling
-- Bonus points system
-
-## Development Language
-- **Primary Language**: German for all development communication
-- **Code Comments**: Write in German
-- **Variable Names**: Can be English/German mix as appropriate
-- **Documentation**: German preferred
-
-## Git Commit Guidelines
-- Standard commit messages without AI attribution
-- Focus on clear, descriptive commit messages in German
-- No requirement to mention Claude or AI assistance
+**WICHTIG**: Dieses System ist produktiv. Alle Änderungen müssen der neuen RBAC-Struktur folgen!

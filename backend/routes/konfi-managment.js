@@ -10,7 +10,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         const query = `
             SELECT u.id, u.display_name as name, u.username, kp.password_plain, 
                    kp.gottesdienst_points, kp.gemeinde_points,
-                   j.name as jahrgang_name, j.id as jahrgang_id
+                   j.name as jahrgang_name, j.id as jahrgang_id,
+                   (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
             FROM users u
             JOIN roles r ON u.role_id = r.id
             LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -27,23 +28,64 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         });
     });
 
-    // GET a single konfi by ID
+    // GET a single konfi by ID with full details
     router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
-        const query = `
-            SELECT u.id, u.display_name as name, u.username, kp.password_plain,
+        const konfiQuery = `
+            SELECT u.id, u.display_name as name, u.username, kp.password_plain as password,
                    kp.gottesdienst_points, kp.gemeinde_points,
-                   j.name as jahrgang_name, j.id as jahrgang_id
+                   j.name as jahrgang_name, j.id as jahrgang_id,
+                   (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
             FROM users u
             JOIN roles r ON u.role_id = r.id
             LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
             LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
             WHERE r.name = 'konfi' AND u.id = ? AND u.organization_id = ?
         `;
-        db.get(query, [req.params.id, req.user.organization_id], (err, konfi) => {
+        
+        db.get(konfiQuery, [req.params.id, req.user.organization_id], (err, konfi) => {
             if (err) return res.status(500).json({ error: 'Database error' });
             if (!konfi) return res.status(404).json({ error: 'Konfi not found' });
 
-            res.json(konfi);
+            // Get activities
+            const activitiesQuery = `
+                SELECT ka.id, a.name, a.points, a.type, ka.completed_date as date,
+                       u.display_name as admin
+                FROM konfi_activities ka
+                JOIN activities a ON ka.activity_id = a.id
+                LEFT JOIN users u ON ka.admin_id = u.id
+                WHERE ka.konfi_id = ?
+                ORDER BY ka.completed_date DESC
+            `;
+            
+            db.all(activitiesQuery, [req.params.id], (err, activities) => {
+                if (err) {
+                    console.error('Error fetching activities:', err);
+                    activities = [];
+                }
+                
+                // Get bonus points
+                const bonusQuery = `
+                    SELECT bp.id, bp.points, bp.type, bp.description, bp.created_at as date,
+                           u.display_name as admin
+                    FROM bonus_points bp
+                    LEFT JOIN users u ON bp.admin_id = u.id
+                    WHERE bp.konfi_id = ?
+                    ORDER BY bp.created_at DESC
+                `;
+                
+                db.all(bonusQuery, [req.params.id], (err, bonusPoints) => {
+                    if (err) {
+                        console.error('Error fetching bonus points:', err);
+                        bonusPoints = [];
+                    }
+                    
+                    konfi.activities = activities || [];
+                    konfi.bonusPoints = bonusPoints || [];
+                    konfi.totalBonus = bonusPoints.reduce((sum, bp) => sum + bp.points, 0);
+                    
+                    res.json(konfi);
+                });
+            });
         });
     });
 
@@ -233,6 +275,149 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                             });
                         });
                 });
+        });
+    });
+
+    // POST bonus points for a konfi
+    router.post('/:id/bonus-points', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
+        const { points, type, description } = req.body;
+        if (!points || !type || !description) {
+            return res.status(400).json({ error: 'Points, type and description are required' });
+        }
+
+        const query = `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, created_at)
+                       VALUES (?, ?, ?, ?, ?, datetime('now'))`;
+        
+        db.run(query, [req.params.id, points, type, description, req.user.id], function(err) {
+            if (err) {
+                console.error('Error creating bonus points:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Update konfi points
+            const updateField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+            const updateQuery = `UPDATE konfi_profiles 
+                               SET ${updateField} = ${updateField} + ? 
+                               WHERE user_id = ?`;
+            
+            db.run(updateQuery, [points, req.params.id], (err) => {
+                if (err) {
+                    console.error('Error updating konfi points:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                res.status(201).json({ message: 'Bonus points added successfully' });
+            });
+        });
+    });
+
+    // DELETE bonus points
+    router.delete('/:id/bonus-points/:bonusId', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
+        // Get bonus points info first
+        db.get('SELECT * FROM bonus_points WHERE id = ? AND konfi_id = ?', 
+               [req.params.bonusId, req.params.id], (err, bonus) => {
+            if (err || !bonus) {
+                return res.status(404).json({ error: 'Bonus points not found' });
+            }
+            
+            // Delete bonus points
+            db.run('DELETE FROM bonus_points WHERE id = ?', [req.params.bonusId], (err) => {
+                if (err) {
+                    console.error('Error deleting bonus points:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                // Update konfi points (subtract)
+                const updateField = bonus.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+                const updateQuery = `UPDATE konfi_profiles 
+                                   SET ${updateField} = ${updateField} - ? 
+                                   WHERE user_id = ?`;
+                
+                db.run(updateQuery, [bonus.points, req.params.id], (err) => {
+                    if (err) {
+                        console.error('Error updating konfi points:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    res.json({ message: 'Bonus points deleted successfully' });
+                });
+            });
+        });
+    });
+
+    // POST activity for a konfi
+    router.post('/:id/activities', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
+        const { activity_id, completed_date, comment } = req.body;
+        if (!activity_id || !completed_date) {
+            return res.status(400).json({ error: 'Activity ID and date are required' });
+        }
+
+        // Get activity details
+        db.get('SELECT * FROM activities WHERE id = ? AND organization_id = ?', 
+               [activity_id, req.user.organization_id], (err, activity) => {
+            if (err || !activity) {
+                return res.status(404).json({ error: 'Activity not found' });
+            }
+            
+            // Insert konfi activity
+            const query = `INSERT INTO konfi_activities 
+                          (konfi_id, activity_id, completed_date, comment, admin_id, created_at)
+                          VALUES (?, ?, ?, ?, ?, datetime('now'))`;
+            
+            db.run(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id], function(err) {
+                if (err) {
+                    console.error('Error creating konfi activity:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                // Update konfi points
+                const updateField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+                const updateQuery = `UPDATE konfi_profiles 
+                                   SET ${updateField} = ${updateField} + ? 
+                                   WHERE user_id = ?`;
+                
+                db.run(updateQuery, [activity.points, req.params.id], (err) => {
+                    if (err) {
+                        console.error('Error updating konfi points:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    res.status(201).json({ message: 'Activity added successfully' });
+                });
+            });
+        });
+    });
+
+    // DELETE activity for a konfi
+    router.delete('/:id/activities/:activityId', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
+        // Get activity info first
+        db.get(`SELECT ka.*, a.points, a.type 
+                FROM konfi_activities ka 
+                JOIN activities a ON ka.activity_id = a.id
+                WHERE ka.id = ? AND ka.konfi_id = ?`, 
+               [req.params.activityId, req.params.id], (err, activity) => {
+            if (err || !activity) {
+                return res.status(404).json({ error: 'Activity not found' });
+            }
+            
+            // Delete activity
+            db.run('DELETE FROM konfi_activities WHERE id = ?', [req.params.activityId], (err) => {
+                if (err) {
+                    console.error('Error deleting activity:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                // Update konfi points (subtract)
+                const updateField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+                const updateQuery = `UPDATE konfi_profiles 
+                                   SET ${updateField} = ${updateField} - ? 
+                                   WHERE user_id = ?`;
+                
+                db.run(updateQuery, [activity.points, req.params.id], (err) => {
+                    if (err) {
+                        console.error('Error updating konfi points:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    res.json({ message: 'Activity deleted successfully' });
+                });
+            });
         });
     });
 
