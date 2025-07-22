@@ -108,6 +108,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [loading, setLoading] = useState(true);
   const [showPasswordAlert, setShowPasswordAlert] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [loadedPassword, setLoadedPassword] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
@@ -195,6 +197,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       ]);
       
       console.log('Konfi data loaded:', konfiRes.data);
+      console.log('Password from API:', konfiRes.data.password);
       const konfiData = konfiRes.data;
       const allActivities = konfiData.activities || [];
       
@@ -276,7 +279,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       buttons: [
         {
           text: 'Passwort anzeigen',
-          handler: () => setShowPasswordAlert(true)
+          handler: () => handleShowPassword()
         },
         {
           text: 'Neues Passwort generieren',
@@ -288,6 +291,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         }
       ]
     });
+  };
+
+  const handleShowPassword = async () => {
+    setShowPasswordAlert(true);
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
@@ -328,8 +335,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     try {
       const response = await api.post(`/admin/konfis/${konfiId}/regenerate-password`);
       // Passwort sofort aktualisieren
-      setCurrentKonfi(prev => prev ? { ...prev, password: response.data.password } : null);
-      setSuccess(`Neues Passwort: ${response.data.password}`);
+      const newPassword = response.data.password;
+      setCurrentKonfi(prev => prev ? { ...prev, password: newPassword } : null);
+      setLoadedPassword(newPassword);
+      setSuccess(`Neues Passwort: ${newPassword}`);
       // Parent-Update triggern
       window.dispatchEvent(new CustomEvent('konfis-updated'));
     } catch (err) {
@@ -621,7 +630,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         isOpen={showPasswordAlert}
         onDidDismiss={() => setShowPasswordAlert(false)}
         header="Passwort"
-        message={`Aktuelles Passwort: ${currentKonfi?.password || 'Nicht verfügbar'}`}
+        message={`Aktuelles Passwort: ${loadedPassword || currentKonfi?.password || 'Nicht verfügbar'}`}
         buttons={['OK']}
       />
 

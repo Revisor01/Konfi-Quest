@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { modalController } from '@ionic/core';
 
@@ -30,7 +30,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     cleanupModals();
   }, [location.pathname]);
 
-  const registerPage = (tabId: string, element: HTMLElement | null) => {
+  const registerPage = useCallback((tabId: string, element: HTMLElement | null) => {
     if (element) {
       setTabPresentingElements(prev => {
         const newMap = new Map(prev);
@@ -38,7 +38,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return newMap;
       });
     }
-  };
+  }, []);
 
   const getCurrentPresentingElement = () => {
     // Aktuelle Route ermitteln

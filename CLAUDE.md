@@ -187,6 +187,25 @@ git pull && docker-compose down && docker-compose up -d --build
 - `konfi_event_registrations` → `event_bookings` verwenden
 - `a.title` → `a.name` verwenden
 
+### 5. useEffect Loop in ModalContext
+**PROBLEM**: "Maximum update depth exceeded" in ModalContext
+**GRUND**: `registerPage` Funktion wird bei jedem Render neu erstellt
+**LÖSUNG**: `useCallback` verwenden für `registerPage`
+
+```tsx
+// ❌ FALSCH - verursacht Loop
+const registerPage = (tabId: string, element: HTMLElement | null) => {
+  // ...
+};
+
+// ✅ RICHTIG - verhindert Loop
+const registerPage = useCallback((tabId: string, element: HTMLElement | null) => {
+  // ...
+}, []);
+```
+
+**WICHTIG**: Diese Lösung ist kritisch für Tab-Navigation und Modal-Funktionalität!
+
 ---
 
 ## Database Schema Mapping

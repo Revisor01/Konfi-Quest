@@ -10,11 +10,10 @@ import {
   IonItem,
   IonLabel,
   IonInput,
-  IonSelect,
-  IonSelectOption,
   IonList,
   IonIcon,
-  IonTextarea
+  IonTextarea,
+  IonActionSheet
 } from '@ionic/react';
 import { close, checkmark } from 'ionicons/icons';
 import api from '../../../services/api';
@@ -38,6 +37,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
   const handleClose = () => {
     if (dismiss) {
@@ -96,19 +96,15 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
       </IonHeader>
       <IonContent>
         <IonList>
-          <IonItem>
+          <IonItem button onClick={() => setIsActionSheetOpen(true)}>
             <IonLabel position="stacked">Aktivität</IonLabel>
-            <IonSelect
-              value={selectedActivity}
-              onSelectionChange={(e) => setSelectedActivity(e.detail.value)}
-              placeholder="Aktivität wählen"
-            >
-              {activities.map(activity => (
-                <IonSelectOption key={activity.id} value={activity.id}>
-                  {activity.name} ({activity.points} Punkte, {activity.type})
-                </IonSelectOption>
-              ))}
-            </IonSelect>
+            <IonLabel>
+              {selectedActivity ? 
+                activities.find(a => a.id === selectedActivity)?.name + 
+                ` (${activities.find(a => a.id === selectedActivity)?.points} Punkte, ${activities.find(a => a.id === selectedActivity)?.type})` : 
+                'Aktivität wählen'
+              }
+            </IonLabel>
           </IonItem>
 
           <IonItem>
@@ -129,6 +125,36 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             />
           </IonItem>
         </IonList>
+
+        <IonActionSheet
+          isOpen={isActionSheetOpen}
+          onDidDismiss={() => setIsActionSheetOpen(false)}
+          header="Aktivität wählen"
+          buttons={[
+            ...activities
+              .sort((a, b) => {
+                // Sortiere nach Type und dann nach Name
+                if (a.type !== b.type) {
+                  return a.type.localeCompare(b.type);
+                }
+                return a.name.localeCompare(b.name);
+              })
+              .map(activity => ({
+                text: `${activity.name} (${activity.points} Punkte, ${activity.type})`,
+                handler: () => {
+                  setSelectedActivity(activity.id);
+                  setIsActionSheetOpen(false);
+                }
+              })),
+            {
+              text: 'Abbrechen',
+              role: 'cancel',
+              handler: () => {
+                setIsActionSheetOpen(false);
+              }
+            }
+          ]}
+        />
       </IonContent>
     </IonPage>
   );

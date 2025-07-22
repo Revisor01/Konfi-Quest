@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://konfipoints.godsapp.de/api';
+const API_BASE_URL = 'https://konfi-quest.de/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -36,7 +36,7 @@ import {
   people
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
-import { filterBySearchTerm, filterByJahrgang } from '../../utils/helpers';
+import { filterBySearchTerm } from '../../utils/helpers';
 
 interface Konfi {
   id: number;
@@ -90,12 +90,25 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name'); // 'name', 'points'
 
+  const getTotalPoints = (konfi: Konfi) => {
+    // Support both new backend structure and legacy structure
+    const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
+    const gemeinde = konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0;
+    return gottesdienst + gemeinde;
+  };
+
   const filteredAndSortedKonfis = (() => {
-    let result = filterBySearchTerm(
-      filterByJahrgang(konfis, selectedJahrgang),
-      searchTerm,
-      ['name', 'username']
-    );
+    let result = konfis;
+    
+    // Suche nach Name/Username
+    result = filterBySearchTerm(result, searchTerm, ['name', 'username']);
+    
+    // Filter nach Jahrgang - angepasst für jahrgang_name
+    if (selectedJahrgang !== 'alle') {
+      result = result.filter(konfi => 
+        konfi.jahrgang_name === selectedJahrgang || konfi.jahrgang === selectedJahrgang
+      );
+    }
     
     // Sortierung
     if (sortBy === 'points') {
@@ -114,18 +127,21 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const showGottesdienstTarget = parseInt(settings.target_gottesdienst || '10') > 0;
   const showGemeindeTarget = parseInt(settings.target_gemeinde || '10') > 0;
 
-  const getTotalPoints = (konfi: Konfi) => {
-    // Support both new backend structure and legacy structure
-    const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
-    const gemeinde = konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0;
-    return gottesdienst + gemeinde;
-  };
-
   const getProgressColor = (current: number, target: number) => {
     const percentage = (current / target) * 100;
     if (percentage >= 100) return 'success';
     if (percentage >= 75) return 'warning';
     return 'primary';
+  };
+
+  const getInitials = (name: string) => {
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) {
+      return words[0].substring(0, 2).toUpperCase();
+    }
+    const firstInitial = words[0][0] || '';
+    const lastInitial = words[words.length - 1][0] || '';
+    return (firstInitial + lastInitial).toUpperCase();
   };
 
   return (
@@ -233,6 +249,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     ]
                   });
                 }}>
+                  <IonIcon icon={people} slot="start" />
                   <IonLabel>
                     {selectedJahrgang === 'alle' ? 'Alle Jahrgänge' : selectedJahrgang || 'Jahrgang wählen'}
                   </IonLabel>
@@ -245,14 +262,15 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   presentActionSheet({
                     header: 'Sortierung wählen',
                     buttons: [
-                      { text: 'Nach Name sortieren', handler: () => setSortBy('name') },
-                      { text: 'Nach Punkte sortieren', handler: () => setSortBy('points') },
+                      { text: 'Nach Name (A-Z)', handler: () => setSortBy('name') },
+                      { text: 'Nach Punkte (hoch-niedrig)', handler: () => setSortBy('points') },
                       { text: 'Abbrechen', role: 'cancel' }
                     ]
                   });
                 }}>
+                  <IonIcon icon={swapVertical} slot="start" />
                   <IonLabel>
-                    {sortBy === 'name' ? 'Nach Name sortieren' : 'Nach Punkte sortieren'}
+                    {sortBy === 'name' ? 'Nach Name (A-Z)' : 'Nach Punkte (hoch-niedrig)'}
                   </IonLabel>
                 </IonItem>
               </IonCol>
@@ -273,13 +291,36 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   style={{ '--min-height': '70px', '--padding-start': '16px' }}
                 >
                   <IonLabel>
-                    <h2 style={{ 
-                      fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
-                    }}>
-                      {konfi.name}
-                    </h2>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
+                      {/* Initialen-Kreis */}
+                      <div 
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: '600',
+                          fontSize: '0.75rem',
+                          marginRight: '10px',
+                          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                          flexShrink: 0
+                        }}
+                      >
+                        {getInitials(konfi.name)}
+                      </div>
+                      
+                      <h2 style={{ 
+                        fontWeight: '600', 
+                        fontSize: '1.1rem',
+                        margin: '0'
+                      }}>
+                        {konfi.name}
+                      </h2>
+                    </div>
                     
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                       {showGottesdienstTarget && (

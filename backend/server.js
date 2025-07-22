@@ -29,7 +29,7 @@ const db = initializeDatabase();
 const SMTP_CONFIG = {
   host: process.env.SMTP_HOST || '213.109.162.132',
   port: process.env.SMTP_PORT || 587,
-  secure: false, // true for 465, false for other ports
+  secure: true, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER || 'team@konfi-quest.de',
     pass: process.env.SMTP_PASS || 'NkqFQuTx$877Si!6Pp'
@@ -59,6 +59,7 @@ app.use(cors({
   origin: [
     'http://localhost:3000',
     'http://localhost:8624',
+    'https://konfi-quest.de',
     'https://konfipoints.godsapp.de',
     'http://127.0.0.1:8624'
   ],
