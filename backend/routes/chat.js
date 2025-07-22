@@ -292,7 +292,7 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
   let params;
   
   if (userType === 'admin') {
-    // Admins see all rooms using chat_read_status table
+    // Admins see ONLY their own rooms - PRIVACY FIX!
     query = `
       SELECT r.*, j.name as jahrgang_name,
               COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') AND m.deleted_at IS NULL THEN 1 END) as unread_count,
@@ -301,12 +301,13 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
               NULL as last_message_sender
       FROM chat_rooms r
       LEFT JOIN jahrgaenge j ON r.jahrgang_id = j.id
+      INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
       LEFT JOIN chat_messages m ON r.id = m.room_id
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
-    params = [userId, userType];
+    params = [userId, userType, userId, userType];
   } else {
     // Konfis see only their rooms using chat_read_status table
     query = `
