@@ -333,7 +333,7 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     
-    // Process rooms to format last_message properly
+    // Process rooms to format last_message properly and fix direct chat names
     const processedRooms = rooms.map(room => {
       let processedRoom = { ...room };
       
@@ -354,7 +354,44 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
       return processedRoom;
     });
     
-    res.json(processedRooms);
+    // Fix direct chat names - get other participant's name for each direct chat
+    const fixDirectChatNames = async (rooms) => {
+      const fixedRooms = await Promise.all(rooms.map(async (room) => {
+        if (room.type === 'direct') {
+          // Get the OTHER participant's name for this direct chat
+          const otherParticipantQuery = `
+            SELECT p.user_id, p.user_type, 
+                   CASE 
+                     WHEN p.user_type = 'admin' THEN u.display_name
+                     WHEN p.user_type = 'konfi' THEN u.display_name
+                   END as participant_name
+            FROM chat_participants p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.room_id = ? AND NOT (p.user_id = ? AND p.user_type = ?)
+            LIMIT 1
+          `;
+          
+          return new Promise((resolve) => {
+            db.get(otherParticipantQuery, [room.id, userId, userType], (err, otherParticipant) => {
+              if (!err && otherParticipant && otherParticipant.participant_name) {
+                room.name = otherParticipant.participant_name;
+              }
+              resolve(room);
+            });
+          });
+        }
+        return room;
+      }));
+      return fixedRooms;
+    };
+    
+    // Apply the fix and return
+    fixDirectChatNames(processedRooms).then(finalRooms => {
+      res.json(finalRooms);
+    }).catch(err => {
+      console.error('Error fixing direct chat names:', err);
+      res.json(processedRooms); // Fallback to original rooms
+    });
   });
 });
 
