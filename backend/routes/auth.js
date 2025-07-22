@@ -89,6 +89,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
           return res.status(500).json({ error: 'Database error' });
         }
         
+        console.log(`Loading permissions for user ${user.id} (role_id: ${user.role_id}), found ${permissions.length} permissions`);
         const userPermissions = permissions.map(p => p.name);
         
         const token = jwt.sign({ 
