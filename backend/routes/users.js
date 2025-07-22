@@ -1,9 +1,18 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
+const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
 
 // User management routes
 module.exports = (db, rbacVerifier, checkPermission) => {
+  
+  // Hierarchie-Middleware mit DB-Zugriff
+  const userHierarchyMiddleware = (operation) => {
+    return (req, res, next) => {
+      req.db = db; // DB-Instanz für Hierarchie-Check verfügbar machen
+      return checkUserHierarchy(operation)(req, res, next);
+    };
+  };
   
   // Get users in current organization
   router.get('/', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
@@ -27,12 +36,15 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         console.error('Error fetching users:', err);
         return res.status(500).json({ error: 'Database error' });
       }
-      res.json(rows);
+      
+      // Filtere Users basierend auf Hierarchie
+      const filteredUsers = filterUsersByHierarchy(rows, req.user.role_name);
+      res.json(filteredUsers);
     });
   });
 
   // Get single user with details
-  router.get('/:id', rbacVerifier, checkPermission('admin.users.view'), (req, res) => {
+  router.get('/:id', rbacVerifier, checkPermission('admin.users.view'), userHierarchyMiddleware('view'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     
@@ -81,7 +93,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Create new user
-  router.post('/', rbacVerifier, checkPermission('admin.users.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('admin.users.create'), userHierarchyMiddleware('create'), (req, res) => {
     const organizationId = req.user.organization_id;
     const {
       username,
@@ -134,7 +146,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Update user
-  router.put('/:id', rbacVerifier, checkPermission('admin.users.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('admin.users.edit'), userHierarchyMiddleware('update'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const {
@@ -234,7 +246,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Delete user
-  router.delete('/:id', rbacVerifier, checkPermission('admin.users.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('admin.users.delete'), userHierarchyMiddleware('delete'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     
