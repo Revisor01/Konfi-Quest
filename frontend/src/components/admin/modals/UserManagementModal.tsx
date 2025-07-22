@@ -106,8 +106,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [user, setUser] = useState<User | null>(null);
   
-  // Jahrgang assignments
-  const [jahrgangAssignments, setJahrgangAssignments] = useState<{[key: number]: {can_view: boolean, can_edit: boolean}}>({});
+  // Jahrgang assignments - simplified to just assignment toggle
+  const [jahrgangAssignments, setJahrgangAssignments] = useState<{[key: number]: boolean}>({});
 
   const isEditMode = !!userId;
 
@@ -151,14 +151,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         is_active: userData.is_active
       });
 
-      // Set jahrgang assignments
-      const assignments: {[key: number]: {can_view: boolean, can_edit: boolean}} = {};
+      // Set jahrgang assignments - simplified to just assigned status
+      const assignments: {[key: number]: boolean} = {};
       if (userData.assigned_jahrgaenge) {
         userData.assigned_jahrgaenge.forEach((assignment: AssignedJahrgang) => {
-          assignments[assignment.id] = {
-            can_view: assignment.can_view,
-            can_edit: assignment.can_edit
-          };
+          assignments[assignment.id] = assignment.can_view || assignment.can_edit;
         });
       }
       setJahrgangAssignments(assignments);
@@ -207,13 +204,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         setSuccess('Benutzer erfolgreich erstellt');
       }
 
-      // Update jahrgang assignments
+      // Update jahrgang assignments - set both can_view and can_edit to true for assigned jahrgaenge
       const assignments = Object.entries(jahrgangAssignments)
-        .filter(([_, assignment]) => assignment.can_view || assignment.can_edit)
-        .map(([jahrgangId, assignment]) => ({
+        .filter(([_, isAssigned]) => isAssigned)
+        .map(([jahrgangId, _]) => ({
           jahrgang_id: parseInt(jahrgangId),
-          can_view: assignment.can_view,
-          can_edit: assignment.can_edit
+          can_view: true,
+          can_edit: true
         }));
 
       if (userIdForAssignments) {
@@ -230,17 +227,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
   };
 
-  const handleJahrgangAssignment = (jahrgangId: number, field: 'can_view' | 'can_edit', value: boolean) => {
+  const handleJahrgangAssignment = (jahrgangId: number, value: boolean) => {
     setJahrgangAssignments(prev => ({
       ...prev,
-      [jahrgangId]: {
-        ...prev[jahrgangId],
-        [field]: value,
-        // If can_edit is true, can_view must also be true
-        ...(field === 'can_edit' && value ? { can_view: true } : {}),
-        // If can_view is false, can_edit must also be false
-        ...(field === 'can_view' && !value ? { can_edit: false } : {})
-      }
+      [jahrgangId]: value
     }));
   };
 
@@ -382,28 +372,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             ) : (
               <IonList>
                 {jahrgaenge.map(jahrgang => {
-                  const assignment = jahrgangAssignments[jahrgang.id] || { can_view: false, can_edit: false };
+                  const isAssigned = jahrgangAssignments[jahrgang.id] || false;
                   
                   return (
                     <IonItem key={jahrgang.id}>
+                      <IonCheckbox
+                        checked={isAssigned}
+                        onIonChange={(e) => handleJahrgangAssignment(jahrgang.id, e.detail.checked)}
+                        slot="start"
+                      />
                       <IonLabel>
                         <h3>{jahrgang.name}</h3>
-                        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
-                            <IonCheckbox
-                              checked={assignment.can_view}
-                              onIonChange={(e) => handleJahrgangAssignment(jahrgang.id, 'can_view', e.detail.checked)}
-                            />
-                            Anzeigen
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem' }}>
-                            <IonCheckbox
-                              checked={assignment.can_edit}
-                              onIonChange={(e) => handleJahrgangAssignment(jahrgang.id, 'can_edit', e.detail.checked)}
-                            />
-                            Bearbeiten
-                          </label>
-                        </div>
+                        <p>Jahrgang zuweisen</p>
                       </IonLabel>
                     </IonItem>
                   );
@@ -434,20 +414,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
               {user.assigned_jahrgaenge.map(assignment => (
                 <IonItem key={assignment.id}>
+                  <IonIcon icon={checkmark} color="success" slot="start" />
                   <IonLabel>
                     <h3>{assignment.name}</h3>
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                      {assignment.can_view && (
-                        <IonChip color="primary" style={{ fontSize: '0.75rem', height: '20px' }}>
-                          Anzeigen
-                        </IonChip>
-                      )}
-                      {assignment.can_edit && (
-                        <IonChip color="success" style={{ fontSize: '0.75rem', height: '20px' }}>
-                          Bearbeiten
-                        </IonChip>
-                      )}
-                    </div>
                     <p style={{ fontSize: '0.8rem', color: '#666', margin: '4px 0 0' }}>
                       Zugewiesen: {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
                       {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
