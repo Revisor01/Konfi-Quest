@@ -37,9 +37,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(500).json({ error: 'Database error' });
       }
       
-      // Filtere Users basierend auf Hierarchie
-      const filteredUsers = filterUsersByHierarchy(rows, req.user.role_name);
-      res.json(filteredUsers);
+      // Markiere Users als editierbar basierend auf Hierarchie statt sie zu filtern
+      const usersWithEditability = rows.map(user => ({
+        ...user,
+        can_edit: filterUsersByHierarchy([user], req.user.role_name).length > 0
+      }));
+      res.json(usersWithEditability);
     });
   });
 
@@ -67,18 +70,24 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(404).json({ error: 'User not found' });
       }
       
-      // Get assigned jahrgaenge
+      // Get assigned jahrgaenge - check both user_jahrgang_assignments and konfi_profiles
       const jahrgaengeQuery = `
-        SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
-               assigner.display_name as assigned_by_name
-        FROM user_jahrgang_assignments uja
-        JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+        SELECT j.id, j.name, 
+               COALESCE(uja.can_view, 1) as can_view, 
+               COALESCE(uja.can_edit, 1) as can_edit, 
+               COALESCE(uja.assigned_at, u.created_at) as assigned_at,
+               COALESCE(assigner.display_name, 'System') as assigned_by_name,
+               CASE WHEN kp.jahrgang_id IS NOT NULL THEN 'konfi_profile' ELSE 'user_assignment' END as source_type
+        FROM jahrgaenge j
+        LEFT JOIN user_jahrgang_assignments uja ON uja.jahrgang_id = j.id AND uja.user_id = ?
+        LEFT JOIN konfi_profiles kp ON kp.jahrgang_id = j.id AND kp.user_id = ?
         LEFT JOIN users assigner ON uja.assigned_by = assigner.id
-        WHERE uja.user_id = ?
+        LEFT JOIN users u ON u.id = ?
+        WHERE (uja.user_id = ? OR kp.user_id = ?) 
         ORDER BY j.name
       `;
       
-      db.all(jahrgaengeQuery, [id], (err, jahrgaenge) => {
+      db.all(jahrgaengeQuery, [id, id, id, id, id], (err, jahrgaenge) => {
         if (err) {
           console.error('Error fetching user jahrgaenge:', err);
           return res.status(500).json({ error: 'Database error' });

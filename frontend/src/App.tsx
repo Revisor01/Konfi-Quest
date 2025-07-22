@@ -173,34 +173,65 @@ const AppContent: React.FC = () => {
                         </IonToolbar>
                       </IonHeader>
                       <IonContent className="ion-padding">
-                        <IonCard>
-                          <IonCardHeader>
-                            <IonCardTitle>System-Verwaltung</IonCardTitle>
-                          </IonCardHeader>
-                          <IonCardContent>
-                            <IonItem button routerLink="/admin/users">
-                              <IonIcon icon={people} slot="start" color="primary" />
-                              <IonLabel>
-                                <h2>Benutzer</h2>
-                                <p>Systembenutzer und Zugriffsrechte verwalten</p>
-                              </IonLabel>
-                            </IonItem>
-                            <IonItem button routerLink="/admin/roles">
-                              <IonIcon icon={shield} slot="start" color="tertiary" />
-                              <IonLabel>
-                                <h2>Rollen</h2>
-                                <p>Benutzerrollen und Berechtigungen verwalten</p>
-                              </IonLabel>
-                            </IonItem>
-                            <IonItem button routerLink="/admin/organizations">
-                              <IonIcon icon={business} slot="start" color="success" />
-                              <IonLabel>
-                                <h2>Organisationen</h2>
-                                <p>Gemeinden und Organisationen verwalten</p>
-                              </IonLabel>
-                            </IonItem>
-                          </IonCardContent>
-                        </IonCard>
+                        {(user?.permissions?.includes('admin.users.view') || 
+                          user?.permissions?.includes('admin.roles.view') || 
+                          user?.permissions?.includes('admin.organizations.view')) && (
+                          <IonCard>
+                            <IonCardHeader>
+                              <IonCardTitle>System-Verwaltung</IonCardTitle>
+                            </IonCardHeader>
+                            <IonCardContent>
+                              {user?.permissions?.includes('admin.users.view') && (
+                                <IonItem 
+                                  button={user?.permissions?.includes('admin.users.edit')} 
+                                  routerLink={user?.permissions?.includes('admin.users.edit') ? "/admin/users" : undefined}
+                                  style={{ 
+                                    opacity: user?.permissions?.includes('admin.users.edit') ? 1 : 0.5,
+                                    cursor: user?.permissions?.includes('admin.users.edit') ? 'pointer' : 'not-allowed'
+                                  }}
+                                >
+                                  <IonIcon icon={people} slot="start" color="primary" />
+                                  <IonLabel>
+                                    <h2>Benutzer</h2>
+                                    <p>Systembenutzer und Zugriffsrechte verwalten</p>
+                                  </IonLabel>
+                                </IonItem>
+                              )}
+                              {user?.permissions?.includes('admin.roles.view') && (
+                                <IonItem 
+                                  button={user?.permissions?.includes('admin.roles.edit')}
+                                  routerLink={user?.permissions?.includes('admin.roles.edit') ? "/admin/roles" : undefined}
+                                  style={{ 
+                                    opacity: user?.permissions?.includes('admin.roles.edit') ? 1 : 0.5,
+                                    cursor: user?.permissions?.includes('admin.roles.edit') ? 'pointer' : 'not-allowed'
+                                  }}
+                                >
+                                  <IonIcon icon={shield} slot="start" color="tertiary" />
+                                  <IonLabel>
+                                    <h2>Rollen</h2>
+                                    <p>Benutzerrollen und Berechtigungen verwalten</p>
+                                  </IonLabel>
+                                </IonItem>
+                              )}
+                              {user?.permissions?.includes('admin.organizations.view') && (
+                                <IonItem 
+                                  button={user?.permissions?.includes('admin.organizations.edit')}
+                                  routerLink={user?.permissions?.includes('admin.organizations.edit') ? "/admin/organizations" : undefined}
+                                  style={{ 
+                                    opacity: user?.permissions?.includes('admin.organizations.edit') ? 1 : 0.5,
+                                    cursor: user?.permissions?.includes('admin.organizations.edit') ? 'pointer' : 'not-allowed'
+                                  }}
+                                >
+                                  <IonIcon icon={business} slot="start" color="success" />
+                                  <IonLabel>
+                                    <h2>Organisationen</h2>
+                                    <p>Gemeinden und Organisationen verwalten</p>
+                                  </IonLabel>
+                                </IonItem>
+                              )}
+                            </IonCardContent>
+                          </IonCard>
+                        )}
 
                         <IonCard>
                           <IonCardHeader>

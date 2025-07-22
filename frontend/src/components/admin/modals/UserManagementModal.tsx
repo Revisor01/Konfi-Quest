@@ -88,7 +88,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, user } = useApp();
+  const { setSuccess, setError, user: currentUser } = useApp();
   const [presentActionSheet] = useIonActionSheet();
   const [loading, setLoading] = useState(false);
   
@@ -114,7 +114,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
   const canAssignRole = (roleName: string) => {
-    const userRole = user?.role_name;
+    const userRole = currentUser?.role_name;
     
     if (userRole === 'org_admin') {
       return true; // org_admin kann alle Rollen zuweisen
@@ -257,7 +257,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     const allowedRoles = roles.filter(role => canAssignRole(role.name));
     
     const buttons = allowedRoles.map(role => ({
-      text: `${role.display_name} (${role.name})`,
+      text: role.display_name,
       handler: () => {
         setFormData({ ...formData, role_id: role.id });
       }
@@ -265,7 +265,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
     buttons.push({
       text: 'Abbrechen',
-      role: 'cancel'
+      handler: () => {
+        // Cancel action
+      }
     });
 
     presentActionSheet({
@@ -351,7 +353,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               <IonIcon icon={shield} slot="start" color="danger" />
               <IonLabel>
                 <h3>Rolle *</h3>
-                <p>{getSelectedRole() ? `${getSelectedRole()?.display_name} (${getSelectedRole()?.name})` : 'Rolle auswählen'}</p>
+                <p>{getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswählen'}</p>
               </IonLabel>
             </IonItem>
 

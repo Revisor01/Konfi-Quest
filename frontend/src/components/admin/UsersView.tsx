@@ -82,7 +82,7 @@ const UsersView: React.FC<UsersViewProps> = ({
     } else if (selectedFilter === 'inaktiv') {
       result = result.filter(user => !user.is_active);
     } else if (selectedFilter === 'admin') {
-      result = result.filter(user => user.role_name === 'admin');
+      result = result.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
     } else if (selectedFilter === 'teamer') {
       result = result.filter(user => user.role_name === 'teamer');
     } else if (selectedFilter === 'helper') {
@@ -109,9 +109,11 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   const getRoleColor = (roleName: string) => {
     switch (roleName) {
+      case 'org_admin': return 'primary';
       case 'admin': return 'danger';
       case 'teamer': return 'warning';
-      case 'helper': return 'primary';
+      case 'helper': return 'secondary';
+      case 'konfi': return 'medium';
       default: return 'medium';
     }
   };
@@ -310,20 +312,26 @@ const UsersView: React.FC<UsersViewProps> = ({
                       {user.display_name}
                     </h2>
                     
+                    <p style={{ 
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      margin: '4px 0 0 0'
+                    }}>
+                      @{user.username}
+                      {user.last_login_at && (
+                        <span style={{ marginLeft: '8px' }}>
+                          • Letzter Login: {formatDate(user.last_login_at)}
+                        </span>
+                      )}
+                    </p>
+                    
                     <div style={{ 
                       display: 'flex', 
                       alignItems: 'center', 
-                      gap: '8px', 
+                      gap: '6px', 
                       flexWrap: 'wrap',
-                      margin: '0'
+                      marginTop: '6px'
                     }}>
-                      <span style={{ 
-                        fontSize: '0.8rem',
-                        color: '#666'
-                      }}>
-                        @{user.username}
-                      </span>
-                      
                       <IonBadge 
                         color={getRoleColor(user.role_name)}
                         style={{ 
@@ -358,15 +366,6 @@ const UsersView: React.FC<UsersViewProps> = ({
                           {user.assigned_jahrgaenge_count}J
                         </IonBadge>
                       )}
-                      
-                      <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.7rem', color: '#999' }}>
-                        <span>Erstellt: {formatDate(user.created_at)}</span>
-                        {user.last_login_at && (
-                          <span style={{ marginTop: '2px' }}>
-                            Login: {formatDate(user.last_login_at)}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </IonLabel>
                 </IonItem>
