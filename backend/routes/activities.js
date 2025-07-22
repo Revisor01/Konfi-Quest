@@ -115,10 +115,10 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // Pfad: GET /api/activities/requests
   router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), (req, res) => {
       const query = `
-        SELECT ar.*, a.name as activity_name, a.points as activity_points,
-               'Unknown User' as konfi_name,
+        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
                u_approved.display_name as approved_by_name
         FROM activity_requests ar
+        JOIN users u_konfi ON ar.konfi_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = ?
