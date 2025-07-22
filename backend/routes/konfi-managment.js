@@ -3,10 +3,30 @@ const bcrypt = require('bcrypt');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
-module.exports = (db, rbacVerifier, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => {
 
-    // GET all konfis for the admin's organization
+    // GET all konfis for the admin's organization (with jahrgang filtering)
     router.get('/', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
+        
+        // Apply jahrgang filtering for non-org_admin users
+        let jahrgangFilter = '';
+        let params = [req.user.organization_id];
+        
+        if (!req.user.is_super_admin && req.user.role_name !== 'org_admin') {
+            // Non-org_admin users see only konfis from their assigned jahrgaenge
+            const viewableJahrgaenge = req.user.assigned_jahrgaenge
+                .filter(j => j.can_view)
+                .map(j => j.id);
+                
+            if (viewableJahrgaenge.length === 0) {
+                return res.json([]); // No access to any jahrgaenge
+            }
+            
+            const placeholders = viewableJahrgaenge.map(() => '?').join(',');
+            jahrgangFilter = `AND j.id IN (${placeholders})`;
+            params.push(...viewableJahrgaenge);
+        }
+        
         const query = `
             SELECT u.id, u.display_name as name, u.username, kp.password_plain, 
                    kp.gottesdienst_points, kp.gemeinde_points,
@@ -16,10 +36,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
             JOIN roles r ON u.role_id = r.id
             LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
             LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-            WHERE r.name = 'konfi' AND u.organization_id = ?
+            WHERE r.name = 'konfi' AND u.organization_id = ? ${jahrgangFilter}
             ORDER BY j.name DESC, u.display_name
         `;
-        db.all(query, [req.user.organization_id], (err, rows) => {
+        
+        db.all(query, params, (err, rows) => {
             if (err) {
                 console.error('Error fetching konfis for admin:', err);
                 return res.status(500).json({ error: 'Database error' });

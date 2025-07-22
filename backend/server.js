@@ -156,7 +156,7 @@ const permissionsRoutes = require('./routes/permissions');
 // ====================================================================
 
 // Import RBAC middleware
-const { verifyTokenRBAC, checkPermission } = require('./middleware/rbac');
+const { verifyTokenRBAC, checkPermission, filterByJahrgangAccess } = require('./middleware/rbac');
 const rbacVerifier = verifyTokenRBAC(db);
 
 // Create router instances by passing dependencies
@@ -185,7 +185,7 @@ app.use('/api/settings', settingsRoutes(db, rbacVerifier, checkPermission));
 // Admin-facing & RBAC-protected routes
 app.use('/api/admin/activities', activitiesRouter);
 app.use('/api/admin/badges', badgesRouter);
-app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission, filterByJahrgangAccess));
 app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/users', usersRoutes(db, rbacVerifier, checkPermission));
