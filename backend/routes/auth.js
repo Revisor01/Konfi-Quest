@@ -75,24 +75,42 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       
       console.log(`✅ ${userType} login successful: ${username} (${user.display_name})`);
       
-      const token = jwt.sign({ 
-        id: user.id, 
-        type: userType, 
-        display_name: user.display_name,
-        email: user.email,
-        organization_id: user.organization_id,
-        role_name: user.role_name
-      }, JWT_SECRET, { expiresIn: '24h' });
+      // Get user permissions
+      const permissionsQuery = `
+        SELECT p.name
+        FROM permissions p
+        JOIN role_permissions rp ON p.id = rp.permission_id
+        WHERE rp.role_id = ? AND rp.granted = 1
+      `;
       
-      const responseUser = {
-        id: user.id, 
-        display_name: user.display_name, 
-        username: user.username,
-        email: user.email,
-        organization: user.organization_name,
-        role_name: user.role_name,
-        type: userType
-      };
+      db.all(permissionsQuery, [user.role_id], (err, permissions) => {
+        if (err) {
+          console.error('Error fetching user permissions:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        const userPermissions = permissions.map(p => p.name);
+        
+        const token = jwt.sign({ 
+          id: user.id, 
+          type: userType, 
+          display_name: user.display_name,
+          email: user.email,
+          organization_id: user.organization_id,
+          role_name: user.role_name,
+          permissions: userPermissions
+        }, JWT_SECRET, { expiresIn: '24h' });
+        
+        const responseUser = {
+          id: user.id, 
+          display_name: user.display_name, 
+          username: user.username,
+          email: user.email,
+          organization: user.organization_name,
+          role_name: user.role_name,
+          type: userType,
+          permissions: userPermissions
+        };
       
       // Add konfi-specific data if user is konfi
       if (userType === 'konfi') {
@@ -101,9 +119,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
         responseUser.gemeinde_points = user.gemeinde_points || 0;
       }
       
-      res.json({ 
-        token, 
-        user: responseUser
+        res.json({ 
+          token, 
+          user: responseUser
+        });
       });
     });
   });
