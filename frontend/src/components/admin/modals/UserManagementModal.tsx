@@ -12,6 +12,7 @@ import {
   IonInput,
   IonSelect,
   IonSelectOption,
+  useIonActionSheet,
   IonToggle,
   IonCard,
   IonCardContent,
@@ -25,7 +26,6 @@ import {
   IonText
 } from '@ionic/react';
 import { 
-  save, 
   close, 
   person, 
   shield,
@@ -88,7 +88,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, user } = useApp();
+  const [presentActionSheet] = useIonActionSheet();
   const [loading, setLoading] = useState(false);
   
   // Form data
@@ -110,6 +111,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [jahrgangAssignments, setJahrgangAssignments] = useState<{[key: number]: boolean}>({});
 
   const isEditMode = !!userId;
+
+  // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
+  const canAssignRole = (roleName: string) => {
+    const userRole = user?.role_name;
+    
+    if (userRole === 'org_admin') {
+      return true; // org_admin kann alle Rollen zuweisen
+    } else if (userRole === 'admin') {
+      return roleName !== 'org_admin' && roleName !== 'admin'; // admin kann nicht org_admin oder admin zuweisen
+    } else if (userRole === 'teamer') {
+      return roleName === 'konfi'; // teamer kann nur konfi zuweisen
+    }
+    return false;
+  };
 
   useEffect(() => {
     loadInitialData();
@@ -238,6 +253,27 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     return roles.find(role => role.id === formData.role_id);
   };
 
+  const presentRoleActionSheet = () => {
+    const allowedRoles = roles.filter(role => canAssignRole(role.name));
+    
+    const buttons = allowedRoles.map(role => ({
+      text: `${role.display_name} (${role.name})`,
+      handler: () => {
+        setFormData({ ...formData, role_id: role.id });
+      }
+    }));
+
+    buttons.push({
+      text: 'Abbrechen',
+      role: 'cancel'
+    });
+
+    presentActionSheet({
+      header: 'Rolle auswählen',
+      buttons: buttons
+    });
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -250,7 +286,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton onClick={handleSave} disabled={loading}>
-              <IonIcon icon={save} />
+              <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -311,20 +347,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         {/* Rolle und Status */}
         <IonCard>
           <IonCardContent>
-            <IonItem>
+            <IonItem button onClick={presentRoleActionSheet}>
               <IonIcon icon={shield} slot="start" color="danger" />
-              <IonLabel position="stacked">Rolle *</IonLabel>
-              <IonSelect
-                value={formData.role_id}
-                onIonChange={(e) => setFormData({ ...formData, role_id: e.detail.value })}
-                placeholder="Rolle auswählen"
-              >
-                {roles.map(role => (
-                  <IonSelectOption key={role.id} value={role.id}>
-                    {role.display_name} ({role.name})
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
+              <IonLabel>
+                <h3>Rolle *</h3>
+                <p>{getSelectedRole() ? `${getSelectedRole()?.display_name} (${getSelectedRole()?.name})` : 'Rolle auswählen'}</p>
+              </IonLabel>
             </IonItem>
 
             {getSelectedRole() && (

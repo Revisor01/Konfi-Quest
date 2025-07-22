@@ -51,6 +51,7 @@ interface User {
   role_name: string;
   role_display_name: string;
   assigned_jahrgaenge_count: number;
+  can_edit?: boolean;
 }
 
 interface UsersViewProps {
@@ -274,9 +275,14 @@ const UsersView: React.FC<UsersViewProps> = ({
             {filteredAndSortedUsers.map((user) => (
               <IonItemSliding key={user.id}>
                 <IonItem 
-                  button 
-                  onClick={() => onSelectUser(user)}
-                  style={{ '--min-height': '56px', '--padding-start': '16px' }}
+                  button={user.can_edit !== false}
+                  onClick={user.can_edit !== false ? () => onSelectUser(user) : undefined}
+                  style={{ 
+                    '--min-height': '56px', 
+                    '--padding-start': '16px',
+                    opacity: user.can_edit !== false ? 1 : 0.5,
+                    cursor: user.can_edit !== false ? 'pointer' : 'not-allowed'
+                  }}
                 >
                   <IonAvatar slot="start" style={{ marginRight: '12px' }}>
                     <div style={{
@@ -353,33 +359,34 @@ const UsersView: React.FC<UsersViewProps> = ({
                         </IonBadge>
                       )}
                       
-                      {user.last_login_at && (
-                        <span style={{ 
-                          fontSize: '0.7rem',
-                          color: '#999',
-                          marginLeft: 'auto'
-                        }}>
-                          {formatDate(user.last_login_at)}
-                        </span>
-                      )}
+                      <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', fontSize: '0.7rem', color: '#999' }}>
+                        <span>Erstellt: {formatDate(user.created_at)}</span>
+                        {user.last_login_at && (
+                          <span style={{ marginTop: '2px' }}>
+                            Login: {formatDate(user.last_login_at)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </IonLabel>
                 </IonItem>
 
-                <IonItemOptions side="end">
-                  <IonItemOption 
-                    color="primary" 
-                    onClick={() => onSelectUser(user)}
-                  >
-                    <IonIcon icon={create} />
-                  </IonItemOption>
-                  <IonItemOption 
-                    color="danger" 
-                    onClick={() => onDeleteUser(user)}
-                  >
-                    <IonIcon icon={trash} />
-                  </IonItemOption>
-                </IonItemOptions>
+                {user.can_edit !== false && (
+                  <IonItemOptions side="end">
+                    <IonItemOption 
+                      color="primary" 
+                      onClick={() => onSelectUser(user)}
+                    >
+                      <IonIcon icon={create} />
+                    </IonItemOption>
+                    <IonItemOption 
+                      color="danger" 
+                      onClick={() => onDeleteUser(user)}
+                    >
+                      <IonIcon icon={trash} />
+                    </IonItemOption>
+                  </IonItemOptions>
+                )}
               </IonItemSliding>
             ))}
             

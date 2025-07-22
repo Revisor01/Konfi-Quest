@@ -35,7 +35,7 @@ interface User {
 }
 
 const AdminUsersPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const { pageRef, presentingElement } = useModalPage('users');
   
   // State
@@ -129,9 +129,11 @@ const AdminUsersPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Benutzer-Verwaltung</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={presentUserModal}>
-              <IonIcon icon={add} />
-            </IonButton>
+            {user?.permissions?.includes('admin.users.create') && (
+              <IonButton onClick={presentUserModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
