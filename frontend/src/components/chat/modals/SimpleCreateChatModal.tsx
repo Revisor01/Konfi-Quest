@@ -18,7 +18,10 @@ import {
   IonSelectOption,
   IonCheckbox,
   IonInput,
-  IonAlert
+  IonAlert,
+  IonGrid,
+  IonRow,
+  IonCol
 } from '@ionic/react';
 import { close, checkmark, person, people, chevronForward } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -39,9 +42,17 @@ interface SimpleCreateChatModalProps {
   dismiss?: () => void;
 }
 
+interface Settings {
+  konfi_chat_permissions?: string;
+}
+
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, refreshChatNotifications } = useApp();
   const pageRef = useRef<HTMLElement>(null);
+  
+  // State
+  const [settings, setSettings] = useState<Settings>({});
+  // Konfis standardmäßig auf direct setzen, aber je nach Settings flexibel
   const [chatType, setChatType] = useState<'direct' | 'group' | ''>('');
 
   const handleClose = () => {
@@ -59,16 +70,43 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState('');
   
+  // Filter states
+  const [selectedRole, setSelectedRole] = useState<string>('alle');
+  const [selectedJahrgang, setSelectedJahrgang] = useState<string>('alle');
+  const [availableJahrgaenge, setAvailableJahrgaenge] = useState<string[]>([]);
+  
   // Group chat specific
   const [groupName, setGroupName] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    loadSettings();
     loadExistingChats();
+  }, []);
+
+  useEffect(() => {
     if (chatType) {
       loadUsers();
     }
   }, [chatType]);
+
+  useEffect(() => {
+    // Set initial chat type based on user type and permissions
+    if (user?.type === 'konfi') {
+      const permissions = settings.konfi_chat_permissions || 'direct_only';
+      setChatType('direct'); // Default to direct for konfis
+      loadUsers();
+    }
+  }, [user, settings]);
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      setSettings(response.data);
+    } catch (err) {
+      console.error('Error loading settings:', err);
+    }
+  };
 
   const loadExistingChats = async () => {
     try {
@@ -91,6 +129,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         ...konfisRes.data.map((konfi: any) => ({ ...konfi, type: 'konfi' as const })),
         ...adminsRes.data.map((admin: any) => ({ ...admin, type: 'admin' as const }))
       ];
+      
+      // Extrahiere verfügbare Jahrgänge
+      const jahrgaenge = [...new Set(
+        allUsers
+          .filter(u => u.jahrgang_name || u.jahrgang)
+          .map(u => u.jahrgang_name || u.jahrgang)
+      )].filter(Boolean) as string[];
+      setAvailableJahrgaenge(jahrgaenge);
       
       // Filter out current user for direct messages
       if (chatType === 'direct') {
@@ -145,6 +191,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       });
       
       setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
+      await refreshChatNotifications(); // Update badges
       handleModalClose();
       onSuccess();
     } catch (err) {
@@ -188,6 +235,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       console.log('Group chat created successfully:', response.data);
       
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
+      await refreshChatNotifications(); // Update badges
       handleModalClose();
       onSuccess();
     } catch (err: any) {
@@ -209,9 +257,26 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   };
 
   const filteredUsers = users.filter(user => {
+    // Name/Suchfilter
     const name = user.name || user.display_name || '';
-    return name.toLowerCase().includes(searchText.toLowerCase()) ||
+    const matchesSearch = name.toLowerCase().includes(searchText.toLowerCase()) ||
            (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
+    // Rollenfilter
+    if (selectedRole !== 'alle') {
+      if (selectedRole === 'konfi' && user.type !== 'konfi') return false;
+      if (selectedRole === 'admin' && user.type !== 'admin') return false;
+    }
+    
+    // Jahrgangsfilter (nur für Konfis)
+    if (selectedJahrgang !== 'alle' && user.type === 'konfi') {
+      const userJahrgang = user.jahrgang_name || user.jahrgang;
+      if (userJahrgang !== selectedJahrgang) return false;
+    }
+    
+    return true;
   });
 
   const getUserDisplayName = (user: User) => {
@@ -223,6 +288,35 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       return groupName.trim() && selectedParticipants.size > 0;
     }
     return chatType === 'direct';
+  };
+
+  const getAvailableChatTypes = () => {
+    if (user?.type === 'admin') {
+      return [
+        { value: 'direct', label: 'Direktnachricht' },
+        { value: 'group', label: 'Gruppenchat' }
+      ];
+    }
+    
+    const permissions = settings.konfi_chat_permissions || 'direct_only';
+    const types = [];
+    
+    switch (permissions) {
+      case 'direct_only':
+        types.push({ value: 'direct', label: 'Direktnachricht' });
+        break;
+      case 'direct_and_group':
+        types.push({ value: 'direct', label: 'Direktnachricht' });
+        types.push({ value: 'group', label: 'Gruppenchat' });
+        break;
+      case 'all':
+        types.push({ value: 'direct', label: 'Direktnachricht' });
+        types.push({ value: 'group', label: 'Gruppenchat' });
+        // Jahrgang und admin_team werden nur von Admins erstellt
+        break;
+    }
+    
+    return types;
   };
 
   return (
@@ -250,19 +344,47 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         </IonHeader>
         
         <IonContent>
-          {/* Chat Type Selection */}
-          <IonItem>
-            <IonLabel position="stacked">Art des Chats</IonLabel>
-            <IonSelect
-              value={chatType}
-              onIonChange={(e) => setChatType(e.detail.value)}
-              placeholder="Chat-Art wählen"
-              interface="action-sheet"
-            >
-              <IonSelectOption value="direct">Direktnachricht</IonSelectOption>
-              <IonSelectOption value="group">Gruppenchat</IonSelectOption>
-            </IonSelect>
-          </IonItem>
+          {/* Chat Type Selection - Basierend auf Benutzerrechten */}
+          {(() => {
+            const availableTypes = getAvailableChatTypes();
+            
+            // Wenn nur eine Option verfügbar ist, zeige Info statt Select
+            if (availableTypes.length === 1) {
+              const singleType = availableTypes[0];
+              return (
+                <IonItem>
+                  <IonLabel>
+                    <h3>{singleType.label} erstellen</h3>
+                    <p>
+                      {singleType.value === 'direct' 
+                        ? 'Sie können Direktnachrichten mit anderen Personen erstellen.'
+                        : 'Sie können Gruppenchats mit mehreren Teilnehmern erstellen.'
+                      }
+                    </p>
+                  </IonLabel>
+                </IonItem>
+              );
+            }
+            
+            // Mehrere Optionen: Zeige Select
+            return (
+              <IonItem>
+                <IonLabel position="stacked">Art des Chats</IonLabel>
+                <IonSelect
+                  value={chatType}
+                  onIonChange={(e) => setChatType(e.detail.value)}
+                  placeholder="Chat-Art wählen"
+                  interface="action-sheet"
+                >
+                  {availableTypes.map(type => (
+                    <IonSelectOption key={type.value} value={type.value}>
+                      {type.label}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
+            );
+          })()}
 
           {/* Group Name Input */}
           {chatType === 'group' && (
@@ -279,11 +401,50 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
           {/* Search */}
           {chatType && (
-            <IonSearchbar
-              value={searchText}
-              onIonInput={(e) => setSearchText(e.detail.value!)}
-              placeholder={chatType === 'direct' ? 'Person suchen...' : 'Teilnehmer suchen...'}
-            />
+            <>
+              <IonSearchbar
+                value={searchText}
+                onIonInput={(e) => setSearchText(e.detail.value!)}
+                placeholder={chatType === 'direct' ? 'Person suchen...' : 'Teilnehmer suchen...'}
+              />
+              
+              {/* Filter Controls */}
+              <div style={{ padding: '0 16px 16px' }}>
+                <IonGrid>
+                  <IonRow>
+                    <IonCol size="6">
+                      <IonItem lines="none">
+                        <IonSelect 
+                          value={selectedRole} 
+                          onSelectionChange={(e) => setSelectedRole(e.detail.value)}
+                          placeholder="Alle Rollen"
+                          interface="action-sheet"
+                        >
+                          <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
+                          <IonSelectOption value="konfi">Konfis</IonSelectOption>
+                          <IonSelectOption value="admin">Admins</IonSelectOption>
+                        </IonSelect>
+                      </IonItem>
+                    </IonCol>
+                    <IonCol size="6">
+                      <IonItem lines="none">
+                        <IonSelect 
+                          value={selectedJahrgang} 
+                          onSelectionChange={(e) => setSelectedJahrgang(e.detail.value)}
+                          placeholder="Alle Jahrgänge"
+                          interface="action-sheet"
+                        >
+                          <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                          {availableJahrgaenge.map(jg => (
+                            <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                          ))}
+                        </IonSelect>
+                      </IonItem>
+                    </IonCol>
+                  </IonRow>
+                </IonGrid>
+              </div>
+            </>
           )}
 
           {/* Users List */}
@@ -343,13 +504,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           </p>
                         </IonLabel>
                         
-                        {chatType === 'direct' ? (
-                          <IonIcon 
-                            icon={chevronForward} 
-                            slot="end" 
-                            style={{ color: '#c7c7cc' }}
-                          />
-                        ) : (
+                        {chatType === 'group' && (
                           <IonCheckbox 
                             slot="end" 
                             checked={isSelected}

@@ -145,8 +145,7 @@ const adminActivitiesRoutes = require('./routes/activities');
 const adminKonfisRoutes = require('./routes/konfi-managment');
 const adminJahrgaengeRoutes = require('./routes/jahrgaenge');
 const adminCategoriesRoutes = require('./routes/categories');
-
-// RBAC-Protected Routes
+// RBAC-Protected Routes  
 const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
@@ -189,6 +188,7 @@ app.use('/api/admin/badges', badgesRouter);
 app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/admin/users', usersRoutes(db, rbacVerifier, checkPermission));
 
 // RBAC system routes
 app.use('/api/users', usersRoutes(db, rbacVerifier, checkPermission));

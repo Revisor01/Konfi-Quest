@@ -68,7 +68,7 @@ interface ChatOverviewRef {
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, pageRef: externalPageRef }, ref) => {
   const pageRef = externalPageRef || useRef<HTMLElement | null>(null);
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, refreshChatNotifications } = useApp();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -82,6 +82,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
+      // Refresh chat notifications whenever chat rooms are loaded
+      await refreshChatNotifications();
     } catch (err) {
       if (!silent) setError('Fehler beim Laden der Chaträume');
       console.error('Error loading chat rooms:', err);
@@ -137,6 +139,26 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       const diffInDays = Math.floor(diffInHours / 24);
       return `${diffInDays}d`;
     }
+  };
+
+  const getDisplayRoomName = (room: ChatRoom) => {
+    // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
+    if (room.type === 'direct') {
+      // Finde den Chat-Partner (nicht der aktuelle User)
+      const otherParticipant = room.participants?.find(p => 
+        !(p.user_id === user?.id && p.user_type === user?.type)
+      );
+      
+      if (otherParticipant) {
+        return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
+      }
+      
+      // Fallback: verwende room.name wenn keine Participants geladen
+      return room.name || 'Direktchat';
+    }
+    
+    // Für alle anderen Chat-Typen: normaler Name
+    return room.name || 'Chat';
   };
 
   const getRoomIcon = (room: ChatRoom) => {
@@ -326,7 +348,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                       
                       <IonLabel>
                         <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
-                          {room.name}
+                          {getDisplayRoomName(room)}
                         </h2>
                         
                         <p style={{ 

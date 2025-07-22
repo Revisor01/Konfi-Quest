@@ -18,6 +18,7 @@ import {
   IonCardTitle,
   IonCardContent,
   IonItem,
+  IonBadge,
   setupIonicReact
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -106,8 +107,43 @@ setupIonicReact({
   spinner: 'lines'
 });
 
+// Chat Badge Component
+const ChatTabButton: React.FC<{ href: string; showBadge?: boolean; badgeCount?: number }> = ({ 
+  href, 
+  showBadge = false, 
+  badgeCount = 0 
+}) => (
+  <IonTabButton tab="chat" href={href}>
+    <div style={{ position: 'relative' }}>
+      <IonIcon icon={chatbubbles} />
+      {showBadge && badgeCount > 0 && (
+        <IonBadge 
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            right: '-12px',
+            minWidth: '18px',
+            height: '18px',
+            borderRadius: '9px',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          color="danger"
+        >
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </IonBadge>
+      )}
+    </div>
+    <IonLabel>Chat</IonLabel>
+  </IonTabButton>
+);
+
 const AppContent: React.FC = () => {
-  const { user, loading } = useApp();
+  const { user, loading, chatNotifications } = useApp();
 
   if (loading) {
     return (
@@ -246,10 +282,11 @@ const AppContent: React.FC = () => {
                     <IonIcon icon={people} />
                     <IonLabel>Konfis</IonLabel>
                   </IonTabButton>
-                  <IonTabButton tab="admin-chat" href="/admin/chat">
-                    <IonIcon icon={chatbubbles} />
-                    <IonLabel>Chat</IonLabel>
-                  </IonTabButton>
+                  <ChatTabButton 
+                    href="/admin/chat"
+                    showBadge={true}
+                    badgeCount={chatNotifications.totalUnreadCount}
+                  />
                   <IonTabButton tab="admin-activities" href="/admin/activities">
                     <IonIcon icon={calendar} />
                     <IonLabel>Aktivitäten</IonLabel>
@@ -293,10 +330,11 @@ const AppContent: React.FC = () => {
                     <IonIcon icon={home} />
                     <IonLabel>Dashboard</IonLabel>
                   </IonTabButton>
-                  <IonTabButton tab="chat" href="/konfi/chat">
-                    <IonIcon icon={chatbubbles} />
-                    <IonLabel>Chat</IonLabel>
-                  </IonTabButton>
+                  <ChatTabButton 
+                    href="/konfi/chat"
+                    showBadge={true}
+                    badgeCount={chatNotifications.totalUnreadCount}
+                  />
                   <IonTabButton tab="events" href="/konfi/events">
                     <IonIcon icon={calendar} />
                     <IonLabel>Events</IonLabel>

@@ -75,6 +75,12 @@ interface ChatRoom {
   id: number;
   name: string;
   type: 'group' | 'direct' | 'jahrgang' | 'admin';
+  participants?: Array<{
+    user_id: number;
+    user_type: 'admin' | 'konfi';
+    name: string;
+    display_name?: string;
+  }>;
 }
 
 interface ChatRoomProps {
@@ -83,7 +89,7 @@ interface ChatRoomProps {
 }
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
-  const { user, setError, setSuccess } = useApp();
+  const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState('');
@@ -91,26 +97,36 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [uploading, setUploading] = useState(false);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
-  // Poll Modal mit useIonModal Hook
-  const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
-    onClose: () => dismissPollModalHook(),
-    onSuccess: () => {
-      dismissPollModalHook();
-      handlePollCreated();
-    },
-    roomId: room.id
-  });
+  // Poll Modal mit useIonModal Hook (iOS Card Design)
+  const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal);
+  
+  const openPollModal = () => {
+    presentPollModalHook({
+      presentingElement: pageRef.current,
+      onClose: () => dismissPollModalHook(),
+      onSuccess: () => {
+        dismissPollModalHook();
+        handlePollCreated();
+      },
+      roomId: room.id
+    });
+  };
 
-  // Members Modal mit useIonModal Hook
-  const [presentMembersModalHook, dismissMembersModalHook] = useIonModal(MembersModal, {
-    onClose: () => dismissMembersModalHook(),
-    onSuccess: () => {
-      dismissMembersModalHook();
-      loadMessages();
-    },
-    roomId: room.id,
-    roomType: room.type
-  });
+  // Members Modal mit useIonModal Hook (iOS Card Design)
+  const [presentMembersModalHook, dismissMembersModalHook] = useIonModal(MembersModal);
+  
+  const openMembersModal = () => {
+    presentMembersModalHook({
+      presentingElement: pageRef.current,
+      onClose: () => dismissMembersModalHook(),
+      onSuccess: () => {
+        dismissMembersModalHook();
+        loadMessages();
+      },
+      roomId: room.id,
+      roomType: room.type
+    });
+  };
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -156,6 +172,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const markRoomAsRead = async () => {
     try {
       await api.post(`/chat/rooms/${room.id}/mark-read`);
+      // Update global chat notifications state
+      markChatRoomAsRead(room.id);
       console.log('Room marked as read:', room.id);
     } catch (err) {
       // Silent fail - marking as read is not critical
@@ -382,6 +400,26 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     }
   };
 
+  const getDisplayRoomName = (room: ChatRoom) => {
+    // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
+    if (room.type === 'direct') {
+      // Finde den Chat-Partner (nicht der aktuelle User)
+      const otherParticipant = room.participants?.find(p => 
+        !(p.user_id === user?.id && p.user_type === user?.type)
+      );
+      
+      if (otherParticipant) {
+        return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
+      }
+      
+      // Fallback: verwende room.name wenn keine Participants geladen
+      return room.name || 'Direktchat';
+    }
+    
+    // Für alle anderen Chat-Typen: normaler Name
+    return room.name || 'Chat';
+  };
+
   const renderMessage = (message: Message) => {
     const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
     
@@ -471,29 +509,57 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           
           {message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
-              background: 'rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginTop: '8px'
+              background: isOwnMessage 
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)'
+                : 'linear-gradient(135deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.02) 100%)',
+              borderRadius: '16px',
+              padding: '20px',
+              marginTop: '8px',
+              border: isOwnMessage 
+                ? '1px solid rgba(255,255,255,0.2)'
+                : '1px solid rgba(0,0,0,0.1)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}>
               <div style={{ 
-                fontWeight: 'bold', 
-                marginBottom: '12px',
+                fontWeight: '600', 
+                marginBottom: '16px',
                 fontSize: '1.1rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '10px',
+                color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.9)'
               }}>
-                📊 {message.question}
+                <span style={{
+                  fontSize: '1.3rem',
+                  background: 'linear-gradient(45deg, #ff6b35, #f7931e)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
+                  📊
+                </span>
+                {message.question}
               </div>
               
               {message.expires_at && (
                 <div style={{
-                  fontSize: '0.8rem',
-                  opacity: 0.7,
-                  marginBottom: '12px'
+                  fontSize: '0.85rem',
+                  opacity: 0.8,
+                  marginBottom: '16px',
+                  padding: '8px 12px',
+                  background: isOwnMessage 
+                    ? 'rgba(255,255,255,0.1)' 
+                    : 'rgba(0,0,0,0.05)',
+                  borderRadius: '8px',
+                  border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
+                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)'
                 }}>
-                  🕐 Läuft ab: {new Date(message.expires_at).toLocaleString('de-DE')}
+                  ⏰ Läuft ab: {new Date(message.expires_at).toLocaleDateString('de-DE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
                 </div>
               )}
               
@@ -511,19 +577,46 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                 );
                 
                 return (
-                  <div key={index} style={{ marginBottom: '8px' }}>
+                  <div key={index} style={{ marginBottom: '10px' }}>
                     <div
                       onClick={() => voteInPoll(message.id, index)}
                       style={{
-                        background: userVoted ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255,255,255,0.15)',
-                        border: userVoted ? '3px solid #28a745' : '2px solid rgba(255,255,255,0.4)',
-                        borderRadius: '8px',
-                        padding: '12px',
+                        background: userVoted 
+                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%)' 
+                          : isOwnMessage 
+                            ? 'rgba(255,255,255,0.12)' 
+                            : 'rgba(0,0,0,0.06)',
+                        border: userVoted 
+                          ? '2px solid #4caf50' 
+                          : `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'}`,
+                        borderRadius: '12px',
+                        padding: '14px 16px',
                         cursor: 'pointer',
                         position: 'relative',
                         overflow: 'hidden',
-                        transition: 'all 0.2s ease',
-                        boxShadow: userVoted ? '0 2px 8px rgba(40, 167, 69, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
+                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                        boxShadow: userVoted 
+                          ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
+                          : '0 2px 8px rgba(0,0,0,0.08)',
+                        transform: 'translateZ(0)',
+                        ':hover': {
+                          transform: 'translateY(-1px)',
+                          boxShadow: userVoted 
+                            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+                            : '0 4px 12px rgba(0,0,0,0.12)'
+                        }
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-1px)';
+                        e.target.style.boxShadow = userVoted 
+                          ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
+                          : '0 4px 12px rgba(0,0,0,0.12)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateZ(0)';
+                        e.target.style.boxShadow = userVoted 
+                          ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
+                          : '0 2px 8px rgba(0,0,0,0.08)';
                       }}
                     >
                       {/* Progress Bar Background */}
@@ -533,9 +626,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                         top: 0,
                         height: '100%',
                         width: `${percentage}%`,
-                        backgroundColor: userVoted ? 'rgba(40, 167, 69, 0.3)' : 'rgba(255,255,255,0.15)',
-                        transition: 'width 0.3s ease',
-                        borderRadius: '6px'
+                        background: userVoted 
+                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%)' 
+                          : isOwnMessage 
+                            ? 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
+                            : 'linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.03) 100%)',
+                        transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        borderRadius: '10px'
                       }} />
                       
                       {/* Content */}
@@ -546,31 +643,52 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                         justifyContent: 'space-between',
                         alignItems: 'center'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           {userVoted && (
-                            <IonIcon 
-                              icon={checkmark} 
-                              style={{ 
-                                marginRight: '8px',
-                                color: '#28a745',
-                                fontSize: '1.2rem'
-                              }} 
-                            />
+                            <div style={{
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              background: 'linear-gradient(45deg, #4caf50, #66bb6a)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 6px rgba(76, 175, 80, 0.4)'
+                            }}>
+                              <IonIcon 
+                                icon={checkmark} 
+                                style={{ 
+                                  color: 'white',
+                                  fontSize: '0.9rem',
+                                  fontWeight: 'bold'
+                                }} 
+                              />
+                            </div>
                           )}
-                          <span style={{ fontWeight: userVoted ? 'bold' : 'normal' }}>
+                          <span style={{ 
+                            fontWeight: userVoted ? '600' : '500',
+                            color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.9)',
+                            fontSize: '0.95rem'
+                          }}>
                             {option}
                           </span>
                         </div>
                         
                         <div style={{ 
-                          fontSize: '0.9rem',
-                          opacity: 0.8,
+                          fontSize: '0.85rem',
+                          opacity: 0.85,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '6px',
+                          background: isOwnMessage 
+                            ? 'rgba(255,255,255,0.12)' 
+                            : 'rgba(0,0,0,0.08)',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
                         }}>
-                          <span>{optionVotes.length}</span>
-                          <span style={{ fontSize: '0.8rem' }}>
+                          <span style={{ fontWeight: '600' }}>{optionVotes.length}</span>
+                          <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                             ({percentage.toFixed(0)}%)
                           </span>
                         </div>
@@ -582,18 +700,46 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               
               {/* Poll Info */}
               <div style={{
-                marginTop: '12px',
-                fontSize: '0.8rem',
-                opacity: 0.7,
+                marginTop: '16px',
+                padding: '12px 16px',
+                background: isOwnMessage 
+                  ? 'rgba(255,255,255,0.08)' 
+                  : 'rgba(0,0,0,0.04)',
+                borderRadius: '10px',
+                border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
                 display: 'flex',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                <span>
-                  {message.multiple_choice ? 'Mehrfachauswahl möglich' : 'Nur eine Antwort'}
-                </span>
-                <span>
-                  {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}
-                </span>
+                <div style={{
+                  fontSize: '0.85rem',
+                  opacity: 0.8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>
+                    {message.multiple_choice ? '☑️' : '🔘'}
+                  </span>
+                  <span>
+                    {message.multiple_choice ? 'Mehrfachauswahl möglich' : 'Nur eine Antwort'}
+                  </span>
+                </div>
+                <div style={{
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  opacity: 0.9,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                }}>
+                  <span>👥</span>
+                  <span>
+                    {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}
+                  </span>
+                </div>
               </div>
             </div>
           ) : message.file_path ? (
@@ -778,13 +924,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>{room.name}</IonTitle>
+          <IonTitle>{getDisplayRoomName(room)}</IonTitle>
           {user?.type === 'admin' && (
             <IonButtons slot="end">
-              <IonButton onClick={() => presentMembersModalHook()}>
+              <IonButton onClick={openMembersModal}>
                 <IonIcon icon={people} />
               </IonButton>
-              <IonButton onClick={() => presentPollModalHook()}>
+              <IonButton onClick={openPollModal}>
                 <IonIcon icon={barChart} />
               </IonButton>
             </IonButtons>

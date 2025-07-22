@@ -134,11 +134,37 @@ const AdminKonfisPage: React.FC = () => {
   const handleAddKonfi = async (konfiData: any) => {
     try {
       const response = await api.post('/admin/konfis', konfiData);
+      
+      // Automatisch Jahrgangschat erstellen/zuweisen
+      if (konfiData.jahrgang_id) {
+        await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
+      }
+      
       setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
       // Sofortige Aktualisierung
       await loadData();
     } catch (err) {
       setError('Fehler beim Hinzufügen');
+    }
+  };
+
+  const createOrJoinJahrgangChat = async (jahrgangId: number, konfiId: number) => {
+    try {
+      // Finde den Jahrgang-Namen
+      const jahrgangResponse = await api.get(`/admin/jahrgaenge/${jahrgangId}`);
+      const jahrgangName = jahrgangResponse.data.name;
+      
+      // Erstelle oder finde existierenden Jahrgangschat
+      await api.post('/chat/rooms', {
+        type: 'jahrgang',
+        name: `Jahrgang ${jahrgangName}`,
+        jahrgang_id: jahrgangId
+      });
+      
+      console.log(`✅ Konfi zu Jahrgangschat "${jahrgangName}" hinzugefügt`);
+    } catch (err) {
+      console.error('Fehler beim Jahrgangschat:', err);
+      // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde
     }
   };
 

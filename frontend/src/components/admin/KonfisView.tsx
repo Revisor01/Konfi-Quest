@@ -327,11 +327,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         <IonChip 
                           color="primary"
                           style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
+                            fontSize: '0.65rem', 
+                            height: '18px',
                             opacity: 0.7,
                             '--background': 'rgba(56, 128, 255, 0.15)',
-                            '--color': '#3880ff'
+                            '--color': '#3880ff',
+                            minWidth: 'auto',
+                            padding: '0 6px'
                           }}
                         >
                           G: {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
@@ -342,11 +344,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         <IonChip 
                           color="success"
                           style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
+                            fontSize: '0.65rem', 
+                            height: '18px',
                             opacity: 0.7,
                             '--background': 'rgba(45, 211, 111, 0.15)',
-                            '--color': '#2dd36f'
+                            '--color': '#2dd36f',
+                            minWidth: 'auto',
+                            padding: '0 6px'
                           }}
                         >
                           Gem: {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
@@ -356,11 +360,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                       <IonChip 
                         color="tertiary"
                         style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
+                          fontSize: '0.65rem', 
+                          height: '18px',
                           opacity: 0.7,
                           '--background': 'rgba(112, 69, 246, 0.15)',
-                          '--color': '#7045f6'
+                          '--color': '#7045f6',
+                          minWidth: 'auto',
+                          padding: '0 6px'
                         }}
                       >
                         Gesamt: {getTotalPoints(konfi)}

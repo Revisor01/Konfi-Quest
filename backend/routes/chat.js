@@ -133,7 +133,51 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
     return res.status(400).json({ error: 'Invalid chat type' });
   }
   
-  // For jahrgang chats, check if one already exists
+  // Check Konfi chat permissions based on settings
+  if (req.user.type === 'konfi') {
+    // Get chat permissions from settings (default: direct_only)
+    db.get("SELECT value FROM settings WHERE key = 'konfi_chat_permissions'", [], (err, setting) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error checking permissions' });
+      }
+      
+      const permissions = setting?.value || 'direct_only';
+      let allowedTypes = [];
+      
+      switch (permissions) {
+        case 'direct_only':
+          allowedTypes = ['direct'];
+          break;
+        case 'direct_and_group':
+          allowedTypes = ['direct', 'group'];
+          break;
+        case 'all':
+          allowedTypes = ['direct', 'group', 'jahrgang', 'admin_team'];
+          break;
+        default:
+          allowedTypes = ['direct'];
+      }
+      
+      if (!allowedTypes.includes(type)) {
+        return res.status(403).json({ 
+          error: `Konfirmanden können nur diese Chat-Arten erstellen: ${allowedTypes.join(', ')}`,
+          allowed_types: allowedTypes,
+          user_type: req.user.type,
+          current_permission: permissions
+        });
+      }
+      
+      // If permission check passes, continue with room creation
+      proceedWithRoomCreation();
+    });
+    return; // Exit here to wait for async permission check
+  }
+  
+  // For admins, proceed directly
+  proceedWithRoomCreation();
+  
+  function proceedWithRoomCreation() {
+    // For jahrgang chats, check if one already exists
   if (type === 'jahrgang') {
     if (!jahrgang_id) {
       return res.status(400).json({ error: 'Jahrgang ID required for jahrgang chats' });
@@ -236,6 +280,7 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
           });
       });
   }
+  } // End of proceedWithRoomCreation function
 });
 
 // Get chat rooms for user
