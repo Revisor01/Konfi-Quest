@@ -77,7 +77,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         SELECT eb.*, u.display_name as participant_name, kp.jahrgang_id,
                j.name as jahrgang_name
         FROM event_bookings eb
-        JOIN users u ON eb.konfi_id = u.id
+        JOIN users u ON eb.user_id = u.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         WHERE eb.event_id = ? AND eb.status = 'confirmed'
@@ -308,7 +308,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       }
       
       // Check if already booked
-      db.get("SELECT id FROM event_bookings WHERE event_id = ? AND konfi_id = ? AND status = 'confirmed'", 
+      db.get("SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ? AND status = 'confirmed'", 
         [eventId, konfiId], (err, existing) => {
           if (err) {
             console.error('Error checking existing booking:', err);
@@ -332,7 +332,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               }
               
               // Create booking
-              db.run("INSERT INTO event_bookings (event_id, konfi_id, timeslot_id, status) VALUES (?, ?, ?, 'confirmed')",
+              db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date) VALUES (?, ?, ?, 'confirmed', datetime('now'))",
                 [eventId, konfiId, timeslot_id], function(err) {
                   if (err) {
                     console.error('Error creating booking:', err);
@@ -362,7 +362,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       return res.status(403).json({ error: 'Only konfis can cancel bookings' });
     }
     
-    db.run("DELETE FROM event_bookings WHERE event_id = ? AND konfi_id = ?", 
+    db.run("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?", 
       [eventId, konfiId], function(err) {
         if (err) {
           console.error('Error canceling booking:', err);
@@ -390,7 +390,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       SELECT eb.*, e.name as event_name, e.event_date, e.location
       FROM event_bookings eb
       JOIN events e ON eb.event_id = e.id
-      WHERE eb.konfi_id = ? AND eb.status = 'confirmed'
+      WHERE eb.user_id = ? AND eb.status = 'confirmed'
       ORDER BY e.event_date ASC
     `;
     
@@ -528,7 +528,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 
                 // Add all event participants to chat
                 const participantsQuery = `
-                  SELECT DISTINCT konfi_id FROM event_bookings 
+                  SELECT DISTINCT user_id FROM event_bookings 
                   WHERE event_id = ? AND status = 'confirmed'
                 `;
                 
@@ -548,7 +548,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                   let addedParticipants = 0;
                   participants.forEach(participant => {
                     db.run("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES (?, ?, 'konfi')",
-                      [chatRoomId, participant.konfi_id], (err) => {
+                      [chatRoomId, participant.user_id], (err) => {
                         if (err) {
                           console.error('Error adding participant to chat:', err);
                         }
