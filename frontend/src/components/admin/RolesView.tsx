@@ -113,9 +113,10 @@ const RolesView: React.FC<RolesViewProps> = ({
     if (!role.is_active) return 'medium';
     if (role.is_system_role) {
       switch (role.name) {
+        case 'org_admin': return 'primary'; // Blau für org_admin
         case 'admin': return 'danger';
         case 'teamer': return 'warning';
-        case 'helper': return 'primary';
+        case 'konfi': return 'success';
         default: return 'tertiary';
       }
     }
@@ -127,6 +128,21 @@ const RolesView: React.FC<RolesViewProps> = ({
       return lockClosed;
     }
     return shield;
+  };
+
+  // Hierarchie-Check: Kann der aktuelle User diese Rolle bearbeiten?
+  const canEditRole = (role: Role) => {
+    const userRole = user?.role_name;
+    const roleToEdit = role.name;
+    
+    if (userRole === 'org_admin') {
+      return true; // org_admin kann ALLES (admin, teamer, konfi, custom)
+    } else if (userRole === 'admin') {
+      return roleToEdit === 'teamer' || roleToEdit === 'konfi' || !role.is_system_role; // admin kann teamer, konfi und custom
+    } else if (userRole === 'teamer') {
+      return roleToEdit === 'konfi'; // teamer kann nur konfi (wenn permissions erlauben)
+    }
+    return false;
   };
 
   const getStatusColor = (isActive: boolean) => {
@@ -269,9 +285,14 @@ const RolesView: React.FC<RolesViewProps> = ({
             {filteredAndSortedRoles.map((role) => (
               <IonItemSliding key={role.id}>
                 <IonItem 
-                  button 
-                  onClick={() => onSelectRole(role)}
-                  style={{ '--min-height': '56px', '--padding-start': '16px' }}
+                  button={canEditRole(role)}
+                  onClick={canEditRole(role) ? () => onSelectRole(role) : undefined}
+                  style={{ 
+                    '--min-height': '56px', 
+                    '--padding-start': '16px',
+                    opacity: canEditRole(role) ? 1 : 0.5,
+                    cursor: canEditRole(role) ? 'pointer' : 'not-allowed'
+                  }}
                 >
                   <div slot="start" style={{ 
                     width: '32px', 
@@ -378,22 +399,24 @@ const RolesView: React.FC<RolesViewProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                <IonItemOptions side="end">
-                  <IonItemOption 
-                    color="primary" 
-                    onClick={() => onSelectRole(role)}
-                  >
-                    <IonIcon icon={create} />
-                  </IonItemOption>
-                  {!role.is_system_role && (
+                {canEditRole(role) && (
+                  <IonItemOptions side="end">
                     <IonItemOption 
-                      color="danger" 
-                      onClick={() => onDeleteRole(role)}
+                      color="primary" 
+                      onClick={() => onSelectRole(role)}
                     >
-                      <IonIcon icon={trash} />
+                      <IonIcon icon={create} />
                     </IonItemOption>
-                  )}
-                </IonItemOptions>
+                    {!role.is_system_role && user?.role_name === 'org_admin' && (
+                      <IonItemOption 
+                        color="danger" 
+                        onClick={() => onDeleteRole(role)}
+                      >
+                        <IonIcon icon={trash} />
+                      </IonItemOption>
+                    )}
+                  </IonItemOptions>
+                )}
               </IonItemSliding>
             ))}
             

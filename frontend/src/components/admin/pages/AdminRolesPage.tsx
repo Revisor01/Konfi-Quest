@@ -33,7 +33,7 @@ interface Role {
 }
 
 const AdminRolesPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const { pageRef, presentingElement } = useModalPage('roles');
   
   // State
@@ -132,9 +132,11 @@ const AdminRolesPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Rollen-Verwaltung</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={presentRoleModal}>
-              <IonIcon icon={add} />
-            </IonButton>
+            {user?.permissions?.includes('admin.roles.create') && (
+              <IonButton onClick={presentRoleModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
