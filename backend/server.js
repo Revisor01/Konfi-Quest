@@ -27,7 +27,7 @@ const db = initializeDatabase();
 // ====================================================================
 
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'server.godsapp.de',
+  host: process.env.SMTP_HOST || 'host.docker.internal',
   port: process.env.SMTP_PORT || 465,
   secure: true, // true for 465, false for other ports
   auth: {

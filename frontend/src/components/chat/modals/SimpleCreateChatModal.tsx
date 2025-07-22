@@ -34,6 +34,7 @@ interface User {
   display_name?: string;
   type: 'admin' | 'konfi';
   jahrgang?: string;
+  jahrgang_name?: string;
 }
 
 interface SimpleCreateChatModalProps {
@@ -416,7 +417,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       <IonItem lines="none">
                         <IonSelect 
                           value={selectedRole} 
-                          onSelectionChange={(e) => setSelectedRole(e.detail.value)}
+                          onIonChange={(e) => setSelectedRole(e.detail.value!)}
                           placeholder="Alle Rollen"
                           interface="action-sheet"
                         >
@@ -430,7 +431,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       <IonItem lines="none">
                         <IonSelect 
                           value={selectedJahrgang} 
-                          onSelectionChange={(e) => setSelectedJahrgang(e.detail.value)}
+                          onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                           placeholder="Alle Jahrgänge"
                           interface="action-sheet"
                         >

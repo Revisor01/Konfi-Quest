@@ -54,6 +54,12 @@ interface ChatRoom {
   };
   unread_count: number;
   jahrgang_name?: string;
+  participants?: Array<{
+    user_id: number;
+    user_type: 'admin' | 'konfi';
+    name: string;
+    display_name?: string;
+  }>;
 }
 
 interface ChatOverviewProps {
@@ -145,7 +151,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
     if (room.type === 'direct') {
       // Finde den Chat-Partner (nicht der aktuelle User)
-      const otherParticipant = room.participants?.find(p => 
+      const otherParticipant = room.participants?.find((p: { user_id: number; user_type: 'admin' | 'konfi'; name: string; display_name?: string }) => 
         !(p.user_id === user?.id && p.user_type === user?.type)
       );
       

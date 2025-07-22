@@ -98,33 +98,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
-  const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal);
+  const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
+    onClose: () => dismissPollModalHook(),
+    onSuccess: () => {
+      dismissPollModalHook();
+      handlePollCreated();
+    },
+    roomId: room.id
+  });
   
   const openPollModal = () => {
     presentPollModalHook({
-      presentingElement: pageRef.current,
-      onClose: () => dismissPollModalHook(),
-      onSuccess: () => {
-        dismissPollModalHook();
-        handlePollCreated();
-      },
-      roomId: room.id
+      presentingElement: pageRef.current || undefined
     });
   };
 
   // Members Modal mit useIonModal Hook (iOS Card Design)
-  const [presentMembersModalHook, dismissMembersModalHook] = useIonModal(MembersModal);
+  const [presentMembersModalHook, dismissMembersModalHook] = useIonModal(MembersModal, {
+    onClose: () => dismissMembersModalHook(),
+    onSuccess: () => {
+      dismissMembersModalHook();
+      loadMessages();
+    },
+    roomId: room.id,
+    roomType: room.type
+  });
   
   const openMembersModal = () => {
     presentMembersModalHook({
-      presentingElement: pageRef.current,
-      onClose: () => dismissMembersModalHook(),
-      onSuccess: () => {
-        dismissMembersModalHook();
-        loadMessages();
-      },
-      roomId: room.id,
-      roomType: room.type
+      presentingElement: pageRef.current || undefined
     });
   };
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -599,22 +601,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                           ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
                           : '0 2px 8px rgba(0,0,0,0.08)',
                         transform: 'translateZ(0)',
-                        ':hover': {
-                          transform: 'translateY(-1px)',
-                          boxShadow: userVoted 
-                            ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
-                            : '0 4px 12px rgba(0,0,0,0.12)'
-                        }
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-1px)';
-                        e.target.style.boxShadow = userVoted 
+                        const target = e.target as HTMLElement;
+                        target.style.transform = 'translateY(-1px)';
+                        target.style.boxShadow = userVoted 
                           ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
                           : '0 4px 12px rgba(0,0,0,0.12)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.transform = 'translateZ(0)';
-                        e.target.style.boxShadow = userVoted 
+                        const target = e.target as HTMLElement;
+                        target.style.transform = 'translateZ(0)';
+                        target.style.boxShadow = userVoted 
                           ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
                           : '0 2px 8px rgba(0,0,0,0.08)';
                       }}
