@@ -18,6 +18,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       WHERE a.organization_id = ?
       ORDER BY a.type, a.name
     `;
+    console.log("Fetching activities for org:", req.user.organization_id);
     db.all(query, [req.user.organization_id], (err, rows) => {
         if (err) {
             console.error("Error fetching activities for admin:", err);
@@ -25,6 +26,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
             console.error("Params:", [req.user.organization_id]);
             return res.status(500).json({ error: 'Database error' });
         }
+        console.log("Activities found:", rows.length);
         
         // Return simplified activities without categories for now
         const activitiesWithCategories = rows.map(row => {
