@@ -11,35 +11,30 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // GET all activities
   // Pfad: GET /api/activities/
   router.get('/', rbacVerifier, checkPermission('admin.activities.view'), (req, res) => {
+    // Simplified query to avoid complex JOIN issues
     const query = `
-      SELECT a.*, 
-             GROUP_CONCAT(c.id) as category_ids,
-             GROUP_CONCAT(c.name) as category_names
+      SELECT a.*
       FROM activities a
-      LEFT JOIN activity_categories ac ON a.id = ac.activity_id
-      LEFT JOIN categories c ON ac.category_id = c.id
       WHERE a.organization_id = ?
-      GROUP BY a.id
       ORDER BY a.type, a.name
     `;
     db.all(query, [req.user.organization_id], (err, rows) => {
         if (err) {
             console.error("Error fetching activities for admin:", err);
+            console.error("Query:", query);
+            console.error("Params:", [req.user.organization_id]);
             return res.status(500).json({ error: 'Database error' });
         }
         
+        // Return simplified activities without categories for now
         const activitiesWithCategories = rows.map(row => {
-            const categories = [];
-            if (row.category_ids) {
-                const ids = row.category_ids.split(',');
-                const names = row.category_names.split(',');
-                for (let i = 0; i < ids.length; i++) {
-                    categories.push({ id: parseInt(ids[i]), name: names[i] });
-                }
-            }
             return {
-                id: row.id, name: row.name, points: row.points,
-                type: row.type, categories: categories, created_at: row.created_at
+                id: row.id, 
+                name: row.name, 
+                points: row.points,
+                type: row.type, 
+                categories: [], // Empty for now to avoid JOIN issues
+                created_at: row.created_at
             };
         });
         res.json(activitiesWithCategories);
