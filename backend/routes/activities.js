@@ -11,35 +11,50 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // GET all activities
   // Pfad: GET /api/activities/
   router.get('/', rbacVerifier, checkPermission('admin.activities.view'), (req, res) => {
-    // Simplified query to avoid complex JOIN issues
-    const query = `
-      SELECT a.*
-      FROM activities a
-      WHERE a.organization_id = ?
-      ORDER BY a.type, a.name
-    `;
-    console.log("Fetching activities for org:", req.user.organization_id);
-    db.all(query, [req.user.organization_id], (err, rows) => {
+    // Check if organization_id column exists in activities table
+    db.all("PRAGMA table_info(activities)", [], (err, columns) => {
+      if (err) {
+        console.error("Error checking activities table structure:", err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      const hasOrgId = columns.some(col => col.name === 'organization_id');
+      console.log("Activities table has organization_id column:", hasOrgId);
+      
+      let query, params;
+      if (hasOrgId) {
+        // Use organization filter if column exists
+        query = `SELECT a.* FROM activities a WHERE a.organization_id = ? ORDER BY a.type, a.name`;
+        params = [req.user.organization_id];
+      } else {
+        // No organization filter if column doesn't exist
+        query = `SELECT a.* FROM activities a ORDER BY a.type, a.name`;
+        params = [];
+      }
+      
+      console.log("Fetching activities for org:", req.user.organization_id);
+      db.all(query, params, (err, rows) => {
         if (err) {
-            console.error("Error fetching activities for admin:", err);
-            console.error("Query:", query);
-            console.error("Params:", [req.user.organization_id]);
-            return res.status(500).json({ error: 'Database error' });
+          console.error("Error fetching activities for admin:", err);
+          console.error("Query:", query);
+          console.error("Params:", params);
+          return res.status(500).json({ error: 'Database error' });
         }
         console.log("Activities found:", rows.length);
         
         // Return simplified activities without categories for now
         const activitiesWithCategories = rows.map(row => {
-            return {
-                id: row.id, 
-                name: row.name, 
-                points: row.points,
-                type: row.type, 
-                categories: [], // Empty for now to avoid JOIN issues
-                created_at: row.created_at
-            };
+          return {
+            id: row.id, 
+            name: row.name, 
+            points: row.points,
+            type: row.type, 
+            categories: [], // Empty for now to avoid JOIN issues
+            created_at: row.created_at
+          };
         });
         res.json(activitiesWithCategories);
+      });
     });
   });
 
