@@ -51,7 +51,7 @@ interface Settings {
 
 
 const AdminKonfisPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { setSuccess, setError, user } = useApp();
   const history = useHistory();
   const { pageRef, presentingElement, cleanupModals } = useModalPage('konfis');
   
@@ -174,9 +174,11 @@ const AdminKonfisPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Konfirmand:innen</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={presentKonfiModal}>
-              <IonIcon icon={add} />
-            </IonButton>
+            {user?.permissions?.includes('admin.konfis.create') && (
+              <IonButton onClick={presentKonfiModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>

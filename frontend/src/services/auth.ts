@@ -12,6 +12,7 @@ interface User {
   role_name?: string;
   jahrgang?: string;
   is_super_admin?: boolean;
+  permissions?: string[];
 }
 
 export const login = async (username: string, password: string, type: 'admin' | 'konfi'): Promise<User> => {

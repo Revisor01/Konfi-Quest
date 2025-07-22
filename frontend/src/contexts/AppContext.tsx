@@ -22,6 +22,7 @@ interface User {
   role_name?: string;
   jahrgang?: string;
   is_super_admin?: boolean;
+  permissions?: string[];
 }
 
 interface AppContextType {
@@ -40,6 +41,7 @@ interface AppContextType {
   markChatRoomAsRead: (roomId: number) => void;
   addUnreadChatMessage: (roomId: number, count?: number) => void;
   requestPushPermissions: () => Promise<void>;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -292,6 +294,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [user, refreshChatNotifications]);
 
+  const hasPermission = useCallback((permission: string): boolean => {
+    if (!user?.permissions) return false;
+    return user.permissions.includes(permission);
+  }, [user]);
+
   const value: AppContextType = {
     user,
     loading,
@@ -308,6 +315,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     markChatRoomAsRead,
     addUnreadChatMessage,
     requestPushPermissions,
+    hasPermission,
   };
 
   return (
