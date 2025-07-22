@@ -112,13 +112,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
           permissions: userPermissions
         };
       
-      // Add konfi-specific data if user is konfi
-      if (userType === 'konfi') {
-        responseUser.jahrgang = user.jahrgang_name;
-        responseUser.gottesdienst_points = user.gottesdienst_points || 0;
-        responseUser.gemeinde_points = user.gemeinde_points || 0;
-      }
-      
+        // Add konfi-specific data if user is konfi
+        if (userType === 'konfi') {
+          responseUser.jahrgang = user.jahrgang_name;
+          responseUser.gottesdienst_points = user.gottesdienst_points || 0;
+          responseUser.gemeinde_points = user.gemeinde_points || 0;
+        }
+        
         res.json({ 
           token, 
           user: responseUser
