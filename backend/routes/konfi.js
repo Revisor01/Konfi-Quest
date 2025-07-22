@@ -419,7 +419,7 @@ module.exports = (db, rbacMiddleware) => {
       }
       
       // Register for event
-      db.run('INSERT INTO event_bookings (user_id, event_id, status, booking_date) VALUES (?, ?, "confirmed", datetime("now"))','
+      db.run('INSERT INTO event_bookings (user_id, event_id, status, booking_date) VALUES (?, ?, "confirmed", datetime("now"))',
         [konfiId, eventId], function(err) {
         if (err) {
           console.error('Error registering for event:', err);
