@@ -34,8 +34,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
     
     if (konfi_chat_permissions) {
-      // Validate permissions value
-      const validPermissions = ['direct_only', 'direct_and_group', 'all'];
+      // Validate permissions value - simplified to just 2 options
+      const validPermissions = ['direct_only', 'direct_and_group'];
       if (validPermissions.includes(konfi_chat_permissions)) {
         db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('konfi_chat_permissions', ?)", [konfi_chat_permissions]);
       } else {

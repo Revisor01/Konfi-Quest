@@ -363,11 +363,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         types.push({ value: 'direct', label: 'Direktnachricht' });
         types.push({ value: 'group', label: 'Gruppenchat' });
         break;
-      case 'all':
-        types.push({ value: 'direct', label: 'Direktnachricht' });
-        types.push({ value: 'group', label: 'Gruppenchat' });
-        // Jahrgang und admin_team werden nur von Admins erstellt
-        break;
     }
     
     return types;

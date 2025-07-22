@@ -147,12 +147,13 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         
         // Create default roles for the organization
         const defaultRoles = [
-          { name: 'admin', display_name: 'Hauptamt', description: 'Vollzugriff auf alle Funktionen', is_system_role: 1 },
+          { name: 'org_admin', display_name: 'Organisations-Admin', description: 'Vollzugriff auf alle Jahrgänge der Organisation', is_system_role: 1 },
+          { name: 'admin', display_name: 'Hauptamt', description: 'Vollzugriff mit Jahrgangs-Beschränkungen', is_system_role: 1 },
           { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten', is_system_role: 1 }
         ];
         
         let rolesCreated = 0;
-        let adminRoleId = null;
+        let orgAdminRoleId = null;
         
         defaultRoles.forEach(role => {
           db.run(`INSERT INTO roles (organization_id, name, display_name, description, is_system_role) 
@@ -164,8 +165,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 return;
               }
               
-              if (role.name === 'admin') {
-                adminRoleId = this.lastID;
+              if (role.name === 'org_admin') {
+                orgAdminRoleId = this.lastID;
               }
               
               rolesCreated++;
@@ -188,7 +189,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
             
             db.run(`INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active) 
                     VALUES (?, ?, ?, ?, ?, ?, 1)`,
-              [organizationId, adminRoleId, admin_username, contact_email, hashedPassword, admin_display_name],
+              [organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name],
               function(err) {
                 if (err) {
                   console.error('Error creating admin user:', err);

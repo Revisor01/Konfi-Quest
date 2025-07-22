@@ -58,11 +58,9 @@ const ChatPermissionsSettings: React.FC = () => {
   const getPermissionDescription = (value: string) => {
     switch (value) {
       case 'direct_only':
-        return 'Konfis können nur Direktnachrichten erstellen';
+        return 'Konfis können nur 1:1 Direktnachrichten mit anderen Personen erstellen';
       case 'direct_and_group':
-        return 'Konfis können Direktnachrichten und Gruppenchats erstellen';
-      case 'all':
-        return 'Konfis haben vollständigen Chat-Zugriff (wie Admins)';
+        return 'Konfis können 1:1 Direktnachrichten und Gruppenchats mit mehreren Teilnehmern erstellen';
       default:
         return '';
     }
@@ -105,9 +103,6 @@ const ChatPermissionsSettings: React.FC = () => {
             </IonSelectOption>
             <IonSelectOption value="direct_and_group">
               Direktnachrichten + Gruppenchats
-            </IonSelectOption>
-            <IonSelectOption value="all">
-              Vollzugriff (wie Admins)
             </IonSelectOption>
           </IonSelect>
         </IonItem>

@@ -73,7 +73,7 @@ module.exports = (db, rbacMiddleware) => {
     db.all(query, [], (err, rows) => {
       if (err) return res.status(500).json({ error: 'Database error' });
       
-      if (req.user.is_super_admin || req.user.role_name === 'admin') {
+      if (req.user.is_super_admin || req.user.role_name === 'org_admin') {
         // Admins get full ranking
         res.json(rows.map((row, index) => ({
           position: index + 1,

@@ -96,7 +96,7 @@ const verifyTokenRBAC = (db) => {
         permissions: permissions,
         assigned_jahrgaenge: assignedJahrgaenge,
         type: user.role_name === 'konfi' ? 'konfi' : 'admin', // Set correct type for backward compatibility  
-        is_super_admin: user.role_name === 'super_admin' || user.role_name === 'admin'
+        is_super_admin: user.role_name === 'super_admin' || user.role_name === 'org_admin'
       };
       
       // Update last login
@@ -144,8 +144,8 @@ const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    // Super admin and organization admin have access to all jahrgaenge
-    if (req.user.is_super_admin || req.user.role_name === 'admin') {
+    // Only super admin and org-admin have access to all jahrgaenge
+    if (req.user.is_super_admin || req.user.role_name === 'org_admin') {
       return next();
     }
     
@@ -179,8 +179,8 @@ const filterByJahrgangAccess = (req) => {
     return { where: 'WHERE 1=0', params: [] }; // No access
   }
   
-  // Super admin and organization admin see everything
-  if (req.user.is_super_admin || req.user.role_name === 'admin') {
+  // Only super admin and org-admin see everything
+  if (req.user.is_super_admin || req.user.role_name === 'org_admin') {
     return { 
       where: 'WHERE organization_id = ?', 
       params: [req.user.organization_id] 

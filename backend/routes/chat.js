@@ -37,6 +37,165 @@ const chatUpload = multer({
   }
 });
 
+// === UTILITY FUNCTIONS ===
+
+// Ensure admin is in all their assigned jahrgang chats
+const ensureAdminJahrgangChatMembership = (db, adminId) => {
+  // Get admin's jahrgang assignments
+  const assignmentsQuery = `
+    SELECT uja.jahrgang_id, j.name as jahrgang_name
+    FROM user_jahrgang_assignments uja
+    JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+    WHERE uja.user_id = ? AND uja.can_view = 1
+  `;
+  
+  db.all(assignmentsQuery, [adminId], (err, assignments) => {
+    if (err || !assignments.length) return;
+    
+    assignments.forEach(assignment => {
+      // Check if jahrgang chat exists
+      const chatExistsQuery = `
+        SELECT id FROM chat_rooms 
+        WHERE type = 'jahrgang' AND jahrgang_id = ?
+      `;
+      
+      db.get(chatExistsQuery, [assignment.jahrgang_id], (err, chatRoom) => {
+        if (err || !chatRoom) return;
+        
+        // Check if admin is already participant
+        const participantExistsQuery = `
+          SELECT id FROM chat_participants 
+          WHERE room_id = ? AND user_id = ? AND user_type = 'admin'
+        `;
+        
+        db.get(participantExistsQuery, [chatRoom.id, adminId], (err, participant) => {
+          if (err || participant) return; // Already exists
+          
+          // Add admin to jahrgang chat
+          const insertQuery = `
+            INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
+            VALUES (?, ?, 'admin', CURRENT_TIMESTAMP)
+          `;
+          
+          db.run(insertQuery, [chatRoom.id, adminId], (err) => {
+            if (!err) {
+              console.log(`Added admin ${adminId} to jahrgang chat ${chatRoom.id} (${assignment.jahrgang_name})`);
+            }
+          });
+        });
+      });
+    });
+  });
+};
+
+// Ensure konfi is in their jahrgang chat
+const ensureKonfiJahrgangChatMembership = (db, konfiId) => {
+  // Get konfi's jahrgang from konfi_profiles
+  const jahrgangQuery = `
+    SELECT kp.jahrgang_id, j.name as jahrgang_name
+    FROM konfi_profiles kp
+    JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+    WHERE kp.user_id = ? AND kp.jahrgang_id IS NOT NULL
+  `;
+  
+  db.get(jahrgangQuery, [konfiId], (err, jahrgang) => {
+    if (err || !jahrgang) return;
+    
+    // Check if jahrgang chat exists
+    const chatExistsQuery = `
+      SELECT id FROM chat_rooms 
+      WHERE type = 'jahrgang' AND jahrgang_id = ?
+    `;
+    
+    db.get(chatExistsQuery, [jahrgang.jahrgang_id], (err, chatRoom) => {
+      if (err || !chatRoom) {
+        // Create jahrgang chat if it doesn't exist
+        const createChatQuery = `
+          INSERT INTO chat_rooms (name, type, jahrgang_id, created_by)
+          VALUES (?, 'jahrgang', ?, 1)
+        `;
+        const chatName = `Jahrgang ${jahrgang.jahrgang_name}`;
+        
+        db.run(createChatQuery, [chatName, jahrgang.jahrgang_id], function(err) {
+          if (err) return;
+          
+          const newChatRoomId = this.lastID;
+          console.log(`Created jahrgang chat ${newChatRoomId} for ${jahrgang.jahrgang_name}`);
+          
+          // Add konfi to the new chat
+          addKonfiToChat(db, newChatRoomId, konfiId, jahrgang.jahrgang_name);
+          
+          // Add all other konfis from this jahrgang to the chat
+          addAllJahrgangKonfisToChat(db, newChatRoomId, jahrgang.jahrgang_id);
+        });
+        return;
+      }
+      
+      // Check if konfi is already participant
+      const participantExistsQuery = `
+        SELECT id FROM chat_participants 
+        WHERE room_id = ? AND user_id = ? AND user_type = 'konfi'
+      `;
+      
+      db.get(participantExistsQuery, [chatRoom.id, konfiId], (err, participant) => {
+        if (err || participant) return; // Already exists
+        
+        // Add konfi to jahrgang chat
+        addKonfiToChat(db, chatRoom.id, konfiId, jahrgang.jahrgang_name);
+      });
+    });
+  });
+};
+
+const addKonfiToChat = (db, roomId, konfiId, jahrgangName) => {
+  const insertQuery = `
+    INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
+    VALUES (?, ?, 'konfi', CURRENT_TIMESTAMP)
+  `;
+  
+  db.run(insertQuery, [roomId, konfiId], (err) => {
+    if (!err) {
+      console.log(`Added konfi ${konfiId} to jahrgang chat ${roomId} (${jahrgangName})`);
+    }
+  });
+};
+
+const addAllJahrgangKonfisToChat = (db, roomId, jahrgangId) => {
+  // Get all konfis from this jahrgang
+  const konfisQuery = `
+    SELECT user_id FROM konfi_profiles 
+    WHERE jahrgang_id = ?
+  `;
+  
+  db.all(konfisQuery, [jahrgangId], (err, konfis) => {
+    if (err || !konfis) return;
+    
+    konfis.forEach(konfi => {
+      // Check if already participant
+      const checkQuery = `
+        SELECT id FROM chat_participants 
+        WHERE room_id = ? AND user_id = ? AND user_type = 'konfi'
+      `;
+      
+      db.get(checkQuery, [roomId, konfi.user_id], (err, existing) => {
+        if (err || existing) return;
+        
+        // Add konfi to chat
+        const insertQuery = `
+          INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
+          VALUES (?, ?, 'konfi', CURRENT_TIMESTAMP)
+        `;
+        
+        db.run(insertQuery, [roomId, konfi.user_id], (err) => {
+          if (!err) {
+            console.log(`Added konfi ${konfi.user_id} to jahrgang chat ${roomId}`);
+          }
+        });
+      });
+    });
+  });
+};
+
 // === CHAT API ENDPOINTS ===
 
 // Get admins for direct contact (konfis only)
@@ -151,11 +310,8 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
         case 'direct_and_group':
           allowedTypes = ['direct', 'group'];
           break;
-        case 'all':
-          allowedTypes = ['direct', 'group', 'jahrgang', 'admin_team'];
-          break;
         default:
-          allowedTypes = ['direct'];
+          allowedTypes = ['direct']; // Fallback to most restrictive
       }
       
       if (!allowedTypes.includes(type)) {
@@ -287,6 +443,13 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
 router.get('/rooms', verifyTokenRBAC, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
+  
+  // Ensure user is in their jahrgang chats
+  if (userType === 'admin') {
+    ensureAdminJahrgangChatMembership(db, userId);
+  } else if (userType === 'konfi') {
+    ensureKonfiJahrgangChatMembership(db, userId);
+  }
   
   let query;
   let params;
