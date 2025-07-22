@@ -11,50 +11,34 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // GET all activities
   // Pfad: GET /api/activities/
   router.get('/', rbacVerifier, checkPermission('admin.activities.view'), (req, res) => {
-    // Check if organization_id column exists in activities table
-    db.all("PRAGMA table_info(activities)", [], (err, columns) => {
+    const query = `
+      SELECT a.*
+      FROM activities a
+      WHERE a.organization_id = ?
+      ORDER BY a.type, a.name
+    `;
+    console.log("Fetching activities for org:", req.user.organization_id);
+    db.all(query, [req.user.organization_id], (err, rows) => {
       if (err) {
-        console.error("Error checking activities table structure:", err);
+        console.error("Error fetching activities for admin:", err);
+        console.error("Query:", query);
+        console.error("Params:", [req.user.organization_id]);
         return res.status(500).json({ error: 'Database error' });
       }
+      console.log("Activities found:", rows.length);
       
-      const hasOrgId = columns.some(col => col.name === 'organization_id');
-      console.log("Activities table has organization_id column:", hasOrgId);
-      
-      let query, params;
-      if (hasOrgId) {
-        // Use organization filter if column exists
-        query = `SELECT a.* FROM activities a WHERE a.organization_id = ? ORDER BY a.type, a.name`;
-        params = [req.user.organization_id];
-      } else {
-        // No organization filter if column doesn't exist
-        query = `SELECT a.* FROM activities a ORDER BY a.type, a.name`;
-        params = [];
-      }
-      
-      console.log("Fetching activities for org:", req.user.organization_id);
-      db.all(query, params, (err, rows) => {
-        if (err) {
-          console.error("Error fetching activities for admin:", err);
-          console.error("Query:", query);
-          console.error("Params:", params);
-          return res.status(500).json({ error: 'Database error' });
-        }
-        console.log("Activities found:", rows.length);
-        
-        // Return simplified activities without categories for now
-        const activitiesWithCategories = rows.map(row => {
-          return {
-            id: row.id, 
-            name: row.name, 
-            points: row.points,
-            type: row.type, 
-            categories: [], // Empty for now to avoid JOIN issues
-            created_at: row.created_at
-          };
-        });
-        res.json(activitiesWithCategories);
+      // Return simplified activities without categories for now
+      const activitiesWithCategories = rows.map(row => {
+        return {
+          id: row.id, 
+          name: row.name, 
+          points: row.points,
+          type: row.type, 
+          categories: [], // Empty for now to avoid JOIN issues
+          created_at: row.created_at
+        };
       });
+      res.json(activitiesWithCategories);
     });
   });
 
@@ -129,55 +113,26 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // GET all activity requests for an organization
   // Pfad: GET /api/activities/requests
   router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), (req, res) => {
-      // First check if organization_id column exists in activities table
-      db.all("PRAGMA table_info(activities)", [], (err, columns) => {
+      const query = `
+        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
+               u_approved.display_name as approved_by_name
+        FROM activity_requests ar
+        JOIN users u_konfi ON ar.konfi_id = u_konfi.id
+        JOIN activities a ON ar.activity_id = a.id
+        LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
+        WHERE a.organization_id = ?
+        ORDER BY ar.created_at DESC
+      `;
+      console.log("Fetching activity requests for org:", req.user.organization_id);
+      db.all(query, [req.user.organization_id], (err, rows) => {
         if (err) {
-          console.error("Error checking activities table structure:", err);
+          console.error("Error fetching activity requests:", err);
+          console.error("Query:", query);
+          console.error("Params:", [req.user.organization_id]);
           return res.status(500).json({ error: 'Database error' });
         }
-        
-        const hasOrgId = columns.some(col => col.name === 'organization_id');
-        console.log("Activities table has organization_id column:", hasOrgId);
-        
-        let query, params;
-        if (hasOrgId) {
-          // Use organization filter if column exists
-          query = `
-            SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
-                   u_approved.display_name as approved_by_name
-            FROM activity_requests ar
-            JOIN users u_konfi ON ar.konfi_id = u_konfi.id
-            JOIN activities a ON ar.activity_id = a.id
-            LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
-            WHERE a.organization_id = ?
-            ORDER BY ar.created_at DESC
-          `;
-          params = [req.user.organization_id];
-        } else {
-          // No organization filter if column doesn't exist
-          query = `
-            SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
-                   u_approved.display_name as approved_by_name
-            FROM activity_requests ar
-            JOIN users u_konfi ON ar.konfi_id = u_konfi.id
-            JOIN activities a ON ar.activity_id = a.id
-            LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
-            ORDER BY ar.created_at DESC
-          `;
-          params = [];
-        }
-        
-        console.log("Fetching activity requests for org:", req.user.organization_id);
-        db.all(query, params, (err, rows) => {
-          if (err) {
-            console.error("Error fetching activity requests:", err);
-            console.error("Query:", query);
-            console.error("Params:", params);
-            return res.status(500).json({ error: 'Database error' });
-          }
-          console.log("Activity requests found:", rows.length);
-          res.json(rows);
-        });
+        console.log("Activity requests found:", rows.length);
+        res.json(rows);
       });
   });
 
