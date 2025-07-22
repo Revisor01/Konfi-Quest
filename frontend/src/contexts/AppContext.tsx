@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
 import { Badge } from '@capawesome/capacitor-badge';
+import { App } from '@capacitor/app';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 export interface ChatNotifications {
   totalUnreadCount: number;
@@ -29,6 +31,7 @@ interface AppContextType {
   success: string;
   chatNotifications: ChatNotifications;
   chatNotificationsLoading: boolean;
+  pushNotificationsPermission: string;
   setUser: (user: User | null) => void;
   setError: (error: string) => void;
   setSuccess: (success: string) => void;
@@ -36,6 +39,7 @@ interface AppContextType {
   refreshChatNotifications: () => Promise<void>;
   markChatRoomAsRead: (roomId: number) => void;
   addUnreadChatMessage: (roomId: number, count?: number) => void;
+  requestPushPermissions: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -53,6 +57,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     unreadByRoom: {}
   });
   const [chatNotificationsLoading, setChatNotificationsLoading] = useState(true);
+
+  // Push notifications state
+  const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
   // Chat notification functions
   const refreshChatNotifications = useCallback(async () => {
@@ -117,6 +124,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  // Push notifications functions
+  const requestPushPermissions = useCallback(async () => {
+    try {
+      // Check current permission status
+      const permStatus = await PushNotifications.checkPermissions();
+      
+      if (permStatus.receive === 'prompt') {
+        // Request permissions
+        const permResult = await PushNotifications.requestPermissions();
+        setPushNotificationsPermission(permResult.receive);
+        
+        if (permResult.receive === 'granted') {
+          // Register for push notifications
+          await PushNotifications.register();
+          console.log('Push notifications registered successfully');
+        }
+      } else {
+        setPushNotificationsPermission(permStatus.receive);
+        
+        if (permStatus.receive === 'granted') {
+          // Already granted, just register
+          await PushNotifications.register();
+          console.log('Push notifications already granted and registered');
+        }
+      }
+    } catch (error) {
+      console.error('Error requesting push permissions:', error);
+      setError('Push Notifications konnten nicht aktiviert werden');
+    }
+  }, []);
+
   const clearMessages = () => {
     setError('');
     setSuccess('');
@@ -146,7 +184,113 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       setChatNotificationsLoading(false);
     }
-  }, [user]);
+  }, [user, refreshChatNotifications]);
+
+  // App lifecycle events for background/foreground detection
+  useEffect(() => {
+    if (!user) return;
+
+    let stateChangeListener: any = null;
+    let resumeListener: any = null;
+
+    // Setup listeners
+    const setupListeners = async () => {
+      // Refresh notifications when app comes to foreground
+      stateChangeListener = await App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          console.log('App came to foreground - refreshing chat notifications');
+          refreshChatNotifications();
+        }
+      });
+
+      // Refresh notifications when app resumes from background
+      resumeListener = await App.addListener('resume', () => {
+        console.log('App resumed - refreshing chat notifications');
+        refreshChatNotifications();
+      });
+    };
+
+    setupListeners();
+
+    // Cleanup listeners
+    return () => {
+      if (stateChangeListener) {
+        stateChangeListener.remove();
+      }
+      if (resumeListener) {
+        resumeListener.remove();
+      }
+    };
+  }, [user, refreshChatNotifications]);
+
+  // Push notifications setup and listeners
+  useEffect(() => {
+    if (!user) return;
+
+    let pushReceivedListener: any = null;
+    let pushActionListener: any = null;
+    let pushRegistrationListener: any = null;
+    let pushRegistrationErrorListener: any = null;
+
+    const setupPushNotifications = async () => {
+      try {
+        // Setup listeners first
+        pushReceivedListener = await PushNotifications.addListener(
+          'pushNotificationReceived',
+          (notification) => {
+            console.log('Push notification received:', notification);
+            // Refresh chat notifications when push is received
+            refreshChatNotifications();
+          }
+        );
+
+        pushActionListener = await PushNotifications.addListener(
+          'pushNotificationActionPerformed',
+          (notification) => {
+            console.log('Push notification action performed:', notification);
+            // Handle notification tap - could navigate to chat
+            refreshChatNotifications();
+          }
+        );
+
+        pushRegistrationListener = await PushNotifications.addListener(
+          'registration',
+          (token) => {
+            console.log('Push registration success, token:', token.value);
+            // Send token to backend for storage
+            // TODO: Implement backend endpoint to store push token
+          }
+        );
+
+        pushRegistrationErrorListener = await PushNotifications.addListener(
+          'registrationError',
+          (error) => {
+            console.error('Push registration error:', error);
+          }
+        );
+
+        // Check and request permissions if needed
+        const permStatus = await PushNotifications.checkPermissions();
+        setPushNotificationsPermission(permStatus.receive);
+
+        if (permStatus.receive === 'granted') {
+          await PushNotifications.register();
+        }
+      } catch (error) {
+        console.error('Error setting up push notifications:', error);
+      }
+    };
+
+    setupPushNotifications();
+
+    // Cleanup push notification listeners
+    return () => {
+      if (pushReceivedListener) pushReceivedListener.remove();
+      if (pushActionListener) pushActionListener.remove();
+      if (pushRegistrationListener) pushRegistrationListener.remove();
+      if (pushRegistrationErrorListener) pushRegistrationErrorListener.remove();
+    };
+  }, [user, refreshChatNotifications]);
 
   const value: AppContextType = {
     user,
@@ -155,6 +299,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     success,
     chatNotifications,
     chatNotificationsLoading,
+    pushNotificationsPermission,
     setUser,
     setError,
     setSuccess,
@@ -162,6 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshChatNotifications,
     markChatRoomAsRead,
     addUnreadChatMessage,
+    requestPushPermissions,
   };
 
   return (

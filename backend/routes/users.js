@@ -412,5 +412,27 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     });
   });
 
+  // Get current user's assigned jahrgaenge
+  router.get('/me/jahrgaenge', rbacVerifier, (req, res) => {
+    const userId = req.user.id;
+    
+    const query = `
+      SELECT uja.jahrgang_id, uja.can_view, uja.can_edit, uja.assigned_at,
+             j.name as jahrgang_name, j.confirmation_date
+      FROM user_jahrgang_assignments uja
+      JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+      WHERE uja.user_id = ? AND j.organization_id = ?
+      ORDER BY j.name DESC
+    `;
+    
+    db.all(query, [userId, req.user.organization_id], (err, rows) => {
+      if (err) {
+        console.error('Error fetching current user jahrgaenge:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows);
+    });
+  });
+
   return router;
 };

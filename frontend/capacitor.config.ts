@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
       persist: true,
       autoClear: false,
     },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
+    },
   }
 };
 

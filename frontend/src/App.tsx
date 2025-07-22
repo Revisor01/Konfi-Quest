@@ -56,6 +56,8 @@ import AdminRolesPage from './components/admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from './components/admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from './components/admin/pages/AdminProfilePage';
 import ChatPage from './components/chat/ChatPage';
+import PushNotificationSettings from './components/common/PushNotificationSettings';
+import ChatPermissionsSettings from './components/admin/settings/ChatPermissionsSettings';
 import KonfiDetailView from './components/admin/views/KonfiDetailView';
 import EventDetailView from './components/admin/views/EventDetailView';
 import KonfiDashboardPage from './components/konfi/pages/KonfiDashboardPage';
@@ -221,6 +223,10 @@ const AppContent: React.FC = () => {
                             </IonItem>
                           </IonCardContent>
                         </IonCard>
+
+                        <ChatPermissionsSettings />
+
+                        <PushNotificationSettings />
 
                         <IonCard>
                           <IonCardHeader>
