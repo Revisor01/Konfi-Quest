@@ -23,7 +23,7 @@ interface Activity {
   id: number;
   name: string;
   points: number;
-  category: string;
+  type: string;
 }
 
 interface ActivityModalProps {
@@ -36,11 +36,7 @@ interface ActivityModalProps {
 const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
-  const [customName, setCustomName] = useState('');
-  const [customPoints, setCustomPoints] = useState<number>(1);
-  const [customCategory, setCustomCategory] = useState('gottesdienst');
   const [comment, setComment] = useState('');
-  const [useCustom, setUseCustom] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   const handleClose = () => {
@@ -66,37 +62,20 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
 
   const handleSave = async () => {
     try {
-      if (useCustom) {
-        // Custom activity - erst Aktivität erstellen, dann zuweisen
-        const activityRes = await api.post('/activities', {
-          name: customName,
-          points: customPoints,
-          type: customCategory,
-          category: 'custom'
-        });
-        
-        await api.post(`/admin/konfis/${konfiId}/activities`, {
-          activityId: activityRes.data.id,
-          completed_date: selectedDate
-        });
-      } else {
-        // Predefined activity
-        if (!selectedActivity) return;
-        await api.post(`/admin/konfis/${konfiId}/activities`, {
-          activityId: selectedActivity,
-          completed_date: selectedDate
-        });
-      }
+      if (!selectedActivity) return;
+      
+      await api.post(`/admin/konfis/${konfiId}/activities`, {
+        activity_id: selectedActivity,
+        completed_date: selectedDate,
+        comment: comment
+      });
+      
       await onSave();
       handleClose();
     } catch (err) {
       console.error('Error saving activity:', err);
     }
   };
-
-  const isValid = useCustom ? 
-    customName.trim().length > 0 && customPoints > 0 : 
-    selectedActivity !== null;
 
   return (
     <IonPage>
@@ -109,87 +88,31 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton 
-              onClick={handleSave} 
-              disabled={!isValid}
-              color="primary"
-            >
+            <IonButton onClick={handleSave} disabled={!selectedActivity}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      
       <IonContent>
-        <IonList style={{ padding: '0' }}>
+        <IonList>
           <IonItem>
-            <IonLabel position="stacked">Typ</IonLabel>
+            <IonLabel position="stacked">Aktivität</IonLabel>
             <IonSelect
-              value={useCustom ? 'custom' : 'predefined'}
-              onIonChange={(e) => setUseCustom(e.detail.value === 'custom')}
-              interface="action-sheet"
+              value={selectedActivity}
+              onSelectionChange={(e) => setSelectedActivity(e.detail.value)}
+              placeholder="Aktivität wählen"
             >
-              <IonSelectOption value="predefined">Vordefinierte Aktivität</IonSelectOption>
-              <IonSelectOption value="custom">Eigene Aktivität</IonSelectOption>
+              {activities.map(activity => (
+                <IonSelectOption key={activity.id} value={activity.id}>
+                  {activity.name} ({activity.points} Punkte, {activity.type})
+                </IonSelectOption>
+              ))}
             </IonSelect>
           </IonItem>
 
-          {!useCustom ? (
-            <IonItem>
-              <IonLabel position="stacked">Aktivität *</IonLabel>
-              <IonSelect
-                value={selectedActivity}
-                onIonChange={(e) => setSelectedActivity(e.detail.value)}
-                placeholder="Aktivität wählen"
-                interface="action-sheet"
-              >
-                {activities.map(activity => (
-                  <IonSelectOption key={activity.id} value={activity.id}>
-                    {activity.name} ({activity.points} Pkt, {activity.category})
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-            </IonItem>
-          ) : (
-            <>
-              <IonItem>
-                <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
-                  value={customName}
-                  onIonInput={(e) => setCustomName(e.detail.value!)}
-                  placeholder="Aktivitätsname"
-                  clearInput={true}
-                />
-              </IonItem>
-
-              <IonItem>
-                <IonLabel position="stacked">Punkte *</IonLabel>
-                <IonInput
-                  type="number"
-                  value={customPoints}
-                  onIonInput={(e) => setCustomPoints(parseInt(e.detail.value!) || 1)}
-                  placeholder="Punktzahl"
-                  min="1"
-                  max="50"
-                />
-              </IonItem>
-
-              <IonItem>
-                <IonLabel position="stacked">Kategorie *</IonLabel>
-                <IonSelect
-                  value={customCategory}
-                  onIonChange={(e) => setCustomCategory(e.detail.value)}
-                  interface="action-sheet"
-                >
-                  <IonSelectOption value="gottesdienst">Gottesdienst</IonSelectOption>
-                  <IonSelectOption value="gemeinde">Gemeinde</IonSelectOption>
-                </IonSelect>
-              </IonItem>
-            </>
-          )}
-
           <IonItem>
-            <IonLabel position="stacked">Datum *</IonLabel>
+            <IonLabel position="stacked">Datum</IonLabel>
             <IonInput
               type="date"
               value={selectedDate}
@@ -198,12 +121,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           </IonItem>
 
           <IonItem>
-            <IonLabel position="stacked">Kommentar</IonLabel>
+            <IonLabel position="stacked">Kommentar (optional)</IonLabel>
             <IonTextarea
               value={comment}
               onIonInput={(e) => setComment(e.detail.value!)}
-              placeholder="Optionaler Kommentar..."
-              rows={3}
+              placeholder="Zusätzliche Informationen..."
             />
           </IonItem>
         </IonList>

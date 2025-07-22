@@ -49,11 +49,6 @@ interface Settings {
   target_gemeinde?: string;
 }
 
-interface Activity {
-  id: number;
-  name: string;
-  points: number;
-}
 
 const AdminKonfisPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
@@ -63,7 +58,6 @@ const AdminKonfisPage: React.FC = () => {
   // State
   const [konfis, setKonfis] = useState<Konfi[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   
@@ -97,16 +91,14 @@ const AdminKonfisPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [konfisRes, jahrgaengeRes, activitiesRes, settingsRes] = await Promise.all([
+      const [konfisRes, jahrgaengeRes, settingsRes] = await Promise.all([
         api.get('/admin/konfis'),
         api.get('/admin/jahrgaenge'),
-        api.get('/admin/activities'),
         api.get('/settings')
       ]);
       
       setKonfis(konfisRes.data);
       setJahrgaenge(jahrgaengeRes.data);
-      setActivities(activitiesRes.data);
       setSettings(settingsRes.data);
     } catch (err) {
       setError('Fehler beim Laden der Daten');
