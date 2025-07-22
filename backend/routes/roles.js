@@ -81,6 +81,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // Create new role
   router.post('/', rbacVerifier, checkPermission('admin.roles.create'), (req, res) => {
     const organizationId = req.user.organization_id;
+    const userRole = req.user.role_name;
     const {
       name,
       display_name,
@@ -90,6 +91,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     
     if (!name || !display_name) {
       return res.status(400).json({ error: 'Name and display_name are required' });
+    }
+    
+    // Only org_admin can create new roles
+    if (userRole !== 'org_admin') {
+      return res.status(403).json({ error: 'Only org_admin can create new roles' });
     }
     
     db.run(`INSERT INTO roles (organization_id, name, display_name, description) 
@@ -141,7 +147,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     } = req.body;
     
     // Check if role exists and can be modified
-    db.get("SELECT is_system_role FROM roles WHERE id = ? AND organization_id = ?", [id, organizationId], (err, role) => {
+    db.get("SELECT name, is_system_role FROM roles WHERE id = ? AND organization_id = ?", [id, organizationId], (err, role) => {
       if (err) {
         console.error('Error checking role:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -151,25 +157,51 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(404).json({ error: 'Role not found in this organization' });
       }
       
-      // System roles can only have their permissions modified
-      if (role.is_system_role && (name || display_name || description !== undefined)) {
-        return res.status(400).json({ error: 'System roles can only have their permissions modified' });
+      // Hierarchical role editing permissions
+      const userRole = req.user.role_name;
+      const roleToEdit = role.name;
+      
+      // Only konfi role is completely protected
+      if (roleToEdit === 'konfi' && (name || display_name || description !== undefined)) {
+        return res.status(400).json({ error: 'The konfi role cannot be modified' });
+      }
+      
+      // org_admin can edit all roles except konfi
+      if (userRole === 'org_admin' && roleToEdit !== 'konfi') {
+        // org_admin can edit everything
+      }
+      // admin can edit teamer and custom roles, but not admin or org_admin
+      else if (userRole === 'admin') {
+        if (roleToEdit === 'admin' || roleToEdit === 'org_admin') {
+          return res.status(403).json({ error: 'You cannot edit admin or org_admin roles' });
+        }
+      }
+      // teamer cannot edit any roles
+      else if (userRole === 'teamer') {
+        return res.status(403).json({ error: 'You do not have permission to edit roles' });
+      }
+      else {
+        return res.status(403).json({ error: 'Insufficient permissions to edit this role' });
       }
       
       let updateFields = [];
       let updateParams = [];
       
-      if (name && !role.is_system_role) {
+      // For system roles, only certain fields can be updated based on hierarchy
+      const isSystemRole = role.is_system_role;
+      const canEditBasicFields = !isSystemRole || (userRole === 'org_admin' && roleToEdit !== 'konfi');
+      
+      if (name && canEditBasicFields) {
         updateFields.push('name = ?');
         updateParams.push(name);
       }
       
-      if (display_name && !role.is_system_role) {
+      if (display_name && canEditBasicFields) {
         updateFields.push('display_name = ?');
         updateParams.push(display_name);
       }
       
-      if (description !== undefined && !role.is_system_role) {
+      if (description !== undefined && canEditBasicFields) {
         updateFields.push('description = ?');
         updateParams.push(description);
       }
@@ -230,9 +262,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.delete('/:id', rbacVerifier, checkPermission('admin.roles.delete'), (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
+    const userRole = req.user.role_name;
     
     // Check if role can be deleted
-    db.get(`SELECT is_system_role, COUNT(u.id) as user_count 
+    db.get(`SELECT r.name, r.is_system_role, COUNT(u.id) as user_count 
             FROM roles r 
             LEFT JOIN users u ON r.id = u.role_id 
             WHERE r.id = ? AND r.organization_id = ?`, [id, organizationId], (err, role) => {
@@ -245,8 +278,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(404).json({ error: 'Role not found in this organization' });
       }
       
+      // System roles cannot be deleted
       if (role.is_system_role) {
         return res.status(400).json({ error: 'Cannot delete system roles' });
+      }
+      
+      // Only org_admin can delete custom roles
+      if (userRole !== 'org_admin') {
+        return res.status(403).json({ error: 'Only org_admin can delete roles' });
       }
       
       if (role.user_count > 0) {
