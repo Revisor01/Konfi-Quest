@@ -115,18 +115,23 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // Pfad: GET /api/activities/requests
   router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), (req, res) => {
       const query = `
-        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
+        SELECT ar.*, a.name as activity_name, a.points as activity_points,
+               'Unknown User' as konfi_name,
                u_approved.display_name as approved_by_name
         FROM activity_requests ar
-        JOIN users u_konfi ON ar.konfi_id = u_konfi.id
-        JOIN konfi_profiles kp ON u_konfi.id = kp.user_id
         JOIN activities a ON ar.activity_id = a.id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id
         WHERE a.organization_id = ?
         ORDER BY ar.created_at DESC
       `;
+      console.log("Fetching activity requests for org:", req.user.organization_id);
       db.all(query, [req.user.organization_id], (err, rows) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
+        if (err) {
+          console.error("Error fetching activity requests:", err);
+          console.error("Query:", query);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        console.log("Activity requests found:", rows.length);
         res.json(rows);
       });
   });
