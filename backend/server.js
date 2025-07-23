@@ -138,6 +138,7 @@ const eventsRoutes = require('./routes/events');
 const chatRoutes = require('./routes/chat');
 const statisticsRoutes = require('./routes/statistics');
 const settingsRoutes = require('./routes/settings');
+const notificationsRoutes = require('./routes/notifications');
 
 // Admin-specific routes
 const adminBadgesRoutes = require('./routes/badges');
@@ -177,6 +178,7 @@ app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
+app.use('/api/notifications', notificationsRoutes(db, rbacVerifier));
 
 // Admin routes requiring RBAC
 app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission));
