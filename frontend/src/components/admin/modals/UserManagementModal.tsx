@@ -113,15 +113,21 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const isEditMode = !!userId;
 
   // Hierarchie-Check: Kann der aktuelle User diese Rolle zuweisen?
+  // WICHTIG: Konfis werden NICHT über UserManagementModal erstellt, sondern über KonfiModal!
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
     
+    // Konfis werden über separate KonfiModal erstellt - NIEMALS hier!
+    if (roleName === 'konfi') {
+      return false;
+    }
+    
     if (userRole === 'org_admin') {
-      return true; // org_admin kann alle Rollen zuweisen
+      return roleName !== 'konfi'; // org_admin kann alle außer konfi zuweisen
     } else if (userRole === 'admin') {
-      return roleName !== 'org_admin' && roleName !== 'admin'; // admin kann nicht org_admin oder admin zuweisen
+      return roleName !== 'org_admin' && roleName !== 'admin' && roleName !== 'konfi'; // admin kann nur teamer zuweisen
     } else if (userRole === 'teamer') {
-      return roleName === 'konfi'; // teamer kann nur konfi zuweisen
+      return false; // teamer kann keine Benutzer erstellen
     }
     return false;
   };

@@ -300,7 +300,7 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
     
     // Get target user name for room title
     const targetQuery = target_user_type === 'admin' ? 
-    "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ? AND r.name = 'admin'" :
+    "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ? AND r.name IN ('admin', 'org_admin', 'teamer')" :
     "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id JOIN konfi_profiles kp ON u.id = kp.user_id WHERE u.id = ? AND r.name = 'konfi'";
     
     db.get(targetQuery, [target_user_id], (err, targetUser) => {
