@@ -236,50 +236,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const setupPushNotifications = async () => {
       try {
-        // Setup listeners first
-        pushReceivedListener = await PushNotifications.addListener(
-          'pushNotificationReceived',
-          (notification) => {
-            console.log('Push notification received:', notification);
-            // Refresh chat notifications when push is received
-            refreshChatNotifications();
-          }
-        );
-
-        pushActionListener = await PushNotifications.addListener(
-          'pushNotificationActionPerformed',
-          (notification) => {
-            console.log('Push notification action performed:', notification);
-            // Handle notification tap - could navigate to chat
-            refreshChatNotifications();
-          }
-        );
-
-        pushRegistrationListener = await PushNotifications.addListener(
-          'registration',
-          (token) => {
-            console.log('Push registration success, token:', token.value);
-            // Send token to backend for storage
-            // TODO: Implement backend endpoint to store push token
-          }
-        );
-
-        pushRegistrationErrorListener = await PushNotifications.addListener(
-          'registrationError',
-          (error) => {
-            console.error('Push registration error:', error);
-          }
-        );
-
-        // Check and request permissions if needed
+        // 👉 1. Erst Listener registrieren
+        PushNotifications.addListener('registration', (token) => {
+          console.log('✅ Push registration success, token:', token.value);
+          
+          // 👉 2. Token an dein Backend senden
+          api.post('/notifications/device-token', {
+            token: token.value,
+            platform: 'ios'
+          }).then(() => {
+            console.log('✅ Token erfolgreich an Server gesendet');
+          }).catch(err => {
+            console.error('❌ Fehler beim Token-Senden:', err);
+          });
+        });
+        
+        PushNotifications.addListener('registrationError', (error) => {
+          console.error('❌ Push registration error:', error);
+        });
+        
+        PushNotifications.addListener('pushNotificationReceived', (notification) => {
+          console.log('📥 Push received:', notification);
+          refreshChatNotifications();
+        });
+        
+        PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+          console.log('📲 Push action performed:', notification);
+          refreshChatNotifications();
+        });
+        
+        // 👉 3. Jetzt Berechtigungen prüfen
         const permStatus = await PushNotifications.checkPermissions();
         setPushNotificationsPermission(permStatus.receive);
-
+        
+        // 👉 4. Jetzt registrieren – NICHT vorher
         if (permStatus.receive === 'granted') {
           await PushNotifications.register();
+        } else if (permStatus.receive === 'prompt') {
+          const permResult = await PushNotifications.requestPermissions();
+          setPushNotificationsPermission(permResult.receive);
+          if (permResult.receive === 'granted') {
+            await PushNotifications.register();
+          }
         }
       } catch (error) {
-        console.error('Error setting up push notifications:', error);
+        console.error('❌ Fehler bei Push-Setup:', error);
       }
     };
 

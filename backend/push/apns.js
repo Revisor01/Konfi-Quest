@@ -6,7 +6,7 @@ const options = {
     keyId: 'A29U7SN796',
     teamId: 'J459G9CJT5',
   },
-  production: true, // TestFlight = true
+  production: false, // TestFlight = true
 };
 
 const apnProvider = new apn.Provider(options);
