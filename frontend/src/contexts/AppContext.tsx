@@ -1,9 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
 import { Badge } from '@capawesome/capacitor-badge';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
+
+interface FCMPlugin {
+  getFCMToken(): Promise<{ token: string }>;
+}
+const FCM = registerPlugin<FCMPlugin>('FCM');
+
+// Funktion, um Duplikate zu vermeiden
+const sendTokenToServer = async (token: string) => {
+  // Statische Variable, um zu prüfen, ob der Token schon gesendet wurde.
+  if ((window as any).fcmTokenSent === token) {
+    console.log('Token bereits gesendet, überspringe.');
+    return;
+  }
+  try {
+    await api.post('/notifications/device-token', {
+      token,
+      platform: Capacitor.getPlatform(),
+    });
+    console.log('✅✅✅ Echter FCM-Token erfolgreich an Server gesendet:', token);
+    (window as any).fcmTokenSent = token; // Markiere Token als gesendet
+  } catch (err) {
+    console.error('❌ Fehler beim Senden des FCM-Tokens:', err);
+  }
+};
 
 export interface ChatNotifications {
   totalUnreadCount: number;
@@ -188,6 +213,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [user, refreshChatNotifications]);
 
+useEffect(() => {
+  const handleNativeFCMToken = (event: any) => {
+    const token = event.detail;
+    console.log('📲 Native FCM Token erhalten:', token);
+    
+    if (token && token.length > 100) {
+      api.post('/notifications/device-token', {
+        token,
+        platform: 'ios',
+      })
+      .then(() => {
+        console.log('✅ Native FCM-Token erfolgreich an Server gesendet');
+      })
+      .catch((err) => {
+        console.error('❌ Fehler beim Senden des Native Tokens:', err);
+      });
+    } else {
+      console.warn('⚠️ Native Token ignoriert – sieht zu kurz aus:', token);
+    }
+  };
+  
+  window.addEventListener('fcmToken', handleNativeFCMToken);
+  return () => window.removeEventListener('fcmToken', handleNativeFCMToken);
+}, []);
+  
+  useEffect(() => {
+    // Nur auf nativen Geräten ausführen und wenn ein User da ist
+    if (user && Capacitor.isNativePlatform()) {
+      // Warte kurz, um sicherzustellen, dass der native Teil Zeit hatte, den Token zu empfangen
+      setTimeout(async () => {
+        try {
+          console.log('Versuche, den FCM-Token via Plugin abzurufen...');
+          const result = await FCM.getFCMToken();
+          const token = result.token;
+          
+          if (token && token.length > 100) {
+            await sendTokenToServer(token);
+          } else {
+            console.error('❌ Plugin lieferte einen ungültigen Token:', token);
+          }
+        } catch (error) {
+          console.error('❌ Fehler beim Abrufen des Tokens via Plugin:', error);
+        }
+      }, 2000); // 2 Sekunden Verzögerung als Sicherheitsnetz
+    }
+  }, [user]);
+  
   // App lifecycle events for background/foreground detection
   useEffect(() => {
     if (!user) return;
@@ -236,19 +308,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           console.log('✅ Push registration success, token:', token.value);
           console.log('✅ Token length:', token.value?.length);
           
-          try {
-            await api.post('/notifications/device-token', {
-              token: token.value,
-              platform: 'ios',
-            });
-            console.log('✅ Token erfolgreich an Server gesendet');
-          } catch (err) {
-            console.error('❌ Fehler beim Token-Senden:', err);
+          // Nur speichern, wenn der Token wie ein echter FCM-Token aussieht
+          if (token.value && token.value.length > 100) {
+            try {
+              await api.post('/notifications/device-token', {
+                token: token.value,
+                platform: 'ios',
+              });
+              console.log('✅ FCM-Token erfolgreich an Server gesendet');
+            } catch (err) {
+              console.error('❌ Fehler beim Token-Senden:', err);
+            }
+          } else {
+            console.warn('⚠️ Token ignoriert – sieht nach APNs aus:', token.value);
           }
-        });
-        
-        PushNotifications.addListener('registrationError', (error) => {
-          console.error('❌ Push registration error:', error);
         });
         
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
