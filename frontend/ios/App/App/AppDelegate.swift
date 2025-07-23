@@ -2,9 +2,10 @@ import UIKit
 import Capacitor
 import FirebaseCore
 import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
 
@@ -15,13 +16,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Firebase Messaging Delegate setzen
         Messaging.messaging().delegate = self
         
-        // Remote Notifications registrieren
-        application.registerForRemoteNotifications()
+        // Push Notification Permissions anfordern
+        UNUserNotificationCenter.current().delegate = self
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { granted, error in
+            print("Push notification permission granted: \(granted)")
+            if granted {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
         
         return true
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // APNS Token an Firebase Messaging weiterleiten
+        Messaging.messaging().apnsToken = deviceToken
+        
+        // Auch an Capacitor (für Fallback)
         NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
     }
 
@@ -69,10 +83,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 // MARK: - MessagingDelegate
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        print("✅ Firebase FCM token: \(fcmToken ?? "nil")")
+        print("✅ Firebase FCM token received: \(fcmToken?.prefix(50) ?? "nil")...")
+        print("✅ FCM Token length: \(fcmToken?.count ?? 0)")
         
-        // FCM Token an Capacitor weiterleiten
+        // FCM Token an Capacitor weiterleiten (als String, nicht Data!)
         if let token = fcmToken {
+            // Custom Notification für FCM Token
+            NotificationCenter.default.post(
+                name: NSNotification.Name("FCMTokenReceived"), 
+                object: token
+            )
+            
+            // Auch für Capacitor (falls es FCM Token erwartet)
             let tokenData = token.data(using: .utf8)!
             NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: tokenData)
         }
