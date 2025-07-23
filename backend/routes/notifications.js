@@ -1,3 +1,6 @@
+const express = require('express');
+const router = express.Router();
+
 router.post('/device-token', verifyTokenRBAC, (req, res) => {
   const { token, platform } = req.body;
   const userId = req.user.id;
@@ -20,3 +23,5 @@ router.post('/device-token', verifyTokenRBAC, (req, res) => {
     }
   );
 });
+
+module.exports = (db, verifyTokenRBAC) => router;
