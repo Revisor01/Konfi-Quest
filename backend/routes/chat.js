@@ -3,7 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { sendApnsNotification } = require('../push/apns');
+const PushService = require('../services/pushService');
 
 module.exports = (db, rbacMiddleware, uploadsDir) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -786,20 +786,23 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
           db.all(getParticipantsQuery, [roomId, userId, userType], (err, participants) => {
             if (err || !participants) return;
             
-            participants.forEach(p => {
-              db.get(
-                `SELECT token FROM push_tokens WHERE user_id = ? AND user_type = ? AND platform = 'ios'`,
-                [p.user_id, p.user_type],
-                (err, tokenRow) => {
-                  if (err || !tokenRow) return;
-                  
-                  sendApnsNotification(tokenRow.token, {
-                    alert: `${message.sender_name}: ${content || '[Anhang]'}`,
-                    badge: 1,
-                    sound: 'default',
-                  });
-                }
-              );
+            participants.forEach(async (p) => {
+              try {
+                await PushService.sendChatNotification(db, p.user_id, {
+                  title: message.sender_name,
+                  body: content || '[Anhang]',
+                  badge: 1,
+                  roomId: roomId,
+                  messageId: message.id,
+                  data: {
+                    sender_id: userId,
+                    sender_name: message.sender_name,
+                    room_name: roomName || 'Chat'
+                  }
+                });
+              } catch (error) {
+                console.error('❌ Failed to send chat push notification:', error);
+              }
             });
           });
         });
@@ -1458,5 +1461,53 @@ router.delete('/rooms/:roomId/participants/:userId/:userType', verifyTokenRBAC, 
       });
   });
 });
+  // Badge update endpoint für Background Refresh
+  router.post('/badge-update', verifyTokenRBAC, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Aktuellen Badge Count berechnen
+      const badgeQuery = `
+        SELECT COUNT(DISTINCT cm.id) as total_unread
+        FROM chat_messages cm
+        JOIN chat_participants cp ON cm.room_id = cp.room_id
+        WHERE cp.user_id = ? 
+        AND cp.user_type = ? 
+        AND cm.created_at > cp.last_read_at
+        AND cm.sender_id != ?
+      `;
+      
+      db.get(badgeQuery, [userId, req.user.type, userId], async (err, result) => {
+        if (err) {
+          console.error('❌ Error calculating badge count:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        const badgeCount = result?.total_unread || 0;
+        
+        try {
+          // Badge Update via Push Notification senden
+          await PushService.sendBadgeUpdate(db, userId, badgeCount);
+          
+          res.json({ 
+            success: true, 
+            badgeCount: badgeCount,
+            message: `Badge updated to ${badgeCount}` 
+          });
+        } catch (pushError) {
+          console.error('❌ Push badge update failed:', pushError);
+          res.json({ 
+            success: false, 
+            badgeCount: badgeCount,
+            error: 'Push notification failed' 
+          });
+        }
+      });
+    } catch (error) {
+      console.error('❌ Badge update endpoint error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   return router;
 };
