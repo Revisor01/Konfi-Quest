@@ -234,6 +234,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // ✅ Registriere Listener
         PushNotifications.addListener('registration', async (token) => {
           console.log('✅ Push registration success, token:', token.value);
+          console.log('✅ Token length:', token.value?.length);
           
           try {
             await api.post('/notifications/device-token', {
