@@ -60,7 +60,7 @@ interface EventsViewProps {
   onUpdate: () => void;
   onAddEventClick: () => void;
   onSelectEvent: (event: Event) => void;
-  onDeleteEvent: (event: Event) => void;
+  onDeleteEvent?: (event: Event) => void;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({ 
@@ -80,7 +80,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     
     // Filter by status
     if (selectedStatus !== 'alle') {
-      result = result.filter(event => event.registration_status === selectedStatus);
+      result = result.filter(event => calculateRegistrationStatus(event) === selectedStatus);
     }
     
     // Sortierung
@@ -106,6 +106,14 @@ const EventsView: React.FC<EventsViewProps> = ({
     return events.filter(event => new Date(event.event_date) <= now);
   };
 
+  const getOpenEvents = () => {
+    return events.filter(event => calculateRegistrationStatus(event) === 'open');
+  };
+
+  const getTotalPoints = () => {
+    return events.reduce((sum, event) => sum + event.points, 0);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
       day: '2-digit',
@@ -121,7 +129,47 @@ const EventsView: React.FC<EventsViewProps> = ({
     });
   };
 
-  const getRegistrationStatusColor = (status: string) => {
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
+    const now = new Date();
+    
+    console.log('Calculating status for event:', event.name);
+    console.log('Current time:', now.toISOString());
+    console.log('Registration opens at:', event.registration_opens_at);
+    console.log('Registration closes at:', event.registration_closes_at);
+    
+    // If registration hasn't opened yet
+    if (event.registration_opens_at) {
+      const opensAt = new Date(event.registration_opens_at);
+      console.log('Opens at parsed:', opensAt.toISOString());
+      if (now < opensAt) {
+        console.log('Status: upcoming (not opened yet)');
+        return 'upcoming';
+      }
+    }
+    
+    // If registration has closed
+    if (event.registration_closes_at) {
+      const closesAt = new Date(event.registration_closes_at);
+      console.log('Closes at parsed:', closesAt.toISOString());
+      if (now > closesAt) {
+        console.log('Status: closed (deadline passed)');
+        return 'closed';
+      }
+    }
+    
+    // If event is full
+    if (event.registered_count >= event.max_participants) {
+      console.log('Status: closed (event full)');
+      return 'closed';
+    }
+    
+    console.log('Status: open');
+    // Otherwise open
+    return 'open';
+  };
+
+  const getRegistrationStatusColor = (event: Event) => {
+    const status = calculateRegistrationStatus(event);
     switch (status) {
       case 'upcoming': return 'medium';
       case 'open': return 'success';
@@ -130,7 +178,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     }
   };
 
-  const getRegistrationStatusText = (status: string) => {
+  const getRegistrationStatusText = (event: Event) => {
+    const status = calculateRegistrationStatus(event);
     switch (status) {
       case 'upcoming': return 'Bald verfügbar';
       case 'open': return 'Anmeldung offen';
@@ -177,10 +226,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 <div style={{ textAlign: 'center' }}>
                   <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                   <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getTotalRegistrations()}
+                    {getOpenEvents().length}
                   </h3>
                   <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Anmeldungen
+                    Buchbar
                   </p>
                 </div>
               </IonCol>
@@ -188,10 +237,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 <div style={{ textAlign: 'center' }}>
                   <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                   <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getUpcomingEvents().length}
+                    {getTotalPoints()}
                   </h3>
                   <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Anstehend
+                    Punkte
                   </p>
                 </div>
               </IonCol>
@@ -327,14 +376,14 @@ const EventsView: React.FC<EventsViewProps> = ({
                     
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                       <IonChip 
-                        color={getRegistrationStatusColor(event.registration_status)}
+                        color={getRegistrationStatusColor(event)}
                         style={{ 
                           fontSize: '0.7rem', 
                           height: '20px',
                           opacity: 0.8
                         }}
                       >
-                        {getRegistrationStatusText(event.registration_status)}
+                        {getRegistrationStatusText(event)}
                       </IonChip>
                       
                       <IonChip 
@@ -378,14 +427,16 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                <IonItemOptions side="end">
-                  <IonItemOption 
-                    color="danger" 
-                    onClick={() => onDeleteEvent(event)}
-                  >
-                    <IonIcon icon={trash} />
-                  </IonItemOption>
-                </IonItemOptions>
+                {onDeleteEvent && (
+                  <IonItemOptions side="end">
+                    <IonItemOption 
+                      color="danger" 
+                      onClick={() => onDeleteEvent(event)}
+                    >
+                      <IonIcon icon={trash} />
+                    </IonItemOption>
+                  </IonItemOptions>
+                )}
               </IonItemSliding>
             ))}
             

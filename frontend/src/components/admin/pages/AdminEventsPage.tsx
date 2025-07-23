@@ -40,7 +40,7 @@ interface Event {
 }
 
 const AdminEventsPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('events');
   const history = useHistory();
   
@@ -48,12 +48,18 @@ const AdminEventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const [editEvent, setEditEvent] = useState<Event | null>(null);
+
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
-    event: null,
-    onClose: () => dismissEventModalHook(),
+    event: editEvent,
+    onClose: () => {
+      dismissEventModalHook();
+      setEditEvent(null);
+    },
     onSuccess: () => {
       dismissEventModalHook();
+      setEditEvent(null);
       loadEvents();
     }
   });
@@ -106,10 +112,16 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const presentEventModal = () => {
+    setEditEvent(null);
     presentEventModalHook({
       presentingElement: presentingElement
     });
   };
+
+  // Permission checks
+  const canCreate = user?.permissions?.includes('admin.events.create') || false;
+  const canEdit = user?.permissions?.includes('admin.events.edit') || false;
+  const canDelete = user?.permissions?.includes('admin.events.delete') || false;
 
 
   return (
@@ -117,11 +129,13 @@ const AdminEventsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Events</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={presentEventModal}>
-              <IonIcon icon={add} />
-            </IonButton>
-          </IonButtons>
+          {canCreate && (
+            <IonButtons slot="end">
+              <IonButton onClick={presentEventModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
@@ -146,7 +160,7 @@ const AdminEventsPage: React.FC = () => {
             onUpdate={loadEvents}
             onAddEventClick={presentEventModal}
             onSelectEvent={handleSelectEvent}
-            onDeleteEvent={handleDeleteEvent}
+            onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
           />
         )}
       </IonContent>

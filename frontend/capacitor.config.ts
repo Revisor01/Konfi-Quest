@@ -3,7 +3,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'de.godsapp.konfipoints',
+  appId: 'de.godsapp.konfiquest',
   appName: 'konfipoints-clean',
   webDir: 'dist',
   plugins: {
@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
       autoClear: false,
     },
     PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"]
+      presentationOptions: ["badge", "sound"]
     },
   }
 };

@@ -97,12 +97,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const loadEventData = async () => {
     setLoading(true);
     try {
-      const [eventRes, participantsRes] = await Promise.all([
-        api.get(`/events/${eventId}`),
-        api.get(`/events/${eventId}/participants`)
-      ]);
+      const eventRes = await api.get(`/events/${eventId}`);
       setEventData(eventRes.data);
-      setParticipants(participantsRes.data);
+      setParticipants(eventRes.data.participants || []);
     } catch (error) {
       setError('Fehler beim Laden der Event-Daten');
     } finally {
