@@ -1,7 +1,7 @@
 const apn = require('apn');
 const path = require('path');
 
-const keyPath = path.join(__dirname, 'AuthKey_A29U7SN796.p8');
+const keyPath = path.join(__dirname, 'AuthKey_47RSW287BV.p8');
 console.log('🔑 APNS Key Path:', keyPath);
 
 // Check if key file exists
@@ -13,7 +13,7 @@ if (!fs.existsSync(keyPath)) {
 const options = {
   token: {
     key: keyPath,
-    keyId: 'A29U7SN796',
+    keyId: '47RSW287BV',
     teamId: 'J459G9CJT5',
   },
   production: false, // false = Sandbox (für Development/TestFlight), true = Production
