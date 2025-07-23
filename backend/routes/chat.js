@@ -1192,28 +1192,31 @@ router.delete('/rooms/:roomId', verifyTokenRBAC, (req, res) => {
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
-      // Delete chat_read_status first (foreign key dependency)
+      // Step 1: Delete chat_read_status (references room_id)
       db.run("DELETE FROM chat_read_status WHERE room_id = ?", [roomId]);
       
-      // Delete poll votes
+      // Step 2: Delete poll votes (references poll_id)
       db.run(`DELETE FROM chat_poll_votes WHERE poll_id IN (
         SELECT p.id FROM chat_polls p 
         JOIN chat_messages m ON p.message_id = m.id 
         WHERE m.room_id = ?
       )`, [roomId]);
       
-      // Delete polls
+      // Step 3: Delete polls (references message_id)
       db.run(`DELETE FROM chat_polls WHERE message_id IN (
         SELECT id FROM chat_messages WHERE room_id = ?
       )`, [roomId]);
       
-      // Delete messages
+      // Step 4: Clear reply_to references first (self-referencing foreign key)
+      db.run("UPDATE chat_messages SET reply_to = NULL WHERE room_id = ?", [roomId]);
+      
+      // Step 5: Delete messages (now safe from self-references)
       db.run("DELETE FROM chat_messages WHERE room_id = ?", [roomId]);
       
-      // Delete participants
+      // Step 6: Delete participants
       db.run("DELETE FROM chat_participants WHERE room_id = ?", [roomId]);
       
-      // Delete room
+      // Step 7: Delete room
       db.run("DELETE FROM chat_rooms WHERE id = ?", [roomId], function(err) {
         if (err) {
           console.error('Error deleting room:', err);
