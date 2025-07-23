@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { sendApnsNotification } = require('../push/apns');
 
 module.exports = (db, rbacMiddleware, uploadsDir) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -704,61 +705,55 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
 });
 
 // Send message - KORRIGIERT mit verifyTokenRBAC
-router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), (req, res) => {
-  const roomId = req.params.roomId;
-  const { content, message_type = 'text', reply_to } = req.body;
-  const userId = req.user.id;
-  const userType = req.user.type;
   
-  if (!content && !req.file) {
-    return res.status(400).json({ error: 'Content or file required' });
-  }
-  
-  // Check access
-  const accessQuery = userType === 'admin' ? 
-  "SELECT 1 FROM chat_rooms WHERE id = ?" :
-  "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
-  const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
-  
-  db.get(accessQuery, accessParams, (err, access) => {
-    if (err || !access) {
-      return res.status(403).json({ error: 'Access denied' });
+  router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), (req, res) => {
+    const roomId = req.params.roomId;
+    const { content, message_type = 'text', reply_to } = req.body;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    if (!content && !req.file) {
+      return res.status(400).json({ error: 'Content or file required' });
     }
     
-    let filePath = null;
-    let fileName = null;
-    let fileSize = null;
-    let actualMessageType = message_type;
+    const accessQuery = userType === 'admin'
+    ? "SELECT 1 FROM chat_rooms WHERE id = ?"
+    : "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
+    const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
     
-    if (req.file) {
-      filePath = req.file.filename;
-      fileName = req.file.originalname;
-      fileSize = req.file.size;
+    db.get(accessQuery, accessParams, (err, access) => {
+      if (err || !access) return res.status(403).json({ error: 'Access denied' });
       
-      // Determine message type from file
-      const ext = path.extname(fileName).toLowerCase();
-      if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-        actualMessageType = 'image';
-      } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
-        actualMessageType = 'video';
-      } else {
-        actualMessageType = 'file';
+      // Datei verarbeiten
+      let filePath = null, fileName = null, fileSize = null;
+      let actualMessageType = message_type;
+      
+      if (req.file) {
+        filePath = req.file.filename;
+        fileName = req.file.originalname;
+        fileSize = req.file.size;
+        
+        const ext = path.extname(fileName).toLowerCase();
+        if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+          actualMessageType = 'image';
+        } else if (['.mp4', '.mov', '.avi'].includes(ext)) {
+          actualMessageType = 'video';
+        } else {
+          actualMessageType = 'file';
+        }
       }
-    }
-    
-    const insertQuery = `
+      
+      const insertQuery = `
       INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, file_path, file_name, file_size, reply_to, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+2 hours'))
     `;
-    
-    db.run(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, reply_to], function(err) {
-      if (err) {
-        console.error('Error inserting message:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
       
-      // Get the sent message with sender info
-      const messageQuery = `
+      db.run(insertQuery, [roomId, userId, userType, actualMessageType, content, filePath, fileName, fileSize, reply_to], function (err) {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        
+        const messageId = this.lastID;
+        
+        const messageQuery = `
         SELECT m.*, 
                 m.user_id as sender_id,
                 m.user_type as sender_type,
@@ -771,22 +766,47 @@ router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'
                   ELSE u_konfi.username  
                 END as sender_username
         FROM chat_messages m
-        LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin') u_admin ON m.user_id = u_admin.id AND m.user_type = 'admin'
-        LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'konfi') u_konfi ON m.user_id = u_konfi.id AND m.user_type = 'konfi'
+        LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin') u_admin 
+          ON m.user_id = u_admin.id AND m.user_type = 'admin'
+        LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'konfi') u_konfi 
+          ON m.user_id = u_konfi.id AND m.user_type = 'konfi'
         WHERE m.id = ?
       `;
-      
-      db.get(messageQuery, [this.lastID], (err, message) => {
-        if (err) {
-          console.error('Error fetching sent message:', err);
-          return res.status(500).json({ error: 'Database error' });
-        }
-        res.json(message);
+        
+        db.get(messageQuery, [messageId], (err, message) => {
+          if (err) return res.status(500).json({ error: 'Database error' });
+          
+          res.json(message); // sofort zurückgeben
+          
+          // 🔔 Push an andere Teilnehmer senden
+          const getParticipantsQuery = `
+          SELECT user_id, user_type FROM chat_participants
+          WHERE room_id = ? AND NOT (user_id = ? AND user_type = ?)
+        `;
+          db.all(getParticipantsQuery, [roomId, userId, userType], (err, participants) => {
+            if (err || !participants) return;
+            
+            participants.forEach(p => {
+              db.get(
+                `SELECT token FROM push_tokens WHERE user_id = ? AND user_type = ? AND platform = 'ios'`,
+                [p.user_id, p.user_type],
+                (err, tokenRow) => {
+                  if (err || !tokenRow) return;
+                  
+                  sendApnsNotification(tokenRow.token, {
+                    alert: `${message.sender_name}: ${content || '[Anhang]'}`,
+                    badge: 1,
+                    sound: 'default',
+                  });
+                }
+              );
+            });
+          });
+        });
       });
     });
   });
-});
-
+  
 // Delete message (only for admins)
 router.delete('/messages/:messageId', verifyTokenRBAC, (req, res) => {
   const messageId = req.params.messageId;
