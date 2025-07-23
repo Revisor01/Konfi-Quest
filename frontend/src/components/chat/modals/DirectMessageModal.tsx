@@ -54,7 +54,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ isOpen, onClose
     try {
       const [konfisRes, adminsRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/admin/users').catch(() => ({ data: [] })) // Fallback if endpoint doesn't exist
+        api.get('/users').catch(() => ({ data: [] })) // Fallback if endpoint doesn't exist
       ]);
       
       const allUsers: User[] = [

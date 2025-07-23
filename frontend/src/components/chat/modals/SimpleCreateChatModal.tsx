@@ -239,7 +239,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
     setCreating(true);
     try {
-      const response = await api.post('/chat/direct', {
+      const response = await api.post('/api/chat/direct', {
         target_user_id: targetUser.id,
         target_user_type: targetUser.type
       });

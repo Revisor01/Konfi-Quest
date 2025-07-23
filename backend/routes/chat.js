@@ -1192,6 +1192,9 @@ router.delete('/rooms/:roomId', verifyTokenRBAC, (req, res) => {
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
+      // Delete chat_read_status first (foreign key dependency)
+      db.run("DELETE FROM chat_read_status WHERE room_id = ?", [roomId]);
+      
       // Delete poll votes
       db.run(`DELETE FROM chat_poll_votes WHERE poll_id IN (
         SELECT p.id FROM chat_polls p 
