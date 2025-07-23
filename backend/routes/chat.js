@@ -802,17 +802,22 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
                 db.get(badgeQuery, [p.user_id, p.user_type, p.user_id], async (err, badgeResult) => {
                   const badgeCount = (badgeResult?.total_unread || 0) + 1; // +1 für die neue Nachricht
                   
-                  await PushService.sendChatNotification(db, p.user_id, {
-                    title: message.sender_name,
-                    body: content || '[Anhang]',
-                    badge: badgeCount,
-                    roomId: roomId,
-                    messageId: message.id,
-                    data: {
-                      sender_id: userId,
-                      sender_name: message.sender_name,
-                      room_name: roomName || 'Chat'
-                    }
+                  // Room Name laden für Push Notification
+                  db.get('SELECT name FROM chat_rooms WHERE id = ?', [roomId], async (roomErr, room) => {
+                    const roomName = room?.name || 'Chat';
+                    
+                    await PushService.sendChatNotification(db, p.user_id, {
+                      title: message.sender_name,
+                      body: content || '[Anhang]',
+                      badge: badgeCount,
+                      roomId: roomId,
+                      messageId: message.id,
+                      data: {
+                        sender_id: userId,
+                        sender_name: message.sender_name,
+                        room_name: roomName
+                      }
+                    });
                   });
                 });
               } catch (error) {

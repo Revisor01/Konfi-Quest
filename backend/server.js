@@ -27,7 +27,7 @@ const db = initializeDatabase();
 // ====================================================================
 
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'host.docker.internal',
+  host: process.env.SMTP_HOST || '213.109.162.132',
   port: process.env.SMTP_PORT || 465,
   secure: true, // true for 465, false for other ports
   auth: {
