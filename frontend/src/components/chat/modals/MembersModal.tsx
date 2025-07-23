@@ -55,7 +55,6 @@ interface User {
 }
 
 interface MembersModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   roomId: number;
@@ -64,7 +63,6 @@ interface MembersModalProps {
 }
 
 const MembersModal: React.FC<MembersModalProps> = ({ 
-  isOpen, 
   onClose, 
   onSuccess, 
   roomId, 
@@ -86,16 +84,25 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const [userToRemove, setUserToRemove] = useState<Participant | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    console.log('MembersModal effect:', { roomId, roomType });
+    if (roomId) {
       loadParticipants();
       loadAllUsers();
     }
-  }, [isOpen, roomId]);
+  }, [roomId]);
 
   const loadParticipants = async () => {
     try {
+      console.log('Loading participants for room:', roomId);
       setLoading(true);
       const response = await api.get(`/chat/rooms/${roomId}/participants`);
+      console.log('Participants loaded:', response.data);
+      // Debug: Check for participants without names
+      response.data.forEach((p: any, i: number) => {
+        if (!p.name) {
+          console.warn(`Participant ${i} has no name:`, p);
+        }
+      });
       setParticipants(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Mitglieder');
@@ -109,7 +116,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
     try {
       const [konfisRes, adminsRes] = await Promise.all([
         api.get('/admin/konfis'),
-        api.get('/admin/users').catch(() => ({ data: [] }))
+        api.get('/users').catch(() => ({ data: [] }))
       ]);
       
       const allUsers: User[] = [
@@ -361,12 +368,12 @@ const MembersModal: React.FC<MembersModalProps> = ({
                             justifyContent: 'center',
                             height: '100%'
                           }}>
-                            {participant.name.charAt(0).toUpperCase()}
+                            {(participant.name || 'U').charAt(0).toUpperCase()}
                           </div>
                         </IonAvatar>
                         
                         <IonLabel>
-                          <h3>{participant.name}</h3>
+                          <h3>{participant.name || 'Unbekannter User'}</h3>
                           <p>
                             {participant.user_type === 'admin' ? 'Admin' : 
                              (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}

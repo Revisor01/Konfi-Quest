@@ -637,19 +637,12 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
       SELECT m.*, 
               m.user_id as sender_id,
               m.user_type as sender_type,
-              CASE 
-                WHEN m.user_type = 'admin' THEN u_admin.display_name
-                ELSE u_konfi.display_name
-              END as sender_name,
-              CASE
-                WHEN m.user_type = 'admin' THEN u_admin.username
-                ELSE u_konfi.username  
-              END as sender_username,
+              u.display_name as sender_name,
+              u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
               p.id as poll_id
       FROM chat_messages m
-      LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin') u_admin ON m.user_id = u_admin.id AND m.user_type = 'admin'
-      LEFT JOIN (SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'konfi') u_konfi ON m.user_id = u_konfi.id AND m.user_type = 'konfi'
+      LEFT JOIN users u ON m.user_id = u.id
       LEFT JOIN chat_polls p ON m.id = p.message_id
       WHERE m.room_id = ? AND m.deleted_at IS NULL
       ORDER BY m.created_at DESC
@@ -674,14 +667,9 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
             // Load votes for this poll
             const votes = await new Promise((resolve, reject) => {
               db.all(`
-                SELECT v.*, 
-                       CASE 
-                         WHEN v.user_type = 'admin' THEN u_admin.display_name
-                         ELSE u_konfi.display_name
-                       END as voter_name
+                SELECT v.*, u.display_name as voter_name
                 FROM chat_poll_votes v
-                LEFT JOIN (SELECT u.id, u.display_name FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin') u_admin ON v.user_id = u_admin.id AND v.user_type = 'admin'
-                LEFT JOIN (SELECT u.id, u.display_name FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'konfi') u_konfi ON v.user_id = u_konfi.id AND v.user_type = 'konfi'
+                LEFT JOIN users u ON v.user_id = u.id
                 WHERE v.poll_id = ?
               `, [msg.poll_id], (err, votes) => {
                 if (err) reject(err);
@@ -1317,10 +1305,7 @@ router.get('/rooms/:roomId/participants', verifyTokenRBAC, (req, res) => {
         cp.user_id,
         cp.user_type,
         cp.joined_at,
-        CASE 
-          WHEN cp.user_type = 'admin' THEN u_admin.display_name
-          ELSE u_konfi.display_name
-        END as name,
+        u.display_name as name,
         CASE 
           WHEN cp.user_type = 'admin' THEN NULL
           ELSE kp.jahrgang_id
@@ -1330,8 +1315,8 @@ router.get('/rooms/:roomId/participants', verifyTokenRBAC, (req, res) => {
           ELSE j.name
         END as jahrgang_name
       FROM chat_participants cp
-      LEFT JOIN (SELECT u.id, u.display_name FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin') u_admin ON cp.user_type = 'admin' AND cp.user_id = u_admin.id
-      LEFT JOIN (SELECT u.id, u.display_name FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'konfi') u_konfi ON cp.user_type = 'konfi' AND cp.user_id = u_konfi.id
+      LEFT JOIN users u ON cp.user_id = u.id
+      LEFT JOIN roles r ON u.role_id = r.id
       LEFT JOIN konfi_profiles kp ON cp.user_type = 'konfi' AND cp.user_id = kp.user_id
       LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
       WHERE cp.room_id = ?

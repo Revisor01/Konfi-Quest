@@ -462,7 +462,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               justifyContent: 'center',
               height: '100%'
             }}>
-              {message.sender_name.charAt(0).toUpperCase()}
+              {(message.sender_name || 'U').charAt(0).toUpperCase()}
             </div>
           </IonAvatar>
         )}
@@ -505,7 +505,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               marginBottom: '4px',
               color: message.sender_type === 'admin' ? '#7045f6' : '#3880ff'
             }}>
-              {message.sender_name}
+              {message.sender_name || 'Unbekannter User'}
             </div>
           )}
           
