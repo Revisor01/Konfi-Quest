@@ -178,7 +178,7 @@ app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
-app.use('/api/notifications', notificationsRoutes(db, rbacVerifier));
+app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 
 // Admin routes requiring RBAC
 app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission));
