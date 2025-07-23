@@ -34,9 +34,11 @@ class PushService {
                 sound: 'default',
                 data: {
                   type: 'chat',
-                  roomId: notificationData.roomId?.toString(),
-                  messageId: notificationData.messageId?.toString(),
-                  ...notificationData.data
+                  roomId: notificationData.roomId?.toString() || '',
+                  messageId: notificationData.messageId?.toString() || '',
+                  sender_id: notificationData.data?.sender_id?.toString() || '',
+                  sender_name: notificationData.data?.sender_name || '',
+                  room_name: notificationData.data?.room_name || ''
                 }
               });
               successCount++;
