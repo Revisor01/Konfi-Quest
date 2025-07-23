@@ -92,7 +92,7 @@ module.exports = (db, verifyTokenRBAC) => {
     console.log('🧪 Testing push notification for user:', userId);
 
     // Get all tokens for this user
-    db.all('SELECT * FROM push_tokens WHERE user_id = ?', [userId], (err, tokens) => {
+    db.all('SELECT * FROM push_tokens WHERE user_id = ?', [userId], async (err, tokens) => {
       if (err) {
         console.error('❌ Error getting push tokens:', err);
         return res.status(500).json({ error: 'Database error' });
