@@ -52,6 +52,10 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
             sound: notificationData.sound || 'default',
           },
         },
+        headers: {
+          'apns-push-type': 'alert',
+          'apns-priority': '10',
+        },
       },
     };
 
