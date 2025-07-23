@@ -1,5 +1,5 @@
 const express = require('express');
-const { sendApnsNotification } = require('../push/apns');
+const { sendFirebasePushNotification } = require('../push/firebase');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
@@ -85,7 +85,7 @@ module.exports = (db, verifyTokenRBAC) => {
   });
 
   // Test endpoint to send push notification to all user's devices
-  router.post('/test-push', verifyTokenRBAC, (req, res) => {
+  router.post('/test-push', verifyTokenRBAC, async (req, res) => {
     const userId = req.user.id;
     const { message = 'Test Push Notification' } = req.body;
 
@@ -108,12 +108,13 @@ module.exports = (db, verifyTokenRBAC) => {
       let sentCount = 0;
       let errorCount = 0;
 
-      tokens.forEach((token, index) => {
+      for (const [index, token] of tokens.entries()) {
         console.log(`📤 Sending test push ${index + 1}/${tokens.length} to token:`, token.token.substring(0, 20) + '...');
         
         try {
-          sendApnsNotification(token.token, {
-            alert: message,
+          await sendFirebasePushNotification(token.token, {
+            title: 'Test Push',
+            body: message,
             badge: 1,
             sound: 'default'
           });
@@ -122,7 +123,7 @@ module.exports = (db, verifyTokenRBAC) => {
           console.error('❌ Error sending to token:', error);
           errorCount++;
         }
-      });
+      }
 
       res.json({ 
         success: true, 
