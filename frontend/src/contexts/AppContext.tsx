@@ -228,27 +228,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Push notifications setup and listeners
   useEffect(() => {
     if (!user) return;
-
-    let pushReceivedListener: any = null;
-    let pushActionListener: any = null;
-    let pushRegistrationListener: any = null;
-    let pushRegistrationErrorListener: any = null;
-
+    
     const setupPushNotifications = async () => {
       try {
-        // 👉 1. Erst Listener registrieren
-        PushNotifications.addListener('registration', (token) => {
+        // ✅ Registriere Listener
+        PushNotifications.addListener('registration', async (token) => {
           console.log('✅ Push registration success, token:', token.value);
           
-          // 👉 2. Token an dein Backend senden
-          api.post('/notifications/device-token', {
-            token: token.value,
-            platform: 'ios'
-          }).then(() => {
+          try {
+            await api.post('/notifications/device-token', {
+              token: token.value,
+              platform: 'ios',
+            });
             console.log('✅ Token erfolgreich an Server gesendet');
-          }).catch(err => {
+          } catch (err) {
             console.error('❌ Fehler beim Token-Senden:', err);
-          });
+          }
         });
         
         PushNotifications.addListener('registrationError', (error) => {
@@ -256,26 +251,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          console.log('📥 Push received:', notification);
+          console.log('📥 Push empfangen:', notification);
           refreshChatNotifications();
         });
         
-        PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-          console.log('📲 Push action performed:', notification);
+        PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+          console.log('📲 Push angeklickt:', action.notification);
           refreshChatNotifications();
         });
         
-        // 👉 3. Jetzt Berechtigungen prüfen
+        // ✅ Jetzt: Registrierung
         const permStatus = await PushNotifications.checkPermissions();
         setPushNotificationsPermission(permStatus.receive);
         
-        // 👉 4. Jetzt registrieren – NICHT vorher
         if (permStatus.receive === 'granted') {
+          console.log('📣 Berechtigung erteilt – registriere...');
           await PushNotifications.register();
         } else if (permStatus.receive === 'prompt') {
-          const permResult = await PushNotifications.requestPermissions();
-          setPushNotificationsPermission(permResult.receive);
-          if (permResult.receive === 'granted') {
+          const result = await PushNotifications.requestPermissions();
+          setPushNotificationsPermission(result.receive);
+          if (result.receive === 'granted') {
+            console.log('📣 Berechtigung nach Anfrage – registriere...');
             await PushNotifications.register();
           }
         }
@@ -283,16 +279,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('❌ Fehler bei Push-Setup:', error);
       }
     };
-
+    
     setupPushNotifications();
-
-    // Cleanup push notification listeners
-    return () => {
-      if (pushReceivedListener) pushReceivedListener.remove();
-      if (pushActionListener) pushActionListener.remove();
-      if (pushRegistrationListener) pushRegistrationListener.remove();
-      if (pushRegistrationErrorListener) pushRegistrationErrorListener.remove();
-    };
   }, [user, refreshChatNotifications]);
 
   const hasPermission = useCallback((permission: string): boolean => {

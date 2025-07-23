@@ -592,6 +592,11 @@ const EventModal: React.FC<EventModalProps> = ({
           onIonChange={(e) => setFormData({ ...formData, event_date: e.detail.value as string })}
           presentation="date-time"
           preferWheel={true}
+          style={{
+            '--background': '#f8f9fa',
+            '--border-radius': '12px',
+            '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)'
+          }}
         />
       </IonModal>
 
@@ -603,6 +608,11 @@ const EventModal: React.FC<EventModalProps> = ({
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
           presentation="time"
           preferWheel={true}
+          style={{
+            '--background': '#f8f9fa',
+            '--border-radius': '12px',
+            '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)'
+          }}
         />
       </IonModal>
 
@@ -613,6 +623,11 @@ const EventModal: React.FC<EventModalProps> = ({
           onIonChange={(e) => setFormData({ ...formData, registration_opens_at: e.detail.value as string })}
           presentation="date-time"
           preferWheel={true}
+          style={{
+            '--background': '#f8f9fa',
+            '--border-radius': '12px',
+            '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)'
+          }}
         />
       </IonModal>
 
@@ -623,6 +638,11 @@ const EventModal: React.FC<EventModalProps> = ({
           onIonChange={(e) => setFormData({ ...formData, registration_closes_at: e.detail.value as string })}
           presentation="date-time"
           preferWheel={true}
+          style={{
+            '--background': '#f8f9fa',
+            '--border-radius': '12px',
+            '--box-shadow': '0 4px 16px rgba(0,0,0,0.1)'
+          }}
         />
       </IonModal>
     </IonPage>
