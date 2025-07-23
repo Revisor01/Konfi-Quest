@@ -4,6 +4,26 @@ import Capacitor
 @objc(FCMPlugin)
 public class FCMPlugin: CAPPlugin {
     
+    override public func load() {
+        // Listener für FCM Token Events
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleFCMTokenReceived(_:)),
+            name: NSNotification.Name("FCMTokenReceived"),
+            object: nil
+        )
+    }
+    
+    @objc func handleFCMTokenReceived(_ notification: Notification) {
+        if let userInfo = notification.userInfo,
+           let token = userInfo["token"] as? String {
+            print("✅ Plugin: FCM Token Event empfangen, sende an WebView")
+            
+            // Event an WebView weiterleiten
+            notifyListeners("fcmTokenReceived", data: ["token": token])
+        }
+    }
+    
     @objc func getFCMToken(_ call: CAPPluginCall) {
         // Greife auf den gespeicherten Token aus dem AppDelegate zu
         if let token = AppDelegate.fcmToken {
@@ -25,5 +45,9 @@ public class FCMPlugin: CAPPlugin {
                 }
             }
         }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }

@@ -6,10 +6,7 @@ import { Badge } from '@capawesome/capacitor-badge';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 
-interface FCMPlugin {
-  getFCMToken(): Promise<{ token: string }>;
-}
-const FCM = registerPlugin<FCMPlugin>('FCM');
+// FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
 // Funktion, um Duplikate zu vermeiden
 const sendTokenToServer = async (token: string) => {
@@ -216,7 +213,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 useEffect(() => {
   const handleNativeFCMToken = (event: any) => {
     const token = event.detail;
-    console.log('📲 Native FCM Token erhalten:', token);
     
     if (token && token.length > 100) {
       api.post('/notifications/device-token', {
@@ -224,13 +220,11 @@ useEffect(() => {
         platform: 'ios',
       })
       .then(() => {
-        console.log('✅ Native FCM-Token erfolgreich an Server gesendet');
+        console.log('✅ FCM Token an Server gesendet');
       })
       .catch((err) => {
-        console.error('❌ Fehler beim Senden des Native Tokens:', err);
+        console.error('❌ Fehler beim Senden des FCM Tokens:', err);
       });
-    } else {
-      console.warn('⚠️ Native Token ignoriert – sieht zu kurz aus:', token);
     }
   };
   
@@ -241,22 +235,8 @@ useEffect(() => {
   useEffect(() => {
     // Nur auf nativen Geräten ausführen und wenn ein User da ist
     if (user && Capacitor.isNativePlatform()) {
-      // Warte kurz, um sicherzustellen, dass der native Teil Zeit hatte, den Token zu empfangen
-      setTimeout(async () => {
-        try {
-          console.log('Versuche, den FCM-Token via Plugin abzurufen...');
-          const result = await FCM.getFCMToken();
-          const token = result.token;
-          
-          if (token && token.length > 100) {
-            await sendTokenToServer(token);
-          } else {
-            console.error('❌ Plugin lieferte einen ungültigen Token:', token);
-          }
-        } catch (error) {
-          console.error('❌ Fehler beim Abrufen des Tokens via Plugin:', error);
-        }
-      }, 2000); // 2 Sekunden Verzögerung als Sicherheitsnetz
+      // Das Window Event System funktioniert bereits perfekt
+      console.log('✅ FCM Token System bereit (Window Event basiert)');
     }
   }, [user]);
   

@@ -31,6 +31,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             }
         }
         
+        // FCM Token wird automatisch über Delegate empfangen
+        
         return true
     }
 
@@ -73,5 +75,37 @@ extension AppDelegate: MessagingDelegate {
         
         // WICHTIG: Den korrekten Token hier in der statischen Variable speichern
         AppDelegate.fcmToken = token
+        
+        // FCM Token an WebView weiterleiten
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if let window = UIApplication.shared.windows.first,
+               let rootController = window.rootViewController {
+                
+                var bridgeController: CAPBridgeViewController?
+                
+                if let bridge = rootController as? CAPBridgeViewController {
+                    bridgeController = bridge
+                } else if let navController = rootController as? UINavigationController,
+                          let bridge = navController.viewControllers.first as? CAPBridgeViewController {
+                    bridgeController = bridge
+                } else if let bridge = rootController.children.first as? CAPBridgeViewController {
+                    bridgeController = bridge
+                }
+                
+                if let bridge = bridgeController {
+                    let jsCode = """
+                        window.dispatchEvent(new CustomEvent('fcmToken', { 
+                            detail: '\(token)' 
+                        }));
+                    """
+                    
+                    bridge.bridge?.webView?.evaluateJavaScript(jsCode) { (result, error) in
+                        if error == nil {
+                            print("✅ FCM Token an WebView übertragen")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
