@@ -640,11 +640,19 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
               u.display_name as sender_name,
               u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
-              p.id as poll_id
+              p.id as poll_id,
+              CASE 
+                WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde gelöscht'
+                ELSE m.content
+              END as content,
+              CASE 
+                WHEN m.deleted_at IS NOT NULL THEN 1
+                ELSE 0
+              END as is_deleted
       FROM chat_messages m
       LEFT JOIN users u ON m.user_id = u.id
       LEFT JOIN chat_polls p ON m.id = p.message_id
-      WHERE m.room_id = ? AND m.deleted_at IS NULL
+      WHERE m.room_id = ?
       ORDER BY m.created_at DESC
       LIMIT ? OFFSET ?
     `;
@@ -785,9 +793,10 @@ router.delete('/messages/:messageId', verifyTokenRBAC, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
 
-  // Only admins can delete messages
-  if (userType !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
+  // Only admin+ roles can delete messages (admin, org_admin, teamer)
+  const roleName = req.user.role_name;
+  if (!roleName || !['admin', 'org_admin', 'teamer'].includes(roleName)) {
+    return res.status(403).json({ error: 'Admin privileges required' });
   }
 
   // Check if message exists and get its info

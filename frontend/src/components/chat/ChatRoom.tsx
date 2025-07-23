@@ -61,6 +61,7 @@ interface Message {
   file_name?: string;
   file_size?: number;
   message_type: 'text' | 'file' | 'poll';
+  is_deleted?: number; // 1 if deleted, 0 if not
   // Poll-Daten direkt in der Message
   question?: string;
   options?: string[];
@@ -509,7 +510,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             </div>
           )}
           
-          {message.message_type === 'poll' && message.question && message.options ? (
+          {message.is_deleted ? (
+            <div style={{
+              fontStyle: 'italic',
+              opacity: 0.6,
+              color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
+            }}>
+              🗑️ {message.content}
+            </div>
+          ) : message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
               background: isOwnMessage 
                 ? 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)'
@@ -706,8 +715,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                 borderRadius: '10px',
                 border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
+                flexDirection: 'column',
+                gap: '8px'
               }}>
                 <div style={{
                   fontSize: '0.85rem',
@@ -735,7 +744,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
                 }}>
                   <span>👥</span>
                   <span>
-                    {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}
+                    {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''} insgesamt
                   </span>
                 </div>
               </div>
@@ -1068,7 +1077,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               handleShare();
             }
           },
-          ...(user?.type === 'admin' ? [{
+          ...((user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name)) ? [{
             text: 'Löschen',
             icon: 'trash-outline',
             role: 'destructive' as const,
