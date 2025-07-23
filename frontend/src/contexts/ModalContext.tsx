@@ -50,8 +50,8 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/chat')) currentTabId = 'chat';
     else if (currentPath.includes('/admin/activities')) currentTabId = 'activities';
     else if (currentPath.includes('/admin/events')) currentTabId = 'events';
-    else if (currentPath.includes('/admin/categories')) currentTabId = 'categories';
-    else if (currentPath.includes('/admin/jahrgaenge')) currentTabId = 'jahrgaenge';
+    else if (currentPath.includes('/admin/settings/categories')) currentTabId = 'categories';
+    else if (currentPath.includes('/admin/settings/jahrgaenge')) currentTabId = 'jahrgaenge';
     else if (currentPath.includes('/admin/badges')) currentTabId = 'badges';
     else if (currentPath.includes('/admin/settings')) currentTabId = 'settings';
     // Konfi Routes

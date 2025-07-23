@@ -106,10 +106,10 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       };
 
       if (category) {
-        await api.put(`/categories/${category.id}`, payload);
+        await api.put(`/admin/categories/${category.id}`, payload);
         setSuccess('Kategorie aktualisiert');
       } else {
-        await api.post('/categories', payload);
+        await api.post('/admin/categories', payload);
         setSuccess('Kategorie erstellt');
       }
       
@@ -183,26 +183,30 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('categories');
-  const { setSuccess, setError } = useApp();
+  const { pageRef, presentingElement } = useModalPage('categories');
+  const { user, setSuccess, setError } = useApp();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
 
-  // Modal mit useIonModal Hook
+  // Modal mit useIonModal Hook - stable reference
   const [presentCategoryModalHook, dismissCategoryModalHook] = useIonModal(CategoryModal, {
     category: editCategory,
-    onClose: () => dismissCategoryModalHook(),
+    onClose: () => {
+      dismissCategoryModalHook();
+      setEditCategory(null);
+    },
     onSuccess: () => {
       dismissCategoryModalHook();
+      setEditCategory(null);
       loadCategories();
     }
   });
 
   const loadCategories = async () => {
     try {
-      const response = await api.get('/categories');
+      const response = await api.get('/admin/categories');
       setCategories(response.data);
     } catch (error) {
       setError('Fehler beim Laden der Kategorien');
@@ -224,11 +228,13 @@ const AdminCategoriesPage: React.FC = () => {
     if (!window.confirm(`Kategorie "${category.name}" wirklich löschen?`)) return;
     
     try {
-      await api.delete(`/categories/${category.id}`);
+      await api.delete(`/admin/categories/${category.id}`);
       setSuccess(`Kategorie "${category.name}" gelöscht`);
       loadCategories();
     } catch (error: any) {
       if (error.response?.status === 400) {
+        setError('Kategorie kann nicht gelöscht werden - wird bereits verwendet');
+      } else if (error.response?.status === 409) {
         setError('Kategorie kann nicht gelöscht werden - wird bereits verwendet');
       } else {
         setError('Fehler beim Löschen der Kategorie');
@@ -238,13 +244,22 @@ const AdminCategoriesPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditCategory(null);
-    presentCategoryModalHook({ presentingElement });
+    presentCategoryModalHook({
+      presentingElement: presentingElement
+    });
   };
 
   const openEditModal = (category: Category) => {
     setEditCategory(category);
-    presentCategoryModalHook({ presentingElement });
+    presentCategoryModalHook({
+      presentingElement: presentingElement
+    });
   };
+
+  // Permission checks
+  const canCreate = user?.permissions?.includes('admin.categories.create') || false;
+  const canEdit = user?.permissions?.includes('admin.categories.edit') || false;
+  const canDelete = user?.permissions?.includes('admin.categories.delete') || false;
 
   if (loading) {
     return (
@@ -271,11 +286,13 @@ const AdminCategoriesPage: React.FC = () => {
             </IonButton>
           </IonButtons>
           <IonTitle>Kategorien</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={openCreateModal}>
-              <IonIcon icon={add} />
-            </IonButton>
-          </IonButtons>
+          {canCreate && (
+            <IonButtons slot="end">
+              <IonButton onClick={openCreateModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
@@ -326,9 +343,13 @@ const AdminCategoriesPage: React.FC = () => {
               categories.map((category) => (
                 <IonItemSliding key={category.id}>
                   <IonItem 
-                    button 
-                    onClick={() => openEditModal(category)}
-                    style={{ '--min-height': '60px' }}
+                    button={canEdit}
+                    onClick={canEdit ? () => openEditModal(category) : undefined}
+                    style={{ 
+                      '--min-height': '60px',
+                      opacity: canEdit ? 1 : 0.6,
+                      cursor: canEdit ? 'pointer' : 'default'
+                    }}
                   >
                     <div slot="start" style={{ 
                       width: '40px', 
@@ -364,14 +385,16 @@ const AdminCategoriesPage: React.FC = () => {
                     </IonLabel>
                   </IonItem>
                   
-                  <IonItemOptions side="end">
-                    <IonItemOption 
-                      color="danger" 
-                      onClick={() => handleDelete(category)}
-                    >
-                      <IonIcon icon={trashOutline} />
-                    </IonItemOption>
-                  </IonItemOptions>
+                  {canDelete && (
+                    <IonItemOptions side="end">
+                      <IonItemOption 
+                        color="danger" 
+                        onClick={() => handleDelete(category)}
+                      >
+                        <IonIcon icon={trashOutline} />
+                      </IonItemOption>
+                    </IonItemOptions>
+                  )}
                 </IonItemSliding>
               ))
             )}

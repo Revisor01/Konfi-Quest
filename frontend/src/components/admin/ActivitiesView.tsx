@@ -51,6 +51,8 @@ interface ActivitiesViewProps {
   onAddActivityClick: () => void;
   onSelectActivity: (activity: Activity) => void;
   onDeleteActivity: (activity: Activity) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({ 
@@ -58,7 +60,9 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   onUpdate, 
   onAddActivityClick,
   onSelectActivity,
-  onDeleteActivity
+  onDeleteActivity,
+  canEdit,
+  canDelete
 }) => {
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,7 +94,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'gottesdienst': return 'primary';
-      case 'gemeinde': return 'success';
+      case 'gemeinde': return 'primary';
       default: return 'medium';
     }
   };
@@ -117,9 +121,9 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       <IonCard style={{
         margin: '16px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
+        background: 'linear-gradient(135deg, #2dd36f 0%, #10dc60 100%)',
         color: 'white',
-        boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)'
+        boxShadow: '0 8px 32px rgba(45, 211, 111, 0.3)'
       }}>
         <IonCardContent>
           <IonGrid>
@@ -231,10 +235,33 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
             {filteredAndSortedActivities.map((activity) => (
               <IonItemSliding key={activity.id}>
                 <IonItem 
-                  button 
-                  onClick={() => onSelectActivity(activity)}
-                  style={{ '--min-height': '70px', '--padding-start': '16px' }}
+                  button={canEdit}
+                  onClick={canEdit ? () => onSelectActivity(activity) : undefined}
+                  style={{ 
+                    '--min-height': '70px', 
+                    '--padding-start': '16px',
+                    opacity: canEdit ? 1 : 0.6,
+                    cursor: canEdit ? 'pointer' : 'default'
+                  }}
                 >
+                  <div slot="start" style={{ 
+                    width: '44px', 
+                    height: '44px',
+                    backgroundColor: activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '12px'
+                  }}>
+                    <IonIcon 
+                      icon={getTypeIcon(activity.type)}
+                      style={{ 
+                        fontSize: '1.3rem', 
+                        color: 'white'
+                      }} 
+                    />
+                  </div>
                   <IonLabel>
                     <h2 style={{ 
                       fontWeight: '600', 
@@ -246,16 +273,27 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     
                     <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
                       <IonChip 
-                        color={getTypeColor(activity.type)}
                         style={{ 
                           fontSize: '0.75rem', 
                           height: '22px',
-                          opacity: 0.7,
                           '--background': activity.type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                          '--color': activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f'
+                          '--color': activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
+                          fontWeight: '500'
                         }}
                       >
-                        {getTypeText(activity.type)} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                        {getTypeText(activity.type)}
+                      </IonChip>
+                      
+                      <IonChip 
+                        style={{ 
+                          fontSize: '0.75rem', 
+                          height: '22px',
+                          '--background': 'rgba(128, 128, 128, 0.15)',
+                          '--color': '#666',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
                       </IonChip>
                     </div>
                     
@@ -285,14 +323,16 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                <IonItemOptions side="end">
-                  <IonItemOption 
-                    color="danger" 
-                    onClick={() => onDeleteActivity(activity)}
-                  >
-                    <IonIcon icon={trash} />
-                  </IonItemOption>
-                </IonItemOptions>
+                {canDelete && (
+                  <IonItemOptions side="end">
+                    <IonItemOption 
+                      color="danger" 
+                      onClick={() => onDeleteActivity(activity)}
+                    >
+                      <IonIcon icon={trash} />
+                    </IonItemOption>
+                  </IonItemOptions>
+                )}
               </IonItemSliding>
             ))}
             

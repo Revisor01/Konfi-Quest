@@ -158,8 +158,8 @@ const AppContent: React.FC = () => {
                     return <EventDetailView eventId={eventId} onBack={() => props.history.goBack()} />;
                   }} />
                   <Route exact path="/admin/events" component={AdminEventsPage} />
-                  <Route exact path="/admin/categories" component={AdminCategoriesPage} />
-                  <Route exact path="/admin/jahrgaenge" component={AdminJahrgaengeePage} />
+                  <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
+                  <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
                   <Route exact path="/admin/badges" component={AdminBadgesPage} />
                   <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
                   <Route exact path="/admin/users" component={AdminUsersPage} />
@@ -238,14 +238,14 @@ const AppContent: React.FC = () => {
                             <IonCardTitle>Inhalts-Verwaltung</IonCardTitle>
                           </IonCardHeader>
                           <IonCardContent>
-                            <IonItem button routerLink="/admin/categories">
+                            <IonItem button routerLink="/admin/settings/categories">
                               <IonIcon icon={pricetag} slot="start" color="warning" />
                               <IonLabel>
                                 <h2>Kategorien</h2>
                                 <p>Kategorien für Aktivitäten und Events verwalten</p>
                               </IonLabel>
                             </IonItem>
-                            <IonItem button routerLink="/admin/jahrgaenge">
+                            <IonItem button routerLink="/admin/settings/jahrgaenge">
                               <IonIcon icon={school} slot="start" color="primary" />
                               <IonLabel>
                                 <h2>Jahrgänge</h2>

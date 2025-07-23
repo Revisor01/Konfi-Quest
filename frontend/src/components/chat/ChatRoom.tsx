@@ -520,15 +520,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             </div>
           ) : message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
-              background: isOwnMessage 
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)'
-                : 'linear-gradient(135deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.02) 100%)',
+              background: 'rgba(128, 128, 128, 0.1)',
               borderRadius: '16px',
               padding: '20px',
               marginTop: '8px',
-              border: isOwnMessage 
-                ? '1px solid rgba(255,255,255,0.2)'
-                : '1px solid rgba(0,0,0,0.1)',
+              border: '1px solid rgba(128, 128, 128, 0.2)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}>
               <div style={{ 
@@ -542,10 +538,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               }}>
                 <span style={{
                   fontSize: '1.3rem',
-                  background: 'linear-gradient(45deg, #ff6b35, #f7931e)',
-                  backgroundClip: 'text',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
+                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
                 }}>
                   📊
                 </span>

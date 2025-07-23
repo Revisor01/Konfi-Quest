@@ -12,9 +12,13 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // Pfad: GET /api/activities/
   router.get('/', rbacVerifier, checkPermission('admin.activities.view'), (req, res) => {
     const query = `
-      SELECT a.*
+      SELECT a.*, 
+             GROUP_CONCAT(c.id || ':' || c.name) as category_data
       FROM activities a
+      LEFT JOIN activity_categories ac ON a.id = ac.activity_id
+      LEFT JOIN categories c ON ac.category_id = c.id
       WHERE a.organization_id = ?
+      GROUP BY a.id
       ORDER BY a.type, a.name
     `;
     console.log("Fetching activities for org:", req.user.organization_id);
@@ -27,14 +31,22 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       }
       console.log("Activities found:", rows.length);
       
-      // Return simplified activities without categories for now
+      // Parse categories from GROUP_CONCAT result
       const activitiesWithCategories = rows.map(row => {
+        let categories = [];
+        if (row.category_data) {
+          categories = row.category_data.split(',').map(catData => {
+            const [id, name] = catData.split(':');
+            return { id: parseInt(id), name };
+          });
+        }
+        
         return {
           id: row.id, 
           name: row.name, 
           points: row.points,
           type: row.type, 
-          categories: [], // Empty for now to avoid JOIN issues
+          categories: categories,
           created_at: row.created_at
         };
       });

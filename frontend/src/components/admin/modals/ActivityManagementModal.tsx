@@ -10,6 +10,7 @@ import {
   IonItem,
   IonLabel,
   IonInput,
+  IonCheckbox,
   IonSelect,
   IonSelectOption,
   IonIcon,
@@ -123,7 +124,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
   const loadCategories = async () => {
     try {
-      const response = await api.get('/categories');
+      const response = await api.get('/admin/categories');
       const filteredCategories = response.data.filter(
         (cat: Category) => cat.type === 'activity' || cat.type === 'both'
       );
@@ -147,10 +148,10 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       };
 
       if (currentActivity) {
-        await api.put(`/activities/${currentActivity.id}`, payload);
+        await api.put(`/admin/activities/${currentActivity.id}`, payload);
         setSuccess('Aktivität aktualisiert');
       } else {
-        await api.post('/activities', payload);
+        await api.post('/admin/activities', payload);
         setSuccess('Aktivität erstellt');
       }
       
@@ -227,7 +228,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonLabel position="stacked">Typ *</IonLabel>
             <IonSelect
               value={formData.type}
-              onIonChange={(e) => setFormData({ ...formData, type: e.detail.value })}
+              onIonChange={(e: any) => setFormData({ ...formData, type: e.detail.value })}
               placeholder="Typ wählen"
               disabled={loading}
               interface="action-sheet"
@@ -240,26 +241,44 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             </IonSelect>
           </IonItem>
 
-          <IonItem>
-            <IonLabel position="stacked">Kategorien (mehrere möglich)</IonLabel>
-            <IonSelect
-              value={formData.category_ids}
-              onIonChange={(e) => setFormData({ ...formData, category_ids: e.detail.value })}
-              placeholder="Kategorien wählen"
-              disabled={loading}
-              multiple={true}
-              interface="alert"
-              interfaceOptions={{
-                header: 'Kategorien auswählen'
-              }}
-            >
+          {categories.length > 0 ? (
+            <>
+              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
+                  Kategorien (mehrere möglich)
+                </IonLabel>
+              </IonItem>
+              <IonList style={{ padding: '0 16px', marginTop: '0' }}>
               {categories.map((category) => (
-                <IonSelectOption key={category.id} value={category.id}>
-                  {category.name}
-                </IonSelectOption>
+                <IonItem key={category.id} lines="none">
+                  <IonCheckbox
+                    slot="start"
+                    checked={formData.category_ids.includes(category.id)}
+                    onIonChange={(e) => {
+                      const isChecked = e.detail.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        category_ids: isChecked 
+                          ? [...prev.category_ids, category.id]
+                          : prev.category_ids.filter(id => id !== category.id)
+                      }));
+                    }}
+                    disabled={loading}
+                  />
+                  <IonLabel style={{ marginLeft: '12px' }}>
+                    {category.name}
+                  </IonLabel>
+                </IonItem>
               ))}
-            </IonSelect>
-          </IonItem>
+              </IonList>
+            </>
+          ) : (
+            <IonItem>
+              <IonLabel color="medium">
+                <p>Keine Kategorien verfügbar</p>
+              </IonLabel>
+            </IonItem>
+          )}
           
         </IonList>
       </IonContent>

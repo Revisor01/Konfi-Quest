@@ -14,7 +14,6 @@ import {
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -31,8 +30,8 @@ interface Activity {
 }
 
 const AdminActivitiesPage: React.FC = () => {
-  const { setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('activities');
+  const { user, setSuccess, setError } = useApp();
+  const pageRef = useRef<HTMLElement>(null);
   
   // State
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -91,7 +90,7 @@ const AdminActivitiesPage: React.FC = () => {
     if (!window.confirm(`Aktivität "${activity.name}" wirklich löschen?`)) return;
 
     try {
-      await api.delete(`/activities/${activity.id}`);
+      await api.delete(`/admin/activities/${activity.id}`);
       setSuccess(`Aktivität "${activity.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadActivities();
@@ -108,7 +107,7 @@ const AdminActivitiesPage: React.FC = () => {
     setSelectedActivity(activity);
     setModalActivityId(activity.id);
     presentActivityModalHook({
-      presentingElement: presentingElement
+      presentingElement: pageRef.current || undefined
     });
   };
 
@@ -116,9 +115,14 @@ const AdminActivitiesPage: React.FC = () => {
     setSelectedActivity(null);
     setModalActivityId(null);
     presentActivityModalHook({
-      presentingElement: presentingElement
+      presentingElement: pageRef.current || undefined
     });
   };
+
+  // Permission checks
+  const canCreate = user?.permissions?.includes('admin.activities.create') || false;
+  const canEdit = user?.permissions?.includes('admin.activities.edit') || false;
+  const canDelete = user?.permissions?.includes('admin.activities.delete') || false;
 
 
   return (
@@ -126,11 +130,13 @@ const AdminActivitiesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Aktivitäten</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={presentActivityModal}>
-              <IonIcon icon={add} />
-            </IonButton>
-          </IonButtons>
+          {canCreate && (
+            <IonButtons slot="end">
+              <IonButton onClick={presentActivityModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
@@ -156,6 +162,8 @@ const AdminActivitiesPage: React.FC = () => {
             onAddActivityClick={presentActivityModal}
             onSelectActivity={handleSelectActivity}
             onDeleteActivity={handleDeleteActivity}
+            canEdit={canEdit}
+            canDelete={canDelete}
           />
         )}
       </IonContent>

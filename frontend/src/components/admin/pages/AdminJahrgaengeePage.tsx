@@ -41,8 +41,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 interface Jahrgang {
   id: number;
   name: string;
-  description?: string;
-  year: number;
+  confirmation_date?: string;
   created_at: string;
 }
 
@@ -71,22 +70,19 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    year: new Date().getFullYear()
+    confirmation_date: ''
   });
 
   useEffect(() => {
     if (jahrgang) {
       setFormData({
         name: jahrgang.name,
-        description: jahrgang.description || '',
-        year: jahrgang.year
+        confirmation_date: jahrgang.confirmation_date || ''
       });
     } else {
       setFormData({
         name: '',
-        description: '',
-        year: new Date().getFullYear()
+        confirmation_date: ''
       });
     }
   }, [jahrgang]);
@@ -97,24 +93,18 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       return;
     }
 
-    if (formData.year < 2000 || formData.year > 2100) {
-      setError('Jahr muss zwischen 2000 und 2100 liegen');
-      return;
-    }
-
     setLoading(true);
     try {
       const payload = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        year: formData.year
+        confirmation_date: formData.confirmation_date.trim() || null
       };
 
       if (jahrgang) {
-        await api.put(`/jahrgaenge/${jahrgang.id}`, payload);
+        await api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload);
         setSuccess('Jahrgang aktualisiert');
       } else {
-        await api.post('/jahrgaenge', payload);
+        await api.post('/admin/jahrgaenge', payload);
         setSuccess('Jahrgang erstellt');
       }
       
@@ -172,24 +162,11 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
           </IonItem>
 
           <IonItem style={{ marginTop: '16px' }}>
-            <IonLabel position="stacked">Jahr *</IonLabel>
+            <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
             <IonInput
-              type="number"
-              value={formData.year}
-              onIonInput={(e) => setFormData({ ...formData, year: parseInt(e.detail.value!) || new Date().getFullYear() })}
-              min={2000}
-              max={2100}
-              disabled={loading}
-            />
-          </IonItem>
-
-          <IonItem style={{ marginTop: '16px' }}>
-            <IonLabel position="stacked">Beschreibung</IonLabel>
-            <IonTextarea
-              value={formData.description}
-              onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-              placeholder="Beschreibung des Jahrgangs..."
-              rows={3}
+              type="date"
+              value={formData.confirmation_date}
+              onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
               disabled={loading}
             />
           </IonItem>
@@ -201,7 +178,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
 const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('jahrgaenge');
-  const { setSuccess, setError } = useApp();
+  const { user, setSuccess, setError } = useApp();
   
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,15 +197,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   const loadJahrgaenge = async () => {
     try {
       const response = await api.get('/admin/jahrgaenge');
-      // Transform backend data to match frontend interface
-      const jahrgaengeData = response.data.map((jahrgang: any) => ({
-        id: jahrgang.id,
-        name: jahrgang.name,
-        description: jahrgang.confirmation_date ? `Bestätigung: ${jahrgang.confirmation_date}` : '',
-        year: parseInt(jahrgang.name.split('/')[0]) || new Date().getFullYear(),
-        created_at: jahrgang.created_at
-      }));
-      setJahrgaenge(jahrgaengeData);
+      setJahrgaenge(response.data);
     } catch (error) {
       setError('Fehler beim Laden der Jahrgänge');
     } finally {
@@ -249,7 +218,7 @@ const AdminJahrgaengeePage: React.FC = () => {
     if (!window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
     
     try {
-      await api.delete(`/jahrgaenge/${jahrgang.id}`);
+      await api.delete(`/admin/jahrgaenge/${jahrgang.id}`);
       setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
       loadJahrgaenge();
     } catch (error: any) {
@@ -271,20 +240,11 @@ const AdminJahrgaengeePage: React.FC = () => {
     presentJahrgangModalHook({ presentingElement });
   };
 
-  if (loading) {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Jahrgänge</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent>
-          <LoadingSpinner fullScreen message="Jahrgänge werden geladen..." />
-        </IonContent>
-      </IonPage>
-    );
-  }
+  // Permission checks
+  const canCreate = user?.permissions?.includes('admin.jahrgaenge.create') || false;
+  const canEdit = user?.permissions?.includes('admin.jahrgaenge.edit') || false;
+  const canDelete = user?.permissions?.includes('admin.jahrgaenge.delete') || false;
+
 
   return (
     <IonPage ref={pageRef}>
@@ -296,11 +256,13 @@ const AdminJahrgaengeePage: React.FC = () => {
             </IonButton>
           </IonButtons>
           <IonTitle>Jahrgänge</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={openCreateModal}>
-              <IonIcon icon={add} />
-            </IonButton>
-          </IonButtons>
+          {canCreate && (
+            <IonButtons slot="end">
+              <IonButton onClick={openCreateModal}>
+                <IonIcon icon={add} />
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
@@ -315,7 +277,11 @@ const AdminJahrgaengeePage: React.FC = () => {
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Header Statistics Card */}
+        {loading ? (
+          <LoadingSpinner message="Jahrgänge werden geladen..." />
+        ) : (
+          <>
+            {/* Header Statistics Card */}
         <IonCard style={{
           margin: '16px',
           borderRadius: '16px',
@@ -351,9 +317,13 @@ const AdminJahrgaengeePage: React.FC = () => {
               jahrgaenge.map((jahrgang) => (
                 <IonItemSliding key={jahrgang.id}>
                   <IonItem 
-                    button 
-                    onClick={() => openEditModal(jahrgang)}
-                    style={{ '--min-height': '60px' }}
+                    button={canEdit}
+                    onClick={canEdit ? () => openEditModal(jahrgang) : undefined}
+                    style={{ 
+                      '--min-height': '60px',
+                      opacity: canEdit ? 1 : 0.6,
+                      cursor: canEdit ? 'pointer' : 'default'
+                    }}
                   >
                     <div slot="start" style={{ 
                       width: '40px', 
@@ -377,30 +347,35 @@ const AdminJahrgaengeePage: React.FC = () => {
                       <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
                         {jahrgang.name}
                       </h2>
-                      <p style={{ 
-                        margin: '0', 
-                        fontSize: '0.85rem', 
-                        color: '#666' 
-                      }}>
-                        Jahr {jahrgang.year}
-                        {jahrgang.description && ` • ${jahrgang.description}`}
-                      </p>
+                      {jahrgang.confirmation_date && (
+                        <p style={{ 
+                          margin: '0', 
+                          fontSize: '0.85rem', 
+                          color: '#666' 
+                        }}>
+                          Konfirmation: {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
+                        </p>
+                      )}
                     </IonLabel>
                   </IonItem>
                   
-                  <IonItemOptions side="end">
-                    <IonItemOption 
-                      color="danger" 
-                      onClick={() => handleDelete(jahrgang)}
-                    >
-                      <IonIcon icon={trashOutline} />
-                    </IonItemOption>
-                  </IonItemOptions>
+                  {canDelete && (
+                    <IonItemOptions side="end">
+                      <IonItemOption 
+                        color="danger" 
+                        onClick={() => handleDelete(jahrgang)}
+                      >
+                        <IonIcon icon={trashOutline} />
+                      </IonItemOption>
+                    </IonItemOptions>
+                  )}
                 </IonItemSliding>
               ))
             )}
           </IonCardContent>
         </IonCard>
+          </>
+        )}
 
       </IonContent>
     </IonPage>
