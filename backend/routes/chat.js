@@ -788,17 +788,32 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
             
             participants.forEach(async (p) => {
               try {
-                await PushService.sendChatNotification(db, p.user_id, {
-                  title: message.sender_name,
-                  body: content || '[Anhang]',
-                  badge: 1,
-                  roomId: roomId,
-                  messageId: message.id,
-                  data: {
-                    sender_id: userId,
-                    sender_name: message.sender_name,
-                    room_name: roomName || 'Chat'
-                  }
+                // Berechne aktuellen Badge Count für diesen User
+                const badgeQuery = `
+                  SELECT COUNT(DISTINCT cm.id) as total_unread
+                  FROM chat_messages cm
+                  JOIN chat_participants cp ON cm.room_id = cp.room_id
+                  WHERE cp.user_id = ? 
+                  AND cp.user_type = ? 
+                  AND cm.created_at > cp.last_read_at
+                  AND cm.sender_id != ?
+                `;
+                
+                db.get(badgeQuery, [p.user_id, p.user_type, p.user_id], async (err, badgeResult) => {
+                  const badgeCount = (badgeResult?.total_unread || 0) + 1; // +1 für die neue Nachricht
+                  
+                  await PushService.sendChatNotification(db, p.user_id, {
+                    title: message.sender_name,
+                    body: content || '[Anhang]',
+                    badge: badgeCount,
+                    roomId: roomId,
+                    messageId: message.id,
+                    data: {
+                      sender_id: userId,
+                      sender_name: message.sender_name,
+                      room_name: roomName || 'Chat'
+                    }
+                  });
                 });
               } catch (error) {
                 console.error('❌ Failed to send chat push notification:', error);

@@ -253,7 +253,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('📥 Push empfangen:', notification);
-          refreshChatNotifications();
+          
+          // Bei Chat-Notifications sofort Badge Count aktualisieren
+          if (notification.data?.type === 'chat') {
+            refreshChatNotifications();
+          }
+          
+          // Bei Badge Updates direkt Badge Count setzen ohne API Call
+          if (notification.data?.type === 'badge_update') {
+            const badgeCount = parseInt(notification.data.count || '0');
+            setChatNotifications(prev => ({
+              ...prev,
+              totalUnreadCount: badgeCount
+            }));
+            
+            // App Icon Badge aktualisieren
+            try {
+              if (badgeCount > 0) {
+                Badge.set({ count: badgeCount });
+              } else {
+                Badge.clear();
+              }
+            } catch (badgeError) {
+              console.log('Badge update error:', badgeError);
+            }
+          }
         });
         
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {

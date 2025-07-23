@@ -139,6 +139,7 @@ const chatRoutes = require('./routes/chat');
 const statisticsRoutes = require('./routes/statistics');
 const settingsRoutes = require('./routes/settings');
 const notificationsRoutes = require('./routes/notifications');
+const BackgroundService = require('./services/backgroundService');
 
 // Admin-specific routes
 const adminBadgesRoutes = require('./routes/badges');
@@ -223,6 +224,9 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Konfi Points API running on port ${PORT}`);
+  
+  // Background Services starten
+  BackgroundService.startBadgeUpdateService(db);
   console.log(`📁 Uploads directory: ${uploadsDir}`);
 });
 
