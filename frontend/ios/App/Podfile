@@ -28,6 +28,7 @@ target 'App' do
   # Add your Pods here
   pod 'FirebaseCore'
   pod 'FirebaseMessaging'
+  pod 'FirebaseInstallations'
 end
 
 post_install do |installer|

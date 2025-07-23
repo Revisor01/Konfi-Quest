@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import FirebaseCore
+import FirebaseMessaging
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -10,6 +11,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Firebase konfigurieren
         FirebaseApp.configure()
+        
+        // Firebase Messaging Delegate setzen
+        Messaging.messaging().delegate = self
+        
+        // Remote Notifications registrieren
+        application.registerForRemoteNotifications()
+        
         return true
     }
 
@@ -56,4 +64,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+}
+
+// MARK: - MessagingDelegate
+extension AppDelegate: MessagingDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("✅ Firebase FCM token: \(fcmToken ?? "nil")")
+        
+        // FCM Token an Capacitor weiterleiten
+        if let token = fcmToken {
+            let tokenData = token.data(using: .utf8)!
+            NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: tokenData)
+        }
+    }
 }
