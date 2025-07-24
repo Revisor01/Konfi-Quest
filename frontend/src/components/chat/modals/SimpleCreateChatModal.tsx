@@ -25,6 +25,7 @@ import {
 } from '@ionic/react';
 import { close, checkmark, person, people, chevronForward } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useBadge } from '../../../contexts/BadgeContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -48,7 +49,8 @@ interface Settings {
 }
 
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
-  const { user, setError, setSuccess, refreshChatNotifications } = useApp();
+  const { user, setError, setSuccess } = useApp();
+  const { refreshFromAPI } = useBadge();
   const pageRef = useRef<HTMLElement>(null);
   
   // State
@@ -245,7 +247,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       });
       
       setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
-      await refreshChatNotifications(); // Update badges
+      await refreshFromAPI(); // Update badge context
       handleModalClose();
       onSuccess();
     } catch (err) {
@@ -289,7 +291,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       console.log('Group chat created successfully:', response.data);
       
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
-      await refreshChatNotifications(); // Update badges
+      await refreshFromAPI(); // Update badge context
       handleModalClose();
       onSuccess();
     } catch (err: any) {

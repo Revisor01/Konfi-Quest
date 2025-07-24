@@ -40,6 +40,7 @@ import {
   chevronForward
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
+import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
@@ -91,6 +92,7 @@ interface ChatRoomProps {
 
 const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
+  const { decrementBadge } = useBadge();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState('');
@@ -183,9 +185,16 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   const markRoomAsRead = async () => {
     try {
-      await api.post(`/chat/rooms/${room.id}/mark-read`);
+      const response = await api.post(`/chat/rooms/${room.id}/mark-read`);
       // Update global chat notifications state
       markChatRoomAsRead(room.id);
+      
+      // Decrement badge count based on how many messages were marked as read
+      if (response.data?.markedAsRead > 0) {
+        decrementBadge(response.data.markedAsRead);
+        console.log('Badge decremented by:', response.data.markedAsRead);
+      }
+      
       console.log('Room marked as read:', room.id);
     } catch (err) {
       // Silent fail - marking as read is not critical

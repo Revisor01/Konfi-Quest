@@ -39,6 +39,7 @@ import {
   search
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
+import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
 
@@ -74,7 +75,8 @@ interface ChatOverviewRef {
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, pageRef: externalPageRef }, ref) => {
   const pageRef = externalPageRef || useRef<HTMLElement | null>(null);
-  const { user, setError, setSuccess, refreshChatNotifications } = useApp();
+  const { user, setError, setSuccess } = useApp();
+  const { refreshFromAPI } = useBadge();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -88,8 +90,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
-      // Refresh chat notifications whenever chat rooms are loaded
-      await refreshChatNotifications();
+      // Update badge context with fresh data
+      await refreshFromAPI();
     } catch (err) {
       if (!silent) setError('Fehler beim Laden der Chaträume');
       console.error('Error loading chat rooms:', err);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
@@ -43,6 +43,8 @@ import {
 } from 'ionicons/icons';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { ModalProvider } from './contexts/ModalContext';
+import { BadgeProvider, useBadge } from './contexts/BadgeContext';
+import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import AdminKonfisPage from './components/admin/pages/AdminKonfisPage';
@@ -111,49 +113,75 @@ setupIonicReact({
 });
 
 
-// Custom hook for tab badge management
-const useTabBadge = () => {
-  const { user, chatNotifications, refreshChatNotifications } = useApp();
-  const [tabBadgeCount, setTabBadgeCount] = React.useState(0);
-  
-  // Load badge immediately when user is available (app start/resume)
-  React.useEffect(() => {
-    if (user) {
-      console.log('🏁 User available - loading tab badge immediately');
-      
-      // Get immediate badge from device first
-      import('@capawesome/capacitor-badge').then(({ Badge }) => {
-        Badge.get().then(result => {
-          console.log('📱 Device badge for tabs:', result.count);
-          if (result.count > 0) {
-            setTabBadgeCount(result.count);
-          }
-          
-          // Always refresh from server for accuracy
-          refreshChatNotifications();
-        }).catch(error => {
-          console.log('📱 Could not read device badge for tabs:', error);
-          // Fallback: just refresh from server
-          refreshChatNotifications();
-        });
-      }).catch(() => {
-        console.log('📱 Badge plugin not available');
-        refreshChatNotifications();
-      });
-    }
-  }, [user]); // Trigger when user changes (login/logout)
-  
-  // Sync with chat notifications when they change
-  React.useEffect(() => {
-    setTabBadgeCount(chatNotifications.totalUnreadCount);
-  }, [chatNotifications.totalUnreadCount]);
-  
-  return tabBadgeCount;
-};
-
 const AppContent: React.FC = () => {
   const { user, loading } = useApp();
-  const tabBadgeCount = useTabBadge();
+  const { badgeCount, setBadgeCount, refreshFromAPI } = useBadge();
+
+  // Setup badge logic when user is available
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🏁 AppContent: User available, setting up badge logic');
+
+    // 1. Initial badge load
+    refreshFromAPI();
+
+    // 2. Setup push notification listeners
+    const setupListeners = async () => {
+      // Remove existing listeners to avoid duplicates
+      await PushNotifications.removeAllListeners();
+
+      const pushListener = await PushNotifications.addListener('pushNotificationReceived', 
+        (notification: PushNotificationSchema) => {
+          console.log('🔔 AppContent: Push received:', notification);
+          if (notification.data?.type === 'chat') {
+            const badgeCountFromPush = notification.badge ?? parseInt(notification.data?.aps?.badge) ?? -1;
+            if (badgeCountFromPush !== -1) {
+              console.log('📱 AppContent: Setting badge from push:', badgeCountFromPush);
+              setBadgeCount(badgeCountFromPush);
+            } else {
+              console.log('📱 AppContent: Incrementing badge as fallback');
+              setBadgeCount(prev => prev + 1);
+            }
+          }
+        }
+      );
+
+      const actionListener = await PushNotifications.addListener('pushNotificationActionPerformed', 
+        (action) => {
+          console.log('🔔 AppContent: Push action performed:', action);
+          refreshFromAPI(); 
+        }
+      );
+
+      return () => {
+        console.log('🧹 AppContent: Cleaning up listeners');
+        pushListener.remove();
+        actionListener.remove();
+      };
+    };
+
+    const cleanupPromise = setupListeners();
+
+    return () => {
+      cleanupPromise.then(cleanup => {
+        if (cleanup) cleanup();
+      });
+    };
+
+  }, [user, setBadgeCount, refreshFromAPI]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('🔄 AppContent: Starting auto-refresh every 30s');
+    const interval = setInterval(refreshFromAPI, 30000);
+    return () => {
+      console.log('🔄 AppContent: Stopping auto-refresh');
+      clearInterval(interval);
+    };
+  }, [user, refreshFromAPI]);
 
   if (loading) {
     return (
@@ -330,9 +358,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="admin-chat" href="/admin/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {tabBadgeCount > 0 && (
+                    {badgeCount > 0 && (
                       <IonBadge color="danger">
-                        {tabBadgeCount > 99 ? '99+' : tabBadgeCount}
+                        {badgeCount > 99 ? '99+' : badgeCount}
                       </IonBadge>
                     )}
                   </IonTabButton>
@@ -382,9 +410,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="chat" href="/konfi/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {tabBadgeCount > 0 && (
+                    {badgeCount > 0 && (
                       <IonBadge color="danger">
-                        {tabBadgeCount > 99 ? '99+' : tabBadgeCount}
+                        {badgeCount > 99 ? '99+' : badgeCount}
                       </IonBadge>
                     )}
                   </IonTabButton>
@@ -417,7 +445,9 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => (
   <AppProvider>
-    <AppContent />
+    <BadgeProvider>
+      <AppContent />
+    </BadgeProvider>
   </AppProvider>
 );
 

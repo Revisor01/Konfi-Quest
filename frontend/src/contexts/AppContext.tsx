@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
-import { Badge } from '@capawesome/capacitor-badge';
 import { App } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
 
@@ -106,26 +105,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       
       setChatNotifications(prev => {
-        // Only update badge if count actually changed AND skipBadgeUpdate is false
+        // Only update DEVICE badge if count actually changed AND skipBadgeUpdate is false
         const hasChanged = prev.totalUnreadCount !== totalUnread;
         
-        if (hasChanged && !skipBadgeUpdate) {
-          // Update app icon badge only when count changes
-          try {
-            if (totalUnread > 0) {
-              Badge.set({ count: totalUnread });
-              console.log('📱 Badge updated to:', totalUnread);
-            } else {
-              Badge.clear();
-              console.log('📱 Badge cleared');
-            }
-          } catch (badgeError) {
-            console.log('Badge not available:', badgeError);
-          }
-        } else if (skipBadgeUpdate) {
-          console.log('📱 Badge update skipped (push already set badge)');
-        }
+        // Badge logic removed - now handled by BadgeContext
         
+        // ALWAYS update the state for tab badges, regardless of skipBadgeUpdate
+        console.log('📊 Updating chat notifications state:', totalUnread);
         return {
           totalUnreadCount: totalUnread,
           unreadByRoom
@@ -146,20 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       console.log(`📊 Room ${roomId}: was ${currentUnread} unread, total going from ${prev.totalUnreadCount} to ${newTotalCount}`);
       
-      // Only update badge if count actually changed
-      if (prev.totalUnreadCount !== newTotalCount) {
-        try {
-          if (newTotalCount > 0) {
-            Badge.set({ count: newTotalCount });
-            console.log('📱 Badge updated to:', newTotalCount);
-          } else {
-            Badge.clear();
-            console.log('📱 Badge cleared');
-          }
-        } catch (badgeError) {
-          console.log('Badge not available:', badgeError);
-        }
-      }
+      // Badge logic removed - now handled by BadgeContext
       
       return {
         totalUnreadCount: newTotalCount,
@@ -176,13 +149,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChatNotifications(prev => {
       const newTotalCount = prev.totalUnreadCount + count;
       
-      // Update icon badge immediately (always when adding)
-      try {
-        Badge.set({ count: newTotalCount });
-        console.log('📱 Badge updated to:', newTotalCount);
-      } catch (badgeError) {
-        console.log('Badge not available:', badgeError);
-      }
+      // Badge logic removed - now handled by BadgeContext
       
       return {
         totalUnreadCount: newTotalCount,
@@ -248,22 +215,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       setChatNotificationsLoading(true);
       
-      // Load immediately on app start - no delay - with multiple attempts for reliability
+      // Load with 1 second delay to allow Tab Bar to fully initialize
       const loadInitial = async () => {
-        await refreshChatNotifications();
+        console.log('🚀 Starting delayed chat notifications load for tab badge visibility');
         
-        // Second immediate call to ensure we have the data (workaround for app start timing)
-        setTimeout(() => {
-          console.log('🔄 Second immediate refresh for app start reliability');
-          refreshChatNotifications();
-        }, 100);
+        // Wait 1 second for Tab Bar to be fully ready
+        setTimeout(async () => {
+          console.log('⏰ 1 second delay complete - loading tab badge now');
+          
+          // Try to get device badge first for immediate display
+          try {
+            const { Badge } = await import('@capawesome/capacitor-badge');
+            const result = await Badge.get();
+            if (result.count > 0) {
+              console.log('📱 Setting tab badge from device after delay:', result.count);
+              setChatNotifications(prev => ({
+                ...prev,
+                totalUnreadCount: result.count
+              }));
+            }
+          } catch (error) {
+            console.log('📱 Could not load device badge for tabs:', error);
+          }
+          
+          // Now get real data from server
+          // refreshChatNotifications disabled - Badge Context handles updates
+          
+          // Ensure a final refresh for reliability
+          setTimeout(() => {
+            console.log('🔄 Final delayed refresh for tab badge reliability');
+            // refreshChatNotifications disabled - Badge Context handles updates
+          }, 300);
+        }, 1000); // 1 second delay
       };
       
       loadInitial();
       
       // Auto-refresh notifications every 5 seconds for reliable badge sync
-      const interval = setInterval(refreshChatNotifications, 5000);
-      return () => clearInterval(interval);
+      // 5-second refresh disabled - Badge Context handles real-time updates
     } else {
       // Clear notifications when user logs out
       setChatNotifications({
@@ -315,7 +304,7 @@ useEffect(() => {
       const now = Date.now();
       if (now - lastRefresh > minRefreshInterval) {
         console.log('App became active - refreshing chat notifications');
-        refreshChatNotifications();
+        // refreshChatNotifications disabled - Badge Context handles updates
         lastRefresh = now;
       }
     };
@@ -372,14 +361,7 @@ useEffect(() => {
           console.log('📥 Push empfangen:', notification);
           console.log('📥 Push data:', notification.data);
           
-          // Bei Chat-Notifications Badge Count aktualisieren
-          if (notification.data?.type === 'chat') {
-            console.log('📥 Chat Push empfangen - Badge:', notification.badge);
-            console.log('📥 Aktueller Badge Count:', chatNotifications.totalUnreadCount);
-            
-            // Refresh von Server holen für genaue Counts (skip badge update da Push bereits Badge gesetzt hat)
-            refreshChatNotifications(true);
-          }
+          // Chat notifications are now handled by BadgeContext
           
           // Bei Badge Updates direkt Badge Count setzen ohne API Call
           if (notification.data?.type === 'badge_update') {
@@ -390,22 +372,13 @@ useEffect(() => {
               totalUnreadCount: badgeCount
             }));
             
-            // App Icon Badge aktualisieren
-            try {
-              if (badgeCount > 0) {
-                Badge.set({ count: badgeCount });
-              } else {
-                Badge.clear();
-              }
-            } catch (badgeError) {
-              console.log('Badge update error:', badgeError);
-            }
+            // Badge logic removed - now handled by BadgeContext
           }
         });
         
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('📲 Push angeklickt:', action.notification);
-          refreshChatNotifications();
+          // Chat notifications refresh removed - handled by BadgeContext
           
           // Navigate to chat if roomId is provided
           if (action.notification.data?.type === 'chat' && action.notification.data?.roomId) {
