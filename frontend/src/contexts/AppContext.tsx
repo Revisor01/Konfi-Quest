@@ -85,11 +85,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
   
-  // Badge sync event system
-  const emitBadgeUpdate = useCallback((count: number) => {
-    const event = new CustomEvent('badgeUpdate', { detail: count });
-    window.dispatchEvent(event);
-  }, []);
+  // Badge sync through state updates only (no custom events)
 
   // Chat notification functions
   const refreshChatNotifications = useCallback(async () => {
@@ -124,9 +120,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (badgeError) {
         console.log('Badge not available:', badgeError);
       }
-      
-      // Emit badge update event for tab synchronization
-      emitBadgeUpdate(totalUnread);
     } catch (err) {
       console.error('Error loading chat notifications:', err);
     } finally {
@@ -150,9 +143,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('Badge not available:', badgeError);
       }
       
-      // Emit badge update event
-      emitBadgeUpdate(newTotalCount);
-      
       return {
         totalUnreadCount: newTotalCount,
         unreadByRoom: {
@@ -173,9 +163,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (badgeError) {
         console.log('Badge not available:', badgeError);
       }
-      
-      // Emit badge update event
-      emitBadgeUpdate(newTotalCount);
       
       return {
         totalUnreadCount: newTotalCount,
@@ -236,8 +223,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       refreshChatNotifications();
       
-      // Auto-refresh notifications more frequently for better badge sync
-      const interval = setInterval(refreshChatNotifications, 10000); // Every 10 seconds
+      // Auto-refresh notifications every 5 seconds for reliable badge sync
+      const interval = setInterval(refreshChatNotifications, 5000);
       return () => clearInterval(interval);
     } else {
       // Clear notifications when user logs out
@@ -279,39 +266,39 @@ useEffect(() => {
     }
   }, [user]);
   
-  // App lifecycle events for background/foreground detection
+  // App lifecycle events - simplified to avoid duplicate calls
   useEffect(() => {
     if (!user) return;
 
-    let stateChangeListener: any = null;
-    let resumeListener: any = null;
+    let lastRefresh = 0;
+    const minRefreshInterval = 5000; // Minimum 5s between refreshes
 
-    // Setup listeners
-    const setupListeners = async () => {
-      // Refresh notifications when app comes to foreground
+    const handleAppActive = () => {
+      const now = Date.now();
+      if (now - lastRefresh > minRefreshInterval) {
+        console.log('App became active - refreshing chat notifications');
+        refreshChatNotifications();
+        lastRefresh = now;
+      }
+    };
+
+    let stateChangeListener: any = null;
+
+    // Setup single listener for app state changes
+    const setupListener = async () => {
       stateChangeListener = await App.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
-          console.log('App came to foreground - refreshing chat notifications');
-          refreshChatNotifications();
+          handleAppActive();
         }
-      });
-
-      // Refresh notifications when app resumes from background
-      resumeListener = await App.addListener('resume', () => {
-        console.log('App resumed - refreshing chat notifications');
-        refreshChatNotifications();
       });
     };
 
-    setupListeners();
+    setupListener();
 
-    // Cleanup listeners
+    // Cleanup
     return () => {
       if (stateChangeListener) {
         stateChangeListener.remove();
-      }
-      if (resumeListener) {
-        resumeListener.remove();
       }
     };
   }, [user, refreshChatNotifications]);

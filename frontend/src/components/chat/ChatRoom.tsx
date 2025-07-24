@@ -137,43 +137,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pageRef = useRef<HTMLElement>(null);
 
-  // Optimized polling for better real-time experience
+  // Simple constant polling for reliable real-time updates
   useEffect(() => {
     loadMessages();
     markRoomAsRead();
     
-    // Smart polling: Fast when active, slower when idle
-    let pollInterval: NodeJS.Timeout | null = null;
-    let fastPollCount = 0;
-    const maxFastPolls = 12; // 12 * 2s = 24s of fast polling after activity
+    // Constant 5-second polling - simple and reliable
+    const interval = setInterval(async () => {
+      await loadMessages();
+      markRoomAsRead();
+    }, 5000);
     
-    const startPolling = (fast = false) => {
-      if (pollInterval) clearInterval(pollInterval);
-      
-      const interval = fast ? 2000 : 8000; // 2s when fast, 8s when slow
-      console.log(`🔄 Starting ${fast ? 'fast' : 'slow'} polling (${interval}ms) for room ${room.id}`);
-      
-      pollInterval = setInterval(async () => {
-        await loadMessages();
-        markRoomAsRead();
-        
-        // Transition from fast to slow polling
-        if (fast) {
-          fastPollCount++;
-          if (fastPollCount >= maxFastPolls) {
-            console.log('🔄 Switching to slow polling');
-            startPolling(false);
-          }
-        }
-      }, interval);
-    };
-    
-    // Start with fast polling (assuming recent activity)
-    startPolling(true);
-    
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
+    return () => clearInterval(interval);
   }, [room.id]);
 
   useEffect(() => {
