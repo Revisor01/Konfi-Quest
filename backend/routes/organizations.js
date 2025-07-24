@@ -11,11 +11,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.get('/', rbacVerifier, checkPermission('admin.organizations.view'), (req, res) => {
     const query = `
       SELECT o.*, 
-             COUNT(DISTINCT u.id) as user_count,
+             COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
              COUNT(DISTINCT kp.user_id) as konfi_count
       FROM organizations o
       LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = 1
-      LEFT JOIN roles r ON u.role_id = r.id AND r.name != 'konfi'
+      LEFT JOIN roles r ON u.role_id = r.id
       LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
       GROUP BY o.id
       ORDER BY o.created_at DESC
