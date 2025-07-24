@@ -76,7 +76,7 @@ interface ChatOverviewRef {
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, pageRef: externalPageRef }, ref) => {
   const pageRef = externalPageRef || useRef<HTMLElement | null>(null);
   const { user, setError, setSuccess } = useApp();
-  const { refreshFromAPI } = useBadge();
+  const { refreshFromAPI, badgeCount } = useBadge();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -84,6 +84,14 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   useEffect(() => {
     loadChatRooms();
   }, []);
+
+  // Live-Update der Chat-Räume wenn Badge Count sich ändert
+  useEffect(() => {
+    if (rooms.length > 0) { // Nur wenn bereits Räume geladen sind
+      console.log('📱 ChatOverview: Badge changed, refreshing room data');
+      loadChatRooms(true); // Silent reload
+    }
+  }, [badgeCount]);
 
   const loadChatRooms = async (silent: boolean = false) => {
     if (!silent) setLoading(true);
