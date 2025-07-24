@@ -1,3 +1,4 @@
+import React from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
@@ -111,7 +112,38 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, loading, chatNotifications, chatNotificationsLoading } = useApp();
+  const { user, loading, chatNotifications, chatNotificationsLoading, refreshChatNotifications } = useApp();
+  const [immediateTabBadge, setImmediateTabBadge] = React.useState(0);
+  
+  // Get immediate badge count from device for instant tab badge display
+  React.useEffect(() => {
+    if (user && !loading) {
+      console.log('🔄 User loaded, getting immediate badge for tabs');
+      
+      // Try to get current badge from device for immediate display
+      import('@capawesome/capacitor-badge').then(({ Badge }) => {
+        Badge.get().then(result => {
+          if (result.count > 0) {
+            setImmediateTabBadge(result.count);
+            console.log('📱 Got immediate tab badge from device:', result.count);
+          }
+        }).catch(error => {
+          console.log('📱 Could not read device badge for tabs:', error);
+        });
+      }).catch(() => {
+        console.log('📱 Badge plugin not available');
+      });
+      
+      refreshChatNotifications();
+    }
+  }, [user, loading]);
+  
+  // Update immediate badge when chat notifications change
+  React.useEffect(() => {
+    if (chatNotifications.totalUnreadCount !== immediateTabBadge) {
+      setImmediateTabBadge(chatNotifications.totalUnreadCount);
+    }
+  }, [chatNotifications.totalUnreadCount]);
 
   if (loading) {
     return (
@@ -288,9 +320,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="admin-chat" href="/admin/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {chatNotifications.totalUnreadCount > 0 && (
+                    {immediateTabBadge > 0 && (
                       <IonBadge color="danger">
-                        {chatNotifications.totalUnreadCount > 99 ? '99+' : chatNotifications.totalUnreadCount}
+                        {immediateTabBadge > 99 ? '99+' : immediateTabBadge}
                       </IonBadge>
                     )}
                   </IonTabButton>
@@ -340,9 +372,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="chat" href="/konfi/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {chatNotifications.totalUnreadCount > 0 && (
+                    {immediateTabBadge > 0 && (
                       <IonBadge color="danger">
-                        {chatNotifications.totalUnreadCount > 99 ? '99+' : chatNotifications.totalUnreadCount}
+                        {immediateTabBadge > 99 ? '99+' : immediateTabBadge}
                       </IonBadge>
                     )}
                   </IonTabButton>

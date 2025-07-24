@@ -88,7 +88,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Badge sync through state updates only (no custom events)
 
   // Chat notification functions
-  const refreshChatNotifications = useCallback(async () => {
+  const refreshChatNotifications = useCallback(async (skipBadgeUpdate = false) => {
     if (!user) return;
     
     try {
@@ -106,10 +106,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       
       setChatNotifications(prev => {
-        // Only update badge if count actually changed
+        // Only update badge if count actually changed AND skipBadgeUpdate is false
         const hasChanged = prev.totalUnreadCount !== totalUnread;
         
-        if (hasChanged) {
+        if (hasChanged && !skipBadgeUpdate) {
           // Update app icon badge only when count changes
           try {
             if (totalUnread > 0) {
@@ -122,6 +122,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } catch (badgeError) {
             console.log('Badge not available:', badgeError);
           }
+        } else if (skipBadgeUpdate) {
+          console.log('📱 Badge update skipped (push already set badge)');
         }
         
         return {
@@ -235,14 +237,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load chat notifications when user changes
   useEffect(() => {
     if (user) {
-      // Reset badge state on startup
+      // Reset badge state on startup but keep loading true
       setChatNotifications({
         totalUnreadCount: 0,
         unreadByRoom: {}
       });
+      setChatNotificationsLoading(true);
       
-      // Load immediately on app start - no delay
-      refreshChatNotifications();
+      // Load immediately on app start - no delay - with multiple attempts for reliability
+      const loadInitial = async () => {
+        await refreshChatNotifications();
+        
+        // Second immediate call to ensure we have the data (workaround for app start timing)
+        setTimeout(() => {
+          console.log('🔄 Second immediate refresh for app start reliability');
+          refreshChatNotifications();
+        }, 100);
+      };
+      
+      loadInitial();
       
       // Auto-refresh notifications every 5 seconds for reliable badge sync
       const interval = setInterval(refreshChatNotifications, 5000);
@@ -357,10 +370,11 @@ useEffect(() => {
           
           // Bei Chat-Notifications Badge Count aktualisieren
           if (notification.data?.type === 'chat') {
-            console.log('📥 Chat Push - refreshing notifications');
+            console.log('📥 Chat Push empfangen - Badge:', notification.badge);
+            console.log('📥 Aktueller Badge Count:', chatNotifications.totalUnreadCount);
             
-            // Refresh von Server holen für genaue Counts
-            refreshChatNotifications();
+            // Refresh von Server holen für genaue Counts (skip badge update da Push bereits Badge gesetzt hat)
+            refreshChatNotifications(true);
           }
           
           // Bei Badge Updates direkt Badge Count setzen ohne API Call

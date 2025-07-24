@@ -788,6 +788,12 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
             
             participants.forEach(async (p) => {
               try {
+                // Double-check: Keine Push an den Sender selbst
+                if (p.user_id === userId && p.user_type === userType) {
+                  console.log(`⚠️ Skipping push to sender (${userId}, ${userType})`);
+                  return;
+                }
+                
                 // Berechne aktuellen Badge Count für diesen User - FIXED mit chat_read_status
                 const badgeQuery = `
                   SELECT COUNT(DISTINCT cm.id) as total_unread
@@ -802,8 +808,9 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
                 `;
                 
                 db.get(badgeQuery, [p.user_id, p.user_type, p.user_id, p.user_type, p.user_id, p.user_type], async (err, badgeResult) => {
-                  const badgeCount = (badgeResult?.total_unread || 0) + 1; // +1 für die neue Nachricht
-                  console.log(`📱 Badge count for user ${p.user_id}: ${badgeCount} (was ${badgeResult?.total_unread || 0}, +1 for new message)`);
+                  // Die neue Nachricht ist bereits in der DB und wird mitgezählt - kein +1 nötig
+                  const badgeCount = badgeResult?.total_unread || 0;
+                  console.log(`📱 Badge count for user ${p.user_id}: ${badgeCount} (including new message)`);
                   
                   // Room Name laden für Push Notification
                   db.get('SELECT name, type FROM chat_rooms WHERE id = ?', [roomId], async (roomErr, room) => {
