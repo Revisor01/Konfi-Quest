@@ -205,7 +205,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     {getTotalUsers()}
                   </h3>
                   <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Benutzer
+                    Team
                   </p>
                 </div>
               </IonCol>
