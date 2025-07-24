@@ -98,8 +98,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
-      // Update badge context with fresh data
-      await refreshFromAPI();
+      // Update badge context with fresh data nur beim ersten Load
+      if (!silent && rooms.length === 0) {
+        await refreshFromAPI();
+      }
     } catch (err) {
       if (!silent) setError('Fehler beim Laden der Chaträume');
       console.error('Error loading chat rooms:', err);

@@ -15,6 +15,8 @@ import {
   IonAvatar,
   IonProgressBar,
   IonChip,
+  IonFooter,
+  IonInput,
   IonText,
   IonSpinner,
   IonRefresher,
@@ -96,7 +98,7 @@ interface ChatRoomProps {
       name: string;
       display_name?: string;
     }>;
-  };
+  } | null;
   onBack: () => void;
 }
 
@@ -109,6 +111,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const contentRef = useRef<HTMLIonContentElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
+
+  // Hooks müssen vor conditional returns stehen!
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
   const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
@@ -117,10 +127,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       dismissPollModalHook();
       handlePollCreated();
     },
-    roomId: room.id
+    roomId: room?.id ?? 0 // ?? statt || für klarere Intention
   });
   
   const openPollModal = () => {
+    if (!room) return; // Sicherheitscheck bleibt
     presentPollModalHook({
       presentingElement: pageRef.current || undefined
     });
@@ -133,35 +144,33 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       dismissMembersModalHook();
       loadMessages();
     },
-    roomId: room.id,
-    roomType: room.type
+    roomId: room?.id ?? 0,
+    roomType: room?.type ?? 'group' 
   });
   
   const openMembersModal = () => {
+    if (!room) return; // Sicherheitscheck bleibt
     presentMembersModalHook({
       presentingElement: pageRef.current || undefined
     });
   };
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [showActionSheet, setShowActionSheet] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
-  const contentRef = useRef<HTMLIonContentElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const pageRef = useRef<HTMLElement>(null);
 
-  // Simple constant polling for reliable real-time updates
+  // Load messages on mount and setup polling for real-time updates
   useEffect(() => {
     if (!room?.id) return;
     loadMessages();
     markRoomAsRead();
     
-    // Constant 5-second polling - simple and reliable (no mark-as-read in interval)
+    // 5-second polling für Real-time Updates - aber OHNE Auto-Scroll
     const interval = setInterval(async () => {
+      // Store current message count to prevent auto-scroll
+      const currentCount = messages.length;
       await loadMessages();
+      // prevMessageCountRef wird vom useEffect für Scroll-Logic verwendet
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [room.id]);
+  }, [room?.id]);
 
   // Mark as read only when new messages arrive (not every 5 seconds)
   useEffect(() => {
@@ -175,15 +184,20 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     setPresentingElement(pageRef.current);
   }, []);
 
+  // Track previous message count to only scroll on NEW messages
+  const prevMessageCountRef = useRef(0);
+  
   useEffect(() => {
-    // Scroll to bottom when new messages arrive, but only if auto-scroll is enabled
-    if (contentRef.current && shouldAutoScroll) {
+    // Only scroll if we actually have new messages (not just reloads)
+    if (contentRef.current && shouldAutoScroll && messages.length > prevMessageCountRef.current) {
       contentRef.current.scrollToBottom(300);
     }
+    prevMessageCountRef.current = messages.length;
   }, [messages, shouldAutoScroll]);
 
   const loadMessages = async () => {
-    if (messages.length === 0) setLoading(true);
+    // Kein eigener Loading State - ChatRoomView handled das Loading
+    if (!room) return;
     try {
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
@@ -191,11 +205,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       setError('Fehler beim Laden der Nachrichten');
       console.error('Error loading messages:', err);
     } finally {
-      setLoading(false);
+      setLoading(false); // Nur für den Fall, dass es gesetzt war
     }
   };
 
   const markRoomAsRead = async () => {
+    if (!room) return;
     try {
       await api.post(`/chat/rooms/${room.id}/mark-read`);
       // Update global chat notifications state
@@ -213,6 +228,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   const sendMessage = async () => {
     if (!messageText.trim() && !selectedFile) return;
+    if (!room) return;
 
     setUploading(true);
     try {
@@ -234,7 +250,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       setSelectedFile(null);
       
       // Mark as read BEFORE loading messages to prevent badge increment
-      markRoomAsRead();
+      if (room) markRoomAsRead();
       
       await loadMessages();
     } catch (err) {
@@ -435,6 +451,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   };
 
   const getDisplayRoomName = () => {
+      if (!room) return 'Chat wird geladen...';
       if (room.type === 'direct' && room.participants) {
         const otherParticipant = room.participants.find(p => 
           !(p.user_id === user?.id && p.user_type === user?.type)
@@ -445,6 +462,29 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       }
       return room.name || 'Chat';
     };
+
+  // Early return nach allen Hooks wenn room noch nicht geladen ist
+  if (!room) {
+    return (
+      <IonPage>
+        <IonHeader translucent={true}>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonButton onClick={onBack}>
+                <IonIcon icon={arrowBack} />
+              </IonButton>
+            </IonButtons>
+            <IonTitle>Chat wird geladen...</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="app-gradient-background" fullscreen>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>Chat wird geladen...</p>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   const renderMessage = (message: Message) => {
     const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
@@ -947,7 +987,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>{getDisplayRoomName(room)}</IonTitle>
+          <IonTitle>{getDisplayRoomName()}</IonTitle>
           {user?.type === 'admin' && (
             <IonButtons slot="end">
               <IonButton onClick={openMembersModal}>
@@ -969,114 +1009,125 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {loading ? (
-          <LoadingSpinner message="Nachrichten werden geladen..." />
-        ) : (
-          <div style={{ paddingBottom: '120px' }}>
-            {messages.map(renderMessage)}
-          </div>
-        )}
+        <div style={{ paddingBottom: '120px' }}>
+          {messages.map(renderMessage)}
+        </div>
       </IonContent>
 
-      {/* Message Input */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'white',
-        borderTop: '1px solid #e0e0e0',
-        padding: '12px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        zIndex: 1000
-      }}>
-        {selectedFile && (
+      <IonFooter>
+        <IonToolbar style={{
+          '--min-height': 'auto', // Damit es sich an den Inhalt anpasst
+          '--padding-start': '16px',
+          '--padding-end': '16px',
+          // KEINE display: flex, alignItems, gap HIER MEHR!
+          // Das macht jetzt das innere Div.
+        }}>
+          {/* Dieses DIV ist der Flex-Container für Input und Buttons */}
           <div style={{
-            position: 'absolute',
-            bottom: '100%',
-            left: '16px',
-            right: '16px',
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #e0e0e0',
-            borderRadius: '8px',
-            padding: '8px',
             display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
+            alignItems: 'flex-end', // Aligns items to the bottom, useful for autoGrow textarea
+            gap: '8px',
+            width: '100%' // Wichtig, damit es die volle Breite einnimmt
           }}>
-            <IonIcon icon={attach} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{selectedFile.name}</div>
-              <div style={{ fontSize: '0.75rem', color: '#666' }}>{formatFileSize(selectedFile.size)}</div>
-            </div>
-            <IonButton fill="clear" size="small" onClick={() => setSelectedFile(null)}>
-              <IonIcon icon={trash} />
+
+            {/* File Preview (wenn ausgewählt) - Positionierung angepasst */}
+            {selectedFile && (
+              <div style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 8px)', // Positioniert 8px oberhalb des Toolbars
+                left: '16px',
+                right: '16px',
+                backgroundColor: 'var(--ion-color-light-shade, #f8f9fa)',
+                border: '1px solid var(--ion-color-step-150, #e0e0e0)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                zIndex: 1000 // Über dem Content, aber unter eventuellen Modals
+              }}>
+                <IonIcon icon={attach} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{selectedFile.name}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ion-color-medium)' }}>{formatFileSize(selectedFile.size)}</div>
+                </div>
+                <IonButton fill="clear" size="small" onClick={() => setSelectedFile(null)}>
+                  <IonIcon icon={trash} />
+                </IonButton>
+              </div>
+            )}
+
+            <IonButton
+              fill="clear"
+              size="small"
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                '--padding-start': '0',
+                '--padding-end': '0',
+                fontSize: '20px' // Attach Icon größer machen
+              }}
+            >
+              <IonIcon icon={attach} />
             </IonButton>
-          </div>
-        )}
-        
-        <IonButton 
-          fill="clear" 
-          size="small"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <IonIcon icon={attach} />
-        </IonButton>
-        
-        
-        <IonTextarea
-          value={messageText}
-          onIonInput={(e) => setMessageText(e.detail.value!)}
-          placeholder="Nachricht schreiben..."
-          autoGrow
-          rows={1}
-          style={{
-            flex: 1,
-            '--background': '#f8f9fa',
-            '--border-radius': '20px',
-            '--padding-start': '12px',
-            '--padding-end': '12px'
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-        />
-        
-        <IonButton 
-          fill="solid" 
-          shape="round"
-          size="small"
-          disabled={(!messageText.trim() && !selectedFile) || uploading}
-          onClick={sendMessage}
-          style={{
-            '--height': '28px',
-            '--min-height': '28px',
-            '--border-radius': '14px',
-            '--padding-start': '6px',
-            '--padding-end': '6px',
-            minWidth: '28px',
-            maxWidth: '28px',
-            fontSize: '14px'
-          }}
-        >
-          {uploading ? <IonSpinner /> : <IonIcon icon={send} />}
-        </IonButton>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          style={{ display: 'none' }}
-          onChange={handleFileSelect}
-          accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-        />
-      </div>
 
 
+            <IonTextarea
+              value={messageText}
+              onIonInput={(e) => setMessageText(e.detail.value!)}
+              placeholder="Nachricht schreiben..."
+              autoGrow
+              rows={1}
+              style={{
+                flex: 1, // Nimmt den restlichen Platz ein
+                // '--background': 'var(--ion-color-light-shade, #f8f9fa)',
+                '--border-radius': '20px',
+                '--padding-start': '12px',
+                '--padding-end': '12px',
+                '--box-shadow': 'none',
+                // Adjust margin-bottom slightly if it conflicts with align-items: flex-end
+                marginBottom: '0',
+                // Ensure text color is readable on the background
+                '--color': 'var(--ion-text-color)'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+
+            <IonButton
+              fill="solid"
+              shape="round"
+              size="small"
+              disabled={(!messageText.trim() && !selectedFile) || uploading}
+              onClick={sendMessage}
+              style={{
+                '--height': '36px',
+                '--min-height': '36px',
+                '--border-radius': '18px',
+                '--padding-start': '0',
+                '--padding-end': '0',
+                minWidth: '36px',
+                maxWidth: '36px',
+                fontSize: '14px', // Send Icon kleiner machen
+                // Adjust margin-bottom to align with the text area
+              }}
+            >
+              {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}
+            </IonButton>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleFileSelect}
+              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+            />
+          </div> {/* Ende des Flex-Containers */}
+        </IonToolbar>
+      </IonFooter>
 
       {/* Action Sheet für Longpress */}
       <IonActionSheet

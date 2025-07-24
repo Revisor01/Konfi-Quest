@@ -134,17 +134,17 @@ const AppContent: React.FC = () => {
 
   }, [user, setBadgeCount, refreshFromAPI]);
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!user) return;
+  // Auto-refresh every 30 seconds - DISABLED wegen Spam
+  // useEffect(() => {
+  //   if (!user) return;
 
-    console.log('🔄 AppContent: Starting auto-refresh every 30s');
-    const interval = setInterval(refreshFromAPI, 30000);
-    return () => {
-      console.log('🔄 AppContent: Stopping auto-refresh');
-      clearInterval(interval);
-    };
-  }, [user, refreshFromAPI]);
+  //   console.log('🔄 AppContent: Starting auto-refresh every 30s');
+  //   const interval = setInterval(refreshFromAPI, 30000);
+  //   return () => {
+  //     console.log('🔄 AppContent: Stopping auto-refresh');
+  //     clearInterval(interval);
+  //   };
+  // }, [user, refreshFromAPI]);
 
   if (loading) {
     return (

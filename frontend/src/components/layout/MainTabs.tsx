@@ -1,5 +1,6 @@
+// MainTabs.tsx
 import React from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Redirect, Route, useLocation } from 'react-router-dom'; // useLocation importieren!
 import {
   IonIcon,
   IonLabel,
@@ -12,7 +13,6 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonSpinner,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -20,27 +20,13 @@ import {
   IonItem,
   IonBadge
 } from '@ionic/react';
-import { 
-  people, 
-  chatbubbles, 
-  calendar, 
-  star, 
-  ellipsisHorizontal,
-  person,
-  home,
-  logOut,
-  settings,
-  information,
-  flash,
-  pricetag,
-  school,
-  document,
-  shield,
-  business
+import {
+  people, chatbubbles, calendar, star, ellipsisHorizontal,
+  person, home, flash, pricetag, school, document, shield, business
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
-import { ModalProvider } from '../../contexts/ModalContext';
+import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
 import AdminEventsPage from '../admin/pages/AdminEventsPage';
@@ -52,8 +38,8 @@ import AdminUsersPage from '../admin/pages/AdminUsersPage';
 import AdminRolesPage from '../admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
-import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
-import ChatRoomView from '../chat/views/ChatRoomView';
+import ChatOverviewPage from '../chat/pages/ChatOverviewPage'; // Diese bleibt!
+import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
 import PushNotificationSettings from '../common/PushNotificationSettings';
 import ChatPermissionsSettings from '../admin/settings/ChatPermissionsSettings';
 import KonfiDetailView from '../admin/views/KonfiDetailView';
@@ -66,16 +52,29 @@ import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  const { badgeCount } = useBadge(); // Badge Hook direkt hier!
+  const { badgeCount } = useBadge();
+  const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
   if (!user) {
     return null;
   }
 
+  // Funktion, um zu prüfen, ob die Tab-Bar angezeigt werden soll
+  const isTabBarHidden = (path: string) => {
+    // Verstecke die Tab-Bar, wenn der Pfad ein Chat-Raum ist
+    return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/');
+  };
+
   return user.type === 'admin' ? (
     // Admin Tabs
     <ModalProvider>
       <IonTabs>
+        {/*
+          Der IonRouterOutlet rendert die Inhalte der Tabs.
+          Der Schlüssel ist, dass die Chat-Routen jetzt tiefer verschachtelt sind,
+          aber immer noch innerhalb dieses Outlets.
+          Ionic behandelt automatisch die Navigation und Transitionen innerhalb desselben Outlets flüssiger.
+        */}
         <IonRouterOutlet>
           <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
@@ -83,8 +82,14 @@ const MainTabs: React.FC = () => {
             const konfiId = parseInt(props.match.params.id);
             return <KonfiDetailView konfiId={konfiId} onBack={() => props.history.goBack()} />;
           }} />
+
+          {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/admin/chat" component={ChatOverviewPage} />
-          <Route path="/admin/chat/room/:roomId" component={ChatRoomView} />
+          <Route path="/admin/chat/room/:roomId" render={(props) => {
+            const roomId = parseInt(props.match.params.roomId);
+            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
+          }} />
+
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
           <Route path="/admin/events/:id" render={(props) => {
             const eventId = parseInt(props.match.params.id);
@@ -106,8 +111,8 @@ const MainTabs: React.FC = () => {
                 </IonToolbar>
               </IonHeader>
               <IonContent className="ion-padding">
-                {(user?.permissions?.includes('admin.users.view') || 
-                  user?.permissions?.includes('admin.roles.view') || 
+                {(user?.permissions?.includes('admin.users.view') ||
+                  user?.permissions?.includes('admin.roles.view') ||
                   user?.permissions?.includes('admin.organizations.view')) && (
                   <IonCard>
                     <IonCardHeader>
@@ -115,10 +120,10 @@ const MainTabs: React.FC = () => {
                     </IonCardHeader>
                     <IonCardContent>
                       {user?.permissions?.includes('admin.users.view') && (
-                        <IonItem 
-                          button={user?.permissions?.includes('admin.users.edit')} 
+                        <IonItem
+                          button={user?.permissions?.includes('admin.users.edit')}
                           routerLink={user?.permissions?.includes('admin.users.edit') ? "/admin/users" : undefined}
-                          style={{ 
+                          style={{
                             opacity: user?.permissions?.includes('admin.users.edit') ? 1 : 0.5,
                             cursor: user?.permissions?.includes('admin.users.edit') ? 'pointer' : 'not-allowed'
                           }}
@@ -131,10 +136,10 @@ const MainTabs: React.FC = () => {
                         </IonItem>
                       )}
                       {user?.permissions?.includes('admin.roles.view') && (
-                        <IonItem 
+                        <IonItem
                           button={user?.permissions?.includes('admin.roles.edit')}
                           routerLink={user?.permissions?.includes('admin.roles.edit') ? "/admin/roles" : undefined}
-                          style={{ 
+                          style={{
                             opacity: user?.permissions?.includes('admin.roles.edit') ? 1 : 0.5,
                             cursor: user?.permissions?.includes('admin.roles.edit') ? 'pointer' : 'not-allowed'
                           }}
@@ -147,10 +152,10 @@ const MainTabs: React.FC = () => {
                         </IonItem>
                       )}
                       {user?.permissions?.includes('admin.organizations.view') && (
-                        <IonItem 
+                        <IonItem
                           button={user?.permissions?.includes('admin.organizations.edit')}
                           routerLink={user?.permissions?.includes('admin.organizations.edit') ? "/admin/organizations" : undefined}
-                          style={{ 
+                          style={{
                             opacity: user?.permissions?.includes('admin.organizations.edit') ? 1 : 0.5,
                             cursor: user?.permissions?.includes('admin.organizations.edit') ? 'pointer' : 'not-allowed'
                           }}
@@ -189,7 +194,6 @@ const MainTabs: React.FC = () => {
                 </IonCard>
 
                 <ChatPermissionsSettings />
-
                 <PushNotificationSettings />
 
                 <IonCard>
@@ -213,41 +217,44 @@ const MainTabs: React.FC = () => {
           <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
         </IonRouterOutlet>
 
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="admin-konfis" href="/admin/konfis">
-            <IonIcon icon={people} />
-            <IonLabel>Konfis</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="admin-chat" href="/admin/chat">
-            <IonIcon icon={chatbubbles} />
-            <IonLabel>Chat</IonLabel>
-            {badgeCount > 0 && (
-              <IonBadge color="danger">
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </IonBadge>
-            )}
-          </IonTabButton>
-          <IonTabButton tab="admin-activities" href="/admin/activities">
-            <IonIcon icon={calendar} />
-            <IonLabel>Aktivitäten</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="admin-events" href="/admin/events">
-            <IonIcon icon={flash} />
-            <IonLabel>Events</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="admin-badges" href="/admin/badges">
-            <IonIcon icon={star} />
-            <IonLabel>Badges</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="admin-requests" href="/admin/requests">
-            <IonIcon icon={document} />
-            <IonLabel>Anträge</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="admin-settings" href="/admin/settings">
-            <IonIcon icon={ellipsisHorizontal} />
-            <IonLabel>Mehr</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
+        {/* Die IonTabBar wird bedingt gerendert */}
+        {!isTabBarHidden(location.pathname) && (
+          <IonTabBar slot="bottom">
+            <IonTabButton tab="admin-konfis" href="/admin/konfis">
+              <IonIcon icon={people} />
+              <IonLabel>Konfis</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="admin-chat" href="/admin/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
+              <IonIcon icon={chatbubbles} />
+              <IonLabel>Chat</IonLabel>
+              {badgeCount > 0 && (
+                <IonBadge color="danger">
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </IonBadge>
+              )}
+            </IonTabButton>
+            <IonTabButton tab="admin-activities" href="/admin/activities">
+              <IonIcon icon={calendar} />
+              <IonLabel>Aktivitäten</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="admin-events" href="/admin/events">
+              <IonIcon icon={flash} />
+              <IonLabel>Events</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="admin-badges" href="/admin/badges">
+              <IonIcon icon={star} />
+              <IonLabel>Badges</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="admin-requests" href="/admin/requests">
+              <IonIcon icon={document} />
+              <IonLabel>Anträge</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="admin-settings" href="/admin/settings">
+              <IonIcon icon={ellipsisHorizontal} />
+              <IonLabel>Mehr</IonLabel>
+            </IonTabButton>
+          </IonTabBar>
+        )}
       </IonTabs>
     </ModalProvider>
   ) : (
@@ -259,44 +266,53 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
           <Route exact path="/konfi/events" component={KonfiEventsPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
+
+          {/* CHAT ROUTEN - Nach Konfis-Pattern */}
           <Route exact path="/konfi/chat" component={ChatOverviewPage} />
-          <Route path="/konfi/chat/room/:roomId" component={ChatRoomView} />
+          <Route path="/konfi/chat/room/:roomId" render={(props) => {
+            const roomId = parseInt(props.match.params.roomId);
+            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
+          }} />
+
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
           <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />
         </IonRouterOutlet>
 
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="dashboard" href="/konfi/dashboard">
-            <IonIcon icon={home} />
-            <IonLabel>Dashboard</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="chat" href="/konfi/chat">
-            <IonIcon icon={chatbubbles} />
-            <IonLabel>Chat</IonLabel>
-            {badgeCount > 0 && (
-              <IonBadge color="danger">
-                {badgeCount > 99 ? '99+' : badgeCount}
-              </IonBadge>
-            )}
-          </IonTabButton>
-          <IonTabButton tab="events" href="/konfi/events">
-            <IonIcon icon={calendar} />
-            <IonLabel>Events</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="badges" href="/konfi/badges">
-            <IonIcon icon={star} />
-            <IonLabel>Badges</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="requests" href="/konfi/requests">
-            <IonIcon icon={document} />
-            <IonLabel>Anfragen</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="profile" href="/konfi/profile">
-            <IonIcon icon={person} />
-            <IonLabel>Profil</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
+        {/* Die IonTabBar wird bedingt gerendert */}
+        {!isTabBarHidden(location.pathname) && (
+          <IonTabBar slot="bottom">
+            <IonTabButton tab="dashboard" href="/konfi/dashboard">
+              <IonIcon icon={home} />
+              <IonLabel>Dashboard</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="chat" href="/konfi/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
+              <IonIcon icon={chatbubbles} />
+              <IonLabel>Chat</IonLabel>
+              {badgeCount > 0 && (
+                <IonBadge color="danger">
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </IonBadge>
+              )}
+            </IonTabButton>
+            <IonTabButton tab="events" href="/konfi/events">
+              <IonIcon icon={calendar} />
+              <IonLabel>Events</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="badges" href="/konfi/badges">
+              <IonIcon icon={star} />
+              <IonLabel>Badges</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="requests" href="/konfi/requests">
+              <IonIcon icon={document} />
+              <IonLabel>Anfragen</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="profile" href="/konfi/profile">
+              <IonIcon icon={person} />
+              <IonLabel>Profil</IonLabel>
+            </IonTabButton>
+          </IonTabBar>
+        )}
       </IonTabs>
     </ModalProvider>
   );

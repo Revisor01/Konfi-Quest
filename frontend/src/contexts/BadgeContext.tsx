@@ -22,7 +22,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // API refresh function - wird von AppContent aufgerufen
   const refreshFromAPI = useCallback(async () => {
     try {
-      console.log('🔄 BadgeContext: Refreshing from API');
+      // console.log('🔄 BadgeContext: Refreshing from API'); // DISABLED wegen Spam
       const response = await api.get('/chat/rooms');
       const rooms = response.data;
       
@@ -31,7 +31,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         totalUnread += room.unread_count || 0;
       });
       
-      console.log('📱 BadgeContext: API refresh result:', totalUnread);
+      // console.log('📱 BadgeContext: API refresh result:', totalUnread); // DISABLED wegen Spam
       setBadgeCount(totalUnread);
     } catch (error) {
       console.log('📱 BadgeContext: API refresh failed:', error);
