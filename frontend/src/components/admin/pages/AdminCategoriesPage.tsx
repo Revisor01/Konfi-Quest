@@ -41,8 +41,6 @@ interface Category {
   id: number;
   name: string;
   description?: string;
-  color?: string;
-  type: 'activity' | 'event' | 'both';
   created_at: string;
 }
 
@@ -71,22 +69,19 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
   
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    type: 'both' as 'activity' | 'event' | 'both'
+    description: ''
   });
 
   useEffect(() => {
     if (category) {
       setFormData({
         name: category.name,
-        description: category.description || '',
-        type: category.type
+        description: category.description || ''
       });
     } else {
       setFormData({
         name: '',
-        description: '',
-        type: 'both'
+        description: ''
       });
     }
   }, [category]);
@@ -101,8 +96,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
     try {
       const payload = {
         name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        type: formData.type
+        description: formData.description.trim() || null
       };
 
       if (category) {
@@ -183,26 +177,23 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('admin-settings');
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
   const { user, setSuccess, setError } = useApp();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
 
-  // Modal mit useIonModal Hook - stable reference
+  // Modal mit useIonModal Hook
   const [presentCategoryModalHook, dismissCategoryModalHook] = useIonModal(CategoryModal, {
     category: editCategory,
-    onClose: () => {
-      dismissCategoryModalHook();
-      setEditCategory(null);
-    },
+    onClose: () => dismissCategoryModalHook(),
     onSuccess: () => {
       dismissCategoryModalHook();
-      setEditCategory(null);
       loadCategories();
     }
   });
+
 
   const loadCategories = async () => {
     try {
@@ -218,6 +209,7 @@ const AdminCategoriesPage: React.FC = () => {
   useEffect(() => {
     loadCategories();
   }, []);
+
 
   const handleRefresh = async (event: CustomEvent) => {
     await loadCategories();
@@ -244,16 +236,12 @@ const AdminCategoriesPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditCategory(null);
-    presentCategoryModalHook({
-      presentingElement: presentingElement
-    });
+    presentCategoryModalHook({ presentingElement });
   };
 
   const openEditModal = (category: Category) => {
     setEditCategory(category);
-    presentCategoryModalHook({
-      presentingElement: presentingElement
-    });
+    presentCategoryModalHook({ presentingElement });
   };
 
   // Permission checks
@@ -263,7 +251,7 @@ const AdminCategoriesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <IonPage>
+      <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonTitle>Kategorien</IonTitle>

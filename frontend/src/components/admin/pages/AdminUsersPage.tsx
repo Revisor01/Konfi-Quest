@@ -12,7 +12,7 @@ import {
   IonIcon,
   useIonModal
 } from '@ionic/react';
-import { add } from 'ionicons/icons';
+import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -36,7 +36,7 @@ interface User {
 
 const AdminUsersPage: React.FC = () => {
   const { setSuccess, setError, user } = useApp();
-  const { pageRef, presentingElement } = useModalPage('admin-settings');
+  const { pageRef, presentingElement } = useModalPage('admin-users');
   
   // State
   const [users, setUsers] = useState<User[]>([]);
@@ -127,6 +127,11 @@ const AdminUsersPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+        <IonButtons slot="start">
+          <IonButton onClick={() => window.history.back()}>
+            <IonIcon icon={arrowBack} />
+          </IonButton>
+        </IonButtons>
           <IonTitle>Benutzer-Verwaltung</IonTitle>
           <IonButtons slot="end">
             {user?.permissions?.includes('admin.users.create') && (

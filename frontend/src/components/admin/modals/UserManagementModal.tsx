@@ -283,7 +283,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   };
 
   return (
-    <IonPage>
+    <>
       <IonHeader>
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
@@ -464,7 +464,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonCard>
         )}
       </IonContent>
-    </IonPage>
+    </>
   );
 };
 

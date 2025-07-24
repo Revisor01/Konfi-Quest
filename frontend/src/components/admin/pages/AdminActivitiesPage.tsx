@@ -14,6 +14,7 @@ import {
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -31,7 +32,7 @@ interface Activity {
 
 const AdminActivitiesPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
-  const pageRef = useRef<HTMLElement>(null);
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-activities');
   
   // State
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -39,20 +40,14 @@ const AdminActivitiesPage: React.FC = () => {
   
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [modalActivityId, setModalActivityId] = useState<number | null>(null);
 
-  // Modal mit useIonModal Hook - löst Tab-Navigation Problem
+  // Modal mit useIonModal Hook 
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityManagementModal, {
-    activityId: modalActivityId,
-    onClose: () => {
-      dismissActivityModalHook();
-      setSelectedActivity(null);
-      setModalActivityId(null);
-    },
+    activity: selectedActivity,
+    activityId: selectedActivity?.id || null,
+    onClose: () => dismissActivityModalHook(),
     onSuccess: () => {
       dismissActivityModalHook();
-      setSelectedActivity(null);
-      setModalActivityId(null);
       loadActivities();
     }
   });
@@ -104,18 +99,20 @@ const AdminActivitiesPage: React.FC = () => {
   };
 
   const handleSelectActivity = (activity: Activity) => {
+    console.log('🎯 AdminActivitiesPage: Opening edit modal with presentingElement:', presentingElement);
+    console.log('🎯 AdminActivitiesPage: pageRef.current:', pageRef.current);
     setSelectedActivity(activity);
-    setModalActivityId(activity.id);
-    presentActivityModalHook({
-      presentingElement: pageRef.current || undefined
+    presentActivityModalHook({ 
+      presentingElement: presentingElement || pageRef.current || undefined 
     });
   };
 
   const presentActivityModal = () => {
+    console.log('🎯 AdminActivitiesPage: Opening create modal with presentingElement:', presentingElement);
+    console.log('🎯 AdminActivitiesPage: pageRef.current:', pageRef.current);
     setSelectedActivity(null);
-    setModalActivityId(null);
-    presentActivityModalHook({
-      presentingElement: pageRef.current || undefined
+    presentActivityModalHook({ 
+      presentingElement: presentingElement || pageRef.current || undefined 
     });
   };
 

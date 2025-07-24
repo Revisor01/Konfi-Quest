@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { modalController } from '@ionic/core';
 
@@ -31,10 +31,12 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [location.pathname]);
 
   const registerPage = useCallback((tabId: string, element: HTMLElement | null) => {
+    console.log('🔥 ModalContext: registerPage called with:', { tabId, element });
     if (element) {
       setTabPresentingElements(prev => {
         const newMap = new Map(prev);
         newMap.set(tabId, element);
+        console.log('🔥 ModalContext: Updated map:', Array.from(newMap.keys()));
         return newMap;
       });
     }
@@ -52,6 +54,12 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/events')) currentTabId = 'admin-events';
     else if (currentPath.includes('/admin/badges')) currentTabId = 'admin-badges';
     else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-requests';
+    else if (currentPath.includes('/admin/users')) currentTabId = 'admin-users';
+    else if (currentPath.includes('/admin/roles')) currentTabId = 'admin-roles';
+    else if (currentPath.includes('/admin/organizations')) currentTabId = 'admin-organizations';
+    else if (currentPath.includes('/admin/profile')) currentTabId = 'admin-profile';
+    else if (currentPath.includes('/admin/settings/categories')) currentTabId = 'admin-categories';
+    else if (currentPath.includes('/admin/settings/jahrgaenge')) currentTabId = 'admin-jahrgaenge';
     else if (currentPath.includes('/admin/settings')) currentTabId = 'admin-settings';
     // Konfi Routes - diese sind bereits korrekt
     else if (currentPath.includes('/konfi/dashboard')) currentTabId = 'dashboard';
@@ -61,7 +69,9 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/konfi/chat')) currentTabId = 'chat';
     else if (currentPath.includes('/konfi/profile')) currentTabId = 'profile';
     
-    return tabPresentingElements.get(currentTabId);
+    const element = tabPresentingElements.get(currentTabId);
+    console.log('🔥 ModalContext: getCurrentPresentingElement:', { currentPath, currentTabId, element, allKeys: Array.from(tabPresentingElements.keys()) });
+    return element;
   };
 
   const presentingElement = getCurrentPresentingElement();
@@ -85,14 +95,27 @@ export const useModalPage = (tabId: string) => {
   const { registerPage, presentingElement, cleanupModals } = useModal();
   const pageRef = useRef<HTMLElement>(null);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (pageRef.current) {
-        registerPage(tabId, pageRef.current);
-      }
-    }, 0);
+  useLayoutEffect(() => {
+    console.log('🔥 useModalPage: useLayoutEffect triggered for tabId:', tabId);
+    console.log('🔥 useModalPage: pageRef.current:', pageRef.current);
     
-    return () => clearTimeout(timeout);
+    if (pageRef.current) {
+      console.log('🔥 useModalPage: calling registerPage immediately');
+      registerPage(tabId, pageRef.current);
+    } else {
+      // Fallback mit längerem Timeout
+      const timeout = setTimeout(() => {
+        console.log('🔥 useModalPage: fallback timeout callback, pageRef.current:', pageRef.current);
+        if (pageRef.current) {
+          console.log('🔥 useModalPage: calling registerPage from fallback');
+          registerPage(tabId, pageRef.current);
+        } else {
+          console.log('🔥 useModalPage: pageRef.current still null after fallback');
+        }
+      }, 500);
+      
+      return () => clearTimeout(timeout);
+    }
   }, [registerPage, tabId]);
 
   return { pageRef, presentingElement, cleanupModals };

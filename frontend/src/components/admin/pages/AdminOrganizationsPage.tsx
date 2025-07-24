@@ -12,6 +12,9 @@ import {
   IonIcon,
   useIonModal
 } from '@ionic/react';
+import { 
+  arrowBack
+} from 'ionicons/icons';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -39,7 +42,7 @@ interface Organization {
 
 const AdminOrganizationsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('admin-settings');
+  const { pageRef, presentingElement } = useModalPage('admin-organizations');
   
   // State
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -97,7 +100,7 @@ const AdminOrganizationsPage: React.FC = () => {
     if (!window.confirm(`Organisation "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`)) return;
 
     try {
-      await api.delete(`/organizations/${organization.id}`);
+      await api.delete(`/admin/organizations/${organization.id}`);
       setSuccess(`Organisation "${organization.display_name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadOrganizations();
@@ -130,6 +133,11 @@ const AdminOrganizationsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+        <IonButtons slot="start">
+          <IonButton onClick={() => window.history.back()}>
+            <IonIcon icon={arrowBack} />
+          </IonButton>
+        </IonButtons>
           <IonTitle>Organisations-Verwaltung</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={presentOrganizationModal}>
