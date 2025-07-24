@@ -111,39 +111,49 @@ setupIonicReact({
 });
 
 
-const AppContent: React.FC = () => {
-  const { user, loading, chatNotifications, chatNotificationsLoading, refreshChatNotifications } = useApp();
-  const [immediateTabBadge, setImmediateTabBadge] = React.useState(0);
+// Custom hook for tab badge management
+const useTabBadge = () => {
+  const { user, chatNotifications, refreshChatNotifications } = useApp();
+  const [tabBadgeCount, setTabBadgeCount] = React.useState(0);
   
-  // Get immediate badge count from device for instant tab badge display
+  // Load badge immediately when user is available (app start/resume)
   React.useEffect(() => {
-    if (user && !loading) {
-      console.log('🔄 User loaded, getting immediate badge for tabs');
+    if (user) {
+      console.log('🏁 User available - loading tab badge immediately');
       
-      // Try to get current badge from device for immediate display
+      // Get immediate badge from device first
       import('@capawesome/capacitor-badge').then(({ Badge }) => {
         Badge.get().then(result => {
+          console.log('📱 Device badge for tabs:', result.count);
           if (result.count > 0) {
-            setImmediateTabBadge(result.count);
-            console.log('📱 Got immediate tab badge from device:', result.count);
+            setTabBadgeCount(result.count);
           }
+          
+          // Always refresh from server for accuracy
+          refreshChatNotifications();
         }).catch(error => {
           console.log('📱 Could not read device badge for tabs:', error);
+          // Fallback: just refresh from server
+          refreshChatNotifications();
         });
       }).catch(() => {
         console.log('📱 Badge plugin not available');
+        refreshChatNotifications();
       });
-      
-      refreshChatNotifications();
     }
-  }, [user, loading]);
+  }, [user]); // Trigger when user changes (login/logout)
   
-  // Update immediate badge when chat notifications change
+  // Sync with chat notifications when they change
   React.useEffect(() => {
-    if (chatNotifications.totalUnreadCount !== immediateTabBadge) {
-      setImmediateTabBadge(chatNotifications.totalUnreadCount);
-    }
+    setTabBadgeCount(chatNotifications.totalUnreadCount);
   }, [chatNotifications.totalUnreadCount]);
+  
+  return tabBadgeCount;
+};
+
+const AppContent: React.FC = () => {
+  const { user, loading } = useApp();
+  const tabBadgeCount = useTabBadge();
 
   if (loading) {
     return (
@@ -320,9 +330,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="admin-chat" href="/admin/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {immediateTabBadge > 0 && (
+                    {tabBadgeCount > 0 && (
                       <IonBadge color="danger">
-                        {immediateTabBadge > 99 ? '99+' : immediateTabBadge}
+                        {tabBadgeCount > 99 ? '99+' : tabBadgeCount}
                       </IonBadge>
                     )}
                   </IonTabButton>
@@ -372,9 +382,9 @@ const AppContent: React.FC = () => {
                   <IonTabButton tab="chat" href="/konfi/chat">
                     <IonIcon icon={chatbubbles} />
                     <IonLabel>Chat</IonLabel>
-                    {immediateTabBadge > 0 && (
+                    {tabBadgeCount > 0 && (
                       <IonBadge color="danger">
-                        {immediateTabBadge > 99 ? '99+' : immediateTabBadge}
+                        {tabBadgeCount > 99 ? '99+' : tabBadgeCount}
                       </IonBadge>
                     )}
                   </IonTabButton>

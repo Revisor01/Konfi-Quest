@@ -214,6 +214,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
       setMessageText('');
       setSelectedFile(null);
+      
+      // Mark as read BEFORE loading messages to prevent badge increment
+      markRoomAsRead();
+      
       await loadMessages();
     } catch (err) {
       setError('Fehler beim Senden der Nachricht');

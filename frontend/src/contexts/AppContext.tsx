@@ -139,9 +139,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [user]);
 
   const markChatRoomAsRead = (roomId: number) => {
+    console.log('✅ Marking room as read:', roomId);
     setChatNotifications(prev => {
       const currentUnread = prev.unreadByRoom[roomId] || 0;
       const newTotalCount = prev.totalUnreadCount - currentUnread;
+      
+      console.log(`📊 Room ${roomId}: was ${currentUnread} unread, total going from ${prev.totalUnreadCount} to ${newTotalCount}`);
       
       // Only update badge if count actually changed
       if (prev.totalUnreadCount !== newTotalCount) {
@@ -169,6 +172,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUnreadChatMessage = (roomId: number, count: number = 1) => {
+    console.log('🔔 Adding unread message for room:', roomId, 'count:', count);
     setChatNotifications(prev => {
       const newTotalCount = prev.totalUnreadCount + count;
       
