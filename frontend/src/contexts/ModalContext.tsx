@@ -45,16 +45,15 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const currentPath = location.pathname;
     let currentTabId = '';
     
-    // Admin Routes
-    if (currentPath.includes('/admin/konfis')) currentTabId = 'konfis';
-    else if (currentPath.includes('/admin/chat')) currentTabId = 'chat';
-    else if (currentPath.includes('/admin/activities')) currentTabId = 'activities';
-    else if (currentPath.includes('/admin/events')) currentTabId = 'events';
-    else if (currentPath.includes('/admin/settings/categories')) currentTabId = 'categories';
-    else if (currentPath.includes('/admin/settings/jahrgaenge')) currentTabId = 'jahrgaenge';
-    else if (currentPath.includes('/admin/badges')) currentTabId = 'badges';
-    else if (currentPath.includes('/admin/settings')) currentTabId = 'settings';
-    // Konfi Routes
+    // Admin Routes - KORRIGIERT: Tab IDs müssen mit MainTabs.tsx übereinstimmen
+    if (currentPath.includes('/admin/konfis')) currentTabId = 'admin-konfis';
+    else if (currentPath.includes('/admin/chat')) currentTabId = 'admin-chat';
+    else if (currentPath.includes('/admin/activities')) currentTabId = 'admin-activities';
+    else if (currentPath.includes('/admin/events')) currentTabId = 'admin-events';
+    else if (currentPath.includes('/admin/badges')) currentTabId = 'admin-badges';
+    else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-requests';
+    else if (currentPath.includes('/admin/settings')) currentTabId = 'admin-settings';
+    // Konfi Routes - diese sind bereits korrekt
     else if (currentPath.includes('/konfi/dashboard')) currentTabId = 'dashboard';
     else if (currentPath.includes('/konfi/events')) currentTabId = 'events';
     else if (currentPath.includes('/konfi/requests')) currentTabId = 'requests';

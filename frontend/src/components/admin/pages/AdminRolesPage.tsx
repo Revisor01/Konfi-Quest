@@ -34,7 +34,7 @@ interface Role {
 
 const AdminRolesPage: React.FC = () => {
   const { setSuccess, setError, user } = useApp();
-  const { pageRef, presentingElement } = useModalPage('roles');
+  const { pageRef, presentingElement } = useModalPage('admin-settings');
   
   // State
   const [roles, setRoles] = useState<Role[]>([]);

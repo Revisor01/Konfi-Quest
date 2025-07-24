@@ -183,7 +183,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 };
 
 const AdminCategoriesPage: React.FC = () => {
-  const { pageRef, presentingElement } = useModalPage('categories');
+  const { pageRef, presentingElement } = useModalPage('admin-settings');
   const { user, setSuccess, setError } = useApp();
   
   const [categories, setCategories] = useState<Category[]>([]);

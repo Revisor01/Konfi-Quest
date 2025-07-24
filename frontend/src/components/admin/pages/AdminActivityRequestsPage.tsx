@@ -35,7 +35,7 @@ interface ActivityRequest {
 
 const AdminActivityRequestsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('activity-requests');
+  const { pageRef, presentingElement } = useModalPage('admin-requests');
   
   // State
   const [requests, setRequests] = useState<ActivityRequest[]>([]);

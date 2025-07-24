@@ -26,7 +26,8 @@ import {
   IonCol,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  useIonModal
 } from '@ionic/react';
 import { 
   chatbubbles, 
@@ -38,10 +39,13 @@ import {
   trash,
   search
 } from 'ionicons/icons';
+import { useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
+import { useModalPage } from '../../contexts/ModalContext';
 import api from '../../services/api';
 import LoadingSpinner from '../common/LoadingSpinner';
+import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 
 interface ChatRoom {
   id: number;
@@ -65,21 +69,24 @@ interface ChatRoom {
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoom) => void;
-  onCreateNewChat: () => void;
-  pageRef?: React.RefObject<HTMLElement | null>;
 }
 
 interface ChatOverviewRef {
   loadChatRooms: () => void;
 }
 
-const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, onCreateNewChat, pageRef: externalPageRef }, ref) => {
-  const pageRef = externalPageRef || useRef<HTMLElement | null>(null);
+const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
   const { user, setError, setSuccess } = useApp();
   const { refreshFromAPI, badgeCount } = useBadge();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
+
+  // Nutze den useModalPage Hook, um die Seite zu registrieren
+  const location = useLocation();
+  // Bestimme die korrekte Tab-ID basierend auf dem Pfad
+  const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
+  const { pageRef, presentingElement } = useModalPage(tabId);
 
   useEffect(() => {
     loadChatRooms();
@@ -108,6 +115,22 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     } finally {
       if (!silent) setLoading(false);
     }
+  };
+
+  // Modal mit useIonModal Hook
+  const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
+    onClose: () => dismissChatModalHook(),
+    onSuccess: () => {
+      dismissChatModalHook();
+      loadChatRooms(); // Chatliste neu laden
+    }
+  });
+
+  const handleCreateNewChat = () => {
+    console.log('🎯 ChatOverview: Opening modal with presentingElement:', pageRef.current);
+    presentChatModalHook({
+      presentingElement: pageRef.current || undefined
+    });
   };
 
   // Expose loadChatRooms to parent component
@@ -230,7 +253,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         <IonToolbar>
           <IonTitle>Chat</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={onCreateNewChat}>
+            <IonButton onClick={handleCreateNewChat}>
               <IonIcon icon={add} />
             </IonButton>
           </IonButtons>

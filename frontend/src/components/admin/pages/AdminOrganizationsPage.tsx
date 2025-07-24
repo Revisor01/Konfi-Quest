@@ -39,7 +39,7 @@ interface Organization {
 
 const AdminOrganizationsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('organizations');
+  const { pageRef, presentingElement } = useModalPage('admin-settings');
   
   // State
   const [organizations, setOrganizations] = useState<Organization[]>([]);

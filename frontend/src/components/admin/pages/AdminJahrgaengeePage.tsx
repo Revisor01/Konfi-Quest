@@ -177,7 +177,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 };
 
 const AdminJahrgaengeePage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('jahrgaenge');
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
   const { user, setSuccess, setError } = useApp();
   
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);

@@ -53,7 +53,7 @@ interface Settings {
 const AdminKonfisPage: React.FC = () => {
   const { setSuccess, setError, user } = useApp();
   const history = useHistory();
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('konfis');
+  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-konfis');
   
   // State
   const [konfis, setKonfis] = useState<Konfi[]>([]);

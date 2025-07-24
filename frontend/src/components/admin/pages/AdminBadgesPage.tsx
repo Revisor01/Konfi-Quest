@@ -36,7 +36,7 @@ interface Badge {
 
 const AdminBadgesPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('badges');
+  const { pageRef, presentingElement } = useModalPage('admin-badges');
   
   // State
   const [badges, setBadges] = useState<Badge[]>([]);

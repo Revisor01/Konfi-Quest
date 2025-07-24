@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// ChatRoomView.tsx
+
+// 1. Benötigte Imports hinzufügen
+import React, { useState, useEffect, useRef } from 'react'; // useRef hinzufügen
 import {
   IonPage,
   IonHeader,
@@ -10,6 +13,8 @@ import {
   IonIcon,
 } from '@ionic/react';
 import { arrowBack } from 'ionicons/icons';
+import { useLocation } from 'react-router-dom'; // Hinzufügen
+import { useModalPage } from '../../../contexts/ModalContext'; // Hinzufügen
 import ChatRoom from '../ChatRoom';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -30,14 +35,20 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
   const [room, setRoom] = useState<ChatRoomData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // 2. Den useModalPage-Hook HIER aufrufen
+  const location = useLocation();
+  const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
+  const { pageRef, presentingElement } = useModalPage(tabId);
+
 
   useEffect(() => {
     loadRoom();
   }, [roomId]);
 
   const loadRoom = async () => {
+    // ... (Funktion bleibt unverändert)
     if (!roomId) return;
-
     setLoading(true);
     setError(null);
     try {
@@ -51,14 +62,10 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
     }
   };
 
-  // Loading Screen entfernt - direkt rendern
-  // if (loading) {
-  //   return <LoadingSpinner fullScreen message="Chat wird geladen..." />;
-  // }
-
   if (error) {
+    // 3. Wichtig: Die Fehlerseite muss auch eine IonPage mit dem Ref sein
     return (
-      <IonPage>
+      <IonPage ref={pageRef}>
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
@@ -77,13 +84,16 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
     );
   }
 
-  // Render ChatRoom auch wenn room noch null ist (loading state)
-  // ChatRoom wird dann eine leere Seite mit Header zeigen bis room geladen ist
+  // 4. ChatRoom bekommt jetzt das `presentingElement` als Prop
+  //    und wird innerhalb der IonPage von ChatRoomView gerendert.
   return (
-    <ChatRoom
-      room={room}
-      onBack={onBack}
-    />
+    <IonPage ref={pageRef}>
+      <ChatRoom
+        room={room}
+        onBack={onBack}
+        presentingElement={presentingElement} // <-- HIER wird es durchgereicht
+      />
+    </IonPage>
   );
 };
 

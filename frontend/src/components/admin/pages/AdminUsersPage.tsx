@@ -36,7 +36,7 @@ interface User {
 
 const AdminUsersPage: React.FC = () => {
   const { setSuccess, setError, user } = useApp();
-  const { pageRef, presentingElement } = useModalPage('users');
+  const { pageRef, presentingElement } = useModalPage('admin-settings');
   
   // State
   const [users, setUsers] = useState<User[]>([]);

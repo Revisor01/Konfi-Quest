@@ -41,7 +41,7 @@ interface Event {
 
 const AdminEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
-  const { pageRef, presentingElement } = useModalPage('events');
+  const { pageRef, presentingElement } = useModalPage('admin-events');
   const history = useHistory();
   
   // State

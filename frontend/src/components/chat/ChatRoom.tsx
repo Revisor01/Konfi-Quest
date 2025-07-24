@@ -100,9 +100,10 @@ interface ChatRoomProps {
     }>;
   } | null;
   onBack: () => void;
+  presentingElement: HTMLElement | undefined | null;
 }
 
-const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
+const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
   const { refreshFromAPI } = useBadge();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -110,13 +111,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pageRef = useRef<HTMLElement>(null);
 
   // Hooks müssen vor conditional returns stehen!
 
@@ -131,9 +130,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   });
   
   const openPollModal = () => {
-    if (!room) return; // Sicherheitscheck bleibt
+    if (!room) return;
     presentPollModalHook({
-      presentingElement: pageRef.current || undefined
+      presentingElement: presentingElement || undefined // <-- Verwendet das Prop
     });
   };
 
@@ -149,9 +148,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   });
   
   const openMembersModal = () => {
-    if (!room) return; // Sicherheitscheck bleibt
+    if (!room) return;
     presentMembersModalHook({
-      presentingElement: pageRef.current || undefined
+      presentingElement: presentingElement || undefined // <-- Verwendet das Prop
     });
   };
 
@@ -179,10 +178,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     }
   }, [messages.length]);
 
-  useEffect(() => {
-    // Setze das presentingElement nach dem ersten Mount
-    setPresentingElement(pageRef.current);
-  }, []);
 
   // Track previous message count to only scroll on NEW messages
   const prevMessageCountRef = useRef(0);
@@ -252,7 +247,16 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
       // Mark as read BEFORE loading messages to prevent badge increment
       if (room) markRoomAsRead();
       
+      // Force scroll to bottom after sending message
+      setShouldAutoScroll(true);
       await loadMessages();
+      
+      // Ensure scroll to bottom after message is loaded
+      setTimeout(() => {
+        if (contentRef.current) {
+          contentRef.current.scrollToBottom(300);
+        }
+      }, 100);
     } catch (err) {
       setError('Fehler beim Senden der Nachricht');
       console.error('Error sending message:', err);
@@ -466,7 +470,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   // Early return nach allen Hooks wenn room noch nicht geladen ist
   if (!room) {
     return (
-      <IonPage>
+      <>
         <IonHeader translucent={true}>
           <IonToolbar>
             <IonButtons slot="start">
@@ -482,7 +486,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             <p>Chat wird geladen...</p>
           </div>
         </IonContent>
-      </IonPage>
+      </>
     );
   }
 
@@ -979,7 +983,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   };
 
   return (
-    <IonPage ref={pageRef}>
+    <>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
@@ -1014,13 +1018,39 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         </div>
       </IonContent>
 
+      {/* File Preview außerhalb des Footers für bessere Sichtbarkeit */}
+      {selectedFile && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px', // Oberhalb des Footers
+          left: '16px',
+          right: '16px',
+          backgroundColor: 'var(--ion-color-light-shade, #f8f9fa)',
+          border: '1px solid var(--ion-color-step-150, #e0e0e0)',
+          borderRadius: '8px',
+          padding: '8px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 1000,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <IonIcon icon={attach} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{selectedFile.name}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--ion-color-medium)' }}>{formatFileSize(selectedFile.size)}</div>
+          </div>
+          <IonButton fill="clear" size="small" onClick={() => setSelectedFile(null)}>
+            <IonIcon icon={trash} />
+          </IonButton>
+        </div>
+      )}
+
       <IonFooter>
         <IonToolbar style={{
           '--min-height': 'auto', // Damit es sich an den Inhalt anpasst
           '--padding-start': '16px',
-          '--padding-end': '16px',
-          // KEINE display: flex, alignItems, gap HIER MEHR!
-          // Das macht jetzt das innere Div.
+          '--padding-end': '16px'
         }}>
           {/* Dieses DIV ist der Flex-Container für Input und Buttons */}
           <div style={{
@@ -1029,33 +1059,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
             gap: '8px',
             width: '100%' // Wichtig, damit es die volle Breite einnimmt
           }}>
-
-            {/* File Preview (wenn ausgewählt) - Positionierung angepasst */}
-            {selectedFile && (
-              <div style={{
-                position: 'absolute',
-                bottom: 'calc(100% + 8px)', // Positioniert 8px oberhalb des Toolbars
-                left: '16px',
-                right: '16px',
-                backgroundColor: 'var(--ion-color-light-shade, #f8f9fa)',
-                border: '1px solid var(--ion-color-step-150, #e0e0e0)',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                zIndex: 1000 // Über dem Content, aber unter eventuellen Modals
-              }}>
-                <IonIcon icon={attach} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{selectedFile.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--ion-color-medium)' }}>{formatFileSize(selectedFile.size)}</div>
-                </div>
-                <IonButton fill="clear" size="small" onClick={() => setSelectedFile(null)}>
-                  <IonIcon icon={trash} />
-                </IonButton>
-              </div>
-            )}
 
             <IonButton
               fill="clear"
@@ -1162,7 +1165,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
         ]}
       />
 
-    </IonPage>
+    </>
   );
 };
 
