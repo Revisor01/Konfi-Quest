@@ -150,10 +150,10 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                     
                     // Create konfi profile entry
                     const profileQuery = `INSERT INTO konfi_profiles 
-                        (user_id, jahrgang_id, password_plain, gottesdienst_points, gemeinde_points) 
-                        VALUES (?, ?, ?, 0, 0)`;
+                        (user_id, jahrgang_id, organization_id, password_plain, gottesdienst_points, gemeinde_points) 
+                        VALUES (?, ?, ?, ?, 0, 0)`;
                     
-                    db.run(profileQuery, [userId, jahrgang_id, password], function(err) {
+                    db.run(profileQuery, [userId, jahrgang_id, req.user.organization_id, password], function(err) {
                         if (err) {
                             db.run("ROLLBACK");
                             console.error("Error creating konfi profile:", err);
