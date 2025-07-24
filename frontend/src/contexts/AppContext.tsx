@@ -84,6 +84,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
+  
+  // Badge sync event system
+  const emitBadgeUpdate = useCallback((count: number) => {
+    const event = new CustomEvent('badgeUpdate', { detail: count });
+    window.dispatchEvent(event);
+  }, []);
 
   // Chat notification functions
   const refreshChatNotifications = useCallback(async () => {
@@ -118,6 +124,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (badgeError) {
         console.log('Badge not available:', badgeError);
       }
+      
+      // Emit badge update event for tab synchronization
+      emitBadgeUpdate(totalUnread);
     } catch (err) {
       console.error('Error loading chat notifications:', err);
     } finally {
@@ -128,8 +137,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const markChatRoomAsRead = (roomId: number) => {
     setChatNotifications(prev => {
       const currentUnread = prev.unreadByRoom[roomId] || 0;
+      const newTotalCount = prev.totalUnreadCount - currentUnread;
+      
+      // Update icon badge immediately
+      try {
+        if (newTotalCount > 0) {
+          Badge.set({ count: newTotalCount });
+        } else {
+          Badge.clear();
+        }
+      } catch (badgeError) {
+        console.log('Badge not available:', badgeError);
+      }
+      
+      // Emit badge update event
+      emitBadgeUpdate(newTotalCount);
+      
       return {
-        totalUnreadCount: prev.totalUnreadCount - currentUnread,
+        totalUnreadCount: newTotalCount,
         unreadByRoom: {
           ...prev.unreadByRoom,
           [roomId]: 0
@@ -139,13 +164,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUnreadChatMessage = (roomId: number, count: number = 1) => {
-    setChatNotifications(prev => ({
-      totalUnreadCount: prev.totalUnreadCount + count,
-      unreadByRoom: {
-        ...prev.unreadByRoom,
-        [roomId]: (prev.unreadByRoom[roomId] || 0) + count
+    setChatNotifications(prev => {
+      const newTotalCount = prev.totalUnreadCount + count;
+      
+      // Update icon badge immediately
+      try {
+        Badge.set({ count: newTotalCount });
+      } catch (badgeError) {
+        console.log('Badge not available:', badgeError);
       }
-    }));
+      
+      // Emit badge update event
+      emitBadgeUpdate(newTotalCount);
+      
+      return {
+        totalUnreadCount: newTotalCount,
+        unreadByRoom: {
+          ...prev.unreadByRoom,
+          [roomId]: (prev.unreadByRoom[roomId] || 0) + count
+        }
+      };
+    });
   };
 
   // Push notifications functions
@@ -197,8 +236,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       refreshChatNotifications();
       
-      // Auto-refresh notifications every 30 seconds
-      const interval = setInterval(refreshChatNotifications, 30000);
+      // Auto-refresh notifications more frequently for better badge sync
+      const interval = setInterval(refreshChatNotifications, 10000); // Every 10 seconds
       return () => clearInterval(interval);
     } else {
       // Clear notifications when user logs out
