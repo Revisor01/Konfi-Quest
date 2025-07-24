@@ -52,7 +52,8 @@ import AdminUsersPage from '../admin/pages/AdminUsersPage';
 import AdminRolesPage from '../admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
-import ChatPage from '../chat/ChatPage';
+import ChatOverviewPage from '../chat/pages/ChatOverviewPage';
+import ChatRoomView from '../chat/views/ChatRoomView';
 import PushNotificationSettings from '../common/PushNotificationSettings';
 import ChatPermissionsSettings from '../admin/settings/ChatPermissionsSettings';
 import KonfiDetailView from '../admin/views/KonfiDetailView';
@@ -82,7 +83,8 @@ const MainTabs: React.FC = () => {
             const konfiId = parseInt(props.match.params.id);
             return <KonfiDetailView konfiId={konfiId} onBack={() => props.history.goBack()} />;
           }} />
-          <Route exact path="/admin/chat" component={ChatPage} />
+          <Route exact path="/admin/chat" component={ChatOverviewPage} />
+          <Route path="/admin/chat/room/:roomId" component={ChatRoomView} />
           <Route exact path="/admin/activities" component={AdminActivitiesPage} />
           <Route path="/admin/events/:id" render={(props) => {
             const eventId = parseInt(props.match.params.id);
@@ -257,7 +259,8 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
           <Route exact path="/konfi/events" component={KonfiEventsPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
-          <Route exact path="/konfi/chat" component={ChatPage} />
+          <Route exact path="/konfi/chat" component={ChatOverviewPage} />
+          <Route path="/konfi/chat/room/:roomId" component={ChatRoomView} />
           <Route exact path="/konfi/requests" component={KonfiRequestsPage} />
           <Route exact path="/konfi/profile" component={KonfiProfilePage} />
           <Route exact path="/" render={() => <Redirect to="/konfi/dashboard" />} />

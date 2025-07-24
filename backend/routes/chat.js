@@ -613,6 +613,71 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
     });
   });
 });
+  
+  // === NEUER ENDPOINT: Get details for a single chat room ===
+  router.get('/rooms/:roomId', verifyTokenRBAC, (req, res) => {
+    const roomId = req.params.roomId;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    // 1. Sicherheitscheck: Hat der User überhaupt Zugriff auf diesen Raum?
+    // Wir können die gleiche Logik wie beim Nachrichten abrufen wiederverwenden.
+    const accessQuery = "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
+    
+    db.get(accessQuery, [roomId, userId, userType], (err, access) => {
+      // Admins geben wir hier mal pauschal Zugriff (könnte man noch feiner steuern)
+      if ((err || !access) && userType !== 'admin') {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      // 2. Raumdaten und Teilnehmer abrufen
+      const roomQuery = `
+      SELECT 
+        cr.*,
+        j.name as jahrgang_name
+      FROM chat_rooms cr
+      LEFT JOIN jahrgaenge j ON cr.jahrgang_id = j.id
+      WHERE cr.id = ?
+    `;
+      
+      db.get(roomQuery, [roomId], (err, room) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error fetching room' });
+        }
+        if (!room) {
+          return res.status(404).json({ error: 'Room not found' });
+        }
+        
+        // 3. Teilnehmerliste für den Raum abrufen (wird in der View gebraucht)
+        const participantsQuery = `
+        SELECT u.id as user_id, u.display_name, cp.user_type
+        FROM chat_participants cp
+        JOIN users u ON cp.user_id = u.id
+        WHERE cp.room_id = ?
+      `;
+        
+        db.all(participantsQuery, [roomId], (err, participants) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error fetching participants' });
+          }
+          
+          room.participants = participants;
+          
+          // 4. Für Direkt-Chats den Namen anpassen (wie in der /rooms Route)
+          if (room.type === 'direct') {
+            const otherParticipant = participants.find(p => 
+              !(p.user_id === userId && p.user_type === userType)
+            );
+            if (otherParticipant) {
+              room.name = otherParticipant.display_name || room.name;
+            }
+          }
+          
+          res.json(room);
+        });
+      });
+    });
+  });
 
 // Get messages for a room
 router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {

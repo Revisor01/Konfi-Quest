@@ -86,7 +86,17 @@ interface ChatRoom {
 }
 
 interface ChatRoomProps {
-  room: ChatRoom;
+  room: {
+    id: number;
+    name: string;
+    type: 'group' | 'direct' | 'jahrgang' | 'admin';
+    participants?: Array<{
+      user_id: number;
+      user_type: 'admin' | 'konfi';
+      name: string;
+      display_name?: string;
+    }>;
+  };
   onBack: () => void;
 }
 
@@ -141,6 +151,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
 
   // Simple constant polling for reliable real-time updates
   useEffect(() => {
+    if (!room?.id) return;
     loadMessages();
     markRoomAsRead();
     
@@ -172,6 +183,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
   }, [messages, shouldAutoScroll]);
 
   const loadMessages = async () => {
+    if (messages.length === 0) setLoading(true);
     try {
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
@@ -422,25 +434,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     }
   };
 
-  const getDisplayRoomName = (room: ChatRoom) => {
-    // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
-    if (room.type === 'direct') {
-      // Finde den Chat-Partner (nicht der aktuelle User)
-      const otherParticipant = room.participants?.find(p => 
-        !(p.user_id === user?.id && p.user_type === user?.type)
-      );
-      
-      if (otherParticipant) {
-        return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
+  const getDisplayRoomName = () => {
+      if (room.type === 'direct' && room.participants) {
+        const otherParticipant = room.participants.find(p => 
+          !(p.user_id === user?.id && p.user_type === user?.type)
+        );
+        if (otherParticipant) {
+          return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
+        }
       }
-      
-      // Fallback: verwende room.name wenn keine Participants geladen
-      return room.name || 'Direktchat';
-    }
-    
-    // Für alle anderen Chat-Typen: normaler Name
-    return room.name || 'Chat';
-  };
+      return room.name || 'Chat';
+    };
 
   const renderMessage = (message: Message) => {
     const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
