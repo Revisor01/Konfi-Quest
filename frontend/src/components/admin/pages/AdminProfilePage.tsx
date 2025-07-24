@@ -54,10 +54,6 @@ const AdminProfilePage: React.FC = () => {
     onSuccess: () => dismissPasswordModalHook()
   });
 
-  useEffect(() => {
-    // Setze das presentingElement nach dem ersten Mount
-    setPresentingElement(pageRef.current);
-  }, []);
 
   const handleOpenEmailModal = () => {
     presentEmailModalHook({

@@ -191,10 +191,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const loadKonfiData = async () => {
     setLoading(true);
     try {
-      const [konfiRes, requestsRes] = await Promise.all([
-        api.get(`/admin/konfis/${konfiId}`),
-        api.get('/admin/activities/requests')
-      ]);
+      // Lade Konfi-Daten
+      const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
+      
+      // Versuche Activity-Requests zu laden (optional, falls Permissions vorhanden)
+      let requestsRes = { data: [] };
+      try {
+        requestsRes = await api.get('/admin/activities/requests');
+      } catch (requestsError) {
+        console.warn('Could not load activity requests (permission denied):', requestsError);
+        // Fallback: keine Requests anzeigen
+      }
       
       console.log('Konfi data loaded:', konfiRes.data);
       console.log('Password from API:', konfiRes.data.password);
