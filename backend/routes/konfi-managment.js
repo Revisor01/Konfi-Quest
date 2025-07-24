@@ -74,11 +74,11 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 FROM konfi_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
-                WHERE ka.konfi_id = ?
+                WHERE ka.konfi_id = ? AND a.organization_id = ?
                 ORDER BY ka.completed_date DESC
             `;
             
-            db.all(activitiesQuery, [req.params.id], (err, activities) => {
+            db.all(activitiesQuery, [req.params.id, req.user.organization_id], (err, activities) => {
                 if (err) {
                     console.error('Error fetching activities:', err);
                     activities = [];
@@ -90,11 +90,11 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                            u.display_name as admin
                     FROM bonus_points bp
                     LEFT JOIN users u ON bp.admin_id = u.id
-                    WHERE bp.konfi_id = ?
+                    WHERE bp.konfi_id = ? AND bp.organization_id = ?
                     ORDER BY bp.created_at DESC
                 `;
                 
-                db.all(bonusQuery, [req.params.id], (err, bonusPoints) => {
+                db.all(bonusQuery, [req.params.id, req.user.organization_id], (err, bonusPoints) => {
                     if (err) {
                         console.error('Error fetching bonus points:', err);
                         bonusPoints = [];
@@ -306,10 +306,10 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
             return res.status(400).json({ error: 'Points, type and description are required' });
         }
 
-        const query = `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, created_at)
-                       VALUES (?, ?, ?, ?, ?, datetime('now'))`;
+        const query = `INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
         
-        db.run(query, [req.params.id, points, type, description, req.user.id], function(err) {
+        db.run(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id], function(err) {
             if (err) {
                 console.error('Error creating bonus points:', err);
                 return res.status(500).json({ error: 'Database error' });
