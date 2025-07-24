@@ -225,8 +225,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`🚀 Konfi Points API running on port ${PORT}`);
   
-  // Background Services starten
-  BackgroundService.startBadgeUpdateService(db);
+  // Background badge service removed - using frontend polling instead
   console.log(`📁 Uploads directory: ${uploadsDir}`);
 });
 

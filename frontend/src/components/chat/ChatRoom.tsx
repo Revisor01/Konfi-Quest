@@ -151,6 +151,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     return () => clearInterval(interval);
   }, [room.id]);
 
+  // Ensure we mark as read when component mounts/updates
+  useEffect(() => {
+    markRoomAsRead();
+  }, [messages.length]);
+
   useEffect(() => {
     // Setze das presentingElement nach dem ersten Mount
     setPresentingElement(pageRef.current);

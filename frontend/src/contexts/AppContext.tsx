@@ -221,6 +221,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load chat notifications when user changes
   useEffect(() => {
     if (user) {
+      // Try to get current badge count from device for immediate display
+      const initializeBadgeFromDevice = async () => {
+        try {
+          const result = await Badge.get();
+          if (result.count > 0) {
+            // Pre-populate with device badge count for immediate display
+            setChatNotifications(prev => ({
+              ...prev,
+              totalUnreadCount: result.count
+            }));
+            console.log('📱 Pre-populated badge from device:', result.count);
+          }
+        } catch (error) {
+          console.log('📱 Could not read device badge:', error);
+        }
+      };
+      
+      // Initialize from device badge first for immediate display
+      initializeBadgeFromDevice();
+      
+      // Load immediately on app start - no delay
       refreshChatNotifications();
       
       // Auto-refresh notifications every 5 seconds for reliable badge sync
@@ -332,15 +353,20 @@ useEffect(() => {
         
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('📥 Push empfangen:', notification);
+          console.log('📥 Push data:', notification.data);
           
-          // Bei Chat-Notifications sofort Badge Count aktualisieren
+          // Bei Chat-Notifications Badge Count aktualisieren
           if (notification.data?.type === 'chat') {
+            console.log('📥 Chat Push - refreshing notifications');
+            
+            // Refresh von Server holen für genaue Counts
             refreshChatNotifications();
           }
           
           // Bei Badge Updates direkt Badge Count setzen ohne API Call
           if (notification.data?.type === 'badge_update') {
             const badgeCount = parseInt(notification.data.count || '0');
+            console.log('📥 Badge update push:', badgeCount);
             setChatNotifications(prev => ({
               ...prev,
               totalUnreadCount: badgeCount

@@ -111,7 +111,7 @@ setupIonicReact({
 
 
 const AppContent: React.FC = () => {
-  const { user, loading, chatNotifications } = useApp();
+  const { user, loading, chatNotifications, chatNotificationsLoading } = useApp();
 
   if (loading) {
     return (

@@ -121,9 +121,16 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     }
   };
 
-  const filteredRooms = rooms.filter(room =>
-    room.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredRooms = rooms
+    .filter(room =>
+      room.name.toLowerCase().includes(searchText.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Sort by last message timestamp (newest first)
+      const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
+      const bTime = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
+      return bTime - aTime; // Newest first
+    });
 
   const formatLastMessageTime = (dateString: string) => {
     if (!dateString) return '';

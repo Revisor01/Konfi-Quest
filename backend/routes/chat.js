@@ -788,19 +788,21 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
             
             participants.forEach(async (p) => {
               try {
-                // Berechne aktuellen Badge Count für diesen User
+                // Berechne aktuellen Badge Count für diesen User - FIXED mit chat_read_status
                 const badgeQuery = `
                   SELECT COUNT(DISTINCT cm.id) as total_unread
                   FROM chat_messages cm
                   JOIN chat_participants cp ON cm.room_id = cp.room_id
+                  LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
                   WHERE cp.user_id = ? 
                   AND cp.user_type = ? 
-                  AND cm.created_at > cp.last_read_at
-                  AND cm.sender_id != ?
+                  AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+                  AND cm.deleted_at IS NULL
+                  AND NOT (cm.user_id = ? AND cm.user_type = ?)
                 `;
                 
-                db.get(badgeQuery, [p.user_id, p.user_type, p.user_id], async (err, badgeResult) => {
-                  const badgeCount = (badgeResult?.total_unread || 0) + 1; // +1 für die neue Nachricht
+                db.get(badgeQuery, [p.user_id, p.user_type, p.user_id, p.user_type, p.user_id, p.user_type], async (err, badgeResult) => {
+                  const badgeCount = badgeResult?.total_unread || 0;
                   
                   // Room Name laden für Push Notification
                   db.get('SELECT name FROM chat_rooms WHERE id = ?', [roomId], async (roomErr, room) => {
