@@ -802,22 +802,31 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
                 `;
                 
                 db.get(badgeQuery, [p.user_id, p.user_type, p.user_id, p.user_type, p.user_id, p.user_type], async (err, badgeResult) => {
-                  const badgeCount = badgeResult?.total_unread || 0;
+                  const badgeCount = (badgeResult?.total_unread || 0) + 1; // +1 für die neue Nachricht
+                  console.log(`📱 Badge count for user ${p.user_id}: ${badgeCount} (was ${badgeResult?.total_unread || 0}, +1 for new message)`);
                   
                   // Room Name laden für Push Notification
-                  db.get('SELECT name FROM chat_rooms WHERE id = ?', [roomId], async (roomErr, room) => {
+                  db.get('SELECT name, type FROM chat_rooms WHERE id = ?', [roomId], async (roomErr, room) => {
                     const roomName = room?.name || 'Chat';
+                    const isDirectChat = room?.type === 'direct';
+                    
+                    // Für Direct Chats: Sender als Titel, für Group Chats: Room Name als Titel
+                    const pushTitle = isDirectChat ? message.sender_name : roomName;
+                    const pushBody = isDirectChat ? 
+                      (content || '[Anhang]') : 
+                      `${message.sender_name}: ${content || '[Anhang]'}`;
                     
                     await PushService.sendChatNotification(db, p.user_id, {
-                      title: message.sender_name,
-                      body: content || '[Anhang]',
+                      title: pushTitle,
+                      body: pushBody,
                       badge: badgeCount,
                       roomId: roomId,
                       messageId: message.id,
                       data: {
                         sender_id: userId,
                         sender_name: message.sender_name,
-                        room_name: roomName
+                        room_name: roomName,
+                        room_type: room?.type || 'unknown'
                       }
                     });
                   });

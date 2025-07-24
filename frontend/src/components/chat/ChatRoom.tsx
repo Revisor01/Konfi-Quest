@@ -142,18 +142,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack }) => {
     loadMessages();
     markRoomAsRead();
     
-    // Constant 5-second polling - simple and reliable
+    // Constant 5-second polling - simple and reliable (no mark-as-read in interval)
     const interval = setInterval(async () => {
       await loadMessages();
-      markRoomAsRead();
     }, 5000);
     
     return () => clearInterval(interval);
   }, [room.id]);
 
-  // Ensure we mark as read when component mounts/updates
+  // Mark as read only when new messages arrive (not every 5 seconds)
   useEffect(() => {
-    markRoomAsRead();
+    if (messages.length > 0) {
+      markRoomAsRead();
+    }
   }, [messages.length]);
 
   useEffect(() => {

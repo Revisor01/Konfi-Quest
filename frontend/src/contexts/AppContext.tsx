@@ -105,21 +105,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         totalUnread += unreadCount;
       });
       
-      setChatNotifications({
-        totalUnreadCount: totalUnread,
-        unreadByRoom
-      });
-      
-      // Update app icon badge
-      try {
-        if (totalUnread > 0) {
-          await Badge.set({ count: totalUnread });
-        } else {
-          await Badge.clear();
+      setChatNotifications(prev => {
+        // Only update badge if count actually changed
+        const hasChanged = prev.totalUnreadCount !== totalUnread;
+        
+        if (hasChanged) {
+          // Update app icon badge only when count changes
+          try {
+            if (totalUnread > 0) {
+              Badge.set({ count: totalUnread });
+              console.log('📱 Badge updated to:', totalUnread);
+            } else {
+              Badge.clear();
+              console.log('📱 Badge cleared');
+            }
+          } catch (badgeError) {
+            console.log('Badge not available:', badgeError);
+          }
         }
-      } catch (badgeError) {
-        console.log('Badge not available:', badgeError);
-      }
+        
+        return {
+          totalUnreadCount: totalUnread,
+          unreadByRoom
+        };
+      });
     } catch (err) {
       console.error('Error loading chat notifications:', err);
     } finally {
@@ -132,15 +141,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const currentUnread = prev.unreadByRoom[roomId] || 0;
       const newTotalCount = prev.totalUnreadCount - currentUnread;
       
-      // Update icon badge immediately
-      try {
-        if (newTotalCount > 0) {
-          Badge.set({ count: newTotalCount });
-        } else {
-          Badge.clear();
+      // Only update badge if count actually changed
+      if (prev.totalUnreadCount !== newTotalCount) {
+        try {
+          if (newTotalCount > 0) {
+            Badge.set({ count: newTotalCount });
+            console.log('📱 Badge updated to:', newTotalCount);
+          } else {
+            Badge.clear();
+            console.log('📱 Badge cleared');
+          }
+        } catch (badgeError) {
+          console.log('Badge not available:', badgeError);
         }
-      } catch (badgeError) {
-        console.log('Badge not available:', badgeError);
       }
       
       return {
@@ -157,9 +170,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChatNotifications(prev => {
       const newTotalCount = prev.totalUnreadCount + count;
       
-      // Update icon badge immediately
+      // Update icon badge immediately (always when adding)
       try {
         Badge.set({ count: newTotalCount });
+        console.log('📱 Badge updated to:', newTotalCount);
       } catch (badgeError) {
         console.log('Badge not available:', badgeError);
       }
@@ -221,25 +235,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load chat notifications when user changes
   useEffect(() => {
     if (user) {
-      // Try to get current badge count from device for immediate display
-      const initializeBadgeFromDevice = async () => {
-        try {
-          const result = await Badge.get();
-          if (result.count > 0) {
-            // Pre-populate with device badge count for immediate display
-            setChatNotifications(prev => ({
-              ...prev,
-              totalUnreadCount: result.count
-            }));
-            console.log('📱 Pre-populated badge from device:', result.count);
-          }
-        } catch (error) {
-          console.log('📱 Could not read device badge:', error);
-        }
-      };
-      
-      // Initialize from device badge first for immediate display
-      initializeBadgeFromDevice();
+      // Reset badge state on startup
+      setChatNotifications({
+        totalUnreadCount: 0,
+        unreadByRoom: {}
+      });
       
       // Load immediately on app start - no delay
       refreshChatNotifications();
@@ -388,6 +388,19 @@ useEffect(() => {
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('📲 Push angeklickt:', action.notification);
           refreshChatNotifications();
+          
+          // Navigate to chat if roomId is provided
+          if (action.notification.data?.type === 'chat' && action.notification.data?.roomId) {
+            const roomId = action.notification.data.roomId;
+            const userType = user?.type || 'konfi';
+            const chatUrl = userType === 'admin' ? '/admin/chat' : '/konfi/chat';
+            
+            // Use timeout to ensure navigation happens after app is fully loaded
+            setTimeout(() => {
+              console.log('📲 Navigating to chat room:', roomId);
+              window.location.href = `${chatUrl}?room=${roomId}`;
+            }, 100);
+          }
         });
         
         // ✅ Jetzt: Registrierung
