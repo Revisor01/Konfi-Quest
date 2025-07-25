@@ -263,29 +263,29 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         // Delete timeslots (mit organization_id check) 
         db.run("DELETE FROM event_timeslots WHERE event_id = ? AND organization_id = ?", [id, req.user.organization_id]);
         
-          // Delete event
-          db.run("DELETE FROM events WHERE id = ? AND organization_id = ?", [id, req.user.organization_id], function(err) {
+        // Delete event
+        db.run("DELETE FROM events WHERE id = ? AND organization_id = ?", [id, req.user.organization_id], function(err) {
+          if (err) {
+            console.error('Error deleting event:', err);
+            db.run("ROLLBACK");
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (this.changes === 0) {
+            db.run("ROLLBACK");
+            return res.status(404).json({ error: 'Event not found' });
+          }
+          
+          db.run("COMMIT", (err) => {
             if (err) {
-              console.error('Error deleting event:', err);
-              db.run("ROLLBACK");
+              console.error('Error committing transaction:', err);
               return res.status(500).json({ error: 'Database error' });
             }
-            
-            if (this.changes === 0) {
-              db.run("ROLLBACK");
-              return res.status(404).json({ error: 'Event not found' });
-            }
-            
-            db.run("COMMIT", (err) => {
-              if (err) {
-                console.error('Error committing transaction:', err);
-                return res.status(500).json({ error: 'Database error' });
-              }
-              res.json({ message: 'Event deleted successfully' });
-            });
+            res.json({ message: 'Event deleted successfully' });
           });
         });
       });
+    });
     });
   });
 
