@@ -11,6 +11,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     
     // HIER: Statische Variable, um den Token zu speichern
     static var fcmToken: String?
+    static var tokenSentToServer: Bool = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Firebase konfigurieren
@@ -50,7 +51,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func applicationWillResignActive(_ application: UIApplication) {}
     func applicationDidEnterBackground(_ application: UIApplication) {}
     func applicationWillEnterForeground(_ application: UIApplication) {}
-    func applicationDidBecomeActive(_ application: UIApplication) {}
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        // Token nur einmal pro App-Session abrufen, wenn noch nicht vorhanden
+        if AppDelegate.fcmToken == nil || !AppDelegate.tokenSentToServer {
+            retrieveAndSendFCMToken()
+        }
+    }
     func applicationWillTerminate(_ application: UIApplication) {}
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
@@ -59,6 +65,82 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+    }
+    
+    // MARK: - FCM Token Retrieval
+    private func retrieveAndSendFCMToken() {
+        // Token aus Firebase abrufen
+        Messaging.messaging().token { [weak self] token, error in
+            if let error = error {
+                print("❌ Error fetching FCM token: \(error)")
+                return
+            }
+            
+            guard let token = token else {
+                print("❌ FCM token is nil")
+                return
+            }
+            
+            print("✅ Retrieved FCM token: \(token.prefix(20))...")
+            
+            // Token in statischer Variable speichern
+            AppDelegate.fcmToken = token
+            
+            // Token an WebView senden
+            self?.sendTokenToWebView(token: token)
+        }
+    }
+    
+    private func sendTokenToWebView(token: String) {
+        // Prüfen ob Token bereits an Server gesendet wurde
+        if AppDelegate.tokenSentToServer {
+            print("ℹ️ Token bereits an Server gesendet, überspringe WebView Event")
+            return
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Längere Verzögerung für WebView readiness
+            if let window = UIApplication.shared.windows.first,
+               let rootController = window.rootViewController {
+                
+                var bridgeController: CAPBridgeViewController?
+                
+                if let bridge = rootController as? CAPBridgeViewController {
+                    bridgeController = bridge
+                } else if let navController = rootController as? UINavigationController,
+                          let bridge = navController.viewControllers.first as? CAPBridgeViewController {
+                    bridgeController = bridge
+                } else if let bridge = rootController.children.first as? CAPBridgeViewController {
+                    bridgeController = bridge
+                }
+                
+                if let bridge = bridgeController, let webView = bridge.bridge?.webView {
+                    let jsCode = """
+                        if (window.dispatchEvent) {
+                            window.dispatchEvent(new CustomEvent('fcmToken', { 
+                                detail: '\(token)' 
+                            }));
+                            console.log('✅ FCM Token Event dispatched');
+                        } else {
+                            console.log('❌ dispatchEvent not available');
+                        }
+                    """
+                    
+                    webView.evaluateJavaScript(jsCode) { (result, error) in
+                        if error == nil {
+                            print("✅ FCM Token an WebView übertragen")
+                            AppDelegate.tokenSentToServer = true
+                        } else {
+                            print("❌ Fehler beim Übertragen des FCM Tokens: \(error?.localizedDescription ?? "Unknown")")
+                        }
+                    }
+                } else {
+                    print("⚠️ WebView noch nicht bereit, wiederhole in 1 Sekunde...")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        self.sendTokenToWebView(token: token)
+                    }
+                }
+            }
+        }
     }
 
 }
@@ -76,36 +158,8 @@ extension AppDelegate: MessagingDelegate {
         // WICHTIG: Den korrekten Token hier in der statischen Variable speichern
         AppDelegate.fcmToken = token
         
-        // FCM Token an WebView weiterleiten
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            if let window = UIApplication.shared.windows.first,
-               let rootController = window.rootViewController {
-                
-                var bridgeController: CAPBridgeViewController?
-                
-                if let bridge = rootController as? CAPBridgeViewController {
-                    bridgeController = bridge
-                } else if let navController = rootController as? UINavigationController,
-                          let bridge = navController.viewControllers.first as? CAPBridgeViewController {
-                    bridgeController = bridge
-                } else if let bridge = rootController.children.first as? CAPBridgeViewController {
-                    bridgeController = bridge
-                }
-                
-                if let bridge = bridgeController {
-                    let jsCode = """
-                        window.dispatchEvent(new CustomEvent('fcmToken', { 
-                            detail: '\(token)' 
-                        }));
-                    """
-                    
-                    bridge.bridge?.webView?.evaluateJavaScript(jsCode) { (result, error) in
-                        if error == nil {
-                            print("✅ FCM Token an WebView übertragen")
-                        }
-                    }
-                }
-            }
-        }
+        // Bei Token Refresh immer senden (neuer Token!)
+        AppDelegate.tokenSentToServer = false
+        sendTokenToWebView(token: token)
     }
 }

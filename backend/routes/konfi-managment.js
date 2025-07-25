@@ -237,10 +237,10 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 }
                 
                 // Delete related data (foreign key references updated to user_id)
-                db.run("DELETE FROM konfi_activities WHERE konfi_id = ?", [userId]);
-                db.run("DELETE FROM bonus_points WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM konfi_activities WHERE konfi_id = ? AND organization_id = ?", [userId, req.user.organization_id]);
+                db.run("DELETE FROM bonus_points WHERE konfi_id = ? AND organization_id = ?", [userId, req.user.organization_id]);
                 db.run("DELETE FROM konfi_badges WHERE konfi_id = ?", [userId]);
-                db.run("DELETE FROM activity_requests WHERE konfi_id = ?", [userId]);
+                db.run("DELETE FROM activity_requests WHERE konfi_id = ? AND organization_id = ?", [userId, req.user.organization_id]);
                 db.run("DELETE FROM chat_participants WHERE user_id = ? AND user_type = 'konfi'", [userId]);
                 
                 // Delete konfi_profile (will cascade to user due to foreign key)
@@ -380,10 +380,10 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
             
             // Insert konfi activity
             const query = `INSERT INTO konfi_activities 
-                          (konfi_id, activity_id, completed_date, comment, admin_id, created_at)
-                          VALUES (?, ?, ?, ?, ?, datetime('now'))`;
+                          (konfi_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
+                          VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`;
             
-            db.run(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id], function(err) {
+            db.run(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id], function(err) {
                 if (err) {
                     console.error('Error creating konfi activity:', err);
                     return res.status(500).json({ error: 'Database error' });
@@ -418,8 +418,8 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 return res.status(404).json({ error: 'Activity not found' });
             }
             
-            // Delete activity
-            db.run('DELETE FROM konfi_activities WHERE id = ?', [req.params.activityId], (err) => {
+            // Delete activity (mit organization_id check für Sicherheit)
+            db.run('DELETE FROM konfi_activities WHERE id = ? AND organization_id = ?', [req.params.activityId, req.user.organization_id], (err) => {
                 if (err) {
                     console.error('Error deleting activity:', err);
                     return res.status(500).json({ error: 'Database error' });

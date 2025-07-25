@@ -106,7 +106,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   // Pfad: DELETE /api/activities/:id
   router.delete('/:id', rbacVerifier, checkPermission('admin.activities.delete'), (req, res) => {
     const activityId = req.params.id;
-    db.get(`SELECT COUNT(*) as count FROM konfi_activities WHERE activity_id = ?`, [activityId], (err, row) => {
+    db.get(`SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.activity_id = ? AND a.organization_id = ?`, [activityId, req.user.organization_id], (err, row) => {
         if (err) return res.status(500).json({ error: 'Database error' });
         if (row.count > 0) return res.status(409).json({ error: `Activity is in use and cannot be deleted.` });
         
@@ -156,14 +156,14 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
   
     try {
-      const request = await db.get("SELECT ar.*, a.points, a.type FROM activity_requests ar JOIN activities a ON ar.activity_id = a.id WHERE ar.id = ?", [requestId]);
+      const request = await db.get("SELECT ar.*, a.points, a.type FROM activity_requests ar JOIN activities a ON ar.activity_id = a.id WHERE ar.id = ? AND a.organization_id = ?", [requestId, req.user.organization_id]);
       if (!request) return res.status(404).json({ error: 'Request not found' });
   
-      await db.run("UPDATE activity_requests SET status = ?, admin_comment = ?, approved_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", [status, admin_comment, req.user.id, requestId]);
+      await db.run("UPDATE activity_requests ar SET status = ?, admin_comment = ?, approved_by = ?, updated_at = CURRENT_TIMESTAMP WHERE ar.id = ? AND EXISTS (SELECT 1 FROM activities a WHERE a.id = ar.activity_id AND a.organization_id = ?)", [status, admin_comment, req.user.id, requestId, req.user.organization_id]);
       
       let newBadges = 0;
       if (status === 'approved') {
-        await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date) VALUES (?, ?, ?, ?)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date]);
+        await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES (?, ?, ?, ?, ?)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
         const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
         await db.run(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + ? WHERE user_id = ?`, [request.points, request.konfi_id]);
         newBadges = await checkAndAwardBadges(request.konfi_id);
@@ -188,10 +188,10 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     const date = completed_date || new Date().toISOString().split('T')[0];
   
     try {
-      const activity = await db.get("SELECT * FROM activities WHERE id = ?", [activityId]);
+      const activity = await db.get("SELECT * FROM activities WHERE id = ? AND organization_id = ?", [activityId, req.user.organization_id]);
       if (!activity) return res.status(404).json({ error: 'Activity not found' });
   
-      await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date) VALUES (?, ?, ?, ?)", [konfiId, activityId, req.user.id, date]);
+      await db.run("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES (?, ?, ?, ?, ?)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
       
       const pointField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
       await db.run(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + ? WHERE user_id = ?`, [activity.points, konfiId]);

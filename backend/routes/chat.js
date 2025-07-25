@@ -260,7 +260,9 @@ router.get('/admins', verifyTokenRBAC, (req, res) => {
     return res.status(403).json({ error: 'Konfi access required' });
   }
   
-  db.all("SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'admin' ORDER BY u.display_name", [], (err, admins) => {
+  const organizationId = req.user.organization_id;
+  
+  db.all("SELECT u.id, u.display_name, u.username FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name IN ('admin', 'org_admin', 'teamer') AND u.organization_id = ? ORDER BY u.display_name", [organizationId], (err, admins) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     res.json(admins);
   });
@@ -269,6 +271,7 @@ router.get('/admins', verifyTokenRBAC, (req, res) => {
 // Create or get direct chat room
 router.post('/direct', verifyTokenRBAC, (req, res) => {
   const { target_user_id, target_user_type } = req.body;
+  const organizationId = req.user.organization_id;
   
   if (!target_user_id || !target_user_type) {
     return res.status(400).json({ error: 'Target user required' });
@@ -279,20 +282,31 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
     return res.status(400).json({ error: 'Invalid target user type' });
   }
   
-  const user1_type = req.user.type;
-  const user1_id = req.user.id;
-  const user2_type = target_user_type;
-  const user2_id = target_user_id;
+  // Verify target user is in the same organization
+  db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", [target_user_id, organizationId], (err, validUser) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (!validUser) {
+      return res.status(403).json({ error: 'Target user not found in your organization' });
+    }
+    
+    proceedWithDirectChat();
+  });
   
-  // Check if room already exists
+  function proceedWithDirectChat() {
+    const user1_type = req.user.type;
+    const user1_id = req.user.id;
+    const user2_type = target_user_type;
+    const user2_id = target_user_id;
+  
+  // Check if room already exists (within same organization)
   const existingRoomQuery = `
     SELECT r.id FROM chat_rooms r
-    WHERE r.type = 'direct'
+    WHERE r.type = 'direct' AND r.organization_id = ?
     AND EXISTS (SELECT 1 FROM chat_participants p1 WHERE p1.room_id = r.id AND p1.user_id = ? AND p1.user_type = ?)
     AND EXISTS (SELECT 1 FROM chat_participants p2 WHERE p2.room_id = r.id AND p2.user_id = ? AND p2.user_type = ?)
   `;
   
-  db.get(existingRoomQuery, [user1_id, user1_type, user2_id, user2_type], (err, existingRoom) => {
+  db.get(existingRoomQuery, [organizationId, user1_id, user1_type, user2_id, user2_type], (err, existingRoom) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     
     if (existingRoom) {
@@ -310,9 +324,9 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
       // Room name is just the target user's name (simplified)
       const roomName = targetUser.name;
       
-      // Create new direct room
-      db.run("INSERT INTO chat_rooms (name, type, created_by) VALUES (?, 'direct', ?)",
-        [roomName, req.user.id], function(err) {
+      // Create new direct room (with organization_id)
+      db.run("INSERT INTO chat_rooms (name, type, created_by, organization_id) VALUES (?, 'direct', ?, ?)",
+        [roomName, req.user.id, organizationId], function(err) {
           if (err) return res.status(500).json({ error: 'Database error' });
           
           const roomId = this.lastID;
@@ -331,13 +345,14 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
             });
         });
     });
-  });
+  }
 });
 
 // Create new chat room
 router.post('/rooms', verifyTokenRBAC, (req, res) => {
   const { type, name, participants, jahrgang_id } = req.body;
   const createdBy = req.user.id;
+  const organizationId = req.user.organization_id;
   
   if (!type || !name) {
     return res.status(400).json({ error: 'Type and name are required' });
@@ -389,19 +404,27 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
   proceedWithRoomCreation();
   
   function proceedWithRoomCreation() {
-    // For jahrgang chats, check if one already exists
+    // For jahrgang chats, check if one already exists (within same organization)
   if (type === 'jahrgang') {
     if (!jahrgang_id) {
       return res.status(400).json({ error: 'Jahrgang ID required for jahrgang chats' });
     }
     
-    db.get("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = ?", [jahrgang_id], (err, existing) => {
+    // Verify jahrgang belongs to same organization
+    db.get("SELECT id FROM jahrgaenge WHERE id = ? AND organization_id = ?", [jahrgang_id, organizationId], (err, validJahrgang) => {
       if (err) return res.status(500).json({ error: 'Database error' });
-      if (existing) {
-        return res.status(400).json({ error: 'Jahrgang chat already exists' });
+      if (!validJahrgang) {
+        return res.status(403).json({ error: 'Jahrgang not found in your organization' });
       }
       
-      createRoom();
+      db.get("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = ? AND organization_id = ?", [jahrgang_id, organizationId], (err, existing) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (existing) {
+          return res.status(400).json({ error: 'Jahrgang chat already exists' });
+        }
+        
+        createRoom();
+      });
     });
   } else {
     createRoom();
@@ -410,9 +433,9 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
   function createRoom() {
     console.log('Creating room with:', { name, type, jahrgang_id, createdBy });
     
-    // Create the room
-    db.run("INSERT INTO chat_rooms (name, type, jahrgang_id, created_by) VALUES (?, ?, ?, ?)",
-      [name, type, jahrgang_id || null, createdBy], function(err) {
+    // Create the room (with organization_id)
+    db.run("INSERT INTO chat_rooms (name, type, jahrgang_id, created_by, organization_id) VALUES (?, ?, ?, ?, ?)",
+      [name, type, jahrgang_id || null, createdBy, organizationId], function(err) {
         if (err) {
           console.error('Room creation error:', err);
           return res.status(500).json({ error: 'Database error' });
@@ -465,8 +488,11 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
                   });
               });
             } else if (type === 'jahrgang') {
-              // Add all konfis from the jahrgang
-              db.all("SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id JOIN konfi_profiles kp ON u.id = kp.user_id WHERE r.name = 'konfi' AND kp.jahrgang_id = ?", [jahrgang_id], (err, konfis) => {
+              // Add all konfis from the jahrgang (within same organization)
+              db.all(`SELECT u.id FROM users u 
+                      JOIN roles r ON u.role_id = r.id 
+                      JOIN konfi_profiles kp ON u.id = kp.user_id 
+                      WHERE r.name = 'konfi' AND kp.jahrgang_id = ? AND u.organization_id = ?`, [jahrgang_id, organizationId], (err, konfis) => {
                 if (err) return res.status(500).json({ error: 'Database error' });
                 
                 if (konfis.length === 0) {
@@ -499,6 +525,7 @@ router.post('/rooms', verifyTokenRBAC, (req, res) => {
 router.get('/rooms', verifyTokenRBAC, (req, res) => {
   const userId = req.user.id;
   const userType = req.user.type;
+  const organizationId = req.user.organization_id;
   
   // Ensure user is in their jahrgang chats
   if (userType === 'admin') {
@@ -511,7 +538,7 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
   let params;
   
   if (userType === 'admin') {
-    // Admins see ONLY their own rooms - PRIVACY FIX!
+    // Admins see ONLY their own rooms from their organization - ORGANIZATION + PRIVACY FIX!
     query = `
       SELECT r.*, j.name as jahrgang_name,
               COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') AND m.deleted_at IS NULL THEN 1 END) as unread_count,
@@ -523,12 +550,13 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
       LEFT JOIN chat_messages m ON r.id = m.room_id
+      WHERE r.organization_id = ?
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
-    params = [userId, userType, userId, userType];
+    params = [userId, userType, userId, userType, organizationId];
   } else {
-    // Konfis see only their rooms using chat_read_status table
+    // Konfis see only their rooms from their organization using chat_read_status table
     query = `
       SELECT r.*, j.name as jahrgang_name,
               COUNT(CASE WHEN m.created_at > COALESCE(crs.last_read_at, '1970-01-01') AND m.deleted_at IS NULL THEN 1 END) as unread_count,
@@ -540,10 +568,11 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
       INNER JOIN chat_participants p ON r.id = p.room_id AND p.user_id = ? AND p.user_type = ?
       LEFT JOIN chat_read_status crs ON r.id = crs.room_id AND crs.user_id = ? AND crs.user_type = ?
       LEFT JOIN chat_messages m ON r.id = m.room_id
+      WHERE r.organization_id = ?
       GROUP BY r.id
       ORDER BY last_message_time DESC NULLS LAST
     `;
-    params = [userId, userType, userId, userType];
+    params = [userId, userType, userId, userType, organizationId];
   }
   
   db.all(query, params, (err, rooms) => {
@@ -619,28 +648,47 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
     const roomId = req.params.roomId;
     const userId = req.user.id;
     const userType = req.user.type;
+    const organizationId = req.user.organization_id;
     
     // 1. Sicherheitscheck: Hat der User überhaupt Zugriff auf diesen Raum?
-    // Wir können die gleiche Logik wie beim Nachrichten abrufen wiederverwenden.
-    const accessQuery = "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
+    // Check organization_id first, then participant access
+    const accessQuery = `
+      SELECT 1 FROM chat_participants cp
+      JOIN chat_rooms cr ON cp.room_id = cr.id 
+      WHERE cp.room_id = ? AND cp.user_id = ? AND cp.user_type = ? AND cr.organization_id = ?
+    `;
     
-    db.get(accessQuery, [roomId, userId, userType], (err, access) => {
-      // Admins geben wir hier mal pauschal Zugriff (könnte man noch feiner steuern)
-      if ((err || !access) && userType !== 'admin') {
+    db.get(accessQuery, [roomId, userId, userType, organizationId], (err, access) => {
+      // For admins, also check organization access without participant requirement
+      if ((err || !access) && userType === 'admin') {
+        const adminAccessQuery = "SELECT 1 FROM chat_rooms WHERE id = ? AND organization_id = ?";
+        db.get(adminAccessQuery, [roomId, organizationId], (adminErr, adminAccess) => {
+          if (adminErr || !adminAccess) {
+            return res.status(403).json({ error: 'Access denied' });
+          }
+          fetchRoomDetails();
+        });
+        return;
+      }
+      
+      if (err || !access) {
         return res.status(403).json({ error: 'Access denied' });
       }
       
-      // 2. Raumdaten und Teilnehmer abrufen
-      const roomQuery = `
-      SELECT 
-        cr.*,
-        j.name as jahrgang_name
-      FROM chat_rooms cr
-      LEFT JOIN jahrgaenge j ON cr.jahrgang_id = j.id
-      WHERE cr.id = ?
-    `;
+      fetchRoomDetails();
       
-      db.get(roomQuery, [roomId], (err, room) => {
+      function fetchRoomDetails() {
+        // 2. Raumdaten und Teilnehmer abrufen
+        const roomQuery = `
+        SELECT 
+          cr.*,
+          j.name as jahrgang_name
+        FROM chat_rooms cr
+        LEFT JOIN jahrgaenge j ON cr.jahrgang_id = j.id
+        WHERE cr.id = ? AND cr.organization_id = ?
+      `;
+      
+      db.get(roomQuery, [roomId, organizationId], (err, room) => {
         if (err) {
           return res.status(500).json({ error: 'Database error fetching room' });
         }
@@ -675,7 +723,7 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
           
           res.json(room);
         });
-      });
+      }
     });
   });
 
@@ -686,12 +734,15 @@ router.get('/rooms/:roomId/messages', verifyTokenRBAC, (req, res) => {
   const offset = parseInt(req.query.offset) || 0;
   const userId = req.user.id;
   const userType = req.user.type;
+  const organizationId = req.user.organization_id;
   
-  // Check if user has access to this room
+  // Check if user has access to this room (with organization check)
   const accessQuery = userType === 'admin' ? 
-  "SELECT 1 FROM chat_rooms WHERE id = ?" :
-  "SELECT 1 FROM chat_participants WHERE room_id = ? AND user_id = ? AND user_type = ?";
-  const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
+  "SELECT 1 FROM chat_rooms WHERE id = ? AND organization_id = ?" :
+  `SELECT 1 FROM chat_participants cp 
+   JOIN chat_rooms cr ON cp.room_id = cr.id 
+   WHERE cp.room_id = ? AND cp.user_id = ? AND cp.user_type = ? AND cr.organization_id = ?`;
+  const accessParams = userType === 'admin' ? [roomId, organizationId] : [roomId, userId, userType, organizationId];
   
   db.get(accessQuery, accessParams, (err, access) => {
     if (err || !access) {

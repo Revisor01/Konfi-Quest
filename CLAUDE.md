@@ -13,10 +13,10 @@
 ## Aktuelle Systemarchitektur (Juli 2025)
 
 ### Backend: Node.js Express mit RBAC System
-- **Database**: SQLite mit neuer RBAC-Struktur
+- **Database**: SQLite mit neuer RBAC-Struktur (`/data/backend/konfi.db`)
 - **Authentication**: JWT mit `verifyTokenRBAC` middleware
 - **Port**: 5000 (Docker: 8623)
-- **API Base**: https://konfipoints.godsapp.de/api
+- **API Base**: https://konfi-points.de/api
 
 ### Frontend: React 19 + Ionic 8 + TypeScript
 - **Framework**: React 19 mit Ionic React 8
@@ -47,6 +47,11 @@ konfi_badges: konfi_id, badge_id, awarded_date
 
 -- Events
 event_bookings: user_id, event_id, status, booking_date
+
+-- Chat System (BRAUCHT organization_id!)
+chat_rooms: id, name, type, jahrgang_id, created_by, organization_id
+chat_messages: id, room_id, user_id, user_type, content, created_at
+chat_participants: id, room_id, user_id, user_type, joined_at
 ```
 
 ### ❌ DEPRECATED (NICHT VERWENDEN):
@@ -265,6 +270,12 @@ await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
 ### 🔄 IN ARBEIT:
 - Events Sektion für KonfiDetailView
 - Legacy Code cleanup
+
+### ✅ SICHERHEITSLÜCKE BEHOBEN (Juli 2025):
+- **Chat-System jetzt MIT organization_id Filterung!**
+- Alle Chat-Routes prüfen jetzt organization_id
+- Chat-Erstellung nur innerhalb derselben Organisation
+- Bestehende Chat-Rooms wurden migriert
 
 ### ❌ DEPRECATED:
 - Alte `points.gottesdienst` Struktur
