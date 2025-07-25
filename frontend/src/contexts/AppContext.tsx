@@ -187,11 +187,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           await PushNotifications.register();
           console.log('✅ Push notifications registered successfully');
           
-          // Force FCM token retrieval after successful registration
-          setTimeout(() => {
-            console.log('🔄 Triggering FCM token retrieval after permission grant');
-            // AppDelegate.retrieveAndSendFCMToken() wird automatisch aufgerufen
-          }, 1000);
+          // TESTFLIGHT FIX: Force APNS registration via native plugin
+          if (Capacitor.getPlatform() === 'ios') {
+            try {
+              const { CapacitorHttp } = await import('@capacitor/core');
+              // Use registerPlugin API for custom plugins
+              const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
+              if (FCMPlugin) {
+                await FCMPlugin.forceAPNSRegistration();
+                console.log('🔄 Forced iOS APNS registration via plugin');
+                
+                // Force FCM token retrieval after APNS registration
+                setTimeout(async () => {
+                  try {
+                    await FCMPlugin.forceTokenRetrieval();
+                    console.log('🔄 Forced FCM token retrieval via plugin');
+                  } catch (error) {
+                    console.warn('⚠️ Could not force FCM token retrieval:', error);
+                  }
+                }, 2000);
+              } else {
+                console.warn('⚠️ FCM Plugin not available');
+              }
+            } catch (error) {
+              console.warn('⚠️ Could not force iOS APNS registration:', error);
+            }
+          }
         }
       } else if (permStatus.receive === 'granted') {
         setPushNotificationsPermission(permStatus.receive);
@@ -199,10 +220,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await PushNotifications.register();
         console.log('✅ Push notifications already granted and registered');
         
-        // Force FCM token retrieval for already granted permissions
-        setTimeout(() => {
-          console.log('🔄 Triggering FCM token retrieval for existing permissions');
-        }, 1000);
+        // TESTFLIGHT FIX: Force APNS registration for already granted permissions
+        if (Capacitor.getPlatform() === 'ios') {
+          try {
+            const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
+            if (FCMPlugin) {
+              await FCMPlugin.forceAPNSRegistration();
+              console.log('🔄 Forced iOS APNS registration for existing permissions');
+              
+              // Force FCM token retrieval after APNS registration
+              setTimeout(async () => {
+                try {
+                  await FCMPlugin.forceTokenRetrieval();
+                  console.log('🔄 Forced FCM token retrieval for existing permissions');
+                } catch (error) {
+                  console.warn('⚠️ Could not force FCM token retrieval:', error);
+                }
+              }, 2000);
+            } else {
+              console.warn('⚠️ FCM Plugin not available for existing permissions');
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not force iOS APNS registration:', error);
+          }
+        }
       } else {
         console.log('❌ Push permissions denied or restricted');
         setPushNotificationsPermission(permStatus.receive);
@@ -365,6 +406,28 @@ useEffect(() => {
     if (user && Capacitor.isNativePlatform()) {
       console.log('✅ User eingeloggt - requesting Push Permissions');
       requestPushPermissions();
+      
+      // TESTFLIGHT FIX: Additional fallback für bereits gewährte Permissions
+      if (Capacitor.getPlatform() === 'ios') {
+        setTimeout(async () => {
+          try {
+            console.log('🔧 TestFlight fallback: Force APNS registration after login');
+            const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
+            if (FCMPlugin) {
+              await FCMPlugin.forceAPNSRegistration();
+              
+              setTimeout(async () => {
+                await FCMPlugin.forceTokenRetrieval();
+                console.log('🔧 TestFlight fallback: Force token retrieval completed');
+              }, 3000);
+            } else {
+              console.warn('⚠️ FCM Plugin not available for fallback');
+            }
+          } catch (error) {
+            console.warn('⚠️ TestFlight fallback failed:', error);
+          }
+        }, 5000); // 5 second delay for complete app startup
+      }
     }
   }, [user]);
   

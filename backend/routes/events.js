@@ -93,10 +93,73 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           return res.status(500).json({ error: 'Database error' });
         }
         
-        res.json({
-          ...event,
-          participants,
-          available_spots: event.max_participants - participants.length
+        // Get series events if this is part of a series
+        const getSeriesEvents = (callback) => {
+          if (event.is_series && event.series_id) {
+            const seriesQuery = `
+              SELECT e.*, COUNT(eb.id) as registered_count
+              FROM events e
+              LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
+              WHERE e.series_id = ? AND e.organization_id = ? AND e.id != ?
+              GROUP BY e.id
+              ORDER BY e.event_date ASC
+            `;
+            
+            db.all(seriesQuery, [event.series_id, req.user.organization_id, eventId], (err, seriesEvents) => {
+              if (err) {
+                console.error('Error fetching series events:', err);
+                return callback(err, null);
+              }
+              callback(null, seriesEvents);
+            });
+          } else {
+            callback(null, []);
+          }
+        };
+        
+        // Get timeslots if event has them
+        const getTimeslots = (callback) => {
+          if (event.has_timeslots) {
+            const timeslotsQuery = `
+              SELECT et.*, COUNT(eb.id) as registered_count
+              FROM event_timeslots et
+              LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id AND eb.status = 'confirmed'
+              WHERE et.event_id = ? AND et.organization_id = ?
+              GROUP BY et.id
+              ORDER BY et.start_time ASC
+            `;
+            
+            db.all(timeslotsQuery, [eventId, req.user.organization_id], (err, timeslots) => {
+              if (err) {
+                console.error('Error fetching timeslots:', err);
+                return callback(err, null);
+              }
+              callback(null, timeslots);
+            });
+          } else {
+            callback(null, []);
+          }
+        };
+        
+        // Fetch both series events and timeslots
+        getSeriesEvents((seriesErr, seriesEvents) => {
+          if (seriesErr) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          getTimeslots((timeslotsErr, timeslots) => {
+            if (timeslotsErr) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            res.json({
+              ...event,
+              participants,
+              timeslots,
+              series_events: seriesEvents,
+              available_spots: event.max_participants - participants.length
+            });
+          });
         });
       });
     });
@@ -168,8 +231,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         if (has_timeslots && timeslots && timeslots.length > 0) {
           const timeslotQueries = timeslots.map(slot => {
             return new Promise((resolve, reject) => {
-              db.run("INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants) VALUES (?, ?, ?, ?)",
-                [eventId, slot.start_time, slot.end_time, slot.max_participants], function(err) {
+              db.run("INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES (?, ?, ?, ?, ?)",
+                [eventId, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id], function(err) {
                   if (err) reject(err);
                   else resolve(this.lastID);
                 }
@@ -458,12 +521,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         db.run(`INSERT INTO events (
           name, description, event_date, location, location_maps_url, 
           points, category, type, max_participants, registration_opens_at, 
-          registration_closes_at, is_series, series_id, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`, 
+          registration_closes_at, is_series, series_id, created_by, organization_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`, 
           [
             eventName, description, date, location, location_maps_url,
             points || 0, category || '', type || 'event', max_participants,
-            registration_opens_at, registration_closes_at, seriesId, req.user.id
+            registration_opens_at, registration_closes_at, seriesId, req.user.id, req.user.organization_id
           ], function(err) {
             if (err) {
               console.error('Error creating series event:', err);

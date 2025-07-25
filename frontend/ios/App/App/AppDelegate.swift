@@ -14,6 +14,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     static var tokenSentToServer: Bool = false
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // ENVIRONMENT DEBUG
+        #if DEBUG
+        print("🔧 Running in DEBUG mode (Development/Xcode)")
+        #else
+        print("🚀 Running in RELEASE mode (TestFlight/Production)")
+        #endif
+        
+        // APNS Environment Detection
+        if let path = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision"),
+           let data = NSData(contentsOfFile: path),
+           let string = String(data: data as Data, encoding: .ascii) {
+            if string.contains("aps-environment") {
+                if string.contains("<string>development</string>") {
+                    print("📱 APNS Environment: DEVELOPMENT (Sandbox)")
+                } else if string.contains("<string>production</string>") {
+                    print("📱 APNS Environment: PRODUCTION")
+                }
+            }
+        }
+        
         // Firebase konfigurieren
         FirebaseApp.configure()
         
@@ -23,17 +43,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Push Notification Delegate setzen (Permission wird nach Login angefordert)
         UNUserNotificationCenter.current().delegate = self
         
-        // FCM Token wird automatisch über Delegate empfangen
+        // TESTFLIGHT FIX: Check if permissions are already granted
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            print("📱 App Launch - Notification Status: \(settings.authorizationStatus.rawValue)")
+            if settings.authorizationStatus == .authorized {
+                print("📱 Permissions already granted - registering for APNS immediately")
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
         
         return true
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("✅ APNS Device Token registered: \(tokenString.prefix(20))...")
+        
         Messaging.messaging().apnsToken = deviceToken
         NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+        
+        // Force FCM token retrieval after APNS registration
+        print("🔄 Triggering FCM token retrieval after APNS registration...")
+        retrieveAndSendFCMToken()
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
         NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
     }
 
@@ -43,10 +80,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func applicationDidEnterBackground(_ application: UIApplication) {}
     func applicationWillEnterForeground(_ application: UIApplication) {}
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Token nur einmal pro App-Session abrufen, wenn noch nicht vorhanden
-        if AppDelegate.fcmToken == nil || !AppDelegate.tokenSentToServer {
-            retrieveAndSendFCMToken()
-        }
+        // TESTFLIGHT FIX: Token IMMER abrufen, da TestFlight andere Environment hat
+        print("📱 App became active - retrieving FCM token for environment")
+        retrieveAndSendFCMToken()
     }
     func applicationWillTerminate(_ application: UIApplication) {}
 
@@ -60,12 +96,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     
     // MARK: - Push Permission Request (called after login)
     func requestPushPermissionsAfterLogin() {
+        print("🔔 Requesting push permissions after login...")
         UNUserNotificationCenter.current().delegate = self
+        
+        // Check current authorization status first
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            print("📱 Current notification settings: \(settings.authorizationStatus.rawValue)")
+            print("📱 Alert setting: \(settings.alertSetting.rawValue)")
+            print("📱 Badge setting: \(settings.badgeSetting.rawValue)")
+            print("📱 Sound setting: \(settings.soundSetting.rawValue)")
+        }
+        
         let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
         UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { granted, error in
             print("✅ Push permission request after login - granted: \(granted)")
+            if let error = error {
+                print("❌ Push permission error: \(error.localizedDescription)")
+            }
+            
             if granted {
                 DispatchQueue.main.async {
+                    print("📱 Registering for remote notifications...")
                     UIApplication.shared.registerForRemoteNotifications()
                     // Token wird automatisch über MessagingDelegate empfangen
                 }
@@ -75,21 +126,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         }
     }
     
+    // MARK: - Public method for manual token retrieval (called from frontend)
+    func forceTokenRetrieval() {
+        print("🔧 Manual token retrieval requested from frontend")
+        retrieveAndSendFCMToken()
+    }
+    
     // MARK: - FCM Token Retrieval
     private func retrieveAndSendFCMToken() {
+        print("🔄 Attempting to retrieve FCM token...")
+        
+        // Check if Firebase is configured
+        guard FirebaseApp.app() != nil else {
+            print("❌ Firebase not configured!")
+            return
+        }
+        
+        // Check notification settings first
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            print("📱 Notification authorization status: \(settings.authorizationStatus.rawValue)")
+            // 0: notDetermined, 1: denied, 2: authorized, 3: provisional, 4: ephemeral
+        }
+        
         // Token aus Firebase abrufen
         Messaging.messaging().token { [weak self] token, error in
             if let error = error {
                 print("❌ Error fetching FCM token: \(error)")
+                print("❌ Error details: \(error.localizedDescription)")
                 return
             }
             
             guard let token = token else {
-                print("❌ FCM token is nil")
+                print("❌ FCM token is nil - this usually means:")
+                print("   - Push notifications not authorized")
+                print("   - No internet connection")
+                print("   - Firebase misconfigured")
                 return
             }
             
             print("✅ Retrieved FCM token: \(token.prefix(20))...")
+            print("📱 Full token length: \(token.count) characters")
             
             // Token in statischer Variable speichern
             AppDelegate.fcmToken = token
@@ -100,11 +176,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     
     private func sendTokenToWebView(token: String) {
-        // Prüfen ob Token bereits an Server gesendet wurde
-        if AppDelegate.tokenSentToServer {
-            print("ℹ️ Token bereits an Server gesendet, überspringe WebView Event")
-            return
-        }
+        // TESTFLIGHT FIX: Token IMMER senden, da TestFlight andere Tokens generiert
+        print("📱 Sending FCM token to WebView: \(token.prefix(20))...")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Längere Verzögerung für WebView readiness
             if let window = UIApplication.shared.windows.first,
@@ -136,7 +209,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
                     webView.evaluateJavaScript(jsCode) { (result, error) in
                         if error == nil {
                             print("✅ FCM Token an WebView übertragen")
-                            AppDelegate.tokenSentToServer = true
+                            // TESTFLIGHT FIX: tokenSentToServer entfernt, da Tokens environment-spezifisch sind
                         } else {
                             print("❌ Fehler beim Übertragen des FCM Tokens: \(error?.localizedDescription ?? "Unknown")")
                         }
@@ -166,8 +239,7 @@ extension AppDelegate: MessagingDelegate {
         // WICHTIG: Den korrekten Token hier in der statischen Variable speichern
         AppDelegate.fcmToken = token
         
-        // Bei Token Refresh immer senden (neuer Token!)
-        AppDelegate.tokenSentToServer = false
+        // TESTFLIGHT FIX: Token immer senden, da environment-spezifisch
         sendTokenToWebView(token: token)
     }
 }

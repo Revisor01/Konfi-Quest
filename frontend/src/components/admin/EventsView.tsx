@@ -38,6 +38,11 @@ import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseGermanTime, getGermanNow } from '../../utils/dateUtils';
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 interface Event {
   id: number;
   name: string;
@@ -46,7 +51,7 @@ interface Event {
   location?: string;
   location_maps_url?: string;
   points: number;
-  category?: string;
+  categories?: Category[];
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -77,7 +82,16 @@ const EventsView: React.FC<EventsViewProps> = ({
   const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'participants'
 
   const filteredAndSortedEvents = (() => {
-    let result = filterBySearchTerm(events, searchTerm, ['name', 'description', 'category']);
+    let result = events.filter(event => {
+      const searchFields = [
+        event.name,
+        event.description || '',
+        ...(event.categories?.map(cat => cat.name) || [])
+      ];
+      return searchFields.some(field => 
+        field.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    });
     
     // Filter by status
     if (selectedStatus !== 'alle') {
@@ -423,7 +437,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     }}>
                       {formatDate(event.event_date)} {formatTime(event.event_date)}
                       {event.location && ` • ${event.location}`}
-                      {event.category && ` • ${event.category}`}
+                      {event.categories && event.categories.length > 0 && ` • ${event.categories.map(cat => cat.name).join(', ')}`}
                     </p>
                   </IonLabel>
                 </IonItem>

@@ -21,6 +21,11 @@ import EventsView from '../EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 interface Event {
   id: number;
   name: string;
@@ -29,7 +34,7 @@ interface Event {
   location?: string;
   location_maps_url?: string;
   points: number;
-  category?: string;
+  categories?: Category[];
   type: string;
   max_participants: number;
   registration_opens_at?: string;

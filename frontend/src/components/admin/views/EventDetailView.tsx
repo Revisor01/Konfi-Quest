@@ -35,6 +35,11 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 interface Event {
   id: number;
   name: string;
@@ -43,21 +48,36 @@ interface Event {
   location?: string;
   location_maps_url?: string;
   points: number;
-  category?: string;
+  categories?: Category[];
   type: string;
   max_participants: number;
   registration_opens_at?: string;
   registration_closes_at?: string;
   registered_count: number;
   registration_status: 'upcoming' | 'open' | 'closed';
+  available_spots: number;
+  participants: Participant[];
+  timeslots?: Timeslot[];
+  has_timeslots?: boolean;
+  is_series?: boolean;
+  series_id?: string;
+  series_events?: Event[];
   created_at: string;
 }
 
 interface Participant {
   id: number;
-  name: string;
-  jahrgang?: string;
-  registered_at: string;
+  participant_name: string;
+  jahrgang_name?: string;
+  created_at: string;
+}
+
+interface Timeslot {
+  id: number;
+  start_time: string;
+  end_time: string;
+  max_participants: number;
+  registered_count: number;
 }
 
 interface EventDetailViewProps {
@@ -159,7 +179,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>Event Details</IonTitle>
+          <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={createOutline} />
@@ -171,7 +191,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Event Details</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>{eventData?.name || 'Event Details'}</IonTitle>
           </IonToolbar>
         </IonHeader>
         
@@ -180,48 +200,45 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         </IonRefresher>
 
         {/* Event Info Card */}
+        {/* Gradient Header Card */}
         <IonCard style={{
           margin: '16px',
           borderRadius: '16px',
-          background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 100%)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
-          boxShadow: '0 8px 32px rgba(235, 68, 90, 0.3)'
+          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
         }}>
           <IonCardContent>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ 
-                width: '48px', 
-                height: '48px',
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '16px'
-              }}>
-                <IonIcon icon={flash} style={{ fontSize: '1.5rem', color: 'white' }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ margin: '0 0 4px 0', fontSize: '1.3rem' }}>{eventData?.name || 'Event Details'}</h2>
-                <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                  {eventData?.category && `${eventData.category} • `}
-                  {eventData?.event_date && `${formatDate(eventData.event_date)} • ${formatTime(eventData.event_date)}`}
-                </p>
-              </div>
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <p style={{ margin: '0', opacity: 0.9, fontSize: '0.9rem' }}>
+                {eventData?.categories && eventData.categories.length > 0 
+                  ? eventData.categories.map(cat => cat.name).join(', ')
+                  : 'Event'
+                } • {eventData?.event_date && `${formatDate(eventData.event_date)} • ${formatTime(eventData.event_date)}`}
+              </p>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
               <div>
                 <IonIcon icon={people} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                 <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {eventData?.registered_count || 0}/{eventData?.max_participants || 0}
+                  {eventData?.registered_count || 0}
                 </h3>
                 <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                  Teilnehmer
+                  Angemeldet
                 </p>
               </div>
               <div>
                 <IonIcon icon={calendar} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
+                <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
+                  {eventData?.max_participants || 0}
+                </h3>
+                <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
+                  Max. Plätze
+                </p>
+              </div>
+              <div>
+                <IonIcon icon={flash} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                 <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
                   {eventData?.points || 0}
                 </h3>
@@ -238,7 +255,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 }}>
                   ●
                 </div>
-                <h3 style={{ margin: '0', fontSize: '1rem' }}>
+                <h3 style={{ margin: '0', fontSize: '0.9rem' }}>
                   {getRegistrationStatusText(eventData?.registration_status || 'closed')}
                 </h3>
               </div>
@@ -289,6 +306,76 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonCardContent>
         </IonCard>
 
+        {/* Timeslots */}
+        {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardHeader>
+              <IonTitle size="large">Zeitslots</IonTitle>
+            </IonCardHeader>
+            <IonCardContent style={{ padding: '0' }}>
+              <IonList>
+                {eventData.timeslots.map((timeslot) => (
+                  <IonItem key={timeslot.id}>
+                    <IonIcon icon={time} slot="start" color="primary" />
+                    <IonLabel>
+                      <h3>{formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}</h3>
+                      <p>
+                        {timeslot.registered_count}/{timeslot.max_participants} Teilnehmer
+                        {timeslot.registered_count >= timeslot.max_participants && ' • Ausgebucht'}
+                      </p>
+                    </IonLabel>
+                    <IonChip 
+                      color={timeslot.registered_count >= timeslot.max_participants ? 'danger' : 'success'}
+                      slot="end"
+                    >
+                      {timeslot.registered_count >= timeslot.max_participants ? 'Voll' : 'Verfügbar'}
+                    </IonChip>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        )}
+
+        {/* Series Events */}
+        {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardHeader>
+              <IonTitle size="large">Weitere Termine dieser Serie</IonTitle>
+            </IonCardHeader>
+            <IonCardContent style={{ padding: '0' }}>
+              <IonList>
+                {eventData.series_events.map((seriesEvent) => (
+                  <IonItem 
+                    key={seriesEvent.id}
+                    button
+                    onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
+                  >
+                    <IonIcon icon={calendar} slot="start" color="primary" />
+                    <IonLabel>
+                      <h3>{seriesEvent.name}</h3>
+                      <p>
+                        {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)}
+                        • {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} Teilnehmer
+                      </p>
+                    </IonLabel>
+                    <IonChip 
+                      color={
+                        (seriesEvent.registered_count || 0) >= seriesEvent.max_participants 
+                          ? 'danger' 
+                          : 'success'
+                      }
+                      slot="end"
+                    >
+                      {(seriesEvent.registered_count || 0) >= seriesEvent.max_participants ? 'Voll' : 'Verfügbar'}
+                    </IonChip>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        )}
+
         {/* Participants List */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
@@ -322,10 +409,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       />
                     </IonAvatar>
                     <IonLabel>
-                      <h3>{participant.name}</h3>
+                      <h3>{participant.participant_name}</h3>
                       <p>
-                        {participant.jahrgang && `Jahrgang ${participant.jahrgang} • `}
-                        Angemeldet am {formatDate(participant.registered_at)}
+                        {participant.jahrgang_name && `${participant.jahrgang_name} • `}
+                        Angemeldet am {formatDate(participant.created_at)}
                       </p>
                     </IonLabel>
                   </IonItem>

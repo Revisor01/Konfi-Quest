@@ -58,41 +58,67 @@ export const loginWithAutoDetection = async (username: string, password: string)
 };
 
 export const logout = async (): Promise<void> => {
+  console.log('🚪 LOGOUT STARTED - attempting to remove push token...');
+  
   // Push token für aktuelles Device löschen vor logout
   try {
     let deviceId: string | undefined;
     
+    console.log('📱 Platform check:', { 
+      isNative: Capacitor.isNativePlatform(),
+      platform: Capacitor.getPlatform()
+    });
+    
     // Echte Device ID via Capacitor abrufen
     if (Capacitor.isNativePlatform()) {
       try {
+        console.log('📱 Getting device ID via Capacitor...');
         const deviceInfo = await Device.getId();
         deviceId = deviceInfo.identifier;
-        console.log('🗑️ Removing push token for device:', deviceId.substring(0, 8) + '...');
+        console.log('🗑️ Device ID retrieved for token removal:', deviceId.substring(0, 8) + '...');
       } catch (err) {
-        console.warn('⚠️ Could not get device ID, using localStorage fallback');
+        console.warn('⚠️ Could not get device ID via Capacitor, using localStorage fallback:', err);
         deviceId = localStorage.getItem('device_id') || undefined;
+        console.log('📱 Fallback Device ID from localStorage:', deviceId?.substring(0, 8) + '...');
       }
     } else {
       deviceId = localStorage.getItem('device_id') || undefined;
+      console.log('🌐 Web platform - using localStorage Device ID:', deviceId?.substring(0, 8) + '...');
     }
     
     if (deviceId) {
-      await api.delete('/notifications/device-token', {
-        data: {
-          device_id: deviceId,
-          platform: Capacitor.getPlatform()
-        }
+      console.log('🚀 Sending DELETE request to /notifications/device-token...');
+      const deleteData = {
+        device_id: deviceId,
+        platform: Capacitor.getPlatform()
+      };
+      console.log('📤 DELETE request data:', deleteData);
+      
+      const response = await api.delete('/notifications/device-token', {
+        data: deleteData
       });
-      console.log('✅ Push token removed for current device');
+      
+      console.log('✅ Push token DELETE response:', response.status, response.data);
+      console.log('✅ Push token successfully removed for current device');
+    } else {
+      console.warn('⚠️ No device ID found - skipping push token removal');
     }
-  } catch (error) {
-    console.warn('⚠️ Could not remove push token during logout:', error);
+  } catch (error: any) {
+    console.error('❌ ERROR during push token removal:', {
+      message: error.message,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      fullError: error
+    });
     // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt
   }
 
+  console.log('🧹 Clearing localStorage data...');
   localStorage.removeItem('konfi_token');
   localStorage.removeItem('konfi_user');
   // Device ID NICHT löschen - bleibt für das Gerät persistent
+  console.log('🚪 LOGOUT COMPLETED');
 };
 
 export const checkAuth = (): User | null => {

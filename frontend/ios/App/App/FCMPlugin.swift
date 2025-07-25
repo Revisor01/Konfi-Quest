@@ -24,6 +24,24 @@ public class FCMPlugin: CAPPlugin {
         }
     }
     
+    @objc func forceAPNSRegistration(_ call: CAPPluginCall) {
+        print("🔧 FCM Plugin: Force APNS Registration requested")
+        DispatchQueue.main.async {
+            UIApplication.shared.registerForRemoteNotifications()
+            call.resolve(["success": true])
+        }
+    }
+    
+    @objc func forceTokenRetrieval(_ call: CAPPluginCall) {
+        print("🔧 FCM Plugin: Force FCM Token Retrieval requested")
+        if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
+            appDelegate.forceTokenRetrieval()
+            call.resolve(["success": true])
+        } else {
+            call.reject("Could not access AppDelegate")
+        }
+    }
+    
     @objc func getFCMToken(_ call: CAPPluginCall) {
         // Greife auf den gespeicherten Token aus dem AppDelegate zu
         if let token = AppDelegate.fcmToken {

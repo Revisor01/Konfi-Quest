@@ -53,6 +53,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { logout } from '../../../services/auth';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface KonfiProfile {
@@ -209,10 +210,17 @@ const KonfiProfilePage: React.FC = () => {
         {
           text: 'Abmelden',
           role: 'destructive',
-          handler: () => {
-            localStorage.removeItem('konfi_token');
-            localStorage.removeItem('konfi_user');
-            window.location.href = '/';
+          handler: async () => {
+            try {
+              await logout();
+              window.location.href = '/';
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Fallback: direct logout even if token removal fails
+              localStorage.removeItem('konfi_token');
+              localStorage.removeItem('konfi_user');
+              window.location.href = '/';
+            }
           }
         }
       ]
