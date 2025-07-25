@@ -190,8 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           // TESTFLIGHT FIX: Force APNS registration via native plugin
           if (Capacitor.getPlatform() === 'ios') {
             try {
-              const { CapacitorHttp } = await import('@capacitor/core');
-              // Use registerPlugin API for custom plugins
+              // Use direct window access for custom plugins
               const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
               if (FCMPlugin) {
                 await FCMPlugin.forceAPNSRegistration();
