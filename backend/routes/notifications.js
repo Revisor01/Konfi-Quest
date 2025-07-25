@@ -5,7 +5,7 @@ module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
 
   router.post('/device-token', verifyTokenRBAC, (req, res) => {
-    const { token, platform } = req.body;
+    const { token, platform, device_id } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
 
@@ -13,6 +13,7 @@ module.exports = (db, verifyTokenRBAC) => {
     console.log('User ID:', userId);
     console.log('User Type:', userType);
     console.log('Platform:', platform);
+    console.log('Device ID:', device_id || 'NOT PROVIDED');
     console.log('Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
 
     if (!token || !platform) {
@@ -52,10 +53,13 @@ module.exports = (db, verifyTokenRBAC) => {
     });
 
     function saveToken() {
+      // Device ID generieren falls nicht vorhanden
+      const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
       db.run(
-        `INSERT OR REPLACE INTO push_tokens (user_id, user_type, token, platform, updated_at)
-         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [userId, userType, token, platform],
+        `INSERT OR REPLACE INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [userId, userType, token, platform, finalDeviceId],
         function(err) {
           if (err) {
             console.error('❌ Error saving push token:', err);
@@ -64,7 +68,7 @@ module.exports = (db, verifyTokenRBAC) => {
           console.log('✅ Push token saved successfully. Row ID:', this.lastID);
           
           // Verify the token was saved
-          db.get('SELECT * FROM push_tokens WHERE user_id = ? AND platform = ?', [userId, platform], (selectErr, row) => {
+          db.get('SELECT * FROM push_tokens WHERE user_id = ? AND platform = ? AND device_id = ?', [userId, platform, finalDeviceId], (selectErr, row) => {
             if (selectErr) {
               console.error('❌ Error verifying saved token:', selectErr);
             } else if (row) {
@@ -72,6 +76,7 @@ module.exports = (db, verifyTokenRBAC) => {
                 id: row.id,
                 user_id: row.user_id,
                 platform: row.platform,
+                device_id: row.device_id,
                 token_preview: row.token.substring(0, 20) + '...',
                 updated_at: row.updated_at
               });
@@ -133,6 +138,41 @@ module.exports = (db, verifyTokenRBAC) => {
         message: `Test push sent to ${sentCount} device(s)`
       });
     });
+  });
+
+  // Remove push token for current device on logout
+  router.delete('/device-token', verifyTokenRBAC, (req, res) => {
+    const { device_id } = req.body;
+    const userId = req.user.id;
+    const platform = req.body.platform || 'ios'; // Default platform
+
+    console.log('🗑️ Push Token Logout Request:');
+    console.log('User ID:', userId);
+    console.log('Device ID:', device_id);
+    console.log('Platform:', platform);
+
+    if (!device_id) {
+      console.log('❌ Missing device_id');
+      return res.status(400).json({ error: 'Device ID required' });
+    }
+
+    db.run(
+      'DELETE FROM push_tokens WHERE user_id = ? AND platform = ? AND device_id = ?',
+      [userId, platform, device_id],
+      function(err) {
+        if (err) {
+          console.error('❌ Error deleting push token:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        console.log('✅ Push token deleted for device:', device_id, 'Changes:', this.changes);
+        res.json({ 
+          success: true, 
+          message: 'Push token removed for current device',
+          changes: this.changes
+        });
+      }
+    );
   });
 
   return router;
