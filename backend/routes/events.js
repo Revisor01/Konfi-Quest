@@ -286,7 +286,6 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         });
       });
     });
-    });
   });
 
   // Book event
