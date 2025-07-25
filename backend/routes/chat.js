@@ -346,7 +346,7 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
         });
     });
   }
-  });
+});
 
 // Create new chat room
 router.post('/rooms', verifyTokenRBAC, (req, res) => {
