@@ -724,6 +724,7 @@ router.get('/rooms', verifyTokenRBAC, (req, res) => {
           
           res.json(room);
         });
+      });
       }
     });
   });
