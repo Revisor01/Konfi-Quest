@@ -10,10 +10,20 @@ const initializeFirebase = () => {
   }
 
   try {
-    // Service Account Key wird aus Environment Variable geladen
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT 
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : require('./firebase-service-account.json'); // Fallback für lokale Entwicklung
+    // Service Account Key wird aus Datei geladen (bevorzugt) oder Environment Variable
+    let serviceAccount;
+    try {
+      serviceAccount = require('./firebase-service-account.json');
+      console.log('🔥 Using Firebase Service Account from file');
+    } catch (fileError) {
+      console.log('📄 Service Account file not found, trying environment variable...');
+      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        console.log('🔥 Using Firebase Service Account from environment variable');
+      } else {
+        throw new Error('Firebase Service Account not found in file or environment variable');
+      }
+    }
 
     firebaseApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
