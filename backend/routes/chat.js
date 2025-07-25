@@ -345,6 +345,7 @@ router.post('/direct', verifyTokenRBAC, (req, res) => {
             });
         });
     });
+  });
   }
 });
 
