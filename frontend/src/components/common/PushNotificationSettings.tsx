@@ -11,6 +11,7 @@ import {
   IonCardTitle
 } from '@ionic/react';
 import { notifications } from 'ionicons/icons';
+import { Capacitor } from '@capacitor/core';
 import { useApp } from '../../contexts/AppContext';
 
 const PushNotificationSettings: React.FC = () => {
@@ -69,10 +70,29 @@ const PushNotificationSettings: React.FC = () => {
         )}
 
         {pushNotificationsPermission === 'denied' && (
-          <IonNote color="medium" style={{ fontSize: '0.9em', marginTop: '8px', display: 'block' }}>
-            Push-Benachrichtigungen wurden deaktiviert. 
-            Du kannst sie in den Geräteeinstellungen wieder aktivieren.
-          </IonNote>
+          <>
+            <IonNote color="medium" style={{ fontSize: '0.9em', marginTop: '8px', display: 'block' }}>
+              Push-Benachrichtigungen wurden deaktiviert. 
+              Du kannst sie in den Geräteeinstellungen wieder aktivieren.
+            </IonNote>
+            <IonButton
+              expand="block"
+              fill="clear"
+              size="small"
+              onClick={() => {
+                // iOS Settings Link
+                if (Capacitor.getPlatform() === 'ios') {
+                  window.open('app-settings:', '_system');
+                } else {
+                  // Fallback für andere Plattformen
+                  console.log('📱 Please enable notifications in device settings');
+                }
+              }}
+              style={{ marginTop: '8px' }}
+            >
+              Zu den Einstellungen
+            </IonButton>
+          </>
         )}
       </IonCardContent>
     </IonCard>

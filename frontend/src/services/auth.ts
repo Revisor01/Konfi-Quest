@@ -1,4 +1,6 @@
 import api from './api';
+import { Device } from '@capacitor/device';
+import { Capacitor } from '@capacitor/core';
 
 interface User {
   id: number;
@@ -55,9 +57,42 @@ export const loginWithAutoDetection = async (username: string, password: string)
   }
 };
 
-export const logout = (): void => {
+export const logout = async (): Promise<void> => {
+  // Push token für aktuelles Device löschen vor logout
+  try {
+    let deviceId: string | undefined;
+    
+    // Echte Device ID via Capacitor abrufen
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const deviceInfo = await Device.getId();
+        deviceId = deviceInfo.identifier;
+        console.log('🗑️ Removing push token for device:', deviceId.substring(0, 8) + '...');
+      } catch (err) {
+        console.warn('⚠️ Could not get device ID, using localStorage fallback');
+        deviceId = localStorage.getItem('device_id') || undefined;
+      }
+    } else {
+      deviceId = localStorage.getItem('device_id') || undefined;
+    }
+    
+    if (deviceId) {
+      await api.delete('/notifications/device-token', {
+        data: {
+          device_id: deviceId,
+          platform: Capacitor.getPlatform()
+        }
+      });
+      console.log('✅ Push token removed for current device');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not remove push token during logout:', error);
+    // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt
+  }
+
   localStorage.removeItem('konfi_token');
   localStorage.removeItem('konfi_user');
+  // Device ID NICHT löschen - bleibt für das Gerät persistent
 };
 
 export const checkAuth = (): User | null => {

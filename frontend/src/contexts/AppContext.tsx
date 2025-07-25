@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Device } from '@capacitor/device';
 import { checkAuth } from '../services/auth';
 import api from '../services/api';
 import { App } from '@capacitor/app';
@@ -163,31 +164,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
+    if (!Capacitor.isNativePlatform()) {
+      console.log('ℹ️ Push notifications not available on web');
+      return;
+    }
+    
     try {
+      console.log('🔔 Requesting push permissions after login...');
+      
       // Check current permission status
       const permStatus = await PushNotifications.checkPermissions();
+      console.log('📱 Current push permission status:', permStatus.receive);
       
       if (permStatus.receive === 'prompt') {
         // Request permissions
         const permResult = await PushNotifications.requestPermissions();
         setPushNotificationsPermission(permResult.receive);
+        console.log('📱 Push permission result:', permResult.receive);
         
         if (permResult.receive === 'granted') {
           // Register for push notifications
           await PushNotifications.register();
-          console.log('Push notifications registered successfully');
+          console.log('✅ Push notifications registered successfully');
+          
+          // Force FCM token retrieval after successful registration
+          setTimeout(() => {
+            console.log('🔄 Triggering FCM token retrieval after permission grant');
+            // AppDelegate.retrieveAndSendFCMToken() wird automatisch aufgerufen
+          }, 1000);
         }
-      } else {
+      } else if (permStatus.receive === 'granted') {
         setPushNotificationsPermission(permStatus.receive);
+        // Already granted, just register
+        await PushNotifications.register();
+        console.log('✅ Push notifications already granted and registered');
         
-        if (permStatus.receive === 'granted') {
-          // Already granted, just register
-          await PushNotifications.register();
-          console.log('Push notifications already granted and registered');
-        }
+        // Force FCM token retrieval for already granted permissions
+        setTimeout(() => {
+          console.log('🔄 Triggering FCM token retrieval for existing permissions');
+        }, 1000);
+      } else {
+        console.log('❌ Push permissions denied or restricted');
+        setPushNotificationsPermission(permStatus.receive);
       }
     } catch (error) {
-      console.error('Error requesting push permissions:', error);
+      console.error('❌ Error requesting push permissions:', error);
       setError('Push Notifications konnten nicht aktiviert werden');
     }
   }, []);
@@ -264,32 +285,86 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [user, refreshChatNotifications]);
 
 useEffect(() => {
+  // NUR AUSFÜHREN, WENN EIN USER EINGELOGGT IST!
+  if (!user) {
+    return;
+  }
+  
+  console.log('✅ User is logged in, setting up FCM token listener.');
+  
   const handleNativeFCMToken = (event: any) => {
     const token = event.detail;
     
     if (token && token.length > 100) {
-      api.post('/notifications/device-token', {
-        token,
-        platform: 'ios',
-      })
-      .then(() => {
-        console.log('✅ FCM Token an Server gesendet');
-      })
-      .catch((err) => {
-        console.error('❌ Fehler beim Senden des FCM Tokens:', err);
+      console.log('📬 Received FCM token from native event:', token.substring(0, 20) + '...');
+      
+      // Echte Device ID via Capacitor Device Plugin abrufen
+      Device.getId().then(deviceInfo => {
+        const deviceId = deviceInfo.identifier;
+        console.log('📱 Using Device ID:', deviceId.substring(0, 8) + '...');
+        
+        // Dieser API-Call hat jetzt den Auth-Header, weil 'user' existiert.
+        api.post('/notifications/device-token', {
+          token,
+          platform: Capacitor.getPlatform(), // 'ios' oder 'android'
+          device_id: deviceId
+        })
+        .then(() => {
+          console.log('✅✅✅ FCM Token successfully sent to server via native event.');
+        })
+        .catch((err) => {
+          console.error('❌ Error sending FCM token to server from native event:', err);
+        });
+      }).catch(err => {
+        console.error('❌ Error getting device ID:', err);
+        // Fallback zu localStorage
+        const fallbackDeviceId = localStorage.getItem('device_id') || 
+          `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('device_id', fallbackDeviceId);
+        
+        api.post('/notifications/device-token', {
+          token,
+          platform: Capacitor.getPlatform(),
+          device_id: fallbackDeviceId
+        })
+        .then(() => {
+          console.log('✅ FCM Token sent with fallback device ID');
+        })
+        .catch((err) => {
+          console.error('❌ Error sending FCM token with fallback:', err);
+        });
       });
     }
   };
   
   window.addEventListener('fcmToken', handleNativeFCMToken);
-  return () => window.removeEventListener('fcmToken', handleNativeFCMToken);
-}, []);
+  
+  // WICHTIG: Nach dem Setup des Listeners manuell den Token abfragen,
+  // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
+  // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
+  // aber dies ist eine zusätzliche Sicherheit.
+  if ((window as any).Capacitor?.Plugins?.App) {
+      const { App } = (window as any).Capacitor.Plugins;
+      // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
+      App.fireRestoredResult({
+          methodName: "getLaunchUrl",
+          data: {}
+      });
+      console.log('📱 Triggered token retrieval on listener setup.');
+  }
+  
+  
+  return () => {
+    console.log('🧹 Cleaning up FCM token listener.');
+    window.removeEventListener('fcmToken', handleNativeFCMToken);
+  };
+}, [user]); // <--- WICHTIGSTE ÄNDERUNG: Abhängigkeit von 'user'
   
   useEffect(() => {
     // Nur auf nativen Geräten ausführen und wenn ein User da ist
     if (user && Capacitor.isNativePlatform()) {
-      // Das Window Event System funktioniert bereits perfekt
-      console.log('✅ FCM Token System bereit (Window Event basiert)');
+      console.log('✅ User eingeloggt - requesting Push Permissions');
+      requestPushPermissions();
     }
   }, [user]);
   
@@ -337,26 +412,6 @@ useEffect(() => {
     const setupPushNotifications = async () => {
       try {
         // ✅ Registriere Listener
-        PushNotifications.addListener('registration', async (token) => {
-          console.log('✅ Push registration success, token:', token.value);
-          console.log('✅ Token length:', token.value?.length);
-          
-          // Nur speichern, wenn der Token wie ein echter FCM-Token aussieht
-          if (token.value && token.value.length > 100) {
-            try {
-              await api.post('/notifications/device-token', {
-                token: token.value,
-                platform: 'ios',
-              });
-              console.log('✅ FCM-Token erfolgreich an Server gesendet');
-            } catch (err) {
-              console.error('❌ Fehler beim Token-Senden:', err);
-            }
-          } else {
-            console.warn('⚠️ Token ignoriert – sieht nach APNs aus:', token.value);
-          }
-        });
-        
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('📥 Push empfangen:', notification);
           console.log('📥 Push data:', notification.data);
@@ -413,9 +468,9 @@ useEffect(() => {
         console.error('❌ Fehler bei Push-Setup:', error);
       }
     };
-    
+          
     setupPushNotifications();
-  }, [user, refreshChatNotifications]);
+  }, [user]); // Abhängigkeit ist korrekt
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (!user?.permissions) return false;

@@ -20,17 +20,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Firebase Messaging Delegate setzen
         Messaging.messaging().delegate = self
         
-        // Push Notification Permissions anfordern
+        // Push Notification Delegate setzen (Permission wird nach Login angefordert)
         UNUserNotificationCenter.current().delegate = self
-        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { granted, error in
-            print("Push notification permission granted: \(granted)")
-            if granted {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
-            }
-        }
         
         // FCM Token wird automatisch über Delegate empfangen
         
@@ -65,6 +56,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+    }
+    
+    // MARK: - Push Permission Request (called after login)
+    func requestPushPermissionsAfterLogin() {
+        UNUserNotificationCenter.current().delegate = self
+        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
+        UNUserNotificationCenter.current().requestAuthorization(options: authOptions) { granted, error in
+            print("✅ Push permission request after login - granted: \(granted)")
+            if granted {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                    // Token wird automatisch über MessagingDelegate empfangen
+                }
+            } else {
+                print("❌ Push permissions denied after login")
+            }
+        }
     }
     
     // MARK: - FCM Token Retrieval

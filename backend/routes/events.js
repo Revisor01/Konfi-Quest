@@ -23,11 +23,13 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
       LEFT JOIN event_categories ec ON e.id = ec.event_id
       LEFT JOIN categories c ON ec.category_id = c.id
+      WHERE e.organization_id = ?
       GROUP BY e.id
       ORDER BY e.event_date ASC
     `;
     
-    db.all(query, (err, rows) => {
+    console.log("Fetching events for org:", req.user.organization_id);
+    db.all(query, [req.user.organization_id], (err, rows) => {
       if (err) {
         console.error('Error fetching events:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -62,7 +64,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const eventId = req.params.id;
     
     // Get event details
-    db.get("SELECT * FROM events WHERE id = ?", [eventId], (err, event) => {
+    console.log("Fetching event details for event:", eventId, "org:", req.user.organization_id);
+    db.get("SELECT * FROM events WHERE id = ? AND organization_id = ?", [eventId, req.user.organization_id], (err, event) => {
       if (err) {
         console.error('Error fetching event:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -72,7 +75,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(404).json({ error: 'Event not found' });
       }
       
-      // Get participants
+      // Get participants (mit organization_id Filterung)
       const participantsQuery = `
         SELECT eb.*, u.display_name as participant_name, kp.jahrgang_id,
                j.name as jahrgang_name
@@ -80,11 +83,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         JOIN users u ON eb.user_id = u.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE eb.event_id = ? AND eb.status = 'confirmed'
+        WHERE eb.event_id = ? AND eb.status = 'confirmed' AND u.organization_id = ?
         ORDER BY eb.created_at ASC
       `;
       
-      db.all(participantsQuery, [eventId], (err, participants) => {
+      db.all(participantsQuery, [eventId, req.user.organization_id], (err, participants) => {
         if (err) {
           console.error('Error fetching participants:', err);
           return res.status(500).json({ error: 'Database error' });
@@ -124,16 +127,17 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       return res.status(400).json({ error: 'Name, event_date, and max_participants are required' });
     }
     
+    console.log("Creating event for org:", req.user.organization_id);
     db.run(`INSERT INTO events (
       name, description, event_date, location, location_maps_url, 
       points, type, max_participants, registration_opens_at, 
-      registration_closes_at, has_timeslots, is_series, series_id, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
       [
         name, description, event_date, location, location_maps_url,
         points || 0, type || 'event', max_participants,
         registration_opens_at, registration_closes_at, has_timeslots || 0,
-        is_series || 0, series_id, req.user.id
+        is_series || 0, series_id, req.user.id, req.user.organization_id
       ], function(err) {
         if (err) {
           console.error('Error creating event:', err);
@@ -213,15 +217,16 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       registration_closes_at
     } = req.body;
     
+    console.log("Updating event:", id, "for org:", req.user.organization_id);
     db.run(`UPDATE events SET 
       name = ?, description = ?, event_date = ?, location = ?, 
       location_maps_url = ?, points = ?, category = ?, type = ?, 
       max_participants = ?, registration_opens_at = ?, registration_closes_at = ?
-      WHERE id = ?`, 
+      WHERE id = ? AND organization_id = ?`, 
       [
         name, description, event_date, location, location_maps_url,
         points, category, type, max_participants, registration_opens_at,
-        registration_closes_at, id
+        registration_closes_at, id, req.user.organization_id
       ], function(err) {
         if (err) {
           console.error('Error updating event:', err);
@@ -240,34 +245,45 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     
     const { id } = req.params;
     
+    console.log("Deleting event:", id, "for org:", req.user.organization_id);
+    
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
-      // Delete bookings
-      db.run("DELETE FROM event_bookings WHERE event_id = ?", [id]);
-      
-      // Delete timeslots
-      db.run("DELETE FROM event_timeslots WHERE event_id = ?", [id]);
-      
-      // Delete event
-      db.run("DELETE FROM events WHERE id = ?", [id], function(err) {
-        if (err) {
-          console.error('Error deleting event:', err);
-          db.run("ROLLBACK");
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        if (this.changes === 0) {
+      // First check if event belongs to organization
+      db.get("SELECT id FROM events WHERE id = ? AND organization_id = ?", [id, req.user.organization_id], (err, event) => {
+        if (err || !event) {
           db.run("ROLLBACK");
           return res.status(404).json({ error: 'Event not found' });
         }
         
-        db.run("COMMIT", (err) => {
-          if (err) {
-            console.error('Error committing transaction:', err);
-            return res.status(500).json({ error: 'Database error' });
-          }
-          res.json({ message: 'Event deleted successfully' });
+        // Delete bookings (mit organization_id check)
+        db.run("DELETE FROM event_bookings WHERE event_id = ? AND organization_id = ?", [id, req.user.organization_id]);
+        
+        // Delete timeslots (mit organization_id check) 
+        db.run("DELETE FROM event_timeslots WHERE event_id = ? AND organization_id = ?", [id, req.user.organization_id]);
+        
+          // Delete event
+          db.run("DELETE FROM events WHERE id = ? AND organization_id = ?", [id, req.user.organization_id], function(err) {
+            if (err) {
+              console.error('Error deleting event:', err);
+              db.run("ROLLBACK");
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (this.changes === 0) {
+              db.run("ROLLBACK");
+              return res.status(404).json({ error: 'Event not found' });
+            }
+            
+            db.run("COMMIT", (err) => {
+              if (err) {
+                console.error('Error committing transaction:', err);
+                return res.status(500).json({ error: 'Database error' });
+              }
+              res.json({ message: 'Event deleted successfully' });
+            });
+          });
         });
       });
     });
@@ -284,7 +300,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
     
     // Check if event exists and registration is open
-    db.get("SELECT * FROM events WHERE id = ?", [eventId], (err, event) => {
+    console.log("Booking event:", eventId, "for user:", konfiId, "org:", req.user.organization_id);
+    db.get("SELECT * FROM events WHERE id = ? AND organization_id = ?", [eventId, req.user.organization_id], (err, event) => {
       if (err) {
         console.error('Error fetching event:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -332,8 +349,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               }
               
               // Create booking
-              db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date) VALUES (?, ?, ?, 'confirmed', datetime('now'))",
-                [eventId, konfiId, timeslot_id], function(err) {
+              db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, 'confirmed', datetime('now'), ?)",
+                [eventId, konfiId, timeslot_id, req.user.organization_id], function(err) {
                   if (err) {
                     console.error('Error creating booking:', err);
                     return res.status(500).json({ error: 'Database error' });
@@ -362,8 +379,9 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       return res.status(403).json({ error: 'Only konfis can cancel bookings' });
     }
     
-    db.run("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ?", 
-      [eventId, konfiId], function(err) {
+    console.log("Canceling booking for event:", eventId, "user:", konfiId, "org:", req.user.organization_id);
+    db.run("DELETE FROM event_bookings WHERE event_id = ? AND user_id = ? AND organization_id = ?", 
+      [eventId, konfiId, req.user.organization_id], function(err) {
         if (err) {
           console.error('Error canceling booking:', err);
           return res.status(500).json({ error: 'Database error' });
