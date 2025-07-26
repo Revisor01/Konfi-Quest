@@ -83,7 +83,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         JOIN users u ON eb.user_id = u.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE eb.event_id = ? AND eb.status = 'confirmed' AND u.organization_id = ?
+        WHERE eb.event_id = ? AND u.organization_id = ?
         ORDER BY eb.created_at ASC
       `;
       
