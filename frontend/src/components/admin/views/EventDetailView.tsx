@@ -238,12 +238,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     onBack();
   };
 
-  const handleAttendanceUpdate = async (participantId: number, status: 'present' | 'absent') => {
+  const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
     try {
-      await api.put(`/admin/events/${eventId}/participants/${participantId}/attendance`, {
+      // Update attendance status
+      await api.put(`/admin/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
-      setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
+      
+      // If marking as present, award points
+      if (status === 'present' && eventData) {
+        const userId = participant.user_id || participant.id;
+        await api.post(`/admin/konfis/${userId}/bonus-points`, {
+          points: eventData.points,
+          type: 'gemeinde', // Event points are usually gemeinde points
+          description: `Teilnahme an Event: ${eventData.name}`,
+          completed_date: new Date().toISOString().split('T')[0]
+        });
+      }
+      
+      setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt und Punkte vergeben' : 'als abwesend markiert'}`);
       loadEventData(); // Reload to update status
     } catch (error) {
       setError('Fehler beim Aktualisieren der Anwesenheit');
@@ -314,12 +327,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div>
                 <IonIcon icon={people} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                 <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {participants.length}/{eventData?.max_participants || 0}
+                  {participants.filter(p => p.status === 'confirmed').length}/{eventData?.max_participants || 0}
                 </h3>
                 <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
                   Anmeldungen
                 </p>
-                {participants.length > 0 && (
+                {participants.filter(p => p.status === 'pending').length > 0 && (
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
+                    +{participants.filter(p => p.status === 'pending').length} Warteliste
+                  </p>
+                )}
+                {participants.filter(p => p.status === 'confirmed').length > 0 && (
                   <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
                     {participants.filter(p => p.attendance_status === 'present').length} anwesend
                   </p>
@@ -492,7 +510,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>
                 <IonIcon icon={people} style={{ marginRight: '8px', color: '#eb445a' }} />
-                Teilnehmer ({participants.length})
+                Teilnehmer ({participants.filter(p => p.status === 'confirmed').length})
+                {participants.filter(p => p.status === 'pending').length > 0 && 
+                  ` • Warteliste (${participants.filter(p => p.status === 'pending').length})`
+                }
               </span>
               <IonButton 
                 fill="clear" 
@@ -563,18 +584,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       </IonLabel>
                       <div slot="end" style={{ display: 'flex', gap: '8px' }}>
                         <IonButton 
-                          fill="clear" 
+                          fill={participant.attendance_status === 'present' ? 'solid' : 'outline'} 
                           size="small"
-                          color={participant.attendance_status === 'present' ? 'success' : 'medium'}
-                          onClick={() => handleAttendanceUpdate(participant.id, 'present')}
+                          color="success"
+                          onClick={() => handleAttendanceUpdate(participant, 'present')}
+                          style={{
+                            '--border-radius': '8px',
+                            minWidth: '40px'
+                          }}
                         >
                           <IonIcon icon={checkmarkCircle} />
                         </IonButton>
                         <IonButton 
-                          fill="clear" 
+                          fill={participant.attendance_status === 'absent' ? 'solid' : 'outline'}
                           size="small"
-                          color={participant.attendance_status === 'absent' ? 'danger' : 'medium'}
-                          onClick={() => handleAttendanceUpdate(participant.id, 'absent')}
+                          color="danger"
+                          onClick={() => handleAttendanceUpdate(participant, 'absent')}
+                          style={{
+                            '--border-radius': '8px',
+                            minWidth: '40px'
+                          }}
                         >
                           <IonIcon icon={closeCircle} />
                         </IonButton>

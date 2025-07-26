@@ -144,17 +144,20 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>Teilnehmer verwalten</IonTitle>
           <IonButtons slot="start">
-            <IonButton 
-              onClick={handleClose}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
-            >
+            <IonButton onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
+          </IonButtons>
+          <IonButtons slot="end">
+            {selectedKonfis.length > 0 && (
+              <IonButton 
+                onClick={handleAddParticipants}
+                disabled={loading}
+                color="primary"
+              >
+                <IonIcon icon={checkmark} />
+              </IonButton>
+            )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
@@ -163,27 +166,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         {/* Add New Participants */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>
-                <IonIcon icon={add} style={{ marginRight: '8px', color: '#eb445a' }} />
-                Teilnehmer hinzufügen
-              </span>
-              {selectedKonfis.length > 0 && (
-                <IonButton 
-                  size="small"
-                  color="success"
-                  onClick={handleAddParticipants}
-                  disabled={loading}
-                  style={{
-                    '--background': '#28a745',
-                    '--background-hover': '#218838',
-                    '--color': 'white'
-                  }}
-                >
-                  <IonIcon icon={checkmark} style={{ marginRight: '4px' }} />
-                  {selectedKonfis.length} hinzufügen
-                </IonButton>
-              )}
+            <IonCardTitle>
+              <IonIcon icon={add} style={{ marginRight: '8px', color: '#eb445a' }} />
+              Teilnehmer hinzufügen
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent style={{ padding: '16px' }}>
