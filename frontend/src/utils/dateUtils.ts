@@ -90,24 +90,44 @@ export const isThisWeek = (date: Date | string): boolean => {
 };
 
 /**
- * Converts a UTC date string to German local time
+ * Gets the user's local timezone
  */
-export const parseGermanTime = (dateString: string): Date => {
-  if (!dateString) return new Date();
-  
-  // Create date from UTC string
-  const utcDate = new Date(dateString);
-  
-  // Return the UTC date as-is, since the dateString should already be in the correct format
-  return utcDate;
+export const getUserTimezone = (): string => {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
 };
 
 /**
+ * Converts a UTC date string to user's local time
+ */
+export const parseLocalTime = (dateString: string): Date => {
+  if (!dateString) return new Date();
+  
+  // Create date from UTC string - this automatically converts to local time
+  const date = new Date(dateString);
+  return date;
+};
+
+/**
+ * Gets current time in user's timezone
+ */
+export const getLocalNow = (): Date => {
+  return new Date();
+};
+
+/**
+ * DEPRECATED - use parseLocalTime instead
+ * Converts a UTC date string to German local time
+ */
+export const parseGermanTime = (dateString: string): Date => {
+  console.warn('parseGermanTime is deprecated, use parseLocalTime instead');
+  return parseLocalTime(dateString);
+};
+
+/**
+ * DEPRECATED - use getLocalNow instead
  * Gets current time in German timezone
  */
 export const getGermanNow = (): Date => {
-  // Return current time in German timezone
-  const now = new Date();
-  const germanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}));
-  return germanTime;
+  console.warn('getGermanNow is deprecated, use getLocalNow instead');
+  return getLocalNow();
 };

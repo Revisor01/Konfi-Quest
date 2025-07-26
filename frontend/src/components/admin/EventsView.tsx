@@ -36,7 +36,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
-import { parseGermanTime, getGermanNow } from '../../utils/dateUtils';
+import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
 
 interface Category {
   id: number;
@@ -145,17 +145,18 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
-    const now = getGermanNow();
+    const now = getLocalNow();
     
     console.log('Calculating status for event:', event.name);
-    console.log('Current German time:', now.toISOString());
+    console.log('Current local time:', now.toISOString());
+    console.log('User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
     console.log('Registration opens at (UTC):', event.registration_opens_at);
     console.log('Registration closes at (UTC):', event.registration_closes_at);
     
     // If registration hasn't opened yet
     if (event.registration_opens_at) {
-      const opensAt = parseGermanTime(event.registration_opens_at);
-      console.log('Opens at German time:', opensAt.toISOString());
+      const opensAt = parseLocalTime(event.registration_opens_at);
+      console.log('Opens at local time:', opensAt.toISOString());
       if (now < opensAt) {
         console.log('Status: upcoming (not opened yet)');
         return 'upcoming';
@@ -164,8 +165,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     
     // If registration has closed
     if (event.registration_closes_at) {
-      const closesAt = parseGermanTime(event.registration_closes_at);
-      console.log('Closes at German time:', closesAt.toISOString());
+      const closesAt = parseLocalTime(event.registration_closes_at);
+      console.log('Closes at local time:', closesAt.toISOString());
       if (now > closesAt) {
         console.log('Status: closed (deadline passed)');
         return 'closed';

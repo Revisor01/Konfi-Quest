@@ -40,7 +40,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
-import { parseGermanTime, getGermanNow } from '../../../utils/dateUtils';
+import { parseLocalTime, getLocalNow } from '../../../utils/dateUtils';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
@@ -189,17 +189,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
-    const now = getGermanNow();
+    const now = getLocalNow();
     
     console.log('EventDetailView - Calculating status for event:', event.name);
-    console.log('EventDetailView - Current German time:', now.toISOString());
+    console.log('EventDetailView - Current local time:', now.toISOString());
+    console.log('EventDetailView - User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
     console.log('EventDetailView - Registration opens at (UTC):', event.registration_opens_at);
     console.log('EventDetailView - Registration closes at (UTC):', event.registration_closes_at);
     
     // If registration hasn't opened yet
     if (event.registration_opens_at) {
-      const opensAt = parseGermanTime(event.registration_opens_at);
-      console.log('EventDetailView - Opens at German time:', opensAt.toISOString());
+      const opensAt = parseLocalTime(event.registration_opens_at);
+      console.log('EventDetailView - Opens at local time:', opensAt.toISOString());
       if (now < opensAt) {
         console.log('EventDetailView - Status: upcoming (not opened yet)');
         return 'upcoming';
@@ -208,8 +209,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     
     // If registration has closed
     if (event.registration_closes_at) {
-      const closesAt = parseGermanTime(event.registration_closes_at);
-      console.log('EventDetailView - Closes at German time:', closesAt.toISOString());
+      const closesAt = parseLocalTime(event.registration_closes_at);
+      console.log('EventDetailView - Closes at local time:', closesAt.toISOString());
       if (now > closesAt) {
         console.log('EventDetailView - Status: closed (deadline passed)');
         return 'closed';
