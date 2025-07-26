@@ -8,22 +8,56 @@ import { PushNotifications } from '@capacitor/push-notifications';
 
 // FCM Token wird über Window Events empfangen (siehe AppDelegate.swift)
 
+// ANTI-SPAM: Verhindere mehrfache Push-Registrierung (Global Scope)
+let pushRegistrationInProgress = false;
+let pushAlreadyRegistered = false;
+
 // Funktion, um Duplikate zu vermeiden
 const sendTokenToServer = async (token: string) => {
-  // Statische Variable, um zu prüfen, ob der Token schon gesendet wurde.
-  if ((window as any).fcmTokenSent === token) {
-    console.log('Token bereits gesendet, überspringe.');
+  // ANTI-SPAM: Prüfe ob Token in letzten 10 Sekunden bereits gesendet wurde
+  const lastSent = (window as any).fcmTokenLastSent || 0;
+  const now = Date.now();
+  if ((window as any).fcmTokenSent === token && (now - lastSent) < 10000) {
+    console.log('🚫 Token bereits vor weniger als 10s gesendet, überspringe:', token.substring(0, 20) + '...');
     return;
   }
+  
   try {
+    // Device ID via Capacitor Device Plugin abrufen
+    const deviceInfo = await Device.getId();
+    const deviceId = deviceInfo.identifier;
+    console.log('📱 Using Device ID:', deviceId.substring(0, 8) + '...');
+    
     await api.post('/notifications/device-token', {
       token,
       platform: Capacitor.getPlatform(),
+      device_id: deviceId
     });
-    console.log('✅✅✅ Echter FCM-Token erfolgreich an Server gesendet:', token);
+    
+    console.log('✅✅✅ FCM-Token erfolgreich an Server gesendet:', token.substring(0, 20) + '...');
     (window as any).fcmTokenSent = token; // Markiere Token als gesendet
+    (window as any).fcmTokenLastSent = now; // Timestamp setzen
   } catch (err) {
     console.error('❌ Fehler beim Senden des FCM-Tokens:', err);
+    
+    // Fallback zu localStorage Device ID
+    try {
+      const fallbackDeviceId = localStorage.getItem('device_id') || 
+        `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('device_id', fallbackDeviceId);
+      
+      await api.post('/notifications/device-token', {
+        token,
+        platform: Capacitor.getPlatform(),
+        device_id: fallbackDeviceId
+      });
+      
+      console.log('✅ FCM Token sent with fallback device ID');
+      (window as any).fcmTokenSent = token;
+      (window as any).fcmTokenLastSent = now;
+    } catch (fallbackErr) {
+      console.error('❌ Error sending FCM token with fallback:', fallbackErr);
+    }
   }
 };
 
@@ -169,6 +203,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     
+    if (pushRegistrationInProgress || pushAlreadyRegistered) {
+      console.log('🚫 Push registration bereits in progress oder abgeschlossen');
+      return;
+    }
+    
+    pushRegistrationInProgress = true;
+    
     try {
       console.log('🔔 Requesting push permissions after login...');
       
@@ -247,9 +288,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('❌ Push permissions denied or restricted');
         setPushNotificationsPermission(permStatus.receive);
       }
+      
+      pushAlreadyRegistered = true;
+      console.log('✅ Push registration completed successfully');
     } catch (error) {
       console.error('❌ Error requesting push permissions:', error);
       setError('Push Notifications konnten nicht aktiviert werden');
+    } finally {
+      pushRegistrationInProgress = false;
     }
   }, []);
 
@@ -338,42 +384,8 @@ useEffect(() => {
     if (token && token.length > 100) {
       console.log('📬 Received FCM token from native event:', token.substring(0, 20) + '...');
       
-      // Echte Device ID via Capacitor Device Plugin abrufen
-      Device.getId().then(deviceInfo => {
-        const deviceId = deviceInfo.identifier;
-        console.log('📱 Using Device ID:', deviceId.substring(0, 8) + '...');
-        
-        // Dieser API-Call hat jetzt den Auth-Header, weil 'user' existiert.
-        api.post('/notifications/device-token', {
-          token,
-          platform: Capacitor.getPlatform(), // 'ios' oder 'android'
-          device_id: deviceId
-        })
-        .then(() => {
-          console.log('✅✅✅ FCM Token successfully sent to server via native event.');
-        })
-        .catch((err) => {
-          console.error('❌ Error sending FCM token to server from native event:', err);
-        });
-      }).catch(err => {
-        console.error('❌ Error getting device ID:', err);
-        // Fallback zu localStorage
-        const fallbackDeviceId = localStorage.getItem('device_id') || 
-          `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('device_id', fallbackDeviceId);
-        
-        api.post('/notifications/device-token', {
-          token,
-          platform: Capacitor.getPlatform(),
-          device_id: fallbackDeviceId
-        })
-        .then(() => {
-          console.log('✅ FCM Token sent with fallback device ID');
-        })
-        .catch((err) => {
-          console.error('❌ Error sending FCM token with fallback:', err);
-        });
-      });
+      // ANTI-SPAM für native Events verwenden
+      sendTokenToServer(token);
     }
   };
   
@@ -401,34 +413,12 @@ useEffect(() => {
 }, [user]); // <--- WICHTIGSTE ÄNDERUNG: Abhängigkeit von 'user'
   
   useEffect(() => {
-    // Nur auf nativen Geräten ausführen und wenn ein User da ist
-    if (user && Capacitor.isNativePlatform()) {
-      console.log('✅ User eingeloggt - requesting Push Permissions');
+    // Nur EINMAL Push-Permissions anfordern nach Login
+    if (user && Capacitor.isNativePlatform() && !pushAlreadyRegistered && !pushRegistrationInProgress) {
+      console.log('✅ User eingeloggt - requesting Push Permissions (EINMALIG)');
       requestPushPermissions();
-      
-      // TESTFLIGHT FIX: Additional fallback für bereits gewährte Permissions
-      if (Capacitor.getPlatform() === 'ios') {
-        setTimeout(async () => {
-          try {
-            console.log('🔧 TestFlight fallback: Force APNS registration after login');
-            const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
-            if (FCMPlugin) {
-              await FCMPlugin.forceAPNSRegistration();
-              
-              setTimeout(async () => {
-                await FCMPlugin.forceTokenRetrieval();
-                console.log('🔧 TestFlight fallback: Force token retrieval completed');
-              }, 3000);
-            } else {
-              console.warn('⚠️ FCM Plugin not available for fallback');
-            }
-          } catch (error) {
-            console.warn('⚠️ TestFlight fallback failed:', error);
-          }
-        }, 5000); // 5 second delay for complete app startup
-      }
     }
-  }, [user]);
+  }, [user, requestPushPermissions]);
   
   // App lifecycle events - simplified to avoid duplicate calls
   useEffect(() => {

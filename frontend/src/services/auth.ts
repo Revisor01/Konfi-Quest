@@ -57,7 +57,16 @@ export const loginWithAutoDetection = async (username: string, password: string)
   }
 };
 
+// ANTI-SPAM: Verhindere mehrfache Logout-Calls
+let logoutInProgress = false;
+
 export const logout = async (): Promise<void> => {
+  if (logoutInProgress) {
+    console.log('🚫 LOGOUT already in progress, skipping...');
+    return;
+  }
+  
+  logoutInProgress = true;
   console.log('🚪 LOGOUT STARTED - attempting to remove push token...');
   
   // Push token für aktuelles Device löschen vor logout
@@ -118,6 +127,9 @@ export const logout = async (): Promise<void> => {
   localStorage.removeItem('konfi_token');
   localStorage.removeItem('konfi_user');
   // Device ID NICHT löschen - bleibt für das Gerät persistent
+  
+  // Reset logout lock
+  logoutInProgress = false;
   console.log('🚪 LOGOUT COMPLETED');
 };
 

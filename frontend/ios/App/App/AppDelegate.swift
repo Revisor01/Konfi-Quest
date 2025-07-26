@@ -12,6 +12,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     // HIER: Statische Variable, um den Token zu speichern
     static var fcmToken: String?
     static var tokenSentToServer: Bool = false
+    static var lastTokenSentTime: TimeInterval = 0
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // ENVIRONMENT DEBUG
@@ -61,12 +62,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         print("✅ APNS Device Token registered: \(tokenString.prefix(20))...")
         
+        // GUIDE RECOMMENDATION: Set APNS token first, then get FCM token
         Messaging.messaging().apnsToken = deviceToken
-        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
         
-        // Force FCM token retrieval after APNS registration
-        print("🔄 Triggering FCM token retrieval after APNS registration...")
-        retrieveAndSendFCMToken()
+        // Get FCM token directly using Firebase recommended approach
+        Messaging.messaging().token { (token, error) in
+            if let error = error {
+                print("❌ Error fetching FCM token after APNS: \(error)")
+                NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+            } else if let token = token {
+                print("✅ FCM Token received after APNS registration: \(token.prefix(20))...")
+                AppDelegate.fcmToken = token
+                self.sendTokenToWebView(token: token)
+                NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: token)
+            }
+        }
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
@@ -176,8 +186,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     
     private func sendTokenToWebView(token: String) {
-        // TESTFLIGHT FIX: Token IMMER senden, da TestFlight andere Tokens generiert
+        // ANTI-SPAM: Prüfe ob Token in letzten 10 Sekunden bereits gesendet wurde
+        let now = Date().timeIntervalSince1970
+        if AppDelegate.fcmToken == token && (now - AppDelegate.lastTokenSentTime) < 10.0 {
+            print("🚫 Token bereits vor weniger als 10s gesendet, überspringe: \(token.prefix(20))...")
+            return
+        }
+        
         print("📱 Sending FCM token to WebView: \(token.prefix(20))...")
+        AppDelegate.lastTokenSentTime = now
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Längere Verzögerung für WebView readiness
             if let window = UIApplication.shared.windows.first,

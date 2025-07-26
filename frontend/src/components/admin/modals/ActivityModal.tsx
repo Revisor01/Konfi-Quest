@@ -99,11 +99,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           <IonItem button onClick={() => setIsActionSheetOpen(true)}>
             <IonLabel position="stacked">Aktivität</IonLabel>
             <IonLabel>
-              {selectedActivity ? 
-                activities.find(a => a.id === selectedActivity)?.name + 
-                ` (${activities.find(a => a.id === selectedActivity)?.points} Punkte, ${activities.find(a => a.id === selectedActivity)?.type})` : 
-                'Aktivität wählen'
-              }
+              {selectedActivity ? (() => {
+                const activity = activities.find(a => a.id === selectedActivity);
+                return activity ? 
+                  `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})` : 
+                  'Aktivität wählen';
+              })() : 'Aktivität wählen'}
             </IonLabel>
           </IonItem>
 
@@ -140,7 +141,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                 return a.name.localeCompare(b.name);
               })
               .map(activity => ({
-                text: `${activity.name} (${activity.points} Punkte, ${activity.type})`,
+                text: `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})`,
                 handler: () => {
                   setSelectedActivity(activity.id);
                   setIsActionSheetOpen(false);

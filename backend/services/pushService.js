@@ -8,15 +8,17 @@ class PushService {
     try {
       console.log('📨 Sending chat notification to user:', userId);
       
-      // NUR das neueste Token pro Device/Platform verwenden um Duplikate zu vermeiden
+      // NUR das neueste echte Device Token verwenden, Fallback-IDs ignorieren
       return new Promise((resolve, reject) => {
         const query = `
           SELECT * FROM push_tokens 
           WHERE user_id = ? 
+            AND device_id NOT LIKE '%_%_%' 
             AND id IN (
               SELECT MAX(id) 
               FROM push_tokens 
               WHERE user_id = ? 
+                AND device_id NOT LIKE '%_%_%'
               GROUP BY device_id, platform
             )
         `;
@@ -81,14 +83,16 @@ class PushService {
       console.log(`🔢 Sending badge update to user ${userId}: ${badgeCount}`);
       
       return new Promise((resolve, reject) => {
-        // NUR das neueste Token pro Device/Platform verwenden um Duplikate zu vermeiden
+        // NUR das neueste echte Device Token verwenden, Fallback-IDs ignorieren
         const query = `
           SELECT * FROM push_tokens 
           WHERE user_id = ? 
+            AND device_id NOT LIKE '%_%_%' 
             AND id IN (
               SELECT MAX(id) 
               FROM push_tokens 
               WHERE user_id = ? 
+                AND device_id NOT LIKE '%_%_%'
               GROUP BY device_id, platform
             )
         `;
