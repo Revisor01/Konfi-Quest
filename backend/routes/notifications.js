@@ -56,11 +56,25 @@ module.exports = (db, verifyTokenRBAC) => {
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      db.run(
-        `INSERT OR REPLACE INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at)
-         VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [userId, userType, token, platform, finalDeviceId],
-        function(err) {
+      // ANTI-SPAM: Prüfe erst ob derselbe Token bereits existiert
+      db.get('SELECT token FROM push_tokens WHERE user_id = ? AND device_id = ? AND platform = ?', 
+        [userId, finalDeviceId, platform], (selectErr, existingRow) => {
+        if (selectErr) {
+          console.error('❌ Error checking existing token:', selectErr);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (existingRow && existingRow.token === token) {
+          console.log('🚫 Identical token already exists, skipping save');
+          return res.json({ success: true, message: 'Token already exists' });
+        }
+        
+        // Token ist neu oder unterschiedlich - speichern
+        db.run(
+          `INSERT OR REPLACE INTO push_tokens (user_id, user_type, token, platform, device_id, updated_at)
+           VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [userId, userType, token, platform, finalDeviceId],
+          function(err) {
           if (err) {
             console.error('❌ Error saving push token:', err);
             return res.status(500).json({ error: 'Database error' });
@@ -86,6 +100,7 @@ module.exports = (db, verifyTokenRBAC) => {
           res.json({ success: true });
         }
       );
+      }); // Schließende Klammer für db.get
     }
   });
 
