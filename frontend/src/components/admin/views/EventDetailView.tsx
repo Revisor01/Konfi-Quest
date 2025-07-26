@@ -10,6 +10,7 @@ import {
   IonIcon,
   IonCard,
   IonCardHeader,
+  IonCardTitle,
   IonCardContent,
   IonItem,
   IonLabel,
@@ -19,7 +20,10 @@ import {
   IonText,
   IonChip,
   IonAvatar,
-  useIonModal
+  useIonModal,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption
 } from '@ionic/react';
 import {
   arrowBack,
@@ -28,12 +32,18 @@ import {
   location,
   people,
   time,
-  flash
+  flash,
+  personAdd,
+  checkmarkCircle,
+  closeCircle,
+  trash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { parseGermanTime, getGermanNow } from '../../../utils/dateUtils';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EventModal from '../modals/EventModal';
+import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 
 interface Category {
   id: number;
@@ -70,6 +80,7 @@ interface Participant {
   participant_name: string;
   jahrgang_name?: string;
   created_at: string;
+  attendance_status?: 'present' | 'absent' | null;
 }
 
 interface Timeslot {
@@ -94,7 +105,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [eventData, setEventData] = useState<Event | null>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
-  // Modal mit useIonModal Hook
+  // Event Modal mit useIonModal Hook
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
     event: eventData,
     onClose: () => dismissEventModalHook(),
@@ -103,6 +114,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       handleEditSuccess();
     },
     dismiss: () => dismissEventModalHook()
+  });
+
+  // Participant Management Modal
+  const [presentParticipantModalHook, dismissParticipantModalHook] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    participants: participants,
+    onClose: () => dismissParticipantModalHook(),
+    onSuccess: () => {
+      dismissParticipantModalHook();
+      loadEventData(); // Reload to get updated participant list
+    },
+    dismiss: () => dismissParticipantModalHook()
   });
 
   useEffect(() => {
@@ -165,9 +188,69 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
+    const now = getGermanNow();
+    
+    console.log('EventDetailView - Calculating status for event:', event.name);
+    console.log('EventDetailView - Current German time:', now.toISOString());
+    console.log('EventDetailView - Registration opens at (UTC):', event.registration_opens_at);
+    console.log('EventDetailView - Registration closes at (UTC):', event.registration_closes_at);
+    
+    // If registration hasn't opened yet
+    if (event.registration_opens_at) {
+      const opensAt = parseGermanTime(event.registration_opens_at);
+      console.log('EventDetailView - Opens at German time:', opensAt.toISOString());
+      if (now < opensAt) {
+        console.log('EventDetailView - Status: upcoming (not opened yet)');
+        return 'upcoming';
+      }
+    }
+    
+    // If registration has closed
+    if (event.registration_closes_at) {
+      const closesAt = parseGermanTime(event.registration_closes_at);
+      console.log('EventDetailView - Closes at German time:', closesAt.toISOString());
+      if (now > closesAt) {
+        console.log('EventDetailView - Status: closed (deadline passed)');
+        return 'closed';
+      }
+    }
+    
+    // If event is full
+    if (event.registered_count >= event.max_participants) {
+      console.log('EventDetailView - Status: closed (event full)');
+      return 'closed';
+    }
+    
+    console.log('EventDetailView - Status: open');
+    return 'open';
+  };
+
   const handleEditSuccess = () => {
     // Reload event data
     onBack();
+  };
+
+  const handleAttendanceUpdate = async (participantId: number, status: 'present' | 'absent') => {
+    try {
+      await api.put(`/admin/events/${eventId}/participants/${participantId}/attendance`, {
+        attendance_status: status
+      });
+      setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
+      loadEventData(); // Reload to update status
+    } catch (error) {
+      setError('Fehler beim Aktualisieren der Anwesenheit');
+    }
+  };
+
+  const handleRemoveParticipant = async (participantId: number) => {
+    try {
+      await api.delete(`/admin/events/${eventId}/participants/${participantId}`);
+      setSuccess('Teilnehmer entfernt');
+      loadEventData(); // Reload to update list
+    } catch (error) {
+      setError('Fehler beim Entfernen des Teilnehmers');
+    }
   };
 
   return (
@@ -204,9 +287,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         <IonCard style={{
           margin: '16px',
           borderRadius: '16px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 50%, #d81b60 100%)',
           color: 'white',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+          boxShadow: '0 8px 32px rgba(235, 68, 90, 0.4)'
         }}>
           <IonCardContent>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -218,24 +301,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               </p>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
               <div>
                 <IonIcon icon={people} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
                 <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {eventData?.registered_count || 0}
+                  {participants.length}/{eventData?.max_participants || 0}
                 </h3>
                 <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                  Angemeldet
+                  Anmeldungen
                 </p>
-              </div>
-              <div>
-                <IonIcon icon={calendar} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {eventData?.max_participants || 0}
-                </h3>
-                <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                  Max. Plätze
-                </p>
+                {participants.length > 0 && (
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
+                    {participants.filter(p => p.attendance_status === 'present').length} anwesend
+                  </p>
+                )}
               </div>
               <div>
                 <IonIcon icon={flash} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
@@ -248,15 +327,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               </div>
               <div>
                 <div style={{
-                  color: getRegistrationStatusColor(eventData?.registration_status || 'closed') === 'success' ? '#2dd36f' : 
-                         getRegistrationStatusColor(eventData?.registration_status || 'closed') === 'danger' ? '#eb445a' : 'white',
+                  color: getRegistrationStatusColor(eventData ? calculateRegistrationStatus(eventData) : 'closed') === 'success' ? '#2dd36f' : 
+                         getRegistrationStatusColor(eventData ? calculateRegistrationStatus(eventData) : 'closed') === 'danger' ? '#eb445a' : 'white',
                   fontSize: '1.2rem',
                   marginBottom: '4px'
                 }}>
                   ●
                 </div>
                 <h3 style={{ margin: '0', fontSize: '0.9rem' }}>
-                  {getRegistrationStatusText(eventData?.registration_status || 'closed')}
+                  {getRegistrationStatusText(eventData ? calculateRegistrationStatus(eventData) : 'closed')}
                 </h3>
               </div>
             </div>
@@ -266,7 +345,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {/* Event Details */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonTitle size="large">Details</IonTitle>
+            <IonCardTitle>
+              <IonIcon icon={createOutline} style={{ marginRight: '8px', color: '#667eea' }} />
+              Details
+            </IonCardTitle>
           </IonCardHeader>
           <IonCardContent style={{ padding: '16px' }}>
             {eventData?.description && (
@@ -307,32 +389,43 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         </IonCard>
 
         {/* Timeslots */}
-        {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
+        {eventData?.has_timeslots && (
           <IonCard style={{ margin: '16px' }}>
             <IonCardHeader>
-              <IonTitle size="large">Zeitslots</IonTitle>
+              <IonCardTitle>
+                <IonIcon icon={time} style={{ marginRight: '8px', color: '#667eea' }} />
+                Zeitslots ({eventData?.timeslots?.length || 0})
+              </IonCardTitle>
             </IonCardHeader>
             <IonCardContent style={{ padding: '0' }}>
-              <IonList>
-                {eventData.timeslots.map((timeslot) => (
-                  <IonItem key={timeslot.id}>
-                    <IonIcon icon={time} slot="start" color="primary" />
-                    <IonLabel>
-                      <h3>{formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}</h3>
-                      <p>
-                        {timeslot.registered_count}/{timeslot.max_participants} Teilnehmer
-                        {timeslot.registered_count >= timeslot.max_participants && ' • Ausgebucht'}
-                      </p>
-                    </IonLabel>
-                    <IonChip 
-                      color={timeslot.registered_count >= timeslot.max_participants ? 'danger' : 'success'}
-                      slot="end"
-                    >
-                      {timeslot.registered_count >= timeslot.max_participants ? 'Voll' : 'Verfügbar'}
-                    </IonChip>
-                  </IonItem>
-                ))}
-              </IonList>
+              {!eventData.timeslots || eventData.timeslots.length === 0 ? (
+                <IonItem lines="none">
+                  <IonLabel style={{ textAlign: 'center', color: '#666' }}>
+                    <p>Keine Zeitslots konfiguriert</p>
+                  </IonLabel>
+                </IonItem>
+              ) : (
+                <IonList>
+                  {eventData.timeslots.map((timeslot) => (
+                    <IonItem key={timeslot.id}>
+                      <IonIcon icon={time} slot="start" color="primary" />
+                      <IonLabel>
+                        <h3>{formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}</h3>
+                        <p>
+                          {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
+                          {(timeslot.registered_count || 0) >= timeslot.max_participants && ' • Ausgebucht'}
+                        </p>
+                      </IonLabel>
+                      <IonChip 
+                        color={(timeslot.registered_count || 0) >= timeslot.max_participants ? 'danger' : 'success'}
+                        slot="end"
+                      >
+                        {(timeslot.registered_count || 0) >= timeslot.max_participants ? 'Voll' : 'Verfügbar'}
+                      </IonChip>
+                    </IonItem>
+                  ))}
+                </IonList>
+              )}
             </IonCardContent>
           </IonCard>
         )}
@@ -341,7 +434,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
           <IonCard style={{ margin: '16px' }}>
             <IonCardHeader>
-              <IonTitle size="large">Weitere Termine dieser Serie</IonTitle>
+              <IonCardTitle>
+                <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#667eea' }} />
+                Weitere Termine dieser Serie
+              </IonCardTitle>
             </IonCardHeader>
             <IonCardContent style={{ padding: '0' }}>
               <IonList>
@@ -379,7 +475,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {/* Participants List */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonTitle size="large">Teilnehmer ({participants.length})</IonTitle>
+            <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>
+                <IonIcon icon={people} style={{ marginRight: '8px', color: '#667eea' }} />
+                Teilnehmer ({participants.length})
+              </span>
+              <IonButton 
+                fill="clear" 
+                size="small"
+                onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+              >
+                <IonIcon icon={personAdd} style={{ color: '#eb445a' }} />
+              </IonButton>
+            </IonCardTitle>
           </IonCardHeader>
           <IonCardContent style={{ padding: '0' }}>
             {participants.length === 0 ? (
@@ -391,31 +499,72 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             ) : (
               <IonList>
                 {participants.map((participant) => (
-                  <IonItem key={participant.id}>
-                    <IonAvatar slot="start" style={{ 
-                      width: '40px', 
-                      height: '40px',
-                      backgroundColor: '#007aff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <IonIcon 
-                        icon={people} 
-                        style={{ 
-                          fontSize: '1.2rem', 
-                          color: 'white'
-                        }} 
-                      />
-                    </IonAvatar>
-                    <IonLabel>
-                      <h3>{participant.participant_name}</h3>
-                      <p>
-                        {participant.jahrgang_name && `${participant.jahrgang_name} • `}
-                        Angemeldet am {formatDate(participant.created_at)}
-                      </p>
-                    </IonLabel>
-                  </IonItem>
+                  <IonItemSliding key={participant.id}>
+                    <IonItem>
+                      <IonAvatar slot="start" style={{ 
+                        width: '40px', 
+                        height: '40px',
+                        backgroundColor: participant.attendance_status === 'present' ? '#28a745' : 
+                                        participant.attendance_status === 'absent' ? '#dc3545' : '#007aff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IonIcon 
+                          icon={participant.attendance_status === 'present' ? checkmarkCircle : 
+                                participant.attendance_status === 'absent' ? closeCircle : people} 
+                          style={{ 
+                            fontSize: '1.2rem', 
+                            color: 'white'
+                          }} 
+                        />
+                      </IonAvatar>
+                      <IonLabel>
+                        <h3>
+                          {participant.participant_name}
+                          {participant.attendance_status && (
+                            <span style={{ 
+                              marginLeft: '8px',
+                              fontSize: '0.8rem',
+                              color: participant.attendance_status === 'present' ? '#28a745' : '#dc3545'
+                            }}>
+                              {participant.attendance_status === 'present' ? '✓ Anwesend' : '✗ Abwesend'}
+                            </span>
+                          )}
+                        </h3>
+                        <p>
+                          {participant.jahrgang_name && `${participant.jahrgang_name} • `}
+                          Angemeldet am {formatDate(participant.created_at)}
+                        </p>
+                      </IonLabel>
+                      <div slot="end" style={{ display: 'flex', gap: '8px' }}>
+                        <IonButton 
+                          fill="clear" 
+                          size="small"
+                          color={participant.attendance_status === 'present' ? 'success' : 'medium'}
+                          onClick={() => handleAttendanceUpdate(participant.id, 'present')}
+                        >
+                          <IonIcon icon={checkmarkCircle} />
+                        </IonButton>
+                        <IonButton 
+                          fill="clear" 
+                          size="small"
+                          color={participant.attendance_status === 'absent' ? 'danger' : 'medium'}
+                          onClick={() => handleAttendanceUpdate(participant.id, 'absent')}
+                        >
+                          <IonIcon icon={closeCircle} />
+                        </IonButton>
+                      </div>
+                    </IonItem>
+                    <IonItemOptions side="end">
+                      <IonItemOption 
+                        color="danger" 
+                        onClick={() => handleRemoveParticipant(participant.id)}
+                      >
+                        <IonIcon icon={trash} />
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
                 ))}
               </IonList>
             )}

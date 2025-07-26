@@ -95,19 +95,19 @@ export const isThisWeek = (date: Date | string): boolean => {
 export const parseGermanTime = (dateString: string): Date => {
   if (!dateString) return new Date();
   
-  // Create date from UTC string and convert to German timezone (CET/CEST)
+  // Create date from UTC string
   const utcDate = new Date(dateString);
   
-  // German timezone offset (CET = UTC+1, CEST = UTC+2)
-  // Check if we're in daylight saving time
-  const germanDate = new Date(utcDate.toLocaleString("en-US", {timeZone: "Europe/Berlin"}));
-  
-  return germanDate;
+  // Return the UTC date as-is, since the dateString should already be in the correct format
+  return utcDate;
 };
 
 /**
  * Gets current time in German timezone
  */
 export const getGermanNow = (): Date => {
-  return new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Berlin"}));
+  // Return current time in German timezone
+  const now = new Date();
+  const germanTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Berlin"}));
+  return germanTime;
 };

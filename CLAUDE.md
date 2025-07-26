@@ -165,6 +165,11 @@ cd /opt/Konfi-Quest/
 git pull && docker-compose down && docker-compose up -d --build
 ```
 
+### Database direkt bearbeiten:
+```bash
+ssh root@server.godsapp.de "cd /opt/Konfi-Quest && sqlite3 data/konfi.db 'ALTER TABLE event_bookings...'
+```
+
 ---
 
 ## Häufige Probleme & Lösungen

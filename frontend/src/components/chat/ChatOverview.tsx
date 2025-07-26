@@ -359,7 +359,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
         {/* Chat Rooms List */}
         <IonCard style={{ margin: '16px', marginTop: '8px' }}>
-          <IonCardContent style={{ padding: '0' }}>
+          <IonCardContent style={{ padding: '0', paddingBottom: '8px' }}>
             {filteredRooms.length === 0 ? (
               <IonItem>
                 <IonLabel style={{ textAlign: 'center', color: '#666' }}>

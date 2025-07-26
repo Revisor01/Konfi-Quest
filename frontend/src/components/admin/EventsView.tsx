@@ -219,9 +219,9 @@ const EventsView: React.FC<EventsViewProps> = ({
       <IonCard style={{
         margin: '16px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 100%)',
+        background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 50%, #d81b60 100%)',
         color: 'white',
-        boxShadow: '0 8px 32px rgba(235, 68, 90, 0.3)'
+        boxShadow: '0 8px 32px rgba(235, 68, 90, 0.4)'
       }}>
         <IonCardContent>
           <IonGrid>
@@ -389,45 +389,25 @@ const EventsView: React.FC<EventsViewProps> = ({
                       {event.name}
                     </h2>
                     
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <IonChip 
-                        color={getRegistrationStatusColor(event)}
-                        style={{ 
-                          fontSize: '0.7rem', 
-                          height: '20px',
-                          opacity: 0.8
-                        }}
-                      >
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '4px',
+                      fontSize: '0.8rem',
+                      color: '#666'
+                    }}>
+                      <span style={{ 
+                        color: getRegistrationStatusColor(event) === 'success' ? '#28a745' : '#dc3545',
+                        fontWeight: '500'
+                      }}>
                         {getRegistrationStatusText(event)}
-                      </IonChip>
+                      </span>
                       
-                      <IonChip 
-                        color="primary"
-                        style={{ 
-                          fontSize: '0.7rem', 
-                          height: '20px',
-                          opacity: 0.7,
-                          '--background': 'rgba(56, 128, 255, 0.15)',
-                          '--color': '#3880ff'
-                        }}
-                      >
-                        {event.registered_count}/{event.max_participants}
-                      </IonChip>
-                      
-                      {event.points > 0 && (
-                        <IonChip 
-                          color="tertiary"
-                          style={{ 
-                            fontSize: '0.7rem', 
-                            height: '20px',
-                            opacity: 0.7,
-                            '--background': 'rgba(112, 69, 246, 0.15)',
-                            '--color': '#7045f6'
-                          }}
-                        >
-                          {event.points} Punkte
-                        </IonChip>
-                      )}
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <span>{event.registered_count}/{event.max_participants}</span>
+                        {event.points > 0 && <span>{event.points} Punkte</span>}
+                      </div>
                     </div>
                     
                     <p style={{ 

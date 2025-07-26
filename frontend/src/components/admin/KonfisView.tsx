@@ -281,7 +281,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
       {/* Konfis Liste */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '0' }}>
+        <IonCardContent style={{ padding: '0', paddingBottom: '8px' }}>
           <IonList>
             {filteredAndSortedKonfis.map((konfi) => (
               <IonItemSliding key={konfi.id}>
