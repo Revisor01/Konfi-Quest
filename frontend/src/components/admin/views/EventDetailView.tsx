@@ -276,7 +276,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleRemoveParticipant = async (participant: Participant) => {
     try {
       // Use booking ID for deletion, not user ID
-      await api.delete(`/admin/events/${eventId}/bookings/${participant.id}`);
+      await api.delete(`/events/${eventId}/bookings/${participant.id}`);
       setSuccess('Teilnehmer entfernt');
       loadEventData(); // Reload to update list
     } catch (error) {

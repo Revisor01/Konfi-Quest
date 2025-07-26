@@ -110,7 +110,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     try {
       // Add each selected konfi as participant
       for (const konfiId of selectedKonfis) {
-        await api.post(`/admin/events/${eventId}/participants`, {
+        await api.post(`/events/${eventId}/participants`, {
           user_id: konfiId,
           status: 'confirmed'
         });
@@ -129,7 +129,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
   const handleRemoveParticipant = async (participantId: number) => {
     try {
-      await api.delete(`/admin/events/${eventId}/participants/${participantId}`);
+      await api.delete(`/events/${eventId}/bookings/${participantId}`);
       setSuccess('Teilnehmer entfernt');
       await loadAvailableKonfis();
       onSuccess();
