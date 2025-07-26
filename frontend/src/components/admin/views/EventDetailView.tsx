@@ -77,9 +77,11 @@ interface Event {
 
 interface Participant {
   id: number;
+  user_id?: number;
   participant_name: string;
   jahrgang_name?: string;
   created_at: string;
+  status?: 'confirmed' | 'pending';
   attendance_status?: 'present' | 'absent' | null;
 }
 
@@ -164,7 +166,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('de-DE', {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -244,12 +249,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
-  const handleRemoveParticipant = async (participantId: number) => {
+  const handleRemoveParticipant = async (participant: Participant) => {
     try {
-      await api.delete(`/admin/events/${eventId}/participants/${participantId}`);
+      // Use booking ID for deletion, not user ID
+      await api.delete(`/admin/events/${eventId}/bookings/${participant.id}`);
       setSuccess('Teilnehmer entfernt');
       loadEventData(); // Reload to update list
     } catch (error) {
+      console.error('Delete participant error:', error);
       setError('Fehler beim Entfernen des Teilnehmers');
     }
   };
@@ -347,7 +354,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
             <IonCardTitle>
-              <IonIcon icon={createOutline} style={{ marginRight: '8px', color: '#667eea' }} />
+              <IonIcon icon={createOutline} style={{ marginRight: '8px', color: '#eb445a' }} />
               Details
             </IonCardTitle>
           </IonCardHeader>
@@ -394,7 +401,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonCard style={{ margin: '16px' }}>
             <IonCardHeader>
               <IonCardTitle>
-                <IonIcon icon={time} style={{ marginRight: '8px', color: '#667eea' }} />
+                <IonIcon icon={time} style={{ marginRight: '8px', color: '#eb445a' }} />
                 Zeitslots ({eventData?.timeslots?.length || 0})
               </IonCardTitle>
             </IonCardHeader>
@@ -436,7 +443,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonCard style={{ margin: '16px' }}>
             <IonCardHeader>
               <IonCardTitle>
-                <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#667eea' }} />
+                <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#eb445a' }} />
                 Weitere Termine dieser Serie
               </IonCardTitle>
             </IonCardHeader>
@@ -478,7 +485,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonCardHeader>
             <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>
-                <IonIcon icon={people} style={{ marginRight: '8px', color: '#667eea' }} />
+                <IonIcon icon={people} style={{ marginRight: '8px', color: '#eb445a' }} />
                 Teilnehmer ({participants.length})
               </span>
               <IonButton 
@@ -523,6 +530,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonLabel>
                         <h3>
                           {participant.participant_name}
+                          {participant.status === 'pending' && (
+                            <span style={{ 
+                              marginLeft: '8px',
+                              fontSize: '0.8rem',
+                              color: '#ff9500',
+                              fontWeight: '500'
+                            }}>
+                              • Warteliste
+                            </span>
+                          )}
                           {participant.attendance_status && (
                             <span style={{ 
                               marginLeft: '8px',
@@ -560,7 +577,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <IonItemOptions side="end">
                       <IonItemOption 
                         color="danger" 
-                        onClick={() => handleRemoveParticipant(participant.id)}
+                        onClick={() => handleRemoveParticipant(participant)}
                       >
                         <IonIcon icon={trash} />
                       </IonItemOption>

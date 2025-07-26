@@ -75,7 +75,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(404).json({ error: 'Event not found' });
       }
       
-      // Get participants (mit organization_id Filterung)
+      // Get participants (mit organization_id Filterung) - ALLE Status anzeigen
       const participantsQuery = `
         SELECT eb.*, u.display_name as participant_name, kp.jahrgang_id,
                j.name as jahrgang_name
@@ -84,7 +84,13 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         WHERE eb.event_id = ? AND u.organization_id = ?
-        ORDER BY eb.created_at ASC
+        ORDER BY 
+          CASE eb.status 
+            WHEN 'confirmed' THEN 1 
+            WHEN 'pending' THEN 2 
+            ELSE 3 
+          END, 
+          eb.created_at ASC
       `;
       
       db.all(participantsQuery, [eventId, req.user.organization_id], (err, participants) => {
@@ -398,35 +404,66 @@ module.exports = (db, rbacVerifier, checkPermission) => {
             return res.status(409).json({ error: 'Already booked this event' });
           }
           
-          // Check available spots
-          db.get("SELECT COUNT(*) as count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'", 
-            [eventId], (err, result) => {
+          // Check available spots and waitlist
+          db.get("SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'", 
+            [eventId], (err, confirmedResult) => {
               if (err) {
-                console.error('Error checking available spots:', err);
+                console.error('Error checking confirmed spots:', err);
                 return res.status(500).json({ error: 'Database error' });
               }
               
-              if (result.count >= event.max_participants) {
-                return res.status(400).json({ error: 'Event is full' });
-              }
+              // Determine status based on availability
+              let bookingStatus = 'confirmed';
+              let message = 'Event booked successfully';
               
-              // Create booking
-              db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, 'confirmed', datetime('now'), ?)",
-                [eventId, konfiId, timeslot_id, req.user.organization_id], function(err) {
-                  if (err) {
-                    console.error('Error creating booking:', err);
-                    return res.status(500).json({ error: 'Database error' });
-                  }
-                  
-                  res.json({ 
-                    id: this.lastID, 
-                    message: 'Event booked successfully',
-                    booking_id: this.lastID
+              if (confirmedResult.confirmed_count >= event.max_participants) {
+                // Event is full, check waitlist
+                db.get("SELECT COUNT(*) as pending_count FROM event_bookings WHERE event_id = ? AND status = 'pending'", 
+                  [eventId], (err, pendingResult) => {
+                    if (err) {
+                      console.error('Error checking waitlist:', err);
+                      return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    if (pendingResult.pending_count >= 5) {
+                      return res.status(400).json({ error: 'Event and waitlist are full' });
+                    }
+                    
+                    bookingStatus = 'pending';
+                    message = 'Added to waitlist';
+                    
+                    // Create waitlist booking
+                    db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, ?, datetime('now'), ?)",
+                      [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id], function(err) {
+                        if (err) {
+                          console.error('Error creating waitlist booking:', err);
+                          return res.status(500).json({ error: 'Database error' });
+                        }
+                        
+                        res.json({ 
+                          id: this.lastID, 
+                          message: message,
+                          status: bookingStatus
+                        });
+                      });
                   });
-                }
-              );
-            }
-          );
+              } else {
+                // Event has space, create confirmed booking
+                db.run("INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, ?, datetime('now'), ?)",
+                  [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id], function(err) {
+                    if (err) {
+                      console.error('Error creating booking:', err);
+                      return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    res.json({ 
+                      id: this.lastID, 
+                      message: message,
+                      status: bookingStatus
+                    });
+                  });
+              }
+            });
         }
       );
     });
@@ -453,9 +490,94 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           return res.status(404).json({ error: 'Booking not found' });
         }
         
-        res.json({ message: 'Booking canceled successfully' });
+        // Auto-promote from waitlist
+        db.get("SELECT id FROM event_bookings WHERE event_id = ? AND status = 'pending' ORDER BY created_at ASC LIMIT 1", 
+          [eventId], (err, nextInLine) => {
+            if (err) {
+              console.error('Error checking waitlist:', err);
+            } else if (nextInLine) {
+              // Promote first person from waitlist
+              db.run("UPDATE event_bookings SET status = 'confirmed' WHERE id = ?", 
+                [nextInLine.id], (err) => {
+                  if (err) {
+                    console.error('Error promoting from waitlist:', err);
+                  } else {
+                    console.log('Promoted booking', nextInLine.id, 'from waitlist');
+                    // TODO: Send push notification
+                  }
+                });
+            }
+            
+            res.json({ message: 'Booking canceled successfully' });
+          });
       }
     );
+  });
+
+  // Delete event booking (Admin only)
+  router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('admin'), (req, res) => {
+    const eventId = req.params.id;
+    const bookingId = req.params.bookingId;
+    
+    console.log("Admin deleting booking:", bookingId, "for event:", eventId, "org:", req.user.organization_id);
+    
+    // First check if booking exists and belongs to the same organization
+    db.get(`
+      SELECT eb.*, u.organization_id 
+      FROM event_bookings eb 
+      JOIN users u ON eb.user_id = u.id 
+      WHERE eb.id = ? AND eb.event_id = ?`, 
+      [bookingId, eventId], (err, booking) => {
+        if (err) {
+          console.error('Error checking booking:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!booking) {
+          return res.status(404).json({ error: 'Booking not found' });
+        }
+        
+        if (booking.organization_id !== req.user.organization_id) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        // Delete the booking
+        db.run("DELETE FROM event_bookings WHERE id = ?", [bookingId], function(err) {
+          if (err) {
+            console.error('Error deleting booking:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+          }
+          
+          // Auto-promote from waitlist if deleted booking was confirmed
+          if (booking.status === 'confirmed') {
+            db.get("SELECT id FROM event_bookings WHERE event_id = ? AND status = 'pending' ORDER BY created_at ASC LIMIT 1", 
+              [eventId], (err, nextInLine) => {
+                if (err) {
+                  console.error('Error checking waitlist:', err);
+                } else if (nextInLine) {
+                  // Promote first person from waitlist
+                  db.run("UPDATE event_bookings SET status = 'confirmed' WHERE id = ?", 
+                    [nextInLine.id], (err) => {
+                      if (err) {
+                        console.error('Error promoting from waitlist:', err);
+                      } else {
+                        console.log('Promoted booking', nextInLine.id, 'from waitlist');
+                        // TODO: Send push notification
+                      }
+                    });
+                }
+                
+                res.json({ message: 'Participant removed successfully' });
+              });
+          } else {
+            res.json({ message: 'Participant removed successfully' });
+          }
+        });
+      });
   });
 
   // Get user's bookings

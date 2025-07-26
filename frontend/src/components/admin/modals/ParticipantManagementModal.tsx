@@ -23,7 +23,7 @@ import {
   IonItemOptions,
   IonItemOption
 } from '@ionic/react';
-import { close, person, people, trash, add } from 'ionicons/icons';
+import { close, person, people, trash, add, checkmark } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -78,9 +78,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       const response = await api.get('/admin/konfis');
       const allKonfis = response.data;
       
-      // Filter out already registered participants
-      const participantIds = participants.map(p => p.id);
-      const available = allKonfis.filter((konfi: Konfi) => !participantIds.includes(konfi.id));
+      // Filter out already registered participants based on user_id (not booking id)
+      const participantUserIds = participants.map(p => p.user_id || p.id);
+      const available = allKonfis.filter((konfi: Konfi) => !participantUserIds.includes(konfi.id));
       
       setAvailableKonfis(available);
     } catch (error) {
@@ -150,71 +150,30 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       </IonHeader>
       
       <IonContent>
-        {/* Current Participants */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={people} style={{ marginRight: '8px', color: '#eb445a' }} />
-              Aktuelle Teilnehmer ({participants.length})
-            </IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent style={{ padding: '0' }}>
-            {participants.length === 0 ? (
-              <IonItem lines="none">
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Noch keine Anmeldungen</p>
-                </IonLabel>
-              </IonItem>
-            ) : (
-              <IonList>
-                {participants.map((participant) => (
-                  <IonItemSliding key={participant.id}>
-                    <IonItem>
-                      <IonAvatar slot="start" style={{ 
-                        width: '40px', 
-                        height: '40px',
-                        backgroundColor: '#eb445a',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <IonIcon 
-                          icon={person} 
-                          style={{ 
-                            fontSize: '1.2rem', 
-                            color: 'white'
-                          }} 
-                        />
-                      </IonAvatar>
-                      <IonLabel>
-                        <h3>{participant.participant_name}</h3>
-                        <p>
-                          {participant.jahrgang_name && `${participant.jahrgang_name} • `}
-                          Angemeldet am {new Date(participant.created_at).toLocaleDateString('de-DE')}
-                        </p>
-                      </IonLabel>
-                    </IonItem>
-                    <IonItemOptions side="end">
-                      <IonItemOption 
-                        color="danger" 
-                        onClick={() => handleRemoveParticipant(participant.id)}
-                      >
-                        <IonIcon icon={trash} />
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
-                ))}
-              </IonList>
-            )}
-          </IonCardContent>
-        </IonCard>
-
         {/* Add New Participants */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={add} style={{ marginRight: '8px', color: '#eb445a' }} />
-              Teilnehmer hinzufügen
+            <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>
+                <IonIcon icon={add} style={{ marginRight: '8px', color: '#eb445a' }} />
+                Teilnehmer hinzufügen
+              </span>
+              {selectedKonfis.length > 0 && (
+                <IonButton 
+                  size="small"
+                  color="success"
+                  onClick={handleAddParticipants}
+                  disabled={loading}
+                  style={{
+                    '--background': '#28a745',
+                    '--background-hover': '#218838',
+                    '--color': 'white'
+                  }}
+                >
+                  <IonIcon icon={checkmark} style={{ marginRight: '4px' }} />
+                  {selectedKonfis.length} hinzufügen
+                </IonButton>
+              )}
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent style={{ padding: '16px' }}>
@@ -224,19 +183,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               placeholder="Konfi suchen..."
               style={{ '--background': '#f8f9fa', marginBottom: '16px' }}
             />
-
-            {selectedKonfis.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <IonButton 
-                  expand="block" 
-                  color="primary"
-                  onClick={handleAddParticipants}
-                  disabled={loading}
-                >
-                  {selectedKonfis.length} Teilnehmer hinzufügen
-                </IonButton>
-              </div>
-            )}
 
             <IonList>
               {filteredKonfis.length === 0 ? (
