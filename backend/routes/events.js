@@ -514,6 +514,54 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     );
   });
 
+  // Add participant to event (Admin only)
+  router.post('/:id/participants', rbacVerifier, checkPermission('admin'), (req, res) => {
+    const eventId = req.params.id;
+    const { user_id, status = 'confirmed' } = req.body;
+    
+    console.log("Admin adding participant:", user_id, "to event:", eventId, "org:", req.user.organization_id);
+    
+    // Check if user exists and belongs to same organization
+    db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", 
+      [user_id, req.user.organization_id], (err, user) => {
+        if (err) {
+          console.error('Error checking user:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!user) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Check if already booked
+        db.get("SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?", 
+          [eventId, user_id], (err, existing) => {
+            if (err) {
+              console.error('Error checking existing booking:', err);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (existing) {
+              return res.status(409).json({ error: 'User already booked this event' });
+            }
+            
+            // Create booking
+            db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
+              [eventId, user_id, status, req.user.organization_id], function(err) {
+                if (err) {
+                  console.error('Error creating booking:', err);
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                
+                res.json({ 
+                  id: this.lastID, 
+                  message: 'Participant added successfully'
+                });
+              });
+          });
+      });
+  });
+
   // Delete event booking (Admin only)
   router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('admin'), (req, res) => {
     const eventId = req.params.id;

@@ -245,13 +245,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         attendance_status: status
       });
       
-      // If marking as present, award points
-      if (status === 'present' && eventData) {
+      // If marking as present, award points based on event type
+      if (status === 'present' && eventData && eventData.points > 0) {
         const userId = participant.user_id || participant.id;
+        
+        // Determine point type based on event categories
+        let pointType = 'gemeinde'; // Default
+        if (eventData.categories && eventData.categories.length > 0) {
+          const categoryNames = eventData.categories.map(cat => cat.name.toLowerCase());
+          if (categoryNames.some(name => name.includes('gottesdienst') || name.includes('kirche'))) {
+            pointType = 'gottesdienst';
+          }
+        }
+        
         await api.post(`/admin/konfis/${userId}/bonus-points`, {
           points: eventData.points,
-          type: 'gemeinde', // Event points are usually gemeinde points
-          description: `Teilnahme an Event: ${eventData.name}`,
+          type: pointType,
+          description: `Event-Teilnahme: ${eventData.name}`,
           completed_date: new Date().toISOString().split('T')[0]
         });
       }
