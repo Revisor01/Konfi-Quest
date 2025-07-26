@@ -264,7 +264,16 @@ const EventModal: React.FC<EventModalProps> = ({
             {event ? 'Event bearbeiten' : 'Neues Event'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton 
+              onClick={handleClose} 
+              disabled={loading}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -273,6 +282,12 @@ const EventModal: React.FC<EventModalProps> = ({
               onClick={handleSubmit} 
               disabled={!isFormValid || loading}
               color="primary"
+              style={{
+                '--background': '#eb445a',
+                '--background-hover': '#d73847',
+                '--color': 'white',
+                '--border-radius': '8px'
+              }}
             >
               {loading ? (
                 <IonSpinner name="crescent" />

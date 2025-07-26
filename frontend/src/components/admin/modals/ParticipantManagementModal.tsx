@@ -35,9 +35,11 @@ interface Konfi {
 
 interface Participant {
   id: number;
+  user_id?: number;
   participant_name: string;
   jahrgang_name?: string;
   created_at: string;
+  status?: 'confirmed' | 'pending';
 }
 
 interface ParticipantManagementModalProps {
@@ -142,7 +144,15 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>Teilnehmer verwalten</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton 
+              onClick={handleClose}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
