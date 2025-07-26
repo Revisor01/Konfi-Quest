@@ -8,9 +8,19 @@ class PushService {
     try {
       console.log('📨 Sending chat notification to user:', userId);
       
-      // Alle Push Tokens des Users laden
+      // NUR das neueste Token pro Device/Platform verwenden um Duplikate zu vermeiden
       return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM push_tokens WHERE user_id = ?', [userId], async (err, tokens) => {
+        const query = `
+          SELECT * FROM push_tokens 
+          WHERE user_id = ? 
+            AND id IN (
+              SELECT MAX(id) 
+              FROM push_tokens 
+              WHERE user_id = ? 
+              GROUP BY device_id, platform
+            )
+        `;
+        db.all(query, [userId, userId], async (err, tokens) => {
           if (err) {
             console.error('❌ Error getting push tokens:', err);
             return reject(err);
@@ -71,7 +81,18 @@ class PushService {
       console.log(`🔢 Sending badge update to user ${userId}: ${badgeCount}`);
       
       return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM push_tokens WHERE user_id = ?', [userId], async (err, tokens) => {
+        // NUR das neueste Token pro Device/Platform verwenden um Duplikate zu vermeiden
+        const query = `
+          SELECT * FROM push_tokens 
+          WHERE user_id = ? 
+            AND id IN (
+              SELECT MAX(id) 
+              FROM push_tokens 
+              WHERE user_id = ? 
+              GROUP BY device_id, platform
+            )
+        `;
+        db.all(query, [userId, userId], async (err, tokens) => {
           if (err) return reject(err);
           if (!tokens || tokens.length === 0) {
             return resolve({ success: false, message: 'No tokens found' });
