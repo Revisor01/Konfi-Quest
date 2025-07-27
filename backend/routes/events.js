@@ -659,46 +659,90 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // Add participant to event (Admin only)
   router.post('/:id/participants', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
     const eventId = req.params.id;
-    const { user_id, status = 'confirmed' } = req.body;
+    const { user_id, status = 'auto' } = req.body; // 'auto' determines status based on capacity
     
     console.log("Admin adding participant:", user_id, "to event:", eventId, "org:", req.user.organization_id);
     
-    // Check if user exists and belongs to same organization
-    db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", 
-      [user_id, req.user.organization_id], (err, user) => {
+    // Get event details
+    db.get("SELECT * FROM events WHERE id = ? AND organization_id = ?", 
+      [eventId, req.user.organization_id], (err, event) => {
         if (err) {
-          console.error('Error checking user:', err);
+          console.error('Error fetching event:', err);
           return res.status(500).json({ error: 'Database error' });
         }
         
-        if (!user) {
-          return res.status(404).json({ error: 'User not found' });
+        if (!event) {
+          return res.status(404).json({ error: 'Event not found' });
         }
         
-        // Check if already booked
-        db.get("SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?", 
-          [eventId, user_id], (err, existing) => {
+        // Check if user exists and belongs to same organization
+        db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", 
+          [user_id, req.user.organization_id], (err, user) => {
             if (err) {
-              console.error('Error checking existing booking:', err);
+              console.error('Error checking user:', err);
               return res.status(500).json({ error: 'Database error' });
             }
             
-            if (existing) {
-              return res.status(409).json({ error: 'User already booked this event' });
+            if (!user) {
+              return res.status(404).json({ error: 'User not found' });
             }
             
-            // Create booking
-            db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
-              [eventId, user_id, status, req.user.organization_id], function(err) {
+            // Check if already booked
+            db.get("SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?", 
+              [eventId, user_id], (err, existing) => {
                 if (err) {
-                  console.error('Error creating booking:', err);
+                  console.error('Error checking existing booking:', err);
                   return res.status(500).json({ error: 'Database error' });
                 }
                 
-                res.json({ 
-                  id: this.lastID, 
-                  message: 'Participant added successfully'
-                });
+                if (existing) {
+                  return res.status(409).json({ error: 'User already booked this event' });
+                }
+                
+                // Determine final status
+                let finalStatus = status;
+                if (status === 'auto') {
+                  // Check current confirmed participants
+                  db.get("SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'", 
+                    [eventId], (err, result) => {
+                      if (err) {
+                        console.error('Error checking capacity:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                      }
+                      
+                      finalStatus = result.confirmed_count >= event.max_participants ? 'pending' : 'confirmed';
+                      
+                      // Create booking
+                      db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
+                        [eventId, user_id, finalStatus, req.user.organization_id], function(err) {
+                          if (err) {
+                            console.error('Error creating booking:', err);
+                            return res.status(500).json({ error: 'Database error' });
+                          }
+                          
+                          res.json({ 
+                            id: this.lastID, 
+                            status: finalStatus,
+                            message: `Participant added ${finalStatus === 'pending' ? 'to waitlist' : 'successfully'}`
+                          });
+                        });
+                    });
+                } else {
+                  // Use specified status (for manual override)
+                  db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
+                    [eventId, user_id, finalStatus, req.user.organization_id], function(err) {
+                      if (err) {
+                        console.error('Error creating booking:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                      }
+                      
+                      res.json({ 
+                        id: this.lastID, 
+                        status: finalStatus,
+                        message: 'Participant added successfully'
+                      });
+                    });
+                }
               });
           });
       });
@@ -870,6 +914,55 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         );
       });
     });
+  });
+
+  // Promote/Demote participant between confirmed and waitlist
+  router.put('/:id/participants/:participantId/status', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
+    const eventId = req.params.id;
+    const participantId = req.params.participantId;
+    const { status } = req.body;
+    
+    if (!['confirmed', 'pending'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be confirmed or pending' });
+    }
+    
+    console.log("Updating participant status:", participantId, "to:", status, "for event:", eventId);
+    
+    // Get current booking
+    db.get("SELECT * FROM event_bookings WHERE id = ? AND event_id = ?", 
+      [participantId, eventId], (err, booking) => {
+        if (err) {
+          console.error('Error fetching booking:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!booking) {
+          return res.status(404).json({ error: 'Booking not found' });
+        }
+        
+        if (booking.status === status) {
+          return res.status(400).json({ error: `Participant already ${status}` });
+        }
+        
+        // Update status
+        db.run("UPDATE event_bookings SET status = ? WHERE id = ?", 
+          [status, participantId], function(err) {
+            if (err) {
+              console.error('Error updating status:', err);
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (this.changes === 0) {
+              return res.status(404).json({ error: 'Booking not found' });
+            }
+            
+            const action = status === 'confirmed' ? 'promoted from waitlist' : 'moved to waitlist';
+            res.json({ 
+              message: `Participant ${action}`,
+              status: status
+            });
+          });
+      });
   });
 
   // Update participant attendance and award event points
