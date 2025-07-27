@@ -481,7 +481,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonIcon icon={time} slot="start" color="primary" />
                       <IonLabel>
                         <h3>
-                          {formatTime(timeslot.start_time) && formatTime(timeslot.end_time) 
+                          {timeslot.start_time && timeslot.end_time 
                             ? `${formatTime(timeslot.start_time)} - ${formatTime(timeslot.end_time)}`
                             : 'Zeit nicht definiert'
                           }

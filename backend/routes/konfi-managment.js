@@ -299,6 +299,112 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
         });
     });
 
+    // GET single konfi details with activities, bonusPoints, eventPoints
+    router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
+        const konfiId = req.params.id;
+        
+        console.log('📝 Loading details for konfi:', konfiId, 'Organization:', req.user.organization_id);
+        
+        // Get the konfi details with all needed joins
+        const konfiQuery = `
+            SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points, kp.password_plain,
+                   j.name as jahrgang_name, j.id as jahrgang_id
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN konfi_profiles kp ON u.id = kp.user_id  
+            LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+            WHERE u.id = ? AND r.name = 'konfi' AND u.organization_id = ?
+        `;
+        
+        db.get(konfiQuery, [konfiId, req.user.organization_id], (err, konfi) => {
+            if (err) {
+                console.error('Error fetching konfi:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (!konfi) {
+                return res.status(404).json({ error: 'Konfi not found' });
+            }
+            
+            // Get activities
+            const activitiesQuery = `
+                SELECT ka.*, a.name, a.points, a.type, u.display_name as admin_name
+                FROM konfi_activities ka
+                JOIN activities a ON ka.activity_id = a.id
+                LEFT JOIN users u ON ka.admin_id = u.id
+                WHERE ka.konfi_id = ? AND ka.organization_id = ?
+                ORDER BY ka.completed_date DESC, ka.created_at DESC
+            `;
+            
+            db.all(activitiesQuery, [konfiId, req.user.organization_id], (err, activities) => {
+                if (err) {
+                    console.error('Error fetching activities:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                // Get bonus points
+                const bonusQuery = `
+                    SELECT bp.*, u.display_name as admin_name
+                    FROM bonus_points bp
+                    LEFT JOIN users u ON bp.admin_id = u.id
+                    WHERE bp.konfi_id = ? AND bp.organization_id = ?
+                    ORDER BY bp.created_at DESC
+                `;
+                
+                db.all(bonusQuery, [konfiId, req.user.organization_id], (err, bonusPoints) => {
+                    if (err) {
+                        console.error('Error fetching bonus points:', err);
+                        return res.status(500).json({ error: 'Database error' });
+                    }
+                    
+                    // Get badge count
+                    const badgeQuery = `SELECT COUNT(*) as badgeCount FROM konfi_badges WHERE konfi_id = ?`;
+                    
+                    db.get(badgeQuery, [konfiId], (err, badgeResult) => {
+                        if (err) {
+                            console.error('Error fetching badge count:', err);
+                            return res.status(500).json({ error: 'Database error' });
+                        }
+                        
+                        // Return complete konfi data
+                        res.json({
+                            ...konfi,
+                            activities: activities || [],
+                            bonusPoints: bonusPoints || [],
+                            badgeCount: badgeResult ? badgeResult.badgeCount : 0,
+                            password: konfi.password_plain // For admin view
+                        });
+                    });
+                });
+            });
+        });
+    });
+
+    // GET event points for konfi
+    router.get('/:id/event-points', rbacVerifier, checkPermission('admin.konfis.view'), (req, res) => {
+        const konfiId = req.params.id;
+        
+        console.log('📝 Loading event points for konfi:', konfiId, 'Organization:', req.user.organization_id);
+        
+        const eventPointsQuery = `
+            SELECT ep.*, e.name as event_name, e.event_date, u.display_name as admin_name
+            FROM event_points ep
+            JOIN events e ON ep.event_id = e.id
+            LEFT JOIN users u ON ep.admin_id = u.id
+            WHERE ep.konfi_id = ? AND ep.organization_id = ?
+            ORDER BY ep.awarded_date DESC, ep.created_at DESC
+        `;
+        
+        db.all(eventPointsQuery, [konfiId, req.user.organization_id], (err, eventPoints) => {
+            if (err) {
+                console.error('Error fetching event points:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            res.json(eventPoints || []);
+        });
+    });
+
     // POST bonus points for a konfi
     router.post('/:id/bonus-points', rbacVerifier, checkPermission('admin.konfis.edit'), (req, res) => {
         const { points, type, description } = req.body;

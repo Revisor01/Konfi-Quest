@@ -48,7 +48,8 @@ import {
   trash,
   image,
   eye,
-  close
+  close,
+  podium
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -104,6 +105,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   
   const [activities, setActivities] = useState<Activity[]>([]);
   const [bonusEntries, setBonusEntries] = useState<any[]>([]);
+  const [eventPoints, setEventPoints] = useState<any[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPasswordAlert, setShowPasswordAlert] = useState(false);
@@ -218,6 +220,16 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       
       // Bonuspunkte aus API-Response extrahieren
       setBonusEntries(konfiData.bonusPoints || []);
+      
+      // Event Points laden
+      try {
+        const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
+        console.log('Event points loaded:', eventPointsRes.data);
+        setEventPoints(eventPointsRes.data || []);
+      } catch (eventPointsError) {
+        console.warn('Could not load event points:', eventPointsError);
+        setEventPoints([]);
+      }
       
       // Normale Aktivitäten haben keine Fotos - nur activity-requests haben Fotos
       const enhancedActivities = allActivities.map((activity: any) => ({
@@ -525,6 +537,61 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonCardContent>
         </IonCard>
 
+        {/* Event Points */}
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardHeader>
+            <IonCardTitle>
+              <IonIcon icon={podium} style={{ marginRight: '8px', color: '#eb445a' }} />
+              Event Punkte ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})
+            </IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            {eventPoints.length > 0 ? (
+              <IonList>
+                {eventPoints.map((eventPoint: any, index: number) => (
+                  <IonItem key={index}>
+                    <IonLabel>
+                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {eventPoint.event_name || 'Event'}
+                        <IonChip 
+                          color={eventPoint.point_type === 'gottesdienst' ? 'primary' : 'success'}
+                          style={{ 
+                            fontSize: '0.7rem', 
+                            height: '18px',
+                            opacity: 0.8,
+                            '--background': eventPoint.point_type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
+                            '--color': eventPoint.point_type === 'gottesdienst' ? '#3880ff' : '#2dd36f'
+                          }}
+                        >
+                          {eventPoint.point_type === 'gottesdienst' ? 'G' : 'Gem'}
+                        </IonChip>
+                      </h3>
+                      <p>
+                        {eventPoint.event_date && formatDate(eventPoint.event_date)} • {eventPoint.admin_name || 'Admin'}
+                        {eventPoint.awarded_date && ` • Vergeben: ${formatDate(eventPoint.awarded_date)}`}
+                      </p>
+                    </IonLabel>
+                    <IonBadge 
+                      style={{
+                        '--background': 'rgba(235, 68, 90, 0.15)',
+                        '--color': '#eb445a',
+                        opacity: 0.8,
+                        fontSize: '0.8rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      +{eventPoint.points}
+                    </IonBadge>
+                  </IonItem>
+                ))}
+              </IonList>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
+                Noch keine Event-Punkte erhalten
+              </p>
+            )}
+          </IonCardContent>
+        </IonCard>
 
         {/* Letzte Aktivitäten */}
         <IonCard style={{ margin: '16px' }}>
