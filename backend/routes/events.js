@@ -894,43 +894,74 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const { 
       name, 
       description, 
-      dates, 
+      event_date,
       location, 
       location_maps_url, 
       points, 
-      category, 
+      point_type,
+      category_ids,
+      jahrgang_ids,
       type, 
       max_participants, 
       registration_opens_at, 
-      registration_closes_at 
+      registration_closes_at,
+      has_timeslots,
+      timeslots,
+      series_count,
+      series_interval
     } = req.body;
     
-    if (!name || !dates || !Array.isArray(dates) || dates.length === 0) {
-      return res.status(400).json({ error: 'Name and dates array are required' });
+    if (!name || !event_date || !series_count || series_count < 2) {
+      return res.status(400).json({ error: 'Name, event_date, and series_count (min 2) are required' });
     }
     
-    // Generate series ID
+    // Generate series dates based on interval
+    const generateSeriesDates = (startDate, count, interval) => {
+      const dates = [];
+      const currentDate = new Date(startDate);
+      
+      for (let i = 0; i < count; i++) {
+        dates.push(new Date(currentDate));
+        
+        // Add interval for next date
+        if (i < count - 1) {
+          if (interval === 'week') {
+            currentDate.setDate(currentDate.getDate() + 7);
+          } else if (interval === 'month') {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+          }
+        }
+      }
+      
+      return dates;
+    };
+    
+    const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
     const seriesId = Date.now().toString();
+    
+    console.log('Creating series with', series_count, 'events, interval:', series_interval);
+    console.log('Generated dates:', seriesDates.map(d => d.toISOString()));
     
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
       
       let completed = 0;
-      const total = dates.length;
+      const total = seriesDates.length;
       let hasError = false;
       
-      dates.forEach((date, index) => {
+      seriesDates.forEach((date, index) => {
         const eventName = `${name} - Termin ${index + 1}`;
+        const isoDate = date.toISOString();
         
         db.run(`INSERT INTO events (
           name, description, event_date, location, location_maps_url, 
-          points, category, type, max_participants, registration_opens_at, 
-          registration_closes_at, is_series, series_id, created_by, organization_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`, 
+          points, point_type, type, max_participants, registration_opens_at, 
+          registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`, 
           [
-            eventName, description, date, location, location_maps_url,
-            points || 0, category || '', type || 'event', max_participants,
-            registration_opens_at, registration_closes_at, seriesId, req.user.id, req.user.organization_id
+            eventName, description, isoDate, location, location_maps_url,
+            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+            registration_opens_at, registration_closes_at, has_timeslots || 0, seriesId, req.user.id, req.user.organization_id
           ], function(err) {
             if (err) {
               console.error('Error creating series event:', err);
@@ -938,26 +969,89 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               return;
             }
             
-            completed++;
+            const eventId = this.lastID;
             
-            if (completed === total) {
-              if (hasError) {
-                db.run("ROLLBACK");
-                return res.status(500).json({ error: 'Error creating series events' });
-              } else {
-                db.run("COMMIT", (err) => {
-                  if (err) {
-                    console.error('Error committing transaction:', err);
-                    return res.status(500).json({ error: 'Database error' });
-                  }
-                  res.json({ 
-                    message: 'Series events created successfully', 
-                    series_id: seriesId,
-                    events_created: total
+            // Handle categories and jahrgaenge for each event
+            const handleRelations = (callback) => {
+              const promises = [];
+              
+              // Add categories
+              if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
+                const categoryPromises = category_ids.map(categoryId => {
+                  return new Promise((resolve, reject) => {
+                    db.run("INSERT OR IGNORE INTO event_categories (event_id, category_id) VALUES (?, ?)",
+                      [eventId, categoryId], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                      });
                   });
                 });
+                promises.push(...categoryPromises);
               }
-            }
+              
+              // Add jahrgaenge
+              if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+                const jahrgangPromises = jahrgang_ids.map(jahrgangId => {
+                  return new Promise((resolve, reject) => {
+                    db.run("INSERT OR IGNORE INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES (?, ?)",
+                      [eventId, jahrgangId], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                      });
+                  });
+                });
+                promises.push(...jahrgangPromises);
+              }
+              
+              // Add timeslots if provided
+              if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
+                const timeslotPromises = timeslots.map(timeslot => {
+                  return new Promise((resolve, reject) => {
+                    db.run("INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES (?, ?, ?, ?, ?)",
+                      [eventId, timeslot.start_time, timeslot.end_time, timeslot.max_participants, req.user.organization_id], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                      });
+                  });
+                });
+                promises.push(...timeslotPromises);
+              }
+              
+              if (promises.length === 0) {
+                return callback();
+              }
+              
+              Promise.all(promises)
+                .then(() => callback())
+                .catch(err => {
+                  console.error('Error adding relations:', err);
+                  hasError = true;
+                  callback();
+                });
+            };
+            
+            handleRelations(() => {
+              completed++;
+            
+              if (completed === total) {
+                if (hasError) {
+                  db.run("ROLLBACK");
+                  return res.status(500).json({ error: 'Error creating series events' });
+                } else {
+                  db.run("COMMIT", (err) => {
+                    if (err) {
+                      console.error('Error committing transaction:', err);
+                      return res.status(500).json({ error: 'Database error' });
+                    }
+                    res.json({ 
+                      message: 'Series events created successfully', 
+                      series_id: seriesId,
+                      events_created: total
+                    });
+                  });
+                }
+              }
+            });
           }
         );
       });
