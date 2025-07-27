@@ -12,8 +12,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
              e.max_participants,
              e.registration_opens_at,
              e.registration_closes_at,
-             GROUP_CONCAT(c.id) as category_ids,
-             GROUP_CONCAT(c.name) as category_names,
+             e.point_type,
+             GROUP_CONCAT(DISTINCT c.id) as category_ids,
+             GROUP_CONCAT(DISTINCT c.name) as category_names,
+             GROUP_CONCAT(DISTINCT j.id) as jahrgang_ids,
+             GROUP_CONCAT(DISTINCT j.name) as jahrgang_names,
              CASE 
                WHEN datetime('now') < e.registration_opens_at THEN 'upcoming'
                WHEN datetime('now') > e.registration_closes_at THEN 'closed'
@@ -23,6 +26,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
       LEFT JOIN event_categories ec ON e.id = ec.event_id
       LEFT JOIN categories c ON ec.category_id = c.id
+      LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+      LEFT JOIN jahrgaenge j ON eja.jahrgang_id = j.id
       WHERE e.organization_id = ?
       GROUP BY e.id
       ORDER BY e.event_date ASC
@@ -35,7 +40,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(500).json({ error: 'Database error' });
       }
       
-      // Transform the data to include categories array
+      // Transform the data to include categories and jahrgaenge arrays
       const eventsWithCategories = rows.map(row => {
         const categories = [];
         if (row.category_ids) {
@@ -49,9 +54,22 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           }
         }
         
+        const jahrgaenge = [];
+        if (row.jahrgang_ids) {
+          const ids = row.jahrgang_ids.split(',');
+          const names = row.jahrgang_names.split(',');
+          for (let i = 0; i < ids.length; i++) {
+            jahrgaenge.push({
+              id: parseInt(ids[i]),
+              name: names[i]
+            });
+          }
+        }
+        
         return {
           ...row,
-          categories: categories
+          categories: categories,
+          jahrgaenge: jahrgaenge
         };
       });
       
@@ -158,12 +176,44 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               return res.status(500).json({ error: 'Database error' });
             }
             
-            res.json({
-              ...event,
-              participants,
-              timeslots,
-              series_events: seriesEvents,
-              available_spots: event.max_participants - participants.length
+            // Get jahrgaenge for this event
+            const jahrgaengeQuery = `
+              SELECT j.id, j.name
+              FROM jahrgaenge j
+              JOIN event_jahrgang_assignments eja ON j.id = eja.jahrgang_id
+              WHERE eja.event_id = ?
+            `;
+            
+            db.all(jahrgaengeQuery, [eventId], (err, jahrgaenge) => {
+              if (err) {
+                console.error('Error fetching event jahrgaenge:', err);
+                return res.status(500).json({ error: 'Database error' });
+              }
+              
+              // Get categories for this event  
+              const categoriesQuery = `
+                SELECT c.id, c.name
+                FROM categories c
+                JOIN event_categories ec ON c.id = ec.category_id
+                WHERE ec.event_id = ?
+              `;
+              
+              db.all(categoriesQuery, [eventId], (err, categories) => {
+                if (err) {
+                  console.error('Error fetching event categories:', err);
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                
+                res.json({
+                  ...event,
+                  participants,
+                  timeslots,
+                  series_events: seriesEvents,
+                  jahrgaenge,
+                  categories,
+                  available_spots: event.max_participants - participants.length
+                });
+              });
             });
           });
         });
@@ -172,7 +222,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Create new event
-  router.post('/', rbacVerifier, checkPermission('admin.events.create'), (req, res) => {
+  router.post('/', rbacVerifier, checkPermission('events.create'), (req, res) => {
     
     const {
       name,
@@ -181,7 +231,9 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       location,
       location_maps_url,
       points,
+      point_type,
       category_ids,
+      jahrgang_ids,
       type,
       max_participants,
       registration_opens_at,
@@ -199,12 +251,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     console.log("Creating event for org:", req.user.organization_id);
     db.run(`INSERT INTO events (
       name, description, event_date, location, location_maps_url, 
-      points, type, max_participants, registration_opens_at, 
+      points, point_type, type, max_participants, registration_opens_at, 
       registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
       [
         name, description, event_date, location, location_maps_url,
-        points || 0, type || 'event', max_participants,
+        points || 0, point_type || 'gemeinde', type || 'event', max_participants,
         registration_opens_at, registration_closes_at, has_timeslots || 0,
         is_series || 0, series_id, req.user.id, req.user.organization_id
       ], function(err) {
@@ -215,8 +267,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         
         const eventId = this.lastID;
         
-        // Add categories if provided
-        const addCategories = () => {
+        // Add categories and jahrgaenge if provided
+        const addCategoriesAndJahrgaenge = () => {
+          const promises = [];
+          
+          // Add categories
           if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
             const categoryPromises = category_ids.map(categoryId => {
               return new Promise((resolve, reject) => {
@@ -227,10 +282,24 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                   });
               });
             });
-            
-            return Promise.all(categoryPromises);
+            promises.push(...categoryPromises);
           }
-          return Promise.resolve();
+          
+          // Add jahrgaenge
+          if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+            const jahrgangPromises = jahrgang_ids.map(jahrgangId => {
+              return new Promise((resolve, reject) => {
+                db.run("INSERT OR IGNORE INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES (?, ?)",
+                  [eventId, jahrgangId], (err) => {
+                    if (err) reject(err);
+                    else resolve();
+                  });
+              });
+            });
+            promises.push(...jahrgangPromises);
+          }
+          
+          return Promise.all(promises);
         };
         
         // If has timeslots, create them
@@ -246,7 +315,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
             });
           });
           
-          Promise.all([...timeslotQueries, addCategories()])
+          Promise.all([...timeslotQueries, addCategoriesAndJahrgaenge()])
             .then(() => {
               res.json({ id: eventId, message: 'Event created successfully with timeslots' });
             })
@@ -255,7 +324,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               res.status(500).json({ error: 'Event created but failed to create timeslots or categories' });
             });
         } else {
-          addCategories()
+          addCategoriesAndJahrgaenge()
             .then(() => {
               res.json({ id: eventId, message: 'Event created successfully' });
             })
@@ -269,7 +338,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Update event
-  router.put('/:id', rbacVerifier, checkPermission('admin.events.edit'), (req, res) => {
+  router.put('/:id', rbacVerifier, checkPermission('events.edit'), (req, res) => {
     
     const { id } = req.params;
     const {
@@ -279,7 +348,9 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       location,
       location_maps_url,
       points,
-      category,
+      point_type,
+      category_ids,
+      jahrgang_ids,
       type,
       max_participants,
       registration_opens_at,
@@ -287,30 +358,101 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     } = req.body;
     
     console.log("Updating event:", id, "for org:", req.user.organization_id);
-    db.run(`UPDATE events SET 
-      name = ?, description = ?, event_date = ?, location = ?, 
-      location_maps_url = ?, points = ?, category = ?, type = ?, 
-      max_participants = ?, registration_opens_at = ?, registration_closes_at = ?
-      WHERE id = ? AND organization_id = ?`, 
-      [
-        name, description, event_date, location, location_maps_url,
-        points, category, type, max_participants, registration_opens_at,
-        registration_closes_at, id, req.user.organization_id
-      ], function(err) {
-        if (err) {
-          console.error('Error updating event:', err);
-          return res.status(500).json({ error: 'Database error' });
+    
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+      
+      // Update main event
+      db.run(`UPDATE events SET 
+        name = ?, description = ?, event_date = ?, location = ?, 
+        location_maps_url = ?, points = ?, point_type = ?, type = ?, 
+        max_participants = ?, registration_opens_at = ?, registration_closes_at = ?
+        WHERE id = ? AND organization_id = ?`, 
+        [
+          name, description, event_date, location, location_maps_url,
+          points, point_type, type, max_participants, registration_opens_at,
+          registration_closes_at, id, req.user.organization_id
+        ], function(err) {
+          if (err) {
+            console.error('Error updating event:', err);
+            db.run("ROLLBACK");
+            return res.status(500).json({ error: 'Database error' });
+          }
+          if (this.changes === 0) {
+            db.run("ROLLBACK");
+            return res.status(404).json({ error: 'Event not found' });
+          }
+          
+          // Update categories
+          db.run("DELETE FROM event_categories WHERE event_id = ?", [id], (err) => {
+            if (err) {
+              console.error('Error deleting old categories:', err);
+              db.run("ROLLBACK");
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            // Update jahrgaenge
+            db.run("DELETE FROM event_jahrgang_assignments WHERE event_id = ?", [id], (err) => {
+              if (err) {
+                console.error('Error deleting old jahrgaenge:', err);
+                db.run("ROLLBACK");
+                return res.status(500).json({ error: 'Database error' });
+              }
+              
+              const promises = [];
+              
+              // Add new categories
+              if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
+                const categoryPromises = category_ids.map(categoryId => {
+                  return new Promise((resolve, reject) => {
+                    db.run("INSERT INTO event_categories (event_id, category_id) VALUES (?, ?)",
+                      [id, categoryId], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                      });
+                  });
+                });
+                promises.push(...categoryPromises);
+              }
+              
+              // Add new jahrgaenge
+              if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
+                const jahrgangPromises = jahrgang_ids.map(jahrgangId => {
+                  return new Promise((resolve, reject) => {
+                    db.run("INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) VALUES (?, ?)",
+                      [id, jahrgangId], (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                      });
+                  });
+                });
+                promises.push(...jahrgangPromises);
+              }
+              
+              Promise.all(promises)
+                .then(() => {
+                  db.run("COMMIT", (err) => {
+                    if (err) {
+                      console.error('Error committing transaction:', err);
+                      return res.status(500).json({ error: 'Database error' });
+                    }
+                    res.json({ message: 'Event updated successfully' });
+                  });
+                })
+                .catch(err => {
+                  console.error('Error updating categories/jahrgaenge:', err);
+                  db.run("ROLLBACK");
+                  res.status(500).json({ error: 'Event updated but failed to update categories/jahrgaenge' });
+                });
+            });
+          });
         }
-        if (this.changes === 0) {
-          return res.status(404).json({ error: 'Event not found' });
-        }
-        res.json({ message: 'Event updated successfully' });
-      }
-    );
+      );
+    });
   });
 
   // Delete event
-  router.delete('/:id', rbacVerifier, checkPermission('admin.events.delete'), (req, res) => {
+  router.delete('/:id', rbacVerifier, checkPermission('events.delete'), (req, res) => {
     
     const { id } = req.params;
     
@@ -515,7 +657,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Add participant to event (Admin only)
-  router.post('/:id/participants', rbacVerifier, checkPermission('admin'), (req, res) => {
+  router.post('/:id/participants', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
     const eventId = req.params.id;
     const { user_id, status = 'confirmed' } = req.body;
     
@@ -563,7 +705,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Delete event booking (Admin only)
-  router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('admin'), (req, res) => {
+  router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
     const eventId = req.params.id;
     const bookingId = req.params.bookingId;
     
@@ -655,7 +797,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Create series events
-  router.post('/series', rbacVerifier, checkPermission('admin.events.create'), (req, res) => {
+  router.post('/series', rbacVerifier, checkPermission('events.create'), (req, res) => {
     
     const { 
       name, 
@@ -730,8 +872,157 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     });
   });
 
+  // Update participant attendance and award event points
+  router.put('/:id/participants/:participantId/attendance', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
+    const eventId = req.params.id;
+    const participantId = req.params.participantId;
+    const { attendance_status } = req.body;
+    
+    if (!['present', 'absent'].includes(attendance_status)) {
+      return res.status(400).json({ error: 'Invalid attendance status' });
+    }
+    
+    console.log("Updating attendance for participant:", participantId, "event:", eventId, "status:", attendance_status);
+    
+    // Get event and participant details
+    db.get(`
+      SELECT e.*, eb.user_id, eb.status as booking_status, u.organization_id
+      FROM events e 
+      JOIN event_bookings eb ON e.id = eb.event_id 
+      JOIN users u ON eb.user_id = u.id
+      WHERE e.id = ? AND eb.id = ? AND e.organization_id = ?
+    `, [eventId, participantId, req.user.organization_id], (err, eventData) => {
+      if (err) {
+        console.error('Error fetching event/participant:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!eventData) {
+        return res.status(404).json({ error: 'Event or participant not found' });
+      }
+      
+      if (eventData.organization_id !== req.user.organization_id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      // Update attendance status
+      db.run("UPDATE event_bookings SET attendance_status = ? WHERE id = ?", 
+        [attendance_status, participantId], function(err) {
+          if (err) {
+            console.error('Error updating attendance:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Participant not found' });
+          }
+          
+          // If marking as present and event has points, award event points
+          if (attendance_status === 'present' && eventData.points > 0) {
+            // Check if points already awarded
+            db.get("SELECT id FROM event_points WHERE konfi_id = ? AND event_id = ?", 
+              [eventData.user_id, eventId], (err, existingPoints) => {
+                if (err) {
+                  console.error('Error checking existing points:', err);
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                
+                if (existingPoints) {
+                  // Points already awarded, just update attendance
+                  return res.json({ 
+                    message: 'Attendance updated (points already awarded)',
+                    points_awarded: false
+                  });
+                }
+                
+                // Award event points
+                const description = `Event-Teilnahme: ${eventData.name}`;
+                const pointType = eventData.point_type || 'gemeinde';
+                const awardedDate = new Date().toISOString().split('T')[0];
+                
+                db.run(`INSERT INTO event_points 
+                  (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [eventData.user_id, eventId, eventData.points, pointType, description, 
+                   awardedDate, req.user.id, req.user.organization_id], function(err) {
+                    if (err) {
+                      console.error('Error awarding event points:', err);
+                      return res.status(500).json({ error: 'Attendance updated but failed to award points' });
+                    }
+                    
+                    // Also update konfi_profiles for the summary
+                    const updateProfileQuery = pointType === 'gottesdienst' 
+                      ? "UPDATE konfi_profiles SET gottesdienst_points = gottesdienst_points + ? WHERE user_id = ?"
+                      : "UPDATE konfi_profiles SET gemeinde_points = gemeinde_points + ? WHERE user_id = ?";
+                    
+                    db.run(updateProfileQuery, [eventData.points, eventData.user_id], (err) => {
+                      if (err) {
+                        console.error('Error updating profile points:', err);
+                      }
+                      
+                      res.json({ 
+                        message: `Attendance updated and ${eventData.points} ${pointType} points awarded`,
+                        points_awarded: true,
+                        points: eventData.points,
+                        point_type: pointType
+                      });
+                    });
+                  });
+              });
+          } else if (attendance_status === 'absent') {
+            // If marking as absent, remove event points if they exist
+            db.get("SELECT id, points, point_type FROM event_points WHERE konfi_id = ? AND event_id = ?", 
+              [eventData.user_id, eventId], (err, existingPoints) => {
+                if (err) {
+                  console.error('Error checking existing points:', err);
+                  return res.status(500).json({ error: 'Database error' });
+                }
+                
+                if (existingPoints) {
+                  // Remove event points
+                  db.run("DELETE FROM event_points WHERE id = ?", [existingPoints.id], (err) => {
+                    if (err) {
+                      console.error('Error removing event points:', err);
+                      return res.status(500).json({ error: 'Attendance updated but failed to remove points' });
+                    }
+                    
+                    // Update konfi_profiles
+                    const updateProfileQuery = existingPoints.point_type === 'gottesdienst' 
+                      ? "UPDATE konfi_profiles SET gottesdienst_points = gottesdienst_points - ? WHERE user_id = ?"
+                      : "UPDATE konfi_profiles SET gemeinde_points = gemeinde_points - ? WHERE user_id = ?";
+                    
+                    db.run(updateProfileQuery, [existingPoints.points, eventData.user_id], (err) => {
+                      if (err) {
+                        console.error('Error updating profile points:', err);
+                      }
+                      
+                      res.json({ 
+                        message: `Attendance updated and ${existingPoints.points} ${existingPoints.point_type} points removed`,
+                        points_removed: true,
+                        points: existingPoints.points,
+                        point_type: existingPoints.point_type
+                      });
+                    });
+                  });
+                } else {
+                  res.json({ 
+                    message: 'Attendance updated (no points to remove)',
+                    points_removed: false
+                  });
+                }
+              });
+          } else {
+            res.json({ 
+              message: 'Attendance updated',
+              points_awarded: false
+            });
+          }
+        });
+    });
+  });
+
   // Create group chat for event
-  router.post('/:id/chat', rbacVerifier, checkPermission('admin.events.edit'), (req, res) => {
+  router.post('/:id/chat', rbacVerifier, checkPermission('events.edit'), (req, res) => {
     
     const eventId = req.params.id;
     
