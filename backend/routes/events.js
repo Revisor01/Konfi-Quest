@@ -791,12 +791,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                       });
                     });
                 }
-              });
             });
           });
         }
       });
-    });
   });
 
   // Delete event booking (Admin only)
