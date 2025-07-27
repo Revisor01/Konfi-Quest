@@ -350,6 +350,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   ? eventData.categories.map(cat => cat.name).join(', ')
                   : 'Event'
                 } • {eventData?.event_date && `${formatDate(eventData.event_date)} • ${formatTime(eventData.event_date)}`}
+                {eventData?.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
               </p>
             </div>
             

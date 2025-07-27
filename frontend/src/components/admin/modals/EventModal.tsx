@@ -116,6 +116,15 @@ const EventModal: React.FC<EventModalProps> = ({
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
 
+  const formatTime = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   useEffect(() => {
     loadCategories();
@@ -359,6 +368,11 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonItem style={{ marginBottom: '16px' }}>
             <IonLabel position="stacked">Endzeit (optional)</IonLabel>
             <IonDatetimeButton datetime="end-time-picker" />
+            {formData.event_end_time && (
+              <IonLabel slot="end" style={{ fontSize: '0.9rem', color: '#666' }}>
+                {formatTime(formData.event_end_time)}
+              </IonLabel>
+            )}
           </IonItem>
 
           <IonItem>
@@ -685,9 +699,9 @@ const EventModal: React.FC<EventModalProps> = ({
       <IonModal keepContentsMounted={true}>
         <IonDatetime
           id="end-time-picker"
-          value={formData.event_end_time}
+          value={formData.event_end_time || formData.event_date}
           onIonChange={(e) => setFormData({ ...formData, event_end_time: e.detail.value as string })}
-          presentation="time"
+          presentation="date-time"
           preferWheel={true}
           style={{
             '--background': '#f8f9fa',

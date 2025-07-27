@@ -112,7 +112,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       for (const konfiId of selectedKonfis) {
         await api.post(`/events/${eventId}/participants`, {
           user_id: konfiId,
-          status: 'confirmed'
+          status: 'auto' // Let backend determine status based on capacity
         });
       }
       

@@ -468,7 +468,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           <IonCardHeader>
             <IonCardTitle>
               <IonIcon icon={gift} style={{ marginRight: '8px', color: '#f59e0b' }} />
-              Bonuspunkte ({getBonusPoints()})
+              Bonus ({getBonusPoints()})
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
@@ -542,7 +542,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           <IonCardHeader>
             <IonCardTitle>
               <IonIcon icon={podium} style={{ marginRight: '8px', color: '#eb445a' }} />
-              Event Punkte ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})
+              Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
@@ -598,7 +598,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           <IonCardHeader>
             <IonCardTitle>
               <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#667eea' }} />
-              Letzte Aktivitäten ({activities.length})
+              Aktivitäten ({activities.length})
             </IonCardTitle>
           </IonCardHeader>
           <IonCardContent>
