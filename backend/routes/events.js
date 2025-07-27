@@ -661,7 +661,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // Add participant to event (Admin only)
   router.post('/:id/participants', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
     const eventId = req.params.id;
-    const { user_id, status = 'auto' } = req.body; // 'auto' determines status based on capacity
+    const { user_id, status = 'auto', timeslot_id = null } = req.body; // 'auto' determines status based on capacity
     
     console.log("Admin adding participant:", user_id, "to event:", eventId, "org:", req.user.organization_id);
     
@@ -677,6 +677,34 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           return res.status(404).json({ error: 'Event not found' });
         }
         
+        // Check if event has timeslots and timeslot_id is required
+        if (event.has_timeslots && !timeslot_id) {
+          return res.status(400).json({ error: 'Timeslot selection required for this event' });
+        }
+        
+        // If timeslot provided, validate it belongs to this event
+        if (timeslot_id) {
+          db.get("SELECT * FROM event_timeslots WHERE id = ? AND event_id = ? AND organization_id = ?", 
+            [timeslot_id, eventId, req.user.organization_id], (err, timeslot) => {
+              if (err) {
+                console.error('Error validating timeslot:', err);
+                return res.status(500).json({ error: 'Database error' });
+              }
+              
+              if (!timeslot) {
+                return res.status(404).json({ error: 'Timeslot not found' });
+              }
+              
+              // Continue with participant validation
+              validateAndCreateBooking(event, timeslot);
+            });
+        } else {
+          // No timeslot booking
+          validateAndCreateBooking(event, null);
+        }
+        
+        function validateAndCreateBooking(event, timeslot) {
+        
         // Check if user exists and belongs to same organization
         db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", 
           [user_id, req.user.organization_id], (err, user) => {
@@ -689,9 +717,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
               return res.status(404).json({ error: 'User not found' });
             }
             
-            // Check if already booked
-            db.get("SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?", 
-              [eventId, user_id], (err, existing) => {
+            // Check if already booked (for this event, any timeslot)
+            const existingQuery = timeslot ? 
+              "SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?" :
+              "SELECT id FROM event_bookings WHERE event_id = ? AND user_id = ?";
+              
+            db.get(existingQuery, [eventId, user_id], (err, existing) => {
                 if (err) {
                   console.error('Error checking existing booking:', err);
                   return res.status(500).json({ error: 'Database error' });
@@ -704,44 +735,59 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 // Determine final status
                 let finalStatus = status;
                 if (status === 'auto') {
-                  // Check current confirmed participants
-                  db.get("SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'", 
-                    [eventId], (err, result) => {
+                  // For timeslot events, check timeslot capacity; for regular events, check event capacity
+                  const capacityQuery = timeslot ? 
+                    "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE timeslot_id = ? AND status = 'confirmed'" :
+                    "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = ? AND status = 'confirmed'";
+                  const capacityParam = timeslot ? timeslot.id : eventId;
+                  const maxCapacity = timeslot ? timeslot.max_participants : event.max_participants;
+                  
+                  db.get(capacityQuery, [capacityParam], (err, result) => {
                       if (err) {
                         console.error('Error checking capacity:', err);
                         return res.status(500).json({ error: 'Database error' });
                       }
                       
-                      finalStatus = result.confirmed_count >= event.max_participants ? 'pending' : 'confirmed';
+                      finalStatus = result.confirmed_count >= maxCapacity ? 'pending' : 'confirmed';
                       
                       // Create booking
-                      db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
-                        [eventId, user_id, finalStatus, req.user.organization_id], function(err) {
+                      const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, ?, datetime('now'), ?)";
+                      db.run(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id], function(err) {
                           if (err) {
                             console.error('Error creating booking:', err);
                             return res.status(500).json({ error: 'Database error' });
                           }
                           
+                          const responseMessage = timeslot ? 
+                            `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'pending' ? '(waitlist)' : 'successfully'}` :
+                            `Participant added ${finalStatus === 'pending' ? 'to waitlist' : 'successfully'}`;
+                          
                           res.json({ 
                             id: this.lastID, 
                             status: finalStatus,
-                            message: `Participant added ${finalStatus === 'pending' ? 'to waitlist' : 'successfully'}`
+                            timeslot_id: timeslot_id,
+                            message: responseMessage
                           });
                         });
                     });
                 } else {
                   // Use specified status (for manual override)
-                  db.run("INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id) VALUES (?, ?, ?, datetime('now'), ?)",
-                    [eventId, user_id, finalStatus, req.user.organization_id], function(err) {
+                  const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, ?, datetime('now'), ?)";
+                  db.run(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id], function(err) {
                       if (err) {
                         console.error('Error creating booking:', err);
                         return res.status(500).json({ error: 'Database error' });
                       }
                       
+                      const responseMessage = timeslot ? 
+                        `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'pending' ? '(waitlist)' : 'successfully'}` :
+                        `Participant added ${finalStatus === 'pending' ? 'to waitlist' : 'successfully'}`;
+                      
                       res.json({ 
                         id: this.lastID, 
                         status: finalStatus,
-                        message: 'Participant added successfully'
+                        timeslot_id: timeslot_id,
+                        message: responseMessage
                       });
                     });
                 }

@@ -21,7 +21,9 @@ import {
   IonChip,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  IonSelect,
+  IonSelectOption
 } from '@ionic/react';
 import { close, person, people, trash, add, checkmark } from 'ionicons/icons';
 import api from '../../../services/api';
@@ -40,6 +42,19 @@ interface Participant {
   jahrgang_name?: string;
   created_at: string;
   status?: 'confirmed' | 'pending';
+}
+
+interface Timeslot {
+  id: number;
+  start_time: string;
+  end_time: string;
+  max_participants: number;
+  registered_count: number;
+}
+
+interface Event {
+  has_timeslots?: boolean;
+  timeslots?: Timeslot[];
 }
 
 interface ParticipantManagementModalProps {
@@ -62,6 +77,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
   const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
+  const [eventData, setEventData] = useState<Event | null>(null);
+  const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
 
   const handleClose = () => {
     if (dismiss) {
@@ -73,7 +90,27 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
   useEffect(() => {
     loadAvailableKonfis();
+    loadEventData();
   }, []);
+
+  const loadEventData = async () => {
+    try {
+      const response = await api.get(`/events/${eventId}`);
+      setEventData(response.data);
+      
+      // If event has timeslots, pre-select the first available one
+      if (response.data.has_timeslots && response.data.timeslots && response.data.timeslots.length > 0) {
+        const availableTimeslot = response.data.timeslots.find((t: Timeslot) => 
+          (t.registered_count || 0) < t.max_participants
+        );
+        if (availableTimeslot) {
+          setSelectedTimeslot(availableTimeslot.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading event data:', error);
+    }
+  };
 
   const loadAvailableKonfis = async () => {
     try {
@@ -95,6 +132,16 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const formatTime = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const handleKonfiSelection = (konfiId: number) => {
     setSelectedKonfis(prev => 
       prev.includes(konfiId) 
@@ -106,14 +153,27 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const handleAddParticipants = async () => {
     if (selectedKonfis.length === 0) return;
     
+    // For events with timeslots, require timeslot selection
+    if (eventData?.has_timeslots && !selectedTimeslot) {
+      setError('Bitte wähle einen Zeitslot aus');
+      return;
+    }
+    
     setLoading(true);
     try {
       // Add each selected konfi as participant
       for (const konfiId of selectedKonfis) {
-        await api.post(`/events/${eventId}/participants`, {
+        const requestData: any = {
           user_id: konfiId,
           status: 'auto' // Let backend determine status based on capacity
-        });
+        };
+        
+        // Add timeslot_id if event has timeslots
+        if (eventData?.has_timeslots && selectedTimeslot) {
+          requestData.timeslot_id = selectedTimeslot;
+        }
+        
+        await api.post(`/events/${eventId}/participants`, requestData);
       }
       
       setSuccess(`${selectedKonfis.length} Teilnehmer hinzugefügt`);
@@ -178,6 +238,37 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               placeholder="Konfi suchen..."
               style={{ '--background': '#f8f9fa', marginBottom: '16px' }}
             />
+
+            {/* Timeslot Selection for events with timeslots */}
+            {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
+              <IonItem style={{ marginBottom: '16px' }}>
+                <IonLabel position="stacked">Zeitslot auswählen *</IonLabel>
+                <IonSelect
+                  value={selectedTimeslot}
+                  onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
+                  placeholder="Zeitslot wählen"
+                  interface="action-sheet"
+                  interfaceOptions={{
+                    header: 'Zeitslot auswählen'
+                  }}
+                >
+                  {eventData.timeslots.map((timeslot) => {
+                    const available = (timeslot.registered_count || 0) < timeslot.max_participants;
+                    return (
+                      <IonSelectOption 
+                        key={timeslot.id} 
+                        value={timeslot.id}
+                        disabled={!available}
+                      >
+                        {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} 
+                        ({timeslot.registered_count || 0}/{timeslot.max_participants})
+                        {!available && ' - Voll'}
+                      </IonSelectOption>
+                    );
+                  })}
+                </IonSelect>
+              </IonItem>
+            )}
 
             <IonList>
               {filteredKonfis.length === 0 ? (
