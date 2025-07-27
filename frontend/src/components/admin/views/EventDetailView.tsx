@@ -36,6 +36,7 @@ import {
   personAdd,
   checkmarkCircle,
   closeCircle,
+  checkmark,
   trash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -612,19 +613,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                               • Warteliste
                             </span>
                           )}
-                          {participant.attendance_status && (
-                            <span style={{ 
-                              marginLeft: '8px',
-                              fontSize: '0.8rem',
-                              color: participant.attendance_status === 'present' ? '#28a745' : '#dc3545'
-                            }}>
-                              {participant.attendance_status === 'present' ? '✓ Anwesend' : '✗ Abwesend'}
-                            </span>
-                          )}
                         </h3>
                         <p>
                           {participant.jahrgang_name && `${participant.jahrgang_name} • `}
-                          Angemeldet am {formatDate(participant.created_at)}
+                          Angemeldet am {new Date(participant.created_at).toLocaleString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </p>
                       </IonLabel>
                       <div slot="end" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -669,12 +667,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             color="warning"
                             onClick={() => handlePromoteParticipant(participant)}
                             style={{
-                              '--border-radius': '16px',
-                              fontSize: '0.7rem',
-                              height: '28px'
+                              '--border-radius': '50%',
+                              '--padding-start': '8px',
+                              '--padding-end': '8px',
+                              width: '32px',
+                              height: '32px'
                             }}
                           >
-                            ✓
+                            <IonIcon icon={checkmark} style={{ fontSize: '16px' }} />
                           </IonButton>
                         )}
                       </div>

@@ -8,9 +8,9 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.get('/', rbacVerifier, (req, res) => {
     const query = `
       SELECT e.*, 
-             COUNT(CASE WHEN eb.status = 'confirmed' THEN 1 END) as registered_count,
-             COUNT(CASE WHEN eb.status = 'pending' THEN 1 END) as pending_count,
-             COUNT(eb.id) as total_participants,
+             COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
+             COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+             COUNT(DISTINCT eb.id) as total_participants,
              e.max_participants,
              e.registration_opens_at,
              e.registration_closes_at,
@@ -792,9 +792,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                     });
                 }
               });
+            });
           });
+        }
       });
-  });
+    });
 
   // Delete event booking (Admin only)
   router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
