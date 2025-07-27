@@ -8,7 +8,9 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.get('/', rbacVerifier, (req, res) => {
     const query = `
       SELECT e.*, 
-             COUNT(eb.id) as registered_count,
+             COUNT(CASE WHEN eb.status = 'confirmed' THEN 1 END) as registered_count,
+             COUNT(CASE WHEN eb.status = 'pending' THEN 1 END) as pending_count,
+             COUNT(eb.id) as total_participants,
              e.max_participants,
              e.registration_opens_at,
              e.registration_closes_at,
@@ -23,7 +25,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                ELSE 'open'
              END as registration_status
       FROM events e
-      LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.status = 'confirmed'
+      LEFT JOIN event_bookings eb ON e.id = eb.event_id
       LEFT JOIN event_categories ec ON e.id = ec.event_id
       LEFT JOIN categories c ON ec.category_id = c.id
       LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id

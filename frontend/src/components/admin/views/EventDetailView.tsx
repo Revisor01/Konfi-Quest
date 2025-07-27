@@ -55,6 +55,7 @@ interface Event {
   name: string;
   description?: string;
   event_date: string;
+  event_end_time?: string;
   location?: string;
   location_maps_url?: string;
   points: number;

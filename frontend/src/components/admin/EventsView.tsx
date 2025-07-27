@@ -406,7 +406,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                       </span>
                       
                       <div style={{ display: 'flex', gap: '12px' }}>
-                        <span>{event.registered_count}/{event.max_participants}</span>
+                        <span>
+                          {event.registered_count}/{event.max_participants}
+                          {(event as any).pending_count > 0 && ` (+${(event as any).pending_count})`}
+                        </span>
                         {event.points > 0 && <span>{event.points} Punkte</span>}
                       </div>
                     </div>
