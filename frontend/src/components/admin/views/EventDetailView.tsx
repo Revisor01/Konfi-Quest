@@ -58,7 +58,9 @@ interface Event {
   location?: string;
   location_maps_url?: string;
   points: number;
+  point_type?: 'gottesdienst' | 'gemeinde';
   categories?: Category[];
+  jahrgaenge?: Jahrgang[];
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -73,6 +75,11 @@ interface Event {
   series_id?: string;
   series_events?: Event[];
   created_at: string;
+}
+
+interface Jahrgang {
+  id: number;
+  name: string;
 }
 
 interface Participant {
@@ -240,33 +247,20 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
     try {
-      // Update attendance status
-      await api.put(`/admin/events/${eventId}/participants/${participant.id}/attendance`, {
+      // Update attendance status using new API
+      const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
         attendance_status: status
       });
       
-      // If marking as present, award points based on event type
-      if (status === 'present' && eventData && eventData.points > 0) {
-        const userId = participant.user_id || participant.id;
-        
-        // Determine point type based on event categories
-        let pointType = 'gemeinde'; // Default
-        if (eventData.categories && eventData.categories.length > 0) {
-          const categoryNames = eventData.categories.map(cat => cat.name.toLowerCase());
-          if (categoryNames.some(name => name.includes('gottesdienst') || name.includes('kirche'))) {
-            pointType = 'gottesdienst';
-          }
-        }
-        
-        await api.post(`/admin/konfis/${userId}/bonus-points`, {
-          points: eventData.points,
-          type: pointType,
-          description: `Event-Teilnahme: ${eventData.name}`,
-          completed_date: new Date().toISOString().split('T')[0]
-        });
+      // Show appropriate success message based on response
+      if (response.data.points_awarded) {
+        setSuccess(`Anwesenheit bestätigt und ${response.data.points} ${response.data.point_type} Punkte vergeben`);
+      } else if (response.data.points_removed) {
+        setSuccess(`Anwesenheit als abwesend markiert und ${response.data.points} ${response.data.point_type} Punkte entfernt`);
+      } else {
+        setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
       }
       
-      setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt und Punkte vergeben' : 'als abwesend markiert'}`);
       loadEventData(); // Reload to update status
     } catch (error) {
       setError('Fehler beim Aktualisieren der Anwesenheit');
@@ -359,6 +353,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   {eventData?.points || 0}
                 </h3>
                 <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
+                  {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                </p>
+                <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
                   Punkte
                 </p>
               </div>
@@ -422,6 +419,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </p>
               </IonLabel>
             </IonItem>
+
+            {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
+              <IonItem lines="none">
+                <IonIcon icon={people} slot="start" color="primary" />
+                <IonLabel>
+                  <h3>Jahrgänge</h3>
+                  <p>{eventData.jahrgaenge.map(j => j.name).join(', ')}</p>
+                </IonLabel>
+              </IonItem>
+            )}
           </IonCardContent>
         </IonCard>
 

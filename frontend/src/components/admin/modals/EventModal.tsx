@@ -38,12 +38,20 @@ interface Event {
   event_end_time?: string;
   location?: string;
   points: number;
+  point_type?: 'gottesdienst' | 'gemeinde';
   category?: string;
+  categories?: Category[];
+  jahrgaenge?: Jahrgang[];
   type: string;
   max_participants: number;
   registration_opens_at?: string;
   registration_closes_at?: string;
   has_timeslots?: boolean;
+}
+
+interface Jahrgang {
+  id: number;
+  name: string;
 }
 
 interface Timeslot {
@@ -76,6 +84,7 @@ const EventModal: React.FC<EventModalProps> = ({
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
 
   const handleClose = () => {
     if (dismiss) {
@@ -92,7 +101,9 @@ const EventModal: React.FC<EventModalProps> = ({
     event_end_time: '',
     location: '',
     points: 0,
-    category: '',
+    point_type: 'gemeinde' as 'gottesdienst' | 'gemeinde',
+    category_ids: [] as number[],
+    jahrgang_ids: [] as number[],
     type: 'event',
     max_participants: 20,
     registration_opens_at: '',
@@ -108,6 +119,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
   useEffect(() => {
     loadCategories();
+    loadJahrgaenge();
     if (event) {
       setFormData({
         name: event.name,
@@ -116,7 +128,9 @@ const EventModal: React.FC<EventModalProps> = ({
         event_end_time: event.event_end_time || '',
         location: event.location || '',
         points: event.points,
-        category: event.category || '',
+        point_type: event.point_type || 'gemeinde',
+        category_ids: event.categories?.map(c => c.id) || [],
+        jahrgang_ids: event.jahrgaenge?.map(j => j.id) || [],
         type: event.type,
         max_participants: event.max_participants,
         registration_opens_at: event.registration_opens_at || '',
@@ -143,7 +157,9 @@ const EventModal: React.FC<EventModalProps> = ({
         event_end_time: '',
         location: '',
         points: 0,
-        category: '',
+        point_type: 'gemeinde',
+        category_ids: [],
+        jahrgang_ids: [],
         type: 'event',
         max_participants: 20,
         registration_opens_at: now.toISOString(),
@@ -167,6 +183,16 @@ const EventModal: React.FC<EventModalProps> = ({
       setCategories(filteredCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  const loadJahrgaenge = async () => {
+    try {
+      const response = await api.get('/admin/jahrgaenge');
+      console.log('Jahrgaenge response:', response.data);
+      setJahrgaenge(response.data);
+    } catch (error) {
+      console.error('Error loading jahrgaenge:', error);
     }
   };
 
@@ -214,7 +240,9 @@ const EventModal: React.FC<EventModalProps> = ({
         event_end_time: formData.event_end_time || null,
         location: formData.location.trim() || null,
         points: formData.points,
-        category: formData.category.trim() || null,
+        point_type: formData.point_type,
+        category_ids: formData.category_ids,
+        jahrgang_ids: formData.jahrgang_ids,
         type: formData.type,
         max_participants: formData.max_participants,
         registration_opens_at: formData.registration_opens_at || null,
@@ -368,6 +396,23 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonItem>
 
           <IonItem>
+            <IonLabel position="stacked">Punkte-Art</IonLabel>
+            <IonSelect
+              value={formData.point_type}
+              onIonChange={(e) => setFormData({ ...formData, point_type: e.detail.value })}
+              placeholder="Art der Punkte wählen"
+              disabled={loading}
+              interface="action-sheet"
+              interfaceOptions={{
+                header: 'Punkte-Art auswählen'
+              }}
+            >
+              <IonSelectOption value="gemeinde">Gemeindepunkte</IonSelectOption>
+              <IonSelectOption value="gottesdienst">Gottesdienstpunkte</IonSelectOption>
+            </IonSelect>
+          </IonItem>
+
+          <IonItem>
             <IonLabel position="stacked">Max. Teilnehmer *</IonLabel>
             <IonInput
               type="text"
@@ -392,21 +437,42 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonItem>
 
           <IonItem>
-            <IonLabel position="stacked">Kategorie</IonLabel>
+            <IonLabel position="stacked">Kategorien (optional)</IonLabel>
             <IonSelect
-              value={formData.category}
-              onIonChange={(e) => setFormData({ ...formData, category: e.detail.value })}
-              placeholder="Kategorie wählen"
+              value={formData.category_ids}
+              onIonChange={(e) => setFormData({ ...formData, category_ids: e.detail.value })}
+              placeholder="Kategorien wählen"
               disabled={loading}
+              multiple={true}
               interface="action-sheet"
               interfaceOptions={{
-                header: 'Kategorie auswählen'
+                header: 'Kategorien auswählen'
               }}
             >
-              <IonSelectOption value="">Keine Kategorie</IonSelectOption>
               {categories.map((category) => (
-                <IonSelectOption key={category.id} value={category.name}>
+                <IonSelectOption key={category.id} value={category.id}>
                   {category.name}
+                </IonSelectOption>
+              ))}
+            </IonSelect>
+          </IonItem>
+
+          <IonItem>
+            <IonLabel position="stacked">Jahrgänge (mehrere möglich) *</IonLabel>
+            <IonSelect
+              value={formData.jahrgang_ids}
+              onIonChange={(e) => setFormData({ ...formData, jahrgang_ids: e.detail.value })}
+              placeholder="Jahrgänge wählen"
+              disabled={loading}
+              multiple={true}
+              interface="action-sheet"
+              interfaceOptions={{
+                header: 'Jahrgänge auswählen'
+              }}
+            >
+              {jahrgaenge.map((jahrgang) => (
+                <IonSelectOption key={jahrgang.id} value={jahrgang.id}>
+                  {jahrgang.name}
                 </IonSelectOption>
               ))}
             </IonSelect>
