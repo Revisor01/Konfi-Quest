@@ -797,6 +797,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         }
       });
     });
+  });
 
   // Delete event booking (Admin only)
   router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('events.manage_bookings'), (req, res) => {
