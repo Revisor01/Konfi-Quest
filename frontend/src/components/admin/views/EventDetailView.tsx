@@ -627,65 +627,67 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           Angemeldet am {formatDate(participant.created_at)}
                         </p>
                       </IonLabel>
-                      <div slot="end" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div slot="end" style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                         {participant.status === 'confirmed' && (
                           <>
                             <IonButton 
-                              fill={participant.attendance_status === 'present' ? 'solid' : 'outline'} 
+                              fill={participant.attendance_status === 'present' ? 'solid' : 'clear'} 
                               size="small"
                               color="success"
                               onClick={() => handleAttendanceUpdate(participant, 'present')}
                               style={{
-                                '--border-radius': '8px',
-                                minWidth: '40px'
+                                '--border-radius': '50%',
+                                '--padding-start': '8px',
+                                '--padding-end': '8px',
+                                width: '32px',
+                                height: '32px'
                               }}
                             >
-                              <IonIcon icon={checkmarkCircle} />
+                              <IonIcon icon={checkmarkCircle} style={{ fontSize: '16px' }} />
                             </IonButton>
                             <IonButton 
-                              fill={participant.attendance_status === 'absent' ? 'solid' : 'outline'}
+                              fill={participant.attendance_status === 'absent' ? 'solid' : 'clear'}
                               size="small"
                               color="danger"
                               onClick={() => handleAttendanceUpdate(participant, 'absent')}
                               style={{
-                                '--border-radius': '8px',
-                                minWidth: '40px'
+                                '--border-radius': '50%',
+                                '--padding-start': '8px',
+                                '--padding-end': '8px',
+                                width: '32px',
+                                height: '32px'
                               }}
                             >
-                              <IonIcon icon={closeCircle} />
+                              <IonIcon icon={closeCircle} style={{ fontSize: '16px' }} />
                             </IonButton>
                           </>
                         )}
                         {participant.status === 'pending' && (
                           <IonButton 
-                            fill="outline"
+                            fill="solid"
                             size="small"
                             color="warning"
                             onClick={() => handlePromoteParticipant(participant)}
                             style={{
-                              '--border-radius': '8px',
-                              fontSize: '0.7rem'
+                              '--border-radius': '16px',
+                              fontSize: '0.7rem',
+                              height: '28px'
                             }}
                           >
-                            Bestätigen
-                          </IonButton>
-                        )}
-                        {participant.status === 'confirmed' && (
-                          <IonButton 
-                            fill="clear"
-                            size="small"
-                            color="medium"
-                            onClick={() => handleDemoteParticipant(participant)}
-                            style={{
-                              fontSize: '0.7rem'
-                            }}
-                          >
-                            → Warteliste
+                            ✓
                           </IonButton>
                         )}
                       </div>
                     </IonItem>
                     <IonItemOptions side="end">
+                      {participant.status === 'confirmed' && (
+                        <IonItemOption 
+                          color="warning" 
+                          onClick={() => handleDemoteParticipant(participant)}
+                        >
+                          Warteliste
+                        </IonItemOption>
+                      )}
                       <IonItemOption 
                         color="danger" 
                         onClick={() => handleRemoveParticipant(participant)}
