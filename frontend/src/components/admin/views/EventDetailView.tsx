@@ -92,6 +92,8 @@ interface Participant {
   created_at: string;
   status?: 'confirmed' | 'pending';
   attendance_status?: 'present' | 'absent' | null;
+  timeslot_start_time?: string;
+  timeslot_end_time?: string;
 }
 
 interface Timeslot {
@@ -616,6 +618,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         </h3>
                         <p>
                           {participant.jahrgang_name && `${participant.jahrgang_name} • `}
+                          {participant.timeslot_start_time && participant.timeslot_end_time && (
+                            <>Zeitslot: {formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)} • </>
+                          )}
                           Angemeldet am {new Date(participant.created_at).toLocaleString('de-DE', {
                             day: '2-digit',
                             month: '2-digit', 
