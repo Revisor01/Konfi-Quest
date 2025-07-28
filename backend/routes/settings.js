@@ -23,7 +23,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // Update settings (admin only)
   router.put('/', rbacVerifier, checkPermission('admin.settings.edit'), (req, res) => {
 
-    const { target_gottesdienst, target_gemeinde, konfi_chat_permissions } = req.body;
+    const { target_gottesdienst, target_gemeinde, konfi_chat_permissions, waitlist_enabled, max_waitlist_size } = req.body;
     
     if (target_gottesdienst) {
       db.run("UPDATE settings SET value = ? WHERE key = 'target_gottesdienst'", [target_gottesdienst]);

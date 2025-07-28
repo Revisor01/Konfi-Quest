@@ -208,6 +208,16 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                   return res.status(500).json({ error: 'Database error' });
                 }
                 
+                // Calculate correct registered_count for timeslot events
+                let registeredCount = participants.filter(p => p.status === 'confirmed').length;
+                let pendingCount = participants.filter(p => p.status === 'pending').length;
+                
+                // For timeslot events, calculate total capacity and availability
+                let totalCapacity = event.max_participants;
+                if (event.has_timeslots && timeslots && timeslots.length > 0) {
+                  totalCapacity = timeslots.reduce((sum, slot) => sum + slot.max_participants, 0);
+                }
+                
                 res.json({
                   ...event,
                   participants,
@@ -215,7 +225,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                   series_events: seriesEvents,
                   jahrgaenge,
                   categories,
-                  available_spots: event.max_participants - participants.length
+                  registered_count: registeredCount,
+                  pending_count: pendingCount,
+                  max_participants: totalCapacity,
+                  available_spots: totalCapacity - registeredCount
                 });
               });
             });
@@ -232,6 +245,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       name,
       description,
       event_date,
+      event_end_time,
       location,
       location_maps_url,
       points,
@@ -243,6 +257,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       registration_opens_at,
       registration_closes_at,
       has_timeslots,
+      waitlist_enabled,
+      max_waitlist_size,
       timeslots,
       is_series,
       series_id
@@ -254,14 +270,16 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     
     console.log("Creating event for org:", req.user.organization_id);
     db.run(`INSERT INTO events (
-      name, description, event_date, location, location_maps_url, 
+      name, description, event_date, event_end_time, location, location_maps_url, 
       points, point_type, type, max_participants, registration_opens_at, 
-      registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, 
+      is_series, series_id, created_by, organization_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
       [
-        name, description, event_date, location, location_maps_url,
+        name, description, event_date, event_end_time, location, location_maps_url,
         points || 0, point_type || 'gemeinde', type || 'event', max_participants,
         registration_opens_at, registration_closes_at, has_timeslots || 0,
+        waitlist_enabled !== undefined ? waitlist_enabled : 1, max_waitlist_size || 10,
         is_series || 0, series_id, req.user.id, req.user.organization_id
       ], function(err) {
         if (err) {
@@ -750,7 +768,38 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                         return res.status(500).json({ error: 'Database error' });
                       }
                       
-                      finalStatus = result.confirmed_count >= maxCapacity ? 'pending' : 'confirmed';
+                      // Check if event allows waitlist
+                      if (result.confirmed_count >= maxCapacity) {
+                        if (event.waitlist_enabled) {
+                          // Check current waitlist size
+                          const waitlistQuery = timeslot ? 
+                            "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = ? AND status = 'pending'" :
+                            "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = ? AND status = 'pending'";
+                          
+                          db.get(waitlistQuery, [capacityParam], (err, waitlistResult) => {
+                            if (err) {
+                              console.error('Error checking waitlist:', err);
+                              return res.status(500).json({ error: 'Database error' });
+                            }
+                            
+                            if (waitlistResult.waitlist_count >= event.max_waitlist_size) {
+                              return res.status(409).json({ error: 'Event and waitlist are full' });
+                            }
+                            
+                            finalStatus = 'pending';
+                            createBooking();
+                          });
+                          return; // Exit early to handle async waitlist check
+                        } else {
+                          return res.status(409).json({ error: 'Event is full and waitlist is disabled' });
+                        }
+                      } else {
+                        finalStatus = 'confirmed';
+                      }
+                      
+                      createBooking();
+                      
+                      function createBooking() {
                       
                       // Create booking
                       const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES (?, ?, ?, ?, datetime('now'), ?)";
@@ -771,6 +820,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                             message: responseMessage
                           });
                         });
+                      }
                     });
                 } else {
                   // Use specified status (for manual override)
@@ -956,16 +1006,24 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         const eventName = `${name} - Termin ${index + 1}`;
         const isoDate = date.toISOString();
         
-        db.run(`INSERT INTO events (
-          name, description, event_date, location, location_maps_url, 
-          points, point_type, type, max_participants, registration_opens_at, 
-          registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`, 
-          [
-            eventName, description, isoDate, location, location_maps_url,
-            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
-            registration_opens_at, registration_closes_at, has_timeslots || 0, seriesId, req.user.id, req.user.organization_id
-          ], function(err) {
+        // Check if created_by user exists first
+        db.get("SELECT id FROM users WHERE id = ? AND organization_id = ?", [req.user.id, req.user.organization_id], (err, user) => {
+          if (err || !user) {
+            console.error('Created_by user not found:', req.user.id);
+            hasError = true;
+            return;
+          }
+
+          db.run(`INSERT INTO events (
+            name, description, event_date, location, location_maps_url, 
+            points, point_type, type, max_participants, registration_opens_at, 
+            registration_closes_at, has_timeslots, is_series, series_id, created_by, organization_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`, 
+            [
+              eventName, description, isoDate, location, location_maps_url,
+              points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+              registration_opens_at, registration_closes_at, has_timeslots || 0, seriesId, user.id, req.user.organization_id
+            ], function(err) {
             if (err) {
               console.error('Error creating series event:', err);
               hasError = true;
@@ -1055,8 +1113,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 }
               }
             });
-          }
-        );
+          });
+        });
       });
     });
   });

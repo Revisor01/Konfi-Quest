@@ -109,6 +109,8 @@ const EventModal: React.FC<EventModalProps> = ({
     registration_opens_at: '',
     registration_closes_at: '',
     has_timeslots: false,
+    waitlist_enabled: true,
+    max_waitlist_size: 10,
     is_series: false,
     series_count: 1,
     series_interval: 'week'
@@ -145,6 +147,8 @@ const EventModal: React.FC<EventModalProps> = ({
         registration_opens_at: event.registration_opens_at || '',
         registration_closes_at: event.registration_closes_at || '',
         has_timeslots: event.has_timeslots || false,
+        waitlist_enabled: (event as any).waitlist_enabled !== undefined ? (event as any).waitlist_enabled : true,
+        max_waitlist_size: (event as any).max_waitlist_size || 10,
         is_series: false,
         series_count: 1,
         series_interval: 'week'
@@ -174,6 +178,8 @@ const EventModal: React.FC<EventModalProps> = ({
         registration_opens_at: now.toISOString(),
         registration_closes_at: nextWeek.toISOString(),
         has_timeslots: false,
+        waitlist_enabled: true,
+        max_waitlist_size: 10,
         is_series: false,
         series_count: 1,
         series_interval: 'week'
@@ -257,6 +263,8 @@ const EventModal: React.FC<EventModalProps> = ({
         registration_opens_at: formData.registration_opens_at || null,
         registration_closes_at: formData.registration_closes_at || null,
         has_timeslots: formData.has_timeslots,
+        waitlist_enabled: formData.waitlist_enabled,
+        max_waitlist_size: formData.max_waitlist_size,
         timeslots: formData.has_timeslots ? timeslots : [],
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
@@ -503,6 +511,46 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonItem>
 
           <IonItemDivider>
+            <IonLabel>Anmeldungen & Warteliste</IonLabel>
+          </IonItemDivider>
+
+          <IonItem>
+            <IonLabel>Warteliste aktivieren</IonLabel>
+            <IonToggle
+              checked={formData.waitlist_enabled}
+              onIonChange={(e) => {
+                setFormData({ ...formData, waitlist_enabled: e.detail.checked });
+              }}
+              disabled={loading}
+            />
+          </IonItem>
+
+          {formData.waitlist_enabled && (
+            <IonItem>
+              <IonLabel position="stacked">Max. Wartelisten-Plätze</IonLabel>
+              <IonInput
+                type="text"
+                inputMode="numeric"
+                value={formData.max_waitlist_size.toString()}
+                onIonInput={(e) => {
+                  const value = e.detail.value!;
+                  if (value === '') {
+                    setFormData({ ...formData, max_waitlist_size: 0 });
+                  } else {
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num >= 0) {
+                      setFormData({ ...formData, max_waitlist_size: num });
+                    }
+                  }
+                }}
+                placeholder="z.B. 10"
+                disabled={loading}
+                clearInput={true}
+              />
+            </IonItem>
+          )}
+
+          <IonItemDivider>
             <IonLabel>Zeitfenster (optional)</IonLabel>
           </IonItemDivider>
 
@@ -684,7 +732,25 @@ const EventModal: React.FC<EventModalProps> = ({
         <IonDatetime
           id="event-date-picker"
           value={formData.event_date}
-          onIonChange={(e) => setFormData({ ...formData, event_date: e.detail.value as string })}
+          onIonChange={(e) => {
+            const selectedDate = e.detail.value as string;
+            const eventDate = new Date(selectedDate);
+            
+            // Automatically set end time to 1 hour later
+            const endDate = new Date(eventDate.getTime() + 60 * 60 * 1000);
+            
+            // Set registration dates: now until 1 day before event
+            const now = new Date();
+            const registrationCloses = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000);
+            
+            setFormData({ 
+              ...formData, 
+              event_date: selectedDate,
+              event_end_time: endDate.toISOString(),
+              registration_opens_at: now.toISOString(),
+              registration_closes_at: registrationCloses.toISOString()
+            });
+          }}
           presentation="date-time"
           preferWheel={true}
           style={{
