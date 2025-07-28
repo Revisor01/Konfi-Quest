@@ -1453,17 +1453,20 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       
       await db.query('BEGIN');
       
+      // Use the actual poll.id from database, not the request pollId (which might be message_id)
+      const actualPollId = poll.id;
+      
       // For single choice polls, remove existing vote
       if (!poll.multiple_choice) {
         await db.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
-          [pollId, userId, userType]
+          [actualPollId, userId, userType]
         );
       } else {
         // For multiple choice, check if user already voted for this option
         const { rows: [existingVote] } = await db.query(
           "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
-          [pollId, userId, userType, option_index]
+          [actualPollId, userId, userType, option_index]
         );
         
         if (existingVote) {
@@ -1475,14 +1478,14 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       // Add the new vote
       await db.query(
         "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
-        [pollId, userId, userType, option_index]
+        [actualPollId, userId, userType, option_index]
       );
       
       await db.query('COMMIT');
       
       res.json({ 
         message: 'Vote recorded successfully',
-        poll_id: parseInt(pollId),
+        poll_id: actualPollId,
         option_index: option_index,
         user_id: userId
       });
