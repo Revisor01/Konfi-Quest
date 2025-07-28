@@ -1383,26 +1383,39 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
     }
   });
 
-  // Vote for a poll
+  // Vote for a poll (by poll ID)
   router.post('/polls/:pollId/vote', verifyTokenRBAC, async (req, res) => {
     const pollId = req.params.pollId;
     const { option_index } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
     
+    console.log(`🗳️ Poll voting request: pollId=${pollId}, option=${option_index}, user=${userId} (${userType})`);
+    
     if (option_index === undefined || option_index === null) {
       return res.status(400).json({ error: 'Option index is required' });
     }
     
     try {
-      // Get the poll to check if it exists and get poll details
-      const getPollQuery = `
+      // Get the poll - try by poll_id first, then by message_id (frontend compatibility)
+      let getPollQuery = `
         SELECT p.*, m.room_id FROM chat_polls p
         JOIN chat_messages m ON p.message_id = m.id
         WHERE p.id = $1
       `;
+      let { rows: [poll] } = await db.query(getPollQuery, [pollId]);
       
-      const { rows: [poll] } = await db.query(getPollQuery, [pollId]);
+      // If not found by poll_id, try by message_id (frontend might be sending message_id)
+      if (!poll) {
+        console.log(`Poll not found by ID ${pollId}, trying as message_id...`);
+        getPollQuery = `
+          SELECT p.*, m.room_id FROM chat_polls p
+          JOIN chat_messages m ON p.message_id = m.id
+          WHERE p.message_id = $1
+        `;
+        const result = await db.query(getPollQuery, [pollId]);
+        poll = result.rows[0];
+      }
       
       if (!poll) {
         return res.status(404).json({ error: 'Poll not found' });
@@ -1516,6 +1529,107 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       
     } catch (err) {
       console.error('Database error in DELETE /messages/:messageId:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Vote for a poll (by message ID - for frontend compatibility)
+  router.post('/messages/:messageId/vote', verifyTokenRBAC, async (req, res) => {
+    const messageId = req.params.messageId;
+    const { option_index } = req.body;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    console.log(`🗳️ Poll voting by messageId: messageId=${messageId}, option=${option_index}, user=${userId} (${userType})`);
+    
+    if (option_index === undefined || option_index === null) {
+      return res.status(400).json({ error: 'Option index is required' });
+    }
+    
+    try {
+      // Get the poll by message_id
+      const getPollQuery = `
+        SELECT p.*, m.room_id FROM chat_polls p
+        JOIN chat_messages m ON p.message_id = m.id
+        WHERE p.message_id = $1
+      `;
+      
+      const { rows: [poll] } = await db.query(getPollQuery, [messageId]);
+      
+      if (!poll) {
+        return res.status(404).json({ error: 'Poll not found for this message' });
+      }
+      
+      // Check if poll has expired
+      if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
+        return res.status(400).json({ error: 'Poll has expired' });
+      }
+      
+      // Parse options and validate option_index
+      let parsedOptions;
+      try {
+        parsedOptions = JSON.parse(poll.options);
+      } catch (e) {
+        console.error('Failed to parse poll options:', poll.options);
+        return res.status(500).json({ error: 'Invalid poll data' });
+      }
+      
+      if (option_index < 0 || option_index >= parsedOptions.length) {
+        return res.status(400).json({ error: 'Invalid option index' });
+      }
+      
+      // Check if user has access to the room
+      const accessQuery = `
+        SELECT 1 FROM chat_participants cp 
+        JOIN chat_rooms cr ON cp.room_id = cr.id 
+        WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4
+      `;
+      const { rows: [access] } = await db.query(accessQuery, [poll.room_id, userId, userType, req.user.organization_id]);
+      
+      if (!access) {
+        return res.status(403).json({ error: 'Access denied to this room' });
+      }
+      
+      await db.query('BEGIN');
+      
+      // For single choice polls, remove existing vote
+      if (!poll.multiple_choice) {
+        await db.query(
+          "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
+          [poll.id, userId, userType]
+        );
+      } else {
+        // For multiple choice, check if user already voted for this option
+        const { rows: [existingVote] } = await db.query(
+          "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
+          [poll.id, userId, userType, option_index]
+        );
+        
+        if (existingVote) {
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: 'You have already voted for this option' });
+        }
+      }
+      
+      // Add the new vote
+      await db.query(
+        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, voted_at) VALUES ($1, $2, $3, $4, NOW())",
+        [poll.id, userId, userType, option_index]
+      );
+      
+      await db.query('COMMIT');
+      
+      res.json({ 
+        message: 'Vote recorded successfully',
+        poll_id: poll.id,
+        message_id: parseInt(messageId),
+        option_index: option_index,
+        user_id: userId
+      });
+      
+    } catch (err) {
+      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+      console.error('Database error in POST /messages/:messageId/vote:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });
