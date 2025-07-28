@@ -40,6 +40,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
             `;
 
             const { rows } = await db.query(query, params);
+            console.log('DEBUG: Admin Konfis API response:', JSON.stringify(rows.slice(0, 2), null, 2));
             res.json(rows);
         } catch (err) {
             console.error('Database error in GET /konfis:', err);
