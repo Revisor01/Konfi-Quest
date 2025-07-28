@@ -5,42 +5,38 @@ const router = express.Router();
 module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get all available permissions
-  router.get('/', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
-    const query = `
-      SELECT id, name, display_name, description, module
-      FROM permissions
-      WHERE is_system_permission = 1
-      ORDER BY module, name
-    `;
-    
-    db.all(query, (err, rows) => {
-      if (err) {
-        console.error('Error fetching permissions:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+  router.get('/', rbacVerifier, checkPermission('admin.roles.view'), async (req, res) => {
+    try {
+      const query = `
+        SELECT id, name, display_name, description, module
+        FROM permissions
+        WHERE is_system_permission = true
+        ORDER BY module, name
+      `;
       
-      res.json(rows);
-    });
+      const { rows: permissions } = await db.query(query);
+      res.json(permissions);
+    } catch (err) {
+      console.error('Database error in GET /permissions:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
 
   // Get permissions grouped by module
-  router.get('/grouped', rbacVerifier, checkPermission('admin.roles.view'), (req, res) => {
-    const query = `
-      SELECT id, name, display_name, description, module
-      FROM permissions
-      WHERE is_system_permission = 1
-      ORDER BY module, name
-    `;
-    
-    db.all(query, (err, rows) => {
-      if (err) {
-        console.error('Error fetching permissions:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+  router.get('/grouped', rbacVerifier, checkPermission('admin.roles.view'), async (req, res) => {
+    try {
+      const query = `
+        SELECT id, name, display_name, description, module
+        FROM permissions
+        WHERE is_system_permission = true
+        ORDER BY module, name
+      `;
+      
+      const { rows: permissions } = await db.query(query);
       
       // Group by module
       const grouped = {};
-      rows.forEach(permission => {
+      permissions.forEach(permission => {
         if (!grouped[permission.module]) {
           grouped[permission.module] = [];
         }
@@ -48,7 +44,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       });
       
       res.json(grouped);
-    });
+    } catch (err) {
+      console.error('Database error in GET /permissions/grouped:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
 
   return router;

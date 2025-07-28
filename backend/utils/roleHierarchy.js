@@ -4,7 +4,7 @@
 const ROLE_HIERARCHY = {
   'org_admin': 4,
   'admin': 3,
-  'teamer': 2,  
+  'teamer': 2,
   'konfi': 1
 };
 
@@ -15,25 +15,12 @@ const ROLE_HIERARCHY = {
  * @returns {boolean} - true wenn erlaubt
  */
 const canManageRole = (userRole, targetRole) => {
+  // ... (Logik unverändert)
   const userLevel = ROLE_HIERARCHY[userRole] || 0;
   const targetLevel = ROLE_HIERARCHY[targetRole] || 0;
-  
-  // org_admin kann alles
-  if (userRole === 'org_admin') {
-    return true;
-  }
-  
-  // admin kann nichts mit org_admin machen, auch keine anderen admins
-  if (userRole === 'admin') {
-    return targetRole !== 'org_admin' && targetRole !== 'admin';
-  }
-  
-  // teamer kann nichts mit org_admin, admin oder teamer machen
-  if (userRole === 'teamer') {
-    return targetRole !== 'org_admin' && targetRole !== 'admin' && targetRole !== 'teamer';
-  }
-  
-  // Fallback: nur verwalten wenn hierarchisch höher
+  if (userRole === 'org_admin') return true;
+  if (userRole === 'admin') return targetRole !== 'org_admin' && targetRole !== 'admin';
+  if (userRole === 'teamer') return targetRole !== 'org_admin' && targetRole !== 'admin' && targetRole !== 'teamer';
   return userLevel > targetLevel;
 };
 
@@ -44,7 +31,6 @@ const canManageRole = (userRole, targetRole) => {
  * @returns {boolean} - true wenn erlaubt
  */
 const canCreateRole = (userRole, targetRole) => {
-  // Gleiche Regeln wie canManageRole, aber explizit für Erstellung
   return canManageRole(userRole, targetRole);
 };
 
@@ -53,79 +39,71 @@ const canCreateRole = (userRole, targetRole) => {
  * Überprüft ob der aktuelle User die Ziel-User-Rolle verwalten darf
  */
 const checkUserHierarchy = (operation = 'manage') => {
-  return (req, res, next) => {
-    const userRole = req.user.role_name;
-    const targetUserId = req.params.id;
-    const targetRoleId = req.body.role_id;
-    
-    if (!userRole) {
-      return res.status(403).json({ error: 'User role not found' });
-    }
-    
-    // Bei Create-Operationen haben wir die role_id im Body
-    if (operation === 'create' && targetRoleId) {
-      // Rolle aus DB laden um den Namen zu bekommen
-      req.db.get('SELECT name FROM roles WHERE id = ?', [targetRoleId], (err, role) => {
-        if (err || !role) {
+  return async (req, res, next) => {
+    try {
+      const userRole = req.user.role_name;
+      const targetUserId = req.params.id;
+      const targetRoleId = req.body.role_id;
+
+      if (!userRole) {
+        return res.status(403).json({ error: 'User role not found' });
+      }
+
+      // Bei Create-Operationen haben wir die role_id im Body
+      if (operation === 'create' && targetRoleId) {
+        const { rows: [role] } = await req.db.query('SELECT name FROM roles WHERE id = $1', [targetRoleId]);
+        if (!role) {
           return res.status(404).json({ error: 'Target role not found' });
         }
-        
         if (!canCreateRole(userRole, role.name)) {
-          return res.status(403).json({ 
-            error: `You cannot create users with role '${role.name}'. Insufficient hierarchy level.` 
+          return res.status(403).json({
+            error: `You cannot create users with role '${role.name}'. Insufficient hierarchy level.`
           });
         }
-        
-        next();
-      });
-      return;
-    }
-    
-    // Bei Update/Delete/View-Operationen müssen wir erst den Ziel-User laden
-    if (targetUserId) {
-      const query = `
-        SELECT u.id, u.role_id, r.name as role_name
-        FROM users u
-        JOIN roles r ON u.role_id = r.id  
-        WHERE u.id = ? AND u.organization_id = ?
-      `;
-      
-      req.db.get(query, [targetUserId, req.user.organization_id], (err, targetUser) => {
-        if (err || !targetUser) {
+        return next();
+      }
+
+      // Bei Update/Delete/View-Operationen müssen wir erst den Ziel-User laden
+      if (targetUserId) {
+        const query = `
+          SELECT u.id, u.role_id, r.name as role_name
+          FROM users u
+          JOIN roles r ON u.role_id = r.id  
+          WHERE u.id = $1 AND u.organization_id = $2
+        `;
+        const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
+
+        if (!targetUser) {
           return res.status(404).json({ error: 'Target user not found in your organization' });
         }
-        
         if (!canManageRole(userRole, targetUser.role_name)) {
-          return res.status(403).json({ 
-            error: `You cannot ${operation} users with role '${targetUser.role_name}'. Insufficient hierarchy level.` 
+          return res.status(403).json({
+            error: `You cannot ${operation} users with role '${targetUser.role_name}'. Insufficient hierarchy level.`
           });
         }
-        
+
         // Zusätzlich bei Role-Updates prüfen
         if (operation === 'update' && targetRoleId && targetRoleId !== targetUser.role_id) {
-          req.db.get('SELECT name FROM roles WHERE id = ?', [targetRoleId], (err, newRole) => {
-            if (err || !newRole) {
-              return res.status(404).json({ error: 'New role not found' });
-            }
-            
-            if (!canCreateRole(userRole, newRole.name)) {
-              return res.status(403).json({ 
-                error: `You cannot assign role '${newRole.name}'. Insufficient hierarchy level.` 
-              });
-            }
-            
-            next();
-          });
-          return;
+          const { rows: [newRole] } = await req.db.query('SELECT name FROM roles WHERE id = $1', [targetRoleId]);
+          if (!newRole) {
+            return res.status(404).json({ error: 'New role not found' });
+          }
+          if (!canCreateRole(userRole, newRole.name)) {
+            return res.status(403).json({
+              error: `You cannot assign role '${newRole.name}'. Insufficient hierarchy level.`
+            });
+          }
         }
         
-        next();
-      });
-      return;
+        return next();
+      }
+
+      // Wenn keine spezifische Überprüfung nötig ist
+      next();
+    } catch (err) {
+      console.error('Database error in checkUserHierarchy middleware:', err);
+      res.status(500).json({ error: 'Database error' });
     }
-    
-    // Wenn keine spezifische Überprüfung nötig ist
-    next();
   };
 };
 

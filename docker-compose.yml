@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: konfi_db
+      POSTGRES_USER: konfi_user
+      POSTGRES_PASSWORD: konfi_secure_password_2025
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"  # Nur localhost für DB-Zugriff
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U konfi_user -d konfi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: ./backend
@@ -10,7 +29,19 @@ services:
     environment:
       - NODE_ENV=production
       - JWT_SECRET=konfi-secret-super-secure-2025
+      - DATABASE_URL=postgresql://konfi_user:konfi_secure_password_2025@postgres:5432/konfi_db
+      - PGHOST=postgres
+      - PGUSER=konfi_user
+      - PGDATABASE=konfi_db
+      - PGPASSWORD=konfi_secure_password_2025
+      - PGPORT=5432
     volumes:
-      - ./data:/app/data        # 🔄 GEÄNDERT: Lokaler Mount
-      - ./uploads:/app/uploads  # 🔄 GEÄNDERT: Lokaler Mount
+      - ./uploads:/app/uploads  # Chat uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

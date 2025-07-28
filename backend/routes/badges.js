@@ -75,433 +75,268 @@ const CRITERIA_TYPES = {
 };
 
 const checkAndAwardBadges = async (db, konfiId) => {
-  return new Promise((resolve, reject) => {
-    // Get all active badges
-    db.all("SELECT * FROM custom_badges WHERE is_active = 1", [], (err, badges) => {
-      if (err) return reject(err);
+  try {
+    const { rows: badges } = await db.query("SELECT * FROM custom_badges WHERE is_active = true");
+    if (badges.length === 0) return 0;
+    
+    const konfiQuery = `
+      SELECT kp.*, u.display_name as name
+      FROM konfi_profiles kp
+      JOIN users u ON kp.user_id = u.id
+      WHERE kp.user_id = $1
+    `;
+    const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
+    if (!konfi) return 0;
+    
+    const { rows: earned } = await db.query("SELECT badge_id FROM konfi_badges WHERE konfi_id = $1", [konfiId]);
+    const alreadyEarned = earned.map(e => e.badge_id);
+    
+    let newBadges = 0;
+    const earnedBadgeIds = [];
+    
+    for (const badge of badges) {
+      if (alreadyEarned.includes(badge.id)) continue;
       
-      // Get konfi data from users + konfi_profiles
-      const konfiQuery = `
-        SELECT kp.*, u.display_name as name
-        FROM konfi_profiles kp
-        JOIN users u ON kp.user_id = u.id
-        WHERE kp.user_id = ?
-      `;
-      db.get(konfiQuery, [konfiId], (err, konfi) => {
-        if (err) return reject(err);
-        if (!konfi) return resolve(0);
+      let earned = false;
+      const criteria = JSON.parse(badge.criteria_extra || '{}');
+      
+      switch (badge.criteria_type) {
+        case 'total_points':
+          earned = (konfi.gottesdienst_points + konfi.gemeinde_points) >= badge.criteria_value;
+          break;
+        case 'gottesdienst_points':
+          earned = konfi.gottesdienst_points >= badge.criteria_value;
+          break;
+        case 'gemeinde_points':
+          earned = konfi.gemeinde_points >= badge.criteria_value;
+          break;
+        case 'both_categories':
+          earned = konfi.gottesdienst_points >= badge.criteria_value && konfi.gemeinde_points >= badge.criteria_value;
+          break;
         
-        let newBadges = 0;
-        const earnedBadgeIds = [];
+        case 'specific_activity':
+          if (criteria.required_activity_name) {
+            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.name = $2`, [konfiId, criteria.required_activity_name]);
+            earned = result && parseInt(result.count) >= badge.criteria_value;
+          }
+          break;
         
-        // Get already earned badges
-        db.all("SELECT badge_id FROM konfi_badges WHERE konfi_id = ?", [konfiId], (err, earned) => {
-          if (err) return reject(err);
+        case 'activity_combination':
+          if (criteria.required_activities) {
+            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1`, [konfiId]);
+            const completedActivities = results.map(r => r.name);
+            earned = criteria.required_activities.every(req => completedActivities.includes(req));
+          }
+          break;
+        
+        case 'category_activities':
+          if (criteria.required_category) {
+            const categoryCountQuery = `
+              SELECT COUNT(*) as count FROM konfi_activities ka 
+              JOIN activities a ON ka.activity_id = a.id 
+              JOIN activity_categories ac ON a.id = ac.activity_id
+              JOIN categories c ON ac.category_id = c.id
+              WHERE ka.konfi_id = $1 AND c.name = $2
+            `;
+            const { rows: [result] } = await db.query(categoryCountQuery, [konfiId, criteria.required_category]);
+            earned = result && parseInt(result.count) >= badge.criteria_value;
+          }
+          break;
+        
+        case 'time_based':
+          if (criteria.days) {
+            const { rows: results } = await db.query(`SELECT completed_date FROM konfi_activities WHERE konfi_id = $1 ORDER BY completed_date DESC`, [konfiId]);
+            const now = new Date();
+            const cutoff = new Date(now.getTime() - (criteria.days * 24 * 60 * 60 * 1000));
+            const recentCount = results.filter(r => new Date(r.completed_date) >= cutoff).length;
+            earned = recentCount >= badge.criteria_value;
+          }
+          break;
+        
+        case 'activity_count':
+          const { rows: [activityCountResult] } = await db.query("SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1", [konfiId]);
+          earned = activityCountResult && parseInt(activityCountResult.count) >= badge.criteria_value;
+          break;
+        
+        case 'bonus_points':
+          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1", [konfiId]);
+          earned = bonusResult && parseInt(bonusResult.count) >= badge.criteria_value;
+          break;
+        
+        case 'unique_activities':
+          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM konfi_activities WHERE konfi_id = $1", [konfiId]);
+          earned = uniqueResults.length >= badge.criteria_value;
+          break;
+        
+        case 'streak':
+          const { rows: streakResults } = await db.query(`SELECT completed_date FROM konfi_activities WHERE konfi_id = $1 ORDER BY completed_date DESC`, [konfiId]);
           
-          const alreadyEarned = earned.map(e => e.badge_id);
-          let badgesProcessed = 0;
-          
-          if (badges.length === 0) {
-            return resolve(0);
+          function getYearWeek(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
           }
           
-          badges.forEach(badge => {
-            if (alreadyEarned.includes(badge.id)) {
-              badgesProcessed++;
-              if (badgesProcessed === badges.length) {
-                finalizeBadges();
-              }
-              return;
-            }
-            
-            let earned = false;
-            const criteria = JSON.parse(badge.criteria_extra || '{}');
-            
-            switch (badge.criteria_type) {
-              case 'total_points':
-                earned = (konfi.gottesdienst_points + konfi.gemeinde_points) >= badge.criteria_value;
-                processBadgeResult();
-                break;
-              
-              case 'gottesdienst_points':
-                earned = konfi.gottesdienst_points >= badge.criteria_value;
-                processBadgeResult();
-                break;
-              
-              case 'gemeinde_points':
-                earned = konfi.gemeinde_points >= badge.criteria_value;
-                processBadgeResult();
-                break;
-              
-              case 'specific_activity':
-                if (criteria.required_activity_name) {
-                  // Separate query to count specific activity occurrences
-                  const countQuery = `
-                    SELECT COUNT(*) as count 
-                    FROM konfi_activities ka 
-                    JOIN activities a ON ka.activity_id = a.id 
-                    WHERE ka.konfi_id = ? AND a.name = ?
-                  `;
-                  db.get(countQuery, [konfiId, criteria.required_activity_name], (err, result) => {
-                    if (err) {
-                      console.error('Specific activity badge check error:', err);
-                      earned = false;
-                    } else {
-                      earned = result && result.count >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                } else {
-                  processBadgeResult();
-                }
-                break;
-              
-              case 'both_categories':
-                earned = konfi.gottesdienst_points >= badge.criteria_value && 
-                konfi.gemeinde_points >= badge.criteria_value;
-                processBadgeResult();
-                break;
-              
-              case 'activity_combination':
-                if (criteria.required_activities) {
-                  // Check if all required activities have been completed at least once
-                  const combinationQuery = `
-                    SELECT DISTINCT a.name 
-                    FROM konfi_activities ka 
-                    JOIN activities a ON ka.activity_id = a.id 
-                    WHERE ka.konfi_id = ?
-                  `;
-                  db.all(combinationQuery, [konfiId], (err, results) => {
-                    if (err) {
-                      console.error('Activity combination badge check error:', err);
-                      earned = false;
-                    } else {
-                      const completedActivities = results.map(r => r.name);
-                      earned = criteria.required_activities.every(req => 
-                        completedActivities.includes(req)
-                      );
-                    }
-                    processBadgeResult();
-                  });
-                } else {
-                  processBadgeResult();
-                }
-                break;
-              
-              case 'category_activities':
-                if (criteria.required_category) {
-                  const categoryCountQuery = `
-                    SELECT COUNT(*) as count FROM konfi_activities ka 
-                    JOIN activities a ON ka.activity_id = a.id 
-                    JOIN activity_categories ac ON a.id = ac.activity_id
-                    JOIN categories c ON ac.category_id = c.id
-                    WHERE ka.konfi_id = ? AND c.name = ?
-                  `;
-                  
-                  const params = [konfiId, criteria.required_category];
-                  
-                  db.get(categoryCountQuery, params, (err, result) => {
-                    if (err) {
-                      console.error('Category badge check error:', err);
-                      earned = false;
-                    } else {
-                      earned = result && result.count >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                } else {
-                  processBadgeResult();
-                }
-                break;
-              
-              case 'time_based':
-                if (criteria.days) {
-                  const timeQuery = `
-                    SELECT completed_date FROM konfi_activities 
-                    WHERE konfi_id = ? 
-                    ORDER BY completed_date DESC
-                  `;
-                  db.all(timeQuery, [konfiId], (err, results) => {
-                    if (err) {
-                      console.error('Time based badge check error:', err);
-                      earned = false;
-                    } else {
-                      const now = new Date();
-                      const cutoff = new Date(now.getTime() - (criteria.days * 24 * 60 * 60 * 1000));
-                      
-                      const recentCount = results.filter(r => {
-                        const date = new Date(r.completed_date);
-                        return date >= cutoff;
-                      }).length;
-                      
-                      earned = recentCount >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                } else {
-                  processBadgeResult();
-                }
-                break;
-              
-              case 'activity_count':
-                db.get("SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = ?", 
-                  [konfiId], (err, result) => {
-                    if (err) {
-                      console.error('Activity count badge check error:', err);
-                      earned = false;
-                    } else {
-                      earned = result && result.count >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                break;
-              
-              case 'bonus_points':
-                db.get("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = ?", 
-                  [konfiId], (err, result) => {
-                    if (err) {
-                      console.error('Bonus points badge check error:', err);
-                      earned = false;
-                    } else {
-                      earned = result && result.count >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                break;
-              
-              case 'streak':
-                const streakQuery = `
-                  SELECT completed_date FROM konfi_activities 
-                  WHERE konfi_id = ? 
-                  ORDER BY completed_date DESC
-                `;
-                db.all(streakQuery, [konfiId], (err, results) => {
-                  if (err) {
-                    console.error('Streak badge check error:', err);
-                    earned = false;
-                  } else {
-                    // Hilfsfunktion: Kalenderwoche berechnen
-                    function getYearWeek(date) {
-                      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-                      const dayNum = d.getUTCDay() || 7;
-                      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-                      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-                      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-                      return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-                    }
-                    
-                    // Aktivitätsdaten in Set einzigartiger Wochen umwandeln
-                    const activityWeeks = new Set(
-                      results
-                      .map(r => getYearWeek(new Date(r.completed_date)))
-                      .filter(week => week && !week.includes('NaN'))
-                    );
-                    
-                    // Sortiere Wochen chronologisch (neueste zuerst)
-                    const sortedWeeks = Array.from(activityWeeks).sort().reverse();
-                    
-                    let currentStreak = 0;
-                    
-                    // Finde den längsten Streak vom neuesten Datum aus
-                    if (sortedWeeks.length > 0) {
-                      currentStreak = 1; // Erste Woche zählt immer
-                      
-                      // Prüfe aufeinanderfolgende Wochen rückwärts
-                      for (let i = 0; i < sortedWeeks.length - 1; i++) {
-                        const thisWeek = sortedWeeks[i];
-                        const nextWeek = sortedWeeks[i + 1];
-                        
-                        // Berechne die erwartete vorherige Woche
-                        const [year, week] = thisWeek.split('-W').map(Number);
-                        let expectedYear = year;
-                        let expectedWeek = week - 1;
-                        
-                        if (expectedWeek === 0) {
-                          expectedYear -= 1;
-                          expectedWeek = 52; // Vereinfacht, könnte 53 sein
-                        }
-                        
-                        const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
-                        
-                        if (nextWeek === expectedWeekStr) {
-                          currentStreak++;
-                        } else {
-                          break; // Streak unterbrochen
-                        }
-                      }
-                    }
-                    
-                    earned = currentStreak >= badge.criteria_value;
-                  }
-                  processBadgeResult();
-                });
-                break;
-              
-              case 'unique_activities':
-                db.all("SELECT DISTINCT activity_id FROM konfi_activities WHERE konfi_id = ?", 
-                  [konfiId], (err, results) => {
-                    if (err) {
-                      console.error('Unique activities badge check error:', err);
-                      earned = false;
-                    } else {
-                      earned = results.length >= badge.criteria_value;
-                    }
-                    processBadgeResult();
-                  });
-                break;
-              
-              default:
-                processBadgeResult();
-                break;
-            }
-            
-            function processBadgeResult() {
-              if (earned) {
-                earnedBadgeIds.push(badge.id);
-                newBadges++;
-              }
-              badgesProcessed++;
-              if (badgesProcessed === badges.length) {
-                finalizeBadges();
-              }
-            }
-          });
+          const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.completed_date))).filter(week => week && !week.includes('NaN')));
+          const sortedWeeks = Array.from(activityWeeks).sort().reverse();
           
-          function finalizeBadges() {
-            // Award new badges
-            if (earnedBadgeIds.length > 0) {
-              const insertPromises = earnedBadgeIds.map(badgeId => {
-                return new Promise((resolve, reject) => {
-                  db.run("INSERT INTO konfi_badges (konfi_id, badge_id) VALUES (?, ?)", 
-                    [konfiId, badgeId], function(err) {
-                      if (err) reject(err);
-                      else resolve();
-                    });
-                });
-              });
-              
-              Promise.all(insertPromises)
-              .then(() => resolve(newBadges))
-              .catch(reject);
-            } else {
-              resolve(newBadges);
+          let currentStreak = 0;
+          if (sortedWeeks.length > 0) {
+            currentStreak = 1;
+            for (let i = 0; i < sortedWeeks.length - 1; i++) {
+              const thisWeek = sortedWeeks[i];
+              const nextWeek = sortedWeeks[i + 1];
+              const [year, week] = thisWeek.split('-W').map(Number);
+              let expectedYear = year;
+              let expectedWeek = week - 1;
+              if (expectedWeek === 0) {
+                expectedYear -= 1;
+                expectedWeek = 52;
+              }
+              const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
+              if (nextWeek === expectedWeekStr) {
+                currentStreak++;
+              } else {
+                break;
+              }
             }
           }
-        });
-      });
-    });
-  });
+          earned = currentStreak >= badge.criteria_value;
+          break;
+      }
+      
+      if (earned) {
+        earnedBadgeIds.push(badge.id);
+        newBadges++;
+      }
+    }
+    
+    if (earnedBadgeIds.length > 0) {
+      const insertPromises = earnedBadgeIds.map(badgeId => 
+        db.query("INSERT INTO konfi_badges (konfi_id, badge_id) VALUES ($1, $2)", [konfiId, badgeId])
+      );
+      await Promise.all(insertPromises);
+    }
+    
+    return newBadges;
+  } catch (err) {
+    console.error('Error in checkAndAwardBadges:', err);
+    throw err; // Re-throw the error to be handled by the caller
+  }
 };
 
-// Route für Admin-Verwaltung von Badges
+
 module.exports = (db, rbacVerifier, checkPermission) => {
   
   router.get('/criteria-types', rbacVerifier, (req, res) => {
     res.json(CRITERIA_TYPES);
   });
   
-  // GET all badges for admin management view
-  router.get('/', rbacVerifier, checkPermission('admin.badges.view'), (req, res) => {
-    
-    const badgeQuery = `
-      SELECT cb.*, 
-              u.display_name as created_by_name,
-              COALESCE(badge_counts.earned_count, 0) as earned_count
-      FROM custom_badges cb 
-      LEFT JOIN users u ON cb.created_by = u.id
-      LEFT JOIN (
-        SELECT badge_id, COUNT(*) as earned_count 
-        FROM konfi_badges 
-        GROUP BY badge_id
-      ) badge_counts ON cb.id = badge_counts.badge_id
-      WHERE cb.organization_id = ?
-      ORDER BY cb.created_at DESC
-    `;
-    
-    db.all(badgeQuery, [req.user.organization_id], (err, rows) => {
-      if (err) {
-        console.error('Error fetching badges for admin:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+  router.get('/', rbacVerifier, checkPermission('admin.badges.view'), async (req, res) => {
+    try {
+      const badgeQuery = `
+        SELECT cb.*, 
+                u.display_name as created_by_name,
+                COALESCE(badge_counts.earned_count, 0)::int as earned_count
+        FROM custom_badges cb 
+        LEFT JOIN users u ON cb.created_by = u.id
+        LEFT JOIN (
+          SELECT badge_id, COUNT(*) as earned_count 
+          FROM konfi_badges 
+          GROUP BY badge_id
+        ) badge_counts ON cb.id = badge_counts.badge_id
+        WHERE cb.organization_id = $1
+        ORDER BY cb.created_at DESC
+      `;
+      const { rows } = await db.query(badgeQuery, [req.user.organization_id]);
       res.json(rows);
-    });
+    } catch (err) {
+      console.error('Database error in GET /api/badges:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
-
-  // POST a new badge
-  router.post('/', rbacVerifier, checkPermission('admin.badges.create'), (req, res) => {
+  
+  router.post('/', rbacVerifier, checkPermission('admin.badges.create'), async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
       return res.status(400).json({ error: 'Name, icon, criteria type and value are required' });
     }
     
-    const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
-    const hiddenFlag = is_hidden ? 1 : 0;
-    
-    db.run(`INSERT INTO custom_badges 
-              (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, created_by, organization_id) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, req.user.id, req.user.organization_id],
-      function(err) {
-        if (err) {
-            console.error('Error creating badge:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        res.status(201).json({ id: this.lastID, message: 'Badge created successfully' });
-      });
+    try {
+      const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
+      const hiddenFlag = !!is_hidden;
+      
+      const query = `INSERT INTO custom_badges 
+                    (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, created_by, organization_id) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    RETURNING id`;
+      
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, req.user.id, req.user.organization_id];
+      const { rows: [newBadge] } = await db.query(query, params);
+      
+      res.status(201).json({ id: newBadge.id, message: 'Badge created successfully' });
+    } catch (err) {
+      console.error('Database error in POST /api/badges:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
-
-  // PUT (update) a badge by ID
-  router.put('/:id', rbacVerifier, checkPermission('admin.badges.edit'), (req, res) => {
+  
+  router.put('/:id', rbacVerifier, checkPermission('admin.badges.edit'), async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden } = req.body;
     
-    const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
-    const activeFlag = is_active ? 1 : 0;
-    const hiddenFlag = is_hidden ? 1 : 0;
-    
-    db.run(`UPDATE custom_badges 
-              SET name = ?, icon = ?, description = ?, criteria_type = ?, criteria_value = ?, criteria_extra = ?, is_active = ?, is_hidden = ? 
-              WHERE id = ? AND organization_id = ?`,
-      [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, req.params.id, req.user.organization_id],
-      function(err) {
-        if (err) {
-            console.error('Error updating badge:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        if (this.changes === 0) {
-            return res.status(404).json({ error: 'Badge not found or you do not have permission to edit it.' });
-        }
-        res.json({ message: 'Badge updated successfully' });
-      });
+    try {
+      const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
+      const activeFlag = !!is_active;
+      const hiddenFlag = !!is_hidden;
+      
+      const query = `UPDATE custom_badges 
+                    SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = $7, is_hidden = $8 
+                    WHERE id = $9 AND organization_id = $10`;
+      
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, req.params.id, req.user.organization_id];
+      const { rowCount } = await db.query(query, params);
+      
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Badge not found or you do not have permission to edit it.' });
+      }
+      res.json({ message: 'Badge updated successfully' });
+    } catch (err) {
+      console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
-
-  // DELETE a badge by ID
-  router.delete('/:id', rbacVerifier, checkPermission('admin.badges.delete'), (req, res) => {
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-        db.run("DELETE FROM konfi_badges WHERE badge_id = ?", [req.params.id]);
-        db.run("DELETE FROM custom_badges WHERE id = ? AND organization_id = ?", [req.params.id, req.user.organization_id], function(err) {
-            if (err) {
-                db.run("ROLLBACK");
-                console.error('Error deleting badge:', err);
-                return res.status(500).json({ error: 'Database error' });
-            }
-            if (this.changes === 0) {
-                db.run("ROLLBACK");
-                return res.status(404).json({ error: 'Badge not found or you do not have permission to delete it.' });
-            }
-            db.run("COMMIT", (err) => {
-                if (err) {
-                    db.run("ROLLBACK");
-                    return res.status(500).json({ error: 'Database error on commit' });
-                }
-                res.json({ message: 'Badge deleted successfully' });
-            });
-        });
-    });
+  
+  router.delete('/:id', rbacVerifier, checkPermission('admin.badges.delete'), async (req, res) => {
+    try {
+      await db.query('BEGIN');
+      
+      await db.query("DELETE FROM konfi_badges WHERE badge_id = $1", [req.params.id]);
+      
+      const { rowCount } = await db.query("DELETE FROM custom_badges WHERE id = $1 AND organization_id = $2", [req.params.id, req.user.organization_id]);
+      
+      if (rowCount === 0) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Badge not found or you do not have permission to delete it.' });
+      }
+      
+      await db.query('COMMIT');
+      res.json({ message: 'Badge deleted successfully' });
+    } catch (err) {
+      // Attempt to rollback transaction on error
+      try {
+        await db.query('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('Failed to rollback transaction:', rollbackErr);
+      }
+      console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
-
-  // Export the checkAndAwardBadges function
+  
   router.checkAndAwardBadges = checkAndAwardBadges;
   
   return router;

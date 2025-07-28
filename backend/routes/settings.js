@@ -5,11 +5,9 @@ const router = express.Router();
 module.exports = (db, rbacVerifier, checkPermission) => {
   
   // Get settings
-  router.get('/', rbacVerifier, (req, res) => {
-    db.all("SELECT * FROM settings", [], (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
+  router.get('/', rbacVerifier, async (req, res) => {
+    try {
+      const { rows } = await db.query("SELECT key, value FROM settings");
       
       const settings = {};
       rows.forEach(row => {
@@ -17,33 +15,58 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       });
       
       res.json(settings);
-    });
+    } catch (err) {
+      console.error('Database error in GET /settings:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
 
   // Update settings (admin only)
-  router.put('/', rbacVerifier, checkPermission('admin.settings.edit'), (req, res) => {
-
-    const { target_gottesdienst, target_gemeinde, konfi_chat_permissions, waitlist_enabled, max_waitlist_size } = req.body;
-    
-    if (target_gottesdienst) {
-      db.run("UPDATE settings SET value = ? WHERE key = 'target_gottesdienst'", [target_gottesdienst]);
-    }
-    
-    if (target_gemeinde) {
-      db.run("UPDATE settings SET value = ? WHERE key = 'target_gemeinde'", [target_gemeinde]);
-    }
-    
-    if (konfi_chat_permissions) {
-      // Validate permissions value - simplified to just 2 options
-      const validPermissions = ['direct_only', 'direct_and_group'];
-      if (validPermissions.includes(konfi_chat_permissions)) {
-        db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('konfi_chat_permissions', ?)", [konfi_chat_permissions]);
-      } else {
-        return res.status(400).json({ error: 'Invalid chat permissions value' });
+  router.put('/', rbacVerifier, checkPermission('admin.settings.edit'), async (req, res) => {
+    try {
+      // Destructuring to get potential settings from the body
+      const { 
+        target_gottesdienst, 
+        target_gemeinde, 
+        konfi_chat_permissions, 
+        waitlist_enabled, 
+        max_waitlist_size 
+      } = req.body;
+      
+      // Using '!== undefined' to allow setting empty strings or false values
+      if (target_gottesdienst !== undefined) {
+        await db.query("UPDATE settings SET value = $1 WHERE key = 'target_gottesdienst'", [target_gottesdienst]);
       }
+      
+      if (target_gemeinde !== undefined) {
+        await db.query("UPDATE settings SET value = $1 WHERE key = 'target_gemeinde'", [target_gemeinde]);
+      }
+      
+      if (konfi_chat_permissions !== undefined) {
+        // Validate permissions value
+        const validPermissions = ['direct_only', 'direct_and_group'];
+        if (!validPermissions.includes(konfi_chat_permissions)) {
+          return res.status(400).json({ error: 'Invalid chat permissions value' });
+        }
+        // Use PostgreSQL's "UPSERT" functionality
+        const upsertQuery = `
+          INSERT INTO settings (key, value) 
+          VALUES ('konfi_chat_permissions', $1)
+          ON CONFLICT (key) 
+          DO UPDATE SET value = EXCLUDED.value;
+        `;
+        await db.query(upsertQuery, [konfi_chat_permissions]);
+      }
+      
+      // Note: waitlist_enabled and max_waitlist_size are not handled in the original code,
+      // so they are not handled here either to maintain logic identity.
+      
+      res.json({ message: 'Settings updated successfully' });
+
+    } catch (err) {
+      console.error('Database error in PUT /settings:', err);
+      res.status(500).json({ error: 'Database error' });
     }
-    
-    res.json({ message: 'Settings updated successfully' });
   });
 
   return router;

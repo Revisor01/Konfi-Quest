@@ -34,214 +34,176 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
   // ===== UNIFIED LOGIN ENDPOINTS =====
   
   // Unified RBAC login - works for both admins and konfis
-  router.post('/login', (req, res) => {
+  router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    
     console.log(`🔐 RBAC login attempt for: ${username}`);
-    
-    // Try login via unified users table (both admins and konfis)
-    const userQuery = `
-      SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
-             o.name as organization_name, o.slug as organization_slug,
-             r.name as role_name, r.display_name as role_display_name,
-             kp.jahrgang_id, j.name as jahrgang_name,
-             kp.gottesdienst_points, kp.gemeinde_points
-      FROM users u 
-      LEFT JOIN organizations o ON u.organization_id = o.id
-      LEFT JOIN roles r ON u.role_id = r.id
-      LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
-      LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-      WHERE u.username = ?
-    `;
-    
-    db.get(userQuery, [username], (err, user) => {
-      if (err) {
-        console.error('Login database error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+
+    try {
+      const userQuery = `
+        SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
+               o.name as organization_name, o.slug as organization_slug,
+               r.name as role_name, r.display_name as role_display_name,
+               kp.jahrgang_id, j.name as jahrgang_name,
+               kp.gottesdienst_points, kp.gemeinde_points
+        FROM users u 
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        LEFT JOIN roles r ON u.role_id = r.id
+        LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
+        LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+        WHERE u.username = $1
+      `;
       
+      const { rows: [user] } = await db.query(userQuery, [username]);
+
       if (!user) {
         console.log(`❌ Login failed: user '${username}' not found`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       
-      if (!bcrypt.compareSync(password, user.password_hash)) {
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+      if (!passwordMatch) {
         console.log(`❌ Login failed: wrong password for user '${username}'`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       
-      // Determine user type based on role
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
-      
       console.log(`✅ ${userType} login successful: ${username} (${user.display_name})`);
       
-      // Get user permissions
       const permissionsQuery = `
         SELECT p.name
         FROM permissions p
         JOIN role_permissions rp ON p.id = rp.permission_id
-        WHERE rp.role_id = ? AND rp.granted = 1
+        WHERE rp.role_id = $1 AND rp.granted = true
       `;
+      const { rows: permissions } = await db.query(permissionsQuery, [user.role_id]);
       
-      db.all(permissionsQuery, [user.role_id], (err, permissions) => {
-        if (err) {
-          console.error('Error fetching user permissions:', err);
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        console.log(`Loading permissions for user ${user.id} (role_id: ${user.role_id}), found ${permissions.length} permissions`);
-        const userPermissions = permissions.map(p => p.name);
-        
-        const token = jwt.sign({ 
-          id: user.id, 
-          type: userType, 
-          display_name: user.display_name,
-          email: user.email,
-          organization_id: user.organization_id,
-          role_name: user.role_name,
-          permissions: userPermissions
-        }, JWT_SECRET, { expiresIn: '24h' });
-        
-        const responseUser = {
-          id: user.id, 
-          display_name: user.display_name, 
-          username: user.username,
-          email: user.email,
-          organization: user.organization_name,
-          role_name: user.role_name,
-          type: userType,
-          permissions: userPermissions
-        };
+      console.log(`Loading permissions for user ${user.id} (role_id: ${user.role_id}), found ${permissions.length} permissions`);
+      const userPermissions = permissions.map(p => p.name);
       
-        // Add konfi-specific data if user is konfi
-        if (userType === 'konfi') {
-          responseUser.jahrgang = user.jahrgang_name;
-          responseUser.gottesdienst_points = user.gottesdienst_points || 0;
-          responseUser.gemeinde_points = user.gemeinde_points || 0;
-        }
-        
-        res.json({ 
-          token, 
-          user: responseUser
-        });
-      });
-    });
+      const token = jwt.sign({ 
+        id: user.id, 
+        type: userType, 
+        display_name: user.display_name,
+        email: user.email,
+        organization_id: user.organization_id,
+        role_name: user.role_name,
+        permissions: userPermissions
+      }, JWT_SECRET, { expiresIn: '24h' });
+      
+      const responseUser = {
+        id: user.id, 
+        display_name: user.display_name, 
+        username: user.username,
+        email: user.email,
+        organization: user.organization_name,
+        role_name: user.role_name,
+        type: userType,
+        permissions: userPermissions
+      };
+    
+      if (userType === 'konfi') {
+        responseUser.jahrgang = user.jahrgang_name;
+        responseUser.gottesdienst_points = user.gottesdienst_points || 0;
+        responseUser.gemeinde_points = user.gemeinde_points || 0;
+      }
+      
+      res.json({ token, user: responseUser });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/login:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
 
   // ===== PASSWORD MANAGEMENT =====
 
   // Change password (for authenticated users)
-  router.post('/change-password', verifyToken, (req, res) => {
+  router.post('/change-password', verifyToken, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
-    const userType = req.user.type;
     
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Aktuelles und neues Passwort sind erforderlich' });
     }
-    
     if (newPassword.length < 6) {
       return res.status(400).json({ error: 'Das neue Passwort muss mindestens 6 Zeichen lang sein' });
     }
     
-    // Get current user from users table
-    db.get(`SELECT * FROM users WHERE id = ?`, [userId], (err, user) => {
-      if (err || !user) {
+    try {
+      const { rows: [user] } = await db.query(`SELECT * FROM users WHERE id = $1`, [userId]);
+      if (!user) {
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
       
-      // Verify current password
-      if (!bcrypt.compareSync(currentPassword, user.password_hash)) {
+      const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!passwordMatch) {
         return res.status(400).json({ error: 'Aktuelles Passwort ist falsch' });
       }
       
-      // Hash new password
-      const hashedPassword = bcrypt.hashSync(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       
-      // Update password in users table
-      const updateQuery = `UPDATE users SET password_hash = ? WHERE id = ?`;
-      const params = [hashedPassword, userId];
+      await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, userId]);
       
-      db.run(updateQuery, params, function(err) {
-        if (err) {
-          console.error('Password change error:', err);
-          return res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
-        }
-        
-        console.log(`✅ Password changed for ${userType} ID ${userId}`);
-        res.json({ message: 'Passwort erfolgreich geändert' });
-      });
-    });
+      console.log(`✅ Password changed for ${req.user.type} ID ${userId}`);
+      res.json({ message: 'Passwort erfolgreich geändert' });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/change-password:', err);
+      res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
+    }
   });
 
   // Update email address (for authenticated users)
-  router.post('/update-email', verifyToken, (req, res) => {
+  router.post('/update-email', verifyToken, async (req, res) => {
     const { email } = req.body;
     const userId = req.user.id;
-    const userType = req.user.type;
     
-    if (!email) {
-      return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
-    }
+    if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     
-    // Simple email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
     }
-    
-    db.run(`UPDATE users SET email = ? WHERE id = ?`, [email, userId], function(err) {
-      if (err) {
-        console.error('Email update error:', err);
-        return res.status(500).json({ error: 'Fehler beim Aktualisieren der E-Mail-Adresse' });
-      }
+
+    try {
+      await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [email, userId]);
       
-      console.log(`✅ Email updated for ${userType} ID ${userId} to ${email}`);
+      console.log(`✅ Email updated for ${req.user.type} ID ${userId} to ${email}`);
       res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert' });
-    });
+
+    } catch (err) {
+        if (err.code === '23505') { // unique_violation for email
+            return res.status(409).json({ error: 'Diese E-Mail-Adresse wird bereits verwendet.' });
+        }
+        console.error('Database error in POST /api/auth/update-email:', err);
+        res.status(500).json({ error: 'Fehler beim Aktualisieren der E-Mail-Adresse' });
+    }
   });
 
   // Request password reset
-  router.post('/request-password-reset', (req, res) => {
+  router.post('/request-password-reset', async (req, res) => {
     const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     
-    if (!email) {
-      return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
-    }
-    
-    // Check in users table with role-based type determination
-    const query = `
-      SELECT u.id, u.email, u.display_name as name, r.name as role_name
-      FROM users u
-      LEFT JOIN roles r ON u.role_id = r.id
-      WHERE u.email = ?
-    `;
-    
-    db.get(query, [email], async (err, user) => {
-      if (err) {
-        console.error('Password reset query error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
+    try {
+      const query = `
+        SELECT u.id, u.email, u.display_name as name, r.name as role_name
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.email = $1
+      `;
+      const { rows: [user] } = await db.query(query, [email]);
       
       if (user) {
-        // Determine user type based on role
         const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
-        
-        // Generate reset token
         const token = generateResetToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
         
-        // Save reset token
-        db.run('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES (?, ?, ?, ?)',
-          [user.id, userType, token, expiresAt], async (err) => {
-          if (err) {
-            console.error('Reset token save error:', err);
-            return res.status(500).json({ error: 'Fehler beim Erstellen des Reset-Tokens' });
-          }
-            
-            // Send reset email
-            const resetUrl = `https://konfipoints.godsapp.de/reset-password?token=${token}`;
-            const emailHtml = `
+        await db.query('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES ($1, $2, $3, $4)',
+          [user.id, userType, token, expiresAt]);
+          
+        const resetUrl = `https://konfi-quest.de/reset-password?token=${token}`;
+        const emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #667eea;">Konfi Quest - Passwort zurücksetzen</h2>
                 <p>Hallo ${user.name},</p>
@@ -261,66 +223,54 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
                 </p>
               </div>
             `;
-            
-          const emailSent = await sendEmail(email, 'Konfi Quest - Passwort zurücksetzen', emailHtml);
-          
-          if (emailSent) {
-            console.log(`✅ Password reset email sent to ${email} for ${userType} ${user.name}`);
-            res.json({ message: 'Password-Reset-E-Mail wurde gesendet' });
-          } else {
-            res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
-          }
-        });
-      } else {
-        // Don't reveal if email exists or not for security
-        res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
+        
+        const emailSent = await sendEmail(email, 'Konfi Quest - Passwort zurücksetzen', emailHtml);
+        
+        if (!emailSent) {
+          // The error is already logged in sendEmail, but we should inform the client
+          return res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
+        }
       }
-    });
+
+      // Always return a success message to not reveal if an email exists or not
+      console.log(`Password reset request processed for email: ${email}`);
+      res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/request-password-reset:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
   });
 
   // Reset password with token
-  router.post('/reset-password', (req, res) => {
+  router.post('/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;
     
-    if (!token || !newPassword) {
-      return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });
-    }
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Das Passwort muss mindestens 6 Zeichen lang sein' });
     
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Das Passwort muss mindestens 6 Zeichen lang sein' });
-    }
-    
-    // Find valid reset token
-    db.get('SELECT * FROM password_resets WHERE token = ? AND used_at IS NULL AND expires_at > datetime("now")',
-      [token], (err, resetRecord) => {
-      if (err || !resetRecord) {
+    try {
+      const { rows: [resetRecord] } = await db.query(
+        'SELECT * FROM password_resets WHERE token = $1 AND used_at IS NULL AND expires_at > NOW()',
+        [token]
+      );
+
+      if (!resetRecord) {
         return res.status(400).json({ error: 'Ungültiger oder abgelaufener Reset-Token' });
       }
       
-      const hashedPassword = bcrypt.hashSync(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       
-      // Update password in users table
-      const updateQuery = `UPDATE users SET password_hash = ? WHERE id = ?`;
-      const params = [hashedPassword, resetRecord.user_id];
+      await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);
+      await db.query('UPDATE password_resets SET used_at = NOW() WHERE id = $1', [resetRecord.id]);
       
-      db.run(updateQuery, params, function(err) {
-        if (err) {
-          console.error('Password reset error:', err);
-          return res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
-        }
-        
-        // Mark token as used
-        db.run('UPDATE password_resets SET used_at = datetime("now") WHERE id = ?', 
-          [resetRecord.id], (err) => {
-          if (err) {
-            console.error('Token update error:', err);
-          }
-          
-          console.log(`✅ Password reset successful for ${resetRecord.user_type} ID ${resetRecord.user_id}`);
-          res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
-        });
-      });
-    });
+      console.log(`✅ Password reset successful for ${resetRecord.user_type} ID ${resetRecord.user_id}`);
+      res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/reset-password:', err);
+      res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+    }
   });
 
   return router;
