@@ -21,7 +21,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 // DATABASE INITIALIZATION
 // ====================================================================
 
-const db = require('./db_pg'); 
+const db = require('./database'); 
 
 // ====================================================================
 // SMTP CONFIGURATION
