@@ -200,9 +200,11 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 return res.status(404).json({ error: 'Konfi not found' });
             }
             
-            // Delete related data
+            // Delete related data (in correct order to avoid FK violations)
             await db.query("DELETE FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await db.query("DELETE FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await db.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await db.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await db.query("DELETE FROM konfi_badges WHERE konfi_id = $1", [userId]);
             await db.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await db.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
