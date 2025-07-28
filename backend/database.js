@@ -1,5 +1,9 @@
 const { Pool } = require('pg');
 
+// Configure pg to parse bigint as integer
+const types = require('pg').types;
+types.setTypeParser(20, (val) => parseInt(val, 10)); // bigint
+
 // Der Pool verwendet automatisch die Standard-Umgebungsvariablen für PostgreSQL
 // (PGHOST, PGUSER, PGDATABASE, PGPASSWORD, PGPORT) oder die DATABASE_URL.
 // Wenn Ihr Node.js-Server und Ihre PostgreSQL-DB im selben Docker-Compose-Netzwerk laufen,
