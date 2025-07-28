@@ -21,8 +21,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ',') as jahrgang_names,
                 CASE 
-                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
-                  WHEN NOW() > e.registration_closes_at THEN 'closed'
+                  WHEN NOW() < e.registration_opens_at::timestamp THEN 'upcoming'
+                  WHEN NOW() > e.registration_closes_at::timestamp THEN 'closed'
                   ELSE 'open'
                 END as registration_status
         FROM events e

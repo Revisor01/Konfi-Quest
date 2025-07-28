@@ -143,8 +143,12 @@ const AdminKonfisPage: React.FC = () => {
       setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
       // Sofortige Aktualisierung
       await loadData();
-    } catch (err) {
-      setError('Fehler beim Hinzufügen');
+    } catch (err: any) {
+      if (err.response?.status === 409) {
+        setError('Ein Konfi mit diesem Namen existiert bereits. Bitte wählen Sie einen anderen Namen.');
+      } else {
+        setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Konfis');
+      }
     }
   };
 
