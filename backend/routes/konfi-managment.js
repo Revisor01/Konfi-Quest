@@ -30,7 +30,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 SELECT u.id, u.display_name as name, u.username, kp.password_plain, 
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
-                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
+                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -54,7 +54,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 SELECT u.id, u.display_name as name, u.username, kp.password_plain as password,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
-                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
+                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
