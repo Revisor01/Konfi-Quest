@@ -8,6 +8,8 @@ services:
       POSTGRES_USER: konfi_user
       POSTGRES_PASSWORD: konfi_secure_password_2025
       PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Berlin
+      PGTZ: Europe/Berlin
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -35,6 +37,7 @@ services:
       - PGDATABASE=konfi_db
       - PGPASSWORD=konfi_secure_password_2025
       - PGPORT=5432
+      - TZ=Europe/Berlin
     volumes:
       - ./uploads:/app/uploads  # Chat uploads
     depends_on:

@@ -1,0 +1,229 @@
+<meta charset="UTF-8">
+<h1>Konfi Management - Testcase Szenarios</h1>
+
+<h2>Testfälle die unbedingt geprüft werden müssen</h2>
+
+<h3>🔴 KRITISCH: Konfi-Löschung mit Referenzen (DELETE /api/admin/konfis/:id)</h3>
+
+<p><strong>Warum kritisch:</strong> 
+- Löscht Daten aus 7 verschiedenen Tabellen
+- Foreign Key Constraints können Löschung verhindern
+- Datenintegrität muss gewährleistet bleiben</p>
+
+<p><strong>Testcase 1: Vollständige Konfi-Löschung</strong>
+<code>
+1. Konfi erstellen mit Name "Test Konfi" und jahrgang_id
+2. Aktivität zuweisen (konfi_activities)
+3. Bonuspunkte vergeben (bonus_points) 
+4. Badge vergeben (konfi_badges)
+5. Activity Request erstellen (activity_requests)
+6. Chat Participation hinzufügen (chat_participants)
+7. Event Points vergeben (event_points)
+8. Konfi löschen via DELETE /api/admin/konfis/:id
+9. Prüfen: Alle Referenzen müssen entfernt sein
+</code></p>
+
+<p><strong>Expected Result:</strong> 
+- Status 200 + "Konfi deleted successfully"
+- Alle 7 Tabellen sauber ohne Waisen-Referenzen</p>
+
+<p><strong>Potential Issues:</strong>
+- Foreign Key Constraints verhindern Löschung
+- Falsche Lösch-Reihenfolge in der Route
+- Missing organization_id Filter könnte zu Cross-Org Löschungen führen</p>
+
+<hr />
+
+<h3>🟡 WICHTIG: Punktesystem Integrität</h3>
+
+<p><strong>Testcase 2: Aktivität zuweisen und entfernen</strong>
+<code>
+1. Konfi erstellen 
+2. Aktivität mit 5 Gottesdienst-Punkten zuweisen
+3. Prüfen: konfi_profiles.gottesdienst_points = 5
+4. Aktivität wieder entfernen via DELETE
+5. Prüfen: konfi_profiles.gottesdienst_points = 0
+</code></p>
+
+<p><strong>Testcase 3: Bonuspunkte vergeben und entfernen</strong>
+<code>
+1. Konfi erstellen
+2. 3 Bonuspunkte Typ "gemeinde" vergeben <br />
+3. Prüfen: konfi_profiles.gemeinde_points = 3
+4. Bonuspunkte löschen
+5. Prüfen: konfi_profiles.gemeinde_points = 0
+</code></p>
+
+<p><strong>Expected Result:</strong> Punkte-Stände müssen mathematisch korrekt sein</p>
+
+<hr />
+
+<h3>🟡 WICHTIG: Organization Isolation</h3>
+
+<p><strong>Testcase 4: Cross-Organization Zugriff verhindern</strong>
+<code>
+1. Als Org 1 Admin: Konfi in Org 1 erstellen
+2. Als Org 2 Admin einloggen
+3. Versuchen Org 1 Konfi zu laden: GET /api/admin/konfis/{org1_konfi_id}
+4. Versuchen Org 1 Konfi zu bearbeiten
+5. Versuchen Org 1 Konfi zu löschen
+</code></p>
+
+<p><strong>Expected Result:</strong> Alle Requests sollten 404 "not found" zurückgeben</p>
+
+<hr />
+
+<h3>🟡 WICHTIG: Transaktionale Integrität</h3>
+
+<p><strong>Testcase 5: Konfi Creation Rollback</strong>
+<code>
+1. Konfi mit bereits existierendem Username erstellen
+2. Database Error sollte Transaction zurückrollen
+3. Prüfen: Keine Halbfertige Einträge in users oder konfi_profiles
+</code></p>
+
+<p><strong>Testcase 6: Password Regeneration Rollback</strong>
+<code>
+1. Konfi existiert
+2. Mock Database Error während Password Update
+3. Prüfen: Alter Password bleibt unverändert
+</code></p>
+
+<hr />
+
+<h3>🟢 STANDARD: CRUD Operations</h3>
+
+<p><strong>Testcase 7: Konfi Liste laden</strong>
+<code>
+1. 3 Konfis in verschiedenen Jahrgängen erstellen
+2. GET /api/admin/konfis
+3. Prüfen: Alle 3 Konfis mit badgeCount, jahrgang_name, Punkten
+</code></p>
+
+<p><strong>Testcase 8: Konfi Details laden</strong>
+<code>
+1. Konfi mit Aktivitäten und Bonuspunkten erstellen
+2. GET /api/admin/konfis/:id <br />
+3. Prüfen: activities[] und bonusPoints[] Arrays sind vollständig
+</code></p>
+
+<p><strong>Testcase 9: Konfi bearbeiten</strong>
+<code>
+1. Konfi erstellen in Jahrgang A
+2. PUT Request: Name ändern + zu Jahrgang B verschieben
+3. Prüfen: Beide Änderungen sind persistent
+</code></p>
+
+<hr />
+
+<h3>🔴 KRITISCH: Jahrgang-Permissions</h3>
+
+<p><strong>Testcase 10: Jahrgang-basierte Sichtbarkeit</strong>
+<code>
+1. Admin mit Zugriff nur auf Jahrgang A
+2. Konfis in Jahrgang A und B erstellen
+3. GET /api/admin/konfis als beschränkter Admin
+4. Prüfen: Nur Jahrgang A Konfis sind sichtbar
+</code></p>
+
+<hr />
+
+<h3>🟡 WICHTIG: Passwort-Handling</h3>
+
+<p><strong>Testcase 11: Password Generation</strong>
+<code>
+1. Konfi erstellen
+2. Prüfen: password_plain ist biblisches Wort + Zahlen
+3. Prüfen: password_hash ist bcrypt verschlüsselt
+4. Passwort regenerieren
+5. Prüfen: Neues Passwort unterschiedlich vom alten
+</code></p>
+
+<hr />
+
+<h2>Automatisierte Testskripte</h2>
+
+<h3>Database Cleanup Hilfsfunktion</h3>
+
+<p><code>javascript
+async function cleanupTestData(db, konfiId) {
+    await db.query('DELETE FROM konfi_activities WHERE konfi_id = $1', [konfiId]);
+    await db.query('DELETE FROM bonus_points WHERE konfi_id = $1', [konfiId]); 
+    await db.query('DELETE FROM konfi_badges WHERE konfi_id = $1', [konfiId]);
+    await db.query('DELETE FROM activity_requests WHERE konfi_id = $1', [konfiId]);
+    await db.query('DELETE FROM chat_participants WHERE user_id = $1', [konfiId]);
+    await db.query('DELETE FROM event_points WHERE konfi_id = $1', [konfiId]);
+    await db.query('DELETE FROM konfi_profiles WHERE user_id = $1', [konfiId]);
+    await db.query('DELETE FROM users WHERE id = $1', [konfiId]);
+}
+</code></p>
+
+<h3>Punkt-Verifikation Hilfsfunktion</h3>
+
+<p><code>javascript
+async function verifyPoints(db, konfiId, expectedGottesdienst, expectedGemeinde) {
+    const { rows: [result] } = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1', 
+        [konfiId]
+    );
+    assert.equal(result.gottesdienst_points, expectedGottesdienst);
+    assert.equal(result.gemeinde_points, expectedGemeinde);
+}
+</code></p>
+
+<hr />
+
+<h2>Manuelle Testschritte für dich:</h2>
+
+<h3>1. <strong>Konfi Vollständig löschen</strong> (KRITISCH)</h3>
+
+<p><code>
+1. Admin Panel öffnen
+2. Neuen Konfi erstellen
+3. Aktivität zuweisen + Bonuspunkte vergeben
+4. Konfi löschen
+5. Database prüfen: Alle Referenzen weg?
+</code></p>
+
+<h3>2. <strong>Punkte-Mathematik prüfen</strong></h3>
+
+<p><code>
+1. Konfi mit 0 Punkten
+2. Aktivität 5 Punkte + Bonus 3 Punkte vergeben
+3. Frontend: Zeigt 8 Gesamtpunkte?
+4. Aktivität entfernen
+5. Frontend: Zeigt 3 Gesamtpunkte?
+</code></p>
+
+<h3>3. <strong>Organization Isolation</strong></h3>
+
+<p><code>
+1. Zwei Browser: Org 1 + Org 2 Admin
+2. Org 1: Konfi erstellen
+3. Org 2: Konfi-Liste laden
+4. Org 1 Konfi darf NICHT sichtbar sein
+</code></p>
+
+<h3>4. <strong>Error Handling</strong></h3>
+
+<p><code>
+1. Konfi mit selben Namen zweimal erstellen
+2. Error Message sinnvoll?
+3. Nicht-existenten Konfi bearbeiten
+4. 404 Error korrekt?
+</code></p>
+
+<h3>5. <strong>Performance Check</strong></h3>
+
+<p><code>
+1. 20+ Konfis mit vielen Aktivitäten erstellen
+2. Konfi-Liste laden - Performance OK?
+3. Einzeln Konfi Details - Lädt schnell?
+</code></p>
+
+<p><strong>Die 5 kritischsten Tests, die du sofort machen solltest:</strong>
+1. ✅ Konfi löschen mit allen Referenzen
+2. ✅ Punkte addieren/subtrahieren mathematisch korrekt
+3. ✅ Organization Isolation funktioniert
+4. ✅ Username Uniqueness Error Handling
+5. ✅ Jahrgang-Permissions bei beschränktem Admin</p>

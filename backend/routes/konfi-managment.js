@@ -208,6 +208,13 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
             await db.query("DELETE FROM konfi_badges WHERE konfi_id = $1", [userId]);
             await db.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await db.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
+            await db.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
+            await db.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
             await db.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
             await db.query("DELETE FROM users WHERE id = $1", [userId]);
             
