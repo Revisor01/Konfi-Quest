@@ -653,7 +653,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       onClick={() => voteInPoll(message.id, index)}
                       style={{
                         background: userVoted 
-                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%)' 
+                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.35) 0%, rgba(76, 175, 80, 0.2) 100%)' 
                           : isOwnMessage 
                             ? 'rgba(255,255,255,0.12)' 
                             : 'rgba(0,0,0,0.06)',
@@ -661,6 +661,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           ? '2px solid #4caf50' 
                           : `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'}`,
                         borderRadius: '12px',
+                        WebkitTapHighlightColor: 'transparent',
+                        WebkitTouchCallout: 'none',
+                        userSelect: 'none',
                         padding: '14px 16px',
                         cursor: 'pointer',
                         position: 'relative',
@@ -694,7 +697,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         height: '100%',
                         width: `${percentage}%`,
                         background: userVoted 
-                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%)' 
+                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.3) 0%, rgba(76, 175, 80, 0.15) 100%)' 
                           : isOwnMessage 
                             ? 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
                             : 'linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.03) 100%)',

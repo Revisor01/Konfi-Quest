@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'de.godsapp.konfiquest',
-  appName: 'konfipoints-clean',
+  appName: 'Konfi Quest',
   webDir: 'dist',
   plugins: {
     Keyboard: {
