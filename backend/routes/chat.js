@@ -1474,7 +1474,7 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       
       // Add the new vote
       await db.query(
-        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, voted_at) VALUES ($1, $2, $3, $4, NOW())",
+        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
         [pollId, userId, userType, option_index]
       );
       
@@ -1613,7 +1613,7 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       
       // Add the new vote
       await db.query(
-        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, voted_at) VALUES ($1, $2, $3, $4, NOW())",
+        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
         [poll.id, userId, userType, option_index]
       );
       
