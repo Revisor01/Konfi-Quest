@@ -23,7 +23,7 @@ COPY . .
 RUN mkdir -p /app/uploads
 
 # Set proper permissions
-RUN chmod +x /app/server_pg.js
+RUN chmod +x /app/server.js
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
@@ -32,5 +32,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 5000
 
-# Start the PostgreSQL version
-CMD ["node", "server_pg.js"]
+# Start the server (now PostgreSQL by default)
+CMD ["node", "server.js"]
