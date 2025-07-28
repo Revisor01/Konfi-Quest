@@ -581,7 +581,13 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       // Load votes for poll messages
       const processedMessages = await Promise.all(messages.map(async (msg) => {
         if (msg.message_type === 'poll' && msg.options) {
-          // Options are already parsed as JSON by pg driver if the column type is JSON/JSONB
+          // Parse options from JSON string (since stored as TEXT in chat_polls table)
+          try {
+            msg.options = JSON.parse(msg.options);
+          } catch (e) {
+            console.error('Failed to parse poll options:', msg.options, e);
+            msg.options = [];
+          }
           const votesQuery = `
           SELECT v.*, u.display_name as voter_name
           FROM chat_poll_votes v
@@ -926,7 +932,13 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       // Load votes for poll messages
       const processedMessages = await Promise.all(messages.map(async (msg) => {
         if (msg.message_type === 'poll' && msg.options) {
-          // Options are already parsed as JSON by pg driver if the column type is JSON/JSONB
+          // Parse options from JSON string (since stored as TEXT in chat_polls table)
+          try {
+            msg.options = JSON.parse(msg.options);
+          } catch (e) {
+            console.error('Failed to parse poll options:', msg.options, e);
+            msg.options = [];
+          }
           const votesQuery = `
           SELECT v.*, u.display_name as voter_name
           FROM chat_poll_votes v
