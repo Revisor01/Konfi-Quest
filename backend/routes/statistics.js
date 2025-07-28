@@ -9,12 +9,24 @@ module.exports = (db, rbacMiddleware) => {
   router.get('/', verifyTokenRBAC, async (req, res) => {
     try {
       const queries = {
+        organizationStats: `
+          SELECT 
+            SUM(kp.gottesdienst_points) as total_gottesdienst_points,
+            SUM(kp.gemeinde_points) as total_gemeinde_points,
+            SUM(kp.gottesdienst_points + kp.gemeinde_points) as total_points,
+            COUNT(DISTINCT u.id) as total_konfis,
+            COUNT(DISTINCT CASE WHEN kp.gottesdienst_points > 0 OR kp.gemeinde_points > 0 THEN u.id END) as active_konfis
+          FROM konfi_profiles kp
+          JOIN users u ON kp.user_id = u.id
+          JOIN roles r ON u.role_id = r.id
+          WHERE r.name = 'konfi' AND u.organization_id = $1
+        `,
         totalPoints: `
           SELECT SUM(kp.gottesdienst_points + kp.gemeinde_points) as total 
           FROM konfi_profiles kp
           JOIN users u ON kp.user_id = u.id
           JOIN roles r ON u.role_id = r.id
-          WHERE r.name = 'konfi'
+          WHERE r.name = 'konfi' AND u.organization_id = $1
         `,
         mostActiveKonfi: `
           SELECT u.display_name as name, (kp.gottesdienst_points + kp.gemeinde_points) as total_points 
@@ -42,16 +54,36 @@ module.exports = (db, rbacMiddleware) => {
         `
       };
       
-      // Führe alle Abfragen parallel aus
-      const queryPromises = Object.values(queries).map(query => db.query(query));
-      const queryResults = await Promise.all(queryPromises);
+      const orgId = req.user.organization_id;
       
-      // Baue das Ergebnisobjekt wieder zusammen
-      const results = {};
-      Object.keys(queries).forEach((key, index) => {
-        // Jede Abfrage sollte eine Zeile zurückgeben, wir nehmen die erste aus dem "rows"-Array
-        results[key] = queryResults[index].rows[0] || null;
-      });
+      // Execute organizationStats query with parameter
+      const { rows: [orgStats] } = await db.query(queries.organizationStats, [orgId]);
+      
+      // Execute other queries with organization filtering
+      const { rows: [totalPoints] } = await db.query(queries.totalPoints, [orgId]);
+      const { rows: [mostActive] } = await db.query(`
+        SELECT u.display_name as name, (kp.gottesdienst_points + kp.gemeinde_points) as total_points 
+        FROM konfi_profiles kp
+        JOIN users u ON kp.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE r.name = 'konfi' AND u.organization_id = $1
+        ORDER BY total_points DESC LIMIT 1
+      `, [orgId]);
+      
+      const { rows: [popularActivity] } = await db.query(`
+        SELECT a.name, COUNT(*) as count 
+        FROM konfi_activities ka 
+        JOIN activities a ON ka.activity_id = a.id 
+        WHERE ka.organization_id = $1
+        GROUP BY a.name ORDER BY count DESC LIMIT 1
+      `, [orgId]);
+      
+      const results = {
+        organizationStats: orgStats,
+        totalPoints: totalPoints,
+        mostActiveKonfi: mostActive,
+        mostPopularActivity: popularActivity
+      };
       
       res.json(results);
 

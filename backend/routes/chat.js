@@ -48,7 +48,7 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
         SELECT uja.jahrgang_id, j.name as jahrgang_name
         FROM user_jahrgang_assignments uja
         JOIN jahrgaenge j ON uja.jahrgang_id = j.id
-        WHERE uja.user_id = $1 AND uja.can_view = 1
+        WHERE uja.user_id = $1 AND uja.can_view = true
       `;
       const { rows: assignments } = await db.query(assignmentsQuery, [adminId]);
       const assignedJahrgangIds = assignments ? assignments.map(a => a.jahrgang_id) : [];
