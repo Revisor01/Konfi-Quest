@@ -1279,6 +1279,246 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       }
     }
   });
+
+  // ====================================================================
+  // MISSING ROUTES FROM SQLITE VERSION
+  // ====================================================================
+  
+  // File serving route
+  router.get('/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, 'chat', filename);
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).json({ error: 'File not found' });
+    }
+  });
+
+  // Create poll for a room
+  router.post('/rooms/:roomId/polls', verifyTokenRBAC, async (req, res) => {
+    const roomId = req.params.roomId;
+    const { question, options, multiple_choice = false, expires_in_hours } = req.body;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    console.log('Poll creation request:', { question, options, multiple_choice, expires_in_hours });
+    
+    // Only admins can create polls
+    if (userType !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can create polls' });
+    }
+    
+    // Validate input
+    if (!question || !question.trim()) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+    
+    if (!options || !Array.isArray(options) || options.length < 2) {
+      return res.status(400).json({ error: 'At least 2 options are required' });
+    }
+    
+    const validOptions = options.filter(opt => opt && opt.trim());
+    if (validOptions.length < 2) {
+      return res.status(400).json({ error: 'At least 2 valid options are required' });
+    }
+    
+    try {
+      // Check if user has access to this room
+      const { rows: [room] } = await db.query("SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
+      
+      if (!room) {
+        return res.status(404).json({ error: 'Room not found' });
+      }
+      
+      // Calculate expires_at
+      let expiresAt = null;
+      if (expires_in_hours && expires_in_hours > 0) {
+        expiresAt = new Date(Date.now() + expires_in_hours * 60 * 60 * 1000);
+      }
+      
+      await db.query('BEGIN');
+      
+      // First create the message
+      const messageQuery = `
+        INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, created_at)
+        VALUES ($1, $2, $3, 'poll', $4, NOW())
+        RETURNING id
+      `;
+      const { rows: [newMessage] } = await db.query(messageQuery, [roomId, userId, userType, question]);
+      const messageId = newMessage.id;
+      
+      // Then create the poll
+      const pollQuery = `
+        INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        RETURNING id
+      `;
+      const { rows: [newPoll] } = await db.query(pollQuery, [
+        messageId, 
+        question, 
+        JSON.stringify(validOptions),
+        multiple_choice,
+        expiresAt
+      ]);
+      
+      await db.query('COMMIT');
+      
+      // Return the created poll
+      res.status(201).json({
+        id: newPoll.id,
+        message_id: messageId,
+        question: question,
+        options: validOptions,
+        multiple_choice: multiple_choice,
+        expires_at: expiresAt,
+        votes: []
+      });
+      
+    } catch (err) {
+      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+      console.error('Database error in POST /rooms/:roomId/polls:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Vote for a poll
+  router.post('/polls/:pollId/vote', verifyTokenRBAC, async (req, res) => {
+    const pollId = req.params.pollId;
+    const { option_index } = req.body;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    if (option_index === undefined || option_index === null) {
+      return res.status(400).json({ error: 'Option index is required' });
+    }
+    
+    try {
+      // Get the poll to check if it exists and get poll details
+      const getPollQuery = `
+        SELECT p.*, m.room_id FROM chat_polls p
+        JOIN chat_messages m ON p.message_id = m.id
+        WHERE p.id = $1
+      `;
+      
+      const { rows: [poll] } = await db.query(getPollQuery, [pollId]);
+      
+      if (!poll) {
+        return res.status(404).json({ error: 'Poll not found' });
+      }
+      
+      // Check if poll has expired
+      if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
+        return res.status(400).json({ error: 'Poll has expired' });
+      }
+      
+      // Parse options and validate option_index
+      let parsedOptions;
+      try {
+        parsedOptions = JSON.parse(poll.options);
+      } catch (e) {
+        console.error('Failed to parse poll options:', poll.options);
+        return res.status(500).json({ error: 'Invalid poll data' });
+      }
+      
+      if (option_index < 0 || option_index >= parsedOptions.length) {
+        return res.status(400).json({ error: 'Invalid option index' });
+      }
+      
+      // Check if user has access to the room
+      const accessQuery = `
+        SELECT 1 FROM chat_participants cp 
+        JOIN chat_rooms cr ON cp.room_id = cr.id 
+        WHERE cp.room_id = $1 AND cp.user_id = $2 AND cp.user_type = $3 AND cr.organization_id = $4
+      `;
+      const { rows: [access] } = await db.query(accessQuery, [poll.room_id, userId, userType, req.user.organization_id]);
+      
+      if (!access) {
+        return res.status(403).json({ error: 'Access denied to this room' });
+      }
+      
+      await db.query('BEGIN');
+      
+      // For single choice polls, remove existing vote
+      if (!poll.multiple_choice) {
+        await db.query(
+          "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
+          [pollId, userId, userType]
+        );
+      } else {
+        // For multiple choice, check if user already voted for this option
+        const { rows: [existingVote] } = await db.query(
+          "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
+          [pollId, userId, userType, option_index]
+        );
+        
+        if (existingVote) {
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: 'You have already voted for this option' });
+        }
+      }
+      
+      // Add the new vote
+      await db.query(
+        "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, voted_at) VALUES ($1, $2, $3, $4, NOW())",
+        [pollId, userId, userType, option_index]
+      );
+      
+      await db.query('COMMIT');
+      
+      res.json({ 
+        message: 'Vote recorded successfully',
+        poll_id: parseInt(pollId),
+        option_index: option_index,
+        user_id: userId
+      });
+      
+    } catch (err) {
+      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+      console.error('Database error in POST /polls/:pollId/vote:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Delete message (soft delete)
+  router.delete('/messages/:messageId', verifyTokenRBAC, async (req, res) => {
+    const messageId = req.params.messageId;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    
+    try {
+      // Get message details and check ownership
+      const messageQuery = `
+        SELECT m.*, cr.organization_id 
+        FROM chat_messages m 
+        JOIN chat_rooms cr ON m.room_id = cr.id 
+        WHERE m.id = $1
+      `;
+      const { rows: [message] } = await db.query(messageQuery, [messageId]);
+      
+      if (!message) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      
+      // Check if user can delete this message (own message or admin in same org)
+      const canDelete = (message.user_id == userId && message.user_type === userType) || 
+                       (userType === 'admin' && message.organization_id == req.user.organization_id);
+      
+      if (!canDelete) {
+        return res.status(403).json({ error: 'You can only delete your own messages' });
+      }
+      
+      // Soft delete the message
+      await db.query("UPDATE chat_messages SET deleted_at = NOW() WHERE id = $1", [messageId]);
+      
+      res.json({ message: 'Message deleted successfully' });
+      
+    } catch (err) {
+      console.error('Database error in DELETE /messages/:messageId:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
   
   return router;
 };
