@@ -343,7 +343,12 @@ const EventModal: React.FC<EventModalProps> = ({
       </IonHeader>
 
       <IonContent>
-        <IonList style={{ padding: '0' }}>
+        {/* EVENT GRUNDDATEN */}
+        <IonItemDivider color="primary" style={{ '--background': '#007aff', '--color': 'white', marginTop: '0' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Event Grunddaten</IonLabel>
+        </IonItemDivider>
+        
+        <IonList style={{ marginBottom: '16px' }}>
           <IonItem>
             <IonLabel position="stacked">Event Name *</IonLabel>
             <IonInput
@@ -366,21 +371,6 @@ const EventModal: React.FC<EventModalProps> = ({
             />
           </IonItem>
 
-          <IonItem style={{ marginBottom: '16px' }}>
-            <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
-            <IonDatetimeButton datetime="event-date-picker" />
-          </IonItem>
-
-          <IonItem style={{ marginBottom: '16px' }}>
-            <IonLabel position="stacked">Endzeit (optional)</IonLabel>
-            <IonDatetimeButton datetime="end-time-picker" />
-            {formData.event_end_time && (
-              <IonLabel slot="end" style={{ fontSize: '0.9rem', color: '#666' }}>
-                {formatTime(formData.event_end_time)}
-              </IonLabel>
-            )}
-          </IonItem>
-
           <IonItem>
             <IonLabel position="stacked">Ort</IonLabel>
             <IonInput
@@ -391,7 +381,46 @@ const EventModal: React.FC<EventModalProps> = ({
               clearInput={true}
             />
           </IonItem>
+        </IonList>
 
+        {/* DATUM & ZEIT */}
+        <IonItemDivider color="secondary" style={{ '--background': '#10dc60', '--color': 'white' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Datum & Zeit</IonLabel>
+        </IonItemDivider>
+        
+        <IonList style={{ marginBottom: '16px' }}>
+          <IonItem>
+            <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
+            <IonDatetimeButton datetime="event-date-picker" />
+          </IonItem>
+
+          <IonItem>
+            <IonLabel position="stacked">Endzeit (optional)</IonLabel>
+            <IonDatetimeButton datetime="end-time-picker" />
+            {formData.event_end_time && (
+              <IonLabel slot="end" style={{ fontSize: '0.9rem', color: '#666' }}>
+                {formatTime(formData.event_end_time)}
+              </IonLabel>
+            )}
+          </IonItem>
+
+          <IonItem>
+            <IonLabel position="stacked">Anmeldung ab</IonLabel>
+            <IonDatetimeButton datetime="registration-opens-picker" />
+          </IonItem>
+
+          <IonItem>
+            <IonLabel position="stacked">Anmeldeschluss</IonLabel>
+            <IonDatetimeButton datetime="registration-closes-picker" />
+          </IonItem>
+        </IonList>
+
+        {/* PUNKTE & TEILNEHMER */}
+        <IonItemDivider color="tertiary" style={{ '--background': '#f4a261', '--color': 'white' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Punkte & Teilnehmer</IonLabel>
+        </IonItemDivider>
+        
+        <IonList style={{ marginBottom: '16px' }}>
           <IonItem>
             <IonLabel position="stacked">Punkte</IonLabel>
             <IonInput
@@ -440,7 +469,6 @@ const EventModal: React.FC<EventModalProps> = ({
               value={formData.max_participants.toString()}
               onIonInput={(e) => {
                 const value = e.detail.value!;
-                // Allow empty string for editing, otherwise parse number
                 if (value === '') {
                   setFormData({ ...formData, max_participants: 0 });
                 } else {
@@ -455,7 +483,14 @@ const EventModal: React.FC<EventModalProps> = ({
               clearInput={true}
             />
           </IonItem>
+        </IonList>
 
+        {/* KATEGORIEN & ZIELGRUPPE */}
+        <IonItemDivider color="warning" style={{ '--background': '#ffce00', '--color': 'black' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Kategorien & Zielgruppe</IonLabel>
+        </IonItemDivider>
+        
+        <IonList style={{ marginBottom: '16px' }}>
           {categories.length > 0 ? (
             <>
               <IonItem lines="none" style={{ paddingBottom: '8px' }}>
@@ -463,29 +498,27 @@ const EventModal: React.FC<EventModalProps> = ({
                   Kategorien (mehrere möglich)
                 </IonLabel>
               </IonItem>
-              <IonList style={{ padding: '0 16px', marginTop: '0' }}>
-                {categories.map((category) => (
-                  <IonItem key={category.id} lines="none">
-                    <IonCheckbox
-                      slot="start"
-                      checked={formData.category_ids.includes(category.id)}
-                      onIonChange={(e) => {
-                        const isChecked = e.detail.checked;
-                        setFormData(prev => ({
-                          ...prev,
-                          category_ids: isChecked 
-                            ? [...prev.category_ids, category.id]
-                            : prev.category_ids.filter(id => id !== category.id)
-                        }));
-                      }}
-                      disabled={loading}
-                    />
-                    <IonLabel style={{ marginLeft: '12px' }}>
-                      {category.name}
-                    </IonLabel>
-                  </IonItem>
-                ))}
-              </IonList>
+              {categories.map((category) => (
+                <IonItem key={category.id} lines="none">
+                  <IonCheckbox
+                    slot="start"
+                    checked={formData.category_ids.includes(category.id)}
+                    onIonChange={(e) => {
+                      const isChecked = e.detail.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        category_ids: isChecked 
+                          ? [...prev.category_ids, category.id]
+                          : prev.category_ids.filter(id => id !== category.id)
+                      }));
+                    }}
+                    disabled={loading}
+                  />
+                  <IonLabel style={{ marginLeft: '12px' }}>
+                    {category.name}
+                  </IonLabel>
+                </IonItem>
+              ))}
             </>
           ) : (
             <IonItem>
@@ -515,21 +548,14 @@ const EventModal: React.FC<EventModalProps> = ({
               ))}
             </IonSelect>
           </IonItem>
+        </IonList>
 
-          <IonItem style={{ marginBottom: '16px' }}>
-            <IonLabel position="stacked">Anmeldung ab</IonLabel>
-            <IonDatetimeButton datetime="registration-opens-picker" />
-          </IonItem>
-
-          <IonItem style={{ marginBottom: '16px' }}>
-            <IonLabel position="stacked">Anmeldeschluss</IonLabel>
-            <IonDatetimeButton datetime="registration-closes-picker" />
-          </IonItem>
-
-          <IonItemDivider>
-            <IonLabel>Anmeldungen & Warteliste</IonLabel>
-          </IonItemDivider>
-
+        {/* ANMELDUNGEN & WARTELISTE */}
+        <IonItemDivider color="danger" style={{ '--background': '#eb445a', '--color': 'white' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Anmeldungen & Warteliste</IonLabel>
+        </IonItemDivider>
+        
+        <IonList style={{ marginBottom: '16px' }}>
           <IonItem>
             <IonLabel>Warteliste aktivieren</IonLabel>
             <IonToggle
@@ -565,10 +591,12 @@ const EventModal: React.FC<EventModalProps> = ({
               />
             </IonItem>
           )}
+        </IonList>
 
-          <IonItemDivider>
-            <IonLabel>Zeitfenster (optional)</IonLabel>
-          </IonItemDivider>
+        {/* ZEITFENSTER */}
+        <IonItemDivider color="medium" style={{ '--background': '#92949c', '--color': 'white' }}>
+          <IonLabel style={{ fontWeight: 'bold' }}>Zeitfenster (optional)</IonLabel>
+        </IonItemDivider>
 
           <IonItem>
             <IonLabel>Zeitfenster aktivieren</IonLabel>

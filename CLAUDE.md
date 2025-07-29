@@ -15,6 +15,8 @@
 - **Authentication**: JWT mit `verifyTokenRBAC` middleware
 - **Port**: 5000 (Docker: 8623)
 - **API Base**: https://konfi-points.de/api
+- **Routes Directory**: `/Users/simonluthe/Documents/Konfipoints/backend/routes/`
+- **Backup Directory**: `/Users/simonluthe/Documents/Konfipoints/backend/backup_sqlite/`
 
 ### Frontend: React 19 + Ionic 8 + TypeScript
 - **Framework**: React 19 mit Ionic React 8
