@@ -1671,32 +1671,21 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       const { rows: [messageCount] } = await db.query("SELECT COUNT(*)::int as count FROM chat_messages WHERE room_id = $1 AND deleted_at IS NULL", [roomId]);
       
       if (messageCount.count > 0 && !forceDelete) {
-        // Check if user is org admin
-        const isOrgAdmin = req.user.permissions?.includes('admin.organization.manage') || false;
-        if (isOrgAdmin) {
-          return res.status(409).json({ 
-            error: `Chat-Raum kann nicht gelöscht werden: ${messageCount.count} Nachricht(en) vorhanden.`,
-            canForceDelete: true
-          });
-        } else {
-          return res.status(409).json({ 
-            error: `Chat-Raum kann nicht gelöscht werden: ${messageCount.count} Nachricht(en) vorhanden.`
-          });
-        }
+        // All admins can force delete chat rooms
+        return res.status(409).json({ 
+          error: `Chat-Raum kann nicht gelöscht werden: ${messageCount.count} Nachricht(en) vorhanden.`,
+          canForceDelete: true
+        });
       }
       
-      // Prevent deletion of system rooms (jahrgang/direct chats)
-      if (room.type === 'jahrgang' && !forceDelete) {
+      // Prevent deletion of system rooms (jahrgang chats can only be deleted via jahrgang)
+      if (room.type === 'jahrgang') {
         return res.status(409).json({ 
           error: 'Jahrgangs-Chat-Räume können nicht direkt gelöscht werden. Bitte den Jahrgang löschen.'
         });
       }
       
-      if (room.type === 'direct') {
-        return res.status(409).json({ 
-          error: 'Direkte Chat-Räume können nicht gelöscht werden.'
-        });
-      }
+      // Direct chats can be deleted by admins (no restrictions)
       
       await db.query('BEGIN');
       

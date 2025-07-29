@@ -88,18 +88,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       if (chatRooms.length > 0) {
         const roomsWithMessages = chatRooms.filter(room => room.message_count > 0);
         if (roomsWithMessages.length > 0 && !forceDelete) {
-          // Check if user is org admin
-          const isOrgAdmin = req.user.permissions?.includes('admin.organization.manage') || false;
-          if (isOrgAdmin) {
-            return res.status(409).json({ 
-              error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).`,
-              canForceDelete: true
-            });
-          } else {
-            return res.status(409).json({ 
-              error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).` 
-            });
-          }
+          // All admins with jahrgaenge.delete permission can force delete
+          return res.status(409).json({ 
+            error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).`,
+            canForceDelete: true
+          });
         }
         
         // Delete chat rooms (with or without messages if force)
