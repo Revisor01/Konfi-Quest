@@ -12,7 +12,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
                 COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
                 COUNT(DISTINCT eb.id) as total_participants,
-                e.max_participants,
+                CASE 
+                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                  ELSE e.max_participants
+                END as max_participants,
                 e.registration_opens_at,
                 e.registration_closes_at,
                 e.point_type,
@@ -23,6 +26,12 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 CASE 
                   WHEN NOW() < e.registration_opens_at::timestamp THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at::timestamp THEN 'closed'
+                  WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= 
+                    CASE 
+                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                      ELSE e.max_participants
+                    END AND 
+                       (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status
         FROM events e
@@ -31,8 +40,13 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         LEFT JOIN categories c ON ec.category_id = c.id
         LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN jahrgaenge j ON eja.jahrgang_id = j.id
+        LEFT JOIN (
+          SELECT event_id, SUM(max_participants) as total_capacity
+          FROM event_timeslots
+          GROUP BY event_id
+        ) timeslot_capacity ON e.id = timeslot_capacity.event_id
         WHERE e.organization_id = $1
-        GROUP BY e.id
+        GROUP BY e.id, timeslot_capacity.total_capacity
         ORDER BY e.event_date ASC
       `;
       

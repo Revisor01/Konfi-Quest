@@ -597,7 +597,8 @@ const EventModal: React.FC<EventModalProps> = ({
         <IonItemDivider color="medium" style={{ '--background': '#92949c', '--color': 'white' }}>
           <IonLabel style={{ fontWeight: 'bold' }}>Zeitfenster (optional)</IonLabel>
         </IonItemDivider>
-
+        
+        <IonList style={{ marginBottom: '16px' }}>
           <IonItem>
             <IonLabel>Zeitfenster aktivieren</IonLabel>
             <IonToggle
