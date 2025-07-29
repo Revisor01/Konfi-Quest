@@ -1649,5 +1649,74 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
     }
   });
   
+  // DELETE a chat room (Admin only)
+  router.delete('/rooms/:roomId', verifyTokenRBAC, async (req, res) => {
+    const roomId = req.params.roomId;
+    const userId = req.user.id;
+    const userType = req.user.type;
+    const forceDelete = req.query.force === 'true';
+    
+    if (userType !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can delete chat rooms' });
+    }
+    
+    try {
+      // Get room details
+      const { rows: [room] } = await db.query("SELECT * FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
+      if (!room) {
+        return res.status(404).json({ error: 'Chat-Raum nicht gefunden' });
+      }
+      
+      // Check if room has messages
+      const { rows: [messageCount] } = await db.query("SELECT COUNT(*)::int as count FROM chat_messages WHERE room_id = $1 AND deleted_at IS NULL", [roomId]);
+      
+      if (messageCount.count > 0 && !forceDelete) {
+        // Check if user is org admin
+        const isOrgAdmin = req.user.permissions?.includes('admin.organization.manage') || false;
+        if (isOrgAdmin) {
+          return res.status(409).json({ 
+            error: `Chat-Raum kann nicht gelöscht werden: ${messageCount.count} Nachricht(en) vorhanden.`,
+            canForceDelete: true
+          });
+        } else {
+          return res.status(409).json({ 
+            error: `Chat-Raum kann nicht gelöscht werden: ${messageCount.count} Nachricht(en) vorhanden.`
+          });
+        }
+      }
+      
+      // Prevent deletion of system rooms (jahrgang/direct chats)
+      if (room.type === 'jahrgang' && !forceDelete) {
+        return res.status(409).json({ 
+          error: 'Jahrgangs-Chat-Räume können nicht direkt gelöscht werden. Bitte den Jahrgang löschen.'
+        });
+      }
+      
+      if (room.type === 'direct') {
+        return res.status(409).json({ 
+          error: 'Direkte Chat-Räume können nicht gelöscht werden.'
+        });
+      }
+      
+      await db.query('BEGIN');
+      
+      // If force delete or no messages, proceed with deletion
+      if (forceDelete || messageCount.count === 0) {
+        // Delete in correct order due to foreign keys
+        await db.query("DELETE FROM chat_messages WHERE room_id = $1", [roomId]);
+        await db.query("DELETE FROM chat_participants WHERE room_id = $1", [roomId]);
+        await db.query("DELETE FROM chat_rooms WHERE id = $1", [roomId]);
+      }
+      
+      await db.query('COMMIT');
+      res.json({ message: 'Chat-Raum erfolgreich gelöscht' });
+      
+    } catch (err) {
+      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+      console.error(`Database error in DELETE /rooms/${roomId}:`, err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+  
   return router;
 };

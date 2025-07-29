@@ -138,21 +138,35 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     loadChatRooms
   }));
 
-  const deleteRoom = async (room: ChatRoom) => {
-    // Erste Bestätigung
-    if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
-    
-    // Zweite Bestätigung mit Warnung
-    const confirmText = `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`;
-    if (!window.confirm(confirmText)) return;
+  const deleteRoom = async (room: ChatRoom, forceDelete = false) => {
+    if (!forceDelete) {
+      // Erste Bestätigung
+      if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
+      
+      // Zweite Bestätigung mit Warnung
+      const confirmText = `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`;
+      if (!window.confirm(confirmText)) return;
+    }
 
     try {
-      await api.delete(`/chat/rooms/${room.id}`);
+      const url = forceDelete ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
+      await api.delete(url);
       setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
       await loadChatRooms();
-    } catch (err) {
-      setError('Fehler beim Löschen des Chats');
-      console.error('Error deleting chat room:', err);
+    } catch (error: any) {
+      if (error.response?.data?.canForceDelete) {
+        // Org Admin kann trotzdem löschen
+        const forceConfirm = window.confirm(
+          `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!\n\nDennoch löschen?`
+        );
+        if (forceConfirm) {
+          await deleteRoom(room, true);
+        }
+      } else if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Fehler beim Löschen des Chats');
+      }
     }
   };
 

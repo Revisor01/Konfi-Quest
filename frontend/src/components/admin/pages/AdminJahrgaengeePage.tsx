@@ -215,19 +215,29 @@ const AdminJahrgaengeePage: React.FC = () => {
     (event.target as HTMLIonRefresherElement).complete();
   };
 
-  const handleDeleteWithSlideClose = async (jahrgang: Jahrgang) => {
-    if (!window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
+  const handleDeleteWithSlideClose = async (jahrgang: Jahrgang, forceDelete = false) => {
+    if (!forceDelete && !window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
     
     const slidingElement = slidingRefs.current.get(jahrgang.id);
     try {
-      await api.delete(`/admin/jahrgaenge/${jahrgang.id}`);
+      const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
+      await api.delete(url);
       setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
       loadJahrgaenge();
     } catch (error: any) {
       if (slidingElement) {
         await slidingElement.close();
       }
-      if (error.response?.data?.error) {
+      
+      if (error.response?.data?.canForceDelete) {
+        // Org Admin kann trotzdem löschen
+        const forceConfirm = window.confirm(
+          `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!\n\nDennoch löschen?`
+        );
+        if (forceConfirm) {
+          await handleDeleteWithSlideClose(jahrgang, true);
+        }
+      } else if (error.response?.data?.error) {
         alert(error.response.data.error);
       } else {
         alert('Fehler beim Löschen des Jahrgangs');

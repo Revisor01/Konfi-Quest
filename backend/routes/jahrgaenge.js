@@ -65,6 +65,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // DELETE a jahrgang
   router.delete('/:id', rbacVerifier, checkPermission('admin.jahrgaenge.delete'), async (req, res) => {
     const jahrgangId = req.params.id;
+    const forceDelete = req.query.force === 'true';
+    
     try {
       // Check if jahrgang is in use by konfis
       const checkKonfisQuery = "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1";
@@ -74,7 +76,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(409).json({ error: `Jahrgang kann nicht gelöscht werden: ${konfiUsage.count} Konfi(s) zugeordnet.` });
       }
 
-      // Check if there are chat rooms with messages - keep those, delete empty ones
+      // Check if there are chat rooms with messages
       const checkChatQuery = `
         SELECT cr.id, 
                (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
@@ -85,14 +87,30 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
       if (chatRooms.length > 0) {
         const roomsWithMessages = chatRooms.filter(room => room.message_count > 0);
-        if (roomsWithMessages.length > 0) {
-          return res.status(409).json({ 
-            error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).` 
-          });
+        if (roomsWithMessages.length > 0 && !forceDelete) {
+          // Check if user is org admin
+          const isOrgAdmin = req.user.permissions?.includes('admin.organization.manage') || false;
+          if (isOrgAdmin) {
+            return res.status(409).json({ 
+              error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).`,
+              canForceDelete: true
+            });
+          } else {
+            return res.status(409).json({ 
+              error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).` 
+            });
+          }
         }
         
-        // Delete empty chat rooms first
-        await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
+        // Delete chat rooms (with or without messages if force)
+        if (forceDelete || roomsWithMessages.length === 0) {
+          // Delete chat messages first, then rooms
+          for (const room of chatRooms) {
+            await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
+            await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
+          }
+          await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
+        }
       }
 
       // Delete the jahrgang itself
