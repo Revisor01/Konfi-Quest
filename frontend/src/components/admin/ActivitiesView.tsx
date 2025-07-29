@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonCard,
   IonCardHeader,
@@ -67,6 +67,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
+  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
   const filteredAndSortedActivities = (() => {
     let result = filterBySearchTerm(activities, searchTerm, ['name', 'description']);
@@ -112,6 +113,21 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       case 'gottesdienst': return 'Gottesdienst';
       case 'gemeinde': return 'Gemeinde';
       default: return 'Unbekannt';
+    }
+  };
+
+  const handleDeleteWithSlideClose = async (activity: Activity) => {
+    const slidingElement = slidingRefs.current.get(activity.id);
+    
+    try {
+      await onDeleteActivity(activity);
+      // Bei erfolgreichem Löschen schließt sich das Sliding automatisch durch den Re-render
+    } catch (error) {
+      // Bei Fehler: Sliding automatisch schließen für bessere UX
+      if (slidingElement) {
+        await slidingElement.close();
+      }
+      // Der Fehler wird bereits im Parent (AdminActivitiesPage) behandelt und angezeigt
     }
   };
 
@@ -233,7 +249,16 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         <IonCardContent style={{ padding: '0' }}>
           <IonList>
             {filteredAndSortedActivities.map((activity) => (
-              <IonItemSliding key={activity.id}>
+              <IonItemSliding 
+                key={activity.id}
+                ref={(el) => {
+                  if (el) {
+                    slidingRefs.current.set(activity.id, el);
+                  } else {
+                    slidingRefs.current.delete(activity.id);
+                  }
+                }}
+              >
                 <IonItem 
                   button={canEdit}
                   onClick={canEdit ? () => onSelectActivity(activity) : undefined}
@@ -327,7 +352,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   <IonItemOptions side="end">
                     <IonItemOption 
                       color="danger" 
-                      onClick={() => onDeleteActivity(activity)}
+                      onClick={() => handleDeleteWithSlideClose(activity)}
                     >
                       <IonIcon icon={trash} />
                     </IonItemOption>

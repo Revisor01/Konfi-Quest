@@ -90,11 +90,10 @@ const AdminActivitiesPage: React.FC = () => {
       // Sofortige Aktualisierung
       await loadActivities();
     } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen der Aktivität');
-      }
+      const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
+      alert(errorMessage);
+      // Re-throw error damit ActivitiesView weiß, dass es einen Fehler gab
+      throw err;
     }
   };
 

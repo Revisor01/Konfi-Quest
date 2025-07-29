@@ -67,15 +67,21 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     const categoryId = req.params.id;
 
     try {
-      // Check if the category is still in use. This query works in PostgreSQL as well.
+      // Check if the category is still in use by activities or events
       const checkQuery = `
-        SELECT ((SELECT COUNT(*) FROM activity_categories WHERE category_id = $1) + 
-                (SELECT COUNT(*) FROM event_categories WHERE category_id = $2))::int as count
+        SELECT 
+          (SELECT COUNT(*) FROM activity_categories WHERE category_id = $1)::int as activity_count,
+          (SELECT COUNT(*) FROM event_categories WHERE category_id = $2)::int as event_count
       `;
       const { rows: [usage] } = await db.query(checkQuery, [categoryId, categoryId]);
 
-      if (usage.count > 0) {
-        return res.status(409).json({ error: `Category is in use and cannot be deleted.` });
+      if (usage.activity_count > 0 || usage.event_count > 0) {
+        let message = 'Kategorie kann nicht gelöscht werden: ';
+        const usages = [];
+        if (usage.activity_count > 0) usages.push(`${usage.activity_count} Aktivität(en)`);
+        if (usage.event_count > 0) usages.push(`${usage.event_count} Event(s)`);
+        message += usages.join(' und ') + ' zugeordnet.';
+        return res.status(409).json({ error: message });
       }
 
       // If not in use, proceed with deletion

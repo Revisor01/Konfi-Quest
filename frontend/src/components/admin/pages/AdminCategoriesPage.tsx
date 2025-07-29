@@ -183,6 +183,7 @@ const AdminCategoriesPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
+  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
   // Modal mit useIonModal Hook
   const [presentCategoryModalHook, dismissCategoryModalHook] = useIonModal(CategoryModal, {
@@ -219,18 +220,21 @@ const AdminCategoriesPage: React.FC = () => {
   const handleDelete = async (category: Category) => {
     if (!window.confirm(`Kategorie "${category.name}" wirklich löschen?`)) return;
     
+    const slidingElement = slidingRefs.current.get(category.id);
+    
     try {
       await api.delete(`/admin/categories/${category.id}`);
       setSuccess(`Kategorie "${category.name}" gelöscht`);
       loadCategories();
+      // Bei erfolgreichem Löschen schließt sich das Sliding automatisch durch den Re-render
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        setError('Kategorie kann nicht gelöscht werden - wird bereits verwendet');
-      } else if (error.response?.status === 409) {
-        setError('Kategorie kann nicht gelöscht werden - wird bereits verwendet');
-      } else {
-        setError('Fehler beim Löschen der Kategorie');
+      // Bei Fehler: Sliding automatisch schließen für bessere UX
+      if (slidingElement) {
+        await slidingElement.close();
       }
+      
+      const errorMessage = error.response?.data?.error || 'Fehler beim Löschen der Kategorie';
+      alert(errorMessage);
     }
   };
 
@@ -329,7 +333,16 @@ const AdminCategoriesPage: React.FC = () => {
               </IonItem>
             ) : (
               categories.map((category) => (
-                <IonItemSliding key={category.id}>
+                <IonItemSliding 
+                  key={category.id}
+                  ref={(el) => {
+                    if (el) {
+                      slidingRefs.current.set(category.id, el);
+                    } else {
+                      slidingRefs.current.delete(category.id);
+                    }
+                  }}
+                >
                   <IonItem 
                     button={canEdit}
                     onClick={canEdit ? () => openEditModal(category) : undefined}

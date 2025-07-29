@@ -2,18 +2,16 @@
 
 ## ⚠️ KRITISCHE REGELN FÜR CLAUDE CODE
 
-1. **NIEMALS das Backend ändern, nur Frontend anpassen** (außer bei kritischen Bugs)
-2. **Neue RBAC-Struktur verwenden** - Alte Strukturen sind deprecated
-3. **Alle API-Calls mit /admin/ prefix für Admin-Funktionen**
-4. **Deutsche Entwicklungssprache verwenden**
-5. **Legacy `points.gottesdienst` Struktur ist TOT - verwende `gottesdienst_points`**
+1. **Neue RBAC-Struktur verwenden** - Alte Strukturen sind deprecated
+2. **Deutsche Entwicklungssprache verwenden**
+3. **Legacy `points.gottesdienst` Struktur ist TOT - verwende `gottesdienst_points`**
 
 ---
 
 ## Aktuelle Systemarchitektur (Juli 2025)
 
 ### Backend: Node.js Express mit RBAC System
-- **Database**: SQLite mit neuer RBAC-Struktur (`/data/backend/konfi.db`)
+- **Database**: PostgreSQL mit neuer RBAC-Struktur (Docker Container)
 - **Authentication**: JWT mit `verifyTokenRBAC` middleware
 - **Port**: 5000 (Docker: 8623)
 - **API Base**: https://konfi-points.de/api
@@ -261,6 +259,50 @@ await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
 ```
 
 ---
+
+## PostgreSQL Migration Status (Juli 2025)
+
+### ✅ BEREITS MIGRIERT UND GETESTET:
+- **Chat System**: Vollständig auf PostgreSQL portiert
+  - Problem: Poll-Voting 404 Fehler (Frontend sendete message_id statt poll_id)
+  - Lösung: Fallback-Logic in Backend implementiert
+  - Problem: 4 fehlende Routes aus SQLite Version (polls, files, etc.)
+  - Lösung: Alle Routes aus backup_sqlite/routes/chat.js übernommen
+  - Status: ✅ Funktioniert vollständig
+
+- **Konfi Management**: Vollständig auf PostgreSQL portiert  
+  - RBAC System migriert von `admins`/`konfis` Tabellen zu `users`+`konfi_profiles`
+  - Badge Counts funktionieren korrekt
+  - Activity/Bonus CRUD Operations funktionieren
+  - Status: ✅ Funktioniert vollständig
+
+### 🔄 AKTUELL IN MIGRATION:
+- **Aktivitäten System**: Wird gerade analysiert
+  - Problem: "custom" Kategorie wird automatisch erstellt
+  - Problem: Nicht alle Kategorien im Modal sichtbar
+  - ToDo: Kategorie-System auf PostgreSQL prüfen
+
+### ❌ NOCH NICHT MIGRIERT:
+- Events System
+- Badge System (custom_badges Tabelle)
+- Statistics System  
+- Organizations System
+- Auth System
+- Push Notifications
+
+### MIGRATION VORGEHEN (Route für Route):
+1. **Aktuell**: `/routes/activities.js` - Aktivitäten und Kategorien analysieren
+2. **Nächste**: `/routes/events.js` - Event System portieren
+3. **Dann**: `/routes/badges.js` - Badge System portieren  
+4. **Dann**: `/routes/statistics.js` - Statistics portieren
+5. **Dann**: `/routes/organizations.js` - Organizations portieren
+6. **Zuletzt**: `/routes/auth.js` - Auth System prüfen
+
+### WICHTIGE ERKENNTNISSE:
+- **SQLite Backup**: `/backend/backup_sqlite/` enthält funktionierende SQLite Version
+- **PostgreSQL Live**: Docker Container mit aktueller PostgreSQL DB
+- **Datenbankzugriff**: `ssh root@server.godsapp.de "docker exec -it konfi-quest-db-1 psql -U konfi_user -d konfi_db"`
+- **Alte SQLite**: `ssh root@server.godsapp.de "cd /opt/Konfi-Quest && sqlite3 data/konfi.db"` (NUR als Referenz!)
 
 ## System Status (Juli 2025)
 

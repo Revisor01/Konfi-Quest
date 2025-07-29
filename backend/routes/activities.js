@@ -123,17 +123,17 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       const { rows: [usage] } = await db.query(checkUsageQuery, [activityId, req.user.organization_id]);
 
       if (usage.count > 0) {
-        return res.status(409).json({ error: `Activity is in use and cannot be deleted.` });
+        return res.status(409).json({ error: `Aktivität kann nicht gelöscht werden: ${usage.count} Zuordnung(en) zu Konfis vorhanden.` });
       }
 
       const deleteQuery = "DELETE FROM activities WHERE id = $1 AND organization_id = $2";
       const { rowCount } = await db.query(deleteQuery, [activityId, req.user.organization_id]);
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Activity not found' });
+        return res.status(404).json({ error: 'Aktivität nicht gefunden' });
       }
 
-      res.json({ message: 'Activity deleted successfully' });
+      res.json({ message: 'Aktivität erfolgreich gelöscht' });
 
     } catch (err) {
       console.error(`Database error in DELETE /api/activities/${activityId}:`, err);

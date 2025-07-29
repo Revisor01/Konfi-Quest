@@ -47,11 +47,12 @@ import api from '../../services/api';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface Message {
   id: number;
@@ -115,7 +116,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks müssen vor conditional returns stehen!
 
@@ -295,14 +295,31 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        setError('Datei ist zu groß (max. 10MB)');
-        return;
+  const handleFileSelect = async () => {
+    try {
+      const result = await FilePicker.pickFiles({
+        types: ['image/*', 'video/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
+      });
+      
+      if (result.files.length > 0) {
+        const file = result.files[0];
+        
+        // Check file size (10MB limit)
+        if (file.size && file.size > 10 * 1024 * 1024) {
+          setError('Datei ist zu groß (max. 10MB)');
+          return;
+        }
+        
+        // Convert to File object for existing upload logic
+        const blob = file.blob;
+        if (blob) {
+          const fileObj = new File([blob], file.name || 'file', { type: file.mimeType || 'application/octet-stream' });
+          setSelectedFile(fileObj);
+        }
       }
-      setSelectedFile(file);
+    } catch (error) {
+      console.error('File picker error:', error);
+      setError('Fehler beim Auswählen der Datei');
     }
   };
 
@@ -398,48 +415,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         const blob = await response.blob();
         const fileName = selectedMessage.file_name || 'file';
         
-        // Convert blob to base64 with proper error handling
-        const base64Data = await new Promise<string>((resolve, reject) => {
+        // Write to Documents directory for sharing (working version)
+        const base64Data = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            const result = reader.result as string;
-            if (result) {
-              const base64 = result.split(',')[1];
-              resolve(base64);
-            } else {
-              reject(new Error('Failed to convert file to base64'));
-            }
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
           };
-          reader.onerror = () => reject(new Error('FileReader error'));
           reader.readAsDataURL(blob);
         });
         
-        // Create MIME type for the file
-        const mimeType = response.headers.get('content-type') || 'application/octet-stream';
+        const path = `share/${fileName}`;
+        await Filesystem.writeFile({
+          path,
+          data: base64Data,
+          directory: Directory.Documents,
+          recursive: true
+        });
         
-        // iOS requires base64 data URLs instead of file:// URLs
-        // This solves the -10814 NSOSStatusErrorDomain error
-        const dataUrl = `data:${mimeType};base64,${base64Data}`;
+        // Get local file URI for sharing
+        const fileUri = await Filesystem.getUri({
+          directory: Directory.Documents,
+          path
+        });
         
-        console.log('Sharing data URL with MIME type:', mimeType);
-        
-        try {
-          await Share.share({
-            title: 'Datei aus Konfi Quest',
-            text: selectedMessage.content || fileName,
-            url: dataUrl,
-            dialogTitle: 'Datei teilen'
-          });
-        } catch (shareError) {
-          console.error('Base64 share failed, trying remote URL:', shareError);
-          // Fallback: Share remote URL directly
-          await Share.share({
-            title: 'Datei aus Konfi Quest',
-            text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
-            url: fileUrl,
-            dialogTitle: 'Datei teilen'
-          });
-        }
+        await Share.share({
+          title: 'Datei aus Konfi Quest',
+          text: selectedMessage.content || fileName,
+          url: fileUri.uri
+        });
       } else {
         // For text messages, share text content
         await Share.share({
@@ -1093,7 +1097,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             <IonButton
               fill="clear"
               size="small"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleFileSelect}
               style={{
                 '--padding-start': '0',
                 '--padding-end': '0',
@@ -1151,13 +1155,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}
             </IonButton>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              style={{ display: 'none' }}
-              onChange={handleFileSelect}
-              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-            />
           </div> {/* Ende des Flex-Containers */}
         </IonToolbar>
       </IonFooter>
