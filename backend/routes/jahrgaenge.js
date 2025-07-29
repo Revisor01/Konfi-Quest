@@ -104,12 +104,48 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         
         // Delete chat rooms (with or without messages if force)
         if (forceDelete || roomsWithMessages.length === 0) {
-          // Delete chat messages first, then rooms
+          // Get all files before deleting messages (for file cleanup)
+          const allFiles = [];
           for (const room of chatRooms) {
+            const { rows: roomFiles } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
+            allFiles.push(...roomFiles);
+          }
+          
+          // Delete chat data in correct order due to foreign keys
+          for (const room of chatRooms) {
+            // 1. Delete poll votes first
+            await db.query("DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id = $1)", [room.id]);
+            
+            // 2. Delete polls
+            await db.query("DELETE FROM chat_polls WHERE room_id = $1", [room.id]);
+            
+            // 3. Delete read status
+            await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
+            
+            // 4. Delete messages
             await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
+            
+            // 5. Delete participants
             await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
           }
+          
+          // 6. Delete chat rooms
           await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
+          
+          // 7. Clean up files from filesystem (best effort)
+          const fs = require('fs').promises;
+          const path = require('path');
+          
+          for (const fileRecord of allFiles) {
+            try {
+              const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
+              await fs.unlink(fullPath);
+              console.log(`Deleted file: ${fullPath}`);
+            } catch (fileErr) {
+              console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
+              // Don't fail the whole operation if file deletion fails
+            }
+          }
         }
       }
 

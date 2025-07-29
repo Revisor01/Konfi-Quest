@@ -364,12 +364,45 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         return res.status(409).json({ error: `Event kann nicht gelöscht werden: Event-Chat enthält ${chatUsage.message_count} Nachricht(en).` });
       }
       
+      // Get event chat rooms and their files before deletion
+      const { rows: eventChatRooms } = await db.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
+      const allFiles = [];
+      
+      for (const room of eventChatRooms) {
+        const { rows: roomFiles } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
+        allFiles.push(...roomFiles);
+      }
+      
       // Proceed with deletions. Order matters due to foreign keys.
+      // 1. Delete chat data first
+      for (const room of eventChatRooms) {
+        await db.query("DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id = $1)", [room.id]);
+        await db.query("DELETE FROM chat_polls WHERE room_id = $1", [room.id]);
+        await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
+        await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
+        await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
+      }
+      await db.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]);
+      
+      // 2. Delete event-specific data
       await db.query("DELETE FROM event_bookings WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
-      await db.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]); // Delete empty chat rooms
+      
+      // 3. Clean up files from filesystem (best effort)
+      const fs = require('fs').promises;
+      const path = require('path');
+      
+      for (const fileRecord of allFiles) {
+        try {
+          const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
+          await fs.unlink(fullPath);
+          console.log(`Deleted event chat file: ${fullPath}`);
+        } catch (fileErr) {
+          console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
+        }
+      }
       
       // Finally, delete the event itself
       const { rowCount } = await db.query("DELETE FROM events WHERE id = $1", [id]);

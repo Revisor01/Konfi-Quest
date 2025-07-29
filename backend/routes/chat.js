@@ -1702,10 +1702,42 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       
       // If force delete or no messages, proceed with deletion
       if (forceDelete || messageCount.count === 0) {
+        // Get all files before deleting messages (for file cleanup)
+        const { rows: filesForDeletion } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [roomId]);
+        
         // Delete in correct order due to foreign keys
+        // 1. Delete poll votes first
+        await db.query("DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id = $1)", [roomId]);
+        
+        // 2. Delete polls
+        await db.query("DELETE FROM chat_polls WHERE room_id = $1", [roomId]);
+        
+        // 3. Delete read status
+        await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [roomId]);
+        
+        // 4. Delete messages
         await db.query("DELETE FROM chat_messages WHERE room_id = $1", [roomId]);
+        
+        // 5. Delete participants
         await db.query("DELETE FROM chat_participants WHERE room_id = $1", [roomId]);
+        
+        // 6. Delete room itself
         await db.query("DELETE FROM chat_rooms WHERE id = $1", [roomId]);
+        
+        // 7. Clean up files from filesystem (best effort, don't fail if files don't exist)
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        for (const fileRecord of filesForDeletion) {
+          try {
+            const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
+            await fs.unlink(fullPath);
+            console.log(`Deleted file: ${fullPath}`);
+          } catch (fileErr) {
+            console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
+            // Don't fail the whole operation if file deletion fails
+          }
+        }
       }
       
       await db.query('COMMIT');
