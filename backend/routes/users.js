@@ -263,18 +263,17 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       return res.status(400).json({ error: 'jahrgang_assignments must be an array' });
     }
 
-    const client = await db.connect();
     try {
         // Check if user exists in organization
-        const { rows: [user] } = await client.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [userId, organizationId]);
+        const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [userId, organizationId]);
         if (!user) {
             return res.status(404).json({ error: 'User not found in this organization' });
         }
 
-        await client.query('BEGIN');
+        await db.query('BEGIN');
 
         // Get current assignments to determine chat changes
-        const { rows: currentAssignments } = await client.query(
+        const { rows: currentAssignments } = await db.query(
             "SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1", 
             [userId]
         );
@@ -293,10 +292,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 SELECT id FROM chat_rooms 
                 WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
             `;
-            const { rows: [chatRoom] } = await client.query(chatRoomQuery, [jahrgangId, organizationId]);
+            const { rows: [chatRoom] } = await db.query(chatRoomQuery, [jahrgangId, organizationId]);
             
             if (chatRoom) {
-                await client.query(
+                await db.query(
                     "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2", 
                     [chatRoom.id, userId]
                 );
@@ -305,17 +304,17 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         }
 
         // Delete existing assignments for this user
-        await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
+        await db.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
 
         if (jahrgang_assignments.length > 0) {
             // First, verify all jahrgaenge exist in the organization
             const jahrgangIds = jahrgang_assignments.map(a => a.jahrgang_id);
             const placeholders = jahrgangIds.map((_, i) => `$${i + 2}`).join(',');
             const verifyQuery = `SELECT id FROM jahrgaenge WHERE organization_id = $1 AND id IN (${placeholders})`;
-            const { rows: validJahrgaenge } = await client.query(verifyQuery, [organizationId, ...jahrgangIds]);
+            const { rows: validJahrgaenge } = await db.query(verifyQuery, [organizationId, ...jahrgangIds]);
 
             if (validJahrgaenge.length !== jahrgangIds.length) {
-                await client.query('ROLLBACK');
+                await db.query('ROLLBACK');
                 return res.status(400).json({ error: 'One or more jahrgang_id is invalid or does not belong to this organization.' });
             }
 
@@ -326,27 +325,27 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                     INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, assigned_by)
                     VALUES ($1, $2, $3, $4, $5)
                 `;
-                await client.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id]);
+                await db.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id]);
             }
             
             // Add to chat rooms for new jahrgänge AFTER creating assignments
             for (const jahrgangId of addedJahrgangIds) {
                 // First ensure chat room exists
-                let { rows: [chatRoom] } = await client.query(
+                let { rows: [chatRoom] } = await db.query(
                     "SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2",
                     [jahrgangId, organizationId]
                 );
                 
                 // Create chat room if it doesn't exist
                 if (!chatRoom) {
-                    const { rows: [jahrgang] } = await client.query("SELECT name FROM jahrgaenge WHERE id = $1", [jahrgangId]);
+                    const { rows: [jahrgang] } = await db.query("SELECT name FROM jahrgaenge WHERE id = $1", [jahrgangId]);
                     if (jahrgang) {
                         const createChatQuery = `
                             INSERT INTO chat_rooms (name, type, jahrgang_id, organization_id, created_by, created_at) 
                             VALUES ($1, 'jahrgang', $2, $3, $4, NOW()) 
                             RETURNING id
                         `;
-                        const { rows: [newChatRoom] } = await client.query(createChatQuery, [
+                        const { rows: [newChatRoom] } = await db.query(createChatQuery, [
                             `Jahrgang ${jahrgang.name}`, 
                             jahrgangId, 
                             organizationId, 
@@ -360,20 +359,20 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 // Add user to chat room
                 if (chatRoom) {
                     // Check if not already a participant
-                    const { rows: [existingParticipant] } = await client.query(
+                    const { rows: [existingParticipant] } = await db.query(
                         "SELECT id FROM chat_participants WHERE room_id = $1 AND user_id = $2",
                         [chatRoom.id, userId]
                     );
                     
                     if (!existingParticipant) {
                         // Get user type
-                        const { rows: [userInfo] } = await client.query(
+                        const { rows: [userInfo] } = await db.query(
                             "SELECT r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1",
                             [userId]
                         );
                         const userType = userInfo?.role_name === 'konfi' ? 'konfi' : 'admin';
                         
-                        await client.query(
+                        await db.query(
                             "INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) VALUES ($1, $2, $3, NOW())",
                             [chatRoom.id, userId, userType]
                         );
@@ -383,18 +382,16 @@ module.exports = (db, rbacVerifier, checkPermission) => {
             }
         }
 
-        await client.query('COMMIT');
+        await db.query('COMMIT');
         res.json({
             message: jahrgang_assignments.length > 0 ? 'Jahrgang assignments updated successfully' : 'All jahrgang assignments removed successfully',
             assignments_count: jahrgang_assignments.length
         });
 
     } catch (err) {
-        await client.query('ROLLBACK');
+        await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
         console.error(`Database error in POST /users/${userId}/jahrgaenge:`, err);
         res.status(500).json({ error: 'Database error while assigning jahrgaenge' });
-    } finally {
-        client.release();
     }
   });
 
