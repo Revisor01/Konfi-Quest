@@ -4,8 +4,8 @@ const router = express.Router();
 const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
 
 // User management routes
-// WICHTIGER HINWEIS: Es wird angenommen, dass das übergebene 'db'-Objekt
-// eine Instanz des 'pg.Pool' ist, um Transaktionen über db.connect() zu ermöglichen.
+// WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
+// Transaktionen werden direkt über db.query('BEGIN'/'COMMIT'/'ROLLBACK') verwaltet.
 module.exports = (db, rbacVerifier, checkPermission) => {
 
   // Hierarchie-Middleware mit DB-Zugriff
@@ -226,30 +226,27 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       return res.status(400).json({ error: 'Cannot delete your own account' });
     }
 
-    const client = await db.connect();
     try {
-      await client.query('BEGIN');
+      await db.query('BEGIN');
 
       // Delete user jahrgang assignments
-      await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [id]);
+      await db.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [id]);
 
       // Delete user
-      const deleteUserResult = await client.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
+      const deleteUserResult = await db.query("DELETE FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
 
       if (deleteUserResult.rowCount === 0) {
-        await client.query('ROLLBACK');
+        await db.query('ROLLBACK');
         return res.status(404).json({ error: 'User not found in this organization' });
       }
 
-      await client.query('COMMIT');
+      await db.query('COMMIT');
       res.json({ message: 'User deleted successfully' });
 
     } catch (err) {
-      await client.query('ROLLBACK');
+      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error(`Database error in DELETE /users/${id}:`, err);
       res.status(500).json({ error: 'Database error' });
-    } finally {
-      client.release();
     }
   });
 

@@ -31,6 +31,7 @@ interface Event {
   name: string;
   description?: string;
   event_date: string;
+  event_end_time?: string;
   location?: string;
   location_maps_url?: string;
   points: number;
@@ -42,6 +43,8 @@ interface Event {
   registered_count: number;
   registration_status: 'upcoming' | 'open' | 'closed';
   created_at: string;
+  waitlist_enabled?: boolean;
+  max_waitlist_size?: number;
 }
 
 const AdminEventsPage: React.FC = () => {
