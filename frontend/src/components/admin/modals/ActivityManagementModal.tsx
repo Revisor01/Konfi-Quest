@@ -53,6 +53,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 }) => {
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(activity || null);
 
@@ -104,29 +105,42 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
   useEffect(() => {
     const initializeModal = async () => {
-      // First load categories
-      await loadCategories();
+      setInitializing(true);
+      console.log('🔄 Starting modal initialization...');
       
-      // Then load activity if activityId is provided
-      if (activityId) {
-        await loadActivity(activityId);
-      } else if (activity) {
-        setCurrentActivity(activity);
-        setFormData({
-          name: activity.name,
-          points: activity.points,
-          type: activity.type,
-          category_ids: activity.categories?.map((cat: Category) => cat.id) || []
-        });
-      } else {
-        // Reset form for new activity
-        setCurrentActivity(null);
-        setFormData({
-          name: '',
-          points: 1,
-          type: 'gottesdienst',
-          category_ids: []
-        });
+      try {
+        // First load categories
+        await loadCategories();
+        
+        // Then load activity if activityId is provided
+        if (activityId) {
+          await loadActivity(activityId);
+        } else if (activity) {
+          console.log('📋 Using provided activity:', activity);
+          setCurrentActivity(activity);
+          setFormData({
+            name: activity.name,
+            points: activity.points,
+            type: activity.type,
+            category_ids: activity.categories?.map((cat: Category) => cat.id) || []
+          });
+        } else {
+          // Reset form for new activity
+          console.log('🆕 Initializing for new activity');
+          setCurrentActivity(null);
+          setFormData({
+            name: '',
+            points: 1,
+            type: 'gottesdienst',
+            category_ids: []
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error during initialization:', error);
+        setError('Fehler beim Initialisieren des Modals');
+      } finally {
+        setInitializing(false);
+        console.log('✅ Modal initialization completed');
       }
     };
     
@@ -257,7 +271,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             </IonSelect>
           </IonItem>
 
-          {categories.length > 0 ? (
+          {initializing ? (
+            <IonItem>
+              <IonLabel color="medium">
+                <p>Kategorien werden geladen...</p>
+              </IonLabel>
+            </IonItem>
+          ) : categories.length > 0 ? (
             <>
               <IonItem lines="none" style={{ paddingBottom: '8px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
@@ -287,7 +307,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                           };
                         });
                       }}
-                      disabled={loading}
+                      disabled={loading || initializing}
                     />
                     <IonLabel style={{ marginLeft: '12px' }}>
                       {category.name} (ID: {category.id})
@@ -300,7 +320,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           ) : (
             <IonItem>
               <IonLabel color="medium">
-                <p>Keine Kategorien verfügbar (Total: {categories.length})</p>
+                <p>Keine Kategorien verfügbar</p>
               </IonLabel>
             </IonItem>
           )}
