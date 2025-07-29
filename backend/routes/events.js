@@ -376,8 +376,21 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       // Proceed with deletions. Order matters due to foreign keys.
       // 1. Delete chat data first
       for (const room of eventChatRooms) {
-        await db.query("DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id = $1)", [room.id]);
-        await db.query("DELETE FROM chat_polls WHERE room_id = $1", [room.id]);
+        // Delete poll votes first (polls are linked via message_id, not room_id)
+        await db.query(`
+          DELETE FROM chat_poll_votes WHERE poll_id IN (
+            SELECT cp.id FROM chat_polls cp 
+            JOIN chat_messages cm ON cp.message_id = cm.id 
+            WHERE cm.room_id = $1
+          )
+        `, [room.id]);
+        
+        // Delete polls (via message_id)
+        await db.query(`
+          DELETE FROM chat_polls WHERE message_id IN (
+            SELECT id FROM chat_messages WHERE room_id = $1
+          )
+        `, [room.id]);
         await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
         await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
         await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);

@@ -135,6 +135,31 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 VALUES ($1, $2, $3, $4, 0, 0)`;
             await db.query(profileQuery, [userId, jahrgang_id, req.user.organization_id, password]);
 
+            // Add konfi to jahrgang chat room if it exists
+            const jahrgangChatQuery = `
+                SELECT id FROM chat_rooms 
+                WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
+            `;
+            const { rows: [jahrgangChat] } = await db.query(jahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
+            
+            if (jahrgangChat) {
+                // Check if konfi is not already a participant (shouldn't happen, but safety first)
+                const existingParticipantQuery = `
+                    SELECT id FROM chat_participants 
+                    WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
+                `;
+                const { rows: [existingParticipant] } = await db.query(existingParticipantQuery, [jahrgangChat.id, userId]);
+                
+                if (!existingParticipant) {
+                    const addParticipantQuery = `
+                        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
+                        VALUES ($1, $2, 'konfi', NOW())
+                    `;
+                    await db.query(addParticipantQuery, [jahrgangChat.id, userId]);
+                    console.log(`Added konfi ${name} (${userId}) to jahrgang chat ${jahrgangChat.id}`);
+                }
+            }
+
             await db.query('COMMIT');
             res.status(201).json({ id: userId, username, password, message: 'Konfi created successfully' });
 
@@ -160,6 +185,10 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
         try {
             await db.query('BEGIN');
             
+            // Get current jahrgang_id before update
+            const currentProfileQuery = `SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1`;
+            const { rows: [currentProfile] } = await db.query(currentProfileQuery, [req.params.id]);
+            
             const userQuery = `
                 UPDATE users SET display_name = $1, username = $2 
                 WHERE id = $3 AND organization_id = $4`;
@@ -172,6 +201,50 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
 
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
             await db.query(profileQuery, [jahrgang_id, req.params.id]);
+
+            // Handle jahrgang chat membership changes
+            if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
+                // Remove from old jahrgang chat
+                if (currentProfile.jahrgang_id) {
+                    const oldJahrgangChatQuery = `
+                        SELECT id FROM chat_rooms 
+                        WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
+                    `;
+                    const { rows: [oldJahrgangChat] } = await db.query(oldJahrgangChatQuery, [currentProfile.jahrgang_id, req.user.organization_id]);
+                    
+                    if (oldJahrgangChat) {
+                        await db.query(`
+                            DELETE FROM chat_participants 
+                            WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
+                        `, [oldJahrgangChat.id, req.params.id]);
+                        console.log(`Removed konfi ${name} from old jahrgang chat ${oldJahrgangChat.id}`);
+                    }
+                }
+                
+                // Add to new jahrgang chat
+                const newJahrgangChatQuery = `
+                    SELECT id FROM chat_rooms 
+                    WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
+                `;
+                const { rows: [newJahrgangChat] } = await db.query(newJahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
+                
+                if (newJahrgangChat) {
+                    // Check if not already a participant
+                    const existingParticipantQuery = `
+                        SELECT id FROM chat_participants 
+                        WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
+                    `;
+                    const { rows: [existingParticipant] } = await db.query(existingParticipantQuery, [newJahrgangChat.id, req.params.id]);
+                    
+                    if (!existingParticipant) {
+                        await db.query(`
+                            INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
+                            VALUES ($1, $2, 'konfi', NOW())
+                        `, [newJahrgangChat.id, req.params.id]);
+                        console.log(`Added konfi ${name} to new jahrgang chat ${newJahrgangChat.id}`);
+                    }
+                }
+            }
 
             await db.query('COMMIT');
             res.json({ message: 'Konfi updated successfully' });

@@ -24,7 +24,8 @@ import {
   IonCardTitle,
   IonItemDivider,
   IonModal,
-  IonDatetimeButton
+  IonDatetimeButton,
+  IonCheckbox
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -458,26 +459,44 @@ const EventModal: React.FC<EventModalProps> = ({
             />
           </IonItem>
 
-          <IonItem>
-            <IonLabel position="stacked">Kategorien (optional)</IonLabel>
-            <IonSelect
-              value={formData.category_ids}
-              onIonChange={(e) => setFormData({ ...formData, category_ids: e.detail.value })}
-              placeholder="Kategorien wählen"
-              disabled={loading}
-              multiple={true}
-              interface="action-sheet"
-              interfaceOptions={{
-                header: 'Kategorien auswählen'
-              }}
-            >
-              {categories.map((category) => (
-                <IonSelectOption key={category.id} value={category.id}>
-                  {category.name}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
+          {categories.length > 0 ? (
+            <>
+              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
+                  Kategorien (mehrere möglich)
+                </IonLabel>
+              </IonItem>
+              <IonList style={{ padding: '0 16px', marginTop: '0' }}>
+                {categories.map((category) => (
+                  <IonItem key={category.id} lines="none">
+                    <IonCheckbox
+                      slot="start"
+                      checked={formData.category_ids.includes(category.id)}
+                      onIonChange={(e) => {
+                        const isChecked = e.detail.checked;
+                        setFormData(prev => ({
+                          ...prev,
+                          category_ids: isChecked 
+                            ? [...prev.category_ids, category.id]
+                            : prev.category_ids.filter(id => id !== category.id)
+                        }));
+                      }}
+                      disabled={loading}
+                    />
+                    <IonLabel style={{ marginLeft: '12px' }}>
+                      {category.name}
+                    </IonLabel>
+                  </IonItem>
+                ))}
+              </IonList>
+            </>
+          ) : (
+            <IonItem>
+              <IonLabel color="medium">
+                <p>Keine Kategorien verfügbar</p>
+              </IonLabel>
+            </IonItem>
+          )}
 
           <IonItem>
             <IonLabel position="stacked">Jahrgänge (mehrere möglich) *</IonLabel>
