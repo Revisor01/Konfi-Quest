@@ -267,9 +267,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.put('/:id', rbacVerifier, checkPermission('events.edit'), async (req, res) => {
     const { id } = req.params;
     const {
-      name, description, event_date, location, location_maps_url,
+      name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
-      registration_opens_at, registration_closes_at
+      registration_opens_at, registration_closes_at, has_timeslots,
+      waitlist_enabled, max_waitlist_size
     } = req.body;
     
     // For robust transactions, a dedicated client from the pool is best practice.
@@ -280,15 +281,18 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
       const updateQuery = `
         UPDATE events SET 
-          name = $1, description = $2, event_date = $3, location = $4, 
-          location_maps_url = $5, points = $6, point_type = $7, type = $8, 
-          max_participants = $9, registration_opens_at = $10, registration_closes_at = $11
-        WHERE id = $12 AND organization_id = $13
+          name = $1, description = $2, event_date = $3, event_end_time = $4, location = $5, 
+          location_maps_url = $6, points = $7, point_type = $8, type = $9, 
+          max_participants = $10, registration_opens_at = $11, registration_closes_at = $12,
+          has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15
+        WHERE id = $16 AND organization_id = $17
       `;
       const { rowCount } = await db.query(updateQuery, [
-        name, description, event_date, location, location_maps_url,
+        name, description, event_date, event_end_time, location, location_maps_url,
         points, point_type, type, max_participants, registration_opens_at,
-        registration_closes_at, id, req.user.organization_id
+        registration_closes_at, has_timeslots || false, 
+        waitlist_enabled !== undefined ? waitlist_enabled : true, max_waitlist_size || 10,
+        id, req.user.organization_id
       ]);
       
       if (rowCount === 0) {
