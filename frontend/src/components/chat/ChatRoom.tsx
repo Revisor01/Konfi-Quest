@@ -390,38 +390,76 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         // For files, share the actual file natively
         const fileUrl = `${api.defaults.baseURL}/chat/files/${selectedMessage.file_path}`;
         const response = await fetch(fileUrl);
+        
+        if (!response.ok) {
+          throw new Error(`File download failed: ${response.status}`);
+        }
+        
         const blob = await response.blob();
         const fileName = selectedMessage.file_name || 'file';
         
-        // Write to Documents directory for sharing
-        const base64Data = await new Promise<string>((resolve) => {
+        // Convert blob to base64 with proper error handling
+        const base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
+            const result = reader.result as string;
+            if (result) {
+              const base64 = result.split(',')[1];
+              resolve(base64);
+            } else {
+              reject(new Error('Failed to convert file to base64'));
+            }
           };
+          reader.onerror = () => reject(new Error('FileReader error'));
           reader.readAsDataURL(blob);
         });
         
-        const path = `share/${fileName}`;
+        // Create unique filename to avoid conflicts
+        const timestamp = Date.now();
+        const uniqueFileName = `${timestamp}_${fileName}`;
+        const path = `share/${uniqueFileName}`;
+        
+        // Write to Capacitor Cache directory instead of Documents
         await Filesystem.writeFile({
           path,
           data: base64Data,
-          directory: Directory.Documents,
+          directory: Directory.Cache,
           recursive: true
         });
         
-        // Get local file URI for sharing
-        const fileUri = await Filesystem.getUri({
-          directory: Directory.Documents,
+        // Verify file was written
+        const stat = await Filesystem.stat({
+          directory: Directory.Cache,
           path
         });
         
-        await Share.share({
-          title: 'Datei aus Konfi Quest',
-          text: selectedMessage.content || fileName,
-          url: fileUri.uri
+        console.log('File written:', { path, size: stat.size, type: stat.type });
+        
+        // Get local file URI
+        const fileUri = await Filesystem.getUri({
+          directory: Directory.Cache,
+          path
         });
+        
+        console.log('Sharing file URI:', fileUri.uri);
+        
+        // Try sharing with different approaches
+        try {
+          await Share.share({
+            title: 'Datei aus Konfi Quest',
+            text: selectedMessage.content || fileName,
+            url: fileUri.uri,
+            dialogTitle: 'Datei teilen'
+          });
+        } catch (shareError) {
+          console.error('Primary share failed, trying alternative:', shareError);
+          // Fallback: Share just the URL without local file
+          await Share.share({
+            title: 'Datei aus Konfi Quest',
+            text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
+            url: fileUrl
+          });
+        }
       } else {
         // For text messages, share text content
         await Share.share({
@@ -840,27 +878,36 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         const blob = await response.blob();
                         const fileName = message.file_name || 'image.jpg';
                         
-                        // Write to Documents directory
-                        const base64Data = await new Promise<string>((resolve) => {
+                        // Write to Cache directory with better error handling
+                        const base64Data = await new Promise<string>((resolve, reject) => {
                           const reader = new FileReader();
                           reader.onloadend = () => {
-                            const base64 = (reader.result as string).split(',')[1];
-                            resolve(base64);
+                            const result = reader.result as string;
+                            if (result) {
+                              const base64 = result.split(',')[1];
+                              resolve(base64);
+                            } else {
+                              reject(new Error('Failed to convert image to base64'));
+                            }
                           };
+                          reader.onerror = () => reject(new Error('FileReader error'));
                           reader.readAsDataURL(blob);
                         });
                         
-                        const path = `temp/${fileName}`;
+                        const timestamp = Date.now();
+                        const uniqueFileName = `${timestamp}_${fileName}`;
+                        const path = `temp/${uniqueFileName}`;
+                        
                         await Filesystem.writeFile({
                           path,
                           data: base64Data,
-                          directory: Directory.Documents,
+                          directory: Directory.Cache,
                           recursive: true
                         });
                         
                         // Get local file URI and open with native viewer
                         const fileUri = await Filesystem.getUri({
-                          directory: Directory.Documents,
+                          directory: Directory.Cache,
                           path
                         });
                         

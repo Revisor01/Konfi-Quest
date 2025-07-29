@@ -1456,23 +1456,34 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
       // Use the actual poll.id from database, not the request pollId (which might be message_id)
       const actualPollId = poll.id;
       
-      // For single choice polls, remove existing vote
+      // Check if user already voted for this specific option
+      const { rows: [existingVote] } = await db.query(
+        "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
+        [actualPollId, userId, userType, option_index]
+      );
+      
+      if (existingVote) {
+        // If already voted for this option, remove the vote (toggle off)
+        await db.query(
+          "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
+          [actualPollId, userId, userType, option_index]
+        );
+        await db.query('COMMIT');
+        return res.json({ 
+          message: 'Vote removed successfully',
+          poll_id: actualPollId,
+          option_index: option_index,
+          user_id: userId,
+          action: 'removed'
+        });
+      }
+      
+      // For single choice polls, remove any existing votes before adding new one
       if (!poll.multiple_choice) {
         await db.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
           [actualPollId, userId, userType]
         );
-      } else {
-        // For multiple choice, check if user already voted for this option
-        const { rows: [existingVote] } = await db.query(
-          "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
-          [actualPollId, userId, userType, option_index]
-        );
-        
-        if (existingVote) {
-          await db.query('ROLLBACK');
-          return res.status(400).json({ error: 'You have already voted for this option' });
-        }
       }
       
       // Add the new vote
@@ -1487,7 +1498,8 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
         message: 'Vote recorded successfully',
         poll_id: actualPollId,
         option_index: option_index,
-        user_id: userId
+        user_id: userId,
+        action: 'added'
       });
       
     } catch (err) {
