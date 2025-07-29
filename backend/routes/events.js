@@ -479,6 +479,15 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       if (existingBooking) return res.status(409).json({ error: 'Already booked this event' });
       
       // 3. Check available spots and waitlist
+      // For timeslot events, calculate total capacity from timeslots
+      let totalCapacity = event.max_participants;
+      if (event.has_timeslots) {
+        const { rows: timeslots } = await db.query("SELECT SUM(max_participants) as total_capacity FROM event_timeslots WHERE event_id = $1", [eventId]);
+        if (timeslots[0] && timeslots[0].total_capacity) {
+          totalCapacity = parseInt(timeslots[0].total_capacity, 10);
+        }
+      }
+      
       const { rows: [counts] } = await db.query("SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'pending') as pending_count FROM event_bookings WHERE event_id = $1", [eventId]);
       const confirmedCount = parseInt(counts.confirmed_count, 10);
       const pendingCount = parseInt(counts.pending_count, 10);
@@ -486,7 +495,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       let bookingStatus = 'confirmed';
       let message = 'Event booked successfully';
       
-      if (confirmedCount >= event.max_participants) {
+      if (confirmedCount >= totalCapacity) {
         if (!event.waitlist_enabled) {
           return res.status(400).json({ error: 'Event is full' });
         }

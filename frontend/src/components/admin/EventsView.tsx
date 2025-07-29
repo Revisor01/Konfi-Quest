@@ -223,43 +223,44 @@ const EventsView: React.FC<EventsViewProps> = ({
       {/* Header Card mit Statistiken */}
       <IonCard style={{
         margin: '16px',
-        borderRadius: '16px',
-        background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 50%, #d81b60 100%)',
-        color: 'white',
-        boxShadow: '0 8px 32px rgba(235, 68, 90, 0.4)'
+        borderRadius: '12px',
+        background: '#f8f9fa',
+        color: '#333',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        border: '1px solid #e9ecef'
       }}>
         <IonCardContent>
           <IonGrid>
             <IonRow>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={flash} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                  <IonIcon icon={flash} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
                     {events.length}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
                     Events
                   </p>
                 </div>
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                  <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
                     {getOpenEvents().length}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
                     Buchbar
                   </p>
                 </div>
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                  <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
                     {getTotalPoints()}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
                     Punkte
                   </p>
                 </div>
@@ -365,148 +366,96 @@ const EventsView: React.FC<EventsViewProps> = ({
                 <IonItem 
                   button 
                   onClick={() => onSelectEvent(event)}
-                  style={{ '--min-height': '90px', '--padding-start': '16px', '--padding-top': '12px', '--padding-bottom': '12px' }}
+                  style={{ '--min-height': '80px', '--padding-start': '16px', '--padding-top': '12px', '--padding-bottom': '12px' }}
                 >
-                  <div slot="start" style={{ 
-                    width: '40px', 
-                    height: '40px',
-                    backgroundColor: '#eb445a',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon 
-                      icon={flash} 
-                      style={{ 
-                        fontSize: '1.2rem', 
-                        color: 'white'
-                      }} 
-                    />
-                  </div>
                   <IonLabel>
-                    <h2 style={{ 
-                      fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
-                    }}>
-                      {event.name}
-                    </h2>
-                    
+                    {/* Titel und Status */}
                     <div style={{ 
                       display: 'flex', 
                       justifyContent: 'space-between', 
                       alignItems: 'center',
-                      marginBottom: '8px',
-                      fontSize: '0.8rem',
-                      color: '#666'
+                      marginBottom: '8px'
                     }}>
-                      <IonBadge 
-                        color={getRegistrationStatusColor(event)} 
-                        style={{ 
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          padding: '5px 10px',
-                          minWidth: '90px',
-                          textAlign: 'center'
-                        }}
-                      >
-                        {getRegistrationStatusText(event)}
-                      </IonBadge>
-                      
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px',
-                        backgroundColor: '#f8f9fa',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '0.8rem'
+                      <h2 style={{ 
+                        fontWeight: '600', 
+                        fontSize: '1.1rem',
+                        margin: '0',
+                        color: '#333'
                       }}>
-                        <IonIcon icon={people} style={{ fontSize: '0.9rem', color: '#28a745' }} />
-                        <span style={{ fontWeight: '500', color: '#333' }}>
-                          {event.registered_count}/{event.max_participants}
-                          {(event as any).pending_count > 0 && ` (+${(event as any).pending_count})`}
-                        </span>
-                      </div>
-                      
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        {event.points > 0 && (
-                          <IonBadge 
-                            color="warning" 
-                            style={{ 
-                              fontSize: '0.75rem',
-                              fontWeight: '600',
-                              padding: '4px 8px'
-                            }}
-                          >
-                            {event.points} Punkte
-                          </IonBadge>
-                        )}
-                      </div>
+                        {event.name}
+                      </h2>
+                      <span style={{
+                        fontSize: '0.8rem',
+                        color: calculateRegistrationStatus(event) === 'open' ? '#28a745' : 
+                              calculateRegistrationStatus(event) === 'upcoming' ? '#6c757d' : '#dc3545',
+                        fontWeight: '500'
+                      }}>
+                        ({calculateRegistrationStatus(event) === 'open' ? 'offen' : 
+                          calculateRegistrationStatus(event) === 'upcoming' ? 'bald' : 'geschlossen'})
+                      </span>
                     </div>
                     
+                    {/* Teilnehmer, Warteliste, Punkte */}
                     <div style={{ 
-                      margin: '0',
+                      display: 'flex', 
+                      alignItems: 'center',
+                      gap: '16px',
+                      marginBottom: '8px',
                       fontSize: '0.85rem',
-                      color: '#666',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
+                      color: '#666'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: '#28a745' }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontWeight: '500', color: '#333' }}>
-                            {formatDate(event.event_date)}
-                          </span>
-                          <span style={{ color: '#007aff', fontWeight: '500' }}>
-                            {formatTime(event.event_date)}
-                          </span>
-                          {event.event_end_time && (
-                            <>
-                              <span style={{ color: '#999', margin: '0 4px' }}>→</span>
-                              <span style={{ color: '#ff6b35', fontWeight: '500' }}>
-                                {formatTime(event.event_end_time)}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      <span style={{ fontWeight: '500', color: '#333' }}>
+                        {event.registered_count}/{event.max_participants}
+                      </span>
                       
-                      {event.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IonIcon icon={location} style={{ fontSize: '0.9rem', color: '#007aff' }} />
-                          <span>{event.location}</span>
-                        </div>
+                      {(event as any).pending_count > 0 && (
+                        <span style={{ color: '#6c757d' }}>
+                          • Warteliste: {(event as any).pending_count}
+                        </span>
                       )}
                       
-                      {event.categories && event.categories.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                          {event.categories.map((cat, index) => (
-                            <IonChip key={cat.id} style={{ 
-                              '--background': '#f8f9fa', 
-                              '--color': '#495057',
-                              fontSize: '0.75rem',
-                              height: '20px',
-                              margin: '0'
-                            }}>
-                              <IonLabel>{cat.name}</IonLabel>
-                            </IonChip>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {(event.waitlist_enabled && event.max_waitlist_size && event.max_waitlist_size > 0) && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={people} style={{ fontSize: '0.9rem', color: '#ffc409' }} />
-                          <span style={{ fontSize: '0.8rem', color: '#ffc409' }}>
-                            Warteliste: max. {event.max_waitlist_size} Plätze
-                          </span>
-                        </div>
+                      {event.points > 0 && (
+                        <span style={{ color: '#6c757d' }}>
+                          • {event.points} Punkte
+                        </span>
                       )}
                     </div>
+                    
+                    {/* Datum und Zeit */}
+                    <div style={{ 
+                      fontSize: '0.85rem',
+                      color: '#666',
+                      marginBottom: '4px'
+                    }}>
+                      <span style={{ fontWeight: '500', color: '#333' }}>
+                        {formatDate(event.event_date)}
+                      </span>
+                      <span style={{ color: '#6c757d', margin: '0 8px' }}>
+                        {formatTime(event.event_date)}
+                        {event.event_end_time && ` - ${formatTime(event.event_end_time)}`}
+                      </span>
+                    </div>
+                    
+                    {/* Ort */}
+                    {event.location && (
+                      <div style={{ 
+                        fontSize: '0.85rem',
+                        color: '#666',
+                        marginBottom: '4px'
+                      }}>
+                        {event.location}
+                      </div>
+                    )}
+                    
+                    {/* Kategorien */}
+                    {event.categories && event.categories.length > 0 && (
+                      <div style={{ 
+                        fontSize: '0.8rem',
+                        color: '#8e8e93'
+                      }}>
+                        {event.categories.map(cat => cat.name).join(', ')}
+                      </div>
+                    )}
                   </IonLabel>
                 </IonItem>
 
