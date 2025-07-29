@@ -152,12 +152,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       console.log('🔄 Loading categories...');
       const response = await api.get('/admin/categories');
       console.log('📦 Categories received:', response.data);
-      const filteredCategories = response.data.filter(
-        (cat: Category) => cat.type === 'activity' || cat.type === 'both'
-      );
-      console.log('✅ Filtered categories:', filteredCategories);
-      setCategories(filteredCategories);
-      return filteredCategories;
+      
+      // Don't filter - show ALL categories for activities
+      // Categories with type=null should also be available for activities
+      const allCategories = response.data;
+      console.log('✅ Using ALL categories (no filtering):', allCategories);
+      setCategories(allCategories);
+      return allCategories;
     } catch (error) {
       console.error('❌ Error loading categories:', error);
       throw error;
