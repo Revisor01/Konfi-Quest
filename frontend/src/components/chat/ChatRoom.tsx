@@ -443,22 +443,34 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         
         console.log('Sharing file URI:', fileUri.uri);
         
-        // Try sharing with different approaches
+        // Use files parameter for local files (Capacitor recommended approach)
         try {
           await Share.share({
             title: 'Datei aus Konfi Quest',
             text: selectedMessage.content || fileName,
-            url: fileUri.uri,
+            files: [fileUri.uri],
             dialogTitle: 'Datei teilen'
           });
         } catch (shareError) {
-          console.error('Primary share failed, trying alternative:', shareError);
-          // Fallback: Share just the URL without local file
-          await Share.share({
-            title: 'Datei aus Konfi Quest',
-            text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
-            url: fileUrl
-          });
+          console.error('Primary share failed, trying url parameter:', shareError);
+          // Fallback: Try url parameter (for compatibility)
+          try {
+            const sanitizedUri = fileUri.uri.replace(/\/$/, ''); // Remove trailing slash
+            await Share.share({
+              title: 'Datei aus Konfi Quest',
+              text: selectedMessage.content || fileName,
+              url: sanitizedUri,
+              dialogTitle: 'Datei teilen'
+            });
+          } catch (urlError) {
+            console.error('URL share also failed, trying remote URL:', urlError);
+            // Final fallback: Share remote URL
+            await Share.share({
+              title: 'Datei aus Konfi Quest',
+              text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
+              url: fileUrl
+            });
+          }
         }
       } else {
         // For text messages, share text content
