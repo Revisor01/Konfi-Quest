@@ -414,63 +414,31 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           reader.readAsDataURL(blob);
         });
         
-        // Create unique filename to avoid conflicts
-        const timestamp = Date.now();
-        const uniqueFileName = `${timestamp}_${fileName}`;
-        const path = `share/${uniqueFileName}`;
+        // Create MIME type for the file
+        const mimeType = response.headers.get('content-type') || 'application/octet-stream';
         
-        // Write to Capacitor Cache directory instead of Documents
-        await Filesystem.writeFile({
-          path,
-          data: base64Data,
-          directory: Directory.Cache,
-          recursive: true
-        });
+        // iOS requires base64 data URLs instead of file:// URLs
+        // This solves the -10814 NSOSStatusErrorDomain error
+        const dataUrl = `data:${mimeType};base64,${base64Data}`;
         
-        // Verify file was written
-        const stat = await Filesystem.stat({
-          directory: Directory.Cache,
-          path
-        });
+        console.log('Sharing data URL with MIME type:', mimeType);
         
-        console.log('File written:', { path, size: stat.size, type: stat.type });
-        
-        // Get local file URI
-        const fileUri = await Filesystem.getUri({
-          directory: Directory.Cache,
-          path
-        });
-        
-        console.log('Sharing file URI:', fileUri.uri);
-        
-        // Use files parameter for local files (Capacitor recommended approach)
         try {
           await Share.share({
             title: 'Datei aus Konfi Quest',
             text: selectedMessage.content || fileName,
-            files: [fileUri.uri],
+            url: dataUrl,
             dialogTitle: 'Datei teilen'
           });
         } catch (shareError) {
-          console.error('Primary share failed, trying url parameter:', shareError);
-          // Fallback: Try url parameter (for compatibility)
-          try {
-            const sanitizedUri = fileUri.uri.replace(/\/$/, ''); // Remove trailing slash
-            await Share.share({
-              title: 'Datei aus Konfi Quest',
-              text: selectedMessage.content || fileName,
-              url: sanitizedUri,
-              dialogTitle: 'Datei teilen'
-            });
-          } catch (urlError) {
-            console.error('URL share also failed, trying remote URL:', urlError);
-            // Final fallback: Share remote URL
-            await Share.share({
-              title: 'Datei aus Konfi Quest',
-              text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
-              url: fileUrl
-            });
-          }
+          console.error('Base64 share failed, trying remote URL:', shareError);
+          // Fallback: Share remote URL directly
+          await Share.share({
+            title: 'Datei aus Konfi Quest',
+            text: `${selectedMessage.content || fileName}\n\nDatei: ${fileUrl}`,
+            url: fileUrl,
+            dialogTitle: 'Datei teilen'
+          });
         }
       } else {
         // For text messages, share text content
