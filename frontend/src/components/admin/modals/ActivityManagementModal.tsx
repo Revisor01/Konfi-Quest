@@ -311,7 +311,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                       disabled={loading || initializing}
                     />
                     <IonLabel style={{ marginLeft: '12px' }}>
-                      {category.name} (ID: {category.id})
+                      {category.name}
                     </IonLabel>
                   </IonItem>
                 );

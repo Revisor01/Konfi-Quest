@@ -23,43 +23,18 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
 
     try {
-      await db.query('BEGIN');
+      const query = "INSERT INTO jahrgaenge (name, confirmation_date, organization_id) VALUES ($1, $2, $3) RETURNING id";
+      const params = [name, confirmation_date, req.user.organization_id];
+      const { rows: [newJahrgang] } = await db.query(query, params);
       
-      // Create jahrgang
-      const jahrgangQuery = "INSERT INTO jahrgaenge (name, confirmation_date, organization_id) VALUES ($1, $2, $3) RETURNING id";
-      const jahrgangParams = [name, confirmation_date, req.user.organization_id];
-      const { rows: [newJahrgang] } = await db.query(jahrgangQuery, jahrgangParams);
-      const jahrgangId = newJahrgang.id;
-      
-      // Create jahrgangschat automatically
-      const chatRoomQuery = `
-        INSERT INTO chat_rooms (name, type, jahrgang_id, organization_id, created_by, created_at) 
-        VALUES ($1, 'jahrgang', $2, $3, $4, NOW()) 
-        RETURNING id
-      `;
-      const chatName = `Jahrgang ${name}`;
-      const { rows: [newChatRoom] } = await db.query(chatRoomQuery, [chatName, jahrgangId, req.user.organization_id, req.user.id]);
-      
-      // Add org admin as participant
-      const participantQuery = `
-        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
-        VALUES ($1, $2, $3, NOW())
-      `;
-      await db.query(participantQuery, [newChatRoom.id, req.user.id, req.user.type]);
-      
-      await db.query('COMMIT');
-      console.log(`✅ Created Jahrgang "${name}" (ID: ${jahrgangId}) with chat room (ID: ${newChatRoom.id})`);
+      console.log(`✅ Created Jahrgang "${name}" (ID: ${newJahrgang.id})`);
       
       res.status(201).json({ 
-        id: jahrgangId, 
+        id: newJahrgang.id, 
         name, 
-        confirmation_date,
-        chat_room_id: newChatRoom.id,
-        message: 'Jahrgang und Chat-Raum erstellt'
+        confirmation_date
       });
     } catch (err) {
-      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-      
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
       }

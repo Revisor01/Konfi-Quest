@@ -192,11 +192,8 @@ const EventModal: React.FC<EventModalProps> = ({
   const loadCategories = async () => {
     try {
       const response = await api.get('/admin/categories');
-      console.log('Categories response:', response.data);
-      // Events können alle Kategorien verwenden, da es keine separaten Event-Kategorien gibt
-      const filteredCategories = response.data;
-      console.log('Filtered categories:', filteredCategories);
-      setCategories(filteredCategories);
+      // Use all categories for events - no filtering needed
+      setCategories(response.data);
     } catch (error) {
       console.error('Error loading categories:', error);
     }

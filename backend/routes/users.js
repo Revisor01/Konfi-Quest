@@ -273,6 +273,37 @@ module.exports = (db, rbacVerifier, checkPermission) => {
 
         await client.query('BEGIN');
 
+        // Get current assignments to determine chat changes
+        const { rows: currentAssignments } = await client.query(
+            "SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1", 
+            [userId]
+        );
+        const currentJahrgangIds = currentAssignments.map(a => a.jahrgang_id);
+        const newJahrgangIds = jahrgang_assignments.map(a => a.jahrgang_id);
+        
+        // Find jahrgänge that are being removed
+        const removedJahrgangIds = currentJahrgangIds.filter(id => !newJahrgangIds.includes(id));
+        
+        // Find jahrgänge that are being added  
+        const addedJahrgangIds = newJahrgangIds.filter(id => !currentJahrgangIds.includes(id));
+        
+        // Remove from chat rooms for removed jahrgänge BEFORE deleting assignments
+        for (const jahrgangId of removedJahrgangIds) {
+            const chatRoomQuery = `
+                SELECT id FROM chat_rooms 
+                WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
+            `;
+            const { rows: [chatRoom] } = await client.query(chatRoomQuery, [jahrgangId, organizationId]);
+            
+            if (chatRoom) {
+                await client.query(
+                    "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2", 
+                    [chatRoom.id, userId]
+                );
+                console.log(`🚫 Removed user ${userId} from jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
+            }
+        }
+
         // Delete existing assignments for this user
         await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
 
@@ -296,6 +327,59 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                     VALUES ($1, $2, $3, $4, $5)
                 `;
                 await client.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id]);
+            }
+            
+            // Add to chat rooms for new jahrgänge AFTER creating assignments
+            for (const jahrgangId of addedJahrgangIds) {
+                // First ensure chat room exists
+                let { rows: [chatRoom] } = await client.query(
+                    "SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2",
+                    [jahrgangId, organizationId]
+                );
+                
+                // Create chat room if it doesn't exist
+                if (!chatRoom) {
+                    const { rows: [jahrgang] } = await client.query("SELECT name FROM jahrgaenge WHERE id = $1", [jahrgangId]);
+                    if (jahrgang) {
+                        const createChatQuery = `
+                            INSERT INTO chat_rooms (name, type, jahrgang_id, organization_id, created_by, created_at) 
+                            VALUES ($1, 'jahrgang', $2, $3, $4, NOW()) 
+                            RETURNING id
+                        `;
+                        const { rows: [newChatRoom] } = await client.query(createChatQuery, [
+                            `Jahrgang ${jahrgang.name}`, 
+                            jahrgangId, 
+                            organizationId, 
+                            req.user.id
+                        ]);
+                        chatRoom = newChatRoom;
+                        console.log(`✅ Created missing jahrgang chat room ${chatRoom.id} for Jahrgang ${jahrgang.name}`);
+                    }
+                }
+                
+                // Add user to chat room
+                if (chatRoom) {
+                    // Check if not already a participant
+                    const { rows: [existingParticipant] } = await client.query(
+                        "SELECT id FROM chat_participants WHERE room_id = $1 AND user_id = $2",
+                        [chatRoom.id, userId]
+                    );
+                    
+                    if (!existingParticipant) {
+                        // Get user type
+                        const { rows: [userInfo] } = await client.query(
+                            "SELECT r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1",
+                            [userId]
+                        );
+                        const userType = userInfo?.role_name === 'konfi' ? 'konfi' : 'admin';
+                        
+                        await client.query(
+                            "INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) VALUES ($1, $2, $3, NOW())",
+                            [chatRoom.id, userId, userType]
+                        );
+                        console.log(`✅ Added user ${userId} (${userType}) to jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
+                    }
+                }
             }
         }
 
