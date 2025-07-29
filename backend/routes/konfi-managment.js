@@ -115,6 +115,15 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
         try {
             await db.query('BEGIN');
 
+            // First verify that the jahrgang exists
+            const jahrgangCheckQuery = "SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
+            const { rows: [jahrgangExists] } = await db.query(jahrgangCheckQuery, [jahrgang_id, req.user.organization_id]);
+            
+            if (!jahrgangExists) {
+                await db.query('ROLLBACK');
+                return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
+            }
+
             const roleQuery = "SELECT id FROM roles WHERE name = 'konfi' AND organization_id = $1";
             const { rows: [role] } = await db.query(roleQuery, [req.user.organization_id]);
 

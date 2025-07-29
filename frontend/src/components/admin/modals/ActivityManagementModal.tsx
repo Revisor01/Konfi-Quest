@@ -75,62 +75,78 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   // Load activity by ID from all activities
   const loadActivity = async (id: number) => {
     try {
+      console.log('🔄 Loading activity with ID:', id);
       const response = await api.get('/admin/activities');
       const activities = response.data;
       const activityData = activities.find((act: Activity) => act.id === id);
       
       if (activityData) {
+        console.log('📦 Activity data found:', activityData);
+        console.log('🏷️ Activity categories:', activityData.categories);
         setCurrentActivity(activityData);
+        const categoryIds = activityData.categories?.map((cat: Category) => cat.id) || [];
+        console.log('🔢 Category IDs to set:', categoryIds);
         setFormData({
           name: activityData.name,
           points: activityData.points,
           type: activityData.type,
-          category_ids: activityData.categories?.map((cat: Category) => cat.id) || []
+          category_ids: categoryIds
         });
       } else {
+        console.error('❌ Activity not found with ID:', id);
         setError('Aktivität nicht gefunden');
       }
     } catch (error) {
-      console.error('Error loading activity:', error);
+      console.error('❌ Error loading activity:', error);
       setError('Fehler beim Laden der Aktivität');
     }
   };
 
   useEffect(() => {
-    loadCategories();
+    const initializeModal = async () => {
+      // First load categories
+      await loadCategories();
+      
+      // Then load activity if activityId is provided
+      if (activityId) {
+        await loadActivity(activityId);
+      } else if (activity) {
+        setCurrentActivity(activity);
+        setFormData({
+          name: activity.name,
+          points: activity.points,
+          type: activity.type,
+          category_ids: activity.categories?.map((cat: Category) => cat.id) || []
+        });
+      } else {
+        // Reset form for new activity
+        setCurrentActivity(null);
+        setFormData({
+          name: '',
+          points: 1,
+          type: 'gottesdienst',
+          category_ids: []
+        });
+      }
+    };
     
-    // Load activity if activityId is provided
-    if (activityId) {
-      loadActivity(activityId);
-    } else if (activity) {
-      setCurrentActivity(activity);
-      setFormData({
-        name: activity.name,
-        points: activity.points,
-        type: activity.type,
-        category_ids: activity.categories?.map((cat: Category) => cat.id) || []
-      });
-    } else {
-      // Reset form for new activity
-      setCurrentActivity(null);
-      setFormData({
-        name: '',
-        points: 1,
-        type: 'gottesdienst',
-        category_ids: []
-      });
-    }
+    initializeModal();
   }, [activityId, activity]);
 
   const loadCategories = async () => {
     try {
+      console.log('🔄 Loading categories...');
       const response = await api.get('/admin/categories');
+      console.log('📦 Categories received:', response.data);
       const filteredCategories = response.data.filter(
         (cat: Category) => cat.type === 'activity' || cat.type === 'both'
       );
+      console.log('✅ Filtered categories:', filteredCategories);
       setCategories(filteredCategories);
+      return filteredCategories;
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('❌ Error loading categories:', error);
+      throw error;
     }
   };
 
@@ -245,37 +261,46 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <>
               <IonItem lines="none" style={{ paddingBottom: '8px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                  Kategorien (mehrere möglich)
+                  Kategorien (mehrere möglich) - {categories.length} verfügbar
                 </IonLabel>
               </IonItem>
               <IonList style={{ padding: '0 16px', marginTop: '0' }}>
-              {categories.map((category) => (
-                <IonItem key={category.id} lines="none">
-                  <IonCheckbox
-                    slot="start"
-                    checked={formData.category_ids.includes(category.id)}
-                    onIonChange={(e) => {
-                      const isChecked = e.detail.checked;
-                      setFormData(prev => ({
-                        ...prev,
-                        category_ids: isChecked 
-                          ? [...prev.category_ids, category.id]
-                          : prev.category_ids.filter(id => id !== category.id)
-                      }));
-                    }}
-                    disabled={loading}
-                  />
-                  <IonLabel style={{ marginLeft: '12px' }}>
-                    {category.name}
-                  </IonLabel>
-                </IonItem>
-              ))}
+              {categories.map((category) => {
+                const isChecked = formData.category_ids.includes(category.id);
+                console.log(`🔘 Category "${category.name}" (ID: ${category.id}) - Checked: ${isChecked}`);
+                return (
+                  <IonItem key={category.id} lines="none">
+                    <IonCheckbox
+                      slot="start"
+                      checked={isChecked}
+                      onIonChange={(e) => {
+                        const newChecked = e.detail.checked;
+                        console.log(`🔄 Category "${category.name}" changed to: ${newChecked}`);
+                        setFormData(prev => {
+                          const newCategoryIds = newChecked 
+                            ? [...prev.category_ids, category.id]
+                            : prev.category_ids.filter(id => id !== category.id);
+                          console.log('📝 New category_ids:', newCategoryIds);
+                          return {
+                            ...prev,
+                            category_ids: newCategoryIds
+                          };
+                        });
+                      }}
+                      disabled={loading}
+                    />
+                    <IonLabel style={{ marginLeft: '12px' }}>
+                      {category.name} (ID: {category.id})
+                    </IonLabel>
+                  </IonItem>
+                );
+              })}
               </IonList>
             </>
           ) : (
             <IonItem>
               <IonLabel color="medium">
-                <p>Keine Kategorien verfügbar</p>
+                <p>Keine Kategorien verfügbar (Total: {categories.length})</p>
               </IonLabel>
             </IonItem>
           )}
