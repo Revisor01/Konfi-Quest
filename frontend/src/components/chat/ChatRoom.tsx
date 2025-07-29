@@ -47,12 +47,11 @@ import api from '../../services/api';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
-import { FilePicker } from '@capawesome/capacitor-file-picker';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface Message {
   id: number;
@@ -116,6 +115,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Hooks müssen vor conditional returns stehen!
 
@@ -295,31 +295,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
   };
 
-  const handleFileSelect = async () => {
-    try {
-      const result = await FilePicker.pickFiles({
-        types: ['image/*', 'video/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'],
-      });
-      
-      if (result.files.length > 0) {
-        const file = result.files[0];
-        
-        // Check file size (10MB limit)
-        if (file.size && file.size > 10 * 1024 * 1024) {
-          setError('Datei ist zu groß (max. 10MB)');
-          return;
-        }
-        
-        // Convert to File object for existing upload logic
-        const blob = file.blob;
-        if (blob) {
-          const fileObj = new File([blob], file.name || 'file', { type: file.mimeType || 'application/octet-stream' });
-          setSelectedFile(fileObj);
-        }
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        setError('Datei ist zu groß (max. 10MB)');
+        return;
       }
-    } catch (error) {
-      console.error('File picker error:', error);
-      setError('Fehler beim Auswählen der Datei');
+      setSelectedFile(file);
     }
   };
 
@@ -407,15 +390,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         // For files, share the actual file natively
         const fileUrl = `${api.defaults.baseURL}/chat/files/${selectedMessage.file_path}`;
         const response = await fetch(fileUrl);
-        
-        if (!response.ok) {
-          throw new Error(`File download failed: ${response.status}`);
-        }
-        
         const blob = await response.blob();
         const fileName = selectedMessage.file_name || 'file';
         
-        // Write to Documents directory for sharing (working version)
+        // Write to Documents directory for sharing
         const base64Data = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -429,13 +407,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         await Filesystem.writeFile({
           path,
           data: base64Data,
-          directory: Directory.Documents,
+          directory: Directory.Cache,
           recursive: true
         });
         
         // Get local file URI for sharing
         const fileUri = await Filesystem.getUri({
-          directory: Directory.Documents,
+          directory: Directory.Cache,
           path
         });
         
@@ -675,7 +653,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       onClick={() => voteInPoll(message.id, index)}
                       style={{
                         background: userVoted 
-                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.35) 0%, rgba(76, 175, 80, 0.2) 100%)' 
+                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%)' 
                           : isOwnMessage 
                             ? 'rgba(255,255,255,0.12)' 
                             : 'rgba(0,0,0,0.06)',
@@ -683,9 +661,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           ? '2px solid #4caf50' 
                           : `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'}`,
                         borderRadius: '12px',
-                        WebkitTapHighlightColor: 'transparent',
-                        WebkitTouchCallout: 'none',
-                        userSelect: 'none',
                         padding: '14px 16px',
                         cursor: 'pointer',
                         position: 'relative',
@@ -719,7 +694,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         height: '100%',
                         width: `${percentage}%`,
                         background: userVoted 
-                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.3) 0%, rgba(76, 175, 80, 0.15) 100%)' 
+                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%)' 
                           : isOwnMessage 
                             ? 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
                             : 'linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.03) 100%)',
@@ -862,26 +837,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         const blob = await response.blob();
                         const fileName = message.file_name || 'image.jpg';
                         
-                        // Write to Cache directory with better error handling
-                        const base64Data = await new Promise<string>((resolve, reject) => {
+                        // Write to Documents directory
+                        const base64Data = await new Promise<string>((resolve) => {
                           const reader = new FileReader();
                           reader.onloadend = () => {
-                            const result = reader.result as string;
-                            if (result) {
-                              const base64 = result.split(',')[1];
-                              resolve(base64);
-                            } else {
-                              reject(new Error('Failed to convert image to base64'));
-                            }
+                            const base64 = (reader.result as string).split(',')[1];
+                            resolve(base64);
                           };
-                          reader.onerror = () => reject(new Error('FileReader error'));
                           reader.readAsDataURL(blob);
                         });
                         
-                        const timestamp = Date.now();
-                        const uniqueFileName = `${timestamp}_${fileName}`;
-                        const path = `temp/${uniqueFileName}`;
-                        
+                        const path = `temp/${fileName}`;
                         await Filesystem.writeFile({
                           path,
                           data: base64Data,
@@ -949,13 +915,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           await Filesystem.writeFile({
                             path,
                             data: base64Data,
-                            directory: Directory.Documents,
+                            directory: Directory.Cache,
                             recursive: true
                           });
                           
                           // Get local file URI and open with native viewer
                           const fileUri = await Filesystem.getUri({
-                            directory: Directory.Documents,
+                            directory: Directory.Cache,
                             path
                           });
                           
@@ -1097,7 +1063,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             <IonButton
               fill="clear"
               size="small"
-              onClick={handleFileSelect}
+              onClick={() => fileInputRef.current?.click()}
               style={{
                 '--padding-start': '0',
                 '--padding-end': '0',
@@ -1155,6 +1121,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}
             </IonButton>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={{ display: 'none' }}
+              onChange={handleFileSelect}
+              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+            />
           </div> {/* Ende des Flex-Containers */}
         </IonToolbar>
       </IonFooter>

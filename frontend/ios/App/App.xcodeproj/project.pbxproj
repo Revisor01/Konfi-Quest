@@ -18,6 +18,7 @@
 		F804907D2E316409004820A3 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F804907C2E316408004820A3 /* GoogleService-Info.plist */; };
 		F818A4AE2E33D0B400F29E73 /* FCMPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = F818A4AC2E33D0B400F29E73 /* FCMPlugin.m */; };
 		F818A4AF2E33D0B400F29E73 /* FCMPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F818A4AD2E33D0B400F29E73 /* FCMPlugin.swift */; };
+		F84748452E38BDF5002BE342 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F84748442E38BDF5002BE342 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		F818A4AC2E33D0B400F29E73 /* FCMPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FCMPlugin.m; sourceTree = "<group>"; };
 		F818A4AD2E33D0B400F29E73 /* FCMPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FCMPlugin.swift; sourceTree = "<group>"; };
 		F818A4B02E33D0B600F29E73 /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
+		F84748442E38BDF5002BE342 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -91,6 +93,7 @@
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
 				F804907C2E316408004820A3 /* GoogleService-Info.plist */,
 				504EC3131FED79650016851F /* Info.plist */,
+				F84748442E38BDF5002BE342 /* PrivacyInfo.xcprivacy */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 				F818A4B02E33D0B600F29E73 /* App-Bridging-Header.h */,
@@ -177,6 +180,7 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+				F84748452E38BDF5002BE342 /* PrivacyInfo.xcprivacy in Resources */,
 				F804907D2E316409004820A3 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

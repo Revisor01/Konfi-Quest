@@ -30,7 +30,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       res.status(201).json({ id: newJahrgang.id, name, confirmation_date });
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Jahrgang name already exists in this organization' });
+        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
       }
       console.error('Database error in POST /api/jahrgaenge:', err);
       res.status(500).json({ error: 'Database error' });
@@ -55,7 +55,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       res.json({ message: 'Jahrgang updated successfully' });
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Jahrgang name already exists' });
+        return res.status(409).json({ error: 'Jahrgang-Name existiert bereits' });
       }
       console.error(`Database error in PUT /api/jahrgaenge/${req.params.id}:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -71,7 +71,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       const { rows: [usage] } = await db.query(checkQuery, [jahrgangId]);
       
       if (usage.count > 0) {
-        return res.status(409).json({ error: `Cannot delete: ${usage.count} konfis are assigned to this jahrgang.` });
+        return res.status(409).json({ error: `Jahrgang kann nicht gelöscht werden: ${usage.count} Konfi(s) zugeordnet.` });
       }
 
       // Delete the jahrgang itself
