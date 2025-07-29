@@ -407,13 +407,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         await Filesystem.writeFile({
           path,
           data: base64Data,
-          directory: Directory.Cache,
+          directory: Directory.Documents,
           recursive: true
         });
         
         // Get local file URI for sharing
         const fileUri = await Filesystem.getUri({
-          directory: Directory.Cache,
+          directory: Directory.Documents,
           path
         });
         
@@ -851,13 +851,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         await Filesystem.writeFile({
                           path,
                           data: base64Data,
-                          directory: Directory.Cache,
+                          directory: Directory.Documents,
                           recursive: true
                         });
                         
                         // Get local file URI and open with native viewer
                         const fileUri = await Filesystem.getUri({
-                          directory: Directory.Cache,
+                          directory: Directory.Documents,
                           path
                         });
                         
@@ -915,13 +915,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           await Filesystem.writeFile({
                             path,
                             data: base64Data,
-                            directory: Directory.Cache,
+                            directory: Directory.Documents,
                             recursive: true
                           });
                           
                           // Get local file URI and open with native viewer
                           const fileUri = await Filesystem.getUri({
-                            directory: Directory.Cache,
+                            directory: Directory.Documents,
                             path
                           });
                           
