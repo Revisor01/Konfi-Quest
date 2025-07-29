@@ -106,8 +106,12 @@ const AdminEventsPage: React.FC = () => {
       setSuccess(`Event "${event.name}" gelöscht`);
       // Sofortige Aktualisierung
       await loadEvents();
-    } catch (err) {
-      setError('Fehler beim Löschen');
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      } else {
+        alert('Fehler beim Löschen des Events');
+      }
     }
   };
 

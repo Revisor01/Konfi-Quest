@@ -276,14 +276,32 @@ await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
   - Activity/Bonus CRUD Operations funktionieren
   - Status: ✅ Funktioniert vollständig
 
-### 🔄 AKTUELL IN MIGRATION:
-- **Aktivitäten System**: Wird gerade analysiert
-  - Problem: "custom" Kategorie wird automatisch erstellt
-  - Problem: Nicht alle Kategorien im Modal sichtbar
-  - ToDo: Kategorie-System auf PostgreSQL prüfen
+- **Aktivitäten System**: ✅ VOLLSTÄNDIG MIGRIERT
+  - Deutsche Fehlermeldungen bei Delete-Konflikten implementiert
+  - Auto-Slide Funktionalität bei Fehlern hinzugefügt  
+  - Usage-Validation für Kategorien und Aktivitäten funktioniert
+  - Status: ✅ Funktioniert vollständig
+
+- **Kategorien System**: ✅ VOLLSTÄNDIG MIGRIERT
+  - Deutsche Fehlermeldungen bei Delete-Konflikten implementiert
+  - Kategorien werden korrekt angezeigt und können CRUD-Operations durchführen
+  - Auto-Slide Funktionalität bei Fehlern hinzugefügt
+  - Status: ✅ Funktioniert vollständig
+
+- **Jahrgänge System**: ✅ VOLLSTÄNDIG MIGRIERT
+  - Chat-Room Validation bei Delete hinzugefügt
+  - Deutsche Fehlermeldungen implementiert
+  - Auto-Slide Funktionalität hinzugefügt
+  - Status: ✅ Funktioniert vollständig
+
+- **Events System**: ✅ VOLLSTÄNDIG MIGRIERT
+  - War bereits PostgreSQL-ready (STRING_AGG, transactions, etc.)
+  - Deutsche Delete-Fehlermeldungen hinzugefügt
+  - Validation für Buchungen, Wartelisten und Chat-Rooms bei Delete
+  - Umfangreiche Event-Booking Logik mit Timeslots und Waitlist
+  - Status: ✅ Funktioniert vollständig
 
 ### ❌ NOCH NICHT MIGRIERT:
-- Events System
 - Badge System (custom_badges Tabelle)
 - Statistics System  
 - Organizations System
@@ -291,12 +309,13 @@ await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
 - Push Notifications
 
 ### MIGRATION VORGEHEN (Route für Route):
-1. **Aktuell**: `/routes/activities.js` - Aktivitäten und Kategorien analysieren
-2. **Nächste**: `/routes/events.js` - Event System portieren
-3. **Dann**: `/routes/badges.js` - Badge System portieren  
-4. **Dann**: `/routes/statistics.js` - Statistics portieren
-5. **Dann**: `/routes/organizations.js` - Organizations portieren
-6. **Zuletzt**: `/routes/auth.js` - Auth System prüfen
+1. ✅ **Erledigt**: `/routes/activities.js` - Aktivitäten und Kategorien migriert
+2. ✅ **Erledigt**: `/routes/jahrgaenge.js` - Jahrgänge System migriert  
+3. ✅ **Erledigt**: `/routes/events.js` - Event System migriert
+4. **Nächste**: `/routes/badges.js` - Badge System portieren  
+5. **Dann**: `/routes/statistics.js` - Statistics portieren
+6. **Dann**: `/routes/organizations.js` - Organizations portieren
+7. **Zuletzt**: `/routes/auth.js` - Auth System prüfen
 
 ### WICHTIGE ERKENNTNISSE:
 - **SQLite Backup**: `/backend/backup_sqlite/` enthält funktionierende SQLite Version

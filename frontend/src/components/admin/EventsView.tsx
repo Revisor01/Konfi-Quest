@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonCard,
   IonCardHeader,
@@ -80,6 +80,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('alle');
   const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'participants'
+  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
   const filteredAndSortedEvents = (() => {
     let result = events.filter(event => {

@@ -329,11 +329,39 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     try {
       console.log("Deleting event:", id, "for org:", req.user.organization_id);
       
-      // First, verify the event belongs to the organization before deleting anything.
-      const { rows: [event] } = await db.query("SELECT id FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
+      // First, verify the event belongs to the organization
+      const { rows: [event] } = await db.query("SELECT id, name FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
       if (!event) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Event not found or you do not have permission to delete it.' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+      
+      // Check if there are bookings (confirmed participants)
+      const { rows: [bookingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
+      
+      if (bookingUsage.count > 0) {
+        await db.query('ROLLBACK');
+        return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${bookingUsage.count} bestätigte Anmeldung(en) vorhanden.` });
+      }
+      
+      // Check for pending bookings (waitlist)
+      const { rows: [pendingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'pending'", [id]);
+      
+      if (pendingUsage.count > 0) {
+        await db.query('ROLLBACK');
+        return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${pendingUsage.count} Wartelisten-Anmeldung(en) vorhanden.` });
+      }
+      
+      // Check for chat rooms with messages
+      const { rows: [chatUsage] } = await db.query(`
+        SELECT cr.id, (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
+        FROM chat_rooms cr 
+        WHERE cr.event_id = $1
+      `, [id]);
+      
+      if (chatUsage && chatUsage.message_count > 0) {
+        await db.query('ROLLBACK');
+        return res.status(409).json({ error: `Event kann nicht gelöscht werden: Event-Chat enthält ${chatUsage.message_count} Nachricht(en).` });
       }
       
       // Proceed with deletions. Order matters due to foreign keys.
@@ -341,18 +369,18 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
+      await db.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]); // Delete empty chat rooms
       
       // Finally, delete the event itself
       const { rowCount } = await db.query("DELETE FROM events WHERE id = $1", [id]);
       
       if (rowCount === 0) {
-        // This case should be rare given the check above, but it's good for safety.
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
       
       await db.query('COMMIT');
-      res.json({ message: 'Event deleted successfully' });
+      res.json({ message: 'Event erfolgreich gelöscht' });
       
     } catch (err) {
       await db.query('ROLLBACK');

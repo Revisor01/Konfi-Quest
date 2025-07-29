@@ -66,12 +66,33 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.delete('/:id', rbacVerifier, checkPermission('admin.jahrgaenge.delete'), async (req, res) => {
     const jahrgangId = req.params.id;
     try {
-      // Check if jahrgang is in use. Note: PostgreSQL returns count as a string.
-      const checkQuery = "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1";
-      const { rows: [usage] } = await db.query(checkQuery, [jahrgangId]);
+      // Check if jahrgang is in use by konfis
+      const checkKonfisQuery = "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1";
+      const { rows: [konfiUsage] } = await db.query(checkKonfisQuery, [jahrgangId]);
       
-      if (usage.count > 0) {
-        return res.status(409).json({ error: `Jahrgang kann nicht gelöscht werden: ${usage.count} Konfi(s) zugeordnet.` });
+      if (konfiUsage.count > 0) {
+        return res.status(409).json({ error: `Jahrgang kann nicht gelöscht werden: ${konfiUsage.count} Konfi(s) zugeordnet.` });
+      }
+
+      // Check if there are chat rooms with messages - keep those, delete empty ones
+      const checkChatQuery = `
+        SELECT cr.id, 
+               (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
+        FROM chat_rooms cr 
+        WHERE cr.type = 'jahrgang' AND cr.jahrgang_id = $1
+      `;
+      const { rows: chatRooms } = await db.query(checkChatQuery, [jahrgangId]);
+      
+      if (chatRooms.length > 0) {
+        const roomsWithMessages = chatRooms.filter(room => room.message_count > 0);
+        if (roomsWithMessages.length > 0) {
+          return res.status(409).json({ 
+            error: `Jahrgang kann nicht gelöscht werden: Chat-Raum enthält ${roomsWithMessages[0].message_count} Nachricht(en).` 
+          });
+        }
+        
+        // Delete empty chat rooms first
+        await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
       }
 
       // Delete the jahrgang itself
@@ -81,9 +102,6 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Jahrgang not found' });
       }
-      
-      // Also delete associated chat room, maintaining original sequential logic.
-      await db.query("DELETE FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1", [jahrgangId]);
       
       res.json({ message: 'Jahrgang deleted successfully' });
     } catch (err) {

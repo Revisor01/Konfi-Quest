@@ -183,6 +183,7 @@ const AdminJahrgaengeePage: React.FC = () => {
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [loading, setLoading] = useState(true);
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
+  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
   // Modal mit useIonModal Hook
   const [presentJahrgangModalHook, dismissJahrgangModalHook] = useIonModal(JahrgangModal, {
@@ -214,18 +215,22 @@ const AdminJahrgaengeePage: React.FC = () => {
     (event.target as HTMLIonRefresherElement).complete();
   };
 
-  const handleDelete = async (jahrgang: Jahrgang) => {
+  const handleDeleteWithSlideClose = async (jahrgang: Jahrgang) => {
     if (!window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
     
+    const slidingElement = slidingRefs.current.get(jahrgang.id);
     try {
       await api.delete(`/admin/jahrgaenge/${jahrgang.id}`);
       setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
       loadJahrgaenge();
     } catch (error: any) {
-      if (error.response?.status === 400) {
-        setError('Jahrgang kann nicht gelöscht werden - wird bereits von Konfis verwendet');
+      if (slidingElement) {
+        await slidingElement.close();
+      }
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
       } else {
-        setError('Fehler beim Löschen des Jahrgangs');
+        alert('Fehler beim Löschen des Jahrgangs');
       }
     }
   };
@@ -315,7 +320,16 @@ const AdminJahrgaengeePage: React.FC = () => {
               </IonItem>
             ) : (
               jahrgaenge.map((jahrgang) => (
-                <IonItemSliding key={jahrgang.id}>
+                <IonItemSliding 
+                  key={jahrgang.id}
+                  ref={(el) => {
+                    if (el) {
+                      slidingRefs.current.set(jahrgang.id, el);
+                    } else {
+                      slidingRefs.current.delete(jahrgang.id);
+                    }
+                  }}
+                >
                   <IonItem 
                     button={canEdit}
                     onClick={canEdit ? () => openEditModal(jahrgang) : undefined}
@@ -363,7 +377,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                     <IonItemOptions side="end">
                       <IonItemOption 
                         color="danger" 
-                        onClick={() => handleDelete(jahrgang)}
+                        onClick={() => handleDeleteWithSlideClose(jahrgang)}
                       >
                         <IonIcon icon={trashOutline} />
                       </IonItemOption>
