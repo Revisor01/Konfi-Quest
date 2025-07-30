@@ -155,7 +155,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     });
   };
 
-  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
+  const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' | 'cancelled' => {
     // Use the backend-calculated status directly
     return event.registration_status;
   };
@@ -166,6 +166,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'upcoming': return 'medium';
       case 'open': return 'success';
       case 'closed': return 'danger';
+      case 'cancelled': return 'danger';
       default: return 'medium';
     }
   };
@@ -176,6 +177,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       case 'upcoming': return 'Bald verfügbar';
       case 'open': return 'Anmeldung offen';
       case 'closed': return 'Anmeldung geschlossen';
+      case 'cancelled': return 'Abgesagt';
       default: return 'Unbekannt';
     }
   };
