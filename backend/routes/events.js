@@ -53,6 +53,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       console.log("Fetching events for org:", req.user.organization_id);
       const { rows } = await db.query(query, [req.user.organization_id]);
       
+      // Debug: Log registration status calculations
+      rows.forEach(event => {
+        console.log(`Event ${event.name}: registered=${event.registered_count}/${event.max_participants}, pending=${event.pending_count}, waitlist_enabled=${event.waitlist_enabled}, max_waitlist=${event.max_waitlist_size}, status=${event.registration_status}`);
+      });
+      
       // Transform the data to include categories and jahrgaenge arrays
       const eventsWithRelations = rows.map(row => {
         const categories = [];

@@ -149,43 +149,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
-    const now = getLocalNow();
-    
-    console.log('Calculating status for event:', event.name);
-    console.log('Current local time:', now.toISOString());
-    console.log('User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
-    console.log('Registration opens at (UTC):', event.registration_opens_at);
-    console.log('Registration closes at (UTC):', event.registration_closes_at);
-    
-    // If registration hasn't opened yet
-    if (event.registration_opens_at) {
-      const opensAt = parseLocalTime(event.registration_opens_at);
-      console.log('Opens at local time:', opensAt.toISOString());
-      if (now < opensAt) {
-        console.log('Status: upcoming (not opened yet)');
-        return 'upcoming';
-      }
-    }
-    
-    // If registration has closed
-    if (event.registration_closes_at) {
-      const closesAt = parseLocalTime(event.registration_closes_at);
-      console.log('Closes at local time:', closesAt.toISOString());
-      if (now > closesAt) {
-        console.log('Status: closed (deadline passed)');
-        return 'closed';
-      }
-    }
-    
-    // If event is full
-    if (event.registered_count >= event.max_participants) {
-      console.log('Status: closed (event full)');
-      return 'closed';
-    }
-    
-    console.log('Status: open');
-    // Otherwise open
-    return 'open';
+    // Use the backend-calculated status directly
+    return event.registration_status;
   };
 
   const getRegistrationStatusColor = (event: Event) => {
@@ -223,44 +188,43 @@ const EventsView: React.FC<EventsViewProps> = ({
       {/* Header Card mit Statistiken */}
       <IonCard style={{
         margin: '16px',
-        borderRadius: '12px',
-        background: '#f8f9fa',
-        color: '#333',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e9ecef'
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 50%, #d81b60 100%)',
+        color: 'white',
+        boxShadow: '0 8px 32px rgba(235, 68, 90, 0.4)'
       }}>
         <IonCardContent>
           <IonGrid>
             <IonRow>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={flash} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
+                  <IonIcon icon={flash} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                     {events.length}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
                     Events
                   </p>
                 </div>
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
+                  <IonIcon icon={people} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                     {getOpenEvents().length}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
                     Buchbar
                   </p>
                 </div>
               </IonCol>
               <IonCol size="4">
                 <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px', color: '#6c757d' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem', color: '#333' }}>
+                  <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                     {getTotalPoints()}
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#6c757d' }}>
+                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
                     Punkte
                   </p>
                 </div>
@@ -408,9 +372,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {event.registered_count}/{event.max_participants}
                       </span>
                       
-                      {(event as any).pending_count > 0 && (
+                      {event.waitlist_enabled && (
                         <span style={{ color: '#6c757d' }}>
-                          • Warteliste: {(event as any).pending_count}
+                          • Warteliste: {(event as any).pending_count || 0}/{event.max_waitlist_size || 0}
                         </span>
                       )}
                       

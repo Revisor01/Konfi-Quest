@@ -426,11 +426,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             )}
             
             {eventData?.location && (
-              <IonItem lines="none">
+              <IonItem 
+                lines="none" 
+                button={!!eventData.location_maps_url || !!eventData.location}
+                onClick={() => {
+                  if (eventData.location_maps_url) {
+                    window.open(eventData.location_maps_url, '_blank');
+                  } else if (eventData.location) {
+                    // Create maps URL from location string
+                    const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
+                    window.open(mapsUrl, '_blank');
+                  }
+                }}
+              >
                 <IonIcon icon={location} slot="start" color="primary" />
                 <IonLabel>
                   <h3>Ort</h3>
-                  <p>{eventData.location}</p>
+                  <p style={{ color: eventData.location_maps_url || eventData.location ? '#007aff' : undefined }}>
+                    {eventData.location}
+                    {(eventData.location_maps_url || eventData.location) && ' (zum Öffnen tippen)'}
+                  </p>
                 </IonLabel>
               </IonItem>
             )}
