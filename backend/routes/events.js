@@ -806,7 +806,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       };
       
       const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
-      const seriesId = Date.now().toString(); // Using timestamp as a simple unique ID for the series
+      let seriesId = null; // Will be set to the first event's ID
       
       console.log(`Creating series with ${series_count} events, interval: ${series_interval}`);
       
@@ -837,28 +837,60 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           regCloses.setDate(regCloses.getDate() - (new Date(event_date).getDate() - new Date(registration_closes_at).getDate()));
         }
         
-        const eventQuery = `
-          INSERT INTO events (
-            name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
-            type, max_participants, registration_opens_at, registration_closes_at, 
-            has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, created_by, organization_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18)
-          RETURNING id
-        `;
-        const { rows: [newEvent] } = await db.query(eventQuery, [
-          eventName, description, eventStartDate.toISOString(), 
-          eventEndDate ? eventEndDate.toISOString() : null,
-          location, location_maps_url,
-          points || 0, point_type || 'gemeinde', type || 'event', max_participants,
-          regOpens ? regOpens.toISOString() : null, 
-          regCloses ? regCloses.toISOString() : null, 
-          has_timeslots || false, 
-          waitlist_enabled !== undefined ? waitlist_enabled : true,
-          max_waitlist_size || 10,
-          seriesId, 
-          req.user.id, req.user.organization_id
-        ]);
-        const eventId = newEvent.id;
+        let eventId;
+        
+        // First event: create without series_id, then use its ID as series_id
+        if (i === 0) {
+          const eventQuery = `
+            INSERT INTO events (
+              name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
+              type, max_participants, registration_opens_at, registration_closes_at, 
+              has_timeslots, waitlist_enabled, max_waitlist_size, is_series, created_by, organization_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17)
+            RETURNING id
+          `;
+          const { rows: [newEvent] } = await db.query(eventQuery, [
+            eventName, description, eventStartDate.toISOString(), 
+            eventEndDate ? eventEndDate.toISOString() : null,
+            location, location_maps_url,
+            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+            regOpens ? regOpens.toISOString() : null, 
+            regCloses ? regCloses.toISOString() : null, 
+            has_timeslots || false, 
+            waitlist_enabled !== undefined ? waitlist_enabled : true,
+            max_waitlist_size || 10,
+            req.user.id, req.user.organization_id
+          ]);
+          eventId = newEvent.id;
+          seriesId = eventId; // Use first event's ID as series_id
+          
+          // Update first event to set its own series_id
+          await db.query("UPDATE events SET series_id = $1 WHERE id = $2", [seriesId, eventId]);
+        } else {
+          // Subsequent events: create with series_id
+          const eventQuery = `
+            INSERT INTO events (
+              name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
+              type, max_participants, registration_opens_at, registration_closes_at, 
+              has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, created_by, organization_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18)
+            RETURNING id
+          `;
+          const { rows: [newEvent] } = await db.query(eventQuery, [
+            eventName, description, eventStartDate.toISOString(), 
+            eventEndDate ? eventEndDate.toISOString() : null,
+            location, location_maps_url,
+            points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+            regOpens ? regOpens.toISOString() : null, 
+            regCloses ? regCloses.toISOString() : null, 
+            has_timeslots || false, 
+            waitlist_enabled !== undefined ? waitlist_enabled : true,
+            max_waitlist_size || 10,
+            seriesId, 
+            req.user.id, req.user.organization_id
+          ]);
+          eventId = newEvent.id;
+        }
         
         const relationPromises = [];
         if (category_ids && category_ids.length) {
