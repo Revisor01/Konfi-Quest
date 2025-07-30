@@ -24,8 +24,8 @@ module.exports = (db, rbacVerifier, checkPermission) => {
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ',') as jahrgang_names,
                 CASE 
-                  WHEN NOW() < e.registration_opens_at::timestamp THEN 'upcoming'
-                  WHEN NOW() > e.registration_closes_at::timestamp THEN 'closed'
+                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
+                  WHEN NOW() > e.registration_closes_at THEN 'closed'
                   WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= 
                     CASE 
                       WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
@@ -45,7 +45,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           FROM event_timeslots
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
-        WHERE e.organization_id = $1
+        WHERE e.organization_id = $1 AND (e.cancelled = FALSE OR e.cancelled IS NULL)
         GROUP BY e.id, timeslot_capacity.total_capacity
         ORDER BY e.event_date ASC
       `;
@@ -95,6 +95,72 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
     } catch (err) {
       console.error('Database error in GET /events:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Get cancelled events (Admin only)
+  router.get('/cancelled', rbacVerifier, checkPermission('events.view'), async (req, res) => {
+    try {
+      const query = `
+        SELECT e.*, 
+                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+                STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
+                STRING_AGG(DISTINCT c.name, ',') as category_names,
+                STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
+                STRING_AGG(DISTINCT j.name, ',') as jahrgang_names
+        FROM events e
+        LEFT JOIN event_bookings eb ON e.id = eb.event_id
+        LEFT JOIN event_categories ec ON e.id = ec.event_id
+        LEFT JOIN categories c ON ec.category_id = c.id
+        LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+        LEFT JOIN jahrgaenge j ON eja.jahrgang_id = j.id
+        WHERE e.organization_id = $1 AND e.cancelled = TRUE
+        GROUP BY e.id
+        ORDER BY e.cancelled_at DESC
+      `;
+      
+      const { rows } = await db.query(query, [req.user.organization_id]);
+      
+      // Transform the data to include categories and jahrgaenge arrays
+      const eventsWithRelations = rows.map(row => {
+        const categories = [];
+        if (row.category_ids) {
+          const ids = row.category_ids.split(',');
+          const names = row.category_names.split(',');
+          for (let i = 0; i < ids.length; i++) {
+            categories.push({
+              id: parseInt(ids[i], 10),
+              name: names[i]
+            });
+          }
+        }
+        
+        const jahrgaenge = [];
+        if (row.jahrgang_ids) {
+          const ids = row.jahrgang_ids.split(',');
+          const names = row.jahrgang_names.split(',');
+          for (let i = 0; i < ids.length; i++) {
+            jahrgaenge.push({
+              id: parseInt(ids[i], 10),
+              name: names[i]
+            });
+          }
+        }
+        
+        return {
+          ...row,
+          categories: categories,
+          jahrgaenge: jahrgaenge,
+          registration_status: 'cancelled'
+        };
+      });
+      
+      res.json(eventsWithRelations);
+      
+    } catch (err) {
+      console.error('Database error in GET /events/cancelled:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });
@@ -716,9 +782,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   // Create series events
   router.post('/series', rbacVerifier, checkPermission('events.create'), async (req, res) => {
     const { 
-      name, description, event_date, location, location_maps_url, points, point_type,
+      name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
       category_ids, jahrgang_ids, type, max_participants, registration_opens_at, 
-      registration_closes_at, has_timeslots, timeslots, series_count, series_interval
+      registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
+      timeslots, series_count, series_interval
     } = req.body;
     
     if (!name || !event_date || !series_count || series_count < 2) {
@@ -747,18 +814,48 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         const date = seriesDates[i];
         const eventName = `${name} - Termin ${i + 1}`;
         
+        // Calculate dates for this specific event in series
+        const eventStartDate = new Date(date);
+        const eventEndDate = event_end_time ? new Date(date) : null;
+        if (eventEndDate && event_end_time) {
+          const endTime = new Date(event_end_time);
+          eventEndDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+        }
+        
+        // Calculate registration dates for this event
+        const regOpens = registration_opens_at ? new Date(date) : null;
+        if (regOpens && registration_opens_at) {
+          const openTime = new Date(registration_opens_at);
+          regOpens.setHours(openTime.getHours(), openTime.getMinutes(), 0, 0);
+          regOpens.setDate(regOpens.getDate() - (new Date(event_date).getDate() - new Date(registration_opens_at).getDate()));
+        }
+        
+        const regCloses = registration_closes_at ? new Date(date) : null;
+        if (regCloses && registration_closes_at) {
+          const closeTime = new Date(registration_closes_at);
+          regCloses.setHours(closeTime.getHours(), closeTime.getMinutes(), 0, 0);
+          regCloses.setDate(regCloses.getDate() - (new Date(event_date).getDate() - new Date(registration_closes_at).getDate()));
+        }
+        
         const eventQuery = `
           INSERT INTO events (
-            name, description, event_date, location, location_maps_url, points, point_type, 
+            name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
             type, max_participants, registration_opens_at, registration_closes_at, 
-            has_timeslots, is_series, series_id, created_by, organization_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, $14, $15)
+            has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, created_by, organization_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18)
           RETURNING id
         `;
         const { rows: [newEvent] } = await db.query(eventQuery, [
-          eventName, description, date.toISOString(), location, location_maps_url,
+          eventName, description, eventStartDate.toISOString(), 
+          eventEndDate ? eventEndDate.toISOString() : null,
+          location, location_maps_url,
           points || 0, point_type || 'gemeinde', type || 'event', max_participants,
-          registration_opens_at, registration_closes_at, has_timeslots || false, seriesId, 
+          regOpens ? regOpens.toISOString() : null, 
+          regCloses ? regCloses.toISOString() : null, 
+          has_timeslots || false, 
+          waitlist_enabled !== undefined ? waitlist_enabled : true,
+          max_waitlist_size || 10,
+          seriesId, 
           req.user.id, req.user.organization_id
         ]);
         const eventId = newEvent.id;
@@ -775,7 +872,22 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         if (has_timeslots && timeslots && timeslots.length) {
           const tsQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
           timeslots.forEach(slot => {
-            relationPromises.push(db.query(tsQuery, [eventId, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]));
+            // Adjust timeslot dates to match the event date
+            const slotStart = new Date(slot.start_time);
+            const slotEnd = new Date(slot.end_time);
+            const adjustedStart = new Date(date);
+            const adjustedEnd = new Date(date);
+            
+            adjustedStart.setHours(slotStart.getHours(), slotStart.getMinutes(), 0, 0);
+            adjustedEnd.setHours(slotEnd.getHours(), slotEnd.getMinutes(), 0, 0);
+            
+            relationPromises.push(db.query(tsQuery, [
+              eventId, 
+              adjustedStart.toISOString(), 
+              adjustedEnd.toISOString(), 
+              slot.max_participants, 
+              req.user.organization_id
+            ]));
           });
         }
         await Promise.all(relationPromises);
@@ -946,6 +1058,62 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       await db.query('ROLLBACK');
       console.error(`Database error in POST /events/${eventId}/chat:`, err);
       res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Cancel event (Admin only)
+  router.put('/:id/cancel', rbacVerifier, checkPermission('events.edit'), async (req, res) => {
+    const eventId = req.params.id;
+    const { notification_message = 'Das Event wurde abgesagt.' } = req.body;
+    
+    await db.query('BEGIN');
+    try {
+      // Get event details
+      const { rows: [event] } = await db.query(
+        "SELECT name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", 
+        [eventId, req.user.organization_id]
+      );
+      
+      if (!event) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+      
+      if (event.cancelled) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Event ist bereits abgesagt' });
+      }
+      
+      // Mark event as cancelled
+      await db.query(
+        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1", 
+        [eventId]
+      );
+      
+      // Get all participants to notify
+      const { rows: participants } = await db.query(`
+        SELECT DISTINCT eb.user_id, u.display_name, u.username
+        FROM event_bookings eb
+        JOIN users u ON eb.user_id = u.id
+        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'pending')
+      `, [eventId]);
+      
+      // TODO: Send push notifications to all participants
+      // For now, we'll just log who would be notified
+      console.log(`Event "${event.name}" cancelled. Would notify ${participants.length} participants:`, 
+        participants.map(p => p.display_name || p.username).join(', '));
+      
+      await db.query('COMMIT');
+      res.json({ 
+        message: `Event "${event.name}" wurde abgesagt`,
+        participants_notified: participants.length,
+        notification_message
+      });
+      
+    } catch (err) {
+      await db.query('ROLLBACK');
+      console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
+      res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
     }
   });
   

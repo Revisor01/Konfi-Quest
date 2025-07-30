@@ -33,7 +33,9 @@ import {
   calendar,
   time,
   location,
-  hourglass
+  hourglass,
+  copy,
+  ban
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -71,6 +73,8 @@ interface EventsViewProps {
   onAddEventClick: () => void;
   onSelectEvent: (event: Event) => void;
   onDeleteEvent?: (event: Event) => void;
+  onCopyEvent?: (event: Event) => void;
+  onCancelEvent?: (event: Event) => void;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({ 
@@ -78,7 +82,9 @@ const EventsView: React.FC<EventsViewProps> = ({
   onUpdate, 
   onAddEventClick,
   onSelectEvent,
-  onDeleteEvent
+  onDeleteEvent,
+  onCopyEvent,
+  onCancelEvent
 }) => {
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
@@ -480,14 +486,32 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </IonLabel>
                 </IonItem>
 
-                {onDeleteEvent && (
+                {(onDeleteEvent || onCopyEvent || onCancelEvent) && (
                   <IonItemOptions side="end">
-                    <IonItemOption 
-                      color="danger" 
-                      onClick={() => onDeleteEvent(event)}
-                    >
-                      <IonIcon icon={trash} />
-                    </IonItemOption>
+                    {onCopyEvent && (
+                      <IonItemOption 
+                        color="primary" 
+                        onClick={() => onCopyEvent(event)}
+                      >
+                        <IonIcon icon={copy} />
+                      </IonItemOption>
+                    )}
+                    {onCancelEvent && (
+                      <IonItemOption 
+                        color="warning" 
+                        onClick={() => onCancelEvent(event)}
+                      >
+                        <IonIcon icon={ban} />
+                      </IonItemOption>
+                    )}
+                    {onDeleteEvent && (
+                      <IonItemOption 
+                        color="danger" 
+                        onClick={() => onDeleteEvent(event)}
+                      >
+                        <IonIcon icon={trash} />
+                      </IonItemOption>
+                    )}
                   </IonItemOptions>
                 )}
               </IonItemSliding>
