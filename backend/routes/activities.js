@@ -263,7 +263,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       const pointField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
       
-      const newBadges = await checkAndAwardBadges(konfiId);
+      const newBadges = await checkAndAwardBadges(db, konfiId);
       res.json({ message: 'Activity assigned successfully', newBadges });
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-activity:', err);
@@ -284,7 +284,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       const pointField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
       
-      const newBadges = await checkAndAwardBadges(konfiId);
+      const newBadges = await checkAndAwardBadges(db, konfiId);
       res.json({ message: 'Bonus points assigned successfully', newBadges });
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-bonus:', err);
