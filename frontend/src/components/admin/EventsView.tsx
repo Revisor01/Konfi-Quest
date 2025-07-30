@@ -22,9 +22,6 @@ import {
   IonSelectOption,
   IonSegment,
   IonSegmentButton,
-  IonCard,
-  IonCardContent,
-  IonLabel,
   useIonActionSheet
 } from '@ionic/react';
 import { 
