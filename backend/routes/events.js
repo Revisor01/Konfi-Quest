@@ -323,16 +323,15 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
       
-      const relationPromises = [];
+      // Add categories and jahrgaenge back sequentially 
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
-        const categoryQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[])";
-        relationPromises.push(db.query(categoryQuery, [id, category_ids]));
+        const categoryQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
+        await db.query(categoryQuery, [id, category_ids]);
       }
       if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
-        const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[])";
-        relationPromises.push(db.query(jahrgangQuery, [id, jahrgang_ids]));
+        const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
+        await db.query(jahrgangQuery, [id, jahrgang_ids]);
       }
-      await Promise.all(relationPromises);
       
       await db.query('COMMIT');
       res.json({ message: 'Event updated successfully' });
