@@ -20,6 +20,11 @@ import {
   IonInput,
   IonSelect,
   IonSelectOption,
+  IonSegment,
+  IonSegmentButton,
+  IonCard,
+  IonCardContent,
+  IonLabel,
   useIonActionSheet
 } from '@ionic/react';
 import { 
@@ -35,7 +40,10 @@ import {
   location,
   hourglass,
   copy,
-  ban
+  ban,
+  list,
+  checkmarkCircle,
+  close
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -75,6 +83,14 @@ interface EventsViewProps {
   onDeleteEvent?: (event: Event) => void;
   onCopyEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
+  activeTab?: 'all' | 'upcoming' | 'past' | 'cancelled';
+  onTabChange?: (tab: 'all' | 'upcoming' | 'past' | 'cancelled') => void;
+  eventCounts?: {
+    all: number;
+    upcoming: number;
+    past: number;
+    cancelled: number;
+  };
 }
 
 const EventsView: React.FC<EventsViewProps> = ({ 
@@ -84,7 +100,10 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onDeleteEvent,
   onCopyEvent,
-  onCancelEvent
+  onCancelEvent,
+  activeTab = 'upcoming',
+  onTabChange,
+  eventCounts
 }) => {
   const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
@@ -329,6 +348,40 @@ const EventsView: React.FC<EventsViewProps> = ({
           </IonGrid>
         </IonCardContent>
       </IonCard>
+
+      {/* Tab Navigation */}
+      {onTabChange && (
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonSegment 
+              value={activeTab} 
+              onIonChange={(e) => onTabChange(e.detail.value as any)}
+              style={{ 
+                '--background': '#f8f9fa',
+                borderRadius: '8px',
+                padding: '4px'
+              }}
+            >
+              <IonSegmentButton value="upcoming">
+                <IonIcon icon={calendar} style={{ fontSize: '1rem', marginRight: '4px', color: '#28a745' }} />
+                <IonLabel>Anstehend</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="all">
+                <IonIcon icon={list} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                <IonLabel>Alle</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="past">
+                <IonIcon icon={checkmarkCircle} style={{ fontSize: '1rem', marginRight: '4px', color: '#dc3545' }} />
+                <IonLabel>Vergangen</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="cancelled">
+                <IonIcon icon={close} style={{ fontSize: '1rem', marginRight: '4px', color: '#dc3545' }} />
+                <IonLabel>Abgesagt</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </IonCardContent>
+        </IonCard>
+      )}
 
       {/* Events Liste */}
       <IonCard style={{ margin: '16px' }}>

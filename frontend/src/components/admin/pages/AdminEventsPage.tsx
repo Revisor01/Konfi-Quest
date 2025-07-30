@@ -11,14 +11,9 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonCard,
-  IonCardContent,
-  IonLabel,
   useIonModal
 } from '@ionic/react';
-import { add, ban, list, archive, calendar, time, checkmark, close } from 'ionicons/icons';
+import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -62,7 +57,7 @@ const AdminEventsPage: React.FC = () => {
   const [cancelledEvents, setCancelledEvents] = useState<Event[]>([]);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
   
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -276,37 +271,6 @@ const AdminEventsPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         
-        {/* Event Filter Card */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonSegment 
-              value={activeTab} 
-              onIonChange={(e) => setActiveTab(e.detail.value as any)}
-              style={{ 
-                '--background': '#f8f9fa',
-                borderRadius: '8px',
-                padding: '4px'
-              }}
-            >
-              <IonSegmentButton value="all">
-                <IonIcon icon={list} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Alle ({getAllEvents().length})</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="upcoming">
-                <IonIcon icon={calendar} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Anstehend ({getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length})</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="past">
-                <IonIcon icon={time} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Vergangen ({pastEvents.length})</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="cancelled">
-                <IonIcon icon={close} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Abgesagt ({cancelledEvents.length})</IonLabel>
-              </IonSegmentButton>
-            </IonSegment>
-          </IonCardContent>
-        </IonCard>
         
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
@@ -328,6 +292,14 @@ const AdminEventsPage: React.FC = () => {
             onDeleteEvent={canDelete && activeTab !== 'cancelled' && activeTab !== 'past' ? handleDeleteEvent : undefined}
             onCopyEvent={canCopy ? handleCopyEvent : undefined}
             onCancelEvent={canCancel && activeTab !== 'cancelled' && activeTab !== 'past' ? handleCancelEvent : undefined}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            eventCounts={{
+              all: getAllEvents().length,
+              upcoming: getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length,
+              past: pastEvents.length,
+              cancelled: cancelledEvents.length
+            }}
           />
         )}
       </IonContent>
