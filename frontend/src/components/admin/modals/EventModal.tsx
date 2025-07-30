@@ -244,14 +244,19 @@ const EventModal: React.FC<EventModalProps> = ({
   const addTimeslot = () => {
     const eventDate = new Date(formData.event_date);
     let startTime: Date;
+    let participants: number;
     
     if (timeslots.length === 0) {
       // Erstes Zeitfenster: beginnt zur Event-Startzeit
       startTime = new Date(eventDate);
+      // Standard-Teilnehmerzahl für erstes Zeitfenster
+      participants = Math.max(1, Math.floor(formData.max_participants / 2));
     } else {
       // Weitere Zeitfenster: beginnen am Ende des vorherigen
       const lastTimeslot = timeslots[timeslots.length - 1];
       startTime = new Date(lastTimeslot.end_time);
+      // Übernehme Teilnehmerzahl vom ersten Zeitfenster
+      participants = timeslots[0].max_participants;
     }
     
     // Endzeit: 1 Stunde nach Start
@@ -266,7 +271,7 @@ const EventModal: React.FC<EventModalProps> = ({
     setTimeslots([...timeslots, {
       start_time: toIonDatetimeISO(startTime),
       end_time: toIonDatetimeISO(endTime),
-      max_participants: Math.floor(formData.max_participants / 2)
+      max_participants: participants
     }]);
   };
 
@@ -286,11 +291,19 @@ const EventModal: React.FC<EventModalProps> = ({
 
     setLoading(true);
     try {
+      // Helper function to convert local time string to ISO with timezone
+      const toBackendTimestamp = (localTimeString: string) => {
+        if (!localTimeString) return null;
+        // Parse the local time string and convert to ISO with timezone
+        const date = new Date(localTimeString);
+        return date.toISOString();
+      };
+
       const payload = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
-        event_date: formData.event_date,
-        event_end_time: formData.event_end_time || null,
+        event_date: toBackendTimestamp(formData.event_date),
+        event_end_time: toBackendTimestamp(formData.event_end_time),
         location: formData.location.trim() || null,
         points: formData.points,
         point_type: formData.point_type,
@@ -298,12 +311,16 @@ const EventModal: React.FC<EventModalProps> = ({
         jahrgang_ids: formData.jahrgang_ids,
         type: formData.type,
         max_participants: formData.max_participants,
-        registration_opens_at: formData.registration_opens_at || null,
-        registration_closes_at: formData.registration_closes_at || null,
+        registration_opens_at: toBackendTimestamp(formData.registration_opens_at),
+        registration_closes_at: toBackendTimestamp(formData.registration_closes_at),
         has_timeslots: formData.has_timeslots,
         waitlist_enabled: formData.waitlist_enabled,
         max_waitlist_size: formData.max_waitlist_size,
-        timeslots: formData.has_timeslots ? timeslots : [],
+        timeslots: formData.has_timeslots ? timeslots.map(ts => ({
+          ...ts,
+          start_time: toBackendTimestamp(ts.start_time),
+          end_time: toBackendTimestamp(ts.end_time)
+        })) : [],
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
         series_interval: formData.is_series ? formData.series_interval : undefined
@@ -645,22 +662,38 @@ const EventModal: React.FC<EventModalProps> = ({
                   <IonItem lines="none" style={{ paddingBottom: '8px' }}>
                     <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
                       Kategorien (mehrere möglich)
+                      {formData.category_ids.length > 0 && (
+                        <span style={{ 
+                          marginLeft: '8px', 
+                          fontSize: '0.8rem', 
+                          color: '#007aff',
+                          fontWeight: 'normal' 
+                        }}>
+                          ({formData.category_ids.length} ausgewählt)
+                        </span>
+                      )}
                     </IonLabel>
                   </IonItem>
                   {categories.map((category) => (
-                    <IonItem key={category.id} lines="none">
+                    <IonItem 
+                      key={category.id} 
+                      lines="none"
+                      button
+                      onClick={() => {
+                        if (!loading) {
+                          setFormData(prev => ({
+                            ...prev,
+                            category_ids: prev.category_ids.includes(category.id)
+                              ? prev.category_ids.filter(id => id !== category.id)
+                              : [...prev.category_ids, category.id]
+                          }));
+                        }
+                      }}
+                      disabled={loading}
+                    >
                       <IonCheckbox
                         slot="start"
                         checked={formData.category_ids.includes(category.id)}
-                        onIonChange={(e) => {
-                          const isChecked = e.detail.checked;
-                          setFormData(prev => ({
-                            ...prev,
-                            category_ids: isChecked 
-                              ? [...prev.category_ids, category.id]
-                              : prev.category_ids.filter(id => id !== category.id)
-                          }));
-                        }}
                         disabled={loading}
                       />
                       <IonLabel style={{ marginLeft: '12px' }}>
@@ -677,26 +710,48 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonItem>
               )}
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Jahrgänge (mehrere möglich) *</IonLabel>
-                <IonSelect
-                  value={formData.jahrgang_ids}
-                  onIonChange={(e) => setFormData({ ...formData, jahrgang_ids: e.detail.value })}
-                  placeholder="Jahrgänge wählen"
-                  disabled={loading}
-                  multiple={true}
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Jahrgänge auswählen'
-                  }}
-                >
-                  {jahrgaenge.map((jahrgang) => (
-                    <IonSelectOption key={jahrgang.id} value={jahrgang.id}>
-                      {jahrgang.name}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
+              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
+                  Jahrgänge (mehrere möglich) *
+                  {formData.jahrgang_ids.length > 0 && (
+                    <span style={{ 
+                      marginLeft: '8px', 
+                      fontSize: '0.8rem', 
+                      color: '#007aff',
+                      fontWeight: 'normal' 
+                    }}>
+                      ({formData.jahrgang_ids.length} ausgewählt)
+                    </span>
+                  )}
+                </IonLabel>
               </IonItem>
+              {jahrgaenge.map((jahrgang) => (
+                <IonItem 
+                  key={jahrgang.id} 
+                  lines="none"
+                  button
+                  onClick={() => {
+                    if (!loading) {
+                      setFormData(prev => ({
+                        ...prev,
+                        jahrgang_ids: prev.jahrgang_ids.includes(jahrgang.id)
+                          ? prev.jahrgang_ids.filter(id => id !== jahrgang.id)
+                          : [...prev.jahrgang_ids, jahrgang.id]
+                      }));
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  <IonCheckbox
+                    slot="start"
+                    checked={formData.jahrgang_ids.includes(jahrgang.id)}
+                    disabled={loading}
+                  />
+                  <IonLabel style={{ marginLeft: '12px' }}>
+                    {jahrgang.name}
+                  </IonLabel>
+                </IonItem>
+              ))}
             </IonList>
           </IonCardContent>
         </IonCard>
