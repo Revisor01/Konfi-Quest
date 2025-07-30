@@ -393,40 +393,25 @@ const EventsView: React.FC<EventsViewProps> = ({
                         </h2>
                       </div>
                       
-                      {/* Cancelled Badge */}
-                      {event.registration_status === 'cancelled' && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '-6px',
-                          right: '-6px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          fontWeight: '700',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.3)',
-                          transform: 'rotate(15deg)',
-                          zIndex: 5
-                        }}>
-                          ABGESAGT
-                        </div>
-                      )}
                       <span style={{
                         fontSize: '0.75rem',
                         color: calculateRegistrationStatus(event) === 'open' ? '#28a745' : 
-                              calculateRegistrationStatus(event) === 'upcoming' ? '#ffc409' : '#dc3545',
+                              calculateRegistrationStatus(event) === 'upcoming' ? '#ffc409' : 
+                              calculateRegistrationStatus(event) === 'cancelled' ? '#dc3545' : '#dc3545',
                         fontWeight: '600',
                         backgroundColor: calculateRegistrationStatus(event) === 'open' ? '#d4edda' : 
-                                       calculateRegistrationStatus(event) === 'upcoming' ? '#fff3cd' : '#f8d7da',
+                                       calculateRegistrationStatus(event) === 'upcoming' ? '#fff3cd' : 
+                                       calculateRegistrationStatus(event) === 'cancelled' ? '#f8d7da' : '#f8d7da',
                         padding: '4px 8px',
                         borderRadius: '12px',
                         border: `1px solid ${calculateRegistrationStatus(event) === 'open' ? '#c3e6cb' : 
-                                            calculateRegistrationStatus(event) === 'upcoming' ? '#ffeaa7' : '#f5c6cb'}`,
+                                            calculateRegistrationStatus(event) === 'upcoming' ? '#ffeaa7' : 
+                                            calculateRegistrationStatus(event) === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
                         flexShrink: 0
                       }}>
                         {calculateRegistrationStatus(event) === 'open' ? 'OFFEN' : 
-                         calculateRegistrationStatus(event) === 'upcoming' ? 'BALD' : 'GESCHLOSSEN'}
+                         calculateRegistrationStatus(event) === 'upcoming' ? 'BALD' : 
+                         calculateRegistrationStatus(event) === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
                       </span>
                     </div>
                     

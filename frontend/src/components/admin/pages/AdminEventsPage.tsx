@@ -11,6 +11,11 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSegment,
+  IonSegmentButton,
+  IonCard,
+  IonCardContent,
+  IonLabel,
   useIonModal
 } from '@ionic/react';
 import { add, ban, list, archive, calendar, time, checkmark, close } from 'ionicons/icons';
@@ -99,12 +104,8 @@ const AdminEventsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.get('/events');
-      const now = new Date();
-      // Filter out past events from the main events list
-      const futureEvents = response.data.filter((event: Event) => 
-        new Date(event.event_date) >= now
-      );
-      setEvents(futureEvents);
+      // Show all active events (non-cancelled)
+      setEvents(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);
@@ -134,6 +135,18 @@ const AdminEventsPage: React.FC = () => {
     } catch (err) {
       console.error('Error loading past events:', err);
     }
+  };
+
+  // Get combined events for "Alle" tab (active + cancelled)
+  const getAllEvents = () => {
+    const combinedEvents = [...events, ...cancelledEvents];
+    return combinedEvents.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+  };
+
+  // Get future events only
+  const getFutureEvents = () => {
+    const now = new Date();
+    return events.filter(event => new Date(event.event_date) >= now);
   };
 
   const handleDeleteEvent = async (event: Event) => {
@@ -263,75 +276,45 @@ const AdminEventsPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         
-        {/* Tab Navigation */}
-        <div style={{
-          display: 'flex',
-          backgroundColor: 'white',
-          borderBottom: '1px solid #e0e0e0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-          margin: '0 16px',
-          borderRadius: '12px 12px 0 0',
-          marginTop: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          {[
-            { key: 'all', label: 'Alle', icon: list, count: events.length },
-            { key: 'upcoming', label: 'Anstehend', icon: calendar, count: events.filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length },
-            { key: 'past', label: 'Vergangen', icon: time, count: pastEvents.length },
-            { key: 'cancelled', label: 'Abgesagt', icon: close, count: cancelledEvents.length }
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              style={{
-                flex: 1,
-                padding: '12px 8px',
-                border: 'none',
-                background: activeTab === tab.key ? '#007aff' : 'transparent',
-                color: activeTab === tab.key ? 'white' : '#666',
-                fontSize: '0.9rem',
-                fontWeight: activeTab === tab.key ? '600' : '500',
-                borderRadius: activeTab === tab.key ? '8px' : '0',
-                margin: '4px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
+        {/* Event Filter Card */}
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonSegment 
+              value={activeTab} 
+              onIonChange={(e) => setActiveTab(e.detail.value as any)}
+              style={{ 
+                '--background': '#f8f9fa',
+                borderRadius: '8px',
+                padding: '4px'
               }}
             >
-              <IonIcon 
-                icon={tab.icon} 
-                style={{ 
-                  fontSize: '1.2rem',
-                  color: activeTab === tab.key ? 'white' : '#007aff'
-                }} 
-              />
-              <span style={{ fontSize: '0.8rem' }}>{tab.label}</span>
-              <span style={{ 
-                fontSize: '0.7rem', 
-                opacity: 0.8,
-                backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.2)' : '#f0f0f0',
-                padding: '2px 6px',
-                borderRadius: '10px',
-                minWidth: '20px'
-              }}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
+              <IonSegmentButton value="all">
+                <IonIcon icon={list} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                <IonLabel>Alle ({getAllEvents().length})</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="upcoming">
+                <IonIcon icon={calendar} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                <IonLabel>Anstehend ({getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length})</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="past">
+                <IonIcon icon={time} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                <IonLabel>Vergangen ({pastEvents.length})</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="cancelled">
+                <IonIcon icon={close} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                <IonLabel>Abgesagt ({cancelledEvents.length})</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </IonCardContent>
+        </IonCard>
         
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
           <EventsView 
             events={
-              activeTab === 'all' ? events :
-              activeTab === 'upcoming' ? events.filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open') :
+              activeTab === 'all' ? getAllEvents() :
+              activeTab === 'upcoming' ? getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open') :
               activeTab === 'past' ? pastEvents :
               cancelledEvents
             }
