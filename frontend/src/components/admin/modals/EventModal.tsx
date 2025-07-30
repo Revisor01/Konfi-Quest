@@ -162,19 +162,32 @@ const EventModal: React.FC<EventModalProps> = ({
       // Reset form for new event
       const now = new Date();
       
-      // Create event starting now (current time + 30 minutes buffer)
+      // Helper function to round time to nearest 30 minutes
+      const roundToHalfHour = (date: Date) => {
+        const rounded = new Date(date);
+        const minutes = rounded.getMinutes();
+        if (minutes < 30) {
+          rounded.setMinutes(0, 0, 0); // Round down to full hour
+        } else {
+          rounded.setMinutes(30, 0, 0); // Round up to half hour
+        }
+        return rounded;
+      };
+      
+      // Create event starting now (current time + 30 minutes buffer), rounded
       const eventStart = new Date();
       eventStart.setMinutes(eventStart.getMinutes() + 30); // 30 minutes from now
+      const roundedEventStart = roundToHalfHour(eventStart);
       
       // Event ends 2 hours after start
-      const eventEnd = new Date(eventStart);
+      const eventEnd = new Date(roundedEventStart);
       eventEnd.setHours(eventEnd.getHours() + 2);
       
-      // Registration opens now (current time)
-      const regOpens = new Date();
+      // Registration opens now (current time), rounded
+      const regOpens = roundToHalfHour(new Date());
       
       // Registration closes 1 hour before event
-      const regCloses = new Date(eventStart);
+      const regCloses = new Date(roundedEventStart);
       regCloses.setHours(regCloses.getHours() - 1);
       
       // Helper function to create local ISO string for IonDatetime
@@ -187,7 +200,7 @@ const EventModal: React.FC<EventModalProps> = ({
       setFormData({
         name: '',
         description: '',
-        event_date: toIonDatetimeISO(eventStart),
+        event_date: toIonDatetimeISO(roundedEventStart),
         event_end_time: toIonDatetimeISO(eventEnd),
         location: '',
         points: 0,
