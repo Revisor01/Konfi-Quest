@@ -357,13 +357,14 @@ const EventsView: React.FC<EventsViewProps> = ({
                       display: 'flex', 
                       justifyContent: 'space-between', 
                       alignItems: 'center',
-                      marginBottom: '8px'
+                      marginBottom: '8px',
+                      position: 'relative'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ 
                           width: '32px', 
                           height: '32px',
-                          backgroundColor: '#eb445a',
+                          backgroundColor: event.registration_status === 'cancelled' ? '#dc3545' : '#eb445a',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
@@ -372,7 +373,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           flexShrink: 0
                         }}>
                           <IonIcon 
-                            icon={flash} 
+                            icon={event.registration_status === 'cancelled' ? ban : flash} 
                             style={{ 
                               fontSize: '1rem', 
                               color: 'white'
@@ -383,11 +384,32 @@ const EventsView: React.FC<EventsViewProps> = ({
                           fontWeight: '600', 
                           fontSize: '1.1rem',
                           margin: '0',
-                          color: '#333'
+                          color: event.registration_status === 'cancelled' ? '#999' : '#333',
+                          textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none'
                         }}>
                           {event.name}
                         </h2>
                       </div>
+                      
+                      {/* Cancelled Badge */}
+                      {event.registration_status === 'cancelled' && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '-6px',
+                          right: '-6px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: '700',
+                          padding: '4px 8px',
+                          borderRadius: '12px',
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.3)',
+                          transform: 'rotate(15deg)',
+                          zIndex: 5
+                        }}>
+                          ABGESAGT
+                        </div>
+                      )}
                       <span style={{
                         fontSize: '0.75rem',
                         color: calculateRegistrationStatus(event) === 'open' ? '#28a745' : 

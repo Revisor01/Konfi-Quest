@@ -13,7 +13,7 @@ import {
   IonIcon,
   useIonModal
 } from '@ionic/react';
-import { add, ban, list, archive } from 'ionicons/icons';
+import { add, ban, list, archive, calendar, time, checkmark, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -55,8 +55,9 @@ const AdminEventsPage: React.FC = () => {
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [cancelledEvents, setCancelledEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('all');
   
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -77,11 +78,13 @@ const AdminEventsPage: React.FC = () => {
   useEffect(() => {
     loadEvents();
     loadCancelledEvents();
+    loadPastEvents();
     console.log('Page ref:', pageRef.current);
     // Event-Listener für Updates aus EventDetailView
     const handleEventsUpdated = () => {
       loadEvents();
       loadCancelledEvents();
+      loadPastEvents();
     };
     
     window.addEventListener('events-updated', handleEventsUpdated);
@@ -96,7 +99,12 @@ const AdminEventsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.get('/events');
-      setEvents(response.data);
+      const now = new Date();
+      // Filter out past events from the main events list
+      const futureEvents = response.data.filter((event: Event) => 
+        new Date(event.event_date) >= now
+      );
+      setEvents(futureEvents);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);
@@ -115,6 +123,19 @@ const AdminEventsPage: React.FC = () => {
     }
   };
 
+  const loadPastEvents = async () => {
+    try {
+      const response = await api.get('/events');
+      const now = new Date();
+      const pastEventsFiltered = response.data.filter((event: Event) => 
+        new Date(event.event_date) < now
+      );
+      setPastEvents(pastEventsFiltered);
+    } catch (err) {
+      console.error('Error loading past events:', err);
+    }
+  };
+
   const handleDeleteEvent = async (event: Event) => {
     if (!window.confirm(`Event "${event.name}" wirklich löschen?`)) return;
 
@@ -124,6 +145,7 @@ const AdminEventsPage: React.FC = () => {
       // Sofortige Aktualisierung
       await loadEvents();
       await loadCancelledEvents();
+      await loadPastEvents();
     } catch (error: any) {
       if (error.response?.data?.error) {
         alert(error.response.data.error);
@@ -137,11 +159,7 @@ const AdminEventsPage: React.FC = () => {
     // Create a copy of the event with modified name and reset dates
     const eventCopy = {
       ...event,
-      name: `${event.name} (Kopie)`,
-      event_date: '', // Reset date to be set in modal
-      event_end_time: '',
-      registration_opens_at: '',
-      registration_closes_at: ''
+      name: `${event.name} (Kopie)`
     };
     
     // Remove properties that shouldn't be copied
@@ -149,6 +167,10 @@ const AdminEventsPage: React.FC = () => {
     delete (eventCopy as any).registered_count;
     delete (eventCopy as any).registration_status;
     delete (eventCopy as any).created_at;
+    delete (eventCopy as any).event_date;
+    delete (eventCopy as any).event_end_time;
+    delete (eventCopy as any).registration_opens_at;
+    delete (eventCopy as any).registration_closes_at;
     
     setEditEvent(eventCopy as Event);
     presentEventModalHook({
@@ -171,6 +193,7 @@ const AdminEventsPage: React.FC = () => {
       setSuccess(`Event "${event.name}" wurde abgesagt`);
       await loadEvents();
       await loadCancelledEvents();
+      await loadPastEvents();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);
@@ -204,23 +227,14 @@ const AdminEventsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>{showCancelled ? 'Abgesagte Events' : 'Events'}</IonTitle>
+          <IonTitle>
+            {activeTab === 'all' ? 'Alle Events' :
+             activeTab === 'upcoming' ? 'Anstehende Events' :
+             activeTab === 'past' ? 'Vergangene Events' :
+             'Abgesagte Events'}
+          </IonTitle>
           <IonButtons slot="end">
-            <IonButton 
-              fill={showCancelled ? 'clear' : 'solid'}
-              color={showCancelled ? 'medium' : 'primary'}
-              onClick={() => setShowCancelled(false)}
-            >
-              <IonIcon icon={list} />
-            </IonButton>
-            <IonButton 
-              fill={showCancelled ? 'solid' : 'clear'}
-              color={showCancelled ? 'warning' : 'medium'}
-              onClick={() => setShowCancelled(true)}
-            >
-              <IonIcon icon={archive} />
-            </IonButton>
-            {canCreate && !showCancelled && (
+            {canCreate && activeTab !== 'cancelled' && activeTab !== 'past' && (
               <IonButton onClick={presentEventModal}>
                 <IonIcon icon={add} />
               </IonButton>
@@ -232,7 +246,10 @@ const AdminEventsPage: React.FC = () => {
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
             <IonTitle size="large" style={{ color: 'black' }}>
-              {showCancelled ? 'Abgesagte Events' : 'Events'}
+              {activeTab === 'all' ? 'Alle Events' :
+               activeTab === 'upcoming' ? 'Anstehende Events' :
+               activeTab === 'past' ? 'Vergangene Events' :
+               'Abgesagte Events'}
             </IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -240,22 +257,94 @@ const AdminEventsPage: React.FC = () => {
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadEvents();
           loadCancelledEvents();
+          loadPastEvents();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
         
+        {/* Tab Navigation */}
+        <div style={{
+          display: 'flex',
+          backgroundColor: 'white',
+          borderBottom: '1px solid #e0e0e0',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          margin: '0 16px',
+          borderRadius: '12px 12px 0 0',
+          marginTop: '16px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          {[
+            { key: 'all', label: 'Alle', icon: list, count: events.length },
+            { key: 'upcoming', label: 'Anstehend', icon: calendar, count: events.filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length },
+            { key: 'past', label: 'Vergangen', icon: time, count: pastEvents.length },
+            { key: 'cancelled', label: 'Abgesagt', icon: close, count: cancelledEvents.length }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              style={{
+                flex: 1,
+                padding: '12px 8px',
+                border: 'none',
+                background: activeTab === tab.key ? '#007aff' : 'transparent',
+                color: activeTab === tab.key ? 'white' : '#666',
+                fontSize: '0.9rem',
+                fontWeight: activeTab === tab.key ? '600' : '500',
+                borderRadius: activeTab === tab.key ? '8px' : '0',
+                margin: '4px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <IonIcon 
+                icon={tab.icon} 
+                style={{ 
+                  fontSize: '1.2rem',
+                  color: activeTab === tab.key ? 'white' : '#007aff'
+                }} 
+              />
+              <span style={{ fontSize: '0.8rem' }}>{tab.label}</span>
+              <span style={{ 
+                fontSize: '0.7rem', 
+                opacity: 0.8,
+                backgroundColor: activeTab === tab.key ? 'rgba(255,255,255,0.2)' : '#f0f0f0',
+                padding: '2px 6px',
+                borderRadius: '10px',
+                minWidth: '20px'
+              }}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+        
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
           <EventsView 
-            events={showCancelled ? cancelledEvents : events}
-            onUpdate={showCancelled ? loadCancelledEvents : loadEvents}
+            events={
+              activeTab === 'all' ? events :
+              activeTab === 'upcoming' ? events.filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open') :
+              activeTab === 'past' ? pastEvents :
+              cancelledEvents
+            }
+            onUpdate={
+              activeTab === 'past' ? loadPastEvents :
+              activeTab === 'cancelled' ? loadCancelledEvents :
+              loadEvents
+            }
             onAddEventClick={presentEventModal}
             onSelectEvent={handleSelectEvent}
-            onDeleteEvent={canDelete && !showCancelled ? handleDeleteEvent : undefined}
+            onDeleteEvent={canDelete && activeTab !== 'cancelled' && activeTab !== 'past' ? handleDeleteEvent : undefined}
             onCopyEvent={canCopy ? handleCopyEvent : undefined}
-            onCancelEvent={canCancel && !showCancelled ? handleCancelEvent : undefined}
+            onCancelEvent={canCancel && activeTab !== 'cancelled' && activeTab !== 'past' ? handleCancelEvent : undefined}
           />
         )}
       </IonContent>
