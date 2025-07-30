@@ -416,7 +416,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                         <div style={{ 
                           width: '32px', 
                           height: '32px',
-                          backgroundColor: event.registration_status === 'cancelled' ? '#dc3545' : '#eb445a',
+                          backgroundColor: 
+                            event.registration_status === 'cancelled' ? '#dc3545' : 
+                            new Date(event.event_date) < new Date() ? '#28a745' : '#eb445a',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
@@ -425,7 +427,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                           flexShrink: 0
                         }}>
                           <IonIcon 
-                            icon={event.registration_status === 'cancelled' ? ban : flash} 
+                            icon={
+                              event.registration_status === 'cancelled' ? ban : 
+                              new Date(event.event_date) < new Date() ? checkmarkCircle : flash
+                            }
                             style={{ 
                               fontSize: '1rem', 
                               color: 'white'

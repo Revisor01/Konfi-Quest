@@ -133,11 +133,19 @@ const EventModal: React.FC<EventModalProps> = ({
     loadCategories();
     loadJahrgaenge();
     if (event) {
+      // Helper function to convert UTC timestamps to local ISO strings for IonDatetime
+      const utcToLocalISO = (utcString: string) => {
+        if (!utcString) return '';
+        const date = new Date(utcString);
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+      };
+      
       setFormData({
         name: event.name,
         description: event.description || '',
-        event_date: event.event_date,
-        event_end_time: event.event_end_time || '',
+        event_date: utcToLocalISO(event.event_date),
+        event_end_time: utcToLocalISO(event.event_end_time || ''),
         location: event.location || '',
         points: event.points,
         point_type: event.point_type || 'gemeinde',
@@ -145,8 +153,8 @@ const EventModal: React.FC<EventModalProps> = ({
         jahrgang_ids: event.jahrgaenge?.map(j => j.id) || [],
         type: event.type,
         max_participants: event.max_participants,
-        registration_opens_at: event.registration_opens_at || '',
-        registration_closes_at: event.registration_closes_at || '',
+        registration_opens_at: utcToLocalISO(event.registration_opens_at || ''),
+        registration_closes_at: utcToLocalISO(event.registration_closes_at || ''),
         has_timeslots: event.has_timeslots || false,
         waitlist_enabled: (event as any).waitlist_enabled !== undefined ? (event as any).waitlist_enabled : true,
         max_waitlist_size: (event as any).max_waitlist_size || 3,

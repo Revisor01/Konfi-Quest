@@ -235,12 +235,7 @@ const AdminEventsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>
-            {activeTab === 'all' ? 'Alle Events' :
-             activeTab === 'upcoming' ? 'Anstehende Events' :
-             activeTab === 'past' ? 'Vergangene Events' :
-             'Abgesagte Events'}
-          </IonTitle>
+          <IonTitle>Events</IonTitle>
           <IonButtons slot="end">
             {canCreate && activeTab !== 'cancelled' && activeTab !== 'past' && (
               <IonButton onClick={presentEventModal}>
@@ -254,10 +249,7 @@ const AdminEventsPage: React.FC = () => {
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
             <IonTitle size="large" style={{ color: 'black' }}>
-              {activeTab === 'all' ? 'Alle Events' :
-               activeTab === 'upcoming' ? 'Anstehende Events' :
-               activeTab === 'past' ? 'Vergangene Events' :
-               'Abgesagte Events'}
+              Events
             </IonTitle>
           </IonToolbar>
         </IonHeader>
