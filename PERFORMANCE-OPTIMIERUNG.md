@@ -64,6 +64,11 @@ const loadBasicKonfi = async (id: string) => {
 
 ## Implementierungs-Prioritäten
 
+Was wir auch tun sollten, immer den aktuellesten Jahrgang vorauswählen. Das sorgt dafür, dass i.d.R. nur max 45 konfis geladen werden müssen.
+Und wie ist es eigentlich wenn die App kein Internet hat? Welche Daten werden dann gezeigt? Oder ist es eine Mobile only App?
+Filter im Backend, macht das Sinn? Wenn ja, dann machen wir das.
+Indexe haben wir schon einige, aber machen wir gerne noch mehr.
+
 ### 🔴 **Sofort (>100 Konfis):**
 1. Badge Count Subquery → JOIN optimieren
 2. Display Name Index hinzufügen
