@@ -70,6 +70,8 @@ interface Event {
   created_at: string;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
+  is_series?: boolean;
+  series_id?: number;
 }
 
 interface EventsViewProps {
@@ -445,6 +447,17 @@ const EventsView: React.FC<EventsViewProps> = ({
                           textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none'
                         }}>
                           {event.name}
+                          {event.is_series && (
+                            <IonIcon 
+                              icon={copy} 
+                              style={{ 
+                                fontSize: '0.8rem', 
+                                color: '#007aff', 
+                                marginLeft: '6px',
+                                opacity: 0.7
+                              }} 
+                            />
+                          )}
                         </h2>
                       </div>
                       

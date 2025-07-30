@@ -11,7 +11,8 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonActionSheet
 } from '@ionic/react';
 import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -45,12 +46,15 @@ interface Event {
   created_at: string;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
+  is_series?: boolean;
+  series_id?: number;
 }
 
 const AdminEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const history = useHistory();
+  const [presentActionSheet] = useIonActionSheet();
   
   // State
   const [events, setEvents] = useState<Event[]>([]);
@@ -145,20 +149,80 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const handleDeleteEvent = async (event: Event) => {
+    // Check if this is part of a series
+    if (event.is_series && event.series_id) {
+      // Get other events in the series
+      const allEvents = [...events, ...cancelledEvents, ...pastEvents];
+      const seriesEvents = allEvents.filter(e => 
+        e.series_id === event.series_id && e.id !== event.id
+      );
+      
+      if (seriesEvents.length > 0) {
+        // Show action sheet for series deletion
+        presentActionSheet({
+          header: `Serie-Event löschen`,
+          subHeader: `"${event.name}" ist Teil einer Serie mit ${seriesEvents.length + 1} Terminen.`,
+          buttons: [
+            {
+              text: 'Nur diesen Termin löschen',
+              icon: 'trash-outline',
+              handler: () => deleteSingleEvent(event)
+            },
+            {
+              text: `Ganze Serie löschen (${seriesEvents.length + 1} Termine)`,
+              icon: 'warning-outline', 
+              role: 'destructive',
+              handler: () => deleteWholeSeries(event.series_id!, [...seriesEvents, event])
+            },
+            {
+              text: 'Abbrechen',
+              role: 'cancel'
+            }
+          ]
+        });
+        return;
+      }
+    }
+    
+    // Normal single event deletion
+    deleteSingleEvent(event);
+  };
+  
+  const deleteSingleEvent = async (event: Event) => {
     if (!window.confirm(`Event "${event.name}" wirklich löschen?`)) return;
 
     try {
       await api.delete(`/events/${event.id}`);
       setSuccess(`Event "${event.name}" gelöscht`);
-      // Sofortige Aktualisierung
+      await loadEvents();
+      await loadCancelledEvents(); 
+      await loadPastEvents();
+    } catch (error: any) {
+      if (error.response?.data?.error) {
+        setError(error.response.data.error);
+      } else {
+        setError('Fehler beim Löschen des Events');
+      }
+    }
+  };
+  
+  const deleteWholeSeries = async (seriesId: number, seriesEvents: Event[]) => {
+    if (!window.confirm(`Wirklich die ganze Serie mit ${seriesEvents.length} Terminen löschen?`)) return;
+
+    try {
+      // Delete all events in the series
+      const deletePromises = seriesEvents.map(event => api.delete(`/events/${event.id}`));
+      await Promise.all(deletePromises);
+      
+      setSuccess(`Serie mit ${seriesEvents.length} Terminen gelöscht`);
       await loadEvents();
       await loadCancelledEvents();
       await loadPastEvents();
     } catch (error: any) {
       if (error.response?.data?.error) {
-        alert(error.response.data.error);
+        setError(error.response.data.error);
       } else {
-        alert('Fehler beim Löschen des Events');
+        setError('Fehler beim Löschen der Serie');
       }
     }
   };
