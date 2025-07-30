@@ -20,9 +20,13 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  useIonModal
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
-import { add, calendar, checkmarkCircle, closeCircle, hourglass, home, people } from 'ionicons/icons';
+import { add, calendar, checkmarkCircle, closeCircle, hourglass, home, people, trash } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -47,6 +51,7 @@ interface ActivityRequest {
 const KonfiRequestsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
+  const [presentAlert] = useIonAlert();
   
   const [requests, setRequests] = useState<ActivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +119,37 @@ const KonfiRequestsPage: React.FC = () => {
 
   const getTypeText = (type: string) => {
     return type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+  };
+
+  const handleDeleteRequest = (request: ActivityRequest) => {
+    if (request.status !== 'pending') {
+      setError('Nur wartende Anträge können gelöscht werden');
+      return;
+    }
+
+    presentAlert({
+      header: 'Antrag löschen',
+      message: `Möchtest du deinen Antrag für "${request.activity_name}" wirklich löschen?`,
+      buttons: [
+        {
+          text: 'Abbrechen',
+          role: 'cancel'
+        },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/konfi/requests/${request.id}`);
+              setSuccess('Antrag erfolgreich gelöscht');
+              loadRequests();
+            } catch (error: any) {
+              setError(error.response?.data?.error || 'Fehler beim Löschen des Antrags');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
@@ -207,21 +243,21 @@ const KonfiRequestsPage: React.FC = () => {
               <IonCardContent style={{ padding: '8px 0' }}>
                 <IonList lines="none" style={{ background: 'transparent' }}>
                   {requests.map((request) => (
-                    <IonItem
-                      key={request.id}
-                      style={{
-                        '--min-height': '90px',
-                        '--padding-start': '16px',
-                        '--padding-top': '12px',
-                        '--padding-bottom': '12px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #f0f0f0',
-                        borderRadius: '12px'
-                      }}
-                    >
+                    <IonItemSliding key={request.id}>
+                      <IonItem
+                        style={{
+                          '--min-height': '90px',
+                          '--padding-start': '16px',
+                          '--padding-top': '12px',
+                          '--padding-bottom': '12px',
+                          '--background': '#fbfbfb',
+                          '--border-radius': '12px',
+                          margin: '6px 8px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          border: '1px solid #f0f0f0',
+                          borderRadius: '12px'
+                        }}
+                      >
                       <IonLabel>
                         {/* Header mit Status */}
                         <div style={{
@@ -325,7 +361,19 @@ const KonfiRequestsPage: React.FC = () => {
                           </div>
                         )}
                       </IonLabel>
-                    </IonItem>
+                      </IonItem>
+
+                      {request.status === 'pending' && (
+                        <IonItemOptions side="end">
+                          <IonItemOption 
+                            color="danger" 
+                            onClick={() => handleDeleteRequest(request)}
+                          >
+                            <IonIcon icon={trash} />
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
+                    </IonItemSliding>
                   ))}
 
                   {requests.length === 0 && (

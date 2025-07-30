@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Redirect, Route, useLocation } from 'react-router-dom'; // useLocation importieren!
 import {
   IonIcon,
@@ -26,6 +26,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
+import api from '../../services/api';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
 import AdminActivitiesPage from '../admin/pages/AdminActivitiesPage';
@@ -33,7 +34,7 @@ import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
-import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage';
+import AdminRequestsPage from '../admin/pages/AdminRequestsPage';
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
 import AdminRolesPage from '../admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
@@ -54,7 +55,29 @@ import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 const MainTabs: React.FC = () => {
   const { user } = useApp();
   const { badgeCount } = useBadge();
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
+
+  // Load pending requests count for admin
+  useEffect(() => {
+    const loadPendingRequestsCount = async () => {
+      if (user?.type === 'admin') {
+        try {
+          const response = await api.get('/admin/activities/requests');
+          const pendingCount = response.data.filter((req: any) => req.status === 'pending').length;
+          setPendingRequestsCount(pendingCount);
+        } catch (error) {
+          console.error('Error loading pending requests count:', error);
+        }
+      }
+    };
+
+    loadPendingRequestsCount();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(loadPendingRequestsCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   if (!user) {
     return null;
@@ -100,7 +123,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
+          <Route exact path="/admin/requests" component={AdminRequestsPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/roles" component={AdminRolesPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
@@ -140,6 +163,11 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-requests" href="/admin/requests">
               <IonIcon icon={document} />
               <IonLabel>Anträge</IonLabel>
+              {pendingRequestsCount > 0 && (
+                <IonBadge color="danger">
+                  {pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}
+                </IonBadge>
+              )}
             </IonTabButton>
             <IonTabButton tab="admin-settings" href="/admin/settings">
               <IonIcon icon={ellipsisHorizontal} />
