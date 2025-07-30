@@ -6,7 +6,7 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Konfi-specific routes
-module.exports = (db, rbacMiddleware) => {
+module.exports = (db, rbacMiddleware, upload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
 
   // Get konfi dashboard data
@@ -198,13 +198,13 @@ module.exports = (db, rbacMiddleware) => {
     try {
       const konfiId = req.user.id;
       const query = `
-        SELECT ar.*, a.name as activity_name, a.points as activity_points
+        SELECT ar.*, a.name as activity_name, a.points as activity_points, a.type as activity_type
         FROM activity_requests ar
         LEFT JOIN activities a ON ar.activity_id = a.id
-        WHERE ar.konfi_id = $1
+        WHERE ar.konfi_id = $1 AND ar.organization_id = $2
         ORDER BY ar.created_at DESC
       `;
-      const { rows: requests } = await db.query(query, [konfiId]);
+      const { rows: requests } = await db.query(query, [konfiId, req.user.organization_id]);
       res.json(requests);
     } catch (err) {
       console.error('Database error in GET /requests:', err);
@@ -220,26 +220,81 @@ module.exports = (db, rbacMiddleware) => {
     
     try {
       const konfiId = req.user.id;
-      const { activity_id, description, photo_filename } = req.body;
+      const { activity_id, description, photo_filename, requested_date } = req.body;
       
       if (!activity_id) {
         return res.status(400).json({ error: 'Activity ID is required' });
       }
       
+      const date = requested_date || new Date().toISOString().split('T')[0];
+      
+      // Get activity details for notification
+      const { rows: [activity] } = await db.query(
+        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2",
+        [activity_id, req.user.organization_id]
+      );
+
+      if (!activity) {
+        return res.status(404).json({ error: 'Activity not found' });
+      }
+
       const insertQuery = `
-        INSERT INTO activity_requests (konfi_id, activity_id, comment, photo_filename, status)
-        VALUES ($1, $2, $3, $4, 'pending')
+        INSERT INTO activity_requests (konfi_id, activity_id, requested_date, comment, photo_filename, status, organization_id)
+        VALUES ($1, $2, $3, $4, $5, 'pending', $6)
         RETURNING id
       `;
-      const { rows: [newRequest] } = await db.query(insertQuery, [konfiId, activity_id, description, photo_filename]);
+      const { rows: [newRequest] } = await db.query(insertQuery, [konfiId, activity_id, date, description, photo_filename, req.user.organization_id]);
       
+      // Send confirmation notification to konfi
+      try {
+        await db.query(
+          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+          [
+            konfiId,
+            'Antrag eingereicht ✅',
+            `Dein Antrag für "${activity.name}" wurde eingereicht und wird geprüft.`,
+            'activity_request_submitted',
+            JSON.stringify({ 
+              request_id: newRequest.id,
+              activity_name: activity.name,
+              points: activity.points
+            }),
+            req.user.organization_id
+          ]
+        );
+      } catch (notifErr) {
+        console.error('Error sending notification:', notifErr);
+        // Don't fail the request if notification fails
+      }
+
       res.status(201).json({ 
         id: newRequest.id, 
-        message: 'Activity request submitted successfully' 
+        message: 'Antrag erfolgreich eingereicht' 
       });
     } catch (err) {
       console.error('Database error in POST /requests:', err);
       res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Upload photo for activity request
+  router.post('/upload-photo', verifyTokenRBAC, upload.single('photo'), async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+    
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Kein Foto hochgeladen' });
+      }
+      
+      res.json({ 
+        filename: req.file.filename,
+        message: 'Foto erfolgreich hochgeladen' 
+      });
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+      res.status(500).json({ error: 'Fehler beim Hochladen des Fotos' });
     }
   });
 
@@ -251,13 +306,16 @@ module.exports = (db, rbacMiddleware) => {
     
     try {
       const query = `
-        SELECT a.*, a.name, c.name as category_name
+        SELECT a.id, a.name, a.description, a.points, a.type,
+               STRING_AGG(c.name, ', ') as category_names
         FROM activities a
         LEFT JOIN activity_categories ac ON a.id = ac.activity_id
         LEFT JOIN categories c ON ac.category_id = c.id
-        ORDER BY c.name, a.name
+        WHERE a.organization_id = $1
+        GROUP BY a.id, a.name, a.description, a.points, a.type
+        ORDER BY a.type, a.name
       `;
-      const { rows: activities } = await db.query(query);
+      const { rows: activities } = await db.query(query, [req.user.organization_id]);
       res.json(activities);
     } catch (err) {
       console.error('Database error in GET /activities:', err);

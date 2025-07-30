@@ -165,7 +165,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
-app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }));
+app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));

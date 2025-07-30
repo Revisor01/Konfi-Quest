@@ -280,10 +280,32 @@ const AdminEventsPage: React.FC = () => {
     history.push(`/admin/events/${event.id}`);
   };
 
-  const presentEventModal = () => {
-    setEditEvent(null);
+  const presentEventModal = (eventType: 'single' | 'series' = 'single') => {
+    setEditEvent(eventType === 'series' ? { is_series: true } as Event : null);
     presentEventModalHook({
       presentingElement: presentingElement
+    });
+  };
+
+  const handleAddEventClick = () => {
+    presentActionSheet({
+      header: 'Event erstellen',
+      buttons: [
+        {
+          text: 'Einzelnes Event erstellen',
+          icon: 'calendar-outline',
+          handler: () => presentEventModal('single')
+        },
+        {
+          text: 'Event-Serie erstellen',
+          icon: 'copy-outline', 
+          handler: () => presentEventModal('series')
+        },
+        {
+          text: 'Abbrechen',
+          role: 'cancel'
+        }
+      ]
     });
   };
 
@@ -302,7 +324,7 @@ const AdminEventsPage: React.FC = () => {
           <IonTitle>Events</IonTitle>
           <IonButtons slot="end">
             {canCreate && activeTab !== 'cancelled' && activeTab !== 'past' && (
-              <IonButton onClick={presentEventModal}>
+              <IonButton onClick={handleAddEventClick}>
                 <IonIcon icon={add} />
               </IonButton>
             )}
@@ -343,7 +365,7 @@ const AdminEventsPage: React.FC = () => {
               activeTab === 'cancelled' ? loadCancelledEvents :
               loadEvents
             }
-            onAddEventClick={presentEventModal}
+            onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
             onDeleteEvent={canDelete && activeTab !== 'cancelled' && activeTab !== 'past' ? handleDeleteEvent : undefined}
             onCopyEvent={canCopy ? handleCopyEvent : undefined}

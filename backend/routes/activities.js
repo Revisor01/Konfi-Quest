@@ -179,7 +179,13 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
     try {
-      const getRequestQuery = "SELECT ar.*, a.points, a.type FROM activity_requests ar JOIN activities a ON ar.activity_id = a.id WHERE ar.id = $1 AND a.organization_id = $2";
+      const getRequestQuery = `
+        SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
+        FROM activity_requests ar 
+        JOIN activities a ON ar.activity_id = a.id 
+        JOIN users u ON ar.konfi_id = u.id
+        WHERE ar.id = $1 AND a.organization_id = $2
+      `;
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
       if (!request) return res.status(404).json({ error: 'Request not found' });
 
@@ -195,6 +201,41 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
         
         newBadges = await checkAndAwardBadges(request.konfi_id);
       }
+
+      // Send push notification to konfi
+      try {
+        const notificationTitle = status === 'approved' 
+          ? `Antrag genehmigt! 🎉`
+          : `Antrag abgelehnt`;
+        
+        const notificationBody = status === 'approved'
+          ? `Dein Antrag für "${request.activity_name}" wurde genehmigt. Du erhältst ${request.points} ${request.points === 1 ? 'Punkt' : 'Punkte'}!`
+          : `Dein Antrag für "${request.activity_name}" wurde leider abgelehnt.${admin_comment ? ` Grund: ${admin_comment}` : ''}`;
+
+        // Create notification entry
+        await db.query(
+          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+          [
+            request.konfi_id,
+            notificationTitle,
+            notificationBody,
+            'activity_request_decision',
+            JSON.stringify({ 
+              request_id: requestId, 
+              activity_name: request.activity_name,
+              status: status,
+              points: request.points
+            }),
+            req.user.organization_id
+          ]
+        );
+
+        console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
+      } catch (notifErr) {
+        console.error('Error sending notification:', notifErr);
+        // Don't fail the request if notification fails
+      }
+      
       res.json({ message: 'Request status updated', newBadges });
     } catch (err) {
       console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
