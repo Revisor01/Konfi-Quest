@@ -395,7 +395,7 @@ const AdminRequestsPage: React.FC = () => {
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/activities/requests');
+      const response = await api.get('/admin/activities/requests');
       setRequests(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Anträge');
@@ -407,7 +407,7 @@ const AdminRequestsPage: React.FC = () => {
 
   async function handleApproveRequest(requestId: number, comment?: string) {
     try {
-      await api.put(`/activities/requests/${requestId}`, {
+      await api.put(`/admin/activities/requests/${requestId}`, {
         status: 'approved',
         admin_comment: comment
       });
@@ -422,7 +422,7 @@ const AdminRequestsPage: React.FC = () => {
 
   async function handleRejectRequest(requestId: number, comment: string) {
     try {
-      await api.put(`/activities/requests/${requestId}`, {
+      await api.put(`/admin/activities/requests/${requestId}`, {
         status: 'rejected',
         admin_comment: comment
       });
