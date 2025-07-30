@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Events routes
-module.exports = (db, rbacVerifier, checkPermission) => {
+module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   
   // Get all events (read-only, accessible to all authenticated users)
   router.get('/', rbacVerifier, async (req, res) => {
@@ -1013,6 +1013,18 @@ module.exports = (db, rbacVerifier, checkPermission) => {
           ? "UPDATE konfi_profiles SET gottesdienst_points = gottesdienst_points + $1 WHERE user_id = $2"
           : "UPDATE konfi_profiles SET gemeinde_points = gemeinde_points + $1 WHERE user_id = $2";
           await db.query(updateProfileQuery, [eventData.points, eventData.user_id]);
+          
+          // Check for new badges after event points are awarded
+          try {
+            const newBadges = await checkAndAwardBadges(db, eventData.user_id);
+            if (newBadges > 0) {
+              console.log(`🏆 ${newBadges} neue Badge(s) für Konfi ${eventData.user_id} nach Event-Teilnahme vergeben`);
+            }
+          } catch (badgeErr) {
+            console.error('Error checking badges after event attendance:', badgeErr);
+            // Don't fail the request if badge checking fails
+          }
+          
           await db.query('COMMIT');
           return res.json({ message: `Attendance updated and ${eventData.points} ${pointType} points awarded`, points_awarded: true });
         } else {

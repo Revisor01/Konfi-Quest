@@ -170,7 +170,7 @@ app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDi
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 
-app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission, badgesRouter.checkAndAwardBadges));
 app.use('/api/settings', settingsRoutes(db, rbacVerifier, checkPermission));
 
 app.use('/api/admin/activities', activitiesRouter);

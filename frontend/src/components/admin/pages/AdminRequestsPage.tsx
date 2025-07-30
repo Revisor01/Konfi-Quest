@@ -13,7 +13,6 @@ import {
   IonLabel,
   IonList,
   IonBadge,
-  IonChip,
   IonButton,
   IonIcon,
   IonButtons,
@@ -23,22 +22,23 @@ import {
   IonTextarea,
   IonInput,
   IonImg,
+  IonSegment,
+  IonSegmentButton,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
 import { 
-  checkmarkCircle, 
-  closeCircle, 
-  hourglass, 
-  home, 
-  people, 
-  calendar,
-  person,
-  star,
-  image,
-  text,
-  close,
-  checkmark
+  checkmarkCircleOutline, 
+  closeCircleOutline, 
+  timeOutline, 
+  homeOutline, 
+  peopleOutline, 
+  calendarOutline,
+  personOutline,
+  imageOutline,
+  documentTextOutline,
+  closeOutline,
+  checkmarkOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -98,7 +98,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   };
 
   const getTypeIcon = (type: string) => {
-    return type === 'gottesdienst' ? home : people;
+    return type === 'gottesdienst' ? homeOutline : peopleOutline;
   };
 
   return (
@@ -108,7 +108,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <IonTitle>{request.activity_name}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={onClose}>
-              <IonIcon icon={close} />
+              <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -157,7 +157,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               </h3>
               
               <IonItem lines="none" style={{ '--padding-start': '0' }}>
-                <IonIcon icon={person} slot="start" color="primary" />
+                <IonIcon icon={personOutline} slot="start" color="primary" />
                 <IonLabel>
                   <h4>{request.konfi_name}</h4>
                   <p>Eingereicht am {formatDate(request.created_at)}</p>
@@ -165,7 +165,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               </IonItem>
 
               <IonItem lines="none" style={{ '--padding-start': '0' }}>
-                <IonIcon icon={calendar} slot="start" color="success" />
+                <IonIcon icon={calendarOutline} slot="start" color="success" />
                 <IonLabel>
                   <h4>Aktivitätsdatum</h4>
                   <p>{formatRequestedDate(request.requested_date)}</p>
@@ -184,7 +184,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   gap: '12px',
                   marginBottom: '16px'
                 }}>
-                  <IonIcon icon={text} color="warning" style={{ fontSize: '1.2rem' }} />
+                  <IonIcon icon={documentTextOutline} color="warning" style={{ fontSize: '1.2rem' }} />
                   <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
                     Beschreibung
                   </h3>
@@ -213,7 +213,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   gap: '12px',
                   marginBottom: '16px'
                 }}>
-                  <IonIcon icon={image} color="tertiary" style={{ fontSize: '1.2rem' }} />
+                  <IonIcon icon={imageOutline} color="tertiary" style={{ fontSize: '1.2rem' }} />
                   <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
                     Nachweis-Foto
                   </h3>
@@ -248,7 +248,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                       onClick={() => onApprove(request.id, comment)}
                       style={{ flex: 1 }}
                     >
-                      <IonIcon icon={checkmark} slot="start" />
+                      <IonIcon icon={checkmarkOutline} slot="start" />
                       Genehmigen
                     </IonButton>
                     <IonButton 
@@ -258,7 +258,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                       onClick={() => setShowRejectForm(true)}
                       style={{ flex: 1 }}
                     >
-                      <IonIcon icon={closeCircle} slot="start" />
+                      <IonIcon icon={closeCircleOutline} slot="start" />
                       Ablehnen
                     </IonButton>
                   </div>
@@ -283,7 +283,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                         disabled={!rejectComment.trim()}
                         style={{ flex: 1 }}
                       >
-                        <IonIcon icon={closeCircle} slot="start" />
+                        <IonIcon icon={closeCircleOutline} slot="start" />
                         Endgültig ablehnen
                       </IonButton>
                       <IonButton 
@@ -329,7 +329,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <IonIcon 
-                      icon={request.status === 'approved' ? checkmarkCircle : closeCircle}
+                      icon={request.status === 'approved' ? checkmarkCircleOutline : closeCircleOutline}
                       color={request.status === 'approved' ? 'success' : 'danger'}
                       style={{ fontSize: '1.5rem' }}
                     />
@@ -380,6 +380,7 @@ const AdminRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<ActivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
+  const [selectedTab, setSelectedTab] = useState<string>('pending');
 
   const [presentDetailModal, dismissDetailModal] = useIonModal(RequestDetailModal, {
     request: selectedRequest,
@@ -469,7 +470,20 @@ const AdminRequestsPage: React.FC = () => {
   };
 
   const getTypeIcon = (type: string) => {
-    return type === 'gottesdienst' ? home : people;
+    return type === 'gottesdienst' ? homeOutline : peopleOutline;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved': return checkmarkOutline;
+      case 'rejected': return closeOutline;
+      case 'pending': return timeOutline;
+      default: return timeOutline;
+    }
+  };
+
+  const getFilteredRequests = () => {
+    return requests.filter(request => request.status === selectedTab);
   };
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
@@ -508,16 +522,16 @@ const AdminRequestsPage: React.FC = () => {
             <IonCard style={{
               margin: '16px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, #eb445a 0%, #f68b9b 100%)',
+              background: 'linear-gradient(135deg, #2dd36f 0%, #1a8a4a 100%)',
               color: 'white',
-              boxShadow: '0 8px 32px rgba(235, 68, 90, 0.3)'
+              boxShadow: '0 8px 32px rgba(45, 211, 111, 0.3)'
             }}>
               <IonCardContent>
                 <IonGrid>
                   <IonRow>
                     <IonCol size="4">
                       <div style={{ textAlign: 'center' }}>
-                        <IonIcon icon={hourglass} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                        <IonIcon icon={timeOutline} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                         <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                           {pendingRequests.length}
                         </h3>
@@ -528,7 +542,7 @@ const AdminRequestsPage: React.FC = () => {
                     </IonCol>
                     <IonCol size="4">
                       <div style={{ textAlign: 'center' }}>
-                        <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                        <IonIcon icon={checkmarkCircleOutline} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                         <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                           {approvedRequests.length}
                         </h3>
@@ -539,7 +553,7 @@ const AdminRequestsPage: React.FC = () => {
                     </IonCol>
                     <IonCol size="4">
                       <div style={{ textAlign: 'center' }}>
-                        <IonIcon icon={closeCircle} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
+                        <IonIcon icon={closeCircleOutline} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
                         <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
                           {rejectedRequests.length}
                         </h3>
@@ -553,11 +567,39 @@ const AdminRequestsPage: React.FC = () => {
               </IonCardContent>
             </IonCard>
 
+            {/* Tab Navigation */}
+            <IonCard style={{ margin: '16px' }}>
+              <IonCardContent style={{ padding: '16px' }}>
+                <IonSegment 
+                  value={selectedTab} 
+                  onIonChange={(e) => setSelectedTab(e.detail.value as string)}
+                  style={{ 
+                    '--background': '#f8f9fa',
+                    borderRadius: '8px',
+                    padding: '4px'
+                  }}
+                >
+                  <IonSegmentButton value="pending">
+                    <IonIcon icon={timeOutline} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                    <IonLabel>Offen</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="approved">
+                    <IonIcon icon={checkmarkOutline} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                    <IonLabel>Genehmigt</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="rejected">
+                    <IonIcon icon={closeOutline} style={{ fontSize: '1rem', marginRight: '4px' }} />
+                    <IonLabel>Abgelehnt</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </IonCardContent>
+            </IonCard>
+
             {/* Anträge Liste */}
             <IonCard style={{ margin: '16px' }}>
               <IonCardContent style={{ padding: '8px 0' }}>
                 <IonList lines="none" style={{ background: 'transparent' }}>
-                  {requests.map((request) => (
+                  {getFilteredRequests().map((request) => (
                     <IonItem
                       key={request.id}
                       button
@@ -587,7 +629,8 @@ const AdminRequestsPage: React.FC = () => {
                             <div style={{
                               width: '32px',
                               height: '32px',
-                              backgroundColor: request.activity_type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
+                              backgroundColor: getStatusColor(request.status) === 'success' ? '#2dd36f' : 
+                                               getStatusColor(request.status) === 'danger' ? '#eb445a' : '#ffc409',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
@@ -595,7 +638,7 @@ const AdminRequestsPage: React.FC = () => {
                               flexShrink: 0
                             }}>
                               <IonIcon
-                                icon={getTypeIcon(request.activity_type)}
+                                icon={getStatusIcon(request.status)}
                                 style={{
                                   fontSize: '1rem',
                                   color: 'white'
@@ -619,10 +662,6 @@ const AdminRequestsPage: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                          
-                          <IonBadge color={getStatusColor(request.status)} style={{ fontSize: '0.75rem' }}>
-                            {getStatusText(request.status)}
-                          </IonBadge>
                         </div>
 
                         {/* Details */}
@@ -635,7 +674,7 @@ const AdminRequestsPage: React.FC = () => {
                           color: '#666'
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: '#007aff' }} />
+                            <IonIcon icon={calendarOutline} style={{ fontSize: '0.9rem', color: '#007aff' }} />
                             <span>{formatDate(request.requested_date)}</span>
                           </div>
                           
@@ -645,14 +684,21 @@ const AdminRequestsPage: React.FC = () => {
                             {request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}
                           </span>
 
-                          {request.photo_filename && (
-                            <>
-                              <span style={{ color: '#6c757d' }}>•</span>
-                              <IonChip style={{ fontSize: '0.75rem', height: '20px' }}>
-                                📷 Foto
-                              </IonChip>
-                            </>
-                          )}
+                          <span style={{ color: '#6c757d' }}>•</span>
+                          
+                          <span style={{ 
+                            color: request.photo_filename ? '#2dd36f' : '#999', 
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px'
+                          }}>
+                            <IonIcon 
+                              icon={imageOutline} 
+                              style={{ fontSize: '0.9rem' }} 
+                            />
+                            {request.photo_filename ? 'Foto' : 'Kein Foto'}
+                          </span>
                         </div>
 
                         {/* Comment Preview */}
@@ -674,10 +720,14 @@ const AdminRequestsPage: React.FC = () => {
                     </IonItem>
                   ))}
 
-                  {requests.length === 0 && (
+                  {getFilteredRequests().length === 0 && (
                     <IonItem>
                       <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                        <p>Keine Anträge vorhanden</p>
+                        <p>
+                          {selectedTab === 'pending' && 'Keine offenen Anträge'}
+                          {selectedTab === 'approved' && 'Keine genehmigten Anträge'}
+                          {selectedTab === 'rejected' && 'Keine abgelehnten Anträge'}
+                        </p>
                       </IonLabel>
                     </IonItem>
                   )}
