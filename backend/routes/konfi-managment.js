@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
-module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => {
+module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, checkAndAwardBadges) => {
 
     // GET all konfis for the admin's organization (with jahrgang filtering)
     router.get('/', rbacVerifier, checkPermission('admin.konfis.view'), async (req, res) => {
@@ -440,6 +440,17 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 WHERE user_id = $2`;
             await db.query(updateQuery, [points, req.params.id]);
 
+            // Check for new badges after bonus points are added
+            try {
+                const newBadges = await checkAndAwardBadges(db, req.params.id);
+                if (newBadges > 0) {
+                    console.log(`🏆 ${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Bonuspunkten vergeben`);
+                }
+            } catch (badgeErr) {
+                console.error('Error checking badges after bonus points:', badgeErr);
+                // Don't fail the request if badge checking fails
+            }
+
             res.status(201).json({ message: 'Bonus points added successfully' });
         } catch (err) {
             console.error('Database error in POST /konfis/:id/bonus-points:', err);
@@ -464,6 +475,14 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess) => 
                 SET ${updateField} = ${updateField} - $1 
                 WHERE user_id = $2`;
             await db.query(updateQuery, [bonus.points, req.params.id]);
+
+            // Check for badge changes after bonus points are removed
+            try {
+                await checkAndAwardBadges(db, req.params.id);
+            } catch (badgeErr) {
+                console.error('Error checking badges after bonus points removal:', badgeErr);
+                // Don't fail the request if badge checking fails
+            }
 
             res.json({ message: 'Bonus points deleted successfully' });
         } catch (err) {

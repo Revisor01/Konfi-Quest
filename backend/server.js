@@ -175,7 +175,7 @@ app.use('/api/settings', settingsRoutes(db, rbacVerifier, checkPermission));
 
 app.use('/api/admin/activities', activitiesRouter);
 app.use('/api/admin/badges', badgesRouter);
-app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission, filterByJahrgangAccess));
+app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
 app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/admin/users', usersRoutes(db, rbacVerifier, checkPermission));

@@ -267,6 +267,47 @@ module.exports = (db, rbacMiddleware, upload) => {
         // Don't fail the request if notification fails
       }
 
+      // Send notification to all admins about new request
+      try {
+        const { rows: admins } = await db.query(
+          `SELECT u.id, u.display_name 
+           FROM users u 
+           JOIN roles r ON u.role_id = r.id 
+           WHERE r.name = 'admin' AND u.organization_id = $1`,
+          [req.user.organization_id]
+        );
+
+        const { rows: [konfiData] } = await db.query(
+          "SELECT display_name FROM users WHERE id = $1",
+          [konfiId]
+        );
+
+        for (const admin of admins) {
+          await db.query(
+            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+            [
+              admin.id,
+              'Neuer Antrag eingegangen 📝',
+              `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+              'new_activity_request',
+              JSON.stringify({
+                request_id: newRequest.id,
+                konfi_id: konfiId,
+                konfi_name: konfiData.display_name,
+                activity_name: activity.name,
+                points: activity.points
+              }),
+              req.user.organization_id
+            ]
+          );
+        }
+
+        console.log(`Notified ${admins.length} admins about new request from ${konfiData.display_name}`);
+      } catch (notifErr) {
+        console.error('Error sending admin notifications:', notifErr);
+        // Don't fail the request if notification fails
+      }
+
       res.status(201).json({ 
         id: newRequest.id, 
         message: 'Antrag erfolgreich eingereicht' 
@@ -295,6 +336,43 @@ module.exports = (db, rbacMiddleware, upload) => {
     } catch (err) {
       console.error('Error uploading photo:', err);
       res.status(500).json({ error: 'Fehler beim Hochladen des Fotos' });
+    }
+  });
+
+  // Delete own activity request (only if pending)
+  router.delete('/requests/:id', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+    
+    try {
+      const requestId = req.params.id;
+      const konfiId = req.user.id;
+      
+      // Check if request exists and belongs to this konfi and is pending
+      const { rows: [request] } = await db.query(
+        "SELECT * FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
+        [requestId, konfiId, req.user.organization_id]
+      );
+      
+      if (!request) {
+        return res.status(404).json({ error: 'Antrag nicht gefunden' });
+      }
+      
+      if (request.status !== 'pending') {
+        return res.status(400).json({ error: 'Nur wartende Anträge können gelöscht werden' });
+      }
+      
+      // Delete the request
+      await db.query(
+        "DELETE FROM activity_requests WHERE id = $1 AND konfi_id = $2 AND organization_id = $3",
+        [requestId, konfiId, req.user.organization_id]
+      );
+      
+      res.json({ message: 'Antrag erfolgreich gelöscht' });
+    } catch (err) {
+      console.error('Database error in DELETE /requests/:id:', err);
+      res.status(500).json({ error: 'Database error' });
     }
   });
 

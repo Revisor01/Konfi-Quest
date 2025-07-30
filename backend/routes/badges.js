@@ -76,17 +76,22 @@ const CRITERIA_TYPES = {
 
 const checkAndAwardBadges = async (db, konfiId) => {
   try {
-    const { rows: badges } = await db.query("SELECT * FROM custom_badges WHERE is_active = true");
-    if (badges.length === 0) return 0;
-    
+    // First get konfi's organization
     const konfiQuery = `
-      SELECT kp.*, u.display_name as name
+      SELECT kp.*, u.display_name as name, u.organization_id
       FROM konfi_profiles kp
       JOIN users u ON kp.user_id = u.id
       WHERE kp.user_id = $1
     `;
     const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
     if (!konfi) return 0;
+
+    // Get badges for this organization only
+    const { rows: badges } = await db.query(
+      "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1", 
+      [konfi.organization_id]
+    );
+    if (badges.length === 0) return 0;
     
     const { rows: earned } = await db.query("SELECT badge_id FROM konfi_badges WHERE konfi_id = $1", [konfiId]);
     const alreadyEarned = earned.map(e => e.badge_id);
@@ -116,14 +121,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
         
         case 'specific_activity':
           if (criteria.required_activity_name) {
-            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.name = $2`, [konfiId, criteria.required_activity_name]);
+            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.name = $2 AND a.organization_id = $3`, [konfiId, criteria.required_activity_name, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
           }
           break;
         
         case 'activity_combination':
           if (criteria.required_activities) {
-            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1`, [konfiId]);
+            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.organization_id = $2`, [konfiId, konfi.organization_id]);
             const completedActivities = results.map(r => r.name);
             earned = criteria.required_activities.every(req => completedActivities.includes(req));
           }
@@ -136,9 +141,9 @@ const checkAndAwardBadges = async (db, konfiId) => {
               JOIN activities a ON ka.activity_id = a.id 
               JOIN activity_categories ac ON a.id = ac.activity_id
               JOIN categories c ON ac.category_id = c.id
-              WHERE ka.konfi_id = $1 AND c.name = $2
+              WHERE ka.konfi_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
             `;
-            const { rows: [result] } = await db.query(categoryCountQuery, [konfiId, criteria.required_category]);
+            const { rows: [result] } = await db.query(categoryCountQuery, [konfiId, criteria.required_category, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
           }
           break;

@@ -168,10 +168,47 @@ module.exports = (db, rbacVerifier, checkPermission) => {
         organizationId, orgAdminRoleId, admin_username, contact_email, hashedPassword, admin_display_name
       ]);
 
+      // 4. Create default badges for the organization
+      const defaultBadges = [
+        { name: "Erster Schritt", icon: "👶", description: "Herzlich willkommen! Du hast deine ersten Punkte gesammelt.", criteria_type: "total_points", criteria_value: 1 },
+        { name: "Auf dem Weg", icon: "🚶", description: "Du sammelst fleißig Punkte!", criteria_type: "total_points", criteria_value: 5 },
+        { name: "Fleißiger Sammler", icon: "🎯", description: "10 Punkte gesammelt - super gemacht!", criteria_type: "total_points", criteria_value: 10 },
+        { name: "Punktesammler", icon: "💎", description: "15 Punkte erreicht - du bist auf einem guten Weg!", criteria_type: "total_points", criteria_value: 15 },
+        { name: "Punkteprofi", icon: "🏆", description: "20 Punkte geschafft - großartig!", criteria_type: "total_points", criteria_value: 20 },
+        { name: "Punktemeister", icon: "👑", description: "25 Punkte erreicht - du bist spitze!", criteria_type: "total_points", criteria_value: 25 },
+        { name: "Gottesdienst-Neuling", icon: "⛪", description: "Du warst zum ersten Mal im Gottesdienst - toll!", criteria_type: "gottesdienst_points", criteria_value: 1 },
+        { name: "Gottesdienst-Fan", icon: "📖", description: "5 Gottesdienst-Punkte gesammelt!", criteria_type: "gottesdienst_points", criteria_value: 5 },
+        { name: "Gottesdienst-Profi", icon: "✨", description: "10 Gottesdienst-Punkte erreicht!", criteria_type: "gottesdienst_points", criteria_value: 10 },
+        { name: "Gottesdienst-Experte", icon: "🙏", description: "15 Gottesdienst-Punkte geschafft!", criteria_type: "gottesdienst_points", criteria_value: 15 },
+        { name: "Gemeinde-Neuling", icon: "🤝", description: "Du hast dich zum ersten Mal in der Gemeinde engagiert!", criteria_type: "gemeinde_points", criteria_value: 1 },
+        { name: "Gemeinde-Helfer", icon: "💪", description: "5 Gemeinde-Punkte gesammelt - danke für dein Engagement!", criteria_type: "gemeinde_points", criteria_value: 5 },
+        { name: "Gemeinde-Unterstützer", icon: "🌟", description: "10 Gemeinde-Punkte erreicht!", criteria_type: "gemeinde_points", criteria_value: 10 },
+        { name: "Gemeinde-Champion", icon: "🎪", description: "15 Gemeinde-Punkte geschafft - du bist eine große Hilfe!", criteria_type: "gemeinde_points", criteria_value: 15 },
+        { name: "Ausgewogen", icon: "⚖️", description: "Du sammelst in beiden Bereichen Punkte - sehr gut!", criteria_type: "both_categories", criteria_value: 3 },
+        { name: "Harmonisch", icon: "🎵", description: "5 Punkte in beiden Bereichen - perfekte Balance!", criteria_type: "both_categories", criteria_value: 5 },
+        { name: "Aktiv dabei", icon: "🏃", description: "Du hast schon 3 verschiedene Aktivitäten gemacht!", criteria_type: "activity_count", criteria_value: 3 },
+        { name: "Vielfalts-Fan", icon: "🌈", description: "5 Aktivitäten absolviert - du probierst gerne Neues!", criteria_type: "activity_count", criteria_value: 5 },
+        { name: "Aktivitäts-Sammler", icon: "📊", description: "10 Aktivitäten geschafft - beeindruckend!", criteria_type: "activity_count", criteria_value: 10 },
+        { name: "Bonuspunkte-Gewinner", icon: "💰", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 }
+      ];
+
+      const badgeQuery = `INSERT INTO custom_badges (
+        organization_id, name, icon, description, criteria_type, criteria_value, 
+        is_active, is_hidden, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, true, false, $7)`;
+
+      for (const badge of defaultBadges) {
+        await db.query(badgeQuery, [
+          organizationId, badge.name, badge.icon, badge.description,
+          badge.criteria_type, badge.criteria_value, newAdmin.id
+        ]);
+      }
+
       res.status(201).json({ 
         id: organizationId, 
         admin_user_id: newAdmin.id,
-        message: 'Organization created successfully with default roles and admin user' 
+        default_badges_created: defaultBadges.length,
+        message: `Organization created successfully with default roles, admin user, and ${defaultBadges.length} badges` 
       });
 
     } catch (err) {
