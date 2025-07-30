@@ -162,23 +162,20 @@ const EventModal: React.FC<EventModalProps> = ({
       // Reset form for new event
       const now = new Date();
       
-      // Create tomorrow at 9:00 local time - but as ISO string for IonDatetime
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(9, 0, 0, 0);
+      // Create event starting now (current time + 30 minutes buffer)
+      const eventStart = new Date();
+      eventStart.setMinutes(eventStart.getMinutes() + 30); // 30 minutes from now
       
-      // Create tomorrow at 10:00 local time (1 hour after start)
-      const tomorrowEnd = new Date();
-      tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
-      tomorrowEnd.setHours(10, 0, 0, 0);
+      // Event ends 2 hours after start
+      const eventEnd = new Date(eventStart);
+      eventEnd.setHours(eventEnd.getHours() + 2);
       
-      // Registration opens today at 9:00
+      // Registration opens now (current time)
       const regOpens = new Date();
-      regOpens.setHours(9, 0, 0, 0);
       
-      // Registration closes exactly 24 hours before event
-      const regCloses = new Date(tomorrow);
-      regCloses.setHours(regCloses.getHours() - 24);
+      // Registration closes 1 hour before event
+      const regCloses = new Date(eventStart);
+      regCloses.setHours(regCloses.getHours() - 1);
       
       // Helper function to create local ISO string for IonDatetime
       // Lokale Zeit ohne Zeitzonen-Suffix - IonDatetime interpretiert das als lokale Zeit
@@ -190,8 +187,8 @@ const EventModal: React.FC<EventModalProps> = ({
       setFormData({
         name: '',
         description: '',
-        event_date: toIonDatetimeISO(tomorrow),
-        event_end_time: toIonDatetimeISO(tomorrowEnd),
+        event_date: toIonDatetimeISO(eventStart),
+        event_end_time: toIonDatetimeISO(eventEnd),
         location: '',
         points: 0,
         point_type: 'gemeinde',
