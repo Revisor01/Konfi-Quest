@@ -41,7 +41,7 @@ interface Event {
   registration_opens_at?: string;
   registration_closes_at?: string;
   registered_count: number;
-  registration_status: 'upcoming' | 'open' | 'closed';
+  registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
   created_at: string;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
