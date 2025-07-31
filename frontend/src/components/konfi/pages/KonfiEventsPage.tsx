@@ -151,22 +151,17 @@ const KonfiEventsPage: React.FC = () => {
       );
     }
 
-    // Type filter
+    // Tab filter - nur die 3 relevanten Tabs: Alle, Offen, Angemeldet
     switch (selectedFilter) {
-      case 'gottesdienst':
-        filtered = filtered.filter(event => event.type === 'gottesdienst');
-        break;
-      case 'gemeinde':
-        filtered = filtered.filter(event => event.type === 'gemeinde');
-        break;
-      case 'aktivitaet':
-        filtered = filtered.filter(event => event.type === 'aktivitaet');
-        break;
       case 'angemeldet':
         filtered = filtered.filter(event => event.is_registered);
         break;
       case 'verfuegbar':
         filtered = filtered.filter(event => !event.is_registered && event.can_register);
+        break;
+      case 'alle':
+      default:
+        // Zeige alle Events, inkl. vergangene
         break;
     }
 
@@ -268,9 +263,9 @@ const KonfiEventsPage: React.FC = () => {
         <IonCard style={{
           margin: '16px',
           borderRadius: '16px',
-          background: 'linear-gradient(135deg, #3880ff 0%, #3171e0 100%)',
+          background: 'linear-gradient(135deg, #eb445a 0%, #d73847 100%)',
           color: 'white',
-          boxShadow: '0 8px 32px rgba(56, 128, 255, 0.3)'
+          boxShadow: '0 8px 32px rgba(235, 68, 90, 0.3)'
         }}>
           <IonCardContent>
             <IonGrid>
@@ -358,25 +353,15 @@ const KonfiEventsPage: React.FC = () => {
                 borderRadius: '8px',
                 padding: '4px'
               }}
-              scrollable
             >
               <IonSegmentButton value="alle">
                 <IonLabel>Alle</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="verfuegbar">
-                <IonLabel>Verfügbar</IonLabel>
+                <IonLabel>Offen</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="angemeldet">
                 <IonLabel>Angemeldet</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="gottesdienst">
-                <IonLabel>Gottesdienst</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="gemeinde">
-                <IonLabel>Gemeinde</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="aktivitaet">
-                <IonLabel>Aktivität</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>

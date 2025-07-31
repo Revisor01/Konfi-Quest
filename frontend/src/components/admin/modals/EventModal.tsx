@@ -158,7 +158,7 @@ const EventModal: React.FC<EventModalProps> = ({
         has_timeslots: event.has_timeslots || false,
         waitlist_enabled: (event as any).waitlist_enabled !== undefined ? (event as any).waitlist_enabled : true,
         max_waitlist_size: (event as any).max_waitlist_size || 3,
-        is_series: false,
+        is_series: (event as any).is_series || false,
         series_count: 1,
         series_interval: 'week'
       });
@@ -344,7 +344,7 @@ const EventModal: React.FC<EventModalProps> = ({
         series_interval: formData.is_series ? formData.series_interval : undefined
       };
 
-      if (event) {
+      if (event && event.id && event.id > 0) {
         // Remove series fields for existing event updates
         const { is_series, series_count, series_interval, ...updatePayload } = payload;
         await api.put(`/events/${event.id}`, updatePayload);
@@ -1056,7 +1056,7 @@ const EventModal: React.FC<EventModalProps> = ({
         ))}
 
         {/* EVENT-SERIE (nur für neue Events) */}
-        {!event && (
+        {(!event?.id || event?.id === 0) && (
           <>
             <div style={{ 
               display: 'flex', 
@@ -1090,62 +1090,76 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonCard style={{ margin: '0 16px 48px 16px', borderRadius: '12px' }}>
               <IonCardContent style={{ padding: '12px 0' }}>
                 <IonList style={{ background: 'transparent' }}>
-                  <IonItem>
-                    <IonLabel>Event-Serie erstellen</IonLabel>
-                    <IonToggle
-                      checked={formData.is_series}
-                      onIonChange={(e) => {
-                        const isSeries = e.detail.checked;
-                        setFormData({ ...formData, is_series: isSeries });
-                      }}
-                      disabled={loading}
-                    />
-                  </IonItem>
-
-                  {formData.is_series && (
+                  {/* Serienoptionen nur bei neuen Events anzeigen (Serienkaskaden verhindern) */}
+                  {!event && (
                     <>
                       <IonItem>
-                        <IonLabel position="stacked">Anzahl Wiederholungen</IonLabel>
-                        <IonInput
-                          type="text"
-                          inputMode="numeric"
-                          value={formData.series_count.toString()}
-                          onIonInput={(e) => {
-                            const value = e.detail.value!;
-                            if (value === '') {
-                              setFormData({ ...formData, series_count: 1 });
-                            } else {
-                              const num = parseInt(value);
-                              if (!isNaN(num) && num >= 1 && num <= 52) {
-                                setFormData({ ...formData, series_count: num });
-                              }
-                            }
+                        <IonLabel>Event-Serie erstellen</IonLabel>
+                        <IonToggle
+                          checked={formData.is_series}
+                          onIonChange={(e) => {
+                            const isSeries = e.detail.checked;
+                            setFormData({ ...formData, is_series: isSeries });
                           }}
-                          placeholder="z.B. 4"
                           disabled={loading}
-                          clearInput={true}
                         />
                       </IonItem>
 
-                      <IonItem lines="none">
-                        <IonLabel position="stacked">Wiederholung</IonLabel>
-                        <IonSelect
-                          value={formData.series_interval}
-                          onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
-                          interface="action-sheet"
-                          disabled={loading}
-                        >
-                          <IonSelectOption value="week">Wöchentlich</IonSelectOption>
-                          <IonSelectOption value="month">Monatlich</IonSelectOption>
-                        </IonSelect>
-                      </IonItem>
+                      {formData.is_series && (
+                        <>
+                          <IonItem>
+                            <IonLabel position="stacked">Anzahl Wiederholungen</IonLabel>
+                            <IonInput
+                              type="text"
+                              inputMode="numeric"
+                              value={formData.series_count.toString()}
+                              onIonInput={(e) => {
+                                const value = e.detail.value!;
+                                if (value === '') {
+                                  setFormData({ ...formData, series_count: 1 });
+                                } else {
+                                  const num = parseInt(value);
+                                  if (!isNaN(num) && num >= 1 && num <= 52) {
+                                    setFormData({ ...formData, series_count: num });
+                                  }
+                                }
+                              }}
+                              placeholder="z.B. 4"
+                              disabled={loading}
+                              clearInput={true}
+                            />
+                          </IonItem>
+
+                          <IonItem lines="none">
+                            <IonLabel position="stacked">Wiederholung</IonLabel>
+                            <IonSelect
+                              value={formData.series_interval}
+                              onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
+                              interface="action-sheet"
+                              disabled={loading}
+                            >
+                              <IonSelectOption value="week">Wöchentlich</IonSelectOption>
+                              <IonSelectOption value="month">Monatlich</IonSelectOption>
+                            </IonSelect>
+                          </IonItem>
+                        </>
+                      )}
+
+                      {!formData.is_series && (
+                        <IonItem lines="none" style={{ opacity: 0.6 }}>
+                          <IonLabel color="medium">
+                            <p>Event-Serie deaktiviert</p>
+                          </IonLabel>
+                        </IonItem>
+                      )}
                     </>
                   )}
 
-                  {!formData.is_series && (
-                    <IonItem lines="none" style={{ opacity: 0.6 }}>
+                  {/* Hinweis bei bestehenden Events */}
+                  {event && (
+                    <IonItem lines="none" style={{ opacity: 0.7 }}>
                       <IonLabel color="medium">
-                        <p>Event-Serie deaktiviert</p>
+                        <p>ℹ️ Serienoptionen sind bei bestehenden Events nicht verfügbar</p>
                       </IonLabel>
                     </IonItem>
                   )}

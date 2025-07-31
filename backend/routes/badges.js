@@ -98,6 +98,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
     
     let newBadges = 0;
     const earnedBadgeIds = [];
+    const earnedBadgeDetails = [];
     
     for (const badge of badges) {
       if (alreadyEarned.includes(badge.id)) continue;
@@ -215,6 +216,12 @@ const checkAndAwardBadges = async (db, konfiId) => {
       
       if (earned) {
         earnedBadgeIds.push(badge.id);
+        earnedBadgeDetails.push({
+          id: badge.id,
+          name: badge.name,
+          icon: badge.icon,
+          description: badge.description
+        });
         newBadges++;
       }
     }
@@ -224,9 +231,35 @@ const checkAndAwardBadges = async (db, konfiId) => {
         db.query("INSERT INTO konfi_badges (konfi_id, badge_id) VALUES ($1, $2)", [konfiId, badgeId])
       );
       await Promise.all(insertPromises);
+
+      // Send push notifications for new badges
+      try {
+        for (const badge of earnedBadgeDetails) {
+          await db.query(
+            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+            [
+              konfiId,
+              `Neues Badge erhalten! ${badge.icon}`,
+              `Herzlichen Glückwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
+              'badge_earned',
+              JSON.stringify({
+                badge_id: badge.id,
+                badge_name: badge.name,
+                badge_icon: badge.icon,
+                badge_description: badge.description
+              }),
+              konfi.organization_id
+            ]
+          );
+        }
+        console.log(`🎉 ${earnedBadgeDetails.length} Badge-Notification(s) für Konfi ${konfi.name} gesendet`);
+      } catch (notifErr) {
+        console.error('Error sending badge notifications:', notifErr);
+        // Don't fail the badge award if notification fails
+      }
     }
     
-    return newBadges;
+    return { count: newBadges, badges: earnedBadgeDetails };
   } catch (err) {
     console.error('Error in checkAndAwardBadges:', err);
     throw err; // Re-throw the error to be handled by the caller

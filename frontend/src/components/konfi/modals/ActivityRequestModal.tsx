@@ -79,7 +79,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const loadActivities = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/konfi/activities');
+      const response = await api.get('/admin/activities');
       setActivities(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');
@@ -87,6 +87,30 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleActivitySelect = () => {
+    if (activities.length === 0) {
+      setError('Keine Aktivitäten verfügbar');
+      return;
+    }
+
+    const buttons = activities.map(activity => ({
+      text: `${activity.name} (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})`,
+      handler: () => {
+        setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
+      }
+    }));
+
+    buttons.push({
+      text: 'Abbrechen',
+      handler: () => {}
+    });
+
+    presentActionSheet({
+      header: 'Aktivität auswählen',
+      buttons
+    });
   };
 
   const handlePhotoSelect = () => {
@@ -176,10 +200,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       return;
     }
 
-    if (!formData.description.trim()) {
-      setError('Bitte beschreibe deine Aktivität');
-      return;
-    }
+    // Description is now optional - no validation needed
 
     if (!formData.photo_file) {
       presentAlert({
@@ -254,94 +275,94 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         )}
       </IonHeader>
       
-      <IonContent>
-        <div style={{ padding: '16px' }}>
-          {/* Activity Selection */}
-          <IonCard>
-            <IonCardContent>
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* Activity Selection */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          margin: '16px 16px 8px 16px'
+        }}>
+          <div style={{ 
+            width: '32px', 
+            height: '32px',
+            backgroundColor: '#ff9500',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={star} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{ 
+            fontWeight: '600', 
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Aktivität wählen
+          </h2>
+        </div>
+        
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
+          <IonCardContent style={{ padding: '12px 0' }}>
+            <IonItem button onClick={handleActivitySelect} disabled={loading || submitting}>
+              <IonLabel>
+                {selectedActivity ? (
+                  <>
+                    <h3>{selectedActivity.name}</h3>
+                    <p>{selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'} • {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Aktivität auswählen</h3>
+                    <p>Tippe hier um eine Aktivität zu wählen</p>
+                  </>
+                )}
+              </IonLabel>
+            </IonItem>
+
+            {selectedActivity && (
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
+                marginTop: '12px',
+                padding: '12px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e9ecef'
               }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#3880ff',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <IonIcon icon={star} style={{ fontSize: '1rem', color: 'white' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <IonIcon 
+                    icon={selectedActivity.type === 'gottesdienst' ? home : people}
+                    color={selectedActivity.type === 'gottesdienst' ? 'primary' : 'success'}
+                  />
+                  <span style={{ fontWeight: '600', color: '#333' }}>
+                    {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                  </span>
+                  <span style={{ color: '#007aff', fontWeight: '500' }}>
+                    • {selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'}
+                  </span>
                 </div>
-                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                  Aktivität auswählen
-                </h3>
+                
+                {selectedActivity.description && (
+                  <p style={{ margin: '0', fontSize: '0.85rem', color: '#666' }}>
+                    {selectedActivity.description}
+                  </p>
+                )}
+                
+                {selectedActivity.category_names && (
+                  <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8e8e93' }}>
+                    Kategorien: {selectedActivity.category_names}
+                  </p>
+                )}
               </div>
-              
-              <IonItem>
-                <IonLabel position="stacked">Welche Aktivität hast du gemacht?</IonLabel>
-                <IonSelect
-                  value={formData.activity_id}
-                  onIonChange={(e) => setFormData(prev => ({ ...prev, activity_id: e.detail.value }))}
-                  placeholder="Aktivität auswählen..."
-                  disabled={loading}
-                >
-                  {activities.map(activity => (
-                    <IonSelectOption key={activity.id} value={activity.id.toString()}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IonIcon 
-                          icon={activity.type === 'gottesdienst' ? home : people} 
-                          style={{ fontSize: '0.9rem' }}
-                        />
-                        {activity.name} ({activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'})
-                      </div>
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+            )}
+          </IonCardContent>
+        </IonCard>
 
-              {selectedActivity && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '8px',
-                  border: '1px solid #e9ecef'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <IonIcon 
-                      icon={selectedActivity.type === 'gottesdienst' ? home : people}
-                      color={selectedActivity.type === 'gottesdienst' ? 'primary' : 'success'}
-                    />
-                    <span style={{ fontWeight: '600', color: '#333' }}>
-                      {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </span>
-                    <span style={{ color: '#007aff', fontWeight: '500' }}>
-                      • {selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'}
-                    </span>
-                  </div>
-                  
-                  {selectedActivity.description && (
-                    <p style={{ margin: '0', fontSize: '0.85rem', color: '#666' }}>
-                      {selectedActivity.description}
-                    </p>
-                  )}
-                  
-                  {selectedActivity.category_names && (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8e8e93' }}>
-                      Kategorien: {selectedActivity.category_names}
-                    </p>
-                  )}
-                </div>
-              )}
-            </IonCardContent>
-          </IonCard>
-
-          {/* Date Selection */}
-          <IonCard>
+        {/* Date Selection */}
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
             <IonCardContent>
               <div style={{
                 display: 'flex',
@@ -376,10 +397,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 />
               </IonItem>
             </IonCardContent>
-          </IonCard>
+        </IonCard>
 
-          {/* Description */}
-          <IonCard>
+        {/* Description */}
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
             <IonCardContent>
               <div style={{
                 display: 'flex',
@@ -414,10 +435,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 />
               </IonItem>
             </IonCardContent>
-          </IonCard>
+        </IonCard>
 
-          {/* Photo */}
-          <IonCard>
+        {/* Photo */}
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
             <IonCardContent>
               <div style={{
                 display: 'flex',
@@ -485,10 +506,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 </div>
               )}
             </IonCardContent>
-          </IonCard>
+        </IonCard>
 
-          {/* Info Card */}
-          <IonCard style={{ background: 'rgba(45, 211, 111, 0.1)', border: '1px solid rgba(45, 211, 111, 0.3)' }}>
+        {/* Info Card */}
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'rgba(45, 211, 111, 0.1)', border: '1px solid rgba(45, 211, 111, 0.3)' }}>
             <IonCardContent>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <IonIcon icon={checkmarkCircle} color="success" style={{ fontSize: '1.5rem' }} />
@@ -502,8 +523,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 </div>
               </div>
             </IonCardContent>
-          </IonCard>
-        </div>
+        </IonCard>
       </IonContent>
     </IonPage>
   );

@@ -107,8 +107,8 @@ module.exports = (db, rbacMiddleware, upload) => {
       const konfiId = req.user.id;
       
       const query = `
-        SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, kp.password_plain, j.name as jahrgang_name
+        SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points, 
+               kp.jahrgang_id, kp.password_plain, j.name as jahrgang_name, j.year as jahrgang_year
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id

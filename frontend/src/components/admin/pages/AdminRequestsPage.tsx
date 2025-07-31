@@ -687,17 +687,18 @@ const AdminRequestsPage: React.FC = () => {
                           <span style={{ color: '#6c757d' }}>•</span>
                           
                           <span style={{ 
-                            color: request.photo_filename ? '#2dd36f' : '#999', 
+                            color: request.photo_filename ? '#2dd36f' : '#eb445a', 
                             fontSize: '0.85rem',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '2px'
+                            gap: '2px',
+                            textDecoration: request.photo_filename ? 'none' : 'line-through'
                           }}>
                             <IonIcon 
                               icon={imageOutline} 
                               style={{ fontSize: '0.9rem' }} 
                             />
-                            {request.photo_filename ? 'Foto' : 'Kein Foto'}
+                            Foto
                           </span>
                         </div>
 

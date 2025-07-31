@@ -123,49 +123,71 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Lade alle verfügbaren Benutzer basierend auf den Jahrgangs-Zuweisungen
-      const [konfisRes, userJahrgangRes] = await Promise.all([
-        api.get('/admin/konfis'),
-        user?.type === 'admin' ? api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
-      ]);
-      
-      // Wenn Admin: Filtere Konfis basierend auf Jahrgangs-Zuweisungen
-      let allowedJahrgangIds: number[] = [];
-      if (user?.type === 'admin' && userJahrgangRes.data.length > 0) {
-        allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
-        console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
-      }
-      
-      // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
-      let konfis: User[] = konfisRes.data
-        .filter((konfi: any) => {
-          // Wenn Admin: Nur Konfis mit erlaubten Jahrgängen zeigen
-          if (user?.type === 'admin' && allowedJahrgangIds.length > 0) {
-            return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
-          }
-          return true; // Für Konfis: Alle Konfis zeigen
-        })
-        .map((konfi: any) => ({
-          id: konfi.id,
-          name: konfi.name || konfi.display_name,
-          display_name: konfi.name || konfi.display_name,
-          type: 'konfi' as const,
-          jahrgang: konfi.jahrgang,
-          jahrgang_name: konfi.jahrgang_name
+      if (user?.type === 'konfi') {
+        // Konfi: Verwende neue sichere API
+        const response = await api.get('/chat/available-users');
+        const availableUsers = response.data.users.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          display_name: u.name,
+          type: u.type as 'admin' | 'konfi',
+          jahrgang_name: u.jahrgang_name
         }));
-      
-      // Wenn Admin, lade auch andere Admins für Admin-zu-Admin Chat
-      let adminUsers: User[] = [];
-      if (user?.type === 'admin') {
+        
+        console.log('Loaded users for konfi chat:', {
+          users: availableUsers.length,
+          jahrgang: response.data.jahrgang,
+          permissions: response.data.permissions,
+          chatType
+        });
+        
+        // Verfügbare Jahrgänge ermitteln
+        const jahrgaenge = [...new Set(availableUsers
+          .filter((u: any) => u.jahrgang_name)
+          .map((u: any) => u.jahrgang_name!))]
+          .sort() as string[];
+        setAvailableJahrgaenge(jahrgaenge);
+        
+        setUsers(availableUsers);
+        
+      } else if (user?.type === 'admin') {
+        // Admin: Verwende bestehende Admin-APIs
+        const [konfisRes, userJahrgangRes] = await Promise.all([
+          api.get('/admin/konfis'),
+          api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] }))
+        ]);
+        
+        // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
+        let allowedJahrgangIds: number[] = [];
+        if (userJahrgangRes.data.length > 0) {
+          allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
+          console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
+        }
+        
+        let konfis: User[] = konfisRes.data
+          .filter((konfi: any) => {
+            // Nur Konfis mit erlaubten Jahrgängen zeigen
+            if (allowedJahrgangIds.length > 0) {
+              return konfi.jahrgang_id && allowedJahrgangIds.includes(konfi.jahrgang_id);
+            }
+            return true;
+          })
+          .map((konfi: any) => ({
+            id: konfi.id,
+            name: konfi.name || konfi.display_name,
+            display_name: konfi.name || konfi.display_name,
+            type: 'konfi' as const,
+            jahrgang: konfi.jahrgang,
+            jahrgang_name: konfi.jahrgang_name
+          }));
+        
+        // Auch andere Admins laden
+        let adminUsers: User[] = [];
         try {
           const usersRes = await api.get('/admin/users');
-          // Filtere Admins: Nur die mit gemeinsamen Jahrgangs-Zuweisungen
           adminUsers = usersRes.data
             .filter((u: any) => {
               if (u.role_name === 'konfi' || u.id === user.id) return false;
-              
-              // Prüfe ob Admin gemeinsame Jahrgangs-Zuweisungen hat (TODO: Backend API)
-              // Für jetzt: Alle anderen Admins zeigen
               return true;
             })
             .map((admin: any) => ({
@@ -177,32 +199,34 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         } catch (err) {
           console.log('Could not load admins for chat:', err);
         }
+        
+        const allUsers = [...konfis, ...adminUsers];
+        console.log('Loaded users for admin chat:', {
+          konfis: konfis.length,
+          admins: adminUsers.length,
+          total: allUsers.length,
+          chatType
+        });
+        
+        // Extrahiere verfügbare Jahrgänge (nur von gefilterten Konfis)
+        const jahrgaenge = [...new Set(
+          konfis
+            .filter(u => u.jahrgang_name || u.jahrgang)
+            .map(u => u.jahrgang_name || u.jahrgang)
+        )].filter(Boolean) as string[];
+        setAvailableJahrgaenge(jahrgaenge);
+        
+        // Filter out current user for direct messages
+        if (chatType === 'direct') {
+          const filteredUsers = allUsers.filter(u => 
+            !(u.id === user?.id && u.type === user?.type)
+          );
+          setUsers(filteredUsers);
+        } else {
+          setUsers(allUsers);
+        }
       }
       
-      const allUsers = [...konfis, ...adminUsers];
-      console.log('Loaded users for chat:', { 
-        konfis: konfis.length, 
-        admins: adminUsers.length,
-        allowedJahrgaenge: allowedJahrgangIds
-      });
-      
-      // Extrahiere verfügbare Jahrgänge (nur von gefilterten Konfis)
-      const jahrgaenge = [...new Set(
-        konfis
-          .filter(u => u.jahrgang_name || u.jahrgang)
-          .map(u => u.jahrgang_name || u.jahrgang)
-      )].filter(Boolean) as string[];
-      setAvailableJahrgaenge(jahrgaenge);
-      
-      // Filter out current user for direct messages
-      if (chatType === 'direct') {
-        const filteredUsers = allUsers.filter(u => 
-          !(u.id === user?.id && u.type === user?.type)
-        );
-        setUsers(filteredUsers);
-      } else {
-        setUsers(allUsers);
-      }
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
       console.error('Error loading users:', err);

@@ -281,7 +281,22 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const presentEventModal = (eventType: 'single' | 'series' = 'single') => {
-    setEditEvent(eventType === 'series' ? { is_series: true } as Event : null);
+    if (eventType === 'series') {
+      // For series, we need to create a proper "new event" object with is_series flag
+      setEditEvent({
+        id: 0, // Set to 0 to indicate new event
+        name: '',
+        description: '',
+        event_date: '',
+        location: '',
+        points: 0,
+        type: 'gottesdienst',
+        max_participants: 10,
+        is_series: true
+      } as Event);
+    } else {
+      setEditEvent(null);
+    }
     presentEventModalHook({
       presentingElement: presentingElement
     });

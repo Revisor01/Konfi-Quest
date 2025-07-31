@@ -19,7 +19,7 @@ import api from '../../../services/api';
 
 const ChatPermissionsSettings: React.FC = () => {
   const { setError, setSuccess } = useApp();
-  const [permissions, setPermissions] = useState<string>('direct_only');
+  const [permissions, setPermissions] = useState<string>('admins_only');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -27,7 +27,7 @@ const ChatPermissionsSettings: React.FC = () => {
     try {
       const response = await api.get('/settings');
       const settings = response.data;
-      setPermissions(settings.konfi_chat_permissions || 'direct_only');
+      setPermissions(settings.konfi_chat_permissions || 'admins_only');
     } catch (err) {
       console.error('Error loading settings:', err);
       setError('Fehler beim Laden der Chat-Einstellungen');
@@ -57,10 +57,10 @@ const ChatPermissionsSettings: React.FC = () => {
 
   const getPermissionDescription = (value: string) => {
     switch (value) {
-      case 'direct_only':
-        return 'Konfis können nur 1:1 Direktnachrichten mit anderen Personen erstellen';
-      case 'direct_and_group':
-        return 'Konfis können 1:1 Direktnachrichten und Gruppenchats mit mehreren Teilnehmern erstellen';
+      case 'admins_only':
+        return 'Konfis können nur mit ihren zugewiesenen Admins chatten (sicherste Einstellung)';
+      case 'all_in_jahrgang':
+        return 'Konfis können mit allen Personen in ihrem Jahrgang chatten (Admins + andere Konfis)';
       default:
         return '';
     }
@@ -98,11 +98,11 @@ const ChatPermissionsSettings: React.FC = () => {
             interface="action-sheet"
             placeholder="Berechtigungsstufe wählen"
           >
-            <IonSelectOption value="direct_only">
-              Nur Direktnachrichten
+            <IonSelectOption value="admins_only">
+              Nur mit Admins chatten
             </IonSelectOption>
-            <IonSelectOption value="direct_and_group">
-              Direktnachrichten + Gruppenchats
+            <IonSelectOption value="all_in_jahrgang">
+              Mit allen im Jahrgang chatten
             </IonSelectOption>
           </IonSelect>
         </IonItem>

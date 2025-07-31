@@ -1749,5 +1749,111 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
     }
   });
   
+  // Get available chat partners for Konfis
+  router.get('/available-users', verifyTokenRBAC, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const userType = req.user.type;
+      const organizationId = req.user.organization_id;
+
+      // Nur für Konfis verfügbar
+      if (userType !== 'konfi') {
+        return res.status(403).json({ error: 'Only Konfis can use this endpoint' });
+      }
+
+      // 1. Get Konfi's jahrgang
+      const konfiQuery = `
+        SELECT kp.jahrgang_id, j.name as jahrgang_name
+        FROM konfi_profiles kp
+        JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+        WHERE kp.user_id = $1
+      `;
+      const { rows: [konfiProfile] } = await db.query(konfiQuery, [userId]);
+      
+      if (!konfiProfile || !konfiProfile.jahrgang_id) {
+        return res.status(400).json({ error: 'Konfi not assigned to jahrgang' });
+      }
+
+      let availableUsers = [];
+      
+      // 2. Get chat permissions from settings
+      const settingsQuery = `SELECT konfi_chat_permissions FROM settings WHERE organization_id = $1`;
+      const { rows: [settings] } = await db.query(settingsQuery, [organizationId]);
+      const chatPermissions = settings?.konfi_chat_permissions || 'admins_only';
+
+      // 3. Always include admins assigned to the same jahrgang
+      const adminQuery = `
+        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
+        WHERE r.name = 'admin' 
+        AND u.organization_id = $1
+        AND uja.jahrgang_id = $2
+        AND uja.can_view = true
+        AND u.id != $3
+        ORDER BY u.display_name
+      `;
+      const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
+      availableUsers = [...admins];
+
+      // 4. Add other Konfis if allowed by settings
+      if (chatPermissions === 'all_in_jahrgang') {
+        const konfiQuery = `
+          SELECT u.id, u.display_name as name, 'konfi' as type, j.name as jahrgang_name
+          FROM users u
+          JOIN roles r on u.role_id = r.id
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+          WHERE r.name = 'konfi'
+          AND u.organization_id = $1
+          AND kp.jahrgang_id = $2
+          AND u.id != $3
+          ORDER BY u.display_name
+        `;
+        const { rows: konfis } = await db.query(konfiQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
+        availableUsers = [...availableUsers, ...konfis];
+      }
+
+      // 5. Get existing direct chats to filter out duplicates
+      const existingChatsQuery = `
+        SELECT DISTINCT 
+          CASE 
+            WHEN cp1.user_id = $1 THEN cp2.user_id
+            ELSE cp1.user_id
+          END as partner_id,
+          CASE 
+            WHEN cp1.user_id = $1 THEN cp2.user_type
+            ELSE cp1.user_type
+          END as partner_type
+        FROM chat_participants cp1
+        JOIN chat_participants cp2 ON cp1.room_id = cp2.room_id
+        JOIN chat_rooms cr ON cp1.room_id = cr.id
+        WHERE cr.type = 'direct'
+        AND cr.organization_id = $2
+        AND ((cp1.user_id = $1 AND cp1.user_type = $3) OR (cp2.user_id = $1 AND cp2.user_type = $3))
+        AND cp1.user_id != cp2.user_id
+      `;
+      const { rows: existingChats } = await db.query(existingChatsQuery, [userId, organizationId, userType]);
+      const existingPartnerKeys = new Set(existingChats.map(chat => `${chat.partner_id}_${chat.partner_type}`));
+
+      // 6. Filter out users with existing direct chats
+      const filteredUsers = availableUsers.filter(user => {
+        const key = `${user.id}_${user.type}`;
+        return !existingPartnerKeys.has(key);
+      });
+
+      res.json({
+        users: filteredUsers,
+        jahrgang: konfiProfile.jahrgang_name,
+        permissions: chatPermissions
+      });
+
+    } catch (err) {
+      console.error('Database error in GET /chat/available-users:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   return router;
 };

@@ -257,16 +257,22 @@ const KonfiProfilePage: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'Unbekannt';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Ungültiges Datum';
+    return date.toLocaleDateString('de-DE', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
+  const formatDateTime = (dateString: string | undefined) => {
+    if (!dateString) return 'Unbekannt';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Ungültiges Datum';
+    return date.toLocaleDateString('de-DE', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -348,7 +354,7 @@ const KonfiProfilePage: React.FC = () => {
                 {profile.display_name}
               </h1>
               <p style={{ margin: '0 0 4px 0', opacity: 0.9, fontSize: '1rem' }}>
-                @{profile.username}
+                {profile.username ? `@${profile.username}` : '@...'}
               </p>
               <p style={{ margin: '0', opacity: 0.8, fontSize: '0.9rem' }}>
                 {profile.jahrgang_name} ({profile.jahrgang_year})
@@ -380,34 +386,16 @@ const KonfiProfilePage: React.FC = () => {
                 <IonCol size="4">
                   <div style={{ textAlign: 'center' }}>
                     <h3 style={{ margin: '0', fontSize: '1.8rem', fontWeight: '700' }}>
-                      #{profile.rank_in_jahrgang || '?'}
+                      {profile.activity_count}
                     </h3>
                     <p style={{ margin: '0', fontSize: '0.85rem', opacity: 0.8 }}>
-                      Rang
+                      Aktivitäten
                     </p>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
 
-            {profile.rank_in_jahrgang && profile.total_in_jahrgang && (
-              <div style={{ marginTop: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>Jahrgang-Ranking</span>
-                  <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
-                    {profile.rank_in_jahrgang} von {profile.total_in_jahrgang}
-                  </span>
-                </div>
-                <IonProgressBar 
-                  value={1 - (profile.rank_in_jahrgang - 1) / (profile.total_in_jahrgang - 1)}
-                  style={{ 
-                    height: '6px', 
-                    borderRadius: '3px',
-                    '--progress-background': 'rgba(255, 255, 255, 0.9)'
-                  }}
-                />
-              </div>
-            )}
           </IonCardContent>
         </IonCard>
 
@@ -586,7 +574,7 @@ const KonfiProfilePage: React.FC = () => {
               <IonIcon icon={person} slot="start" color="primary" />
               <IonLabel>
                 <h4>Benutzername</h4>
-                <p>{profile.username}</p>
+                <p>{profile.username || 'Nicht verfügbar'}</p>
               </IonLabel>
             </IonItem>
 

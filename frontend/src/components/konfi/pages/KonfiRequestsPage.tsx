@@ -193,9 +193,9 @@ const KonfiRequestsPage: React.FC = () => {
             <IonCard style={{
               margin: '16px',
               borderRadius: '16px',
-              background: 'linear-gradient(135deg, #3880ff 0%, #2dd36f 100%)',
+              background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
               color: 'white',
-              boxShadow: '0 8px 32px rgba(56, 128, 255, 0.3)'
+              boxShadow: '0 8px 32px rgba(255, 149, 0, 0.3)'
             }}>
               <IonCardContent>
                 <IonGrid>
@@ -239,7 +239,13 @@ const KonfiRequestsPage: React.FC = () => {
             </IonCard>
 
             {/* Anträge Liste */}
-            <IonCard style={{ margin: '16px' }}>
+            <IonCard style={{ 
+              margin: '16px', 
+              borderRadius: '16px',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            }}>
               <IonCardContent style={{ padding: '8px 0' }}>
                 <IonList lines="none" style={{ background: 'transparent' }}>
                   {requests.map((request) => (
@@ -250,12 +256,25 @@ const KonfiRequestsPage: React.FC = () => {
                           '--padding-start': '16px',
                           '--padding-top': '12px',
                           '--padding-bottom': '12px',
-                          '--background': '#fbfbfb',
+                          '--background': request.status === 'approved' 
+                            ? 'rgba(45, 211, 111, 0.08)' 
+                            : request.status === 'rejected' 
+                            ? 'rgba(245, 61, 61, 0.08)'
+                            : 'rgba(255, 204, 0, 0.08)',
                           '--border-radius': '12px',
                           margin: '6px 8px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                          border: '1px solid #f0f0f0',
-                          borderRadius: '12px'
+                          boxShadow: request.status === 'pending' 
+                            ? '0 4px 16px rgba(255, 149, 0, 0.15)'
+                            : request.status === 'approved'
+                            ? '0 4px 16px rgba(45, 211, 111, 0.15)'
+                            : '0 4px 16px rgba(245, 61, 61, 0.15)',
+                          border: request.status === 'pending'
+                            ? '2px solid rgba(255, 149, 0, 0.2)'
+                            : request.status === 'approved'
+                            ? '2px solid rgba(45, 211, 111, 0.2)'
+                            : '2px solid rgba(245, 61, 61, 0.2)',
+                          borderRadius: '12px',
+                          transition: 'all 0.3s ease'
                         }}
                       >
                       <IonLabel>
@@ -268,14 +287,18 @@ const KonfiRequestsPage: React.FC = () => {
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <div style={{
-                              width: '32px',
-                              height: '32px',
-                              backgroundColor: request.activity_type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
+                              width: '40px',
+                              height: '40px',
+                              background: request.activity_type === 'gottesdienst' 
+                                ? 'linear-gradient(135deg, #3880ff 0%, #3171e0 100%)'
+                                : 'linear-gradient(135deg, #2dd36f 0%, #26c764 100%)',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                              border: '2px solid rgba(255, 255, 255, 0.3)'
                             }}>
                               <IonIcon
                                 icon={getTypeIcon(request.activity_type)}
@@ -294,7 +317,19 @@ const KonfiRequestsPage: React.FC = () => {
                             </h2>
                           </div>
                           
-                          <IonBadge color={getStatusColor(request.status)} style={{ fontSize: '0.75rem' }}>
+                          <IonBadge 
+                            color={getStatusColor(request.status)} 
+                            style={{ 
+                              fontSize: '0.75rem',
+                              fontWeight: '600',
+                              padding: '4px 8px',
+                              borderRadius: '8px',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                            }}
+                          >
+                            {request.status === 'pending' && '⏳ '}
+                            {request.status === 'approved' && '✅ '}
+                            {request.status === 'rejected' && '❌ '}
                             {getStatusText(request.status)}
                           </IonBadge>
                         </div>
@@ -315,9 +350,20 @@ const KonfiRequestsPage: React.FC = () => {
                           
                           <span style={{ color: '#6c757d' }}>•</span>
                           
-                          <span style={{ color: '#007aff', fontWeight: '500' }}>
-                            {request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}
-                          </span>
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '4px',
+                            background: 'linear-gradient(135deg, #ffcc00 0%, #ff9500 100%)',
+                            color: 'white',
+                            padding: '2px 6px',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            boxShadow: '0 2px 6px rgba(255, 149, 0, 0.3)'
+                          }}>
+                            ⭐ {request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}
+                          </div>
                         </div>
 
                         {/* Kommentar */}
@@ -355,8 +401,13 @@ const KonfiRequestsPage: React.FC = () => {
                         {/* Foto anzeigen */}
                         {request.photo_filename && (
                           <div style={{ marginTop: '8px' }}>
-                            <IonChip style={{ fontSize: '0.75rem' }}>
-                              📷 Foto vorhanden
+                            <IonChip style={{ 
+                              fontSize: '0.75rem',
+                              '--background': 'rgba(56, 128, 255, 0.1)',
+                              '--color': '#3880ff',
+                              fontWeight: '500'
+                            }}>
+                              📷 Foto angehängt
                             </IonChip>
                           </div>
                         )}
