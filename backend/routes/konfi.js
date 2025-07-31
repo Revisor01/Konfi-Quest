@@ -17,6 +17,7 @@ module.exports = (db, rbacMiddleware, upload) => {
     
     try {
       const konfiId = req.user.id;
+      console.log(`Dashboard request for konfi ID: ${konfiId}`);
       
       // Get konfi basic info 
       const konfiQuery = `
@@ -47,6 +48,7 @@ module.exports = (db, rbacMiddleware, upload) => {
           [konfiId]
         );
         badgeCount = parseInt(badgeCountResult.count, 10) || 0;
+        console.log(`Badge count for konfi ${konfiId}: ${badgeCount}`);
 
         // Get recent badges for display
         const badgesQuery = `
