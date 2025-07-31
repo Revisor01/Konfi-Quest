@@ -710,7 +710,7 @@ const KonfiDashboardPage: React.FC = () => {
                           width: '90px',
                           height: heights[visualIndex],
                           background: colors[visualIndex],
-                          borderRadius: '12px 12px 0 0',
+                          borderRadius: '16px 16px 0 0',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
@@ -718,7 +718,9 @@ const KonfiDashboardPage: React.FC = () => {
                           padding: '12px 8px',
                           color: 'white',
                           position: 'relative',
-                          border: player.id === dashboardData.konfi.id ? '3px solid #2dd36f' : 'none'
+                          border: player.id === dashboardData.konfi.id ? '3px solid #2dd36f' : 'none',
+                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                          transform: visualIndex === 1 ? 'scale(1.05)' : 'scale(1)'
                         }}
                       >
                         <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
@@ -774,13 +776,15 @@ const KonfiDashboardPage: React.FC = () => {
                             width: '90px',
                             height: heights[index],
                             background: colors[index],
-                            borderRadius: '12px 12px 0 0',
+                            borderRadius: '16px 16px 0 0',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'flex-start',
                             padding: '12px 8px',
                             color: 'white',
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+                            transform: index === 0 ? 'scale(1.05)' : 'scale(1)',
                             position: 'relative',
                             border: player.id === dashboardData.konfi.id ? '3px solid #2dd36f' : 'none'
                           }}>
@@ -921,15 +925,16 @@ const KonfiDashboardPage: React.FC = () => {
                     key={badge.id || index}
                     style={{
                       background: index === 0 
-                        ? 'rgba(255, 193, 7, 0.15)'
-                        : 'rgba(255, 255, 255, 0.1)',
+                        ? 'rgba(255, 193, 7, 0.3)'
+                        : 'rgba(255, 255, 255, 0.25)',
                       border: index === 0 
-                        ? '1px solid rgba(255, 193, 7, 0.4)'
-                        : '1px solid rgba(255, 255, 255, 0.2)',
-                      backdropFilter: 'blur(10px)',
+                        ? '2px solid rgba(255, 193, 7, 0.6)'
+                        : '2px solid rgba(255, 255, 255, 0.4)',
+                      backdropFilter: 'blur(15px)',
                       borderRadius: '16px',
                       padding: '16px',
-                      position: 'relative'
+                      position: 'relative',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
                     }}
                   >
                     {index === 0 && (
@@ -1122,7 +1127,37 @@ const KonfiDashboardPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      border: '2px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '16px',
+                      padding: '24px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        fontSize: '2rem',
+                        marginBottom: '12px'
+                      }}>
+                        📅
+                      </div>
+                      <h4 style={{
+                        margin: '0 0 8px 0',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: 'white'
+                      }}>
+                        Keine bevorstehenden Events
+                      </h4>
+                      <p style={{
+                        margin: '0',
+                        fontSize: '0.85rem',
+                        color: 'rgba(255, 255, 255, 0.7)'
+                      }}>
+                        Schau später wieder vorbei oder melde dich für neue Events an!
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
