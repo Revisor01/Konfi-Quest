@@ -90,7 +90,7 @@ module.exports = (db, rbacMiddleware, upload) => {
 
       // Get recent registered events
       const eventsQuery = `
-        SELECT e.title, e.event_date, eb.booking_date
+        SELECT e.name as title, e.event_date, eb.booking_date
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.user_id = $1

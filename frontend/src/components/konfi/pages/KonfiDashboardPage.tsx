@@ -182,7 +182,7 @@ const KonfiDashboardPage: React.FC = () => {
   const loadUpcomingEvents = async () => {
     try {
       const response = await api.get('/konfi/events');
-      const registeredEvents = response.data.filter((event: any) => event.registered);
+      const registeredEvents = response.data.filter((event: any) => event.is_registered);
       setUpcomingEvents(registeredEvents.slice(0, 3)); // Nur die nächsten 3 angemeldeten Events
     } catch (err) {
       console.error('Error loading events:', err);
