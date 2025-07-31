@@ -11,7 +11,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
       const settings = {};
       rows.forEach(row => {
-        settings[row.key] = row.value;
+        // Convert numeric settings to numbers
+        if (row.key === 'target_gottesdienst' || row.key === 'target_gemeinde' || row.key === 'max_waitlist_size') {
+          settings[row.key] = parseInt(row.value, 10) || 0;
+        } else if (row.key === 'waitlist_enabled') {
+          settings[row.key] = row.value === 'true' || row.value === '1';
+        } else {
+          settings[row.key] = row.value;
+        }
       });
       
       res.json(settings);

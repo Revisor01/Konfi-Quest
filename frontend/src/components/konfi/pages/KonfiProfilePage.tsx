@@ -229,6 +229,7 @@ const KonfiProfilePage: React.FC = () => {
       'LUT': 'Lutherbibel 2017',
       'ELB': 'Elberfelder Bibel',
       'GNB': 'Gute Nachricht Bibel',
+      'BIGS': 'Bibel in gerechter Sprache',
       'NIV': 'New International Version',
       'LSG': 'Louis Segond 1910',
       'RVR60': 'Reina-Valera 1960'
@@ -612,9 +613,10 @@ const KonfiProfilePage: React.FC = () => {
                 <IonSelectOption value="LUT">Lutherbibel</IonSelectOption>
                 <IonSelectOption value="ELB">Elberfelder</IonSelectOption>
                 <IonSelectOption value="GNB">Gute Nachricht</IonSelectOption>
-                <IonSelectOption value="NIV">English (NIV)</IonSelectOption>
-                <IonSelectOption value="LSG">Français (LSG)</IonSelectOption>
-                <IonSelectOption value="RVR60">Español (RVR60)</IonSelectOption>
+                <IonSelectOption value="BIGS">Gerechte Sprache</IonSelectOption>
+                <IonSelectOption value="NIV">English</IonSelectOption>
+                <IonSelectOption value="LSG">Français</IonSelectOption>
+                <IonSelectOption value="RVR60">Español</IonSelectOption>
               </IonSelect>
             </IonItem>
           </IonCardContent>
