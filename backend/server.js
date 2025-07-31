@@ -56,6 +56,7 @@ console.log('🔧 Setting up middleware...');
 app.use(cors({
   origin: [
     'http://localhost:3000',
+    'http://localhost:5173',  // Vite dev server
     'http://localhost:8624',
     'https://konfi-quest.de',
     'https://konfipoints.godsapp.de',
