@@ -443,7 +443,10 @@ module.exports = (db, rbacMiddleware, upload) => {
       const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
 
       if (!tableExistsResult || !tableExistsResult.to_regclass) {
-        return res.json([]);
+        return res.json({
+          available: [],
+          earned: []
+        });
       }
 
       const query = `
@@ -455,7 +458,15 @@ module.exports = (db, rbacMiddleware, upload) => {
         ORDER BY earned DESC, cb.name
       `;
       const { rows: badges } = await db.query(query, [konfiId]);
-      res.json(badges);
+      
+      // Separate earned and available badges
+      const earned = badges.filter(badge => badge.earned);
+      const available = badges; // All badges (both earned and not earned)
+      
+      res.json({
+        available: available,
+        earned: earned
+      });
     } catch (err) {
       console.error('Database error in GET /badges:', err);
       res.status(500).json({ error: 'Database error' });
@@ -504,13 +515,28 @@ module.exports = (db, rbacMiddleware, upload) => {
     try {
       const konfiId = req.user.id;
       const query = `
-        SELECT e.*, 
-               CASE WHEN eb.user_id IS NOT NULL THEN TRUE ELSE FALSE END as registered,
-               eb.booking_date as registered_at
+        SELECT e.id, 
+               e.name as title,
+               e.description,
+               e.event_date as date,
+               e.location,
+               e.max_participants,
+               e.points,
+               e.type,
+               e.registration_closes_at as registration_deadline,
+               CASE WHEN eb.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_registered,
+               eb.booking_date as registered_at,
+               (SELECT COUNT(*) FROM event_bookings WHERE event_id = e.id) as current_participants,
+               CASE 
+                 WHEN eb.user_id IS NOT NULL THEN FALSE
+                 WHEN e.registration_closes_at IS NOT NULL AND e.registration_closes_at < NOW() THEN FALSE
+                 WHEN e.max_participants IS NOT NULL AND (SELECT COUNT(*) FROM event_bookings WHERE event_id = e.id) >= e.max_participants THEN FALSE
+                 ELSE TRUE
+               END as can_register
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
-        WHERE e.is_active = TRUE AND e.event_date >= CURRENT_DATE
-        ORDER BY e.event_date, e.start_time
+        WHERE e.cancelled = FALSE AND e.event_date >= CURRENT_DATE
+        ORDER BY e.event_date
       `;
       const { rows: events } = await db.query(query, [konfiId]);
       res.json(events);
