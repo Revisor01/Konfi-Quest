@@ -25,6 +25,8 @@ import {
   IonAvatar,
   IonProgressBar,
   IonAlert,
+  IonSelect,
+  IonSelectOption,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -49,7 +51,8 @@ import {
   rocket,
   eye,
   eyeOff,
-  key
+  key,
+  book
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -65,6 +68,7 @@ interface KonfiProfile {
   jahrgang_year: number;
   created_at: string;
   last_login_at?: string;
+  bible_translation?: string;
   // Statistics
   total_points: number;
   badge_count: number;
@@ -112,6 +116,7 @@ const KonfiProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [selectedTranslation, setSelectedTranslation] = useState<string>('LUT');
   
   // Edit form state
   const [editData, setEditData] = useState({
@@ -140,6 +145,10 @@ const KonfiProfilePage: React.FC = () => {
     try {
       const response = await api.get('/konfi/profile');
       setProfile(response.data);
+      // Set current translation from profile
+      if (response.data.bible_translation) {
+        setSelectedTranslation(response.data.bible_translation);
+      }
     } catch (err) {
       setError('Fehler beim Laden des Profils');
       console.error('Error loading profile:', err);
@@ -199,6 +208,32 @@ const KonfiProfilePage: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
     }
+  };
+
+  const handleTranslationChange = async (translation: string) => {
+    try {
+      await api.put('/konfi/bible-translation', { translation });
+      setSelectedTranslation(translation);
+      setSuccess(`Bibelübersetzung auf ${getTranslationName(translation)} geändert`);
+      // Update profile to reflect the change
+      if (profile) {
+        setProfile({ ...profile, bible_translation: translation });
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Ändern der Bibelübersetzung');
+    }
+  };
+
+  const getTranslationName = (code: string) => {
+    const translations = {
+      'LUT': 'Lutherbibel 2017',
+      'ELB': 'Elberfelder Bibel',
+      'GNB': 'Gute Nachricht Bibel',
+      'NIV': 'New International Version',
+      'LSG': 'Louis Segond 1910',
+      'RVR60': 'Reina-Valera 1960'
+    };
+    return translations[code as keyof typeof translations] || code;
   };
 
   const handleLogout = () => {
@@ -559,6 +594,28 @@ const KonfiProfilePage: React.FC = () => {
                 <p>Sicherheitseinstellungen</p>
               </IonLabel>
               <IonIcon icon={create} slot="end" style={{ color: '#ccc' }} />
+            </IonItem>
+
+            <IonItem>
+              <IonIcon icon={book} slot="start" color="tertiary" />
+              <IonLabel>
+                <h3>Bibelübersetzung</h3>
+                <p>Für die Tageslosung</p>
+              </IonLabel>
+              <IonSelect
+                value={selectedTranslation}
+                onIonChange={(e) => handleTranslationChange(e.detail.value)}
+                interface="action-sheet"
+                slot="end"
+                style={{ maxWidth: '100px' }}
+              >
+                <IonSelectOption value="LUT">Lutherbibel</IonSelectOption>
+                <IonSelectOption value="ELB">Elberfelder</IonSelectOption>
+                <IonSelectOption value="GNB">Gute Nachricht</IonSelectOption>
+                <IonSelectOption value="NIV">English (NIV)</IonSelectOption>
+                <IonSelectOption value="LSG">Français (LSG)</IonSelectOption>
+                <IonSelectOption value="RVR60">Español (RVR60)</IonSelectOption>
+              </IonSelect>
             </IonItem>
           </IonCardContent>
         </IonCard>
