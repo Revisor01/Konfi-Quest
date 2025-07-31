@@ -36,10 +36,19 @@ module.exports = (db, rbacMiddleware, upload) => {
 
       // Check if badges table exists and get badges for this konfi
       let badges = [];
+      let badgeCount = 0;
       const checkBadgesTableQuery = "SELECT to_regclass('public.custom_badges')";
       const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
 
       if (tableExistsResult && tableExistsResult.to_regclass) {
+        // Get total badge count
+        const { rows: [badgeCountResult] } = await db.query(
+          'SELECT COUNT(*) as count FROM konfi_badges WHERE konfi_id = $1',
+          [konfiId]
+        );
+        badgeCount = parseInt(badgeCountResult.count, 10) || 0;
+
+        // Get recent badges for display
         const badgesQuery = `
           SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
                  kb.earned_at
@@ -72,6 +81,24 @@ module.exports = (db, rbacMiddleware, upload) => {
         initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
       }));
 
+      // Get registered events count
+      const { rows: [eventCountResult] } = await db.query(
+        'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1',
+        [konfiId]
+      );
+      const eventCount = parseInt(eventCountResult.count, 10) || 0;
+
+      // Get recent registered events
+      const eventsQuery = `
+        SELECT e.title, e.event_date, eb.booking_date
+        FROM events e
+        JOIN event_bookings eb ON e.id = eb.event_id
+        WHERE eb.user_id = $1
+        ORDER BY eb.booking_date DESC
+        LIMIT 3
+      `;
+      const { rows: recentEvents } = await db.query(eventsQuery, [konfiId]);
+
       // Calculate days to confirmation
       let daysToConfirmation = null;
       if (konfi.confirmation_date) {
@@ -85,6 +112,9 @@ module.exports = (db, rbacMiddleware, upload) => {
       res.json({
         konfi: konfi,
         recent_badges: badges,
+        badge_count: badgeCount,
+        recent_events: recentEvents,
+        event_count: eventCount,
         ranking: rankingWithInitials,
         total_points: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0),
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
@@ -690,7 +720,7 @@ module.exports = (db, rbacMiddleware, upload) => {
       const { translation } = req.body;
       
       // Validate translation
-      const validTranslations = ['LUT', 'ELB', 'GNB', 'NIV', 'LSG', 'RVR60'];
+      const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
       if (!validTranslations.includes(translation)) {
         return res.status(400).json({ 
           error: 'Invalid translation',
