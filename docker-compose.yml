@@ -31,18 +31,18 @@ services:
     ports:
       - "127.0.0.1:8623:5000"  # Nur localhost, Port 8623
     environment:
-      - NODE_ENV=production
-      - JWT_SECRET=konfi-secret-super-secure-2025
-      - DATABASE_URL=postgresql://konfi_user:konfi_secure_password_2025@postgres:5432/konfi_db
-      - PGHOST=postgres
-      - PGUSER=konfi_user
-      - PGDATABASE=konfi_db
-      - PGPASSWORD=konfi_secure_password_2025
-      - PGPORT=5432
-      - SMTP_HOST=server.godsapp.de
-      - SMTP_PORT=587
-      - SMTP_USER=team@konfi-quest.de
-      - SMTP_PASS='NkqFQuTx$877Si!6Pp'
+      NODE_ENV: production
+      JWT_SECRET: konfi-secret-super-secure-2025
+      DATABASE_URL: postgresql://konfi_user:konfi_secure_password_2025@postgres:5432/konfi_db
+      PGHOST: postgres
+      PGUSER: konfi_user
+      PGDATABASE: konfi_db
+      PGPASSWORD: konfi_secure_password_2025
+      PGPORT: 5432
+      SMTP_HOST: server.godsapp.de
+      SMTP_PORT: 587
+      SMTP_USER: team@konfi-quest.de
+      SMTP_PASS: "NkqFQuTx\$877Si!6Pp"
     volumes:
       - ./uploads:/app/uploads  # Chat uploads
     extra_hosts:
