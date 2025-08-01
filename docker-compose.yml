@@ -42,7 +42,7 @@ services:
       SMTP_HOST: server.godsapp.de
       SMTP_PORT: 587
       SMTP_USER: team@konfi-quest.de
-      SMTP_PASS: "NkqFQuTx\$877Si!6Pp"
+      SMTP_PASS: "NkqFQuTx877Sia6Pp"
     volumes:
       - ./uploads:/app/uploads  # Chat uploads
     extra_hosts:
