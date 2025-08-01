@@ -10,6 +10,10 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Europe/Berlin
       PGTZ: Europe/Berlin
+      SMTP_HOST: server.godsapp.de
+      SMTP_PORT: 587
+      SMTP_USER: team@konfi-quest.de
+      SMTP_PASS: NkqFQuTx$877Si!6Pp
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
