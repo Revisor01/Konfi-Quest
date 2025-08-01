@@ -16,6 +16,8 @@ services:
     ports:
       - "127.0.0.1:5432:5432"  # Nur localhost für DB-Zugriff
     restart: unless-stopped
+    extra_hosts:
+      - "server.godsapp.de:213.109.162.132"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U konfi_user -d konfi_db"]
       interval: 10s
@@ -40,6 +42,8 @@ services:
       - TZ=Europe/Berlin
     volumes:
       - ./uploads:/app/uploads  # Chat uploads
+    extra_hosts:
+      - "server.godsapp.de:213.109.162.132"
     depends_on:
       postgres:
         condition: service_healthy
