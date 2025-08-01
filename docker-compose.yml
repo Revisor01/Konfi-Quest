@@ -11,7 +11,7 @@ services:
       TZ: Europe/Berlin
       PGTZ: Europe/Berlin
       SMTP_HOST: server.godsapp.de
-      SMTP_PORT: 587
+      SMTP_PORT: 465
       SMTP_USER: team@konfi-quest.de
       SMTP_PASS: "NkqFQuTx877Sia6Pp"
     volumes:
@@ -44,7 +44,7 @@ services:
       PGPASSWORD: konfi_secure_password_2025
       PGPORT: 5432
       SMTP_HOST: server.godsapp.de
-      SMTP_PORT: 587
+      SMTP_PORT: 465
       SMTP_USER: team@konfi-quest.de
       SMTP_PASS: "NkqFQuTx877Sia6Pp"
     volumes:
