@@ -4,7 +4,6 @@
 
 1. **Neue RBAC-Struktur verwenden** - Alte Strukturen sind deprecated
 2. **Deutsche Entwicklungssprache verwenden**
-3. **Legacy `points.gottesdienst` Struktur ist TOT - verwende `gottesdienst_points`**
 
 ---
 
@@ -48,80 +47,10 @@ konfi_badges: konfi_id, badge_id, awarded_date
 -- Events
 event_bookings: user_id, event_id, status, booking_date
 
--- Chat System (BRAUCHT organization_id!)
+-- Chat System
 chat_rooms: id, name, type, jahrgang_id, created_by, organization_id
 chat_messages: id, room_id, user_id, user_type, content, created_at
 chat_participants: id, room_id, user_id, user_type, joined_at
-```
-
-### ❌ DEPRECATED (NICHT VERWENDEN):
-- `admins` tabelle → Ersetzt durch `users` mit role='admin'
-- `konfis` tabelle → Ersetzt durch `users` + `konfi_profiles`
-
----
-
-## API Endpoints (Admin) - AKTUELL GÜLTIG
-
-### Konfi Management
-- `GET /api/admin/konfis` - Alle Konfis mit badgeCount ✅
-- `GET /api/admin/konfis/:id` - Einzelner Konfi mit activities, bonusPoints ✅
-- `POST /api/admin/konfis` - Neuer Konfi erstellen ✅
-- `PUT /api/admin/konfis/:id` - Konfi bearbeiten ✅
-- `DELETE /api/admin/konfis/:id` - Konfi löschen ✅
-- `POST /api/admin/konfis/:id/regenerate-password` - Passwort neu generieren ✅
-
-### Activities & Bonus (NEU IMPLEMENTIERT)
-- `POST /api/admin/konfis/:id/activities` - Aktivität hinzufügen ✅
-- `DELETE /api/admin/konfis/:id/activities/:activityId` - Aktivität löschen ✅
-- `POST /api/admin/konfis/:id/bonus-points` - Bonuspunkte hinzufügen ✅
-- `DELETE /api/admin/konfis/:id/bonus-points/:bonusId` - Bonuspunkte löschen ✅
-
-### Activity Requests
-- `GET /api/admin/activities/requests` - Alle Anträge ✅
-
-### Other Resources
-- `GET /api/admin/activities` - Alle Aktivitäten ✅
-- `GET /api/admin/jahrgaenge` - Alle Jahrgänge ✅
-- `GET /api/settings` - System Settings ✅
-
----
-
-## Frontend Datenstrukturen (AKTUELL)
-
-### Konfi Interface - SO VERWENDEN:
-```typescript
-interface Konfi {
-  id: number;
-  name: string;
-  username?: string;
-  jahrgang_name?: string;        // ✅ Backend liefert jahrgang_name
-  gottesdienst_points?: number;  // ✅ Backend neue Struktur
-  gemeinde_points?: number;      // ✅ Backend neue Struktur  
-  badgeCount?: number;           // ✅ Jetzt verfügbar
-  password?: string;             // ✅ Für Admin Views
-}
-```
-
-### ✅ RICHTIGE Implementierung:
-```typescript
-const getTotalPoints = (konfi: Konfi) => {
-  const gottesdienst = konfi.gottesdienst_points ?? 0;
-  const gemeinde = konfi.gemeinde_points ?? 0;
-  return gottesdienst + gemeinde;
-};
-
-// Anzeige
-{konfi.jahrgang_name} • {konfi.badgeCount || 0} Badges
-G: {konfi.gottesdienst_points ?? 0}/{settings.target_gottesdienst}
-Gem: {konfi.gemeinde_points ?? 0}/{settings.target_gemeinde}
-```
-
-### ❌ FALSCH (Legacy - NICHT verwenden):
-```typescript
-// ❌ NIEMALS SO:
-konfi.points?.gottesdienst  // TOT
-konfi.points?.gemeinde     // TOT
-konfi.jahrgang            // Backend liefert jahrgang_name
 ```
 
 ---
@@ -167,98 +96,7 @@ git pull && docker-compose down && docker-compose up -d --build
 
 ### Database direkt bearbeiten:
 ```bash
-ssh root@server.godsapp.de "cd /opt/Konfi-Quest && sqlite3 data/konfi.db 'ALTER TABLE event_bookings...'
-```
-
----
-
-## Häufige Probleme & Lösungen
-
-### 1. 403 Forbidden Errors
-- RBAC middleware prüfen in `middleware/rbac.js`
-- JWT Token und Organization ID prüfen
-- Permissions in Database validieren
-
-### 2. "Daten werden nicht angezeigt"
-**GRUND**: Legacy Datenstruktur verwendet!
-**LÖSUNG**: 
-- ✅ `konfi.gottesdienst_points` verwenden
-- ✅ `konfi.gemeinde_points` verwenden  
-- ✅ `konfi.jahrgang_name` verwenden
-- ✅ `konfi.badgeCount` ist verfügbar
-
-### 3. Modal 404 Errors
-**GRUND**: Falsche API Routes
-**LÖSUNG**:
-- ✅ `/api/admin/konfis/:id/activities` 
-- ✅ `/api/admin/konfis/:id/bonus-points`
-
-### 4. Database Errors
-- `konfi_event_registrations` → `event_bookings` verwenden
-- `a.title` → `a.name` verwenden
-
-### 5. useEffect Loop in ModalContext
-**PROBLEM**: "Maximum update depth exceeded" in ModalContext
-**GRUND**: `registerPage` Funktion wird bei jedem Render neu erstellt
-**LÖSUNG**: `useCallback` verwenden für `registerPage`
-
-```tsx
-// ❌ FALSCH - verursacht Loop
-const registerPage = (tabId: string, element: HTMLElement | null) => {
-  // ...
-};
-
-// ✅ RICHTIG - verhindert Loop
-const registerPage = useCallback((tabId: string, element: HTMLElement | null) => {
-  // ...
-}, []);
-```
-
-**WICHTIG**: Diese Lösung ist kritisch für Tab-Navigation und Modal-Funktionalität!
-
----
-
-## Database Schema Mapping
-
-### User/Konfi Queries:
-```sql
--- Alle Konfis laden
-SELECT u.id, u.display_name as name, u.username, 
-       kp.gottesdienst_points, kp.gemeinde_points,
-       j.name as jahrgang_name,
-       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as badgeCount
-FROM users u
-JOIN roles r ON u.role_id = r.id
-LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
-LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-WHERE r.name = 'konfi' AND u.organization_id = ?
-```
-
----
-
-## Typische API Aufrufe
-
-```typescript
-// ✅ Konfis laden (mit badges)
-const konfis = await api.get('/admin/konfis');
-
-// ✅ Einzelnen Konfi laden (komplett mit activities, bonusPoints)
-const konfi = await api.get(`/admin/konfis/${id}`);
-
-// ✅ Aktivität hinzufügen
-await api.post(`/admin/konfis/${konfiId}/activities`, {
-  activity_id: activityId,
-  completed_date: date,
-  comment: comment
-});
-
-// ✅ Bonuspunkte hinzufügen
-await api.post(`/admin/konfis/${konfiId}/bonus-points`, {
-  points: points,
-  type: 'gottesdienst', // oder 'gemeinde'
-  description: description
-});
-```
+ssh root@server.godsapp.de "cd /opt/Konfi-Quest && auf den docker zugreifen für psotgres```
 
 ---
 
