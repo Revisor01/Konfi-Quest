@@ -93,7 +93,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
     );
     if (badges.length === 0) return 0;
     
-    const { rows: earned } = await db.query("SELECT badge_id FROM konfi_badges WHERE konfi_id = $1", [konfiId]);
+    const { rows: earned } = await db.query("SELECT badge_id FROM konfi_badges WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
     const alreadyEarned = earned.map(e => e.badge_id);
     
     let newBadges = 0;
@@ -228,7 +228,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
     
     if (earnedBadgeIds.length > 0) {
       const insertPromises = earnedBadgeIds.map(badgeId => 
-        db.query("INSERT INTO konfi_badges (konfi_id, badge_id) VALUES ($1, $2)", [konfiId, badgeId])
+        db.query("INSERT INTO konfi_badges (konfi_id, badge_id, organization_id) VALUES ($1, $2, $3)", [konfiId, badgeId, konfi.organization_id])
       );
       await Promise.all(insertPromises);
 

@@ -419,18 +419,32 @@ const KonfiBadgesPage: React.FC = () => {
                               style={{ 
                                 height: '4px', 
                                 borderRadius: '2px',
-                                marginBottom: '8px',
+                                marginBottom: '6px',
                                 '--progress-background': getBadgeColor(badge)
                               }}
                             />
-                            <p style={{ 
-                              margin: '0', 
-                              fontSize: '0.7rem', 
-                              color: '#666',
-                              fontWeight: '500'
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
                             }}>
-                              {Math.round(badge.progress_percentage)}%
-                            </p>
+                              <p style={{ 
+                                margin: '0', 
+                                fontSize: '0.7rem', 
+                                color: '#666',
+                                fontWeight: '600'
+                              }}>
+                                {badge.progress_points || 0}/{badge.criteria_value}
+                              </p>
+                              <p style={{ 
+                                margin: '0', 
+                                fontSize: '0.65rem', 
+                                color: '#999',
+                                fontWeight: '500'
+                              }}>
+                                {Math.round(badge.progress_percentage)}%
+                              </p>
+                            </div>
                           </>
                         ) : (
                           <p style={{ 
@@ -439,7 +453,7 @@ const KonfiBadgesPage: React.FC = () => {
                             color: '#999',
                             fontWeight: '500'
                           }}>
-                            {badge.criteria_value} Punkte benötigt
+                            0/{badge.criteria_value}
                           </p>
                         )}
                       </div>

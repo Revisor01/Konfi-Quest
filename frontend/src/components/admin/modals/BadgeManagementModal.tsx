@@ -16,14 +16,17 @@ import {
   IonToggle,
   IonCard,
   IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
   IonGrid,
   IonRow,
   IonCol,
   IonIcon,
   IonText,
-  IonCheckbox
+  IonCheckbox,
+  IonSpinner
 } from '@ionic/react';
-import { save, close, ribbon, settings } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, ribbon, settings, trophy } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -45,6 +48,12 @@ interface Activity {
   id: number;
   name: string;
   type: 'gottesdienst' | 'gemeinde';
+  categories?: Category[];
+}
+
+interface Category {
+  id: number;
+  name: string;
 }
 
 interface BadgeManagementModalProps {
@@ -75,8 +84,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   // Available data for dropdowns
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [criteriaTypes, setCriteriaTypes] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [criteriaTypes, setCriteriaTypes] = useState<any>({});
 
   // Additional form fields for complex criteria
   const [extraCriteria, setExtraCriteria] = useState<any>({});
@@ -108,15 +117,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const loadInitialData = async () => {
     try {
       // Load activities
-      const activitiesResponse = await api.get('/admin/activities');
+      const activitiesResponse = await api.get('/activities');
       setActivities(activitiesResponse.data);
 
-      // Load categories for badges
-      const categoriesResponse = await api.get('/activity-categories');
+      // Load categories
+      const categoriesResponse = await api.get('/categories');
       setCategories(categoriesResponse.data);
 
       // Load criteria types
-      const criteriaResponse = await api.get('/badge-criteria-types');
+      const criteriaResponse = await api.get('/badges/criteria-types');
       setCriteriaTypes(criteriaResponse.data);
     } catch (err) {
       console.error('Error loading initial data:', err);
@@ -128,9 +137,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     
     setLoading(true);
     try {
-      const response = await api.get('/admin/badges');
-      const badges = response.data;
-      const badge = badges.find((b: Badge) => b.id === badgeId);
+      const response = await api.get(`/badges/${badgeId}`);
+      const badge = response.data;
       
       if (badge) {
         setFormData({
@@ -203,7 +211,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         await api.put(`/badges/${badgeId}`, badgeData);
         setSuccess('Badge erfolgreich aktualisiert');
       } else {
-        await api.post('/admin/badges', badgeData);
+        await api.post('/badges', badgeData);
         setSuccess('Badge erfolgreich erstellt');
       }
 
@@ -219,12 +227,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     switch (formData.criteria_type) {
       case 'specific_activity':
         return (
-          <IonItem>
-            <IonLabel position="stacked">Aktivität auswählen</IonLabel>
+          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonLabel position="stacked" color="dark">
+              <strong>Aktivität auswählen</strong>
+            </IonLabel>
             <IonSelect
               value={extraCriteria.activity_id}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_id: e.detail.value })}
               placeholder="Aktivität wählen"
+              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
             >
               {activities.map(activity => (
                 <IonSelectOption key={activity.id} value={activity.id}>
@@ -237,16 +248,19 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'category_activities':
         return (
-          <IonItem>
-            <IonLabel position="stacked">Kategorie auswählen</IonLabel>
+          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonLabel position="stacked" color="dark">
+              <strong>Kategorie auswählen</strong>
+            </IonLabel>
             <IonSelect
               value={extraCriteria.required_category}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, required_category: e.detail.value })}
               placeholder="Kategorie wählen"
+              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
             >
               {categories.map(category => (
-                <IonSelectOption key={category} value={category}>
-                  {category}
+                <IonSelectOption key={category.id} value={category.name}>
+                  {category.name}
                 </IonSelectOption>
               ))}
             </IonSelect>
@@ -255,8 +269,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'time_based':
         return (
-          <IonItem>
-            <IonLabel position="stacked">Zeitraum (Tage)</IonLabel>
+          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonLabel position="stacked" color="dark">
+              <strong>Zeitraum (Tage)</strong>
+            </IonLabel>
             <IonInput
               type="number"
               value={extraCriteria.days || 7}
@@ -264,19 +280,23 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               placeholder="7"
               min={1}
               max={365}
+              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
             />
           </IonItem>
         );
 
       case 'activity_combination':
         return (
-          <IonItem>
-            <IonLabel position="stacked">Aktivitäten kombinieren</IonLabel>
+          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonLabel position="stacked" color="dark">
+              <strong>Aktivitäten kombinieren</strong>
+            </IonLabel>
             <IonSelect
               multiple
               value={extraCriteria.activity_ids || []}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_ids: e.detail.value })}
               placeholder="Aktivitäten wählen"
+              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
             >
               {activities.map(activity => (
                 <IonSelectOption key={activity.id} value={activity.id}>
@@ -319,83 +339,106 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
-              <IonIcon icon={close} />
+            <IonButton onClick={onClose} fill="clear">
+              <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={loading}>
-              <IonIcon icon={save} />
+            <IonButton onClick={handleSave} disabled={loading} fill="clear">
+              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
+      <IonContent className="ion-padding"  style={{ '--background': '#f8f9fa' }}>
         {/* Basis-Informationen */}
-        <IonCard>
+        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
+          <IonCardHeader>
+            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
+              <IonIcon icon={trophy} style={{ marginRight: '8px', color: '#ffd700' }} />
+              Badge-Informationen
+            </IonCardTitle>
+          </IonCardHeader>
           <IonCardContent>
-            <IonItem>
-              <IonLabel position="stacked">Name *</IonLabel>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>Name *</strong>
+              </IonLabel>
               <IonInput
                 value={formData.name}
                 onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                 placeholder="Badge-Name eingeben"
                 required
+                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
 
-            <IonItem>
-              <IonLabel position="stacked">Icon (Emoji)</IonLabel>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>Icon (Emoji)</strong>
+              </IonLabel>
               <IonInput
                 value={formData.icon}
                 onIonInput={(e) => setFormData({ ...formData, icon: e.detail.value! })}
                 placeholder="🏆"
+                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
 
-            <IonItem>
-              <IonLabel position="stacked">Beschreibung</IonLabel>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>Beschreibung</strong>
+              </IonLabel>
               <IonTextarea
                 value={formData.description}
                 onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                 placeholder="Beschreibung des Badges"
                 rows={3}
+                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
           </IonCardContent>
         </IonCard>
 
         {/* Kriterien */}
-        <IonCard>
+        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
+          <IonCardHeader>
+            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
+              <IonIcon icon={settings} style={{ marginRight: '8px', color: '#667eea' }} />
+              Badge-Kriterien
+            </IonCardTitle>
+            <IonText color="medium">
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem' }}>
+                Bestimme, wann dieses Badge verliehen wird
+              </p>
+            </IonText>
+          </IonCardHeader>
           <IonCardContent>
-            <IonItem>
-              <IonIcon icon={settings} slot="start" color="primary" />
-              <IonLabel>
-                <h2>Kriterien</h2>
-                <p>Bestimme, wann dieses Badge verliehen wird</p>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>Kriterium-Typ</strong>
               </IonLabel>
-            </IonItem>
-
-            <IonItem>
-              <IonLabel position="stacked">Kriterium-Typ</IonLabel>
               <IonSelect
                 value={formData.criteria_type}
                 onIonChange={(e) => {
                   setFormData({ ...formData, criteria_type: e.detail.value });
                   setExtraCriteria({}); // Reset extra criteria when type changes
                 }}
+                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               >
-                {Object.entries(criteriaTypeLabels).map(([value, label]) => (
+                {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => (
                   <IonSelectOption key={value} value={value}>
-                    {label}
+                    {type.label}
                   </IonSelectOption>
                 ))}
               </IonSelect>
             </IonItem>
 
-            <IonItem>
-              <IonLabel position="stacked">{getValueLabel()}</IonLabel>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>{getValueLabel()}</strong>
+              </IonLabel>
               <IonInput
                 type="number"
                 value={formData.criteria_value}
@@ -403,6 +446,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 placeholder="10"
                 min={1}
                 max={1000}
+                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
 
@@ -411,35 +455,40 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         </IonCard>
 
         {/* Status-Einstellungen */}
-        <IonCard>
+        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
+          <IonCardHeader>
+            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
+              <IonIcon icon={ribbon} style={{ marginRight: '8px', color: '#ff6b6b' }} />
+              Badge-Status
+            </IonCardTitle>
+            <IonText color="medium">
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem' }}>
+                Sichtbarkeit und Aktivierung des Badges
+              </p>
+            </IonText>
+          </IonCardHeader>
           <IonCardContent>
-            <IonItem>
-              <IonIcon icon={ribbon} slot="start" color="warning" />
+            <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
               <IonLabel>
-                <h2>Status</h2>
-                <p>Sichtbarkeit und Aktivierung</p>
-              </IonLabel>
-            </IonItem>
-
-            <IonItem>
-              <IonLabel>
-                <h3>Aktiv</h3>
-                <p>Badge kann verliehen werden</p>
+                <h3 style={{ color: '#333', margin: '0 0 4px 0' }}>Aktiv</h3>
+                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>Badge kann verliehen werden</p>
               </IonLabel>
               <IonToggle
                 checked={formData.is_active}
                 onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
+                color="success"
               />
             </IonItem>
 
-            <IonItem>
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
               <IonLabel>
-                <h3>Versteckt</h3>
-                <p>Badge ist für Konfis nicht sichtbar</p>
+                <h3 style={{ color: '#333', margin: '0 0 4px 0' }}>Versteckt (Geheimes Badge)</h3>
+                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
               </IonLabel>
               <IonToggle
                 checked={formData.is_hidden}
                 onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
+                color="warning"
               />
             </IonItem>
           </IonCardContent>

@@ -199,7 +199,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
         const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
         await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
         
-        newBadges = await checkAndAwardBadges(request.konfi_id);
+        newBadges = await checkAndAwardBadges(db, request.konfi_id);
       }
 
       // Send push notification to konfi

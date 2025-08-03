@@ -41,10 +41,10 @@ module.exports = (db, rbacMiddleware, upload) => {
       const { rows: [tableExistsResult] } = await db.query(checkBadgesTableQuery);
 
       if (tableExistsResult && tableExistsResult.to_regclass) {
-        // Get total badge count
+        // Get total badge count for this organization
         const { rows: [badgeCountResult] } = await db.query(
-          'SELECT COUNT(*) as count FROM konfi_badges WHERE konfi_id = $1',
-          [konfiId]
+          'SELECT COUNT(*) as count FROM konfi_badges kb JOIN users u ON kb.konfi_id = u.id WHERE kb.konfi_id = $1 AND kb.organization_id = $2',
+          [konfiId, req.user.organization_id]
         );
         badgeCount = parseInt(badgeCountResult.count, 10) || 0;
 
@@ -53,12 +53,12 @@ module.exports = (db, rbacMiddleware, upload) => {
           SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
                  kb.earned_at
           FROM custom_badges cb
-          LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1
-          WHERE kb.earned_at IS NOT NULL
+          LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1 AND kb.organization_id = $2
+          WHERE kb.earned_at IS NOT NULL AND cb.organization_id = $2
           ORDER BY kb.earned_at DESC
           LIMIT 3
         `;
-        const { rows: badgeResults } = await db.query(badgesQuery, [konfiId]);
+        const { rows: badgeResults } = await db.query(badgesQuery, [konfiId, req.user.organization_id]);
         badges = badgeResults;
       }
 
@@ -454,14 +454,86 @@ module.exports = (db, rbacMiddleware, upload) => {
                CASE WHEN kb.konfi_id IS NOT NULL THEN TRUE ELSE FALSE END as earned,
                kb.earned_at
         FROM custom_badges cb
-        LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1
+        LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1 AND kb.organization_id = $2
+        WHERE cb.is_active = TRUE AND cb.organization_id = $2
         ORDER BY earned DESC, cb.name
       `;
-      const { rows: badges } = await db.query(query, [konfiId]);
+      const { rows: badges } = await db.query(query, [konfiId, req.user.organization_id]);
       
-      // Separate earned and available badges
+      // Calculate progress for each badge
+      for (let badge of badges) {
+        if (badge.earned) {
+          badge.progress = { current: badge.criteria_value, target: badge.criteria_value, percentage: 100 };
+          continue;
+        }
+
+        let progress = { current: 0, target: badge.criteria_value || 1, percentage: 0 };
+        
+        try {
+          switch (badge.criteria_type) {
+            case 'total_points':
+              const { rows: [totalPointsResult] } = await db.query(
+                'SELECT (kp.gottesdienst_points + kp.gemeinde_points) as total FROM konfi_profiles kp WHERE user_id = $1',
+                [konfiId]
+              );
+              progress.current = totalPointsResult?.total || 0;
+              break;
+              
+            case 'gottesdienst_points':
+              const { rows: [gottesdienstResult] } = await db.query(
+                'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+              );
+              progress.current = gottesdienstResult?.gottesdienst_points || 0;
+              break;
+              
+            case 'gemeinde_points':
+              const { rows: [gemeindeResult] } = await db.query(
+                'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+              );
+              progress.current = gemeindeResult?.gemeinde_points || 0;
+              break;
+              
+            case 'activity_count':
+              const { rows: [activityCountResult] } = await db.query(
+                'SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1',
+                [konfiId]
+              );
+              progress.current = parseInt(activityCountResult?.count || 0);
+              break;
+              
+            case 'unique_activities':
+              const { rows: [uniqueActivitiesResult] } = await db.query(
+                'SELECT COUNT(DISTINCT activity_id) as count FROM konfi_activities WHERE konfi_id = $1',
+                [konfiId]
+              );
+              progress.current = parseInt(uniqueActivitiesResult?.count || 0);
+              break;
+              
+            case 'streak':
+              // TODO: Implement streak calculation (complex)
+              progress.current = 0;
+              break;
+              
+            case 'time_based':
+              // TODO: Implement time-based calculation (complex)
+              progress.current = 0;
+              break;
+          }
+          
+          progress.percentage = Math.min((progress.current / progress.target) * 100, 100);
+        } catch (err) {
+          console.error(`Error calculating progress for badge ${badge.id}:`, err);
+        }
+        
+        badge.progress = progress;
+      }
+      
+      // Separate earned and available badges correctly
       const earned = badges.filter(badge => badge.earned);
-      const available = badges; // All badges (both earned and not earned)
+      // Available = not earned AND not hidden (unless earned)
+      const available = badges.filter(badge => !badge.earned && !badge.is_hidden);
       
       res.json({
         available: available,
@@ -490,12 +562,12 @@ module.exports = (db, rbacMiddleware, upload) => {
 
       const statsQuery = `
         SELECT 
-          (SELECT COUNT(*) FROM custom_badges) as total_badges,
+          (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2) as total_badges,
           COUNT(kb.badge_id) as earned_badges
         FROM konfi_badges kb
-        WHERE kb.konfi_id = $1
+        WHERE kb.konfi_id = $1 AND kb.organization_id = $2
       `;
-      const { rows: [stats] } = await db.query(statsQuery, [konfiId]);
+      const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       res.json({
         total_badges: parseInt(stats.total_badges, 10) || 0,
         earned_badges: parseInt(stats.earned_badges, 10) || 0

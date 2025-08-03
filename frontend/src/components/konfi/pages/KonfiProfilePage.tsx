@@ -18,15 +18,14 @@ import {
   IonLabel,
   IonChip,
   IonList,
-  IonInput,
-  IonModal,
-  IonButtons,
-  IonTextarea,
   IonAvatar,
   IonProgressBar,
-  IonAlert,
   IonSelect,
   IonSelectOption,
+  IonModal,
+  IonButtons,
+  IonInput,
+  useIonModal,
   useIonAlert
 } from '@ionic/react';
 import {
