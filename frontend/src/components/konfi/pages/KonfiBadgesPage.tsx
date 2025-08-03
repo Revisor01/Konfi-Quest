@@ -19,12 +19,7 @@ import {
   IonProgressBar,
   IonBadge
 } from '@ionic/react';
-import {
-  trophy,
-  checkmark,
-  statsChart,
-  lockClosed
-} from 'ionicons/icons';
+// Removed icons - using emojis instead for cleaner look
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -200,6 +195,11 @@ const KonfiBadgesPage: React.FC = () => {
         });
 
       setBadges(processedBadges);
+      
+      // Debug: Log filter counts after loading
+      setTimeout(() => {
+        getFilterCounts();
+      }, 100);
     } catch (err) {
       setError('Fehler beim Laden der Badges');
       console.error('Error loading badges:', err);
@@ -219,6 +219,15 @@ const KonfiBadgesPage: React.FC = () => {
     }
   };
 
+  // Debug-Funktion für Filter
+  const getFilterCounts = () => {
+    const all = badges.length;
+    const earned = badges.filter(badge => badge.is_earned).length;
+    const inWork = badges.filter(badge => !badge.is_earned && badge.progress_percentage && badge.progress_percentage > 0).length;
+    console.log('🔍 Badge Filter Counts:', { all, earned, inWork, badges: badges.map(b => ({ name: b.name, earned: b.is_earned, progress: b.progress_percentage })) });
+    return { all, earned, inWork };
+  };
+
   const getBadgeColor = (badge: Badge) => {
     if (badge.criteria_type === 'total_points') {
       if (badge.criteria_value <= 5) return '#cd7f32'; // Bronze
@@ -228,8 +237,7 @@ const KonfiBadgesPage: React.FC = () => {
     return '#667eea'; // Default
   };
 
-  const getEarnedCount = () => badges.filter(badge => badge.is_earned).length;
-  const getInWorkCount = () => badges.filter(badge => !badge.is_earned && badge.progress_percentage && badge.progress_percentage > 0).length;
+  // Entfernt - verwenden jetzt getFilterCounts() für Debug
 
   const filteredBadges = getFilteredBadges();
 
@@ -253,12 +261,13 @@ const KonfiBadgesPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Orange Gradient Header */}
-        <div style={{
+        {/* Achievements Header Card */}
+        <IonCard style={{
+          margin: '16px',
+          borderRadius: '20px',
           background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
           color: 'white',
-          padding: '40px 20px 30px 20px',
-          textAlign: 'center',
+          boxShadow: '0 10px 30px rgba(255, 107, 53, 0.3)',
           position: 'relative',
           overflow: 'hidden'
         }}>
@@ -269,7 +278,7 @@ const KonfiBadgesPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            fontSize: '8rem',
+            fontSize: '6rem',
             fontWeight: '900',
             opacity: 0.1,
             display: 'flex',
@@ -277,81 +286,33 @@ const KonfiBadgesPage: React.FC = () => {
             justifyContent: 'center',
             letterSpacing: '0.1em'
           }}>
-            BADGES
+            ACHIEVEMENTS
           </div>
           
-          {/* Content */}
-          <div style={{ position: 'relative', zIndex: 2 }}>
-            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🏆</div>
-            <h1 style={{ 
-              margin: '0 0 8px 0', 
-              fontSize: '1.8rem', 
-              fontWeight: '700',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-            }}>
-              Badge-Sammlung
-            </h1>
-            <p style={{ 
-              margin: '0', 
-              fontSize: '1rem', 
-              opacity: 0.9,
-              fontWeight: '500'
-            }}>
-              Erreiche Meilensteine und sammle Badges
-            </p>
-          </div>
-        </div>
-
-        {/* Header Statistiken */}
-        <IonCard style={{
-          margin: '16px',
-          borderRadius: '20px',
-          background: 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)',
-          color: '#8B4513',
-          boxShadow: '0 10px 30px rgba(255, 215, 0, 0.3)'
-        }}>
-          <IonCardContent style={{ padding: '24px' }}>
+          <IonCardContent style={{ padding: '24px', position: 'relative', zIndex: 2 }}>
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🏆</div>
               <h2 style={{ margin: '0', fontSize: '1.3rem', fontWeight: '600' }}>
-                Badge-Sammlung
+                Achievements
               </h2>
+              <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', opacity: 0.9 }}>
+                Sammle Badges und erreiche Meilensteine
+              </p>
             </div>
             <IonGrid>
               <IonRow>
-                <IonCol size="4">
+                <IonCol size="12">
                   <div style={{ textAlign: 'center' }}>
-                    <h3 style={{ margin: '0', fontSize: '1.8rem', fontWeight: '700' }}>
-                      {getEarnedCount()}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.85rem', opacity: 0.8 }}>
-                      Erhalten
-                    </p>
-                  </div>
-                </IonCol>
-                <IonCol size="4">
-                  <div style={{ textAlign: 'center' }}>
-                    <h3 style={{ margin: '0', fontSize: '1.8rem', fontWeight: '700' }}>
-                      {getInWorkCount()}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.85rem', opacity: 0.8 }}>
-                      In Arbeit
-                    </p>
-                  </div>
-                </IonCol>
-                <IonCol size="4">
-                  <div style={{ textAlign: 'center' }}>
-                    <h3 style={{ margin: '0', fontSize: '1.8rem', fontWeight: '700' }}>
+                    <h3 style={{ margin: '0', fontSize: '2.2rem', fontWeight: '700' }}>
                       {badges.length}
                     </h3>
-                    <p style={{ margin: '0', fontSize: '0.85rem', opacity: 0.8 }}>
-                      Gesamt
+                    <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.9 }}>
+                      Badges verfügbar
                     </p>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-
           </IonCardContent>
         </IonCard>
 
@@ -363,174 +324,152 @@ const KonfiBadgesPage: React.FC = () => {
               onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
               style={{ 
                 '--background': '#f8f9fa',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 padding: '4px'
               }}
             >
               <IonSegmentButton value="alle">
-                <IonIcon icon={trophy} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Alle</IonLabel>
+                <IonLabel style={{ fontWeight: '600' }}>Alle</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="erhalten">
-                <IonIcon icon={checkmark} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Erhalten</IonLabel>
+                <IonLabel style={{ fontWeight: '600' }}>Erhalten</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="in_arbeit">
-                <IonIcon icon={statsChart} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>In Arbeit</IonLabel>
+                <IonLabel style={{ fontWeight: '600' }}>In Arbeit</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>
         </IonCard>
 
-        {/* Badges Grid */}
+        {/* Badges Liste */}
         <div style={{ margin: '0 16px', paddingBottom: '32px' }}>
-          <IonGrid>
-            <IonRow>
-              {filteredBadges.map((badge) => (
-                <IonCol size="6" key={badge.id}>
-                  <IonCard 
-                    style={{ 
-                      margin: '0 0 16px 0',
-                      borderRadius: '16px',
-                      height: '180px',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      background: badge.is_earned 
-                        ? `linear-gradient(135deg, ${getBadgeColor(badge)} 0%, ${getBadgeColor(badge)}cc 100%)`
-                        : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                      border: badge.is_earned ? 'none' : '2px dashed #dee2e6',
-                      boxShadow: badge.is_earned 
-                        ? `0 8px 25px ${getBadgeColor(badge)}40`
-                        : '0 2px 8px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    <IonCardContent style={{ 
-                      padding: '16px', 
-                      height: '100%', 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      position: 'relative'
+          {filteredBadges.map((badge) => (
+            <IonCard 
+              key={badge.id}
+              style={{ 
+                margin: '0 0 12px 0',
+                borderRadius: '16px',
+                position: 'relative',
+                overflow: 'hidden',
+                background: badge.is_earned 
+                  ? `linear-gradient(135deg, ${getBadgeColor(badge)} 0%, ${getBadgeColor(badge)}dd 100%)`
+                  : '#ffffff',
+                border: badge.is_earned ? 'none' : '1px solid #e0e0e0',
+                boxShadow: badge.is_earned 
+                  ? `0 8px 25px ${getBadgeColor(badge)}40`
+                  : '0 2px 12px rgba(0,0,0,0.08)'
+              }}
+            >
+              {/* Special Effects für erhalten Badges */}
+              {badge.is_earned && (
+                <div style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  background: 'rgba(255,255,255,0.2)',
+                  borderRadius: '12px',
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '600',
+                  color: 'white'
+                }}>
+                  {badge.is_hidden ? '🎉 GEHEIM' : '✓ ERREICHT'}
+                </div>
+              )}
+              
+              <IonCardContent style={{ 
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px'
+              }}>
+                {/* Badge Icon */}
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '16px',
+                  background: badge.is_earned 
+                    ? 'rgba(255, 255, 255, 0.2)'
+                    : 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.8rem',
+                  flexShrink: 0
+                }}>
+                  {badge.is_earned ? badge.icon : '🔒'}
+                </div>
+
+                {/* Badge Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Badge Name */}
+                  <h3 style={{ 
+                    margin: '0 0 4px 0', 
+                    fontSize: '1rem', 
+                    fontWeight: '700',
+                    color: badge.is_earned ? 'white' : '#333',
+                    lineHeight: '1.2'
+                  }}>
+                    {badge.name}
+                  </h3>
+                  
+                  {/* Badge Description */}
+                  {badge.description && (
+                    <p style={{
+                      margin: '0 0 8px 0',
+                      fontSize: '0.85rem',
+                      color: badge.is_earned ? 'rgba(255,255,255,0.9)' : '#666',
+                      lineHeight: '1.3'
                     }}>
-                      {/* Badge Icon */}
+                      {badge.description}
+                    </p>
+                  )}
+
+                  {/* Progress/Status */}
+                  {badge.is_earned ? (
+                    <div style={{
+                      color: 'rgba(255,255,255,0.9)',
+                      fontSize: '0.8rem',
+                      fontWeight: '500'
+                    }}>
+                      {badge.is_hidden && '🎊 Geheimes Badge entdeckt!'}
+                    </div>
+                  ) : badge.progress_percentage && badge.progress_percentage > 0 ? (
+                    <div>
+                      <IonProgressBar 
+                        value={badge.progress_percentage / 100}
+                        style={{ 
+                          height: '6px', 
+                          borderRadius: '3px',
+                          marginBottom: '8px',
+                          '--progress-background': getBadgeColor(badge)
+                        }}
+                      />
                       <div style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        background: badge.is_earned 
-                          ? 'rgba(255, 255, 255, 0.2)'
-                          : 'rgba(146, 146, 150, 0.1)',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '12px',
-                        opacity: badge.is_earned ? 1 : 0.4,
-                        fontSize: badge.is_earned ? '2rem' : '1.5rem'
+                        justifyContent: 'space-between',
+                        fontSize: '0.8rem',
+                        color: '#666',
+                        fontWeight: '600'
                       }}>
-                        {badge.is_earned ? (
-                          <div>{badge.icon}</div>
-                        ) : (
-                          <IonIcon 
-                            icon={badge.progress_percentage && badge.progress_percentage > 0 ? statsChart : lockClosed} 
-                            style={{ 
-                              fontSize: '1.5rem', 
-                              color: '#929296'
-                            }} 
-                          />
-                        )}
+                        <span>{badge.progress_points || 0}/{badge.criteria_value}</span>
+                        <span>{Math.round(badge.progress_percentage)}%</span>
                       </div>
-
-                      {/* Badge Name */}
-                      <h3 style={{ 
-                        margin: '0 0 4px 0', 
-                        fontSize: '0.9rem', 
-                        fontWeight: '600',
-                        color: badge.is_earned ? 'white' : '#333',
-                        lineHeight: '1.2'
-                      }}>
-                        {badge.name}
-                      </h3>
-                      
-                      {/* Badge Description */}
-                      {badge.description && (
-                        <p style={{
-                          margin: '0 0 8px 0',
-                          fontSize: '0.7rem',
-                          color: badge.is_earned ? 'rgba(255,255,255,0.8)' : '#666',
-                          lineHeight: '1.1',
-                          textAlign: 'center'
-                        }}>
-                          {badge.description}
-                        </p>
-                      )}
-
-                      {/* Badge Info */}
-                      <div style={{ marginTop: 'auto', width: '100%' }}>
-                        {badge.is_earned ? (
-                          <div style={{
-                            background: 'rgba(255, 255, 255, 0.2)',
-                            color: 'white',
-                            fontSize: '0.7rem',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            fontWeight: '600'
-                          }}>
-                            ✓ Erhalten
-                          </div>
-                        ) : badge.progress_percentage && badge.progress_percentage > 0 ? (
-                          <>
-                            <IonProgressBar 
-                              value={badge.progress_percentage / 100}
-                              style={{ 
-                                height: '4px', 
-                                borderRadius: '2px',
-                                marginBottom: '6px',
-                                '--progress-background': getBadgeColor(badge)
-                              }}
-                            />
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}>
-                              <p style={{ 
-                                margin: '0', 
-                                fontSize: '0.7rem', 
-                                color: '#666',
-                                fontWeight: '600'
-                              }}>
-                                {badge.progress_points || 0}/{badge.criteria_value}
-                              </p>
-                              <p style={{ 
-                                margin: '0', 
-                                fontSize: '0.65rem', 
-                                color: '#999',
-                                fontWeight: '500'
-                              }}>
-                                {Math.round(badge.progress_percentage)}%
-                              </p>
-                            </div>
-                          </>
-                        ) : (
-                          <p style={{ 
-                            margin: '0', 
-                            fontSize: '0.7rem', 
-                            color: '#999',
-                            fontWeight: '500'
-                          }}>
-                            0/{badge.criteria_value}
-                          </p>
-                        )}
-                      </div>
-                    </IonCardContent>
-                  </IonCard>
-                </IonCol>
-              ))}
-            </IonRow>
-          </IonGrid>
+                    </div>
+                  ) : (
+                    <p style={{ 
+                      margin: '0', 
+                      fontSize: '0.8rem', 
+                      color: '#999',
+                      fontWeight: '500'
+                    }}>
+                      Noch nicht erreicht • {badge.criteria_value} benötigt
+                    </p>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          ))}
 
           {filteredBadges.length === 0 && (
             <IonCard style={{ textAlign: 'center', padding: '32px' }}>
