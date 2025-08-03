@@ -535,9 +535,22 @@ module.exports = (db, rbacMiddleware, upload) => {
       // Available = not earned AND not hidden (unless earned)
       const available = badges.filter(badge => !badge.earned && !badge.is_hidden);
       
+      // Get total counts for dashboard stats
+      const { rows: [totalStats] } = await db.query(`
+        SELECT 
+          COUNT(*) FILTER (WHERE is_hidden = false) as total_visible,
+          COUNT(*) FILTER (WHERE is_hidden = true) as total_secret
+        FROM custom_badges 
+        WHERE is_active = TRUE AND organization_id = $1
+      `, [req.user.organization_id]);
+      
       res.json({
         available: available,
-        earned: earned
+        earned: earned,
+        stats: {
+          totalVisible: parseInt(totalStats.total_visible) || 0,
+          totalSecret: parseInt(totalStats.total_secret) || 0
+        }
       });
     } catch (err) {
       console.error('Database error in GET /badges:', err);

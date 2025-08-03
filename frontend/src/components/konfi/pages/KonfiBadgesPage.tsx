@@ -134,9 +134,28 @@ const KonfiBadgesPage: React.FC = () => {
         console.log('📊 Badge using API points:', { currentGottesdienstPoints, currentGemeindePoints, currentTotalPoints });
       }
 
-      // Process all available badges
-      const processedBadges: Badge[] = badgeData.available
-        .filter((badge: any) => !badge.is_hidden) // Hide secret badges from overview
+      // Process ALL badges (available + earned, but hide secret ones unless earned)
+      const allBadges = [...badgeData.available, ...badgeData.earned];
+      
+      // Remove duplicates and process
+      const uniqueBadges = allBadges.reduce((acc: any[], current: any) => {
+        const existingIndex = acc.findIndex(badge => badge.id === current.id);
+        if (existingIndex === -1) {
+          acc.push(current);
+        } else {
+          // If we already have this badge, prefer the earned version
+          if (current.earned && !acc[existingIndex].earned) {
+            acc[existingIndex] = current;
+          }
+        }
+        return acc;
+      }, []);
+      
+      const processedBadges: Badge[] = uniqueBadges
+        .filter((badge: any) => {
+          // Show badge if: not hidden OR already earned
+          return !badge.is_hidden || badgeData.earned.some((earned: any) => earned.id === badge.id);
+        })
         .map((badge: any) => {
           const isEarned = badgeData.earned.some((earned: any) => earned.id === badge.id);
           const earnedBadge = badgeData.earned.find((earned: any) => earned.id === badge.id);
@@ -220,19 +239,68 @@ const KonfiBadgesPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader translucent={true}>
+      <IonHeader collapse="condense">
         <IonToolbar>
           <IonTitle>Badges</IonTitle>
         </IonToolbar>
       </IonHeader>
       
-      <IonContent className="app-gradient-background" fullscreen>
+      <IonContent fullscreen>
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadBadges();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
+
+        {/* Orange Gradient Header */}
+        <div style={{
+          background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+          color: 'white',
+          padding: '40px 20px 30px 20px',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Background Pattern */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            fontSize: '8rem',
+            fontWeight: '900',
+            opacity: 0.1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            letterSpacing: '0.1em'
+          }}>
+            BADGES
+          </div>
+          
+          {/* Content */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🏆</div>
+            <h1 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '1.8rem', 
+              fontWeight: '700',
+              textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+            }}>
+              Badge-Sammlung
+            </h1>
+            <p style={{ 
+              margin: '0', 
+              fontSize: '1rem', 
+              opacity: 0.9,
+              fontWeight: '500'
+            }}>
+              Erreiche Meilensteine und sammle Badges
+            </p>
+          </div>
+        </div>
 
         {/* Header Statistiken */}
         <IonCard style={{

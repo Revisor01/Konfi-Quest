@@ -236,23 +236,21 @@ const KonfiDashboardPage: React.FC = () => {
   const loadBadgeStats = async () => {
     try {
       const response = await api.get('/konfi/badges');
-      const { available, earned } = response.data;
+      const { available, earned, stats } = response.data;
       
-      // Count total and secret badges
-      const totalAvailable = available.length;
-      const totalEarned = earned.length;
+      // Count visible badges earned vs available
+      const visibleEarned = earned.filter((badge: any) => !badge.is_hidden).length;
+      const visibleTotal = stats?.totalVisible || 0;
       
-      // Secret badges detection using is_hidden field
-      const allBadges = [...available, ...earned]; // Combine both lists
-      
-      const secretAvailable = allBadges.filter((badge: any) => badge.is_hidden === true).length;
+      // Count secret badges earned vs total secret
       const secretEarned = earned.filter((badge: any) => badge.is_hidden === true).length;
+      const secretTotal = stats?.totalSecret || 0;
       
       setBadgeStats({
-        totalAvailable,
-        totalEarned,
-        secretAvailable,
-        secretEarned
+        totalAvailable: visibleTotal,
+        totalEarned: visibleEarned, 
+        secretAvailable: secretTotal,
+        secretEarned: secretEarned
       });
     } catch (err) {
       console.error('Error loading badge stats:', err);
