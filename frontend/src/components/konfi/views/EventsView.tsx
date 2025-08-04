@@ -62,8 +62,8 @@ interface Event {
 
 interface EventsViewProps {
   events: Event[];
-  activeTab: 'all' | 'upcoming' | 'past' | 'cancelled';
-  onTabChange: (tab: 'all' | 'upcoming' | 'past' | 'cancelled') => void;
+  activeTab: 'registered' | 'upcoming' | 'past' | 'cancelled';
+  onTabChange: (tab: 'registered' | 'upcoming' | 'past' | 'cancelled') => void;
   onSelectEvent: (event: Event) => void;
   onUpdate: () => void;
 }
@@ -134,7 +134,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: '-10px',
+          top: '5px',
           left: '12px',
           zIndex: 1
         }}>
@@ -257,9 +257,9 @@ const EventsView: React.FC<EventsViewProps> = ({
               padding: '4px'
             }}
           >
-            <IonSegmentButton value="all">
+            <IonSegmentButton value="registered">
               <IonLabel style={{ fontWeight: '600' }}>
-                Alle ({eventCounts.all})
+                Angemeldet ({events.filter(e => e.is_registered).length})
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="upcoming">
@@ -435,8 +435,8 @@ const EventsView: React.FC<EventsViewProps> = ({
           <div style={{ fontSize: '3rem', color: '#ccc', marginBottom: '16px' }}>📅</div>
           <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
           <p style={{ color: '#999', margin: '0' }}>
-            {activeTab === 'all' 
-              ? 'Es sind noch keine Events verfügbar' 
+            {activeTab === 'registered' 
+              ? 'Du bist noch für keine Events angemeldet' 
               : activeTab === 'upcoming'
               ? 'Keine anstehenden Events'
               : activeTab === 'past'

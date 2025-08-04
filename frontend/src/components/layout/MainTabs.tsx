@@ -48,6 +48,7 @@ import KonfiDetailView from '../admin/views/KonfiDetailView';
 import EventDetailView from '../admin/views/EventDetailView';
 import KonfiDashboardPage from '../konfi/pages/KonfiDashboardPage';
 import KonfiEventsPage from '../konfi/pages/KonfiEventsPage';
+import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
 import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
 import KonfiRequestsPage from '../konfi/pages/KonfiRequestsPage';
 import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
@@ -185,6 +186,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/konfi" render={() => <Redirect to="/konfi/dashboard" />} />
           <Route exact path="/konfi/dashboard" component={KonfiDashboardPage} />
           <Route exact path="/konfi/events" component={KonfiEventsPage} />
+          <Route exact path="/konfi/events/:id" component={KonfiEventDetailPage} />
           <Route exact path="/konfi/badges" component={KonfiBadgesPage} />
 
           {/* CHAT ROUTEN - Nach Konfis-Pattern */}

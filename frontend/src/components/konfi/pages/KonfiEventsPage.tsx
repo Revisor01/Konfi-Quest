@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useHistory } from 'react-router-dom';
 import {
   IonPage,
   IonHeader,
@@ -48,12 +49,12 @@ interface Event {
 const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
+  const history = useHistory();
   
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'registered' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
 
   useEffect(() => {
     loadEvents();
@@ -112,6 +113,8 @@ const KonfiEventsPage: React.FC = () => {
     const now = new Date();
     
     switch (activeTab) {
+      case 'registered':
+        return events.filter(event => event.is_registered);
       case 'upcoming':
         return events.filter(event => 
           new Date(event.event_date) >= now && 
@@ -130,22 +133,9 @@ const KonfiEventsPage: React.FC = () => {
   };
 
   const handleSelectEvent = (event: Event) => {
-    setSelectedEventId(event.id);
+    // Navigate to event detail page using React Router
+    history.push(`/konfi/events/${event.id}`);
   };
-
-  const handleBackToList = () => {
-    setSelectedEventId(null);
-  };
-
-  // Show EventDetailView if event is selected
-  if (selectedEventId) {
-    return (
-      <EventDetailView
-        eventId={selectedEventId}
-        onBack={handleBackToList}
-      />
-    );
-  }
 
   return (
     <IonPage ref={pageRef}>
