@@ -92,19 +92,34 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const loadEventData = async () => {
     setLoading(true);
     try {
-      // Get event details from admin API
-      const eventResponse = await api.get(`/events/${eventId}`);
+      // Get event details from admin API (same as used in EventsView)
+      const eventsResponse = await api.get('/events');
+      const event = eventsResponse.data.find((e: Event) => e.id === eventId);
       
-      // Get registration status for konfi
-      const statusResponse = await api.get(`/konfi/events/${eventId}/status`);
+      if (!event) {
+        setError('Event nicht gefunden');
+        return;
+      }
       
-      const eventWithStatus = {
-        ...eventResponse.data,
-        is_registered: statusResponse.data.is_registered,
-        can_register: statusResponse.data.can_register
-      };
+      // Get registration status for konfi using the existing route
+      try {
+        const statusResponse = await api.get(`/konfi/events/${eventId}/status`);
+        const eventWithStatus = {
+          ...event,
+          is_registered: statusResponse.data.is_registered,
+          can_register: statusResponse.data.can_register
+        };
+        setEventData(eventWithStatus);
+      } catch (statusErr) {
+        // If status check fails, assume not registered
+        const eventWithStatus = {
+          ...event,
+          is_registered: false,
+          can_register: event.registration_status === 'open'
+        };
+        setEventData(eventWithStatus);
+      }
       
-      setEventData(eventWithStatus);
     } catch (err) {
       setError('Fehler beim Laden der Event-Details');
       console.error('Error loading event details:', err);
