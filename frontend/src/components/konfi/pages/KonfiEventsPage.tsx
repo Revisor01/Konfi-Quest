@@ -13,6 +13,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import EventsView from '../views/EventsView';
+import EventDetailModal from '../modals/EventDetailModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface Category {
@@ -54,6 +55,8 @@ const KonfiEventsPage: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [showEventDetail, setShowEventDetail] = useState(false);
 
   useEffect(() => {
     loadEvents();
@@ -63,14 +66,43 @@ const KonfiEventsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.get('/konfi/events');
-      // Show all events for konfi users
-      setEvents(response.data);
+      // Map the konfi API response to match our Event interface
+      const mappedEvents = response.data.map((event: any) => ({
+        id: event.id,
+        name: event.title, // API returns 'title' instead of 'name'
+        description: event.description,
+        event_date: event.date, // API returns 'date' instead of 'event_date'
+        location: event.location,
+        points: event.points,
+        type: event.type || 'gemeinde',
+        max_participants: event.max_participants,
+        registration_closes_at: event.registration_deadline,
+        registered_count: event.current_participants || 0,
+        is_registered: event.is_registered,
+        can_register: event.can_register,
+        registration_status: calculateRegistrationStatus(event)
+      }));
+      setEvents(mappedEvents);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);
     } finally {
       setLoading(false);
     }
+  };
+  
+  const calculateRegistrationStatus = (event: any): 'upcoming' | 'open' | 'closed' | 'cancelled' => {
+    const now = new Date();
+    const eventDate = new Date(event.date || event.event_date);
+    const registrationDeadline = event.registration_deadline || event.registration_closes_at;
+    
+    if (event.cancelled) return 'cancelled';
+    if (eventDate < now) return 'closed';
+    if (registrationDeadline && new Date(registrationDeadline) < now) return 'closed';
+    if (event.current_participants >= event.max_participants) return 'closed';
+    if (!event.can_register) return 'closed';
+    
+    return 'open';
   };
 
   // Get filtered events by tab
@@ -96,27 +128,8 @@ const KonfiEventsPage: React.FC = () => {
   };
 
   const handleSelectEvent = (event: Event) => {
-    // For konfi users, we could show event details or handle registration
-    // For now, just show event info
-    presentAlert({
-      header: event.name,
-      message: `${event.description || 'Keine Beschreibung verfügbar'}\n\nDatum: ${new Date(event.event_date).toLocaleDateString('de-DE')}\n${event.location ? `Ort: ${event.location}` : ''}`,
-      buttons: [
-        {
-          text: 'Schließen',
-          role: 'cancel'
-        },
-        ...(event.can_register ? [{
-          text: 'Anmelden',
-          handler: () => handleRegisterEvent(event)
-        }] : []),
-        ...(event.is_registered ? [{
-          text: 'Abmelden',
-          role: 'destructive',
-          handler: () => handleUnregisterEvent(event)
-        }] : [])
-      ]
-    });
+    setSelectedEvent(event);
+    setShowEventDetail(true);
   };
 
   const handleRegisterEvent = async (event: Event) => {
@@ -173,6 +186,16 @@ const KonfiEventsPage: React.FC = () => {
             onUpdate={loadEvents}
           />
         )}
+        
+        <EventDetailModal
+          isOpen={showEventDetail}
+          onClose={() => {
+            setShowEventDetail(false);
+            setSelectedEvent(null);
+          }}
+          event={selectedEvent}
+          onUpdate={loadEvents}
+        />
       </IonContent>
     </IonPage>
   );

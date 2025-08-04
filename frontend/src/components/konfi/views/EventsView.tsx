@@ -119,12 +119,12 @@ const EventsView: React.FC<EventsViewProps> = ({
     <div>
       {/* Events Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+        boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         minHeight: '220px',
@@ -160,7 +160,7 @@ const EventsView: React.FC<EventsViewProps> = ({
           flexDirection: 'column',
           justifyContent: 'center'
         }}>
-          <IonGrid style={{ padding: '0', margin: '0 8px' }}>
+          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
               <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
