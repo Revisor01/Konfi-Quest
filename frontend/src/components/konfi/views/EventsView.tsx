@@ -293,7 +293,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                 button 
                 onClick={() => onSelectEvent(event)}
                 style={{ 
-                  '--min-height': '90px', 
+                  '--min-height': '110px',
+                  height: '110px',
                   '--padding-start': '16px', 
                   '--padding-top': '12px', 
                   '--padding-bottom': '12px',

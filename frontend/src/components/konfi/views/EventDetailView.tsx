@@ -288,22 +288,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Überschrift - groß und überlappend */}
+          {/* Event-Titel - groß und überlappend im Hintergrund */}
           <div style={{
             position: 'absolute',
-            top: '-10px',
+            top: '10px',
             left: '12px',
+            right: '12px',
             zIndex: 1
           }}>
             <h2 style={{
-              fontSize: '3rem',
+              fontSize: '2.5rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.1)',
               margin: '0',
-              lineHeight: '0.8',
-              letterSpacing: '-2px'
+              lineHeight: '0.9',
+              letterSpacing: '-1px',
+              wordBreak: 'break-word',
+              textTransform: 'uppercase'
             }}>
-              EVENT
+              {eventData.name}
             </h2>
           </div>
           
@@ -317,17 +320,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             flexDirection: 'column',
             justifyContent: 'center'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <h1 style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: '800', 
-                color: 'white', 
-                margin: '0',
-                lineHeight: '1.2',
-                maxWidth: '70%'
-              }}>
-                {eventData.name}
-              </h1>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div style={{
                 backgroundColor: eventData.is_registered ? 'rgba(52, 199, 89, 0.2)' : 'rgba(255, 255, 255, 0.2)',
                 borderRadius: '12px',
@@ -436,21 +429,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
+                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
                     <div style={{ fontSize: '1rem', color: '#333' }}>
                       {eventData.registered_count} / {eventData.max_participants} Teilnehmer
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '16px' }}>
-                    <IonChip color="primary" style={{ fontSize: '0.9rem' }}>
-                      <IonIcon icon={trophy} style={{ marginRight: '4px' }} />
-                      {eventData.points} Punkte
-                    </IonChip>
-                    <IonChip color="secondary" style={{ fontSize: '0.9rem' }}>
-                      {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </IonChip>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon icon={trophy} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData.points} Punkte • {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                    </div>
                   </div>
+
+                  {eventData.waitlist_enabled && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={hourglass} style={{ marginRight: '12px', color: '#ff6b35', fontSize: '1.2rem' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        Warteliste verfügbar (max. {eventData.max_waitlist_size || 10})
+                      </div>
+                    </div>
+                  )}
                 </IonCol>
               </IonRow>
             </IonGrid>
@@ -492,22 +491,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {/* Action Buttons - same width as admin cards */}
         <div style={{ padding: '16px', paddingBottom: '32px' }}>
           {eventData.is_registered ? (
-            <div>
-              <IonButton 
-                expand="block" 
-                color="success"
-                disabled
-                style={{ 
-                  height: '48px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  marginBottom: '12px'
-                }}
-              >
-                <IonIcon icon={checkmarkCircle} slot="start" />
-                Angemeldet
-              </IonButton>
-              
+            <div>              
               {canUnregister(eventData) ? (
                 <IonButton 
                   expand="block" 
@@ -543,13 +527,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           ) : eventData.can_register && eventData.registration_status === 'open' ? (
             <IonButton 
               expand="block" 
-              color="success"
-              onClick={handleRegister}
               style={{ 
                 height: '48px',
                 borderRadius: '12px',
-                fontWeight: '600'
+                fontWeight: '600',
+                '--background': '#dc2626',
+                '--background-activated': '#991b1b',
+                '--background-hover': '#b91c1c',
+                '--color': 'white'
               }}
+              onClick={handleRegister}
             >
               <IonIcon icon={checkmarkCircle} slot="start" />
               Anmelden
