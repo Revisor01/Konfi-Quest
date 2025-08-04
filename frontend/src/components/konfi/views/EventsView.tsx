@@ -294,7 +294,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                 onClick={() => onSelectEvent(event)}
                 style={{ 
                   '--min-height': '110px',
-                  height: '110px',
                   '--padding-start': '16px', 
                   '--padding-top': '12px', 
                   '--padding-bottom': '12px',
@@ -303,20 +302,18 @@ const EventsView: React.FC<EventsViewProps> = ({
                   margin: '6px 8px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                   border: '1px solid #f0f0f0',
-                  borderRadius: '12px',
-                  overflow: 'hidden'
+                  borderRadius: '12px'
                 }}
               >
                 <IonLabel>
-                  {/* Titel und Status */}
+                  {/* Titel mit Icon und separates Status-Badge */}
                   <div style={{ 
                     display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     marginBottom: '8px',
                     position: 'relative'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                       <div style={{ 
                         width: '32px', 
                         height: '32px',
@@ -348,12 +345,16 @@ const EventsView: React.FC<EventsViewProps> = ({
                         textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none',
                         lineHeight: '1.3',
                         wordBreak: 'break-word',
-                        maxWidth: '200px'
+                        flex: 1,
+                        minWidth: 0
                       }}>
                         {event.name}
                       </h2>
                     </div>
-                    
+                  </div>
+
+                  {/* Status Badge - eigene Zeile */}
+                  <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-start' }}>
                     <span style={{
                       fontSize: '0.75rem',
                       color: event.is_registered ? '#28a745' : 
@@ -371,7 +372,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                                           event.registration_status === 'open' ? '#c3e6cb' : 
                                           event.registration_status === 'upcoming' ? '#ffeaa7' : 
                                           event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
-                      flexShrink: 0
+                      display: 'inline-block'
                     }}>
                       {event.is_registered ? 'ANGEMELDET' : 
                        event.registration_status === 'open' ? 'OFFEN' : 
