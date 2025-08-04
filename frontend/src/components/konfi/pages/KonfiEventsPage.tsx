@@ -6,14 +6,13 @@ import {
   IonTitle,
   IonContent,
   IonRefresher,
-  IonRefresherContent,
-  useIonAlert
+  IonRefresherContent
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import EventsView from '../views/EventsView';
-import EventDetailModal from '../modals/EventDetailModal';
+import EventDetailView from '../views/EventDetailView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface Category {
@@ -49,60 +48,63 @@ interface Event {
 const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
-  const [presentAlert] = useIonAlert();
   
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [showEventDetail, setShowEventDetail] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
 
   useEffect(() => {
     loadEvents();
+    
+    // Event-Listener für Updates aus EventDetailView
+    const handleEventsUpdated = () => {
+      loadEvents();
+    };
+    
+    window.addEventListener('events-updated', handleEventsUpdated);
+    
+    return () => {
+      window.removeEventListener('events-updated', handleEventsUpdated);
+    };
   }, []);
 
   const loadEvents = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/konfi/events');
-      // Map the konfi API response to match our Event interface
-      const mappedEvents = response.data.map((event: any) => ({
-        id: event.id,
-        name: event.title, // API returns 'title' instead of 'name'
-        description: event.description,
-        event_date: event.date, // API returns 'date' instead of 'event_date'
-        location: event.location,
-        points: event.points,
-        type: event.type || 'gemeinde',
-        max_participants: event.max_participants,
-        registration_closes_at: event.registration_deadline,
-        registered_count: event.current_participants || 0,
-        is_registered: event.is_registered,
-        can_register: event.can_register,
-        registration_status: calculateRegistrationStatus(event)
-      }));
-      setEvents(mappedEvents);
+      // Use the same API as Admin - Events are accessible to all authenticated users
+      const response = await api.get('/events');
+      
+      // For Konfis, we need to check their registration status
+      const eventsWithRegistration = await Promise.all(
+        response.data.map(async (event: Event) => {
+          try {
+            // Check if konfi is registered for this event
+            const registrationResponse = await api.get(`/konfi/events/${event.id}/status`);
+            return {
+              ...event,
+              is_registered: registrationResponse.data.is_registered,
+              can_register: registrationResponse.data.can_register
+            };
+          } catch (err) {
+            // If status check fails, assume not registered but can register if open
+            return {
+              ...event,
+              is_registered: false,
+              can_register: event.registration_status === 'open'
+            };
+          }
+        })
+      );
+      
+      setEvents(eventsWithRegistration);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);
     } finally {
       setLoading(false);
     }
-  };
-  
-  const calculateRegistrationStatus = (event: any): 'upcoming' | 'open' | 'closed' | 'cancelled' => {
-    const now = new Date();
-    const eventDate = new Date(event.date || event.event_date);
-    const registrationDeadline = event.registration_deadline || event.registration_closes_at;
-    
-    if (event.cancelled) return 'cancelled';
-    if (eventDate < now) return 'closed';
-    if (registrationDeadline && new Date(registrationDeadline) < now) return 'closed';
-    if (event.current_participants >= event.max_participants) return 'closed';
-    if (!event.can_register) return 'closed';
-    
-    return 'open';
   };
 
   // Get filtered events by tab
@@ -128,29 +130,22 @@ const KonfiEventsPage: React.FC = () => {
   };
 
   const handleSelectEvent = (event: Event) => {
-    setSelectedEvent(event);
-    setShowEventDetail(true);
+    setSelectedEventId(event.id);
   };
 
-  const handleRegisterEvent = async (event: Event) => {
-    try {
-      await api.post(`/konfi/events/${event.id}/register`);
-      setSuccess(`Erfolgreich für "${event.name}" angemeldet!`);
-      await loadEvents();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
-    }
+  const handleBackToList = () => {
+    setSelectedEventId(null);
   };
 
-  const handleUnregisterEvent = async (event: Event) => {
-    try {
-      await api.delete(`/konfi/events/${event.id}/register`);
-      setSuccess(`Von "${event.name}" abgemeldet`);
-      await loadEvents();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
-    }
-  };
+  // Show EventDetailView if event is selected
+  if (selectedEventId) {
+    return (
+      <EventDetailView
+        eventId={selectedEventId}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
@@ -186,16 +181,6 @@ const KonfiEventsPage: React.FC = () => {
             onUpdate={loadEvents}
           />
         )}
-        
-        <EventDetailModal
-          isOpen={showEventDetail}
-          onClose={() => {
-            setShowEventDetail(false);
-            setSelectedEvent(null);
-          }}
-          event={selectedEvent}
-          onUpdate={loadEvents}
-        />
       </IonContent>
     </IonPage>
   );

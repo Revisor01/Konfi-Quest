@@ -682,42 +682,43 @@ module.exports = (db, rbacMiddleware, upload) => {
     }
   });
 
-  // Get konfi's events
-  router.get('/events', verifyTokenRBAC, async (req, res) => {
+  // Get konfi's registration status for a specific event
+  router.get('/events/:id/status', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
     
     try {
       const konfiId = req.user.id;
-      const query = `
-        SELECT e.id, 
-               e.name as title,
-               e.description,
-               e.event_date as date,
-               e.location,
-               e.max_participants,
-               e.points,
-               e.type,
-               e.registration_closes_at as registration_deadline,
-               CASE WHEN eb.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_registered,
-               eb.booking_date as registered_at,
-               (SELECT COUNT(*) FROM event_bookings WHERE event_id = e.id) as current_participants,
-               CASE 
-                 WHEN eb.user_id IS NOT NULL THEN FALSE
-                 WHEN e.registration_closes_at IS NOT NULL AND e.registration_closes_at < NOW() THEN FALSE
-                 WHEN e.max_participants IS NOT NULL AND (SELECT COUNT(*) FROM event_bookings WHERE event_id = e.id) >= e.max_participants THEN FALSE
-                 ELSE TRUE
-               END as can_register
-        FROM events e
-        LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
-        WHERE e.cancelled = FALSE AND e.event_date >= CURRENT_DATE
-        ORDER BY e.event_date
-      `;
-      const { rows: events } = await db.query(query, [konfiId]);
-      res.json(events);
+      const eventId = req.params.id;
+      
+      // Check if konfi is registered
+      const { rows: [registration] } = await db.query(
+        'SELECT * FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [konfiId, eventId]
+      );
+      
+      // Get event details for can_register logic
+      const { rows: [event] } = await db.query(
+        'SELECT *, (SELECT COUNT(*) FROM event_bookings WHERE event_id = $1) as current_participants FROM events WHERE id = $1',
+        [eventId]
+      );
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      const can_register = !registration && 
+                          event.registration_closes_at && new Date(event.registration_closes_at) > new Date() &&
+                          event.current_participants < event.max_participants;
+      
+      res.json({
+        is_registered: !!registration,
+        can_register: can_register,
+        registration_date: registration?.booking_date
+      });
     } catch (err) {
-      console.error('Database error in GET /events:', err);
+      console.error('Database error in GET /events/:id/status:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });
@@ -907,6 +908,69 @@ module.exports = (db, rbacMiddleware, upload) => {
       });
     } catch (err) {
       console.error('Database error in POST /events/:id/register:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Unregister from event
+  router.delete('/events/:id/register', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+    
+    try {
+      const konfiId = req.user.id;
+      const eventId = req.params.id;
+      const { reason } = req.body;
+      
+      // Check if konfi is registered
+      const { rows: [registration] } = await db.query(
+        'SELECT * FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [konfiId, eventId]
+      );
+      
+      if (!registration) {
+        return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
+      }
+      
+      // Check if event exists and get event date
+      const { rows: [event] } = await db.query(
+        'SELECT event_date FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, req.user.organization_id]
+      );
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+      
+      // Check if unregistration is still allowed (2 days before event)
+      const eventDate = new Date(event.event_date);
+      const now = new Date();
+      const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
+      
+      if (now >= twoDaysBeforeEvent) {
+        return res.status(400).json({ 
+          error: 'Abmeldung ist nur bis 2 Tage vor dem Event möglich' 
+        });
+      }
+      
+      // Delete registration (with reason for audit trail)
+      await db.query(
+        'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
+        [konfiId, eventId]
+      );
+      
+      // Optional: Log unregistration with reason for admin visibility
+      if (reason) {
+        await db.query(
+          'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
+          [konfiId, eventId, reason, req.user.organization_id]
+        );
+      }
+      
+      res.json({ message: 'Successfully unregistered from event' });
+    } catch (err) {
+      console.error('Database error in DELETE /events/:id/register:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });
