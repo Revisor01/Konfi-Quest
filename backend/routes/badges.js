@@ -298,7 +298,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
   
   router.post('/', rbacVerifier, checkPermission('admin.badges.create'), async (req, res) => {
-    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden } = req.body;
+    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
       return res.status(400).json({ error: 'Name, icon, criteria type and value are required' });
@@ -309,11 +309,11 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       const hiddenFlag = !!is_hidden;
       
       const query = `INSERT INTO custom_badges 
-                    (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, created_by, organization_id) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color, created_by, organization_id) 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                     RETURNING id`;
       
-      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, req.user.id, req.user.organization_id];
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, color || '#667eea', req.user.id, req.user.organization_id];
       const { rows: [newBadge] } = await db.query(query, params);
       
       res.status(201).json({ id: newBadge.id, message: 'Badge created successfully' });
@@ -324,7 +324,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
   
   router.put('/:id', rbacVerifier, checkPermission('admin.badges.edit'), async (req, res) => {
-    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden } = req.body;
+    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden, color } = req.body;
     
     try {
       const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
@@ -332,10 +332,10 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       const hiddenFlag = !!is_hidden;
       
       const query = `UPDATE custom_badges 
-                    SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = $7, is_hidden = $8 
-                    WHERE id = $9 AND organization_id = $10`;
+                    SET name = $1, icon = $2, description = $3, criteria_type = $4, criteria_value = $5, criteria_extra = $6, is_active = $7, is_hidden = $8, color = $9 
+                    WHERE id = $10 AND organization_id = $11`;
       
-      const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, req.params.id, req.user.organization_id];
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, activeFlag, hiddenFlag, color || '#667eea', req.params.id, req.user.organization_id];
       const { rowCount } = await db.query(query, params);
       
       if (rowCount === 0) {

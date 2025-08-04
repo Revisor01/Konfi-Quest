@@ -24,7 +24,10 @@ import {
   people,
   checkmarkCircle,
   hourglass,
-  close
+  close,
+  statsChart,
+  trophy,
+  ribbon
 } from 'ionicons/icons';
 
 interface Category {
@@ -114,6 +117,134 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   return (
     <div>
+      {/* Events Header - Dashboard-Style */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        borderRadius: '24px',
+        padding: '0',
+        margin: '16px',
+        marginBottom: '16px',
+        boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: '220px',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Überschrift - groß und überlappend */}
+        <div style={{
+          position: 'absolute',
+          top: '-10px',
+          left: '12px',
+          zIndex: 1
+        }}>
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
+          }}>
+            EVENTS
+          </h2>
+        </div>
+        
+        {/* Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '70px 24px 24px 24px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <IonGrid style={{ padding: '0', margin: '0 8px' }}>
+            <IonRow>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon 
+                    icon={calendar} 
+                    style={{ 
+                      fontSize: '1.5rem', 
+                      color: 'rgba(255, 255, 255, 0.9)', 
+                      marginBottom: '8px', 
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }} 
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.all}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Gesamt
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon 
+                    icon={time} 
+                    style={{ 
+                      fontSize: '1.5rem', 
+                      color: 'rgba(255, 255, 255, 0.9)', 
+                      marginBottom: '8px', 
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }} 
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.upcoming}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Anstehend
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon 
+                    icon={statsChart} 
+                    style={{ 
+                      fontSize: '1.5rem', 
+                      color: 'rgba(255, 255, 255, 0.9)', 
+                      marginBottom: '8px', 
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }} 
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.past}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Vergangen
+                  </div>
+                </div>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        </div>
+      </div>
+
       {/* Tab Navigation */}
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '16px' }}>

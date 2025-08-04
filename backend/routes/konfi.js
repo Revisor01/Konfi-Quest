@@ -495,6 +495,17 @@ module.exports = (db, rbacMiddleware, upload) => {
               progress.current = gemeindeResult?.gemeinde_points || 0;
               break;
               
+            case 'both_categories':
+              // For both_categories, show progress as minimum of both categories
+              const { rows: [bothCatResult] } = await db.query(
+                'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+              );
+              const gottesdienstPts = bothCatResult?.gottesdienst_points || 0;
+              const gemeindePts = bothCatResult?.gemeinde_points || 0;
+              progress.current = Math.min(gottesdienstPts, gemeindePts);
+              break;
+              
             case 'activity_count':
               const { rows: [activityCountResult] } = await db.query(
                 'SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1',
@@ -509,6 +520,86 @@ module.exports = (db, rbacMiddleware, upload) => {
                 [konfiId]
               );
               progress.current = parseInt(uniqueActivitiesResult?.count || 0);
+              break;
+
+            case 'specific_activity':
+              // Check if specific activity was completed (criteria_extra contains activity_id)
+              let specificActivityId = null;
+              try {
+                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                specificActivityId = extraData.activity_id;
+              } catch (e) {
+                console.error('Error parsing criteria_extra for specific_activity badge:', e);
+              }
+              
+              if (specificActivityId) {
+                const { rows: [specificResult] } = await db.query(
+                  'SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1 AND activity_id = $2',
+                  [konfiId, specificActivityId]
+                );
+                progress.current = parseInt(specificResult?.count || 0);
+              } else {
+                progress.current = 0;
+              }
+              break;
+
+            case 'category_activities':
+              // Count activities in specific category (criteria_extra contains required_category)
+              let requiredCategory = null;
+              try {
+                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                requiredCategory = extraData.required_category;
+              } catch (e) {
+                console.error('Error parsing criteria_extra for category_activities badge:', e);
+              }
+              
+              if (requiredCategory) {
+                const { rows: [categoryResult] } = await db.query(
+                  `SELECT COUNT(*) as count 
+                   FROM konfi_activities ka 
+                   JOIN activities a ON ka.activity_id = a.id 
+                   JOIN activity_categories ac ON a.id = ac.activity_id 
+                   JOIN categories c ON ac.category_id = c.id 
+                   WHERE ka.konfi_id = $1 AND c.name = $2`,
+                  [konfiId, requiredCategory]
+                );
+                progress.current = parseInt(categoryResult?.count || 0);
+              } else {
+                progress.current = 0;
+              }
+              break;
+
+            case 'activity_combination':
+              // Check if all activities in combination were completed
+              let activityIds = [];
+              try {
+                const extraData = JSON.parse(badge.criteria_extra || '{}');
+                activityIds = extraData.activity_ids || [];
+              } catch (e) {
+                console.error('Error parsing criteria_extra for activity_combination badge:', e);
+              }
+              
+              if (activityIds.length > 0) {
+                const placeholders = activityIds.map((_, i) => `$${i + 2}`).join(',');
+                const { rows: [combinationResult] } = await db.query(
+                  `SELECT COUNT(DISTINCT activity_id) as count 
+                   FROM konfi_activities 
+                   WHERE konfi_id = $1 AND activity_id IN (${placeholders})`,
+                  [konfiId, ...activityIds]
+                );
+                progress.current = parseInt(combinationResult?.count || 0);
+              } else {
+                progress.current = 0;
+              }
+              break;
+
+            case 'bonus_points':
+              // Count total bonus points
+              const { rows: [bonusResult] } = await db.query(
+                'SELECT COALESCE(SUM(points), 0) as total FROM bonus_points WHERE konfi_id = $1',
+                [konfiId]
+              );
+              progress.current = parseInt(bonusResult?.total || 0);
               break;
               
             case 'streak':
