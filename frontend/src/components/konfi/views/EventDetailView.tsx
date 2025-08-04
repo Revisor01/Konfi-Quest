@@ -39,7 +39,8 @@ import {
   closeCircle,
   informationCircle,
   warning,
-  hourglass
+  hourglass,
+  ribbon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -291,23 +292,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Event-Titel - groß und überlappend im Hintergrund */}
+          {/* Event-Titel - groß und überlappend über Rand hinaus */}
           <div style={{
             position: 'absolute',
-            top: '10px',
-            left: '12px',
-            right: '12px',
-            zIndex: 1
+            top: '5px',
+            left: '8px',
+            right: '8px',
+            zIndex: 1,
+            overflow: 'visible'
           }}>
             <h2 style={{
-              fontSize: '2.5rem',
+              fontSize: '2.8rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.1)',
               margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-1px',
+              lineHeight: '0.85',
+              letterSpacing: '-2px',
               wordBreak: 'break-word',
-              textTransform: 'uppercase'
+              textTransform: 'uppercase',
+              transform: 'scale(1.05)'
             }}>
               {eventData.name}
             </h2>
@@ -344,9 +347,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               </div>
             </div>
             
-            <IonGrid style={{ padding: '0', margin: '0' }}>
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
               <IonRow>
-                <IonCol size="6" style={{ padding: '0 4px' }}>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
@@ -372,7 +375,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
                 </IonCol>
-                <IonCol size="6" style={{ padding: '0 4px' }}>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
@@ -395,6 +398,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                     <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
                       Punkte
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon 
+                      icon={checkmarkCircle} 
+                      style={{ 
+                        fontSize: '1.2rem', 
+                        color: 'rgba(255, 255, 255, 0.9)', 
+                        marginBottom: '4px', 
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }} 
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.3rem' }}>{eventData.registered_count}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                      dabei
                     </div>
                   </div>
                 </IonCol>
@@ -450,6 +479,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonIcon icon={hourglass} style={{ marginRight: '12px', color: '#ff6b35', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         Warteliste verfügbar (max. {eventData.max_waitlist_size || 10})
+                      </div>
+                    </div>
+                  )}
+
+                  {eventData.categories && eventData.categories.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={ribbon} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {eventData.categories.map(cat => cat.name).join(', ')}
                       </div>
                     </div>
                   )}
@@ -530,13 +568,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           ) : eventData.can_register && eventData.registration_status === 'open' ? (
             <IonButton 
               expand="block" 
+              color="success"
               style={{ 
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600',
-                '--background': '#dc2626',
-                '--background-activated': '#991b1b',
-                '--background-hover': '#b91c1c',
+                '--background': '#28a745',
+                '--background-activated': '#1e7e34',
+                '--background-hover': '#218838',
                 '--color': 'white'
               }}
               onClick={handleRegister}

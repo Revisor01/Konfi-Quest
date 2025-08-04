@@ -698,24 +698,48 @@ module.exports = (db, rbacMiddleware, upload) => {
         [konfiId, eventId]
       );
       
-      // Get event details for can_register logic
-      const { rows: [event] } = await db.query(
-        'SELECT *, (SELECT COUNT(*) FROM event_bookings WHERE event_id = $1) as current_participants FROM events WHERE id = $1',
-        [eventId]
-      );
+      // Get event details with same logic as events API
+      const { rows: [event] } = await db.query(`
+        SELECT e.*, 
+               COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
+               COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+               CASE 
+                 WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                 ELSE e.max_participants
+               END as max_participants,
+               CASE 
+                 WHEN NOW() < e.registration_opens_at THEN 'upcoming'
+                 WHEN NOW() > e.registration_closes_at THEN 'closed'
+                 WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= 
+                   CASE 
+                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                     ELSE e.max_participants
+                   END AND 
+                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                 ELSE 'open'
+               END as registration_status
+        FROM events e
+        LEFT JOIN event_bookings eb ON e.id = eb.event_id
+        LEFT JOIN (
+          SELECT event_id, SUM(max_participants) as total_capacity
+          FROM event_timeslots
+          GROUP BY event_id
+        ) timeslot_capacity ON e.id = timeslot_capacity.event_id
+        WHERE e.id = $1 AND e.organization_id = $2 AND (e.cancelled = FALSE OR e.cancelled IS NULL)
+        GROUP BY e.id, timeslot_capacity.total_capacity
+      `, [eventId, req.user.organization_id]);
       
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
       }
       
-      const can_register = !registration && 
-                          event.registration_closes_at && new Date(event.registration_closes_at) > new Date() &&
-                          event.current_participants < event.max_participants;
+      const can_register = !registration && event.registration_status === 'open';
       
       res.json({
         is_registered: !!registration,
         can_register: can_register,
-        registration_date: registration?.booking_date
+        registration_date: registration?.booking_date,
+        event_status: event.registration_status
       });
     } catch (err) {
       console.error('Database error in GET /events/:id/status:', err);
