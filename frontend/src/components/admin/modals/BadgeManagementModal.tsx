@@ -79,7 +79,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     criteria_value: 10,
     criteria_extra: '{}',
     is_active: true,
-    is_hidden: false
+    is_hidden: false,
+    color: '#667eea'
   });
 
   // Available data for dropdowns
@@ -149,7 +150,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           criteria_value: badge.criteria_value,
           criteria_extra: badge.criteria_extra || '{}',
           is_active: badge.is_active,
-          is_hidden: badge.is_hidden
+          is_hidden: badge.is_hidden,
+          color: badge.color || '#667eea'
         });
 
         // Parse extra criteria
@@ -384,6 +386,32 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 placeholder="🏆"
                 style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
+            </IonItem>
+
+            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonLabel position="stacked" color="dark">
+                <strong>Badge-Farbe</strong>
+              </IonLabel>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                <input
+                  type="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  style={{
+                    width: '50px',
+                    height: '40px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                />
+                <IonInput
+                  value={formData.color}
+                  onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
+                  placeholder="#667eea"
+                  style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+                />
+              </div>
             </IonItem>
 
             <IonItem lines="none" style={{ '--background': 'transparent' }}>

@@ -12,7 +12,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
-import EventsView from '../../admin/EventsView';
+import EventsView from '../views/EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface Category {
@@ -167,17 +167,10 @@ const KonfiEventsPage: React.FC = () => {
         ) : (
           <EventsView 
             events={getFilteredEvents()}
-            onUpdate={loadEvents}
-            onAddEventClick={() => {}} // Konfis can't add events
-            onSelectEvent={handleSelectEvent}
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            eventCounts={{
-              all: events.length,
-              upcoming: events.filter(e => new Date(e.event_date) >= new Date() && e.registration_status !== 'cancelled').length,
-              past: events.filter(e => new Date(e.event_date) < new Date() && e.registration_status !== 'cancelled').length,
-              cancelled: events.filter(e => e.registration_status === 'cancelled').length
-            }}
+            onSelectEvent={handleSelectEvent}
+            onUpdate={loadEvents}
           />
         )}
       </IonContent>
