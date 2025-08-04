@@ -274,22 +274,141 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Event Header Card */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardHeader>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <IonCardTitle style={{ fontSize: '1.4rem', fontWeight: '700', color: '#333' }}>
+        {/* Event Header - Dashboard-Style Gradient */}
+        <div style={{
+          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+          borderRadius: '24px',
+          padding: '0',
+          margin: '16px',
+          marginBottom: '16px',
+          boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Überschrift - groß und überlappend */}
+          <div style={{
+            position: 'absolute',
+            top: '-10px',
+            left: '12px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px'
+            }}>
+              EVENT
+            </h2>
+          </div>
+          
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '60px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <h1 style={{ 
+                fontSize: '1.5rem', 
+                fontWeight: '800', 
+                color: 'white', 
+                margin: '0',
+                lineHeight: '1.2',
+                maxWidth: '70%'
+              }}>
                 {eventData.name}
-              </IonCardTitle>
-              <IonBadge 
-                color={eventData.is_registered ? 'success' : getStatusColor(eventData.registration_status)} 
-                style={{ fontSize: '0.8rem' }}
-              >
-                {eventData.is_registered ? 'Angemeldet' : getStatusText(eventData.registration_status)}
-              </IonBadge>
+              </h1>
+              <div style={{
+                backgroundColor: eventData.is_registered ? 'rgba(52, 199, 89, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px',
+                padding: '8px 12px',
+                border: `1px solid ${eventData.is_registered ? 'rgba(52, 199, 89, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
+                flexShrink: 0
+              }}>
+                <span style={{ 
+                  color: 'white', 
+                  fontSize: '0.8rem', 
+                  fontWeight: '600'
+                }}>
+                  {eventData.is_registered ? 'ANGEMELDET' : 
+                   eventData.registration_status === 'open' ? 'OFFEN' : 
+                   eventData.registration_status === 'upcoming' ? 'BALD' : 
+                   eventData.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
+                </span>
+              </div>
             </div>
-          </IonCardHeader>
+            
+            <IonGrid style={{ padding: '0', margin: '0' }}>
+              <IonRow>
+                <IonCol size="6" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon 
+                      icon={people} 
+                      style={{ 
+                        fontSize: '1.2rem', 
+                        color: 'rgba(255, 255, 255, 0.9)', 
+                        marginBottom: '4px', 
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }} 
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.3rem' }}>{eventData.max_participants - eventData.registered_count}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                      frei
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="6" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon 
+                      icon={trophy} 
+                      style={{ 
+                        fontSize: '1.2rem', 
+                        color: 'rgba(255, 255, 255, 0.9)', 
+                        marginBottom: '4px', 
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }} 
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.3rem' }}>{eventData.points}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                      Punkte
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+          </div>
+        </div>
 
+        {/* Event Details Card */}
+        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
           <IonCardContent>
             <IonGrid style={{ padding: '0' }}>
               <IonRow>

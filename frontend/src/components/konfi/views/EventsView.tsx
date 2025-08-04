@@ -344,7 +344,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                         fontSize: '1.1rem',
                         margin: '0',
                         color: event.registration_status === 'cancelled' ? '#999' : '#333',
-                        textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none'
+                        textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none',
+                        lineHeight: '1.3',
+                        wordBreak: 'break-word',
+                        maxWidth: '200px'
                       }}>
                         {event.name}
                       </h2>
@@ -389,7 +392,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     <span style={{ fontWeight: '500', color: '#333' }}>
                       {formatDate(event.event_date)}
                     </span>
-                    <IonIcon icon={time} style={{ fontSize: '0.9rem', color: '#dc2626', marginLeft: '8px' }} />
+                    <IonIcon icon={time} style={{ fontSize: '0.9rem', color: '#ff6b35', marginLeft: '8px' }} />
                     <span style={{ color: '#666' }}>
                       {formatTime(event.event_date)}
                     </span>
@@ -405,16 +408,16 @@ const EventsView: React.FC<EventsViewProps> = ({
                   }}>
                     {event.location && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
+                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: '#007aff' }} />
                         <span>{event.location}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={people} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
+                      <IonIcon icon={people} style={{ fontSize: '0.8rem', color: '#34c759' }} />
                       <span>{event.registered_count}/{event.max_participants}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
+                      <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
                       <span>{event.points}P</span>
                     </div>
                   </div>
