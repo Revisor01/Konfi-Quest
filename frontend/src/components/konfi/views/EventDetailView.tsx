@@ -38,7 +38,8 @@ import {
   checkmarkCircle,
   closeCircle,
   informationCircle,
-  warning
+  warning,
+  hourglass
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -68,6 +69,8 @@ interface Event {
   registration_status: 'upcoming' | 'open' | 'closed' | 'cancelled';
   is_registered?: boolean;
   can_register?: boolean;
+  waitlist_enabled?: boolean;
+  max_waitlist_size?: number;
 }
 
 interface EventDetailViewProps {
