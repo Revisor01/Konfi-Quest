@@ -338,11 +338,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         fileSize: selectedFile?.size
       });
 
-      await api.post(`/chat/rooms/${room.id}/messages`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.post(`/chat/rooms/${room.id}/messages`, formData);
+      // Note: Don't set Content-Type header - let the browser set it automatically
+      // This fixes iOS WebKit upload assertion issues
 
       setMessageText('');
       setSelectedFile(null);
