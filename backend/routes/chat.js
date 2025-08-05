@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
@@ -872,7 +873,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   });
   
   // Protected file serving route
-  router.get('/files/:filename', verifyTokenRBAC, async (req, res) => {
+  router.get('/files/:filename', async (req, res) => {
+    // Support token from header OR query parameter (for video elements)
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    // Verify token manually since we can't use middleware for query params
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decoded;
+    } catch (error) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
     try {
       const filename = req.params.filename;
       

@@ -54,6 +54,200 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 
+// Lazy Loading Image Component
+const LazyImage: React.FC<{
+  filePath: string;
+  fileName: string;
+  onError: () => void;
+  onClick: () => void;
+}> = ({ filePath, fileName, onError, onClick }) => {
+  const [imageSrc, setImageSrc] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      async (entries) => {
+        if (entries[0].isIntersecting && !imageSrc) {
+          setIsLoading(true);
+          try {
+            const response = await api.get(`/chat/files/${filePath}`, {
+              responseType: 'blob'
+            });
+            const blob = response.data;
+            const imageUrl = URL.createObjectURL(blob);
+            setImageSrc(imageUrl);
+          } catch (error) {
+            console.error('Error loading lazy image:', error);
+            onError();
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [filePath, imageSrc, onError]);
+
+  return (
+    <div
+      ref={imgRef}
+      style={{
+        maxWidth: '100%',
+        maxHeight: '300px',
+        borderRadius: '8px',
+        backgroundColor: '#f0f0f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: imageSrc ? 'pointer' : 'default',
+        minHeight: '100px'
+      }}
+      onClick={imageSrc ? onClick : undefined}
+    >
+      {isLoading ? (
+        <div style={{ color: '#666', fontSize: '0.9rem' }}>
+          📸 Bild wird geladen...
+        </div>
+      ) : imageSrc ? (
+        <img
+          src={imageSrc}
+          alt={fileName}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '300px',
+            borderRadius: '8px',
+            objectFit: 'cover'
+          }}
+        />
+      ) : (
+        <div style={{ color: '#999', fontSize: '0.8rem' }}>
+          ❌ Bild konnte nicht geladen werden
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Lazy Loading Video Component
+const LazyVideo: React.FC<{
+  filePath: string;
+  fileName: string;
+  fileSize: number;
+  onError: () => void;
+}> = ({ filePath, fileName, fileSize, onError }) => {
+  const [videoSrc, setVideoSrc] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const loadVideo = async () => {
+    if (hasStarted) return;
+    setHasStarted(true);
+    setIsLoading(true);
+    
+    try {
+      const response = await api.get(`/chat/files/${filePath}`, {
+        responseType: 'blob'
+      });
+      const blob = response.data;
+      const videoUrl = URL.createObjectURL(blob);
+      setVideoSrc(videoUrl);
+    } catch (error) {
+      console.error('Error loading video:', error);
+      onError();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      {!hasStarted ? (
+        // Play Button Overlay
+        <div
+          style={{
+            maxWidth: '100%',
+            height: '200px',
+            borderRadius: '8px',
+            backgroundColor: '#f0f0f0',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            border: '2px dashed #ccc'
+          }}
+          onClick={loadVideo}
+        >
+          <div style={{ fontSize: '3rem', marginBottom: '8px' }}>🎥</div>
+          <div style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '4px' }}>
+            Video abspielen
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#666' }}>
+            Tap zum Laden
+          </div>
+        </div>
+      ) : isLoading ? (
+        <div
+          style={{
+            maxWidth: '100%',
+            height: '200px',
+            borderRadius: '8px',
+            backgroundColor: '#f0f0f0',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⏳</div>
+          <div style={{ fontSize: '0.9rem', color: '#666' }}>
+            Video wird geladen...
+          </div>
+        </div>
+      ) : videoSrc ? (
+        <video
+          ref={videoRef}
+          controls
+          style={{
+            maxWidth: '100%',
+            maxHeight: '300px',
+            borderRadius: '8px',
+            objectFit: 'cover'
+          }}
+          controlsList="nodownload"
+        >
+          <source src={videoSrc} />
+          Video kann nicht angezeigt werden
+        </video>
+      ) : (
+        <div style={{ color: '#999', fontSize: '0.8rem', textAlign: 'center', padding: '32px' }}>
+          ❌ Video konnte nicht geladen werden
+        </div>
+      )}
+      
+      <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
+        {fileName} • {fileSize && formatFileSize(fileSize)}
+      </div>
+    </div>
+  );
+};
+
 interface Message {
   id: number;
   content: string;
@@ -284,15 +478,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
       
-      // Pre-load images and videos for inline display (not PDFs, docs, etc.)  
-      response.data.forEach((message: any) => {
-        if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|m4v)$/i) && message.file_path) {
-          // Only pre-load images, not videos (videos load on-demand)
-          if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-            loadAuthenticatedImage(message.file_path);
-          }
-        }
-      });
+      // Don't pre-load images anymore - use lazy loading instead for better performance
     } catch (err) {
       setError('Fehler beim Laden der Nachrichten');
       console.error('Error loading messages:', err);
@@ -924,18 +1110,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 <div style={{ marginBottom: '8px' }}>{message.content}</div>
               )}
               {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                // Inline Bild-Anzeige
+                // Inline Bild-Anzeige mit Lazy Loading
                 <div style={{ marginBottom: '8px' }}>
-                  <img 
-                    src={imageCache.get(message.file_path) || ''}
-                    alt={message.file_name}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '300px',
-                      borderRadius: '8px',
-                      objectFit: 'cover',
-                      cursor: 'pointer'
-                    }}
+                  <LazyImage 
+                    filePath={message.file_path}
+                    fileName={message.file_name}
+                    onError={() => setError('Fehler beim Laden des Bildes')}
                     onClick={async () => {
                       try {
                         await Haptics.impact({ style: ImpactStyle.Light });
@@ -997,7 +1177,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                   </div>
                 </div>
               ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
-                // Inline Video-Anzeige
+                // Inline Video-Anzeige - direkt wie Bilder
                 <div style={{ marginBottom: '8px' }}>
                   <video 
                     controls
@@ -1007,10 +1187,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       borderRadius: '8px',
                       objectFit: 'cover'
                     }}
-                    preload="none"
-                    controlsList="nodownload"
+                    preload="metadata"
                   >
-                    <source src={`${api.defaults.baseURL}/chat/files/${message.file_path}`} />
+                    <source src={`${api.defaults.baseURL}/chat/files/${message.file_path}?token=${localStorage.getItem('token')}`} />
                     Video kann nicht angezeigt werden
                   </video>
                   <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
