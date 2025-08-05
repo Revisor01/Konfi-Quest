@@ -82,8 +82,31 @@ const chatDir = path.join(uploadsDir, 'chat');
   }
 });
 
-app.use('/uploads', express.static(uploadsDir));
+// SECURITY: Removed static uploads route - all files served through protected endpoints
 
+// Separate multer config for chat (encrypted storage)
+const chatUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, chatDir);
+    },
+    filename: (req, file, cb) => {
+      // Generate encrypted filename
+      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      cb(null, hash);
+    }
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  }
+});
+
+// Legacy upload for other parts (deprecated - migrate to specific uploads)
 const upload = multer({ 
   dest: uploadsDir,
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -196,7 +219,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
-app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir));
+app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 

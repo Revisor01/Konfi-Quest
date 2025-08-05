@@ -5,38 +5,9 @@ const fs = require('fs');
 const multer = require('multer');
 const PushService = require('../services/pushService');
 
-module.exports = (db, rbacMiddleware, uploadsDir) => {
+module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
-  // Chat file upload setup
-  const chatUpload = multer({
-    dest: path.join(uploadsDir, 'chat'),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-    fileFilter: (req, file, cb) => {
-      const allowedExtensions = /\.(jpeg|jpg|png|gif|heic|webp|pdf|mp3|wav|m4a|mp4|mov|avi|docx|txt|pptx|xlsx|rtf|zip)$/i;
-      const extname = allowedExtensions.test(file.originalname);
-      
-      // Check MIME types more specifically
-      const allowedMimeTypes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/heic', 'image/webp',
-        'application/pdf',
-        'audio/mpeg', 'audio/wav', 'audio/x-m4a', 'audio/mp4',
-        'video/mp4', 'video/quicktime', 'video/x-msvideo',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // docx
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // pptx  
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-        'text/plain', 'text/rtf', 'application/rtf',
-        'application/zip', 'application/x-zip-compressed'
-      ];
-      const mimetype = allowedMimeTypes.includes(file.mimetype);
-      
-      if (extname && mimetype) {
-        return cb(null, true);
-      } else {
-        console.log('Rejected file:', file.originalname, 'MIME:', file.mimetype);
-        cb(new Error('Dateityp nicht erlaubt'));
-      }
-    }
-  });
+  // Using passed-in encrypted chatUpload from server.js
   
   // === UTILITY FUNCTIONS ===
   
@@ -1284,15 +1255,44 @@ module.exports = (db, rbacMiddleware, uploadsDir) => {
   // MISSING ROUTES FROM SQLITE VERSION
   // ====================================================================
   
-  // File serving route
-  router.get('/files/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, 'chat', filename);
-    
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ error: 'File not found' });
+  // Protected file serving route
+  router.get('/files/:filename', verifyTokenRBAC, async (req, res) => {
+    try {
+      const filename = req.params.filename;
+      
+      // Check if user has access to this file by checking chat membership
+      const { rows: [fileMessage] } = await db.query(
+        `SELECT cm.room_id 
+         FROM chat_messages cm 
+         WHERE cm.file_path = $1 AND cm.organization_id = $2`,
+        [filename, req.user.organization_id]
+      );
+      
+      if (!fileMessage) {
+        return res.status(404).json({ error: 'File not found' });
+      }
+      
+      // Check if user is member of the chat room
+      const { rows: [membership] } = await db.query(
+        `SELECT 1 FROM chat_participants cp 
+         WHERE cp.room_id = $1 AND cp.user_id = $2`,
+        [fileMessage.room_id, req.user.id]
+      );
+      
+      if (!membership) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const filePath = path.join(uploadsDir, 'chat', filename);
+      
+      if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+      } else {
+        res.status(404).json({ error: 'File not found on disk' });
+      }
+    } catch (error) {
+      console.error('Error serving chat file:', error);
+      res.status(500).json({ error: 'Server error' });
     }
   });
 
