@@ -327,7 +327,16 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
       if (selectedFile) {
         formData.append('file', selectedFile);
+        console.log('📎 Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       }
+      
+      // Debug: Check what we're sending
+      console.log('📤 FormData contents:', {
+        hasContent: !!messageText.trim(),
+        hasFile: !!selectedFile,
+        fileName: selectedFile?.name,
+        fileSize: selectedFile?.size
+      });
 
       await api.post(`/chat/rooms/${room.id}/messages`, formData, {
         headers: {
