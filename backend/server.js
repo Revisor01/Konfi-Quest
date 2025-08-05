@@ -72,14 +72,43 @@ app.use(express.json());
 // ====================================================================
 
 const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+const requestsDir = path.join(uploadsDir, 'requests');
+const chatDir = path.join(uploadsDir, 'chat');
+
+// Create upload directories
+[uploadsDir, requestsDir, chatDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 app.use('/uploads', express.static(uploadsDir));
 
 const upload = multer({ 
   dest: uploadsDir,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(null, false);
+    }
+  }
+});
+
+// Separate multer config for activity requests (encrypted storage)
+const crypto = require('crypto');
+const requestUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, requestsDir);
+    },
+    filename: (req, file, cb) => {
+      // Generate encrypted filename
+      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      cb(null, hash);
+    }
+  }),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -166,7 +195,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
-app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload));
+app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));

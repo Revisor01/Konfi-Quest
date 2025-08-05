@@ -6,7 +6,7 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Konfi-specific routes
-module.exports = (db, rbacMiddleware, upload) => {
+module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
 
   // Get konfi dashboard data
@@ -348,8 +348,8 @@ module.exports = (db, rbacMiddleware, upload) => {
     }
   });
 
-  // Upload photo for activity request
-  router.post('/upload-photo', verifyTokenRBAC, upload.single('photo'), async (req, res) => {
+  // Upload photo for activity request (encrypted storage)
+  router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
@@ -366,6 +366,48 @@ module.exports = (db, rbacMiddleware, upload) => {
     } catch (err) {
       console.error('Error uploading photo:', err);
       res.status(500).json({ error: 'Fehler beim Hochladen des Fotos' });
+    }
+  });
+
+  // Serve activity request photos (protected route)
+  router.get('/activity-requests/:id/photo', verifyTokenRBAC, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+      
+      // Get request with photo filename
+      const { rows: [request] } = await db.query(
+        'SELECT photo_filename, konfi_id FROM activity_requests WHERE id = $1 AND organization_id = $2',
+        [requestId, req.user.organization_id]
+      );
+      
+      if (!request) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+      
+      if (!request.photo_filename) {
+        return res.status(404).json({ error: 'No photo found' });
+      }
+      
+      // Check permissions: Admin can see all, Konfi can only see own
+      const isAdmin = req.user.type === 'admin';
+      const isOwnRequest = req.user.type === 'konfi' && req.user.id === request.konfi_id;
+      
+      if (!isAdmin && !isOwnRequest) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const fs = require('fs');
+      const path = require('path');
+      const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
+      
+      if (!fs.existsSync(photoPath)) {
+        return res.status(404).json({ error: 'Photo file not found' });
+      }
+      
+      res.sendFile(photoPath);
+    } catch (err) {
+      console.error('Error serving photo:', err);
+      res.status(500).json({ error: 'Server error' });
     }
   });
 

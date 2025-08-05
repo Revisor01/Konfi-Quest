@@ -43,6 +43,7 @@ const KonfiRequestsPage: React.FC = () => {
   
   const [requests, setRequests] = useState<ActivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const [presentRequestModal, dismissRequestModal] = useIonModal(ActivityRequestModal, {
     onClose: () => dismissRequestModal(),
@@ -109,6 +110,19 @@ const KonfiRequestsPage: React.FC = () => {
     return type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
   };
 
+  const getFilteredRequests = () => {
+    switch (activeTab) {
+      case 'pending':
+        return requests.filter(r => r.status === 'pending');
+      case 'approved':
+        return requests.filter(r => r.status === 'approved');
+      case 'rejected':
+        return requests.filter(r => r.status === 'rejected');
+      default:
+        return requests;
+    }
+  };
+
   const handleDeleteRequest = (request: ActivityRequest) => {
     if (request.status !== 'pending') {
       setError('Nur wartende Anträge können gelöscht werden');
@@ -145,7 +159,7 @@ const KonfiRequestsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>Meine Anträge</IonTitle>
+          <IonTitle>Anträge</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleAddRequest}>
               <IonIcon icon={add} />
@@ -174,8 +188,10 @@ const KonfiRequestsPage: React.FC = () => {
           <LoadingSpinner message="Anträge werden geladen..." />
         ) : (
           <RequestsView 
-            requests={requests}
+            requests={getFilteredRequests()}
             onDeleteRequest={handleDeleteRequest}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
             formatDate={formatDate}
             getStatusColor={getStatusColor}
             getStatusText={getStatusText}

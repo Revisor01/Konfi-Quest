@@ -13,7 +13,10 @@ import {
   IonChip,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  IonSegment,
+  IonSegmentButton,
+  IonImg
 } from '@ionic/react';
 import { 
   hourglass,
@@ -23,6 +26,9 @@ import {
   home,
   people,
   trash,
+  trophy,
+  camera,
+  chatbox,
   documentTextOutline
 } from 'ionicons/icons';
 
@@ -44,6 +50,8 @@ interface ActivityRequest {
 interface RequestsViewProps {
   requests: ActivityRequest[];
   onDeleteRequest?: (request: ActivityRequest) => void;
+  activeTab: 'all' | 'pending' | 'approved' | 'rejected';
+  onTabChange: (tab: 'all' | 'pending' | 'approved' | 'rejected') => void;
   formatDate: (dateString: string) => string;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
@@ -54,6 +62,8 @@ interface RequestsViewProps {
 const RequestsView: React.FC<RequestsViewProps> = ({ 
   requests,
   onDeleteRequest,
+  activeTab,
+  onTabChange,
   formatDate,
   getStatusColor,
   getStatusText,
@@ -205,6 +215,42 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <IonCard style={{ margin: '16px' }}>
+        <IonCardContent style={{ padding: '16px' }}>
+          <IonSegment 
+            value={activeTab} 
+            onIonChange={(e) => onTabChange(e.detail.value as any)}
+            style={{ 
+              '--background': '#f8f9fa',
+              borderRadius: '12px',
+              padding: '4px'
+            }}
+          >
+            <IonSegmentButton value="all">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Alle ({requests.length})
+              </IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="pending">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Wartend ({pendingRequests.length})
+              </IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="approved">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Genehmigt ({approvedRequests.length})
+              </IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="rejected">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Abgelehnt ({rejectedRequests.length})
+              </IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </IonCardContent>
+      </IonCard>
+
       {/* Anträge Liste - Events Design */}
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '8px 0' }}>
@@ -213,10 +259,10 @@ const RequestsView: React.FC<RequestsViewProps> = ({
               <IonItemSliding key={request.id}>
                 <IonItem
                   style={{
-                    '--min-height': '110px',
+                    '--min-height': '90px',
                     '--padding-start': '16px',
-                    '--padding-top': '12px',
-                    '--padding-bottom': '12px',
+                    '--padding-top': '8px',
+                    '--padding-bottom': '8px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '6px 8px',
@@ -290,9 +336,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         top: '50%',
                         transform: 'translateY(-50%)'
                       }}>
-                        {request.status === 'pending' && '⏳ '}
-                        {request.status === 'approved' && '✅ '}
-                        {request.status === 'rejected' && '❌ '}
                         {getStatusText(request.status)}
                       </span>
                     </div>
@@ -312,7 +355,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                       </span>
                     </div>
                     
-                    {/* Typ und Punkte */}
+                    {/* Typ, Punkte und Foto - kompakt in einer Zeile */}
                     <div style={{ 
                       display: 'flex',
                       alignItems: 'center',
@@ -321,67 +364,68 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                       color: '#666'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: '#666' }}>{getTypeText(request.activity_type)}</span>
+                        <IonIcon icon={request.activity_type === 'gottesdienst' ? home : people} style={{ fontSize: '0.8rem', color: '#007aff' }} />
+                        <span>{getTypeText(request.activity_type)}</span>
                       </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px',
-                        background: 'linear-gradient(135deg, #ffcc00 0%, #ff9500 100%)',
-                        color: 'white',
-                        padding: '2px 6px',
-                        borderRadius: '6px',
-                        fontSize: '0.8rem',
-                        fontWeight: '600',
-                        boxShadow: '0 2px 6px rgba(255, 149, 0, 0.3)'
-                      }}>
-                        ⭐ {request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
+                        <span>{request.activity_points}P</span>
                       </div>
+                      {request.photo_filename && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={camera} style={{ fontSize: '0.8rem', color: '#7045f6' }} />
+                          <span>Foto</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Kommentar */}
+                    {/* Anmerkung - lesbar in separater Zeile */}
                     {request.comment && (
-                      <p style={{
-                        margin: '8px 0 0 0',
+                      <div style={{
+                        margin: '6px 0 0 0',
                         fontSize: '0.85rem',
                         color: '#666',
-                        fontStyle: 'italic'
+                        fontStyle: 'italic',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '6px'
                       }}>
-                        "{request.comment}"
-                      </p>
+                        <IonIcon icon={chatbox} style={{ fontSize: '0.8rem', color: '#34c759', marginTop: '2px', flexShrink: 0 }} />
+                        <span>"{request.comment}"</span>
+                      </div>
                     )}
 
-                    {/* Admin Kommentar bei Ablehnung */}
+                    {/* Foto anzeigen - inline wie im Admin */}
+                    {request.photo_filename && (
+                      <div style={{
+                        marginTop: '8px',
+                        textAlign: 'center'
+                      }}>
+                        <IonImg 
+                          src={`https://konfipoints.godsapp.de/api/activity-requests/${request.id}/photo`}
+                          style={{ 
+                            maxWidth: '200px',
+                            maxHeight: '150px',
+                            borderRadius: '8px',
+                            border: '1px solid #e0e0e0',
+                            objectFit: 'cover'
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Admin Kommentar bei Ablehnung - kompakter */}
                     {request.status === 'rejected' && request.admin_comment && (
                       <div style={{
                         background: '#fee',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        marginTop: '8px',
-                        border: '1px solid #fcc'
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        marginTop: '6px',
+                        border: '1px solid #fcc',
+                        fontSize: '0.8rem',
+                        color: '#c33'
                       }}>
-                        <p style={{
-                          margin: '0',
-                          fontSize: '0.85rem',
-                          color: '#c33',
-                          fontWeight: '500'
-                        }}>
-                          Ablehnungsgrund: {request.admin_comment}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Foto anzeigen */}
-                    {request.photo_filename && (
-                      <div style={{ marginTop: '8px' }}>
-                        <IonChip style={{ 
-                          fontSize: '0.75rem',
-                          '--background': 'rgba(56, 128, 255, 0.1)',
-                          '--color': '#3880ff',
-                          fontWeight: '500'
-                        }}>
-                          📷 Foto angehängt
-                        </IonChip>
+                        <strong>Grund:</strong> {request.admin_comment}
                       </div>
                     )}
                   </IonLabel>

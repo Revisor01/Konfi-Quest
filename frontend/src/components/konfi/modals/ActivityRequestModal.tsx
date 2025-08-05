@@ -12,20 +12,18 @@ import {
   IonCardContent,
   IonItem,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
   IonTextarea,
   IonDatetime,
-  IonImg,
+  IonDatetimeButton,
+  IonModal,
   IonProgressBar,
   useIonActionSheet,
   useIonAlert
 } from '@ionic/react';
 import { 
   close, 
-  send, 
+  checkmark, 
   camera, 
-  image, 
   trash,
   checkmarkCircle,
   calendar,
@@ -114,38 +112,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   };
 
   const handlePhotoSelect = () => {
-    presentActionSheet({
-      header: 'Foto hinzufügen',
-      buttons: [
-        {
-          text: 'Kamera',
-          icon: camera,
-          handler: () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.setAttribute('capture', 'environment');
-            input.onchange = (e: Event) => handleFileSelect(e);
-            input.click();
-          }
-        },
-        {
-          text: 'Galerie',
-          icon: image,
-          handler: () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = (e: Event) => handleFileSelect(e);
-            input.click();
-          }
-        },
-        {
-          text: 'Abbrechen',
-          role: 'cancel'
-        }
-      ]
-    });
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = false;
+    input.onchange = (e: Event) => handleFileSelect(e);
+    input.click();
   };
 
   const handleFileSelect = (event: Event) => {
@@ -266,7 +238,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton onClick={handleSubmit} disabled={submitting || loading}>
-              <IonIcon icon={send} />
+              <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -327,6 +299,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             {selectedActivity && (
               <div style={{
                 marginTop: '12px',
+                margin: '12px 16px 0 16px',
                 padding: '12px',
                 backgroundColor: '#f8f9fa',
                 borderRadius: '8px',
@@ -340,7 +313,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <span style={{ fontWeight: '600', color: '#333' }}>
                     {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
                   </span>
-                  <span style={{ color: '#007aff', fontWeight: '500' }}>
+                  <span style={{ color: '#666', fontWeight: '500' }}>
                     • {selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'}
                   </span>
                 </div>
@@ -386,15 +359,18 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 </h3>
               </div>
               
-              <IonItem>
-                <IonLabel position="stacked">Wann hast du die Aktivität gemacht?</IonLabel>
-                <IonDatetime
-                  value={formData.requested_date}
-                  onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
-                  presentation="date"
-                  max={new Date().toISOString().split('T')[0]}
-                  style={{ width: '100%' }}
-                />
+              <IonItem lines="none">
+                <IonDatetimeButton datetime="date-picker" />
+                <IonModal keepContentsMounted={true}>
+                  <IonDatetime
+                    id="date-picker"
+                    value={formData.requested_date}
+                    onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
+                    presentation="date"
+                    max={new Date().toISOString().split('T')[0]}
+                    firstDayOfWeek={1}
+                  />
+                </IonModal>
               </IonItem>
             </IonCardContent>
         </IonCard>
@@ -420,18 +396,17 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <IonIcon icon={text} style={{ fontSize: '1rem', color: 'white' }} />
                 </div>
                 <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                  Beschreibung *
+                  Anmerkungen (optional)
                 </h3>
               </div>
               
               <IonItem>
-                <IonLabel position="stacked">Was genau hast du gemacht?</IonLabel>
                 <IonTextarea
                   value={formData.description}
                   onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
-                  placeholder="Beschreibe ausführlich, was du gemacht hast..."
+                  placeholder="Anmerkungen... (optional)"
                   autoGrow={true}
-                  rows={4}
+                  rows={1}
                 />
               </IonItem>
             </IonCardContent>
@@ -439,12 +414,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
         {/* Photo */}
         <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-            <IonCardContent>
+            <IonCardContent style={{ padding: '12px 0' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                marginBottom: '16px'
+                margin: '16px 16px 8px 16px'
               }}>
                 <div style={{
                   width: '32px',
@@ -453,77 +428,72 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(112, 69, 246, 0.3)',
+                  flexShrink: 0
                 }}>
                   <IonIcon icon={camera} style={{ fontSize: '1rem', color: 'white' }} />
                 </div>
-                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                  Foto als Nachweis
-                </h3>
+                <h2 style={{ 
+                  fontWeight: '600', 
+                  fontSize: '1.1rem',
+                  margin: '0',
+                  color: '#333'
+                }}>
+                  Foto als Nachweis (optional)
+                </h2>
               </div>
               
-              {photoPreview ? (
-                <div style={{ textAlign: 'center' }}>
-                  <IonImg 
-                    src={photoPreview} 
-                    alt="Foto Vorschau"
-                    style={{ 
-                      maxHeight: '200px',
-                      borderRadius: '8px',
-                      border: '2px solid #e9ecef',
-                      marginBottom: '16px'
-                    }}
-                  />
-                  <IonButton 
-                    fill="outline" 
-                    color="danger"
-                    size="small"
-                    onClick={removePhoto}
-                  >
-                    <IonIcon icon={trash} slot="start" />
-                    Foto entfernen
-                  </IonButton>
-                </div>
-              ) : (
-                <div>
-                  <IonButton 
-                    expand="block" 
-                    fill="outline"
-                    onClick={handlePhotoSelect}
-                    disabled={submitting}
-                  >
-                    <IonIcon icon={camera} slot="start" />
-                    Foto hinzufügen
-                  </IonButton>
-                  <p style={{ 
-                    margin: '8px 0 0 0', 
-                    fontSize: '0.85rem', 
-                    color: '#666',
-                    textAlign: 'center'
-                  }}>
-                    Empfohlen: Lade ein Foto als Nachweis hoch
-                  </p>
-                </div>
-              )}
+              <div 
+                onClick={handlePhotoSelect}
+                style={{
+                  margin: '12px 16px 0 16px',
+                  padding: '12px',
+                  backgroundColor: photoPreview ? '#e8f5e8' : '#f8f9fa',
+                  borderRadius: '8px',
+                  border: photoPreview ? '1px solid #c3e6cb' : '1px solid #e9ecef',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {photoPreview ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <IonIcon 
+                        icon={checkmarkCircle}
+                        style={{ fontSize: '1.2rem', color: '#28a745' }}
+                      />
+                      <span style={{ fontWeight: '600', color: '#28a745' }}>
+                        Foto ausgewählt
+                      </span>
+                    </div>
+                    <IonButton 
+                      fill="clear" 
+                      color="danger"
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removePhoto();
+                      }}
+                    >
+                      <IonIcon icon={trash} />
+                    </IonButton>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <IonIcon 
+                      icon={camera}
+                      style={{ fontSize: '1.2rem', color: '#7045f6' }}
+                    />
+                    <span style={{ fontWeight: '500', color: '#666' }}>
+                      Foto hinzufügen
+                    </span>
+                  </div>
+                )}
+              </div>
             </IonCardContent>
         </IonCard>
 
-        {/* Info Card */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'rgba(45, 211, 111, 0.1)', border: '1px solid rgba(45, 211, 111, 0.3)' }}>
-            <IonCardContent>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <IonIcon icon={checkmarkCircle} color="success" style={{ fontSize: '1.5rem' }} />
-                <div>
-                  <p style={{ margin: '0', fontSize: '0.9rem', color: '#2dd36f', fontWeight: '600' }}>
-                    Antrag wird geprüft
-                  </p>
-                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#666' }}>
-                    Ein Admin prüft deinen Antrag und du bekommst eine Rückmeldung
-                  </p>
-                </div>
-              </div>
-            </IonCardContent>
-        </IonCard>
       </IonContent>
     </IonPage>
   );
