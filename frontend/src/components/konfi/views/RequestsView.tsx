@@ -15,9 +15,13 @@ import {
   IonItemOptions,
   IonItemOption,
   IonSegment,
-  IonSegmentButton,
-  IonImg
+  IonSegmentButton
 } from '@ionic/react';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { PhotoViewer } from '@capacitor-community/photoviewer';
+import { useApp } from '../../../contexts/AppContext';
+import api from '../../../services/api';
 import { 
   hourglass,
   checkmarkCircle,
@@ -70,10 +74,65 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   getTypeIcon,
   getTypeText
 }) => {
+  const { setError } = useApp();
 
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const approvedRequests = requests.filter(r => r.status === 'approved');
   const rejectedRequests = requests.filter(r => r.status === 'rejected');
+
+  const handleRequestClick = async (request: ActivityRequest) => {
+    if (!request.photo_filename) return;
+
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      const imageUrl = `${api.defaults.baseURL}/konfi/activity-requests/${request.id}/photo`;
+      
+      // Download image to local storage first (with auth)
+      const response = await api.get(`/konfi/activity-requests/${request.id}/photo`, {
+        responseType: 'blob'
+      });
+      const blob = response.data;
+      const fileName = `${request.activity_name}_${request.id}.jpg`;
+      
+      // Write to Documents directory
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+      
+      const path = `temp/${fileName}`;
+      await Filesystem.writeFile({
+        path,
+        data: base64Data,
+        directory: Directory.Documents,
+        recursive: true
+      });
+      
+      // Get local file URI and show with PhotoViewer
+      const fileUri = await Filesystem.getUri({
+        directory: Directory.Documents,
+        path
+      });
+      
+      await PhotoViewer.show({
+        images: [{
+          url: fileUri.uri,
+          title: request.activity_name
+        }],
+        mode: 'one',
+        options: {
+          share: false
+        }
+      });
+    } catch (error) {
+      console.error('Error opening image:', error);
+      setError('Fehler beim Öffnen des Fotos');
+    }
+  };
 
   return (
     <div>
@@ -229,22 +288,22 @@ const RequestsView: React.FC<RequestsViewProps> = ({
           >
             <IonSegmentButton value="all">
               <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Alle ({requests.length})
+                Alle
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="pending">
               <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Wartend ({pendingRequests.length})
+                Wartend
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="approved">
               <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Genehmigt ({approvedRequests.length})
+                Genehmigt
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="rejected">
               <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Abgelehnt ({rejectedRequests.length})
+                Abgelehnt
               </IonLabel>
             </IonSegmentButton>
           </IonSegment>
@@ -258,6 +317,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
             {requests.map((request) => (
               <IonItemSliding key={request.id}>
                 <IonItem
+                  button={false}
+                  onClick={request.photo_filename ? () => handleRequestClick(request) : undefined}
                   style={{
                     '--min-height': '90px',
                     '--padding-start': '16px',
@@ -268,7 +329,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                     margin: '6px 8px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                     border: '1px solid #f0f0f0',
-                    borderRadius: '12px'
+                    borderRadius: '12px',
+                    cursor: request.photo_filename ? 'pointer' : 'default'
                   }}
                 >
                   <IonLabel>
@@ -395,24 +457,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                       </div>
                     )}
 
-                    {/* Foto anzeigen - inline wie im Admin */}
-                    {request.photo_filename && (
-                      <div style={{
-                        marginTop: '8px',
-                        textAlign: 'center'
-                      }}>
-                        <IonImg 
-                          src={`https://konfipoints.godsapp.de/api/activity-requests/${request.id}/photo`}
-                          style={{ 
-                            maxWidth: '200px',
-                            maxHeight: '150px',
-                            borderRadius: '8px',
-                            border: '1px solid #e0e0e0',
-                            objectFit: 'cover'
-                          }}
-                        />
-                      </div>
-                    )}
 
                     {/* Admin Kommentar bei Ablehnung - kompakter */}
                     {request.status === 'rejected' && request.admin_comment && (
@@ -465,6 +509,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
           </IonList>
         </IonCardContent>
       </IonCard>
+
     </div>
   );
 };

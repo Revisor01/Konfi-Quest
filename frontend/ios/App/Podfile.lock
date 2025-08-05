@@ -5,6 +5,10 @@ PODS:
     - Capacitor
   - CapacitorCamera (7.0.1):
     - Capacitor
+  - CapacitorCommunityPhotoviewer (7.0.0):
+    - Capacitor
+    - ISVImageScrollView
+    - SDWebImage
   - CapacitorCordova (7.4.2)
   - CapacitorDevice (7.0.1):
     - Capacitor
@@ -75,17 +79,22 @@ PODS:
     - GoogleUtilities/Privacy
   - IONFilesystemLib (1.0.0)
   - IONFileViewerLib (1.0.1)
+  - ISVImageScrollView (0.3.0)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
     - nanopb/encode (= 3.30910.0)
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
+  - SDWebImage (5.21.1):
+    - SDWebImage/Core (= 5.21.1)
+  - SDWebImage/Core (5.21.1)
 
 DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorCommunityPhotoviewer (from `../../node_modules/@capacitor-community/photoviewer`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
   - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
@@ -110,8 +119,10 @@ SPEC REPOS:
     - GoogleUtilities
     - IONFilesystemLib
     - IONFileViewerLib
+    - ISVImageScrollView
     - nanopb
     - PromisesObjC
+    - SDWebImage
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -120,6 +131,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/app"
   CapacitorCamera:
     :path: "../../node_modules/@capacitor/camera"
+  CapacitorCommunityPhotoviewer:
+    :path: "../../node_modules/@capacitor-community/photoviewer"
   CapacitorCordova:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorDevice:
@@ -145,6 +158,7 @@ SPEC CHECKSUMS:
   Capacitor: 156d98aba46ec01dde72c4bbb92fa626837cad29
   CapacitorApp: d63334c052278caf5d81585d80b21905c6f93f39
   CapacitorCamera: eb8687d8687fed853598ec9460d94bcd5e16babe
+  CapacitorCommunityPhotoviewer: db03de87c72d2e0a5fbbfa713e4fc1acc1043e37
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorDevice: fe3f190e1d718f4607bdc6b73993433d1c84f409
   CapacitorFilesystem: 7b7e9bf177ce09657a667d935ca6f0eadbcfda54
@@ -163,9 +177,11 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   IONFilesystemLib: ceacae793975039530458eabab0c495c70515a0d
   IONFileViewerLib: 9e6b09451afa7705545d4d20e2974b4f1555390c
+  ISVImageScrollView: 2c89840496647af985bfc0e09b346b9aa733ecec
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  SDWebImage: f29024626962457f3470184232766516dee8dfea
 
-PODFILE CHECKSUM: 3e38e6a07bae6ca36ecf9096d846248e78c4ecae
+PODFILE CHECKSUM: 6514d2051a08e8500cfed4f2a9fa53f0390eef2a
 
 COCOAPODS: 1.15.2

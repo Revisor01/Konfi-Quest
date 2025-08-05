@@ -37,7 +37,7 @@ interface ActivityRequest {
 }
 
 const KonfiRequestsPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const { setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
   const [presentAlert] = useIonAlert();
   
@@ -72,7 +72,7 @@ const KonfiRequestsPage: React.FC = () => {
 
   const handleAddRequest = () => {
     presentRequestModal({
-      presentingElement: pageRef.current || undefined
+      presentingElement: presentingElement
     });
   };
 
@@ -172,7 +172,7 @@ const KonfiRequestsPage: React.FC = () => {
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
             <IonTitle size="large" style={{ color: 'black' }}>
-              Meine Anträge
+              Anträge
             </IonTitle>
           </IonToolbar>
         </IonHeader>
