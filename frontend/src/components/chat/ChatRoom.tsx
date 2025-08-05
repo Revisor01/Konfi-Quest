@@ -400,12 +400,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('📁 File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         setError('Datei ist zu groß (max. 10MB)');
         return;
       }
       setSelectedFile(file);
+      console.log('✅ File set as selectedFile');
     }
   };
 

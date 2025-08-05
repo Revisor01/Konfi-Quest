@@ -28,6 +28,8 @@
 	<string>Diese App benötigt Zugriff auf die Fotobibliothek, um Bilder für Chat-Nachrichten auszuwählen.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
 	<string>Diese App benötigt Zugriff auf Dokumente, um Dateien für Chat-Nachrichten auszuwählen und zu teilen.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Diese App benötigt Zugriff auf das Mikrofon, um Videos mit Ton für Chat-Nachrichten aufzunehmen.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
