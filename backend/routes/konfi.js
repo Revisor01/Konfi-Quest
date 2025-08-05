@@ -414,13 +414,13 @@ module.exports = (db, rbacMiddleware, upload) => {
     
     try {
       const query = `
-        SELECT a.id, a.name, a.description, a.points, a.type,
+        SELECT a.id, a.name, a.points, a.type,
                STRING_AGG(c.name, ', ') as category_names
         FROM activities a
         LEFT JOIN activity_categories ac ON a.id = ac.activity_id
         LEFT JOIN categories c ON ac.category_id = c.id
         WHERE a.organization_id = $1
-        GROUP BY a.id, a.name, a.description, a.points, a.type
+        GROUP BY a.id, a.name, a.points, a.type
         ORDER BY a.type, a.name
       `;
       const { rows: activities } = await db.query(query, [req.user.organization_id]);

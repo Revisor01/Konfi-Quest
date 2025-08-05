@@ -243,13 +243,13 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             }}
           >
             <IonSegmentButton value="alle">
-              <IonLabel style={{ fontWeight: '600' }}>Alle</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem'  }}>Alle</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="nicht_erhalten">
-              <IonLabel style={{ fontWeight: '600' }}>Nicht erhalten</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem'  }}>Nicht erhalten</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="in_arbeit">
-              <IonLabel style={{ fontWeight: '600' }}>In Arbeit</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem'  }}>In Arbeit</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </IonCardContent>
