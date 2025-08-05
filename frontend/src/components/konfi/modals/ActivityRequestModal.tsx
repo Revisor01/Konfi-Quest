@@ -79,7 +79,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const loadActivities = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/activities');
+      const response = await api.get('/konfi/activities');
       setActivities(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');

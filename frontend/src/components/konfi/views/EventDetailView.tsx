@@ -38,7 +38,8 @@ import {
   informationCircle,
   warning,
   hourglass,
-  ribbon
+  ribbon,
+  listOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -97,9 +98,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         data: { reason: reason.trim() }
       });
       
-      // Modal schließen BEVOR andere Aktionen
-      dismissUnregisterModal();
-      
       setSuccess(`Von "${eventData.name}" abgemeldet`);
       await loadEventData();
       
@@ -110,12 +108,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
-  // Modal mit useIonModal Hook - gleiche Pattern wie Admin
+  // Modal mit useIonModal Hook - korrekte Ionic Implementierung  
   const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
-    onClose: () => dismissUnregisterModal(),
+    onClose: () => {
+      dismissUnregisterModal();
+      loadEventData(); // Seite aktualisieren nach Modal schließen
+    },
     onUnregister: handleUnregister,
-    dismiss: () => dismissUnregisterModal()
+    dismiss: (data?: string, role?: string) => {
+      dismissUnregisterModal(data, role);
+      loadEventData(); // Seite aktualisieren nach Abmeldung
+    }
   });
 
   useEffect(() => {
@@ -326,18 +330,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </h2>
           </div>
           
-          {/* Status Badge - separate row at top right */}
+          {/* Status Badge - rechtsbündig mit Grid, immer anzeigen */}
           <div style={{
             position: 'absolute',
             top: '16px',
-            right: '24px',
+            right: '32px', // Rechtsbündig mit Grid padding
             zIndex: 3
           }}>
             <div style={{
-              backgroundColor: eventData.is_registered ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.2)',
+              backgroundColor: (eventData as any).registration_status_detail === 'waitlist' ? 'rgba(253, 126, 20, 0.9)' :
+                              eventData.is_registered ? 'rgba(255, 255, 255, 0.9)' : 
+                              eventData.registration_status === 'open' ? 'rgba(255, 255, 255, 0.9)' :
+                              'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
               padding: '8px 12px',
-              border: `1px solid ${eventData.is_registered ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.3)'}`,
+              border: `1px solid ${(eventData as any).registration_status_detail === 'waitlist' ? 'rgba(253, 126, 20, 1)' :
+                                    eventData.is_registered ? 'rgba(255, 255, 255, 1)' : 
+                                    eventData.registration_status === 'open' ? 'rgba(255, 255, 255, 1)' :
+                                    'rgba(255, 255, 255, 0.3)'}`,
               display: 'flex',
               alignItems: 'center',
               gap: '6px'
@@ -347,12 +357,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   icon={checkmarkCircle} 
                   style={{ 
                     fontSize: '1rem', 
-                    color: '#28a745'
+                    color: (eventData as any).registration_status_detail === 'waitlist' ? 'white' : '#28a745'
                   }} 
                 />
               )}
               <span style={{ 
-                color: eventData.is_registered ? '#28a745' : 
+                color: (eventData as any).registration_status_detail === 'waitlist' ? 'white' :
+                       eventData.is_registered ? '#28a745' : 
+                       eventData.registration_status === 'open' && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled ? '#fd7e14' :
                        eventData.registration_status === 'open' ? '#fd7e14' :
                        eventData.registration_status === 'upcoming' ? '#ffc409' :
                        eventData.registration_status === 'cancelled' ? '#dc3545' : 
@@ -360,8 +372,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 fontSize: '0.8rem', 
                 fontWeight: '600'
               }}>
-                {eventData.is_registered ? 'ANGEMELDET' : 
-                 eventData.registration_status === 'open' ? 'OFFEN' : 
+                {(eventData as any).registration_status_detail === 'waitlist' ? `WARTELISTE (${(eventData as any).waitlist_position || 1})` :
+                 eventData.is_registered ? 'ANGEMELDET' : 
+                 eventData.registration_status === 'open' && eventData.registered_count >= eventData.max_participants && eventData.waitlist_enabled ? 'WARTELISTE OFFEN' :
+                 eventData.registration_status === 'open' ? 'ANMELDUNG OFFEN' : 
                  eventData.registration_status === 'upcoming' ? 'BALD' : 
                  eventData.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
               </span>
@@ -385,24 +399,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    padding: '12px',
+                    padding: '16px 12px',
                     color: 'white',
                     textAlign: 'center'
                   }}>
                     <IonIcon 
                       icon={people} 
                       style={{ 
-                        fontSize: '1.2rem', 
+                        fontSize: '1.5rem', 
                         color: 'rgba(255, 255, 255, 0.9)', 
-                        marginBottom: '4px', 
+                        marginBottom: '8px', 
                         display: 'block',
-                        margin: '0 auto 4px auto'
+                        margin: '0 auto 8px auto'
                       }} 
                     />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.3rem' }}>{eventData.max_participants - eventData.registered_count}</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{eventData.max_participants - eventData.registered_count}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       frei
                     </div>
                   </div>
@@ -411,24 +425,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    padding: '12px',
+                    padding: '16px 12px',
                     color: 'white',
                     textAlign: 'center'
                   }}>
                     <IonIcon 
                       icon={trophy} 
                       style={{ 
-                        fontSize: '1.2rem', 
+                        fontSize: '1.5rem', 
                         color: 'rgba(255, 255, 255, 0.9)', 
-                        marginBottom: '4px', 
+                        marginBottom: '8px', 
                         display: 'block',
-                        margin: '0 auto 4px auto'
+                        margin: '0 auto 8px auto'
                       }} 
                     />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.3rem' }}>{eventData.points}</span>
+                    <div style={{ fontSize: '1.3em', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{eventData.points}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       Punkte
                     </div>
                   </div>
@@ -437,24 +451,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    padding: '12px',
+                    padding: '16px 12px',
                     color: 'white',
                     textAlign: 'center'
                   }}>
                     <IonIcon 
                       icon={checkmarkCircle} 
                       style={{ 
-                        fontSize: '1.2rem', 
+                        fontSize: '1.5rem', 
                         color: 'rgba(255, 255, 255, 0.9)', 
-                        marginBottom: '4px', 
+                        marginBottom: '8px', 
                         display: 'block',
-                        margin: '0 auto 4px auto'
+                        margin: '0 auto 8px auto'
                       }} 
                     />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.3rem' }}>{eventData.registered_count}</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{eventData.registered_count}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       dabei
                     </div>
                   </div>
@@ -528,6 +542,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
+                  {eventData.waitlist_enabled && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={listOutline} style={{ marginRight: '12px', color: '#fd7e14', fontSize: '1.2rem' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        Warteliste: {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10}
+                        {(eventData as any).waitlist_position && ` (Du: Platz ${(eventData as any).waitlist_position})`}
+                      </div>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                     <IonIcon icon={trophy} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
                     <div style={{ fontSize: '1rem', color: '#333' }}>
@@ -535,15 +559,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
-                  {eventData.waitlist_enabled && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={hourglass} style={{ marginRight: '12px', color: '#ff6b35', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        Warteliste: {(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 10}
-                        {(eventData as any).waitlist_position && ` (Platz ${(eventData as any).waitlist_position})`}
-                      </div>
-                    </div>
-                  )}
 
                   {eventData.categories && eventData.categories.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
@@ -612,7 +627,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </IonButton>
               )}
             </div>
-          ) : eventData.can_register && eventData.registration_status === 'open' ? (
+          ) : eventData.can_register && eventData.registration_status === 'open' && eventData.registered_count < eventData.max_participants ? (
             <IonButton 
               expand="block" 
               style={{ 
@@ -644,7 +659,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />
-              Warteliste ({(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 0})
+              Warteliste offen ({(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 0})
             </IonButton>
           ) : (
             <IonButton 

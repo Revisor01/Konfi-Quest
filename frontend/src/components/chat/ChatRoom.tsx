@@ -519,7 +519,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             width: '32px', 
             height: '32px', 
             marginRight: '8px',
-            backgroundColor: message.sender_type === 'admin' ? '#7045f6' : '#3880ff'
+            backgroundColor: message.sender_type === 'admin' ? '#7045f6' : '#17a2b8'
           }}>
             <div style={{ 
               color: 'white', 
@@ -538,7 +538,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         <div 
           style={{
             maxWidth: '70%',
-            backgroundColor: isOwnMessage ? '#007aff' : '#e9ecef',
+            backgroundColor: isOwnMessage ? '#17a2b8' : '#e9ecef',
             color: isOwnMessage ? 'white' : 'black',
             borderRadius: '16px',
             padding: '12px',
@@ -571,7 +571,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               fontSize: '0.75rem', 
               fontWeight: 'bold', 
               marginBottom: '4px',
-              color: message.sender_type === 'admin' ? '#7045f6' : '#3880ff'
+              color: message.sender_type === 'admin' ? '#7045f6' : '#17a2b8'
             }}>
               {message.sender_name || 'Unbekannter User'}
             </div>

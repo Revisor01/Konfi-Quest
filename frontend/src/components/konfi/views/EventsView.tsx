@@ -27,7 +27,9 @@ import {
   close,
   statsChart,
   trophy,
-  ribbon
+  ribbon,
+  listOutline,
+  calendarOutline
 } from 'ionicons/icons';
 
 interface Category {
@@ -257,24 +259,24 @@ const EventsView: React.FC<EventsViewProps> = ({
               padding: '4px'
             }}
           >
-            <IonSegmentButton value="registered">
-              <IonLabel style={{ fontWeight: '600' }}>
-                Angemeldet ({events.filter(e => e.is_registered).length})
+            <IonSegmentButton value="upcoming">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Anstehend
               </IonLabel>
             </IonSegmentButton>
-            <IonSegmentButton value="upcoming">
-              <IonLabel style={{ fontWeight: '600' }}>
-                Anstehend ({eventCounts.upcoming})
+            <IonSegmentButton value="registered">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Angemeldet
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="past">
-              <IonLabel style={{ fontWeight: '600' }}>
-                Vergangen ({eventCounts.past})
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+                Vergangen
               </IonLabel>
             </IonSegmentButton>
             {eventCounts.cancelled > 0 && (
               <IonSegmentButton value="cancelled">
-                <IonLabel style={{ fontWeight: '600' }}>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
                   Abgesagt ({eventCounts.cancelled})
                 </IonLabel>
               </IonSegmentButton>
@@ -295,8 +297,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                 style={{ 
                   '--min-height': '110px',
                   '--padding-start': '16px', 
-                  '--padding-top': '12px', 
-                  '--padding-bottom': '12px',
+                  '--padding-top': '0px', 
+                  '--padding-bottom': '0px',
                   '--background': '#fbfbfb',
                   '--border-radius': '12px',
                   margin: '6px 8px',
@@ -306,54 +308,67 @@ const EventsView: React.FC<EventsViewProps> = ({
                 }}
               >
                 <IonLabel>
-                  {/* Card Header mit Titel und Status Badge oben rechts */}
+                  {/* Titel mit Icon und Status Badge in einer Reihe */}
                   <div style={{ 
                     display: 'flex', 
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px'
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px',
+                    position: 'relative'
                   }}>
-                    {/* Links: Icon + Titel */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                      <div style={{ 
-                        width: '32px', 
-                        height: '32px',
-                        backgroundColor: event.is_registered ? '#28a745' : 
-                                       event.registration_status === 'cancelled' ? '#dc3545' : 
-                                       new Date(event.event_date) < new Date() ? '#6c757d' : '#dc2626',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
-                        flexShrink: 0
-                      }}>
-                        <IonIcon 
-                          icon={event.is_registered ? checkmarkCircle : 
-                                event.registration_status === 'cancelled' ? close : 
-                                new Date(event.event_date) < new Date() ? hourglass : calendar}
-                          style={{ 
-                            fontSize: '1rem', 
-                            color: 'white'
-                          }} 
-                        />
-                      </div>
-                      <h2 style={{ 
-                        fontWeight: '600', 
-                        fontSize: '1.1rem',
-                        margin: '0',
-                        color: event.registration_status === 'cancelled' ? '#999' : '#333',
-                        textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none',
-                        lineHeight: '1.3',
-                        wordBreak: 'break-word',
-                        flex: 1,
-                        minWidth: 0
-                      }}>
-                        {event.name}
-                      </h2>
+                    <div style={{ 
+                      width: '32px', 
+                      height: '32px',
+                      backgroundColor: (() => {
+                        const isPastEvent = new Date(event.event_date) < new Date();
+                        const isParticipated = isPastEvent && event.is_registered;
+                        return isParticipated ? '#6c757d' :
+                               (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
+                               event.is_registered ? '#28a745' : 
+                               event.registration_status === 'cancelled' ? '#dc3545' : 
+                               new Date(event.event_date) < new Date() ? '#6c757d' : '#dc2626';
+                      })(),
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
+                      flexShrink: 0
+                    }}>
+                      <IonIcon 
+                        icon={(() => {
+                          const isPastEvent = new Date(event.event_date) < new Date();
+                          const isParticipated = isPastEvent && event.is_registered;
+                          return isParticipated ? checkmarkCircle :
+                                 (event as any).registration_status_detail === 'waitlist' ? checkmarkCircle :
+                                 event.is_registered ? checkmarkCircle : 
+                                 event.registration_status === 'cancelled' ? close : 
+                                 new Date(event.event_date) < new Date() ? hourglass : calendar;
+                        })()}
+                        style={{ 
+                          fontSize: '1rem', 
+                          color: 'white'
+                        }} 
+                      />
                     </div>
-
-                    {/* Rechts: Status Badge */}
+                    <h2 style={{ 
+                      fontWeight: '600', 
+                      fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)', // Responsive Schriftgröße
+                      margin: '0',
+                      color: event.registration_status === 'cancelled' ? '#999' : '#333',
+                      textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none',
+                      lineHeight: '1.3',
+                      flex: 1,
+                      minWidth: 0,
+                      marginRight: '110px', // Fester Platz für Badge
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap' // Titel wird automatisch mit ... abgekürzt
+                    }}>
+                      {event.name}
+                    </h2>
+                    
+                    {/* Status Badge rechts */}
                     {(() => {
                       const isPastEvent = new Date(event.event_date) < new Date();
                       const showBadge = !isPastEvent || (isPastEvent && event.is_registered);
@@ -363,36 +378,45 @@ const EventsView: React.FC<EventsViewProps> = ({
                       const isParticipated = isPastEvent && event.is_registered;
                       
                       return (
-                        <div style={{ flexShrink: 0, marginLeft: '12px' }}>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: isParticipated ? '#28a745' : 
-                                  event.is_registered ? '#28a745' : 
-                                  event.registration_status === 'open' ? '#fd7e14' : 
-                                  event.registration_status === 'upcoming' ? '#ffc409' : 
-                                  event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
-                            fontWeight: '600',
-                            backgroundColor: isParticipated ? '#d4edda' : 
-                                           event.is_registered ? '#d4edda' : 
-                                           event.registration_status === 'open' ? '#fff4e6' : 
-                                           event.registration_status === 'upcoming' ? '#fff3cd' : 
-                                           event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
-                            padding: '4px 8px',
-                            borderRadius: '8px',
-                            border: `1px solid ${isParticipated ? '#c3e6cb' : 
-                                               event.is_registered ? '#c3e6cb' : 
-                                               event.registration_status === 'open' ? '#fdbf85' : 
-                                               event.registration_status === 'upcoming' ? '#ffeaa7' : 
-                                               event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {isParticipated ? 'TEILGENOMMEN' :
-                             event.is_registered ? 'ANGEMELDET' : 
-                             event.registration_status === 'open' ? 'OFFEN' : 
-                             event.registration_status === 'upcoming' ? 'BALD' : 
-                             event.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
-                          </span>
-                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          color: isParticipated ? '#6c757d' : 
+                                (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
+                                event.is_registered ? '#28a745' : 
+                                event.registration_status === 'open' ? '#fd7e14' : 
+                                event.registration_status === 'upcoming' ? '#ffc409' : 
+                                event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
+                          fontWeight: '600',
+                          backgroundColor: isParticipated ? '#e9ecef' : 
+                                         (event as any).registration_status_detail === 'waitlist' ? '#fff4e6' :
+                                         event.is_registered ? '#d4edda' : 
+                                         event.registration_status === 'open' ? '#fff4e6' : 
+                                         event.registration_status === 'upcoming' ? '#fff3cd' : 
+                                         event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
+                          padding: '3px 6px',
+                          borderRadius: '6px',
+                          border: `1px solid ${isParticipated ? '#adb5bd' : 
+                                             (event as any).registration_status_detail === 'waitlist' ? '#fdbf85' :
+                                             event.is_registered ? '#c3e6cb' : 
+                                             event.registration_status === 'open' ? '#fdbf85' : 
+                                             event.registration_status === 'upcoming' ? '#ffeaa7' : 
+                                             event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                          flexShrink: 0,
+                          position: 'absolute',
+                          right: '0',
+                          top: '50%',
+                          transform: 'translateY(-50%)'
+                        }}>
+                          {isParticipated ? 'TEILGENOMMEN' :
+                           (event as any).registration_status_detail === 'waitlist' ? `WARTELISTE (${(event as any).waitlist_position || 1})` :
+                           event.is_registered ? 'ANGEMELDET' : 
+                           event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled ? 'WARTELISTE' :
+                           event.registration_status === 'open' ? 'OFFEN' : 
+                           event.registration_status === 'upcoming' ? 'BALD' : 
+                           event.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
+                        </span>
                       );
                     })()}
                   </div>
@@ -434,6 +458,12 @@ const EventsView: React.FC<EventsViewProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <IonIcon icon={people} style={{ fontSize: '0.8rem', color: '#34c759' }} />
                       <span>{event.registered_count}/{event.max_participants}</span>
+                      {event.waitlist_enabled && (event as any).waitlist_count > 0 && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
+                          <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: '#fd7e14' }} />
+                          <span style={{ color: '#666' }}>{(event as any).waitlist_count}/{event.max_waitlist_size || 10}</span>
+                        </span>
+                      )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
@@ -449,7 +479,16 @@ const EventsView: React.FC<EventsViewProps> = ({
 
       {events.length === 0 && (
         <div style={{ textAlign: 'center', padding: '32px' }}>
-          <div style={{ fontSize: '3rem', color: '#ccc', marginBottom: '16px' }}>📅</div>
+          <IonIcon 
+            icon={calendarOutline} 
+            style={{ 
+              fontSize: '3rem', 
+              color: '#dc2626', 
+              marginBottom: '16px',
+              display: 'block',
+              margin: '0 auto 16px auto'
+            }} 
+          />
           <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
           <p style={{ color: '#999', margin: '0' }}>
             {activeTab === 'registered' 

@@ -86,7 +86,10 @@ const KonfiEventsPage: React.FC = () => {
             return {
               ...event,
               is_registered: registrationResponse.data.is_registered,
-              can_register: registrationResponse.data.can_register
+              can_register: registrationResponse.data.can_register,
+              waitlist_count: registrationResponse.data.waitlist_count,
+              waitlist_position: registrationResponse.data.waitlist_position,
+              registration_status_detail: registrationResponse.data.registration_status
             };
           } catch (err) {
             // If status check fails, assume not registered but can register if open
@@ -112,24 +115,44 @@ const KonfiEventsPage: React.FC = () => {
   const getFilteredEvents = () => {
     const now = new Date();
     
+    let filteredEvents;
     switch (activeTab) {
       case 'registered':
-        return events.filter(event => event.is_registered);
+        filteredEvents = events.filter(event => event.is_registered);
+        break;
       case 'upcoming':
-        return events.filter(event => 
+        filteredEvents = events.filter(event => 
           new Date(event.event_date) >= now && 
           event.registration_status !== 'cancelled'
         );
+        break;
       case 'past':
-        return events.filter(event => 
+        filteredEvents = events.filter(event => 
           new Date(event.event_date) < now &&
           event.registration_status !== 'cancelled'
         );
+        break;
       case 'cancelled':
-        return events.filter(event => event.registration_status === 'cancelled');
+        filteredEvents = events.filter(event => event.registration_status === 'cancelled');
+        break;
       default:
-        return events;
+        filteredEvents = events;
     }
+    
+    // Sort events: current events first, then by date
+    return filteredEvents.sort((a, b) => {
+      const dateA = new Date(a.event_date);
+      const dateB = new Date(b.event_date);
+      const isPastA = dateA < now;
+      const isPastB = dateB < now;
+      
+      // If one is past and other is future, future comes first
+      if (isPastA && !isPastB) return 1;
+      if (!isPastA && isPastB) return -1;
+      
+      // If both are future or both are past, sort by date
+      return dateA.getTime() - dateB.getTime();
+    });
   };
 
   const handleSelectEvent = (event: Event) => {

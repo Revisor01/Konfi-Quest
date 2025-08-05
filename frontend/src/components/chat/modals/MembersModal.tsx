@@ -311,7 +311,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         <IonAvatar slot="start" style={{ 
                           width: '40px', 
                           height: '40px',
-                          backgroundColor: user.type === 'admin' ? '#7045f6' : '#3880ff'
+                          backgroundColor: user.type === 'admin' ? '#7045f6' : '#17a2b8'
                         }}>
                           <div style={{ 
                             color: 'white', 
@@ -357,7 +357,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         <IonAvatar slot="start" style={{ 
                           width: '40px', 
                           height: '40px',
-                          backgroundColor: participant.user_type === 'admin' ? '#7045f6' : '#3880ff'
+                          backgroundColor: participant.user_type === 'admin' ? '#7045f6' : '#17a2b8'
                         }}>
                           <div style={{ 
                             color: 'white', 

@@ -347,7 +347,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
                           <IonAvatar slot="start" style={{ 
                             width: '40px', 
                             height: '40px',
-                            backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#3880ff',
+                            backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#17a2b8',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'

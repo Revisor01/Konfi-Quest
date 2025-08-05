@@ -334,7 +334,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
                             <IonAvatar slot="start" style={{ 
                               width: '40px', 
                               height: '40px',
-                              backgroundColor: '#3880ff'
+                              backgroundColor: '#17a2b8'
                             }}>
                               <div style={{ 
                                 color: 'white', 

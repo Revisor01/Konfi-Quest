@@ -137,14 +137,14 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ isOpen, onClose, on
                   icon={chatbubbles} 
                   style={{ 
                     fontSize: '1.2rem', 
-                    color: '#3880ff' 
+                    color: '#17a2b8' 
                   }} 
                 />
                 <h3 style={{ 
                   margin: '0', 
                   fontSize: '1rem', 
                   fontWeight: '600',
-                  color: '#3880ff'
+                  color: '#17a2b8'
                 }}>
                   Jahrgangschats
                 </h3>
