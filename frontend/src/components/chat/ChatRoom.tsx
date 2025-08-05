@@ -284,10 +284,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
       
-      // Pre-load only images for inline display (not PDFs, docs, etc.)  
+      // Pre-load images and videos for inline display (not PDFs, docs, etc.)  
       response.data.forEach((message: any) => {
-        if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) && message.file_path) {
-          loadAuthenticatedImage(message.file_path);
+        if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|webm|m4v)$/i) && message.file_path) {
+          // Only pre-load images, not videos (videos load on-demand)
+          if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+            loadAuthenticatedImage(message.file_path);
+          }
         }
       });
     } catch (err) {
@@ -989,6 +992,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       }
                     }}
                   />
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
+                    {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
+                  </div>
+                </div>
+              ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
+                // Inline Video-Anzeige
+                <div style={{ marginBottom: '8px' }}>
+                  <video 
+                    controls
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '300px',
+                      borderRadius: '8px',
+                      objectFit: 'cover'
+                    }}
+                    preload="none"
+                    controlsList="nodownload"
+                  >
+                    <source src={`${api.defaults.baseURL}/chat/files/${message.file_path}`} />
+                    Video kann nicht angezeigt werden
+                  </video>
                   <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
                     {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
                   </div>

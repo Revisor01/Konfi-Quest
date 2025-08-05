@@ -406,29 +406,33 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         {filteredBadges.length === 0 && (
           <IonRow>
             <IonCol size="12">
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon 
-                  icon={trophyOutline} 
-                  style={{ 
-                    fontSize: '3rem', 
-                    color: '#ff9500', 
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }} 
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>
-                  {selectedFilter === 'alle' 
-                    ? 'Noch keine Badges verfügbar' 
-                    : selectedFilter === 'nicht_erhalten'
-                    ? 'Alle Badges bereits erreicht!'
-                    : selectedFilter === 'in_arbeit'
-                    ? 'Du arbeitest noch an keinem Badge. Sammle Punkte!'
-                    : 'Keine Badges gefunden'
-                  }
-                </p>
-              </div>
+              <IonCard style={{ margin: '16px' }}>
+                <IonCardContent>
+                  <div style={{ textAlign: 'center', padding: '32px' }}>
+                    <IonIcon 
+                      icon={trophyOutline} 
+                      style={{ 
+                        fontSize: '3rem', 
+                        color: '#ff9500', 
+                        marginBottom: '16px',
+                        display: 'block',
+                        margin: '0 auto 16px auto'
+                      }} 
+                    />
+                    <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
+                    <p style={{ color: '#999', margin: '0' }}>
+                      {selectedFilter === 'alle' 
+                        ? 'Noch keine Badges verfügbar' 
+                        : selectedFilter === 'nicht_erhalten'
+                        ? 'Alle Badges bereits erreicht!'
+                        : selectedFilter === 'in_arbeit'
+                        ? 'Du arbeitest noch an keinem Badge. Sammle Punkte!'
+                        : 'Keine Badges gefunden'
+                      }
+                    </p>
+                  </div>
+                </IonCardContent>
+              </IonCard>
             </IonCol>
           </IonRow>
         )}

@@ -381,7 +381,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
               SELECT json_build_object(
                   'content', m.content,
                   'sender_name', u.display_name,
-                  'created_at', m.created_at
+                  'created_at', m.created_at,
+                  'file_name', m.file_name,
+                  'message_type', m.message_type
               )
               FROM chat_messages m
               JOIN users u ON m.user_id = u.id

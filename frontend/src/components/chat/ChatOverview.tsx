@@ -56,6 +56,8 @@ interface ChatRoom {
     content: string;
     sender_name: string;
     created_at: string;
+    file_name?: string;
+    message_type?: string;
   };
   unread_count: number;
   jahrgang_name?: string;
@@ -583,7 +585,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                         </div>
                         
                         {/* Letzte Nachricht - Time Card Style wie Events */}
-                        {room.last_message && room.last_message.content && (
+                        {room.last_message && (room.last_message.content || room.last_message.file_name) && (
                           <div style={{ 
                             display: 'flex',
                             alignItems: 'center',
@@ -611,7 +613,12 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 whiteSpace: 'nowrap',
                                 color: '#666'
                               }}>
-                                {room.last_message.content}
+                                {room.last_message.content || 
+                                 (room.last_message.file_name ? 
+                                   (room.last_message.message_type === 'image' ? '🖼️ ' : 
+                                    room.last_message.message_type === 'video' ? '🎥 ' : 
+                                    '📄 ') + room.last_message.file_name 
+                                   : 'Datei')}
                               </span>
                             </div>
                             {room.last_message.created_at && (
