@@ -869,32 +869,62 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     }
   });
   
-  // Serve chat files with authentication
-  router.get('/files/:filename', verifyTokenRBAC, (req, res) => {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, 'chat', filename);
-    
-    if (fs.existsSync(filePath)) {
-      // Set correct content type for different file types
-      const ext = path.extname(filename).toLowerCase();
-      const contentTypes = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg', 
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.webp': 'image/webp',
-        '.pdf': 'application/pdf',
-        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-      };
+  // Protected file serving route
+  router.get('/files/:filename', verifyTokenRBAC, async (req, res) => {
+    try {
+      const filename = req.params.filename;
       
-      if (contentTypes[ext]) {
-        res.setHeader('Content-Type', contentTypes[ext]);
+      // Check if user has access to this file by checking chat membership
+      const { rows: [fileMessage] } = await db.query(
+        `SELECT cm.room_id 
+         FROM chat_messages cm 
+         JOIN chat_rooms cr ON cm.room_id = cr.id
+         WHERE cm.file_path = $1 AND cr.organization_id = $2`,
+        [filename, req.user.organization_id]
+      );
+      
+      if (!fileMessage) {
+        return res.status(404).json({ error: 'File not found' });
       }
       
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ error: 'File not found' });
+      // Check if user is member of the chat room
+      const { rows: [membership] } = await db.query(
+        `SELECT 1 FROM chat_participants cp 
+         WHERE cp.room_id = $1 AND cp.user_id = $2`,
+        [fileMessage.room_id, req.user.id]
+      );
+      
+      if (!membership) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+      
+      const filePath = path.join(uploadsDir, 'chat', filename);
+      
+      if (fs.existsSync(filePath)) {
+        // Set correct content type for different file types
+        const ext = path.extname(filename).toLowerCase();
+        const contentTypes = {
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg', 
+          '.png': 'image/png',
+          '.gif': 'image/gif',
+          '.webp': 'image/webp',
+          '.pdf': 'application/pdf',
+          '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        };
+        
+        if (contentTypes[ext]) {
+          res.setHeader('Content-Type', contentTypes[ext]);
+        }
+        
+        res.sendFile(filePath);
+      } else {
+        res.status(404).json({ error: 'File not found on disk' });
+      }
+    } catch (error) {
+      console.error('Error serving chat file:', error);
+      res.status(500).json({ error: 'Server error' });
     }
   });
 

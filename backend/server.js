@@ -98,9 +98,23 @@ const chatUpload = multer({
   }),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    const allowedMimes = [
+      'image/', // Alle Bilder
+      'application/pdf', // PDFs
+      'video/', // Videos
+      'audio/', // Audio
+      'application/msword', // DOC
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+      'application/vnd.ms-powerpoint', // PPT
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PPTX
+      'text/' // Text-Dateien
+    ];
+    
+    const isAllowed = allowedMimes.some(mime => file.mimetype.startsWith(mime));
+    if (isAllowed) {
       cb(null, true);
     } else {
+      console.log(`❌ File rejected: ${file.originalname} (${file.mimetype})`);
       cb(null, false);
     }
   }
