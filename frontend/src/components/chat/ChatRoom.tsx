@@ -52,6 +52,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
+import { FileOpener } from '@capacitor-community/file-opener';
 
 interface Message {
   id: number;
@@ -116,6 +117,92 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
+
+  // Load authenticated image and convert to base64 data URL for inline display
+  const loadAuthenticatedImage = async (filePath: string): Promise<string> => {
+    if (imageCache.has(filePath)) {
+      return imageCache.get(filePath)!;
+    }
+
+    try {
+      const response = await api.get(`/chat/files/${filePath}`, {
+        responseType: 'blob'
+      });
+      
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          setImageCache(prev => new Map(prev.set(filePath, dataUrl)));
+          resolve(dataUrl);
+        };
+        reader.readAsDataURL(response.data);
+      });
+    } catch (error) {
+      console.error('Error loading authenticated image:', error);
+      return '';
+    }
+  };
+
+  // Open image with FileOpener (like Activity Requests)
+  const openImageWithFileOpener = async (filePath: string, fileName: string) => {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      
+      // Download with authentication
+      const response = await api.get(`/chat/files/${filePath}`, {
+        responseType: 'blob'
+      });
+      
+      const blob = response.data;
+      const safeFileName = `chat_${filePath.substring(0, 8)}.jpg`;
+      
+      // Convert to base64
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+      
+      // Ensure temp directory exists
+      try {
+        await Filesystem.mkdir({
+          path: 'temp',
+          directory: Directory.Documents,
+          recursive: true
+        });
+      } catch (e) {
+        // Directory might already exist
+      }
+      
+      // Write file
+      const path = `temp/${safeFileName}`;
+      await Filesystem.writeFile({
+        path,
+        data: base64Data,
+        directory: Directory.Documents
+      });
+      
+      // Get file URI
+      const fileUri = await Filesystem.getUri({
+        directory: Directory.Documents,
+        path
+      });
+      
+      // Open with FileOpener
+      await FileOpener.open({
+        filePath: fileUri.uri,
+        contentType: 'image/jpeg'
+      });
+    } catch (error) {
+      console.error('Error opening image:', error);
+      setError('Fehler beim Öffnen des Bildes');
+    }
+  };
 
   // Hooks müssen vor conditional returns stehen!
 
@@ -196,6 +283,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     try {
       const response = await api.get(`/chat/rooms/${room.id}/messages?limit=100`);
       setMessages(response.data);
+      
+      // Pre-load only images for inline display (not PDFs, docs, etc.)  
+      response.data.forEach((message: any) => {
+        if (message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) && message.file_path) {
+          loadAuthenticatedImage(message.file_path);
+        }
+      });
     } catch (err) {
       setError('Fehler beim Laden der Nachrichten');
       console.error('Error loading messages:', err);
@@ -818,7 +912,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 // Inline Bild-Anzeige
                 <div style={{ marginBottom: '8px' }}>
                   <img 
-                    src={`${api.defaults.baseURL}/chat/files/${message.file_path}`}
+                    src={imageCache.get(message.file_path) || ''}
                     alt={message.file_name}
                     style={{
                       maxWidth: '100%',
@@ -832,9 +926,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         await Haptics.impact({ style: ImpactStyle.Light });
                         const imageUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
                         
-                        // Download image to local storage first
-                        const response = await fetch(imageUrl);
-                        const blob = await response.blob();
+                        // Download image with authentication
+                        const response = await api.get(`/chat/files/${message.file_path}`, {
+                          responseType: 'blob'
+                        });
+                        const blob = response.data;
                         const fileName = message.file_name || 'image.jpg';
                         
                         // Write to Documents directory
@@ -847,12 +943,22 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           reader.readAsDataURL(blob);
                         });
                         
+                        // Ensure temp directory exists
+                        try {
+                          await Filesystem.mkdir({
+                            path: 'temp',
+                            directory: Directory.Documents,
+                            recursive: true
+                          });
+                        } catch (e) {
+                          // Directory might already exist
+                        }
+                        
                         const path = `temp/${fileName}`;
                         await Filesystem.writeFile({
                           path,
                           data: base64Data,
-                          directory: Directory.Documents,
-                          recursive: true
+                          directory: Directory.Documents
                         });
                         
                         // Get local file URI and open with native viewer
@@ -861,13 +967,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           path
                         });
                         
-                        await FileViewer.openDocumentFromLocalPath({
-                          path: fileUri.uri
+                        await FileOpener.open({
+                          filePath: fileUri.uri,
+                          contentType: 'image/jpeg'
                         });
                       } catch (error) {
                         console.error('Error opening image:', error);
-                        // Fallback: open image in browser
-                        window.open(`${api.defaults.baseURL}/chat/files/${message.file_path}`, '_blank');
+                        setError('Fehler beim Öffnen des Bildes');
                       }
                     }}
                   />
@@ -896,9 +1002,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       // Für PDF und andere Dokumente: Native File Viewer verwenden
                       if (message.file_name?.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
                         try {
-                          // Download file to local storage first
-                          const response = await fetch(fileUrl);
-                          const blob = await response.blob();
+                          // Download file with authentication
+                          const response = await api.get(`/chat/files/${message.file_path}`, {
+                            responseType: 'blob'
+                          });
+                          const blob = response.data;
                           const fileName = message.file_name || 'document';
                           
                           // Write to Documents directory (not Cache)

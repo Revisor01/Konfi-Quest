@@ -5,6 +5,8 @@ PODS:
     - Capacitor
   - CapacitorCamera (7.0.1):
     - Capacitor
+  - CapacitorCommunityFileOpener (7.0.1):
+    - Capacitor
   - CapacitorCommunityPhotoviewer (7.0.0):
     - Capacitor
     - ISVImageScrollView
@@ -94,6 +96,7 @@ DEPENDENCIES:
   - "Capacitor (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorApp (from `../../node_modules/@capacitor/app`)"
   - "CapacitorCamera (from `../../node_modules/@capacitor/camera`)"
+  - "CapacitorCommunityFileOpener (from `../../node_modules/@capacitor-community/file-opener`)"
   - "CapacitorCommunityPhotoviewer (from `../../node_modules/@capacitor-community/photoviewer`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
@@ -131,6 +134,8 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/app"
   CapacitorCamera:
     :path: "../../node_modules/@capacitor/camera"
+  CapacitorCommunityFileOpener:
+    :path: "../../node_modules/@capacitor-community/file-opener"
   CapacitorCommunityPhotoviewer:
     :path: "../../node_modules/@capacitor-community/photoviewer"
   CapacitorCordova:
@@ -158,6 +163,7 @@ SPEC CHECKSUMS:
   Capacitor: 156d98aba46ec01dde72c4bbb92fa626837cad29
   CapacitorApp: d63334c052278caf5d81585d80b21905c6f93f39
   CapacitorCamera: eb8687d8687fed853598ec9460d94bcd5e16babe
+  CapacitorCommunityFileOpener: 9611c9d1595de7b50571717d443bb718a304b5eb
   CapacitorCommunityPhotoviewer: db03de87c72d2e0a5fbbfa713e4fc1acc1043e37
   CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
   CapacitorDevice: fe3f190e1d718f4607bdc6b73993433d1c84f409
@@ -182,6 +188,6 @@ SPEC CHECKSUMS:
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   SDWebImage: f29024626962457f3470184232766516dee8dfea
 
-PODFILE CHECKSUM: 6514d2051a08e8500cfed4f2a9fa53f0390eef2a
+PODFILE CHECKSUM: e7ca683267b8097686764a1441ade3dec186a877
 
 COCOAPODS: 1.15.2

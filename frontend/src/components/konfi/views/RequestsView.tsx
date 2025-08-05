@@ -19,7 +19,7 @@ import {
 } from '@ionic/react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { PhotoViewer } from '@capacitor-community/photoviewer';
+import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { 
@@ -85,16 +85,15 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
-      const imageUrl = `${api.defaults.baseURL}/konfi/activity-requests/${request.id}/photo`;
       
-      // Download image to local storage first (with auth)
+      // Download image with authentication first, then save locally
       const response = await api.get(`/konfi/activity-requests/${request.id}/photo`, {
         responseType: 'blob'
       });
       const blob = response.data;
-      const fileName = `${request.activity_name}_${request.id}.jpg`;
+      const fileName = `request_${request.id}.jpg`;
       
-      // Write to Documents directory
+      // Convert blob to base64
       const base64Data = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -104,29 +103,38 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         reader.readAsDataURL(blob);
       });
       
+      // Ensure temp directory exists first
+      try {
+        await Filesystem.mkdir({
+          path: 'temp',
+          directory: Directory.Documents,
+          recursive: true
+        });
+      } catch (e) {
+        // Directory might already exist
+      }
+      
+      // Write file (not directory!)
       const path = `temp/${fileName}`;
       await Filesystem.writeFile({
         path,
         data: base64Data,
-        directory: Directory.Documents,
-        recursive: true
+        directory: Directory.Documents
       });
       
-      // Get local file URI and show with PhotoViewer
+      console.log('✅ Image saved to:', path);
+      console.log('📁 File size:', base64Data.length, 'bytes (base64)');
+      
+      // Get local file URI
       const fileUri = await Filesystem.getUri({
         directory: Directory.Documents,
         path
       });
       
-      await PhotoViewer.show({
-        images: [{
-          url: fileUri.uri,
-          title: request.activity_name
-        }],
-        mode: 'one',
-        options: {
-          share: false
-        }
+      // Open with native file opener
+      await FileOpener.open({
+        filePath: fileUri.uri,
+        contentType: 'image/jpeg'
       });
     } catch (error) {
       console.error('Error opening image:', error);
