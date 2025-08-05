@@ -404,6 +404,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         return res.status(404).json({ error: 'Photo file not found' });
       }
       
+      // Set correct content type for images
+      res.setHeader('Content-Type', 'image/jpeg');
       res.sendFile(photoPath);
     } catch (err) {
       console.error('Error serving photo:', err);

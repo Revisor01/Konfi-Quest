@@ -1206,6 +1206,35 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     }
   });
   
+  // Serve chat files with authentication
+  router.get('/files/:filename', verifyTokenRBAC, (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, 'chat', filename);
+    
+    if (fs.existsSync(filePath)) {
+      // Set correct content type for different file types
+      const ext = path.extname(filename).toLowerCase();
+      const contentTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg', 
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      };
+      
+      if (contentTypes[ext]) {
+        res.setHeader('Content-Type', contentTypes[ext]);
+      }
+      
+      res.sendFile(filePath);
+    } else {
+      res.status(404).json({ error: 'File not found' });
+    }
+  });
+
   // Badge update endpoint for Background Refresh
   router.post('/badge-update', verifyTokenRBAC, async (req, res) => {
     try {
