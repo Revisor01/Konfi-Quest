@@ -134,7 +134,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: '5px',
+          top: '-5px',
           left: '12px',
           zIndex: 1
         }}>
@@ -306,13 +306,14 @@ const EventsView: React.FC<EventsViewProps> = ({
                 }}
               >
                 <IonLabel>
-                  {/* Titel mit Icon und separates Status-Badge */}
+                  {/* Card Header mit Titel und Status Badge oben rechts */}
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'flex-start',
-                    marginBottom: '8px',
-                    position: 'relative'
+                    justifyContent: 'space-between',
+                    marginBottom: '8px'
                   }}>
+                    {/* Links: Icon + Titel */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                       <div style={{ 
                         width: '32px', 
@@ -351,35 +352,51 @@ const EventsView: React.FC<EventsViewProps> = ({
                         {event.name}
                       </h2>
                     </div>
+
+                    {/* Rechts: Status Badge */}
+                    {(() => {
+                      const isPastEvent = new Date(event.event_date) < new Date();
+                      const showBadge = !isPastEvent || (isPastEvent && event.is_registered);
+                      
+                      if (!showBadge) return null;
+                      
+                      const isParticipated = isPastEvent && event.is_registered;
+                      
+                      return (
+                        <div style={{ flexShrink: 0, marginLeft: '12px' }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: isParticipated ? '#28a745' : 
+                                  event.is_registered ? '#28a745' : 
+                                  event.registration_status === 'open' ? '#fd7e14' : 
+                                  event.registration_status === 'upcoming' ? '#ffc409' : 
+                                  event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
+                            fontWeight: '600',
+                            backgroundColor: isParticipated ? '#d4edda' : 
+                                           event.is_registered ? '#d4edda' : 
+                                           event.registration_status === 'open' ? '#fff4e6' : 
+                                           event.registration_status === 'upcoming' ? '#fff3cd' : 
+                                           event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            border: `1px solid ${isParticipated ? '#c3e6cb' : 
+                                               event.is_registered ? '#c3e6cb' : 
+                                               event.registration_status === 'open' ? '#fdbf85' : 
+                                               event.registration_status === 'upcoming' ? '#ffeaa7' : 
+                                               event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {isParticipated ? 'TEILGENOMMEN' :
+                             event.is_registered ? 'ANGEMELDET' : 
+                             event.registration_status === 'open' ? 'OFFEN' : 
+                             event.registration_status === 'upcoming' ? 'BALD' : 
+                             event.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
-                  {/* Status Badge - eigene Zeile */}
-                  <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'flex-start' }}>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      color: event.is_registered ? '#28a745' : 
-                            event.registration_status === 'open' ? '#28a745' : 
-                            event.registration_status === 'upcoming' ? '#ffc409' : 
-                            event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
-                      fontWeight: '600',
-                      backgroundColor: event.is_registered ? '#d4edda' : 
-                                     event.registration_status === 'open' ? '#d4edda' : 
-                                     event.registration_status === 'upcoming' ? '#fff3cd' : 
-                                     event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      border: `1px solid ${event.is_registered ? '#c3e6cb' : 
-                                          event.registration_status === 'open' ? '#c3e6cb' : 
-                                          event.registration_status === 'upcoming' ? '#ffeaa7' : 
-                                          event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
-                      display: 'inline-block'
-                    }}>
-                      {event.is_registered ? 'ANGEMELDET' : 
-                       event.registration_status === 'open' ? 'OFFEN' : 
-                       event.registration_status === 'upcoming' ? 'BALD' : 
-                       event.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
-                    </span>
-                  </div>
                   
                   {/* Datum und Zeit */}
                   <div style={{ 

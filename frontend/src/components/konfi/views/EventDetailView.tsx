@@ -24,9 +24,7 @@ import {
   IonRow,
   IonCol,
   useIonAlert,
-  IonTextarea,
-  IonInput,
-  IonModal
+  useIonModal
 } from '@ionic/react';
 import {
   arrowBack,
@@ -45,6 +43,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import UnregisterModal from '../modals/UnregisterModal';
 
 interface Category {
   id: number;
@@ -86,22 +85,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
-  const [showUnregisterModal, setShowUnregisterModal] = useState(false);
-  const [unregisterReason, setUnregisterReason] = useState('');
 
-  const handleUnregister = async () => {
-    if (!eventData || !unregisterReason.trim()) {
+  const handleUnregister = async (reason: string) => {
+    if (!eventData || !reason.trim()) {
       setError('Bitte gib einen Grund für die Abmeldung an');
       return;
     }
 
     try {
       await api.delete(`/konfi/events/${eventData.id}/register`, {
-        data: { reason: unregisterReason.trim() }
+        data: { reason: reason.trim() }
       });
+      
+      // Modal schließen BEVOR andere Aktionen
+      dismissUnregisterModal();
+      
       setSuccess(`Von "${eventData.name}" abgemeldet`);
-      setShowUnregisterModal(false);
-      setUnregisterReason('');
       await loadEventData();
       
       // Trigger events update for parent page
@@ -110,6 +109,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
     }
   };
+
+  // Modal mit useIonModal Hook - gleiche Pattern wie Admin
+  const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
+    eventName: eventData?.name || '',
+    onClose: () => dismissUnregisterModal(),
+    onUnregister: handleUnregister,
+    dismiss: () => dismissUnregisterModal()
+  });
 
   useEffect(() => {
     loadEventData();
@@ -133,7 +140,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         const eventWithStatus = {
           ...event,
           is_registered: statusResponse.data.is_registered,
-          can_register: statusResponse.data.can_register
+          can_register: statusResponse.data.can_register,
+          waitlist_count: statusResponse.data.waitlist_count,
+          waitlist_position: statusResponse.data.waitlist_position,
+          registration_status_detail: statusResponse.data.registration_status
         };
         setEventData(eventWithStatus);
       } catch (statusErr) {
@@ -288,14 +298,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
           position: 'relative',
           overflow: 'hidden',
-          minHeight: '200px',
+          minHeight: '220px',
           display: 'flex',
           flexDirection: 'column'
         }}>
           {/* Event-Titel - groß und überlappend über Rand hinaus */}
           <div style={{
             position: 'absolute',
-            top: '5px',
+            top: '-5px',
             left: '8px',
             right: '8px',
             zIndex: 1,
@@ -342,7 +352,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 />
               )}
               <span style={{ 
-                color: eventData.is_registered ? '#28a745' : 'white', 
+                color: eventData.is_registered ? '#28a745' : 
+                       eventData.registration_status === 'open' ? '#fd7e14' :
+                       eventData.registration_status === 'upcoming' ? '#ffc409' :
+                       eventData.registration_status === 'cancelled' ? '#dc3545' : 
+                       'white', 
                 fontSize: '0.8rem', 
                 fontWeight: '600'
               }}>
@@ -525,7 +539,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                       <IonIcon icon={hourglass} style={{ marginRight: '12px', color: '#ff6b35', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
-                        Warteliste verfügbar (max. {eventData.max_waitlist_size || 10})
+                        Warteliste: {(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 10}
+                        {(eventData as any).waitlist_position && ` (Platz ${(eventData as any).waitlist_position})`}
                       </div>
                     </div>
                   )}
@@ -568,7 +583,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   expand="block" 
                   fill="outline" 
                   color="danger"
-                  onClick={() => setShowUnregisterModal(true)}
+                  onClick={() => presentUnregisterModal({ 
+                    presentingElement: pageRef.current || undefined
+                  })}
                   style={{ 
                     height: '48px',
                     borderRadius: '12px',
@@ -627,7 +644,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={handleRegister}
             >
               <IonIcon icon={hourglass} slot="start" />
-              Warteliste ({(eventData as any).pending_count || 0}/{eventData.max_waitlist_size || 0})
+              Warteliste ({(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 0})
             </IonButton>
           ) : (
             <IonButton 
@@ -646,72 +663,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           )}
         </div>
 
-        {/* Unregister Modal */}
-        <IonModal isOpen={showUnregisterModal} onDidDismiss={() => setShowUnregisterModal(false)}>
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Abmeldung</IonTitle>
-              <IonButtons slot="end">
-                <IonButton onClick={() => setShowUnregisterModal(false)}>
-                  Abbrechen
-                </IonButton>
-              </IonButtons>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <div style={{ padding: '16px' }}>
-              <IonCard style={{ margin: '0', borderRadius: '12px' }}>
-                <IonCardContent>
-                  <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
-                    Abmeldung von "{eventData?.name}"
-                  </h3>
-                  
-                  <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-                    <IonLabel position="stacked">
-                      <strong>Grund für die Abmeldung *</strong>
-                    </IonLabel>
-                    <IonTextarea
-                      value={unregisterReason}
-                      onIonInput={(e) => setUnregisterReason(e.detail.value!)}
-                      placeholder="Bitte gib einen Grund für deine Abmeldung an..."
-                      rows={4}
-                      style={{
-                        '--background': '#f8f9fa',
-                        '--border-radius': '8px',
-                        '--padding-start': '12px',
-                        '--padding-end': '12px',
-                        '--padding-top': '12px',
-                        '--padding-bottom': '12px',
-                        marginTop: '8px'
-                      }}
-                    />
-                  </IonItem>
-
-                  <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
-                    <IonButton 
-                      expand="block" 
-                      fill="outline" 
-                      color="medium"
-                      onClick={() => setShowUnregisterModal(false)}
-                      style={{ flex: '1', height: '44px', borderRadius: '8px' }}
-                    >
-                      Abbrechen
-                    </IonButton>
-                    <IonButton 
-                      expand="block" 
-                      color="danger"
-                      onClick={handleUnregister}
-                      disabled={!unregisterReason.trim()}
-                      style={{ flex: '1', height: '44px', borderRadius: '8px' }}
-                    >
-                      Abmelden
-                    </IonButton>
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            </div>
-          </IonContent>
-        </IonModal>
       </IonContent>
     </IonPage>
   );

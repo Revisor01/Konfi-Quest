@@ -702,7 +702,7 @@ module.exports = (db, rbacMiddleware, upload) => {
       const { rows: [event] } = await db.query(`
         SELECT e.*, 
                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-               COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+               COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
                CASE 
                  WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                  ELSE e.max_participants
@@ -715,7 +715,7 @@ module.exports = (db, rbacMiddleware, upload) => {
                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                      ELSE e.max_participants
                    END AND 
-                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                  ELSE 'open'
                END as registration_status
         FROM events e
@@ -733,13 +733,34 @@ module.exports = (db, rbacMiddleware, upload) => {
         return res.status(404).json({ error: 'Event not found' });
       }
       
+      const confirmedCount = parseInt(event.registered_count) || 0;
+      const waitlistCount = parseInt(event.waitlist_count) || 0;
       const can_register = !registration && event.registration_status === 'open';
+      
+      // Get waitlist position if user is on waitlist
+      let waitlist_position = null;
+      if (registration && registration.status === 'waitlist') {
+        const positionQuery = `
+          SELECT COUNT(*) + 1 as position
+          FROM event_bookings
+          WHERE event_id = $1 AND status = 'waitlist' AND booking_date < $2
+        `;
+        const { rows: [posResult] } = await db.query(positionQuery, [eventId, registration.booking_date]);
+        waitlist_position = parseInt(posResult.position) || 1;
+      }
       
       res.json({
         is_registered: !!registration,
+        registration_status: registration?.status || null,
         can_register: can_register,
         registration_date: registration?.booking_date,
-        event_status: event.registration_status
+        event_status: event.registration_status,
+        confirmed_count: confirmedCount,
+        waitlist_count: waitlistCount,
+        waitlist_position: waitlist_position,
+        max_participants: event.max_participants,
+        max_waitlist_size: event.max_waitlist_size,
+        waitlist_enabled: event.waitlist_enabled
       });
     } catch (err) {
       console.error('Database error in GET /events/:id/status:', err);
@@ -918,17 +939,53 @@ module.exports = (db, rbacMiddleware, upload) => {
         return res.status(409).json({ error: 'Already registered for this event' });
       }
       
+      // Get event details and current registration count
+      const eventQuery = `
+        SELECT e.*, 
+               COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
+               COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
+        FROM events e
+        LEFT JOIN event_bookings eb ON e.id = eb.event_id
+        WHERE e.id = $1 AND e.organization_id = $2
+        GROUP BY e.id
+      `;
+      const { rows: [event] } = await db.query(eventQuery, [eventId, req.user.organization_id]);
+      
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      
+      const confirmedCount = parseInt(event.confirmed_count) || 0;
+      const waitlistCount = parseInt(event.waitlist_count) || 0;
+      
+      // Determine registration status
+      let status;
+      if (confirmedCount < event.max_participants) {
+        status = 'confirmed';
+      } else if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
+        status = 'waitlist';
+      } else {
+        return res.status(400).json({ 
+          error: 'Event ist voll und Warteliste ist auch voll' 
+        });
+      }
+      
       // Register for event
       const insertQuery = `
         INSERT INTO event_bookings (user_id, event_id, status, booking_date) 
-        VALUES ($1, $2, 'confirmed', NOW())
+        VALUES ($1, $2, $3, NOW())
         RETURNING id
       `;
-      const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId]);
+      const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId, status]);
+      
+      const message = status === 'confirmed' 
+        ? 'Successfully registered for event'
+        : `Auf Warteliste gesetzt (Platz ${waitlistCount + 1})`;
       
       res.json({ 
-        message: 'Successfully registered for event',
-        registration_id: newBooking.id 
+        message,
+        registration_id: newBooking.id,
+        status 
       });
     } catch (err) {
       console.error('Database error in POST /events/:id/register:', err);
