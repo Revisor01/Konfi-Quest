@@ -615,9 +615,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                               }}>
                                 {room.last_message.content || 
                                  (room.last_message.file_name ? 
-                                   (room.last_message.message_type === 'image' ? '🖼️ ' : 
-                                    room.last_message.message_type === 'video' ? '🎥 ' : 
-                                    '📄 ') + room.last_message.file_name 
+                                   room.last_message.file_name 
                                    : 'Datei')}
                               </span>
                             </div>

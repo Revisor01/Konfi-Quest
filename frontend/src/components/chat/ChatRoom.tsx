@@ -54,6 +54,246 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 
+// Utility function für Dateigröße
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// VideoPreview Komponente mit Blob-URLs und korrektem MIME-Type
+const VideoPreview: React.FC<{
+  message: Message;
+  onError: (error: string) => void;
+}> = ({ message, onError }) => {
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  
+  useEffect(() => {
+    const loadVideoBlob = async () => {
+      try {
+        console.log('🎥 Loading video:', message.file_name, 'from path:', message.file_path);
+        setLoading(true);
+        setHasError(false);
+        
+        // Download video als Blob mit korrekter Authentication
+        const response = await api.get(`/chat/files/${message.file_path}`, {
+          responseType: 'blob'
+        });
+        
+        const blob = response.data;
+        console.log('✅ Video blob loaded:', blob.type, blob.size, 'bytes');
+        
+        // Korrekten MIME-Type basierend auf Dateiendung setzen
+        const fileName = message.file_name?.toLowerCase() || '';
+        let mimeType = blob.type;
+        
+        // Fallback für korrekte MIME-Types wenn Server "application/octet-stream" sendet
+        if (!mimeType || mimeType === 'application/octet-stream') {
+          if (fileName.endsWith('.mov')) {
+            mimeType = 'video/quicktime';
+          } else if (fileName.endsWith('.mp4')) {
+            mimeType = 'video/mp4';
+          } else if (fileName.endsWith('.webm')) {
+            mimeType = 'video/webm';
+          } else if (fileName.endsWith('.avi')) {
+            mimeType = 'video/x-msvideo';
+          } else if (fileName.endsWith('.m4v')) {
+            mimeType = 'video/x-m4v';
+          } else {
+            mimeType = 'video/mp4'; // Default fallback
+          }
+        }
+        
+        // Neue Blob mit korrektem MIME-Type erstellen
+        const correctedBlob = new Blob([blob], { type: mimeType });
+        const blobUrl = URL.createObjectURL(correctedBlob);
+        
+        console.log('🔗 Video URL created:', blobUrl);
+        console.log('📋 MIME-Type corrected from', blob.type, 'to', mimeType);
+        
+        setVideoUrl(blobUrl);
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ Error loading video blob:', error);
+        setHasError(true);
+        setLoading(false);
+        onError('Fehler beim Laden des Videos');
+      }
+    };
+    
+    if (message.file_path) {
+      loadVideoBlob();
+    }
+    
+    // Cleanup: Revoke object URL when component unmounts
+    return () => {
+      if (videoUrl) {
+        URL.revokeObjectURL(videoUrl);
+      }
+    };
+  }, [message.file_path]);
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleVideoClick = async () => {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      
+      if (videoRef.current) {
+        if (isPlaying) {
+          videoRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          await videoRef.current.play();
+          setIsPlaying(true);
+          setShowControls(true);
+          
+          // Hide controls after 3 seconds
+          setTimeout(() => {
+            if (isPlaying) {
+              setShowControls(false);
+            }
+          }, 3000);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Video play error:', error);
+      onError('Fehler beim Abspielen des Videos');
+    }
+  };
+  
+  const handleVideoEnd = () => {
+    setIsPlaying(false);
+    setShowControls(false);
+  };
+  
+  if (loading) {
+    return (
+      <div style={{ 
+        position: 'relative', 
+        maxWidth: '280px', 
+        height: '200px',
+        borderRadius: '12px', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: 'white', opacity: 0.7 }}>Video wird geladen...</div>
+      </div>
+    );
+  }
+  
+  if (hasError) {
+    return (
+      <div style={{ 
+        position: 'relative', 
+        maxWidth: '280px', 
+        height: '200px',
+        borderRadius: '12px', 
+        backgroundColor: '#1e1e1e',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <div style={{ color: 'white', opacity: 0.7 }}>Fehler beim Laden</div>
+      </div>
+    );
+  }
+  
+  return (
+    <div style={{ position: 'relative', maxWidth: '280px', borderRadius: '12px', overflow: 'hidden' }}>
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        style={{
+          width: '100%',
+          height: 'auto',
+          maxHeight: '200px',
+          display: 'block',
+          borderRadius: '12px',
+          backgroundColor: '#000',
+          cursor: 'pointer'
+        }}
+        preload="metadata"
+        muted={!isPlaying}
+        playsInline
+        controls={showControls}
+        onClick={handleVideoClick}
+        onEnded={handleVideoEnd}
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
+        onError={(e) => {
+          console.error('🚫 Video element error for:', message.file_name, e);
+          console.log('Video src:', e.currentTarget.src);
+          console.log('Is MOV video:', message.file_name?.toLowerCase().includes('.mov'));
+          setHasError(true);
+          onError('Video kann nicht abgespielt werden');
+        }}
+        onLoadedMetadata={() => {
+          console.log('✅ Video metadata loaded for:', message.file_name);
+        }}
+      />
+      
+      {/* Play/Pause Button Overlay - nur wenn nicht abgespielt wird */}
+      {!isPlaying && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '60px',
+            height: '60px',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            pointerEvents: 'none',
+            transition: 'all 0.3s ease',
+            zIndex: 10
+          }}
+        >
+          <div style={{
+            width: '0',
+            height: '0',
+            borderLeft: '20px solid white',
+            borderTop: '12px solid transparent',
+            borderBottom: '12px solid transparent',
+            marginLeft: '4px'
+          }} />
+        </div>
+      )}
+      
+      {/* File Size Badge */}
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        right: '8px',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: '500',
+        pointerEvents: 'none',
+        zIndex: 5
+      }}>
+        {message.file_size && formatFileSize(message.file_size)}
+      </div>
+      
+    </div>
+  );
+};
+
 // Lazy Loading Image Component
 const LazyImage: React.FC<{
   filePath: string;
@@ -135,118 +375,6 @@ const LazyImage: React.FC<{
   );
 };
 
-// Lazy Loading Video Component
-const LazyVideo: React.FC<{
-  filePath: string;
-  fileName: string;
-  fileSize: number;
-  onError: () => void;
-}> = ({ filePath, fileName, fileSize, onError }) => {
-  const [videoSrc, setVideoSrc] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const loadVideo = async () => {
-    if (hasStarted) return;
-    setHasStarted(true);
-    setIsLoading(true);
-    
-    try {
-      const response = await api.get(`/chat/files/${filePath}`, {
-        responseType: 'blob'
-      });
-      const blob = response.data;
-      const videoUrl = URL.createObjectURL(blob);
-      setVideoSrc(videoUrl);
-    } catch (error) {
-      console.error('Error loading video:', error);
-      onError();
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  return (
-    <div style={{ marginBottom: '8px' }}>
-      {!hasStarted ? (
-        // Play Button Overlay
-        <div
-          style={{
-            maxWidth: '100%',
-            height: '200px',
-            borderRadius: '8px',
-            backgroundColor: '#f0f0f0',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            border: '2px dashed #ccc'
-          }}
-          onClick={loadVideo}
-        >
-          <div style={{ fontSize: '3rem', marginBottom: '8px' }}>🎥</div>
-          <div style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '4px' }}>
-            Video abspielen
-          </div>
-          <div style={{ fontSize: '0.8rem', color: '#666' }}>
-            Tap zum Laden
-          </div>
-        </div>
-      ) : isLoading ? (
-        <div
-          style={{
-            maxWidth: '100%',
-            height: '200px',
-            borderRadius: '8px',
-            backgroundColor: '#f0f0f0',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⏳</div>
-          <div style={{ fontSize: '0.9rem', color: '#666' }}>
-            Video wird geladen...
-          </div>
-        </div>
-      ) : videoSrc ? (
-        <video
-          ref={videoRef}
-          controls
-          style={{
-            maxWidth: '100%',
-            maxHeight: '300px',
-            borderRadius: '8px',
-            objectFit: 'cover'
-          }}
-          controlsList="nodownload"
-        >
-          <source src={videoSrc} />
-          Video kann nicht angezeigt werden
-        </video>
-      ) : (
-        <div style={{ color: '#999', fontSize: '0.8rem', textAlign: 'center', padding: '32px' }}>
-          ❌ Video konnte nicht geladen werden
-        </div>
-      )}
-      
-      <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
-        {fileName} • {fileSize && formatFileSize(fileSize)}
-      </div>
-    </div>
-  );
-};
 
 interface Message {
   id: number;
@@ -302,7 +430,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
   const { refreshFromAPI } = useBadge();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -311,36 +438,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
 
-  // Load authenticated image and convert to base64 data URL for inline display
-  const loadAuthenticatedImage = async (filePath: string): Promise<string> => {
-    if (imageCache.has(filePath)) {
-      return imageCache.get(filePath)!;
-    }
-
-    try {
-      const response = await api.get(`/chat/files/${filePath}`, {
-        responseType: 'blob'
-      });
-      
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const dataUrl = reader.result as string;
-          setImageCache(prev => new Map(prev.set(filePath, dataUrl)));
-          resolve(dataUrl);
-        };
-        reader.readAsDataURL(response.data);
-      });
-    } catch (error) {
-      console.error('Error loading authenticated image:', error);
-      return '';
-    }
-  };
 
   // Open image with FileOpener (like Activity Requests)
-  const openImageWithFileOpener = async (filePath: string, fileName: string) => {
+  const openImageWithFileOpener = async (filePath: string) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
       
@@ -443,8 +544,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     
     // 5-second polling für Real-time Updates - aber OHNE Auto-Scroll
     const interval = setInterval(async () => {
-      // Store current message count to prevent auto-scroll
-      const currentCount = messages.length;
+      // Load messages without auto-scrolling
       await loadMessages();
       // prevMessageCountRef wird vom useEffect für Scroll-Logic verwendet
     }, 5000);
@@ -483,7 +583,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       setError('Fehler beim Laden der Nachrichten');
       console.error('Error loading messages:', err);
     } finally {
-      setLoading(false); // Nur für den Fall, dass es gesetzt war
+      // Loading wird im ChatRoomView gehandhabt
     }
   };
 
@@ -1119,7 +1219,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                     onClick={async () => {
                       try {
                         await Haptics.impact({ style: ImpactStyle.Light });
-                        const imageUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
                         
                         // Download image with authentication
                         const response = await api.get(`/chat/files/${message.file_path}`, {
@@ -1177,25 +1276,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                   </div>
                 </div>
               ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
-                // Inline Video-Anzeige - direkt wie Bilder
-                <div style={{ marginBottom: '8px' }}>
-                  <video 
-                    controls
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '300px',
-                      borderRadius: '8px',
-                      objectFit: 'cover'
-                    }}
-                    preload="metadata"
-                  >
-                    <source src={`${api.defaults.baseURL}/chat/files/${message.file_path}?token=${localStorage.getItem('token')}`} />
-                    Video kann nicht angezeigt werden
-                  </video>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
-                    {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
-                  </div>
-                </div>
+                // HTML5 Video mit Blob-URL und korrektem MIME-Type
+                <VideoPreview 
+                  message={message} 
+                  onError={(error) => setError('Fehler beim Laden des Videos: ' + error)}
+                />
               ) : (
                 // Datei-Anhang für andere Dateitypen
                 <div 
