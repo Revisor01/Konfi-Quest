@@ -283,13 +283,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       if (req.user.type === 'konfi') {
         const { rows: [setting] } = await db.query("SELECT value FROM settings WHERE key = 'konfi_chat_permissions'", []);
-        const permissions = setting?.value || 'direct_only';
+        const permissions = setting?.value || 'direct_only_admin';
+        
+        // Determine allowed chat types based on permissions
         let allowedTypes = [];
-        switch (permissions) {
-          case 'direct_only': allowedTypes = ['direct']; break;
-          case 'direct_and_group': allowedTypes = ['direct', 'group']; break;
-          default: allowedTypes = ['direct'];
+        if (permissions.includes('direct_')) {
+          allowedTypes.push('direct');
         }
+        if (permissions.includes('group_')) {
+          allowedTypes.push('group');
+        }
+        
         if (!allowedTypes.includes(type)) {
           return res.status(403).json({
             error: `Konfirmanden können nur diese Chat-Arten erstellen: ${allowedTypes.join(', ')}`,
@@ -1470,29 +1474,35 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
       let availableUsers = [];
       
-      // 2. Get chat permissions from settings
-      const settingsQuery = `SELECT konfi_chat_permissions FROM settings WHERE organization_id = $1`;
-      const { rows: [settings] } = await db.query(settingsQuery, [organizationId]);
-      const chatPermissions = settings?.konfi_chat_permissions || 'admins_only';
+      // 2. Get chat permissions from settings  
+      const settingsQuery = `SELECT value FROM settings WHERE key = 'konfi_chat_permissions'`;
+      const { rows: [settings] } = await db.query(settingsQuery);
+      const chatPermissions = settings?.value || 'direct_only_admin';
 
-      // 3. Always include admins assigned to the same jahrgang
-      const adminQuery = `
-        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-        WHERE r.name = 'admin' 
-        AND u.organization_id = $1
-        AND uja.jahrgang_id = $2
-        AND uja.can_view = true
-        AND u.id != $3
-        ORDER BY u.display_name
-      `;
-      const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
-      availableUsers = [...admins];
+      // 3. Check if Konfis can chat with other Konfis based on permissions
+      const canChatWithKonfis = chatPermissions.includes('_all');
+      const canCreateGroups = chatPermissions.includes('group_');
 
-      // 4. Add other Konfis if allowed by settings
-      if (chatPermissions === 'all_in_jahrgang') {
+      // 4. Always include admins assigned to the same jahrgang (if permission allows)
+      if (chatPermissions.includes('_admin') || chatPermissions.includes('_all')) {
+        const adminQuery = `
+          SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
+          FROM users u
+          JOIN roles r ON u.role_id = r.id
+          JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
+          WHERE r.name = 'admin' 
+          AND u.organization_id = $1
+          AND uja.jahrgang_id = $2
+          AND uja.can_view = true
+          AND u.id != $3
+          ORDER BY u.display_name
+        `;
+        const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
+        availableUsers = [...admins];
+      }
+
+      // 5. Add other Konfis if allowed by settings
+      if (canChatWithKonfis) {
         const konfiQuery = `
           SELECT u.id, u.display_name as name, 'konfi' as type, j.name as jahrgang_name
           FROM users u

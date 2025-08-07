@@ -51,9 +51,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       
       if (konfi_chat_permissions !== undefined) {
         // Validate permissions value
-        const validPermissions = ['direct_only', 'direct_and_group'];
+        const validPermissions = [
+          'direct_only_admin',      // Nur Direktchats mit Admins
+          'direct_only_all',        // Direktchats mit allen im Jahrgang
+          'group_direct_admin',     // Gruppen- und Direktchats nur mit Admins
+          'group_direct_all'        // Gruppen- und Direktchats mit allen im Jahrgang
+        ];
         if (!validPermissions.includes(konfi_chat_permissions)) {
-          return res.status(400).json({ error: 'Invalid chat permissions value' });
+          return res.status(400).json({ error: 'Invalid chat permissions value. Valid options: ' + validPermissions.join(', ') });
         }
         // Use PostgreSQL's "UPSERT" functionality
         const upsertQuery = `
