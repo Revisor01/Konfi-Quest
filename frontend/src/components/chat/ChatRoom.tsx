@@ -216,10 +216,13 @@ const VideoPreview: React.FC<{
           width: '100%',
           height: 'auto',
           maxHeight: '200px',
+          minHeight: '120px',
           display: 'block',
           borderRadius: '12px',
           backgroundColor: '#000',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          objectFit: 'cover',
+          border: '1px solid rgba(255,255,255,0.1)'
         }}
         preload="metadata"
         muted={!isPlaying}
@@ -236,8 +239,44 @@ const VideoPreview: React.FC<{
           setHasError(true);
           onError('Video kann nicht abgespielt werden');
         }}
-        onLoadedMetadata={() => {
-          console.log('✅ Video metadata loaded for:', message.file_name);
+        onLoadedMetadata={async (e) => {
+          const video = e.currentTarget;
+          console.log('✅ Video metadata loaded for:', message.file_name, {
+            duration: video.duration,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            readyState: video.readyState,
+            networkState: video.networkState,
+            poster: video.poster,
+            currentSrc: video.currentSrc
+          });
+          
+          // Trick: Video kurz abspielen und sofort pausieren um Thumbnail zu zeigen
+          try {
+            video.currentTime = 0.1; // Gehe zu 0.1 Sekunden für ersten Frame
+            await video.play();
+            video.pause();
+            video.currentTime = 0; // Zurück zum Anfang
+            console.log('🖼️ Thumbnail generated for:', message.file_name);
+          } catch (error) {
+            console.log('⚠️ Thumbnail generation failed for:', message.file_name, error);
+          }
+        }}
+        onLoadedData={() => {
+          console.log('📊 Video data loaded for:', message.file_name);
+        }}
+        onCanPlay={() => {
+          console.log('▶️ Video can play for:', message.file_name);
+        }}
+        onLoadStart={() => {
+          console.log('🎬 Video load started for:', message.file_name);
+        }}
+        onProgress={(e) => {
+          const video = e.currentTarget;
+          if (video.buffered.length > 0) {
+            console.log('📡 Video buffering progress for:', message.file_name, 
+              'buffered:', video.buffered.end(0), 'of', video.duration);
+          }
         }}
       />
       

@@ -146,7 +146,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
     <div>
       {/* Anträge Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #28a745 0%, #1e7e34 100%)',
+        background: 'linear-gradient(135deg, #28a745 0%, #155724 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',

@@ -47,6 +47,7 @@ interface Event {
   location_maps_url?: string;
   points: number;
   categories?: Category[];
+  category_names?: string;
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -289,7 +290,9 @@ const EventsView: React.FC<EventsViewProps> = ({
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '8px 0' }}>
           <IonList lines="none" style={{ background: 'transparent' }}>
-            {events.map((event) => (
+            {events.map((event) => {
+              const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
+              return (
               <IonItem 
                 key={event.id}
                 button 
@@ -299,11 +302,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--padding-start': '16px', 
                   '--padding-top': '0px', 
                   '--padding-bottom': '0px',
-                  '--background': '#fbfbfb',
+                  '--background': isKonfirmationEvent ? '#fff5f5' : '#fbfbfb',
                   '--border-radius': '12px',
                   margin: '6px 8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #f0f0f0',
+                  boxShadow: isKonfirmationEvent ? '0 2px 8px rgba(239, 68, 68, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
+                  border: isKonfirmationEvent ? '1px solid #fecaca' : '1px solid #f0f0f0',
                   borderRadius: '12px'
                 }}
               >
@@ -472,7 +475,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                   </div>
                 </IonLabel>
               </IonItem>
-            ))}
+              );
+            })}
           </IonList>
         </IonCardContent>
       </IonCard>

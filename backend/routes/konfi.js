@@ -138,7 +138,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       const query = `
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, kp.password_plain, kp.bible_translation, j.name as jahrgang_name
+               kp.jahrgang_id, kp.password_plain, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
@@ -154,18 +154,61 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Get additional profile stats
       const statsQuery = `
         SELECT 
-          0 as badge_count, -- Placeholder, as custom_badges might not exist
-          COUNT(DISTINCT ar.id) as activity_count,
-          0 as event_count, -- Placeholder
+          COALESCE(badge_stats.badge_count, 0) as badge_count,
+          COALESCE(activity_stats.activity_count, 0) as activity_count,
+          COALESCE(event_stats.event_count, 0) as event_count,
           COUNT(DISTINCT CASE WHEN ar.status = 'pending' THEN ar.id END) as pending_requests
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN roles r ON u.role_id = r.id
-        LEFT JOIN activity_requests ar ON u.id = ar.konfi_id
+        LEFT JOIN activity_requests ar ON u.id = ar.konfi_id AND ar.organization_id = $2
+        LEFT JOIN (
+          SELECT konfi_id, COUNT(*) as badge_count 
+          FROM konfi_badges 
+          WHERE organization_id = $2 
+          GROUP BY konfi_id
+        ) badge_stats ON u.id = badge_stats.konfi_id
+        LEFT JOIN (
+          SELECT konfi_id, COUNT(*) as activity_count 
+          FROM konfi_activities 
+          WHERE organization_id = $2 
+          GROUP BY konfi_id
+        ) activity_stats ON u.id = activity_stats.konfi_id
+        LEFT JOIN (
+          SELECT user_id, COUNT(*) as event_count 
+          FROM event_bookings 
+          GROUP BY user_id
+        ) event_stats ON u.id = event_stats.user_id
         WHERE u.id = $1 AND r.name = 'konfi'
+        GROUP BY badge_stats.badge_count, activity_stats.activity_count, event_stats.event_count
       `;
-      const { rows: [stats] } = await db.query(statsQuery, [konfiId]);
+      const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       
+      // Get confirmation event date if booked (look for events with "Konfirmation" category)
+      let confirmationEventDate = null;
+      try {
+        const confirmationQuery = `
+          SELECT e.event_date
+          FROM events e
+          JOIN event_categories ec ON e.id = ec.event_id
+          JOIN categories c ON ec.category_id = c.id
+          JOIN event_bookings eb ON e.id = eb.event_id
+          WHERE eb.user_id = $1 
+            AND eb.status = 'confirmed'
+            AND LOWER(c.name) LIKE '%konfirmation%'
+            AND e.organization_id = $2
+          ORDER BY e.event_date ASC
+          LIMIT 1
+        `;
+        const { rows: [confirmationEvent] } = await db.query(confirmationQuery, [konfiId, req.user.organization_id]);
+        if (confirmationEvent) {
+          confirmationEventDate = confirmationEvent.event_date;
+        }
+      } catch (err) {
+        console.warn('Could not fetch confirmation event date:', err);
+        // Fall back to jahrgang confirmation_date if no event found
+      }
+
       // Get ranking position
       const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
       const rankingQuery = `
@@ -209,6 +252,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         pending_requests: stats.pending_requests || 0,
         rank_in_jahrgang: ranking ? ranking.rank_in_jahrgang : null,
         total_in_jahrgang: ranking ? ranking.total_in_jahrgang : null,
+        // Use individual confirmation event date if available, otherwise fall back to jahrgang date
+        confirmation_date: confirmationEventDate || konfi.confirmation_date,
         recent_activities: [], // Could be enhanced
         progress_overview: progressOverview
       });

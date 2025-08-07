@@ -584,48 +584,48 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           </span>
                         </div>
                         
-                        {/* Letzte Nachricht - Time Card Style wie Events */}
+                        {/* Letzte Nachricht - mit fixer Zeitstempel-Position */}
                         {room.last_message && (room.last_message.content || room.last_message.file_name) && (
                           <div style={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '16px',
                             fontSize: '0.8rem',
-                            color: '#666'
+                            color: '#666',
+                            marginTop: '6px'
                           }}>
                             <div style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '4px',
-                              flex: 1,
-                              minWidth: 0
+                              display: 'grid',
+                              gridTemplateColumns: '1fr auto',
+                              gap: '12px',
+                              alignItems: 'center'
                             }}>
-                              <span style={{ 
-                                fontWeight: '600',
-                                color: '#333',
-                                flexShrink: 0
-                              }}>
-                                {room.last_message.sender_name}:
-                              </span>
-                              <span style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                color: '#666'
-                              }}>
-                                {room.last_message.content || 
-                                 (room.last_message.file_name ? 
-                                   room.last_message.file_name 
-                                   : 'Datei')}
-                              </span>
-                            </div>
-                            {room.last_message.created_at && (
+                              {/* Nachricht links */}
                               <div style={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 gap: '4px',
-                                flexShrink: 0
+                                minWidth: 0
                               }}>
+                                <span style={{ 
+                                  fontWeight: '600',
+                                  color: '#333',
+                                  flexShrink: 0
+                                }}>
+                                  {room.last_message.sender_name}:
+                                </span>
+                                <span style={{
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  color: '#666'
+                                }}>
+                                  {room.last_message.content || 
+                                   (room.last_message.file_name ? 
+                                     room.last_message.file_name 
+                                     : 'Datei')}
+                                </span>
+                              </div>
+                              
+                              {/* Zeitstempel rechts - fixe Position im Grid */}
+                              {room.last_message.created_at && (
                                 <span style={{
                                   fontSize: '0.7rem',
                                   color: '#17a2b8',
@@ -635,12 +635,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   borderRadius: '6px',
                                   border: '1px solid #b3e5fc',
                                   whiteSpace: 'nowrap',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                                  justifySelf: 'end'
                                 }}>
                                   {formatLastMessageTime(room.last_message.created_at)}
                                 </span>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                         )}
                       </IonLabel>
