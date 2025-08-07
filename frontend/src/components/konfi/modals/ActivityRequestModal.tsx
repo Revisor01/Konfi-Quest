@@ -335,163 +335,177 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         </IonCard>
 
         {/* Date Selection */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          margin: '16px 16px 8px 16px'
+        }}>
+          <div style={{ 
+            width: '32px', 
+            height: '32px',
+            backgroundColor: '#2dd36f',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{ 
+            fontWeight: '600', 
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Datum wählen
+          </h2>
+        </div>
+        
         <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-            <IonCardContent>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#2dd36f',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
-                </div>
-                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                  Datum
-                </h3>
-              </div>
-              
-              <IonItem lines="none">
-                <IonDatetimeButton datetime="date-picker" />
-                <IonModal keepContentsMounted={true}>
-                  <IonDatetime
-                    id="date-picker"
-                    value={formData.requested_date}
-                    onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
-                    presentation="date"
-                    max={new Date().toISOString().split('T')[0]}
-                    firstDayOfWeek={1}
-                  />
-                </IonModal>
-              </IonItem>
-            </IonCardContent>
+          <IonCardContent style={{ padding: '12px 0' }}>
+            <IonItem lines="none">
+              <IonDatetimeButton datetime="date-picker" />
+              <IonModal keepContentsMounted={true}>
+                <IonDatetime
+                  id="date-picker"
+                  value={formData.requested_date}
+                  onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
+                  presentation="date"
+                  max={new Date().toISOString().split('T')[0]}
+                  firstDayOfWeek={1}
+                />
+              </IonModal>
+            </IonItem>
+          </IonCardContent>
         </IonCard>
 
         {/* Description */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          margin: '16px 16px 8px 16px'
+        }}>
+          <div style={{ 
+            width: '32px', 
+            height: '32px',
+            backgroundColor: '#ffcc00',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(255, 204, 0, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={text} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{ 
+            fontWeight: '600', 
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Anmerkungen (optional)
+          </h2>
+        </div>
+        
         <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-            <IonCardContent>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#ffcc00',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <IonIcon icon={text} style={{ fontSize: '1rem', color: 'white' }} />
-                </div>
-                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                  Anmerkungen (optional)
-                </h3>
-              </div>
-              
-              <IonItem>
-                <IonTextarea
-                  value={formData.description}
-                  onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
-                  placeholder="Anmerkungen... (optional)"
-                  autoGrow={true}
-                  rows={1}
-                />
-              </IonItem>
-            </IonCardContent>
+          <IonCardContent style={{ padding: '12px 0' }}>
+            <IonItem lines="none">
+              <IonTextarea
+                value={formData.description}
+                onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
+                placeholder="Anmerkungen... (optional)"
+                autoGrow={true}
+                rows={1}
+              />
+            </IonItem>
+          </IonCardContent>
         </IonCard>
 
         {/* Photo */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          margin: '16px 16px 8px 16px'
+        }}>
+          <div style={{ 
+            width: '32px', 
+            height: '32px',
+            backgroundColor: '#7045f6',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(112, 69, 246, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={camera} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{ 
+            fontWeight: '600', 
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Foto als Nachweis (optional)
+          </h2>
+        </div>
+        
         <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-            <IonCardContent style={{ padding: '12px 0' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                margin: '16px 16px 8px 16px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#7045f6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(112, 69, 246, 0.3)',
-                  flexShrink: 0
-                }}>
-                  <IonIcon icon={camera} style={{ fontSize: '1rem', color: 'white' }} />
-                </div>
-                <h2 style={{ 
-                  fontWeight: '600', 
-                  fontSize: '1.1rem',
-                  margin: '0',
-                  color: '#333'
-                }}>
-                  Foto als Nachweis (optional)
-                </h2>
-              </div>
-              
-              <div 
-                onClick={handlePhotoSelect}
-                style={{
-                  margin: '12px 16px 0 16px',
-                  padding: '12px',
-                  backgroundColor: photoPreview ? '#e8f5e8' : '#f8f9fa',
-                  borderRadius: '8px',
-                  border: photoPreview ? '1px solid #c3e6cb' : '1px solid #e9ecef',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {photoPreview ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon 
-                        icon={checkmarkCircle}
-                        style={{ fontSize: '1.2rem', color: '#28a745' }}
-                      />
-                      <span style={{ fontWeight: '600', color: '#28a745' }}>
-                        Foto ausgewählt
-                      </span>
-                    </div>
-                    <IonButton 
-                      fill="clear" 
-                      color="danger"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removePhoto();
-                      }}
-                    >
-                      <IonIcon icon={trash} />
-                    </IonButton>
-                  </div>
-                ) : (
+          <IonCardContent style={{ padding: '12px 0' }}>
+            <div 
+              onClick={handlePhotoSelect}
+              style={{
+                margin: '12px 16px 0 16px',
+                padding: '12px',
+                backgroundColor: photoPreview ? '#e8f5e8' : '#f8f9fa',
+                borderRadius: '8px',
+                border: photoPreview ? '1px solid #c3e6cb' : '1px solid #e9ecef',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {photoPreview ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <IonIcon 
-                      icon={camera}
-                      style={{ fontSize: '1.2rem', color: '#7045f6' }}
+                      icon={checkmarkCircle}
+                      style={{ fontSize: '1.2rem', color: '#28a745' }}
                     />
-                    <span style={{ fontWeight: '500', color: '#666' }}>
-                      Foto hinzufügen
+                    <span style={{ fontWeight: '600', color: '#28a745' }}>
+                      Foto ausgewählt
                     </span>
                   </div>
-                )}
-              </div>
-            </IonCardContent>
+                  <IonButton 
+                    fill="clear" 
+                    color="danger"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removePhoto();
+                    }}
+                  >
+                    <IonIcon icon={trash} />
+                  </IonButton>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IonIcon 
+                    icon={camera}
+                    style={{ fontSize: '1.2rem', color: '#7045f6' }}
+                  />
+                  <span style={{ fontWeight: '500', color: '#666' }}>
+                    Foto hinzufügen
+                  </span>
+                </div>
+              )}
+            </div>
+          </IonCardContent>
         </IonCard>
 
       </IonContent>

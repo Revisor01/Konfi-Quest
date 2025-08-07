@@ -51,6 +51,9 @@ const KonfiRequestsPage: React.FC = () => {
       dismissRequestModal();
       loadRequests();
     }
+  }, {
+    onDismiss: () => dismissRequestModal(),
+    presentingElement: presentingElement
   });
 
   useEffect(() => {
@@ -71,9 +74,7 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleAddRequest = () => {
-    presentRequestModal({
-      presentingElement: presentingElement
-    });
+    presentRequestModal();
   };
 
   const formatDate = (dateString: string) => {
