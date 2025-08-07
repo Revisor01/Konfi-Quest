@@ -115,8 +115,36 @@ const EventsView: React.FC<EventsViewProps> = ({
     all: events.length,
     upcoming: events.filter(e => new Date(e.event_date) >= new Date() && e.registration_status !== 'cancelled').length,
     past: events.filter(e => new Date(e.event_date) < new Date() && e.registration_status !== 'cancelled').length,
-    cancelled: events.filter(e => e.registration_status === 'cancelled').length
+    cancelled: events.filter(e => e.registration_status === 'cancelled').length,
+    registered: events.filter(e => e.is_registered).length,
+    booked: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length, // Vergangene gebuchte Events
+    pending: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length // Anstehende gebuchte Events
   };
+
+  const getStatLabelsAndCounts = () => {
+    switch (activeTab) {
+      case 'upcoming':
+        return [
+          { label: 'Gesamt', count: eventCounts.all, icon: calendar },
+          { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
+          { label: 'Gebucht', count: eventCounts.registered, icon: statsChart }
+        ];
+      case 'past':
+        return [
+          { label: 'Gesamt', count: eventCounts.all, icon: calendar },
+          { label: 'Gebucht', count: eventCounts.booked, icon: time },
+          { label: 'Ausstehend', count: eventCounts.past - eventCounts.booked, icon: statsChart }
+        ];
+      default: // 'registered' and others
+        return [
+          { label: 'Gesamt', count: eventCounts.all, icon: calendar },
+          { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
+          { label: 'Vergangen', count: eventCounts.past, icon: statsChart }
+        ];
+    }
+  };
+
+  const statsData = getStatLabelsAndCounts();
 
   return (
     <div>
@@ -165,84 +193,34 @@ const EventsView: React.FC<EventsViewProps> = ({
         }}>
           <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon 
-                    icon={calendar} 
-                    style={{ 
-                      fontSize: '1.5rem', 
-                      color: 'rgba(255, 255, 255, 0.9)', 
-                      marginBottom: '8px', 
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.all}</span>
+              {statsData.map((stat, index) => (
+                <IonCol key={index} size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon 
+                      icon={stat.icon} 
+                      style={{ 
+                        fontSize: '1.5rem', 
+                        color: 'rgba(255, 255, 255, 0.9)', 
+                        marginBottom: '8px', 
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }} 
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{stat.count}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      {stat.label}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon 
-                    icon={time} 
-                    style={{ 
-                      fontSize: '1.5rem', 
-                      color: 'rgba(255, 255, 255, 0.9)', 
-                      marginBottom: '8px', 
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.upcoming}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Anstehend
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon 
-                    icon={statsChart} 
-                    style={{ 
-                      fontSize: '1.5rem', 
-                      color: 'rgba(255, 255, 255, 0.9)', 
-                      marginBottom: '8px', 
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{eventCounts.past}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Vergangen
-                  </div>
-                </div>
-              </IonCol>
+                </IonCol>
+              ))}
             </IonRow>
           </IonGrid>
         </div>
@@ -383,14 +361,14 @@ const EventsView: React.FC<EventsViewProps> = ({
                       return (
                         <span style={{
                           fontSize: '0.7rem',
-                          color: isParticipated ? '#6c757d' : 
+                          color: isParticipated ? '#28a745' : 
                                 (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
                                 event.is_registered ? '#28a745' : 
                                 event.registration_status === 'open' ? '#fd7e14' : 
                                 event.registration_status === 'upcoming' ? '#ffc409' : 
                                 event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
                           fontWeight: '600',
-                          backgroundColor: isParticipated ? '#e9ecef' : 
+                          backgroundColor: isParticipated ? '#d4edda' : 
                                          (event as any).registration_status_detail === 'waitlist' ? '#fff4e6' :
                                          event.is_registered ? '#d4edda' : 
                                          event.registration_status === 'open' ? '#fff4e6' : 
@@ -398,7 +376,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                                          event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
                           padding: '3px 6px',
                           borderRadius: '6px',
-                          border: `1px solid ${isParticipated ? '#adb5bd' : 
+                          border: `1px solid ${isParticipated ? '#c3e6cb' : 
                                              (event as any).registration_status_detail === 'waitlist' ? '#fdbf85' :
                                              event.is_registered ? '#c3e6cb' : 
                                              event.registration_status === 'open' ? '#fdbf85' : 
@@ -412,7 +390,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           top: '50%',
                           transform: 'translateY(-50%)'
                         }}>
-                          {isParticipated ? 'TEILGENOMMEN' :
+                          {isParticipated ? 'VERBUCHT' :
                            (event as any).registration_status_detail === 'waitlist' ? `WARTELISTE (${(event as any).waitlist_position || 1})` :
                            event.is_registered ? 'ANGEMELDET' : 
                            event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled ? 'WARTELISTE' :

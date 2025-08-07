@@ -184,11 +184,12 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       
-      // Get confirmation event date if booked (look for events with "Konfirmation" category)
+      // Get confirmation event date and location if booked (look for events with "Konfirmation" category)
       let confirmationEventDate = null;
+      let confirmationLocation = null;
       try {
         const confirmationQuery = `
-          SELECT e.event_date
+          SELECT e.event_date, e.location
           FROM events e
           JOIN event_categories ec ON e.id = ec.event_id
           JOIN categories c ON ec.category_id = c.id
@@ -203,6 +204,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         const { rows: [confirmationEvent] } = await db.query(confirmationQuery, [konfiId, req.user.organization_id]);
         if (confirmationEvent) {
           confirmationEventDate = confirmationEvent.event_date;
+          confirmationLocation = confirmationEvent.location;
         }
       } catch (err) {
         console.warn('Could not fetch confirmation event date:', err);
@@ -254,6 +256,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         total_in_jahrgang: ranking ? ranking.total_in_jahrgang : null,
         // Use individual confirmation event date if available, otherwise fall back to jahrgang date
         confirmation_date: confirmationEventDate || konfi.confirmation_date,
+        confirmation_location: confirmationLocation,
         recent_activities: [], // Could be enhanced
         progress_overview: progressOverview
       });

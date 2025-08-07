@@ -61,6 +61,7 @@ interface KonfiProfile {
   jahrgang_name: string;
   jahrgang_year: number;
   confirmation_date?: string;
+  confirmation_location?: string;
   created_at: string;
   last_login_at?: string;
   bible_translation?: string;
@@ -668,7 +669,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
                 {profile.username ? `${profile.username}` : '...'}
               </p>
               <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
-                {profile.jahrgang_name} ({profile.confirmation_date ? formatDate(profile.confirmation_date) : profile.jahrgang_year})
+                {profile.jahrgang_name} ({profile.jahrgang_year})
               </p>
               {profile.email && (
                 <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
@@ -678,6 +679,36 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
                 Mitglied seit {formatDate(profile.created_at)}
               </p>
+            </div>
+          </div>
+        </IonCardContent>
+      </IonCard>
+
+      {/* Konfirmationstermin Card */}
+      <IonCard style={{ margin: '16px', borderRadius: '8px', background: profile.confirmation_date ? '#f0f9ff' : '#fff5f5' }}>
+        <IonCardContent>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <IonIcon 
+              icon={calendar} 
+              style={{ 
+                fontSize: '1.5rem', 
+                color: profile.confirmation_date ? '#3b82f6' : '#ef4444'
+              }} 
+            />
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '600' }}>
+                Konfirmationstermin
+              </h3>
+              {profile.confirmation_date ? (
+                <p style={{ margin: '0', color: '#333', fontSize: '0.9rem' }}>
+                  {formatDate(profile.confirmation_date)}
+                  {profile.confirmation_location && ` • ${profile.confirmation_location}`}
+                </p>
+              ) : (
+                <p style={{ margin: '0', color: '#ef4444', fontSize: '0.9rem' }}>
+                  Noch kein Konfirmationstermin gebucht
+                </p>
+              )}
             </div>
           </div>
         </IonCardContent>

@@ -86,6 +86,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
+  const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
 
   const handleUnregister = async (reason: string) => {
     if (!eventData || !reason.trim()) {
@@ -160,6 +161,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         setEventData(eventWithStatus);
       }
       
+      // Check if user already has a konfirmation booked
+      const hasKonfirmation = await checkExistingKonfirmation();
+      setHasExistingKonfirmation(hasKonfirmation);
+      
     } catch (err) {
       setError('Fehler beim Laden der Event-Details');
       console.error('Error loading event details:', err);
@@ -212,8 +217,37 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     return now < twoDaysBeforeEvent;
   };
 
+  const isKonfirmationEvent = (event: Event) => {
+    return event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) || false;
+  };
+
+  const checkExistingKonfirmation = async () => {
+    try {
+      const response = await api.get('/konfi/events');
+      const myEvents = response.data.filter((e: Event) => e.is_registered);
+      const hasKonfirmation = myEvents.some((e: Event) => isKonfirmationEvent(e));
+      return hasKonfirmation;
+    } catch (err) {
+      console.error('Error checking existing konfirmation:', err);
+      return false;
+    }
+  };
+
   const handleRegister = async () => {
     if (!eventData) return;
+    
+    // Check if this is a Konfirmation event and if user already has one
+    if (isKonfirmationEvent(eventData)) {
+      const hasExistingKonfirmation = await checkExistingKonfirmation();
+      if (hasExistingKonfirmation) {
+        presentAlert({
+          header: 'Konfirmationstermin bereits gebucht',
+          message: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab, bevor du einen neuen buchst.',
+          buttons: ['OK']
+        });
+        return;
+      }
+    }
     
     try {
       await api.post(`/konfi/events/${eventData.id}/register`);
@@ -628,22 +662,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               )}
             </div>
           ) : eventData.can_register && eventData.registration_status === 'open' && eventData.registered_count < eventData.max_participants ? (
-            <IonButton 
-              expand="block" 
-              style={{ 
-                height: '48px',
-                borderRadius: '12px',
-                fontWeight: '600',
-                '--background': '#1e7e34',
-                '--background-activated': '#155724',
-                '--background-hover': '#1c7430',
-                '--color': 'white'
-              }}
-              onClick={handleRegister}
-            >
-              <IonIcon icon={checkmarkCircle} slot="start" />
-              Anmelden ({eventData.registered_count}/{eventData.max_participants})
-            </IonButton>
+            // Check if this is a konfirmation event and user already has one
+            isKonfirmationEvent(eventData) && hasExistingKonfirmation ? (
+              <IonButton 
+                expand="block" 
+                disabled
+                color="medium"
+                style={{ 
+                  height: '48px',
+                  borderRadius: '12px',
+                  fontWeight: '600'
+                }}
+              >
+                <IonIcon icon={warning} slot="start" />
+                Konfirmationstermin bereits gebucht
+              </IonButton>
+            ) : (
+              <IonButton 
+                expand="block" 
+                style={{ 
+                  height: '48px',
+                  borderRadius: '12px',
+                  fontWeight: '600',
+                  '--background': '#1e7e34',
+                  '--background-activated': '#155724',
+                  '--background-hover': '#1c7430',
+                  '--color': 'white'
+                }}
+                onClick={handleRegister}
+              >
+                <IonIcon icon={checkmarkCircle} slot="start" />
+                Anmelden ({eventData.registered_count}/{eventData.max_participants})
+              </IonButton>
+            )
           ) : eventData.waitlist_enabled && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton 
               expand="block" 

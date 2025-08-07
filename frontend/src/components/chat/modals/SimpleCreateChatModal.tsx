@@ -378,17 +378,15 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       ];
     }
     
-    const permissions = settings.konfi_chat_permissions || 'direct_only';
+    const permissions = settings.konfi_chat_permissions || 'direct_only_admin';
     const types = [];
     
-    switch (permissions) {
-      case 'direct_only':
-        types.push({ value: 'direct', label: 'Direktnachricht' });
-        break;
-      case 'direct_and_group':
-        types.push({ value: 'direct', label: 'Direktnachricht' });
-        types.push({ value: 'group', label: 'Gruppenchat' });
-        break;
+    // All new permissions include direct chats
+    types.push({ value: 'direct', label: 'Direktnachricht' });
+    
+    // Only group permissions include group chats
+    if (permissions.includes('group_')) {
+      types.push({ value: 'group', label: 'Gruppenchat' });
     }
     
     return types;
