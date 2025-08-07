@@ -61,6 +61,7 @@ interface Event {
   series_id?: number;
   is_registered?: boolean;
   can_register?: boolean;
+  attendance_status?: 'present' | 'absent' | null;
 }
 
 interface EventsViewProps {
@@ -357,18 +358,19 @@ const EventsView: React.FC<EventsViewProps> = ({
                       if (!showBadge) return null;
                       
                       const isParticipated = isPastEvent && event.is_registered;
+                      const attendanceStatus = event.attendance_status;
                       
                       return (
                         <span style={{
                           fontSize: '0.7rem',
-                          color: isParticipated ? '#28a745' : 
+                          color: isParticipated ? (attendanceStatus === 'present' ? '#28a745' : attendanceStatus === 'absent' ? '#dc3545' : '#6c757d') : 
                                 (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
                                 event.is_registered ? '#28a745' : 
                                 event.registration_status === 'open' ? '#fd7e14' : 
                                 event.registration_status === 'upcoming' ? '#ffc409' : 
                                 event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
                           fontWeight: '600',
-                          backgroundColor: isParticipated ? '#d4edda' : 
+                          backgroundColor: isParticipated ? (attendanceStatus === 'present' ? '#d4edda' : attendanceStatus === 'absent' ? '#f8d7da' : '#e9ecef') : 
                                          (event as any).registration_status_detail === 'waitlist' ? '#fff4e6' :
                                          event.is_registered ? '#d4edda' : 
                                          event.registration_status === 'open' ? '#fff4e6' : 
@@ -376,7 +378,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                                          event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
                           padding: '3px 6px',
                           borderRadius: '6px',
-                          border: `1px solid ${isParticipated ? '#c3e6cb' : 
+                          border: `1px solid ${isParticipated ? (attendanceStatus === 'present' ? '#c3e6cb' : attendanceStatus === 'absent' ? '#f5c6cb' : '#adb5bd') : 
                                              (event as any).registration_status_detail === 'waitlist' ? '#fdbf85' :
                                              event.is_registered ? '#c3e6cb' : 
                                              event.registration_status === 'open' ? '#fdbf85' : 
@@ -390,7 +392,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           top: '50%',
                           transform: 'translateY(-50%)'
                         }}>
-                          {isParticipated ? 'VERBUCHT' :
+                          {isParticipated ? (attendanceStatus === 'present' ? 'VERBUCHT' : attendanceStatus === 'absent' ? 'VERPASST' : 'OFFEN') :
                            (event as any).registration_status_detail === 'waitlist' ? `WARTELISTE (${(event as any).waitlist_position || 1})` :
                            event.is_registered ? 'ANGEMELDET' : 
                            event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled ? 'WARTELISTE' :

@@ -1030,6 +1030,38 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       if (existing) {
         return res.status(409).json({ error: 'Already registered for this event' });
       }
+
+      // Check if this is a Konfirmation event and if user already has one
+      const isKonfirmationQuery = `
+        SELECT e.id 
+        FROM events e
+        JOIN event_categories ec ON e.id = ec.event_id
+        JOIN categories c ON ec.category_id = c.id
+        WHERE e.id = $1 AND LOWER(c.name) LIKE '%konfirmation%'
+      `;
+      const { rows: [isKonfirmation] } = await db.query(isKonfirmationQuery, [eventId]);
+
+      if (isKonfirmation) {
+        // Check if user already has a confirmed konfirmation booking
+        const existingKonfirmationQuery = `
+          SELECT eb.id
+          FROM event_bookings eb
+          JOIN events e ON eb.event_id = e.id
+          JOIN event_categories ec ON e.id = ec.event_id
+          JOIN categories c ON ec.category_id = c.id
+          WHERE eb.user_id = $1 
+            AND eb.status = 'confirmed'
+            AND LOWER(c.name) LIKE '%konfirmation%'
+            AND e.organization_id = $2
+        `;
+        const { rows: [existingKonfirmation] } = await db.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
+
+        if (existingKonfirmation) {
+          return res.status(409).json({ 
+            error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.' 
+          });
+        }
+      }
       
       // Get event details and current registration count
       const eventQuery = `
