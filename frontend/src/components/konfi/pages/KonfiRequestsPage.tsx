@@ -45,13 +45,16 @@ const KonfiRequestsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
-  const [presentRequestModal, dismissRequestModal] = useIonModal(ActivityRequestModal, {
-    onClose: () => dismissRequestModal(),
-    onSuccess: () => {
-      dismissRequestModal();
-      loadRequests();
+  const [presentRequestModal, dismissRequestModal] = useIonModal(
+    ActivityRequestModal,
+    {
+      onClose: () => dismissRequestModal(),
+      onSuccess: () => {
+        dismissRequestModal();
+        loadRequests();
+      }
     }
-  });
+  );
 
   useEffect(() => {
     loadRequests();

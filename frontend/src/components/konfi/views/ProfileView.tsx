@@ -549,8 +549,45 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center'
+          justifyContent: 'space-between'
         }}>
+          {/* Konfirmation Info - wenn vorhanden */}
+          {profile.confirmation_date && (
+            <div style={{
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              <h3 style={{
+                fontSize: '1.3rem',
+                fontWeight: '700',
+                color: 'white',
+                margin: '0 0 4px 0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Konfirmation
+              </h3>
+              <p style={{
+                fontSize: '1rem',
+                color: 'rgba(255, 255, 255, 0.95)',
+                margin: '0 0 2px 0',
+                fontWeight: '500'
+              }}>
+                {formatDate(profile.confirmation_date)} • {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+              </p>
+              {profile.confirmation_location && (
+                <p style={{
+                  fontSize: '0.9rem',
+                  color: 'rgba(255, 255, 255, 0.85)',
+                  margin: '0',
+                  fontStyle: 'italic'
+                }}>
+                  {profile.confirmation_location}
+                </p>
+              )}
+            </div>
+          )}
+          
           <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
               <IonCol size="4" style={{ padding: '0 4px' }}>

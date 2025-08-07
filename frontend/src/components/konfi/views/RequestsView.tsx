@@ -391,14 +391,14 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                       {/* Status Badge rechts */}
                       <span style={{
                         fontSize: '0.7rem',
-                        color: request.status === 'pending' ? '#ffc409' :
+                        color: request.status === 'pending' ? '#fd7e14' :
                                request.status === 'approved' ? '#28a745' : '#dc3545',
                         fontWeight: '600',
-                        backgroundColor: request.status === 'pending' ? '#fff3cd' :
+                        backgroundColor: request.status === 'pending' ? '#fff4e6' :
                                        request.status === 'approved' ? '#d4edda' : '#f8d7da',
                         padding: '3px 6px',
                         borderRadius: '6px',
-                        border: `1px solid ${request.status === 'pending' ? '#ffeaa7' :
+                        border: `1px solid ${request.status === 'pending' ? '#fdbf85' :
                                             request.status === 'approved' ? '#c3e6cb' : '#f5c6cb'}`,
                         whiteSpace: 'nowrap',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
