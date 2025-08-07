@@ -774,6 +774,93 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     }
   });
 
+  // Get events with konfi-specific data (registration status, attendance status)
+  router.get('/events', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+    
+    try {
+      const konfiId = req.user.id;
+      
+      // Get all events with konfi-specific data
+      const query = `
+        SELECT e.*, 
+               COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) as registered_count,
+               COUNT(DISTINCT CASE WHEN eb_all.status = 'waitlist' THEN eb_all.id END) as waitlist_count,
+               CASE 
+                 WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                 ELSE e.max_participants
+               END as max_participants,
+               STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
+               STRING_AGG(DISTINCT c.name, ',') as category_names,
+               CASE 
+                 WHEN e.cancelled = true THEN 'cancelled'
+                 WHEN NOW() < e.registration_opens_at THEN 'upcoming'
+                 WHEN NOW() > e.registration_closes_at THEN 'closed'
+                 WHEN COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) >= 
+                   CASE 
+                     WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
+                     ELSE e.max_participants
+                   END AND 
+                      (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb_all.status = 'waitlist' THEN eb_all.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                 ELSE 'open'
+               END as registration_status,
+               -- Konfi-specific data
+               eb_konfi.status as booking_status,
+               eb_konfi.attendance_status,
+               CASE WHEN eb_konfi.id IS NOT NULL THEN true ELSE false END as is_registered,
+               CASE 
+                 WHEN e.cancelled = true THEN false
+                 WHEN eb_konfi.id IS NOT NULL THEN false
+                 WHEN NOW() < e.registration_opens_at OR NOW() > e.registration_closes_at THEN false
+                 ELSE true
+               END as can_register
+        FROM events e
+        LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
+        LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
+        LEFT JOIN event_categories ec ON e.id = ec.event_id
+        LEFT JOIN categories c ON ec.category_id = c.id
+        LEFT JOIN (
+          SELECT event_id, SUM(max_participants) as total_capacity
+          FROM event_timeslots
+          GROUP BY event_id
+        ) timeslot_capacity ON e.id = timeslot_capacity.event_id
+        WHERE e.organization_id = $1
+        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status
+        ORDER BY e.event_date ASC
+      `;
+      
+      const { rows } = await db.query(query, [req.user.organization_id, konfiId]);
+      
+      // Transform the data to include categories arrays
+      const eventsWithRelations = rows.map(row => {
+        const categories = [];
+        if (row.category_ids) {
+          const ids = row.category_ids.split(',');
+          const names = row.category_names.split(',');
+          for (let i = 0; i < ids.length; i++) {
+            categories.push({
+              id: parseInt(ids[i], 10),
+              name: names[i]
+            });
+          }
+        }
+        
+        return {
+          ...row,
+          categories: categories
+        };
+      });
+      
+      res.json(eventsWithRelations);
+      
+    } catch (err) {
+      console.error('Database error in GET /konfi/events:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Get konfi's registration status for a specific event
   router.get('/events/:id/status', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {

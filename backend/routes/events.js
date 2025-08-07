@@ -45,7 +45,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           FROM event_timeslots
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
-        WHERE e.organization_id = $1 AND (e.cancelled = FALSE OR e.cancelled IS NULL)
+        WHERE e.organization_id = $1
         GROUP BY e.id, timeslot_capacity.total_capacity
         ORDER BY e.event_date ASC
       `;

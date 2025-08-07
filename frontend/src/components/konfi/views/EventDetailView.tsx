@@ -62,6 +62,7 @@ interface Event {
   points: number;
   point_type?: 'gottesdienst' | 'gemeinde';
   categories?: Category[];
+  category_names?: string;
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -72,6 +73,11 @@ interface Event {
   can_register?: boolean;
   waitlist_enabled?: boolean;
   max_waitlist_size?: number;
+  cancelled?: boolean;
+  attendance_status?: 'present' | 'absent' | null;
+  waitlist_count?: number;
+  waitlist_position?: number;
+  registration_status_detail?: string;
 }
 
 interface EventDetailViewProps {
@@ -218,14 +224,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const isKonfirmationEvent = (event: Event) => {
-    return event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) || false;
+    return event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) ||
+           event.category_names?.toLowerCase().includes('konfirmation') || 
+           false;
   };
 
   const checkExistingKonfirmation = async () => {
     try {
       const response = await api.get('/konfi/events');
       const myEvents = response.data.filter((e: Event) => e.is_registered);
-      const hasKonfirmation = myEvents.some((e: Event) => isKonfirmationEvent(e));
+      const hasKonfirmation = myEvents.some((e: Event) => 
+        e.category_names?.toLowerCase().includes('konfirmation') || 
+        isKonfirmationEvent(e)
+      );
       return hasKonfirmation;
     } catch (err) {
       console.error('Error checking existing konfirmation:', err);
@@ -661,40 +672,37 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </IonButton>
               )}
             </div>
+          ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
+            <IonButton 
+              expand="block" 
+              disabled
+              color="medium"
+              style={{ 
+                height: '48px',
+                borderRadius: '12px',
+                fontWeight: '600'
+              }}
+            >
+              <IonIcon icon={warning} slot="start" />
+              Konfirmationstermin bereits gebucht
+            </IonButton>
           ) : eventData.can_register && eventData.registration_status === 'open' && eventData.registered_count < eventData.max_participants ? (
-            // Check if this is a konfirmation event and user already has one
-            isKonfirmationEvent(eventData) && hasExistingKonfirmation ? (
-              <IonButton 
-                expand="block" 
-                disabled
-                color="medium"
-                style={{ 
-                  height: '48px',
-                  borderRadius: '12px',
-                  fontWeight: '600'
-                }}
-              >
-                <IonIcon icon={warning} slot="start" />
-                Konfirmationstermin bereits gebucht
-              </IonButton>
-            ) : (
-              <IonButton 
-                expand="block" 
-                style={{ 
-                  height: '48px',
-                  borderRadius: '12px',
-                  fontWeight: '600',
-                  '--background': '#1e7e34',
-                  '--background-activated': '#155724',
-                  '--background-hover': '#1c7430',
-                  '--color': 'white'
-                }}
-                onClick={handleRegister}
-              >
-                <IonIcon icon={checkmarkCircle} slot="start" />
-                Anmelden ({eventData.registered_count}/{eventData.max_participants})
-              </IonButton>
-            )
+            <IonButton 
+              expand="block" 
+              style={{ 
+                height: '48px',
+                borderRadius: '12px',
+                fontWeight: '600',
+                '--background': '#1e7e34',
+                '--background-activated': '#155724',
+                '--background-hover': '#1c7430',
+                '--color': 'white'
+              }}
+              onClick={handleRegister}
+            >
+              <IonIcon icon={checkmarkCircle} slot="start" />
+              Anmelden ({eventData.registered_count}/{eventData.max_participants})
+            </IonButton>
           ) : eventData.waitlist_enabled && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton 
               expand="block" 

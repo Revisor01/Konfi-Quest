@@ -62,12 +62,16 @@ interface Event {
   is_registered?: boolean;
   can_register?: boolean;
   attendance_status?: 'present' | 'absent' | null;
+  cancelled?: boolean;
+  waitlist_count?: number;
+  waitlist_position?: number;
+  registration_status_detail?: string;
 }
 
 interface EventsViewProps {
   events: Event[];
-  activeTab: 'registered' | 'upcoming' | 'past' | 'cancelled';
-  onTabChange: (tab: 'registered' | 'upcoming' | 'past' | 'cancelled') => void;
+  activeTab: 'upcoming' | 'registered';
+  onTabChange: (tab: 'upcoming' | 'registered') => void;
   onSelectEvent: (event: Event) => void;
   onUpdate: () => void;
 }
@@ -112,14 +116,13 @@ const EventsView: React.FC<EventsViewProps> = ({
     });
   };
 
+  const allEvents = events.length;
   const eventCounts = {
-    all: events.length,
-    upcoming: events.filter(e => new Date(e.event_date) >= new Date() && e.registration_status !== 'cancelled').length,
-    past: events.filter(e => new Date(e.event_date) < new Date() && e.registration_status !== 'cancelled').length,
-    cancelled: events.filter(e => e.registration_status === 'cancelled').length,
+    all: allEvents,
+    upcoming: events.filter(e => new Date(e.event_date) >= new Date()).length,
     registered: events.filter(e => e.is_registered).length,
-    booked: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length, // Vergangene gebuchte Events
-    pending: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length // Anstehende gebuchte Events
+    registeredUpcoming: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length,
+    registeredPast: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length
   };
 
   const getStatLabelsAndCounts = () => {
@@ -130,17 +133,17 @@ const EventsView: React.FC<EventsViewProps> = ({
           { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
           { label: 'Gebucht', count: eventCounts.registered, icon: statsChart }
         ];
-      case 'past':
+      case 'registered':
         return [
-          { label: 'Gesamt', count: eventCounts.all, icon: calendar },
-          { label: 'Gebucht', count: eventCounts.booked, icon: time },
-          { label: 'Ausstehend', count: eventCounts.past - eventCounts.booked, icon: statsChart }
+          { label: 'Gebucht', count: eventCounts.registered, icon: calendar },
+          { label: 'Anstehend', count: eventCounts.registeredUpcoming, icon: time },
+          { label: 'Vergangen', count: eventCounts.registeredPast, icon: statsChart }
         ];
-      default: // 'registered' and others
+      default:
         return [
           { label: 'Gesamt', count: eventCounts.all, icon: calendar },
           { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
-          { label: 'Vergangen', count: eventCounts.past, icon: statsChart }
+          { label: 'Gebucht', count: eventCounts.registered, icon: statsChart }
         ];
     }
   };
@@ -240,27 +243,15 @@ const EventsView: React.FC<EventsViewProps> = ({
             }}
           >
             <IonSegmentButton value="upcoming">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
                 Anstehend
               </IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="registered">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Angemeldet
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
+                Meine Events
               </IonLabel>
             </IonSegmentButton>
-            <IonSegmentButton value="past">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                Vergangen
-              </IonLabel>
-            </IonSegmentButton>
-            {eventCounts.cancelled > 0 && (
-              <IonSegmentButton value="cancelled">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.7rem' }}>
-                  Abgesagt ({eventCounts.cancelled})
-                </IonLabel>
-              </IonSegmentButton>
-            )}
           </IonSegment>
         </IonCardContent>
       </IonCard>
@@ -337,8 +328,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                       fontWeight: '600', 
                       fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)', // Responsive Schriftgröße
                       margin: '0',
-                      color: event.registration_status === 'cancelled' ? '#999' : '#333',
-                      textDecoration: event.registration_status === 'cancelled' ? 'line-through' : 'none',
+                      color: event.cancelled ? '#999' : '#333',
+                      textDecoration: event.cancelled ? 'line-through' : 'none',
                       lineHeight: '1.3',
                       flex: 1,
                       minWidth: 0,
@@ -479,11 +470,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               <p style={{ color: '#999', margin: '0' }}>
                 {activeTab === 'registered' 
                   ? 'Du bist noch für keine Events angemeldet' 
-                  : activeTab === 'upcoming'
-                  ? 'Keine anstehenden Events'
-                  : activeTab === 'past'
-                  ? 'Keine vergangenen Events'
-                  : 'Keine abgesagten Events'
+                  : 'Keine anstehenden Events'
                 }
               </p>
             </div>

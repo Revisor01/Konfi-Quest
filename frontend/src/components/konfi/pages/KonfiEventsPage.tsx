@@ -31,6 +31,7 @@ interface Event {
   location_maps_url?: string;
   points: number;
   categories?: Category[];
+  category_names?: string;
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -44,6 +45,11 @@ interface Event {
   series_id?: number;
   is_registered?: boolean;
   can_register?: boolean;
+  attendance_status?: 'present' | 'absent' | null;
+  cancelled?: boolean;
+  waitlist_count?: number;
+  waitlist_position?: number;
+  registration_status_detail?: string;
 }
 
 const KonfiEventsPage: React.FC = () => {
@@ -54,7 +60,7 @@ const KonfiEventsPage: React.FC = () => {
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'registered' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'registered'>('upcoming');
 
   useEffect(() => {
     loadEvents();
@@ -74,35 +80,9 @@ const KonfiEventsPage: React.FC = () => {
   const loadEvents = async () => {
     setLoading(true);
     try {
-      // Use the same API as Admin - Events are accessible to all authenticated users
-      const response = await api.get('/events');
-      
-      // For Konfis, we need to check their registration status
-      const eventsWithRegistration = await Promise.all(
-        response.data.map(async (event: Event) => {
-          try {
-            // Check if konfi is registered for this event
-            const registrationResponse = await api.get(`/konfi/events/${event.id}/status`);
-            return {
-              ...event,
-              is_registered: registrationResponse.data.is_registered,
-              can_register: registrationResponse.data.can_register,
-              waitlist_count: registrationResponse.data.waitlist_count,
-              waitlist_position: registrationResponse.data.waitlist_position,
-              registration_status_detail: registrationResponse.data.registration_status
-            };
-          } catch (err) {
-            // If status check fails, assume not registered but can register if open
-            return {
-              ...event,
-              is_registered: false,
-              can_register: event.registration_status === 'open'
-            };
-          }
-        })
-      );
-      
-      setEvents(eventsWithRegistration);
+      // Use konfi-specific events route with attendance status
+      const response = await api.get('/konfi/events');
+      setEvents(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);
@@ -122,24 +102,14 @@ const KonfiEventsPage: React.FC = () => {
         break;
       case 'upcoming':
         filteredEvents = events.filter(event => 
-          new Date(event.event_date) >= now && 
-          event.registration_status !== 'cancelled'
+          new Date(event.event_date) >= now
         );
-        break;
-      case 'past':
-        filteredEvents = events.filter(event => 
-          new Date(event.event_date) < now &&
-          event.registration_status !== 'cancelled'
-        );
-        break;
-      case 'cancelled':
-        filteredEvents = events.filter(event => event.registration_status === 'cancelled');
         break;
       default:
         filteredEvents = events;
     }
     
-    // Sort events: current events first, then by date
+    // Sort events: upcoming events first, then by date
     return filteredEvents.sort((a, b) => {
       const dateA = new Date(a.event_date);
       const dateB = new Date(b.event_date);
