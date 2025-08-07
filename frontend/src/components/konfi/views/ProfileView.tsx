@@ -684,98 +684,33 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </IonCardContent>
       </IonCard>
 
-      {/* Konfirmationstermin Card - Liebevoll integriert */}
-      <IonCard style={{ 
-        margin: '16px', 
-        borderRadius: '16px', 
-        background: profile.confirmation_date 
-          ? 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)' 
-          : 'linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%)',
-        border: profile.confirmation_date 
-          ? '2px solid rgba(59, 130, 246, 0.2)' 
-          : '2px solid rgba(239, 68, 68, 0.2)',
-        boxShadow: profile.confirmation_date 
-          ? '0 8px 25px rgba(59, 130, 246, 0.15)' 
-          : '0 8px 25px rgba(239, 68, 68, 0.15)'
-      }}>
-        <IonCardContent style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: profile.confirmation_date 
-                ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
-                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-              flexShrink: 0
-            }}>
-              <IonIcon 
-                icon={profile.confirmation_date ? checkmark : calendar} 
-                style={{ 
-                  fontSize: '1.3rem', 
-                  color: 'white'
-                }} 
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ 
-                margin: '0 0 8px 0', 
-                fontSize: '1.1rem', 
-                fontWeight: '700',
-                color: profile.confirmation_date ? '#1e40af' : '#dc2626'
-              }}>
-                {profile.confirmation_date ? '✨ Konfirmationstermin gebucht' : '📅 Konfirmationstermin'}
+      {/* Konfirmationstermin Card - Schlicht im Profil-Stil */}
+      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
+        <IonCardContent>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <IonIcon 
+              icon={calendar} 
+              style={{ 
+                fontSize: '1.5rem', 
+                color: '#8b5cf6'
+              }} 
+            />
+            <div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '600' }}>
+                Konfirmationstermin
               </h3>
               {profile.confirmation_date ? (
-                <div>
-                  <p style={{ 
-                    margin: '0 0 4px 0', 
-                    color: '#1e40af', 
-                    fontSize: '1rem',
-                    fontWeight: '600'
-                  }}>
-                    {formatDate(profile.confirmation_date)}
-                  </p>
-                  {profile.confirmation_location && (
-                    <p style={{ 
-                      margin: '0', 
-                      color: '#3b82f6', 
-                      fontSize: '0.9rem',
-                      fontStyle: 'italic'
-                    }}>
-                      📍 {profile.confirmation_location}
-                    </p>
-                  )}
-                  <p style={{ 
-                    margin: '4px 0 0 0', 
-                    color: '#6b7280', 
-                    fontSize: '0.8rem'
-                  }}>
-                    🎉 Dein großer Tag ist geplant!
-                  </p>
-                </div>
+                <p style={{ margin: '0', color: '#333', fontSize: '0.9rem' }}>
+                  {formatDate(profile.confirmation_date)}
+                  {profile.confirmation_location && ` • ${profile.confirmation_location}`}
+                </p>
               ) : (
-                <div>
-                  <p style={{ 
-                    margin: '0 0 4px 0', 
-                    color: '#dc2626', 
-                    fontSize: '0.95rem',
-                    fontWeight: '500'
-                  }}>
-                    Noch kein Termin gebucht
-                  </p>
-                  <p style={{ 
-                    margin: '0', 
-                    color: '#6b7280', 
-                    fontSize: '0.85rem'
-                  }}>
-                    Buche deinen Konfirmationstermin in der Events-Sektion
-                  </p>
-                </div>
+                <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
+                  {profile.jahrgang_name && profile.jahrgang_year 
+                    ? `Noch kein Termin gebucht`
+                    : 'Kein Termin verfügbar'
+                  }
+                </p>
               )}
             </div>
           </div>

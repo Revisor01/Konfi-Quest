@@ -51,6 +51,9 @@ const KonfiRequestsPage: React.FC = () => {
       dismissRequestModal();
       loadRequests();
     }
+  }, {
+    onDismiss: () => dismissRequestModal(),
+    presentingElement: presentingElement
   });
 
   useEffect(() => {
@@ -71,9 +74,7 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleAddRequest = () => {
-    presentRequestModal({
-      presentingElement: presentingElement
-    });
+    presentRequestModal();
   };
 
   const formatDate = (dateString: string) => {
@@ -95,8 +96,8 @@ const KonfiRequestsPage: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'Wartend';
-      case 'approved': return 'Genehmigt';
+      case 'pending': return 'Offen';
+      case 'approved': return 'Verbucht';
       case 'rejected': return 'Abgelehnt';
       default: return 'Unbekannt';
     }
