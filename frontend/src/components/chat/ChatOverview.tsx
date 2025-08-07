@@ -486,7 +486,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 filteredRooms.map((room) => (
                   <IonItemSliding key={room.id}>
                     <IonItem 
-                      button 
                       onClick={() => onSelectRoom(room)}
                       style={{ 
                         '--min-height': '110px',

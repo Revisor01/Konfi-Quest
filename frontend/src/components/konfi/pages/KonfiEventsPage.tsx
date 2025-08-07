@@ -50,6 +50,7 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
+  booking_status?: 'confirmed' | 'waitlist' | null;
 }
 
 const KonfiEventsPage: React.FC = () => {
@@ -109,19 +110,23 @@ const KonfiEventsPage: React.FC = () => {
         filteredEvents = events;
     }
     
-    // Sort events: upcoming events first, then by date
+    // Sort events: nächstes Event immer oben
     return filteredEvents.sort((a, b) => {
       const dateA = new Date(a.event_date);
       const dateB = new Date(b.event_date);
       const isPastA = dateA < now;
       const isPastB = dateB < now;
       
-      // If one is past and other is future, future comes first
-      if (isPastA && !isPastB) return 1;
-      if (!isPastA && isPastB) return -1;
+      // Wenn beide in Zukunft oder beide in Vergangenheit: chronologisch sortieren
+      if ((isPastA && isPastB) || (!isPastA && !isPastB)) {
+        return dateA.getTime() - dateB.getTime();
+      }
       
-      // If both are future or both are past, sort by date
-      return dateA.getTime() - dateB.getTime();
+      // Zukunft kommt vor Vergangenheit
+      if (!isPastA && isPastB) return -1;
+      if (isPastA && !isPastB) return 1;
+      
+      return 0;
     });
   };
 

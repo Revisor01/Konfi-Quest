@@ -815,7 +815,16 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                  WHEN eb_konfi.id IS NOT NULL THEN false
                  WHEN NOW() < e.registration_opens_at OR NOW() > e.registration_closes_at THEN false
                  ELSE true
-               END as can_register
+               END as can_register,
+               -- Wartelisten-Position berechnen
+               CASE 
+                 WHEN eb_konfi.status = 'waitlist' THEN
+                   (SELECT COUNT(*) + 1 FROM event_bookings eb2 
+                    WHERE eb2.event_id = e.id 
+                    AND eb2.status = 'waitlist' 
+                    AND eb2.created_at < eb_konfi.created_at)
+                 ELSE NULL
+               END as waitlist_position
         FROM events e
         LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
         LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
@@ -827,7 +836,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
         WHERE e.organization_id = $1
-        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status
+        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status, eb_konfi.created_at
         ORDER BY e.event_date ASC
       `;
       

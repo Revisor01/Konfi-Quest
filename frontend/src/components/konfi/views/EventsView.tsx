@@ -66,6 +66,7 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
+  booking_status?: 'confirmed' | 'waitlist' | null;
 }
 
 interface EventsViewProps {
@@ -257,26 +258,27 @@ const EventsView: React.FC<EventsViewProps> = ({
       </IonCard>
 
       {/* Events Liste - Admin Design */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '8px 0' }}>
-          <IonList lines="none" style={{ background: 'transparent' }}>
-            {events.map((event) => {
+      {events.length > 0 && (
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              {events.map((event) => {
               const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
+              const isCancelled = event.cancelled;
               return (
               <IonItem 
                 key={event.id}
-                button 
                 onClick={() => onSelectEvent(event)}
                 style={{ 
                   '--min-height': '110px',
                   '--padding-start': '16px', 
                   '--padding-top': '0px', 
                   '--padding-bottom': '0px',
-                  '--background': isKonfirmationEvent ? '#fff5f5' : '#fbfbfb',
+                  '--background': isCancelled ? '#fef2f2' : isKonfirmationEvent ? '#f0f9ff' : '#fbfbfb',
                   '--border-radius': '12px',
                   margin: '6px 8px',
-                  boxShadow: isKonfirmationEvent ? '0 2px 8px rgba(239, 68, 68, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
-                  border: isKonfirmationEvent ? '1px solid #fecaca' : '1px solid #f0f0f0',
+                  boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(59, 130, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
+                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #93c5fd' : '1px solid #f0f0f0',
                   borderRadius: '12px'
                 }}
               >
@@ -292,14 +294,18 @@ const EventsView: React.FC<EventsViewProps> = ({
                     <div style={{ 
                       width: '32px', 
                       height: '32px',
-                      backgroundColor: (() => {
+backgroundColor: (() => {
                         const isPastEvent = new Date(event.event_date) < new Date();
                         const isParticipated = isPastEvent && event.is_registered;
-                        return isParticipated ? '#6c757d' :
-                               (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
-                               event.is_registered ? '#28a745' : 
-                               event.registration_status === 'cancelled' ? '#dc3545' : 
-                               new Date(event.event_date) < new Date() ? '#6c757d' : '#dc2626';
+                        const attendanceStatus = event.attendance_status;
+                        
+                        if (event.cancelled) return '#dc3545'; // Rot für abgesagt
+                        if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
+                        if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst  
+                        if ((event as any).booking_status === 'waitlist') return '#fd7e14'; // Orange für Warteliste
+                        if (event.is_registered) return '#007aff'; // Blau für angemeldet
+                        if (isPastEvent) return '#6c757d'; // Grau für vergangen
+                        return '#fd7e14'; // Orange für offen
                       })(),
                       borderRadius: '50%',
                       display: 'flex',
@@ -309,14 +315,19 @@ const EventsView: React.FC<EventsViewProps> = ({
                       flexShrink: 0
                     }}>
                       <IonIcon 
-                        icon={(() => {
+icon={(() => {
                           const isPastEvent = new Date(event.event_date) < new Date();
                           const isParticipated = isPastEvent && event.is_registered;
-                          return isParticipated ? checkmarkCircle :
-                                 (event as any).registration_status_detail === 'waitlist' ? checkmarkCircle :
-                                 event.is_registered ? checkmarkCircle : 
-                                 event.registration_status === 'cancelled' ? close : 
-                                 new Date(event.event_date) < new Date() ? hourglass : calendar;
+                          const attendanceStatus = event.attendance_status;
+                          
+                          if (event.cancelled) return close; // X für abgesagt
+                          if (isParticipated && attendanceStatus === 'present') return checkmarkCircle; // Häkchen für verbucht
+                          if (isParticipated && attendanceStatus === 'absent') return close; // X für verpasst
+                          if (isParticipated && !attendanceStatus) return hourglass; // Sanduhr für offen
+                          if ((event as any).registration_status_detail === 'waitlist') return checkmarkCircle; // Häkchen für Warteliste
+                          if (event.is_registered) return checkmarkCircle; // Häkchen für angemeldet
+                          if (isPastEvent) return hourglass; // Sanduhr für vergangen
+                          return calendar; // Kalender für anstehend
                         })()}
                         style={{ 
                           fontSize: '1rem', 
@@ -344,37 +355,63 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {/* Status Badge rechts */}
                     {(() => {
                       const isPastEvent = new Date(event.event_date) < new Date();
-                      const showBadge = !isPastEvent || (isPastEvent && event.is_registered);
+                      const isParticipated = isPastEvent && event.is_registered;
+                      
+                      // Zeige Badge nur wenn Event zukünftig ist ODER Benutzer war angemeldet
+                      const showBadge = !isPastEvent || isParticipated;
                       
                       if (!showBadge) return null;
                       
-                      const isParticipated = isPastEvent && event.is_registered;
                       const attendanceStatus = event.attendance_status;
                       
                       return (
                         <span style={{
                           fontSize: '0.7rem',
-                          color: isParticipated ? (attendanceStatus === 'present' ? '#28a745' : attendanceStatus === 'absent' ? '#dc3545' : '#6c757d') : 
-                                (event as any).registration_status_detail === 'waitlist' ? '#fd7e14' :
-                                event.is_registered ? '#28a745' : 
-                                event.registration_status === 'open' ? '#fd7e14' : 
-                                event.registration_status === 'upcoming' ? '#ffc409' : 
-                                event.registration_status === 'cancelled' ? '#dc3545' : '#dc3545',
+color: (() => {
+                            const isPastEvent = new Date(event.event_date) < new Date();
+                            const isParticipated = isPastEvent && event.is_registered;
+                            const attendanceStatus = event.attendance_status;
+                            
+                            if (event.cancelled) return '#dc3545'; // Rot für abgesagt
+                            if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
+                            if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst
+                            if ((event as any).booking_status === 'waitlist') return '#fd7e14'; // Orange für Warteliste
+                            if (event.is_registered) return '#007aff'; // Blau für angemeldet
+                            if (event.registration_status === 'open') return '#fd7e14'; // Orange für offen
+                            if (event.registration_status === 'upcoming') return '#ffc409'; // Gelb für bald
+                            return '#dc3545'; // Rot für geschlossen
+                          })(),
                           fontWeight: '600',
-                          backgroundColor: isParticipated ? (attendanceStatus === 'present' ? '#d4edda' : attendanceStatus === 'absent' ? '#f8d7da' : '#e9ecef') : 
-                                         (event as any).registration_status_detail === 'waitlist' ? '#fff4e6' :
-                                         event.is_registered ? '#d4edda' : 
-                                         event.registration_status === 'open' ? '#fff4e6' : 
-                                         event.registration_status === 'upcoming' ? '#fff3cd' : 
-                                         event.registration_status === 'cancelled' ? '#f8d7da' : '#f8d7da',
+backgroundColor: (() => {
+                            const isPastEvent = new Date(event.event_date) < new Date();
+                            const isParticipated = isPastEvent && event.is_registered;
+                            const attendanceStatus = event.attendance_status;
+                            
+                            if (event.cancelled) return '#f8d7da'; // Hellrot für abgesagt
+                            if (isParticipated && attendanceStatus === 'present') return '#d4edda'; // Hellgrün für verbucht
+                            if (isParticipated && attendanceStatus === 'absent') return '#f8d7da'; // Hellrot für verpasst
+                            if ((event as any).booking_status === 'waitlist') return '#fff4e6'; // Hellorange für Warteliste
+                            if (event.is_registered) return '#e3f2fd'; // Hellblau für angemeldet
+                            if (event.registration_status === 'open') return '#fff4e6'; // Hellorange für offen
+                            if (event.registration_status === 'upcoming') return '#fff3cd'; // Hellgelb für bald
+                            return '#f8d7da'; // Hellrot für geschlossen
+                          })(),
                           padding: '3px 6px',
                           borderRadius: '6px',
-                          border: `1px solid ${isParticipated ? (attendanceStatus === 'present' ? '#c3e6cb' : attendanceStatus === 'absent' ? '#f5c6cb' : '#adb5bd') : 
-                                             (event as any).registration_status_detail === 'waitlist' ? '#fdbf85' :
-                                             event.is_registered ? '#c3e6cb' : 
-                                             event.registration_status === 'open' ? '#fdbf85' : 
-                                             event.registration_status === 'upcoming' ? '#ffeaa7' : 
-                                             event.registration_status === 'cancelled' ? '#f5c6cb' : '#f5c6cb'}`,
+border: `1px solid ${(() => {
+                            const isPastEvent = new Date(event.event_date) < new Date();
+                            const isParticipated = isPastEvent && event.is_registered;
+                            const attendanceStatus = event.attendance_status;
+                            
+                            if (event.cancelled) return '#f5c6cb'; // Border rot für abgesagt
+                            if (isParticipated && attendanceStatus === 'present') return '#c3e6cb'; // Border grün für verbucht
+                            if (isParticipated && attendanceStatus === 'absent') return '#f5c6cb'; // Border rot für verpasst
+                            if ((event as any).booking_status === 'waitlist') return '#fdbf85'; // Border orange für Warteliste
+                            if (event.is_registered) return '#bbdefb'; // Border blau für angemeldet
+                            if (event.registration_status === 'open') return '#fdbf85'; // Border orange für offen
+                            if (event.registration_status === 'upcoming') return '#ffeaa7'; // Border gelb für bald
+                            return '#f5c6cb'; // Border rot für geschlossen
+                          })()}`,
                           whiteSpace: 'nowrap',
                           boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                           flexShrink: 0,
@@ -383,13 +420,21 @@ const EventsView: React.FC<EventsViewProps> = ({
                           top: '50%',
                           transform: 'translateY(-50%)'
                         }}>
-                          {isParticipated ? (attendanceStatus === 'present' ? 'VERBUCHT' : attendanceStatus === 'absent' ? 'VERPASST' : 'OFFEN') :
-                           (event as any).registration_status_detail === 'waitlist' ? `WARTELISTE (${(event as any).waitlist_position || 1})` :
-                           event.is_registered ? 'ANGEMELDET' : 
-                           event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled ? 'WARTELISTE' :
-                           event.registration_status === 'open' ? 'OFFEN' : 
-                           event.registration_status === 'upcoming' ? 'BALD' : 
-                           event.registration_status === 'cancelled' ? 'ABGESAGT' : 'GESCHLOSSEN'}
+                          {(() => {
+                            const isPastEvent = new Date(event.event_date) < new Date();
+                            const isParticipated = isPastEvent && event.is_registered;
+                            const attendanceStatus = event.attendance_status;
+                            
+                            if (event.cancelled) return 'ABGESAGT';
+                            if (isParticipated && attendanceStatus === 'present') return 'VERBUCHT';
+                            if (isParticipated && attendanceStatus === 'absent') return 'VERPASST';
+                            if ((event as any).booking_status === 'waitlist') return `WARTELISTE (${(event as any).waitlist_position || 1})`;
+                            if (event.is_registered) return 'ANGEMELDET';
+                            if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'WARTELISTE';
+                            if (event.registration_status === 'open') return 'OFFEN';
+                            if (event.registration_status === 'upcoming') return 'BALD';
+                            return 'GESCHLOSSEN';
+                          })()}
                         </span>
                       );
                     })()}
@@ -447,10 +492,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                 </IonLabel>
               </IonItem>
               );
-            })}
-          </IonList>
-        </IonCardContent>
-      </IonCard>
+              })}
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      )}
 
       {events.length === 0 && (
         <IonCard style={{ margin: '16px' }}>
