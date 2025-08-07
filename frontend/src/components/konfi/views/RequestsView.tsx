@@ -328,15 +328,15 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                   button={false}
                   onClick={request.photo_filename ? () => handleRequestClick(request) : undefined}
                   style={{
-                    '--min-height': '90px',
+                    '--min-height': '110px',
                     '--padding-start': '16px',
-                    '--padding-top': '8px',
-                    '--padding-bottom': '8px',
-                    '--background': '#fbfbfb',
+                    '--padding-top': '0px',
+                    '--padding-bottom': '0px',
+                    '--background': request.activity_type === 'gottesdienst' ? '#f0f9ff' : '#f0f9f0',
                     '--border-radius': '12px',
                     margin: '6px 8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #f0f0f0',
+                    boxShadow: request.activity_type === 'gottesdienst' ? '0 2px 8px rgba(59, 130, 246, 0.15)' : '0 2px 8px rgba(40, 167, 69, 0.15)',
+                    border: request.activity_type === 'gottesdienst' ? '1px solid #93c5fd' : '1px solid #90ee90',
                     borderRadius: '12px',
                     cursor: request.photo_filename ? 'pointer' : 'default'
                   }}
@@ -359,7 +359,9 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)',
+                        boxShadow: request.activity_type === 'gottesdienst' 
+                          ? '0 2px 8px rgba(56, 128, 255, 0.3)' 
+                          : '0 2px 8px rgba(40, 167, 69, 0.3)',
                         flexShrink: 0
                       }}>
                         <IonIcon 
@@ -406,7 +408,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                         top: '50%',
                         transform: 'translateY(-50%)'
                       }}>
-                        {getStatusText(request.status)}
+                        {getStatusText(request.status).toUpperCase()}
                       </span>
                     </div>
 
