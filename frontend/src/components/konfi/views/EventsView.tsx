@@ -15,7 +15,8 @@ import {
   IonList,
   IonChip,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonItemSliding
 } from '@ionic/react';
 import { 
   calendar,
@@ -266,10 +267,10 @@ const EventsView: React.FC<EventsViewProps> = ({
               const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
               const isCancelled = event.cancelled;
               return (
-              <IonItem 
-                key={event.id}
-                onClick={() => onSelectEvent(event)}
-                style={{ 
+              <IonItemSliding key={event.id}>
+                <IonItem 
+                  onClick={() => onSelectEvent(event)}
+                  style={{ 
                   '--min-height': '110px',
                   '--padding-start': '16px', 
                   '--padding-top': '0px', 
@@ -491,6 +492,7 @@ border: `1px solid ${(() => {
                   </div>
                 </IonLabel>
               </IonItem>
+              </IonItemSliding>
               );
               })}
             </IonList>
