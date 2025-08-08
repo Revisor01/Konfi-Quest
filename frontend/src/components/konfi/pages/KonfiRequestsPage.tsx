@@ -74,8 +74,9 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleAddRequest = () => {
+    console.log('🎯 Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
     presentRequestModal({
-      presentingElement: presentingElement
+      presentingElement: pageRef.current || presentingElement || undefined
     });
   };
 

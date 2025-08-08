@@ -332,7 +332,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
-                    '--background': request.activity_type === 'gottesdienst' ? '#f0f9ff' : '#f0f9f0',
+                    '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '6px 8px',
                     boxShadow: request.activity_type === 'gottesdienst' ? '0 2px 8px rgba(59, 130, 246, 0.15)' : '0 2px 8px rgba(40, 167, 69, 0.15)',

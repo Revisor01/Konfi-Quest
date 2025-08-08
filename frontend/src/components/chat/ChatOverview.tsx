@@ -420,43 +420,37 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
 <IonCard style={{ margin: '16px' }}>
   <IonCardContent style={{ padding: '16px' }}>
-    <IonGrid>
-      <IonRow>
-        <IonCol size="12">
-          <IonItem 
-            lines="none" 
-            style={{ 
-              '--background': '#f8f9fa',
-              '--border-radius': '8px',
-              marginBottom: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              '--min-height': '44px'
-            }}
-          >
-            <IonIcon 
-              icon={search} 
-              slot="start" 
-              style={{ 
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }} 
-            />
-            <IonInput
-              value={searchText}
-              onIonInput={(e) => setSearchText(e.detail.value!)}
-              placeholder="Chaträume durchsuchen..."
-              style={{ 
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-            </IonItem>
-        </IonCol>
-      </IonRow>
-      </IonGrid>
+    <IonItem 
+      lines="none" 
+      style={{ 
+        '--background': '#f8f9fa',
+        '--border-radius': '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        '--padding-start': '12px',
+        '--padding-end': '12px',
+        '--min-height': '52px',
+        margin: '0'
+      }}
+    >
+      <IonIcon 
+        icon={search} 
+        slot="start" 
+        style={{ 
+          color: '#8e8e93',
+          marginRight: '8px',
+          fontSize: '1rem'
+        }} 
+      />
+      <IonInput
+        value={searchText}
+        onIonInput={(e) => setSearchText(e.detail.value!)}
+        placeholder="Chaträume durchsuchen..."
+        style={{ 
+          '--color': '#000',
+          '--placeholder-color': '#8e8e93'
+        }}
+      />
+    </IonItem>
   </IonCardContent>
 </IonCard>
     

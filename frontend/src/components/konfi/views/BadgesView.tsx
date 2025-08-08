@@ -256,7 +256,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
       {/* Badges Grid - 2er Grid mit Square Cards */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '0px' }}>
+        <IonCardContent style={{ padding: '14px 0px' }}>
           {filteredBadges.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px' }}>
               <IonIcon 
@@ -273,10 +273,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
               <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Achievements!</p>
             </div>
           ) : (
-            <IonGrid style={{ padding: '0' }}>
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
               <IonRow>
                 {filteredBadges.map((badge) => (
-                  <IonCol size="6" key={badge.id} style={{ padding: '8px' }}>
+                  <IonCol size="6" key={badge.id} style={{ padding: '0px 4px 8px 4px' }}>
                     <IonCard style={{
                       margin: '0',
                       backgroundColor: badge.is_earned ? '#fbfbfb' : '#f8f9fa',
@@ -289,7 +289,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       opacity: badge.is_earned ? 1 : 0.7,
                       position: 'relative',
                       aspectRatio: '1',
-                      height: 'auto'
+                      height: 'auto',
+                      borderRadius: '12px',
                     }}>
                       <IonCardContent style={{ 
                         padding: '12px',

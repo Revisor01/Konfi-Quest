@@ -61,7 +61,7 @@ const KonfiEventsPage: React.FC = () => {
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'registered'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'registered' | 'konfirmation'>('upcoming');
 
   useEffect(() => {
     loadEvents();
@@ -99,11 +99,17 @@ const KonfiEventsPage: React.FC = () => {
     let filteredEvents;
     switch (activeTab) {
       case 'registered':
+        // Zeige alle Events wo ich angemeldet bin
         filteredEvents = events.filter(event => event.is_registered);
         break;
       case 'upcoming':
         filteredEvents = events.filter(event => 
-          new Date(event.event_date) >= now
+          new Date(event.event_date) >= now && !event.category_names?.toLowerCase().includes('konfirmation')
+        );
+        break;
+      case 'konfirmation':
+        filteredEvents = events.filter(event => 
+          event.category_names?.toLowerCase().includes('konfirmation')
         );
         break;
       default:

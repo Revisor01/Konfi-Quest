@@ -72,8 +72,8 @@ interface Event {
 
 interface EventsViewProps {
   events: Event[];
-  activeTab: 'upcoming' | 'registered';
-  onTabChange: (tab: 'upcoming' | 'registered') => void;
+  activeTab: 'upcoming' | 'registered' | 'konfirmation';
+  onTabChange: (tab: 'upcoming' | 'registered' | 'konfirmation') => void;
   onSelectEvent: (event: Event) => void;
   onUpdate: () => void;
 }
@@ -119,27 +119,39 @@ const EventsView: React.FC<EventsViewProps> = ({
   };
 
   const allEvents = events.length;
+  const konfirmationEvents = events.filter(e => e.category_names?.toLowerCase().includes('konfirmation'));
+  const nonKonfirmationEvents = events.filter(e => !e.category_names?.toLowerCase().includes('konfirmation'));
+  
   const eventCounts = {
     all: allEvents,
-    upcoming: events.filter(e => new Date(e.event_date) >= new Date()).length,
+    upcoming: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
     registered: events.filter(e => e.is_registered).length,
     registeredUpcoming: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length,
-    registeredPast: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length
+    registeredPast: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length,
+    konfirmation: konfirmationEvents.length,
+    konfirmationUpcoming: konfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
+    konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
   };
 
   const getStatLabelsAndCounts = () => {
     switch (activeTab) {
       case 'upcoming':
         return [
-          { label: 'Gesamt', count: eventCounts.all, icon: calendar },
-          { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
-          { label: 'Gebucht', count: eventCounts.registered, icon: statsChart }
+          { label: 'Gesamt', count: eventCounts.upcoming, icon: calendar },
+          { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date() && !e.is_registered).length, icon: time },
+          { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: statsChart }
         ];
       case 'registered':
         return [
           { label: 'Gebucht', count: eventCounts.registered, icon: calendar },
           { label: 'Anstehend', count: eventCounts.registeredUpcoming, icon: time },
           { label: 'Vergangen', count: eventCounts.registeredPast, icon: statsChart }
+        ];
+      case 'konfirmation':
+        return [
+          { label: 'Gesamt', count: eventCounts.konfirmation, icon: calendar },
+          { label: 'Anstehend', count: eventCounts.konfirmationUpcoming, icon: time },
+          { label: 'Gebucht', count: eventCounts.konfirmationRegistered, icon: statsChart }
         ];
       default:
         return [
@@ -254,18 +266,42 @@ const EventsView: React.FC<EventsViewProps> = ({
                 Meine Events
               </IonLabel>
             </IonSegmentButton>
+            <IonSegmentButton value="konfirmation">
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
+                Konfirmation
+              </IonLabel>
+            </IonSegmentButton>
           </IonSegment>
         </IonCardContent>
       </IonCard>
 
       {/* Events Liste - Admin Design */}
-      {events.length > 0 && (
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '8px 0' }}>
-            <IonList lines="none" style={{ background: 'transparent' }}>
-              {events.map((event) => {
+      {(() => {
+        // Filtere Events basierend auf aktivem Tab
+        let filteredEvents = events;
+        switch (activeTab) {
+          case 'upcoming':
+            filteredEvents = nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
+            break;
+          case 'registered':
+            filteredEvents = events.filter(e => e.is_registered);
+            break;
+          case 'konfirmation':
+            filteredEvents = konfirmationEvents;
+            break;
+          default:
+            filteredEvents = events;
+        }
+        
+        return filteredEvents.length > 0 && (
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
+                {filteredEvents.map((event) => {
               const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
               const isCancelled = event.cancelled;
+              const isPastEvent = new Date(event.event_date) < new Date();
+              
               return (
               <IonItemSliding key={event.id}>
                 <IonItem 
@@ -275,12 +311,13 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--padding-start': '16px', 
                   '--padding-top': '0px', 
                   '--padding-bottom': '0px',
-                  '--background': isCancelled ? '#fef2f2' : isKonfirmationEvent ? '#f0f9ff' : '#fbfbfb',
+                  '--background': '#fbfbfb',
                   '--border-radius': '12px',
                   margin: '6px 8px',
-                  boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(59, 130, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
-                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #93c5fd' : '1px solid #f0f0f0',
-                  borderRadius: '12px'
+                  boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
+                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #f0f0f0',
+                  borderRadius: '12px',
+                  opacity: isPastEvent ? 0.6 : 1
                 }}
               >
                 <IonLabel>
@@ -299,11 +336,14 @@ backgroundColor: (() => {
                         const isPastEvent = new Date(event.event_date) < new Date();
                         const isParticipated = isPastEvent && event.is_registered;
                         const attendanceStatus = event.attendance_status;
+                        const isOnWaitlist = (event as any).booking_status === 'waitlist';
                         
                         if (event.cancelled) return '#dc3545'; // Rot für abgesagt
                         if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
-                        if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst  
-                        if ((event as any).booking_status === 'waitlist') return '#fd7e14'; // Orange für Warteliste
+                        if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst
+                        // Vergangene Wartelisten-Events grau
+                        if (isPastEvent && isOnWaitlist) return '#6c757d'; // Grau für vergangen  
+                        if (isOnWaitlist) return '#fd7e14'; // Orange für Warteliste
                         if (event.is_registered) return '#007aff'; // Blau für angemeldet
                         if (isPastEvent) return '#6c757d'; // Grau für vergangen
                         return '#fd7e14'; // Orange für offen
@@ -340,7 +380,7 @@ icon={(() => {
                       fontWeight: '600', 
                       fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)', // Responsive Schriftgröße
                       margin: '0',
-                      color: event.cancelled ? '#999' : '#333',
+                      color: event.cancelled ? '#999' : isPastEvent ? '#999' : '#333',
                       textDecoration: event.cancelled ? 'line-through' : 'none',
                       lineHeight: '1.3',
                       flex: 1,
@@ -363,8 +403,6 @@ icon={(() => {
                       
                       if (!showBadge) return null;
                       
-                      const attendanceStatus = event.attendance_status;
-                      
                       return (
                         <span style={{
                           fontSize: '0.7rem',
@@ -372,11 +410,14 @@ color: (() => {
                             const isPastEvent = new Date(event.event_date) < new Date();
                             const isParticipated = isPastEvent && event.is_registered;
                             const attendanceStatus = event.attendance_status;
+                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
                             
                             if (event.cancelled) return '#dc3545'; // Rot für abgesagt
                             if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
                             if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst
-                            if ((event as any).booking_status === 'waitlist') return '#fd7e14'; // Orange für Warteliste
+                            // Vergangene Wartelisten-Events grau
+                            if (isPastEvent && isOnWaitlist) return '#6c757d'; // Grau für vergangen
+                            if (isOnWaitlist) return '#fd7e14'; // Orange für Warteliste
                             if (event.is_registered) return '#007aff'; // Blau für angemeldet
                             if (event.registration_status === 'open') return '#fd7e14'; // Orange für offen
                             if (event.registration_status === 'upcoming') return '#ffc409'; // Gelb für bald
@@ -387,11 +428,14 @@ backgroundColor: (() => {
                             const isPastEvent = new Date(event.event_date) < new Date();
                             const isParticipated = isPastEvent && event.is_registered;
                             const attendanceStatus = event.attendance_status;
+                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
                             
                             if (event.cancelled) return '#f8d7da'; // Hellrot für abgesagt
                             if (isParticipated && attendanceStatus === 'present') return '#d4edda'; // Hellgrün für verbucht
                             if (isParticipated && attendanceStatus === 'absent') return '#f8d7da'; // Hellrot für verpasst
-                            if ((event as any).booking_status === 'waitlist') return '#fff4e6'; // Hellorange für Warteliste
+                            // Vergangene Wartelisten-Events grau
+                            if (isPastEvent && isOnWaitlist) return '#e9ecef'; // Hellgrau für vergangen
+                            if (isOnWaitlist) return '#fff4e6'; // Hellorange für Warteliste
                             if (event.is_registered) return '#e3f2fd'; // Hellblau für angemeldet
                             if (event.registration_status === 'open') return '#fff4e6'; // Hellorange für offen
                             if (event.registration_status === 'upcoming') return '#fff3cd'; // Hellgelb für bald
@@ -403,11 +447,14 @@ border: `1px solid ${(() => {
                             const isPastEvent = new Date(event.event_date) < new Date();
                             const isParticipated = isPastEvent && event.is_registered;
                             const attendanceStatus = event.attendance_status;
+                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
                             
                             if (event.cancelled) return '#f5c6cb'; // Border rot für abgesagt
                             if (isParticipated && attendanceStatus === 'present') return '#c3e6cb'; // Border grün für verbucht
                             if (isParticipated && attendanceStatus === 'absent') return '#f5c6cb'; // Border rot für verpasst
-                            if ((event as any).booking_status === 'waitlist') return '#fdbf85'; // Border orange für Warteliste
+                            // Vergangene Wartelisten-Events grau
+                            if (isPastEvent && isOnWaitlist) return '#dee2e6'; // Border grau für vergangen
+                            if (isOnWaitlist) return '#fdbf85'; // Border orange für Warteliste
                             if (event.is_registered) return '#bbdefb'; // Border blau für angemeldet
                             if (event.registration_status === 'open') return '#fdbf85'; // Border orange für offen
                             if (event.registration_status === 'upcoming') return '#ffeaa7'; // Border gelb für bald
@@ -425,11 +472,14 @@ border: `1px solid ${(() => {
                             const isPastEvent = new Date(event.event_date) < new Date();
                             const isParticipated = isPastEvent && event.is_registered;
                             const attendanceStatus = event.attendance_status;
+                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
                             
                             if (event.cancelled) return 'ABGESAGT';
                             if (isParticipated && attendanceStatus === 'present') return 'VERBUCHT';
                             if (isParticipated && attendanceStatus === 'absent') return 'VERPASST';
-                            if ((event as any).booking_status === 'waitlist') return `WARTELISTE (${(event as any).waitlist_position || 1})`;
+                            // Vergangene Wartelisten-Events - einfach als VERGANGEN markieren
+                            if (isPastEvent && isOnWaitlist) return 'VERGANGEN';
+                            if (isOnWaitlist) return `WARTELISTE (${(event as any).waitlist_position || 1})`;
                             if (event.is_registered) return 'ANGEMELDET';
                             if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'WARTELISTE';
                             if (event.registration_status === 'open') return 'OFFEN';
@@ -448,15 +498,15 @@ border: `1px solid ${(() => {
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '0.85rem',
-                    color: '#666',
+                    color: isPastEvent ? '#999' : '#666',
                     marginBottom: '6px'
                   }}>
-                    <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: '#dc2626' }} />
-                    <span style={{ fontWeight: '500', color: '#333' }}>
+                    <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#dc2626' }} />
+                    <span style={{ fontWeight: '500', color: isPastEvent ? '#999' : '#333' }}>
                       {formatDate(event.event_date)}
                     </span>
-                    <IonIcon icon={time} style={{ fontSize: '0.9rem', color: '#ff6b35', marginLeft: '8px' }} />
-                    <span style={{ color: '#666' }}>
+                    <IonIcon icon={time} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#ff6b35', marginLeft: '8px' }} />
+                    <span style={{ color: isPastEvent ? '#999' : '#666' }}>
                       {formatTime(event.event_date)}
                     </span>
                   </div>
@@ -467,64 +517,85 @@ border: `1px solid ${(() => {
                     alignItems: 'center',
                     gap: '16px',
                     fontSize: '0.8rem',
-                    color: '#666'
+                    color: isPastEvent ? '#999' : '#666'
                   }}>
                     {event.location && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: '#007aff' }} />
+                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#007aff' }} />
                         <span>{event.location}</span>
                       </div>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={people} style={{ fontSize: '0.8rem', color: '#34c759' }} />
+                      <IonIcon icon={people} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#34c759' }} />
                       <span>{event.registered_count}/{event.max_participants}</span>
                       {event.waitlist_enabled && (event as any).waitlist_count > 0 && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
-                          <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: '#fd7e14' }} />
-                          <span style={{ color: '#666' }}>{(event as any).waitlist_count}/{event.max_waitlist_size || 10}</span>
+                          <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: isPastEvent ? '#999' : '#fd7e14' }} />
+                          <span style={{ color: isPastEvent ? '#999' : '#666' }}>{(event as any).waitlist_count}/{event.max_waitlist_size || 10}</span>
                         </span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
+                      <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#ff9500' }} />
                       <span>{event.points}P</span>
                     </div>
                   </div>
                 </IonLabel>
               </IonItem>
               </IonItemSliding>
-              );
-              })}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      )}
+                );
+                })}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        );
+      })()}
 
-      {events.length === 0 && (
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent>
-            <div style={{ textAlign: 'center', padding: '32px' }}>
-              <IonIcon 
-                icon={calendarOutline} 
-                style={{ 
-                  fontSize: '3rem', 
-                  color: '#dc2626', 
-                  marginBottom: '16px',
-                  display: 'block',
-                  margin: '0 auto 16px auto'
-                }} 
-              />
-              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
-              <p style={{ color: '#999', margin: '0' }}>
-                {activeTab === 'registered' 
-                  ? 'Du bist noch für keine Events angemeldet' 
-                  : 'Keine anstehenden Events'
-                }
-              </p>
-            </div>
-          </IonCardContent>
-        </IonCard>
-      )}
+      {(() => {
+        // Zeige leere Nachricht basierend auf Tab
+        let filteredEvents = events;
+        switch (activeTab) {
+          case 'upcoming':
+            filteredEvents = nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
+            break;
+          case 'registered':
+            filteredEvents = events.filter(e => e.is_registered);
+            break;
+          case 'konfirmation':
+            filteredEvents = konfirmationEvents;
+            break;
+          default:
+            filteredEvents = events;
+        }
+        
+        return filteredEvents.length === 0 && (
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardContent>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon 
+                  icon={calendarOutline} 
+                  style={{ 
+                    fontSize: '3rem', 
+                    color: '#dc2626', 
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }} 
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>
+                  {activeTab === 'registered' 
+                    ? 'Du bist noch für keine Events angemeldet' 
+                    : activeTab === 'konfirmation'
+                    ? 'Keine Konfirmationstermine verfügbar'
+                    : 'Keine anstehenden Events'
+                  }
+                </p>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        );
+      })()}
     </div>
   );
 };

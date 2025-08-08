@@ -46,7 +46,8 @@ import {
   eye,
   eyeOff,
   key,
-  book
+  book,
+  location
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -549,45 +550,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between'
+          justifyContent: 'center'
         }}>
-          {/* Konfirmation Info - wenn vorhanden */}
-          {profile.confirmation_date && (
-            <div style={{
-              marginBottom: '16px',
-              textAlign: 'center'
-            }}>
-              <h3 style={{
-                fontSize: '1.3rem',
-                fontWeight: '700',
-                color: 'white',
-                margin: '0 0 4px 0',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Konfirmation
-              </h3>
-              <p style={{
-                fontSize: '1rem',
-                color: 'rgba(255, 255, 255, 0.95)',
-                margin: '0 0 2px 0',
-                fontWeight: '500'
-              }}>
-                {formatDate(profile.confirmation_date)} • {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
-              </p>
-              {profile.confirmation_location && (
-                <p style={{
-                  fontSize: '0.9rem',
-                  color: 'rgba(255, 255, 255, 0.85)',
-                  margin: '0',
-                  fontStyle: 'italic'
-                }}>
-                  {profile.confirmation_location}
-                </p>
-              )}
-            </div>
-          )}
-          
           <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
               <IonCol size="4" style={{ padding: '0 4px' }}>
@@ -674,7 +638,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
       </div>
 
       {/* Persönliche Informationen - Erweitert */}
-      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
+      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
         <IonCardContent>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <IonAvatar style={{ 
@@ -721,26 +685,85 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </IonCardContent>
       </IonCard>
 
-      {/* Konfirmationstermin Card - Schlicht im Profil-Stil */}
-      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
+      {/* Konfirmationstermin Card - Schön gestylt */}
+      <IonCard style={{ 
+        margin: '16px', 
+        borderRadius: '12px',
+        background: profile.confirmation_date ? 'linear-gradient(135deg, #f0e6ff 0%, #e6d9ff 100%)' : '#fff',
+        border: profile.confirmation_date ? '1px solid #d4b5fd' : '1px solid #e0e0e0'
+      }}>
         <IonCardContent>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <IonIcon 
-              icon={calendar} 
-              style={{ 
-                fontSize: '1.5rem', 
-                color: '#8b5cf6'
-              }} 
-            />
-            <div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '600' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              width: '48px', 
+              height: '48px',
+              backgroundColor: '#8b5cf6',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+              flexShrink: 0
+            }}>
+              <IonIcon 
+                icon={calendar} 
+                style={{ 
+                  fontSize: '1.5rem', 
+                  color: 'white'
+                }} 
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ 
+                margin: '0 0 6px 0', 
+                fontSize: '1rem', 
+                fontWeight: '700',
+                color: '#8b5cf6',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
                 Konfirmationstermin
               </h3>
               {profile.confirmation_date ? (
-                <p style={{ margin: '0', color: '#333', fontSize: '0.9rem' }}>
-                  {formatDate(profile.confirmation_date)}
-                  {profile.confirmation_location && ` • ${profile.confirmation_location}`}
-                </p>
+                <div>
+                  <p style={{ 
+                    margin: '0 0 4px 0', 
+                    color: '#333', 
+                    fontSize: '1.1rem', 
+                    fontWeight: '600' 
+                  }}>
+                    {formatDate(profile.confirmation_date)}
+                  </p>
+                  <p style={{ 
+                    margin: '0 0 4px 0', 
+                    color: '#666', 
+                    fontSize: '0.9rem' 
+                  }}>
+                    {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                  </p>
+                  {profile.confirmation_location && (
+                    <p 
+                      style={{ 
+                        margin: '0', 
+                        color: '#8b5cf6', 
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onClick={() => {
+                        if (profile.confirmation_location) {
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.confirmation_location)}`, '_blank');
+                        }
+                      }}
+                    >
+                      <IonIcon icon={location} style={{ fontSize: '1rem' }} />
+                      {profile.confirmation_location}
+                    </p>
+                  )}
+                </div>
               ) : (
                 <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
                   {profile.jahrgang_name && profile.jahrgang_year 
@@ -756,7 +779,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
 
       {/* Next Badge Progress */}
       {profile.progress_overview?.next_badge && (
-        <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
+        <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
           <IonCardContent>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
               <IonIcon icon={rocket} style={{ fontSize: '1.2rem', color: '#ff6b35', marginRight: '8px' }} />
@@ -829,7 +852,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
       )}
 
       {/* Account Settings */}
-      <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
+      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
         <IonCardContent>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
             Konto-Einstellungen
