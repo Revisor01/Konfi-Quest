@@ -1,35 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  IonCard,
-  IonCardContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonIcon,
   IonProgressBar,
   IonAvatar,
-  IonChip,
-  IonBadge
+  IonBadge,
+  IonIcon
 } from '@ionic/react';
-import {
-  calendar,
+import { 
   trophy,
-  star,
-  flash,
-  sparkles,
-  location,
-  time,
   checkmarkCircle,
-  book,
-  ribbon,
-  people,
-  statsChart,
-  flame,
-  rocket,
-  heart,
-  diamond,
-  gift
+  hourglass,
+  time,
+  location
 } from 'ionicons/icons';
+import axios from 'axios';
 
 interface DashboardData {
   konfi: {
@@ -106,6 +89,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   targetGottesdienst,
   targetGemeinde
 }) => {
+  const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
+  const [loadingVerse, setLoadingVerse] = useState(true);
+
+  // Load Tageslosung from API based on user's translation setting
+  useEffect(() => {
+    const loadTageslosung = async () => {
+      try {
+        // Get user's bible translation setting (default to BIGS)
+        const translation = localStorage.getItem('bible_translation') || 'BIGS';
+        const response = await axios.get(
+          `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`
+        );
+        
+        if (response.data) {
+          setActualDailyVerse(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load Tageslosung:', error);
+        // Use fallback if provided
+        if (dailyVerse) {
+          setActualDailyVerse(dailyVerse);
+        }
+      } finally {
+        setLoadingVerse(false);
+      }
+    };
+
+    loadTageslosung();
+  }, [dailyVerse]);
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -123,733 +136,523 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     });
   };
 
+  const formatTimeUntil = (dateString: string) => {
+    const targetDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = targetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Heute';
+    if (diffDays === 1) return 'Morgen';
+    if (diffDays < 0) return 'Vorbei';
+    if (diffDays < 7) return `in ${diffDays} Tagen`;
+    if (diffDays < 30) return `in ${Math.floor(diffDays / 7)} Wochen`;
+    return `in ${Math.floor(diffDays / 30)} Monaten`;
+  };
+
   const gottesdienstPoints = dashboardData.konfi.gottesdienst_points || 0;
   const gemeindePoints = dashboardData.konfi.gemeinde_points || 0;
   const totalPoints = dashboardData.total_points || 0;
-  const maxPoints = targetGottesdienst + targetGemeinde;
 
-  // Berechne Fortschritt als Prozent
-  const overallProgress = Math.min((totalPoints / maxPoints) * 100, 100);
+  // Get next upcoming event
+  const nextEvent = upcomingEvents
+    .filter(e => !e.cancelled && new Date(e.event_date || e.date) >= new Date())
+    .sort((a, b) => new Date(a.event_date || a.date).getTime() - new Date(b.event_date || b.date).getTime())[0];
+
+  const cancelledEvents = upcomingEvents.filter(e => e.cancelled && e.is_registered);
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', minHeight: '100vh', padding: '16px' }}>
-      {/* Header mit Gradient und Name/Level */}
+    <div style={{ padding: '16px' }}>
+      
+      {/* Header Card - Dunkles Lila */}
       <div style={{
-        background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)',
+        background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
         borderRadius: '24px',
         padding: '24px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(255, 107, 107, 0.4)',
+        boxShadow: '0 10px 40px rgba(91, 33, 182, 0.3)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Überschrift Hintergrund */}
+        {/* Background Pattern */}
         <div style={{
           position: 'absolute',
-          top: '-5px',
-          left: '12px',
-          zIndex: 1
-        }}>
-          <h2 style={{
-            fontSize: '4.5rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            KONFI
-          </h2>
-          <h2 style={{
-            fontSize: '4.5rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            QUEST
-          </h2>
-        </div>
+          top: '-20px',
+          right: '-20px',
+          width: '150px',
+          height: '150px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '50%'
+        }}/>
         
-        {/* Content */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          paddingTop: '80px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-            <IonAvatar style={{ width: '80px', height: '80px' }}>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <IonAvatar style={{ width: '60px', height: '60px' }}>
               <div style={{
                 width: '100%',
                 height: '100%',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                background: 'rgba(255, 255, 255, 0.2)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
                 fontWeight: '700',
-                fontSize: '1.8rem',
-                border: '4px solid rgba(255, 255, 255, 0.3)',
-                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)'
+                fontSize: '1.5rem',
+                backdropFilter: 'blur(10px)'
               }}>
                 {getInitials(dashboardData.konfi.display_name)}
               </div>
             </IonAvatar>
             
             <div style={{ flex: 1 }}>
-              <h1 style={{
-                fontSize: '2rem',
+              <h2 style={{
+                fontSize: '1.8rem',
                 fontWeight: '800',
                 margin: '0 0 4px 0',
-                color: 'white',
-                textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                color: 'white'
               }}>
                 Hey {dashboardData.konfi.display_name}!
-              </h1>
+              </h2>
               <p style={{
-                fontSize: '1.1rem',
-                margin: '0 0 8px 0',
-                color: 'rgba(255, 255, 255, 0.9)',
-                fontWeight: '600'
+                fontSize: '1rem',
+                margin: '0 0 4px 0',
+                color: 'rgba(255, 255, 255, 0.8)'
               }}>
                 {dashboardData.konfi.jahrgang_name}
               </p>
-              
-              {/* Level Anzeige */}
               {dashboardData.level_info?.current_level && (
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '8px 12px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
+                  display: 'inline-block',
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '8px',
+                  padding: '4px 12px',
+                  fontSize: '0.85rem',
+                  color: 'white',
+                  fontWeight: '600'
                 }}>
-                  <span style={{ fontSize: '1.2rem' }}>
-                    {dashboardData.level_info.current_level.icon}
-                  </span>
-                  <span style={{ 
-                    color: 'white', 
-                    fontWeight: '700',
-                    fontSize: '0.9rem'
-                  }}>
-                    {dashboardData.level_info.current_level.title}
-                  </span>
+                  Level {dashboardData.level_info.current_level.title}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Stats Grid - XX/XX Format */}
-          <IonGrid style={{ padding: '0' }}>
-            <IonRow>
-              <IonCol size="4">
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  textAlign: 'center',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <IonIcon 
-                    icon={star} 
-                    style={{ 
-                      fontSize: '2rem', 
-                      color: '#ffd700', 
-                      marginBottom: '8px',
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'white' }}>
-                    {totalPoints}/{maxPoints}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4">
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  textAlign: 'center',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <IonIcon 
-                    icon={trophy} 
-                    style={{ 
-                      fontSize: '2rem', 
-                      color: '#ff9500', 
-                      marginBottom: '8px',
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'white' }}>
-                    {badgeStats.totalEarned}/{badgeStats.totalAvailable}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                    Badges
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4">
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  textAlign: 'center',
-                  backdropFilter: 'blur(10px)'
-                }}>
-                  <IonIcon 
-                    icon={statsChart} 
-                    style={{ 
-                      fontSize: '2rem', 
-                      color: '#2dd36f', 
-                      marginBottom: '8px',
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }} 
-                  />
-                  <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'white' }}>
-                    {Math.round(overallProgress)}%
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                    Fortschritt
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-
           {/* Level Progress */}
           {dashboardData.level_info?.next_level && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '16px',
-              padding: '16px',
-              marginTop: '16px',
-              backdropFilter: 'blur(10px)'
-            }}>
+            <div style={{ marginTop: '16px' }}>
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '8px'
+                marginBottom: '6px'
               }}>
-                <span style={{ fontSize: '0.9rem', color: 'white', fontWeight: '600' }}>
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                   Nächstes Level: {dashboardData.level_info.next_level.title}
                 </span>
-                <span style={{ fontSize: '0.9rem', color: 'white' }}>
+                <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                   {dashboardData.level_info.progress_percentage}%
                 </span>
               </div>
-              
               <IonProgressBar 
                 value={dashboardData.level_info.progress_percentage / 100}
                 style={{
-                  height: '8px',
-                  borderRadius: '4px',
-                  '--progress-background': 'linear-gradient(90deg, #4facfe, #00f2fe)',
-                  '--background': 'rgba(255, 255, 255, 0.3)'
+                  '--progress-background': 'rgba(255, 255, 255, 0.8)',
+                  '--background': 'rgba(255, 255, 255, 0.2)',
+                  'height': '6px',
+                  'borderRadius': '3px'
                 }}
               />
-              
-              <div style={{
-                fontSize: '0.8rem',
-                color: 'rgba(255, 255, 255, 0.8)',
-                marginTop: '4px',
-                textAlign: 'center'
-              }}>
-                Noch {dashboardData.level_info.points_to_next_level} Punkte
-              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 2x2 Grid für Cards */}
-      <IonGrid style={{ padding: '0' }}>
-        <IonRow>
-          {/* Countdown bis zur Konfirmation */}
-          <IonCol size="6">
-            {dashboardData.days_to_confirmation !== undefined ? (
-              <IonCard style={{ 
-                margin: '0 8px 16px 0',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                border: 'none',
-                height: '140px'
-              }}>
-                <IonCardContent style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon 
-                      icon={calendar} 
-                      style={{ 
-                        fontSize: '2rem', 
-                        color: 'white',
-                        marginBottom: '8px',
-                        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                      }} 
-                    />
-                    <div style={{ 
-                      fontSize: '2rem', 
-                      fontWeight: '800',
-                      color: 'white',
-                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                    }}>
-                      {dashboardData.days_to_confirmation}
-                    </div>
-                    <div style={{ 
-                      fontSize: '0.7rem', 
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px'
-                    }}>
-                      Tage bis Konfi
-                    </div>
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            ) : (
-              <IonCard style={{ 
-                margin: '0 8px 16px 0',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                border: 'none',
-                height: '140px'
-              }}>
-                <IonCardContent style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon 
-                      icon={heart} 
-                      style={{ 
-                        fontSize: '2rem', 
-                        color: '#ff6b6b',
-                        marginBottom: '8px'
-                      }} 
-                    />
-                    <div style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '700',
-                      color: '#333'
-                    }}>
-                      Konfi-Zeit
-                    </div>
-                    <div style={{ 
-                      fontSize: '0.7rem', 
-                      color: '#666',
-                      fontWeight: '500'
-                    }}>
-                      Genieße jeden Tag!
-                    </div>
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            )}
-          </IonCol>
-
-          {/* Tageslosung */}
-          <IonCol size="6">
-            <IonCard style={{ 
-              margin: '0 0 16px 8px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-              border: 'none',
-              height: '140px'
+      {/* Statistiken Cards - Volle Breite */}
+      <div style={{ marginBottom: '16px' }}>
+        {/* Gottesdienst Progress */}
+        {targetGottesdienst > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '20px',
+            padding: '20px',
+            marginBottom: '12px',
+            boxShadow: '0 8px 32px rgba(102, 126, 234, 0.25)'
+          }}>
+            <h3 style={{
+              margin: '0 0 12px 0',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              color: 'white'
             }}>
-              <IonCardContent style={{ padding: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                {dailyVerse ? (
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon 
-                      icon={book} 
-                      style={{ 
-                        fontSize: '1.5rem', 
-                        color: 'white',
-                        marginBottom: '8px'
-                      }} 
-                    />
-                    <div style={{ 
-                      fontSize: '0.8rem', 
-                      fontWeight: '600',
-                      color: 'white',
-                      lineHeight: '1.3',
-                      marginBottom: '4px',
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
-                    }}>
-                      "{dailyVerse.losungstext.substring(0, 60)}..."
-                    </div>
-                    <div style={{ 
-                      fontSize: '0.6rem', 
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      fontWeight: '500'
-                    }}>
-                      {dailyVerse.losungsvers}
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon 
-                      icon={book} 
-                      style={{ 
-                        fontSize: '2rem', 
-                        color: 'white',
-                        marginBottom: '8px'
-                      }} 
-                    />
-                    <div style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '700',
-                      color: 'white'
-                    }}>
-                      Tageslosung
-                    </div>
-                  </div>
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonCol>
-        </IonRow>
-
-        <IonRow>
-          {/* Recent Badges - 2er Grid */}
-          <IonCol size="6">
-            <IonCard style={{ 
-              margin: '0 8px 16px 0',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%)',
-              border: 'none',
-              height: '140px'
-            }}>
-              <IonCardContent style={{ padding: '16px', height: '100%' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  marginBottom: '12px'
-                }}>
-                  <IonIcon 
-                    icon={trophy} 
-                    style={{ 
-                      fontSize: '1.2rem', 
-                      color: 'white'
-                    }} 
-                  />
-                  <span style={{ 
-                    fontWeight: '700', 
-                    fontSize: '0.9rem',
-                    color: 'white'
-                  }}>
-                    Neueste Badges
-                  </span>
-                </div>
-
-                {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                    {dashboardData.recent_badges.slice(0, 2).map((badge, index) => (
-                      <div 
-                        key={badge.id || index}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.2)',
-                          borderRadius: '12px',
-                          padding: '8px',
-                          textAlign: 'center',
-                          backdropFilter: 'blur(10px)'
-                        }}
-                      >
-                        <IonIcon 
-                          icon={trophy} 
-                          style={{ 
-                            fontSize: '1.5rem', 
-                            color: 'white',
-                            marginBottom: '4px'
-                          }}
-                        />
-                        <div style={{
-                          fontSize: '0.6rem',
-                          fontWeight: '600',
-                          color: 'white',
-                          lineHeight: '1.2',
-                          overflow: 'hidden',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: 'vertical'
-                        }}>
-                          {badge.name}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                    <IonIcon 
-                      icon={rocket} 
-                      style={{ 
-                        fontSize: '2rem', 
-                        color: 'white',
-                        marginBottom: '4px'
-                      }}
-                    />
-                    <div style={{ 
-                      fontSize: '0.7rem', 
-                      color: 'white',
-                      fontWeight: '600'
-                    }}>
-                      Erstes Badge wartet!
-                    </div>
-                  </div>
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonCol>
-
-          {/* Top 3 Ranking */}
-          <IonCol size="6">
-            <IonCard style={{ 
-              margin: '0 0 16px 8px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              border: 'none',
-              height: '140px'
-            }}>
-              <IonCardContent style={{ padding: '16px', height: '100%' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  marginBottom: '12px'
-                }}>
-                  <IonIcon 
-                    icon={flame} 
-                    style={{ 
-                      fontSize: '1.2rem', 
-                      color: '#ffd700'
-                    }} 
-                  />
-                  <span style={{ 
-                    fontWeight: '700', 
-                    fontSize: '0.9rem',
-                    color: 'white'
-                  }}>
-                    Top 3
-                  </span>
-                </div>
-
-                {dashboardData.ranking && dashboardData.ranking.length > 0 ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end' }}>
-                    {(() => {
-                      const topThree = dashboardData.ranking.slice(0, 3);
-                      // Podest-Anordnung: 2. Platz - 1. Platz - 3. Platz
-                      const podiumOrder = topThree.length >= 2 
-                        ? [topThree[1], topThree[0], topThree[2]].filter(Boolean)
-                        : topThree;
-                      
-                      const realRanks = podiumOrder.map(player => 
-                        dashboardData.ranking.findIndex(p => p.id === player.id) + 1
-                      );
-                      
-                      const heights = ['36px', '44px', '28px']; // Höhen für Podest-Effekt
-                      const medalColors: { [key: number]: string } = {1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32'};
-                      
-                      return podiumOrder.map((player, visualIndex) => {
-                        const realRank = realRanks[visualIndex];
-                        const isMe = player.id === dashboardData.konfi.id;
-                        
-                        return (
-                          <div 
-                            key={player.id}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              flex: 1,
-                              marginBottom: visualIndex === 1 ? '0' : visualIndex === 0 ? '8px' : '16px'
-                            }}
-                          >
-                            <IonAvatar style={{ 
-                              width: heights[visualIndex], 
-                              height: heights[visualIndex],
-                              marginBottom: '4px'
-                            }}>
-                              <div style={{
-                                width: '100%',
-                                height: '100%',
-                                borderRadius: '50%',
-                                background: isMe 
-                                  ? 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
-                                  : 'linear-gradient(135deg, #94a3b8 0%, #64748b 100%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontWeight: '700',
-                                fontSize: visualIndex === 1 ? '0.8rem' : '0.6rem',
-                                border: `2px solid ${medalColors[realRank]}`,
-                                boxShadow: `0 2px 8px ${medalColors[realRank]}50`
-                              }}>
-                                {getInitials(player.display_name)}
-                              </div>
-                            </IonAvatar>
-                            <div style={{ 
-                              width: '18px', 
-                              height: '18px', 
-                              borderRadius: '50%',
-                              background: medalColors[realRank],
-                              marginBottom: '2px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '0.6rem',
-                              fontWeight: '800',
-                              color: 'white',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                            }}>
-                              {realRank}
-                            </div>
-                            <div style={{
-                              fontSize: '0.55rem',
-                              fontWeight: '600',
-                              color: isMe ? '#ffd700' : 'white',
-                              textAlign: 'center'
-                            }}>
-                              {player.display_name.split(' ')[0]}
-                            </div>
-                            <div style={{
-                              fontSize: '0.5rem',
-                              fontWeight: '500',
-                              color: 'rgba(255, 255, 255, 0.8)'
-                            }}>
-                              {player.points}P
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                ) : (
-                  <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                    <IonIcon 
-                      icon={flame} 
-                      style={{ 
-                        fontSize: '2rem', 
-                        color: 'white',
-                        marginBottom: '4px'
-                      }}
-                    />
-                    <div style={{ 
-                      fontSize: '0.7rem', 
-                      color: 'white',
-                      fontWeight: '600'
-                    }}>
-                      Sei der Erste!
-                    </div>
-                  </div>
-                )}
-              </IonCardContent>
-            </IonCard>
-          </IonCol>
-        </IonRow>
-      </IonGrid>
-
-      {/* Nächste Events - Full Width */}
-      {upcomingEvents && upcomingEvents.length > 0 && (
-        <IonCard style={{ 
-          margin: '0 0 16px 0',
-          borderRadius: '20px',
-          background: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-          border: 'none'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px',
-              marginBottom: '16px'
-            }}>
-              <IonIcon 
-                icon={calendar} 
-                style={{ 
-                  fontSize: '1.5rem', 
-                  color: '#ff6b6b'
-                }} 
-              />
-              <h2 style={{ 
-                fontWeight: '700', 
-                fontSize: '1.2rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Deine nächsten Events
-              </h2>
+              Gottesdienst
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: '800', color: 'white' }}>
+                {gottesdienstPoints}
+              </span>
+              <span style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                / {targetGottesdienst}
+              </span>
             </div>
+            <IonProgressBar 
+              value={Math.min(gottesdienstPoints / targetGottesdienst, 1)}
+              style={{
+                '--progress-background': 'rgba(255, 255, 255, 0.9)',
+                '--background': 'rgba(255, 255, 255, 0.3)',
+                'height': '8px',
+                'borderRadius': '4px'
+              }}
+            />
+          </div>
+        )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {upcomingEvents.slice(0, 3).map(event => (
-                <div 
-                  key={event.id}
-                  style={{
-                    padding: '12px',
-                    background: 'rgba(255, 255, 255, 0.7)',
-                    borderRadius: '12px',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ flex: 1 }}>
-                      <h4 style={{
-                        margin: '0 0 4px 0',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: '#333'
-                      }}>
-                        {event.name || event.title}
-                      </h4>
+        {/* Gemeinde Progress */}
+        {targetGemeinde > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #2dd36f 0%, #10dc60 100%)',
+            borderRadius: '20px',
+            padding: '20px',
+            marginBottom: '12px',
+            boxShadow: '0 8px 32px rgba(45, 211, 111, 0.25)'
+          }}>
+            <h3 style={{
+              margin: '0 0 12px 0',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              color: 'white'
+            }}>
+              Gemeinde
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '2rem', fontWeight: '800', color: 'white' }}>
+                {gemeindePoints}
+              </span>
+              <span style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                / {targetGemeinde}
+              </span>
+            </div>
+            <IonProgressBar 
+              value={Math.min(gemeindePoints / targetGemeinde, 1)}
+              style={{
+                '--progress-background': 'rgba(255, 255, 255, 0.9)',
+                '--background': 'rgba(255, 255, 255, 0.3)',
+                'height': '8px',
+                'borderRadius': '4px'
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Tage bis Konfirmation - Profil Gradient */}
+      {dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined && (
+        <div style={{
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
+          borderRadius: '20px',
+          padding: '24px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(139, 92, 246, 0.25)',
+          textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1' }}>
+                {dashboardData.days_to_confirmation}
+              </div>
+              <div style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '4px' }}>
+                Tage bis zur Konfirmation
+              </div>
+              {dashboardData.konfi.confirmation_location && (
+                <div style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'rgba(255, 255, 255, 0.7)', 
+                  marginTop: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
+                }}>
+                  <IonIcon icon={location} style={{ fontSize: '1rem' }} />
+                  {dashboardData.konfi.confirmation_location}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tageslosung - Chat Gradient */}
+      {actualDailyVerse && !loadingVerse && (
+        <div style={{
+          background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(23, 162, 184, 0.25)'
+        }}>
+          <h3 style={{
+            margin: '0 0 12px 0',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            Tageslosung
+          </h3>
+          <div style={{ color: 'white' }}>
+            <p style={{ 
+              fontSize: '1rem', 
+              lineHeight: '1.5',
+              fontStyle: 'italic',
+              marginBottom: '8px'
+            }}>
+              "{actualDailyVerse.losungstext || actualDailyVerse.text}"
+            </p>
+            <p style={{ 
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.8)',
+              textAlign: 'right'
+            }}>
+              {actualDailyVerse.losungsvers || actualDailyVerse.reference}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Neue Badges - Orange Gradient */}
+      {badgeStats.totalEarned > 0 && dashboardData.recent_badges.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)'
+        }}>
+          <h3 style={{
+            margin: '0 0 16px 0',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            Neue Badges
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            {dashboardData.recent_badges.slice(0, 4).map((badge) => (
+              <div 
+                key={badge.id}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '12px',
+                  padding: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.2rem'
+                }}>
+                  {badge.icon || '🏆'}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: '600',
+                    color: 'white',
+                    lineHeight: '1.2'
+                  }}>
+                    {badge.name}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Events - Rot Gradient */}
+      {nextEvent && (
+        <div style={{
+          background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(235, 68, 90, 0.25)'
+        }}>
+          <h3 style={{
+            margin: '0 0 16px 0',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            Nächstes Event
+          </h3>
+          <div style={{ color: 'white' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '8px' }}>
+              {nextEvent.title || nextEvent.name}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <IonIcon icon={time} />
+              {formatTimeUntil(nextEvent.event_date || nextEvent.date)}
+            </div>
+            {nextEvent.location && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '4px' }}>
+                <IonIcon icon={location} />
+                {nextEvent.location}
+              </div>
+            )}
+            {nextEvent.on_waitlist && (
+              <IonBadge color="warning" style={{ marginTop: '8px' }}>
+                Auf Warteliste
+              </IonBadge>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Abgesagte Events */}
+      {cancelledEvents.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(220, 53, 69, 0.25)'
+        }}>
+          <h3 style={{
+            margin: '0 0 12px 0',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            Abgesagt
+          </h3>
+          {cancelledEvents.map((event) => (
+            <div key={event.id} style={{ 
+              color: 'white',
+              padding: '8px 0',
+              borderBottom: cancelledEvents.indexOf(event) < cancelledEvents.length - 1 ? '1px solid rgba(255,255,255,0.2)' : 'none'
+            }}>
+              <div style={{ fontSize: '1rem', fontWeight: '600' }}>
+                {event.title || event.name}
+              </div>
+              <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                {formatDate(event.event_date || event.date)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ranking - Aktivitäten Grün */}
+      {dashboardData.ranking && dashboardData.ranking.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #2dd36f 0%, #10dc60 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 8px 32px rgba(45, 211, 111, 0.25)'
+        }}>
+          <h3 style={{
+            margin: '0 0 16px 0',
+            fontSize: '1.1rem',
+            fontWeight: '700',
+            color: 'white'
+          }}>
+            Ranking
+          </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end' }}>
+            {(() => {
+              const topThree = dashboardData.ranking.slice(0, 3);
+              // Podium order: 2nd - 1st - 3rd
+              const podiumOrder = topThree.length >= 2 
+                ? [topThree[1], topThree[0], topThree[2]].filter(Boolean)
+                : topThree;
+              
+              const realRanks = podiumOrder.map(player => 
+                dashboardData.ranking.findIndex(p => p.id === player.id) + 1
+              );
+              
+              const heights = ['60px', '80px', '40px'];
+              const medalColors: { [key: number]: string } = {1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32'};
+              
+              return podiumOrder.map((player, visualIndex) => {
+                const realRank = realRanks[visualIndex];
+                const isMe = player.id === dashboardData.konfi.id;
+                
+                return (
+                  <div 
+                    key={player.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      flex: 1
+                    }}
+                  >
+                    <IonAvatar style={{ 
+                      width: visualIndex === 1 ? '50px' : '40px', 
+                      height: visualIndex === 1 ? '50px' : '40px',
+                      marginBottom: '8px'
+                    }}>
                       <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: isMe 
+                          ? 'rgba(255, 255, 255, 0.9)'
+                          : 'rgba(255, 255, 255, 0.3)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        fontSize: '0.75rem',
-                        color: '#666'
+                        justifyContent: 'center',
+                        color: isMe ? '#2dd36f' : 'white',
+                        fontWeight: '700',
+                        fontSize: visualIndex === 1 ? '1rem' : '0.8rem',
+                        border: `2px solid ${medalColors[realRank] || 'rgba(255,255,255,0.5)'}`
                       }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={calendar} style={{ fontSize: '0.75rem' }} />
-                          {new Date(event.event_date || event.date).toLocaleDateString('de-DE', {
-                            day: '2-digit',
-                            month: '2-digit'
-                          })}
-                        </span>
-                        {event.location && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={location} style={{ fontSize: '0.75rem' }} />
-                            {event.location}
-                          </span>
-                        )}
+                        {getInitials(player.display_name)}
+                      </div>
+                    </IonAvatar>
+                    
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.2)',
+                      width: '100%',
+                      height: heights[visualIndex],
+                      borderRadius: '8px 8px 0 0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px'
+                    }}>
+                      <div style={{
+                        fontSize: '1.5rem',
+                        fontWeight: '800',
+                        color: 'white'
+                      }}>
+                        {realRank}
+                      </div>
+                      <div style={{
+                        fontSize: '0.7rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        fontWeight: '600'
+                      }}>
+                        {player.points} Pkt
                       </div>
                     </div>
-                    {event.is_registered && (
-                      <IonChip 
-                        style={{ 
-                          '--background': '#2dd36f',
-                          '--color': 'white',
-                          height: '24px',
-                          fontSize: '0.7rem'
-                        }}
-                      >
-                        <IonIcon icon={checkmarkCircle} />
-                        <span>Angemeldet</span>
-                      </IonChip>
-                    )}
                   </div>
-                </div>
-              ))}
-            </div>
-          </IonCardContent>
-        </IonCard>
+                );
+              });
+            })()}
+          </div>
+        </div>
       )}
     </div>
   );
