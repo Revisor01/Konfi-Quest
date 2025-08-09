@@ -18,20 +18,29 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     try {
       const konfiId = req.user.id;
       
-      // Get konfi basic info with level information
+      // Get konfi basic info with level information and confirmation location
       const konfiQuery = `
         SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date, j.confirmation_location,
+               kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date,
                kp.current_level_id, l.name as current_level_name, l.title as current_level_title,
-               l.icon as current_level_icon, l.color as current_level_color, l.points_required as current_level_points
+               l.icon as current_level_icon, l.color as current_level_color, l.points_required as current_level_points,
+               ce.location as confirmation_location
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN levels l ON kp.current_level_id = l.id
+        LEFT JOIN (
+          SELECT DISTINCT eja.jahrgang_id, e.location
+          FROM events e
+          JOIN event_categories ec ON e.id = ec.event_id
+          JOIN categories c ON ec.category_id = c.id
+          JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+          WHERE c.name = 'Konfirmation' AND e.organization_id = $2
+        ) ce ON ce.jahrgang_id = kp.jahrgang_id
         WHERE u.id = $1 AND r.name = 'konfi'
       `;
-      const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
+      const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
       if (!konfi) {
         return res.status(404).json({ error: 'Konfi not found' });
