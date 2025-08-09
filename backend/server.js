@@ -212,6 +212,7 @@ const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
 const permissionsRoutes = require('./routes/permissions');
+const levelsRoutes = require('./routes/levels');
 
 // ====================================================================
 // RBAC MIDDLEWARE SETUP
@@ -251,6 +252,7 @@ app.use('/api/users', usersRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/roles', rolesRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/permissions', permissionsRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/levels', levelsRoutes);
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION

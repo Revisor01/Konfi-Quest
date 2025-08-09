@@ -19,7 +19,8 @@ import {
   business,
   pricetag,
   school,
-  person
+  person,
+  trophy
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -115,6 +116,13 @@ const AdminSettingsPage: React.FC = () => {
               <IonLabel>
                 <h2>Jahrgänge</h2>
                 <p>Konfirmanden-Jahrgänge verwalten</p>
+              </IonLabel>
+            </IonItem>
+            <IonItem button routerLink="/admin/settings/levels">
+              <IonIcon icon={trophy} slot="start" color="secondary" />
+              <IonLabel>
+                <h2>Level-System</h2>
+                <p>Punkte-Level und Belohnungen verwalten</p>
               </IonLabel>
             </IonItem>
           </IonCardContent>

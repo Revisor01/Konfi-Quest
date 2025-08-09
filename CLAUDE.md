@@ -4,6 +4,11 @@
 
 1. **Neue RBAC-Struktur verwenden** - Alte Strukturen sind deprecated
 2. **Deutsche Entwicklungssprache verwenden**
+3. **KEINE UNICODE EMOJIS VERWENDEN!!!** - Keine Emojis in Code, UI oder Texten!
+   - VERBOTEN: 👋 🎯 🚀 🔥 💖 😊 und ALLE anderen Unicode Emojis
+   - ERLAUBT: IonIcon mit Icons aus ionicons/icons (auch outline Varianten)
+   - ERLAUBT: Line Icons und Icon Fonts
+   - Das gilt für ALLE Dateien: .tsx, .ts, .js, .jsx, Kommentare, Strings, ÜBERALL!
 
 ---
 

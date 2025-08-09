@@ -18,14 +18,17 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     try {
       const konfiId = req.user.id;
       
-      // Get konfi basic info 
+      // Get konfi basic info with level information
       const konfiQuery = `
         SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date
+               kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date, j.confirmation_location,
+               kp.current_level_id, l.name as current_level_name, l.title as current_level_title,
+               l.icon as current_level_icon, l.color as current_level_color, l.points_required as current_level_points
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         JOIN roles r ON u.role_id = r.id
+        LEFT JOIN levels l ON kp.current_level_id = l.id
         WHERE u.id = $1 AND r.name = 'konfi'
       `;
       const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
@@ -108,17 +111,57 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         daysToConfirmation = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
+      // Get level information for this konfi
+      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
+      
+      // Get next level
+      const nextLevelQuery = `
+        SELECT * FROM levels 
+        WHERE organization_id = $1 AND points_required > $2 AND is_active = true
+        ORDER BY points_required ASC
+        LIMIT 1
+      `;
+      const { rows: [nextLevel] } = await db.query(nextLevelQuery, [req.user.organization_id, totalPoints]);
+      
+      // Calculate progress to next level
+      let levelProgress = 100;
+      let pointsToNextLevel = 0;
+      
+      if (nextLevel) {
+        const currentLevelPoints = konfi.current_level_points || 0;
+        const pointsNeeded = nextLevel.points_required - currentLevelPoints;
+        const pointsAchieved = totalPoints - currentLevelPoints;
+        levelProgress = Math.max(0, Math.min(100, (pointsAchieved / pointsNeeded) * 100));
+        pointsToNextLevel = nextLevel.points_required - totalPoints;
+      }
+
       // Return dashboard data
       res.json({
-        konfi: konfi,
+        konfi: {
+          ...konfi,
+          confirmation_location: konfi.confirmation_location
+        },
         recent_badges: badges,
         badge_count: badgeCount,
         recent_events: recentEvents,
         event_count: eventCount,
         ranking: rankingWithInitials,
-        total_points: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0),
+        total_points: totalPoints,
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
-        confirmation_date: konfi.confirmation_date
+        confirmation_date: konfi.confirmation_date,
+        level_info: {
+          current_level: konfi.current_level_id ? {
+            id: konfi.current_level_id,
+            name: konfi.current_level_name,
+            title: konfi.current_level_title,
+            icon: konfi.current_level_icon,
+            color: konfi.current_level_color,
+            points_required: konfi.current_level_points
+          } : null,
+          next_level: nextLevel || null,
+          progress_percentage: Math.round(levelProgress),
+          points_to_next_level: pointsToNextLevel
+        }
       });
       
     } catch (err) {
