@@ -654,7 +654,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       );
                       
                       const heights = ['36px', '44px', '28px']; // Höhen für Podest-Effekt
-                      const medalColors = {1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32'};
+                      const medalColors: { [key: number]: string } = {1: '#ffd700', 2: '#c0c0c0', 3: '#cd7f32'};
                       
                       return podiumOrder.map((player, visualIndex) => {
                         const realRank = realRanks[visualIndex];

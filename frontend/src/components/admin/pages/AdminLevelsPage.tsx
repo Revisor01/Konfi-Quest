@@ -43,7 +43,8 @@ const AdminLevelsPage: React.FC = () => {
   const [levels, setLevels] = useState<Level[]>([]);
   const [loading, setLoading] = useState(true);
   const ionListRef = useRef<HTMLIonListElement>(null);
-  const presentingElement = document.querySelector('.ion-page');
+  const presentingElement = document.querySelector('.ion-page') as HTMLElement;
+  const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
 
   const loadLevels = async () => {
     try {
@@ -64,6 +65,7 @@ const AdminLevelsPage: React.FC = () => {
   }, []);
 
   const [presentLevelModal, dismissLevelModal] = useIonModal(LevelManagementModal, {
+    level: editLevel,
     onClose: () => dismissLevelModal(),
     onSuccess: () => {
       dismissLevelModal();
@@ -72,15 +74,16 @@ const AdminLevelsPage: React.FC = () => {
   });
 
   const handleAdd = () => {
+    setEditLevel(undefined);
     presentLevelModal({
-      presentingElement: presentingElement
+      presentingElement: presentingElement || undefined
     });
   };
 
   const handleEdit = (level: Level) => {
+    setEditLevel(level);
     presentLevelModal({
-      level,
-      presentingElement: presentingElement
+      presentingElement: presentingElement || undefined
     });
   };
 
