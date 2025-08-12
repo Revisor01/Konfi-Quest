@@ -1045,11 +1045,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Not cached - fetch from external API
       console.log(`Fetching new verse from API for ${today} (${translation})`);
       const fetch = (await import('node-fetch')).default;
-      const apiUrl = `https://losung.konfi-quest.de/?translation=${translation}`;
+      const apiUrl = `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
       
       const response = await fetch(apiUrl, {
         headers: {
-          'X-API-Key': 'ksadh8324oijcff45rfdsvcvhoids44',
+          'Accept': 'application/json',
           'User-Agent': 'Konfi-Quest-App/1.0'
         },
         timeout: 10000
@@ -1110,7 +1110,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       try {
         const { rows: [fallbackCached] } = await db.query(
           'SELECT verse_data FROM daily_verses WHERE translation = $1 ORDER BY date DESC LIMIT 1',
-          [konfi?.bible_translation || 'LUT']
+          [translation]
         );
         
         if (fallbackCached) {
@@ -1118,7 +1118,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           return res.json({
             success: true,
             data: fallbackCached.verse_data,
-            translation: konfi?.bible_translation || 'LUT',
+            translation: translation,
             fallback: true,
             error: 'Aktuelle Tageslosung nicht verfügbar - verwende letzte verfügbare Losung'
           });
