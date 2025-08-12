@@ -633,7 +633,141 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Badges Section */}
+      {/* Events Section - jetzt vor Badges */}
+      {regularEvents && regularEvents.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+          borderRadius: '20px',
+          padding: '0',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '180px'
+        }}>
+          {/* Background Text */}
+          <div style={{
+            position: 'absolute',
+            top: '-15px',
+            left: '10px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '2.8rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.08)',
+              margin: '0',
+              lineHeight: '0.9',
+              letterSpacing: '-2px'
+            }}>
+              DEINE
+            </h2>
+            <h2 style={{
+              fontSize: '2.8rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.08)',
+              margin: '0',
+              lineHeight: '0.9',
+              letterSpacing: '-2px'
+            }}>
+              EVENTS
+            </h2>
+          </div>
+
+          {/* Zusätzlicher Indikator */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            fontSize: '0.7rem',
+            color: 'white',
+            fontWeight: '700',
+            zIndex: 3
+          }}>
+Deine nächsten {regularEvents.length} Events
+          </div>
+
+          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {regularEvents.map((event) => (
+                <div key={event.id} style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: event.cancelled ? '2px dashed rgba(255,255,255,0.3)' : 'none'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontSize: '1rem', 
+                      fontWeight: '700', 
+                      color: 'white',
+                      marginBottom: '4px',
+                      textDecoration: event.cancelled ? 'line-through' : 'none'
+                    }}>
+                      {event.title || event.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px', 
+                        fontSize: '0.8rem', 
+                        color: 'rgba(255, 255, 255, 0.8)' 
+                      }}>
+                        <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
+                        {formatEventDate(event.event_date || event.date)}
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px', 
+                        fontSize: '0.8rem', 
+                        color: 'rgba(255, 255, 255, 0.8)' 
+                      }}>
+                        <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                        {formatEventTime(event.event_date || event.date)}
+                      </div>
+                      {event.location && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px', 
+                          fontSize: '0.8rem', 
+                          color: 'rgba(255, 255, 255, 0.8)' 
+                        }}>
+                          <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
+                          {event.location}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: event.cancelled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.25)',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    color: 'white',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {event.cancelled ? 'ABGESAGT' : `In ${formatTimeUntil(event.event_date || event.date)}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Badges Section - jetzt nach Events */}
       {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 && (
         <div style={{
           background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
@@ -733,7 +867,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     
                     {/* Content */}
                     <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                      {/* Header mit Icon und Status */}
+                      {/* Header mit Icon und Datum */}
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
                         {/* Badge Icon */}
                         <div style={{
@@ -778,6 +912,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           </div>
                         </div>
 
+                        {/* Earned Date oben rechts */}
+                        {badge.earned_at && (
+                          <div style={{
+                            fontSize: '0.6rem',
+                            color: getBadgeColor(badge),
+                            fontWeight: '700',
+                            textAlign: 'right',
+                            lineHeight: '1.2'
+                          }}>
+                            {new Date(badge.earned_at).toLocaleDateString('de-DE')}
+                          </div>
+                        )}
                       </div>
 
                       {/* Badge Name */}
@@ -787,7 +933,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         color: '#1f2937',
                         margin: '0 0 6px 0',
                         lineHeight: '1.2',
-                        textAlign: 'center'
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}>
                         {badge.name}
                       </h4>
@@ -803,21 +952,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       }}>
                         {badge.description}
                       </p>
-
-                      {/* Earned Date als Stempel-Datum */}
-                      {badge.earned_at && (
-                        <div style={{
-                          fontSize: '0.6rem',
-                          color: getBadgeColor(badge),
-                          fontWeight: '700',
-                          marginTop: 'auto',
-                          textAlign: 'center',
-                          borderTop: `1px dashed ${getBadgeColor(badge)}30`,
-                          paddingTop: '6px'
-                        }}>
-                          {new Date(badge.earned_at).toLocaleDateString('de-DE')}
-                        </div>
-                      )}
 
                       {/* Progress oder Kriterium */}
                       <div style={{
@@ -839,123 +973,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               ))}
             </div>
             
-          </div>
-        </div>
-      )}
-
-      {/* Events Section */}
-      {regularEvents && regularEvents.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '180px'
-        }}>
-          {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-15px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
-              NÄCHSTE
-            </h2>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
-              EVENTS
-            </h2>
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {regularEvents.map((event) => (
-                <div key={event.id} style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  border: event.cancelled ? '2px dashed rgba(255,255,255,0.3)' : 'none'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '700', 
-                      color: 'white',
-                      marginBottom: '4px',
-                      textDecoration: event.cancelled ? 'line-through' : 'none'
-                    }}>
-                      {event.title || event.name}
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        fontSize: '0.8rem', 
-                        color: 'rgba(255, 255, 255, 0.8)' 
-                      }}>
-                        <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
-                        {formatEventDate(event.event_date || event.date)}
-                      </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        fontSize: '0.8rem', 
-                        color: 'rgba(255, 255, 255, 0.8)' 
-                      }}>
-                        <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
-                        {formatEventTime(event.event_date || event.date)}
-                      </div>
-                      {event.location && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '4px', 
-                          fontSize: '0.8rem', 
-                          color: 'rgba(255, 255, 255, 0.8)' 
-                        }}>
-                          <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
-                          {event.location}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{
-                    background: event.cancelled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.25)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: 'white',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {event.cancelled ? 'ABGESAGT' : `In ${formatTimeUntil(event.event_date || event.date)}`}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
@@ -1048,10 +1065,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     fontSize: '0.85rem',
                     color: 'rgba(255, 255, 255, 0.9)'
                   }}>
-                    {rank === 1 && `🥇 Du bist auf Platz 1 von ${dashboardData.ranking.length}!`}
-                    {rank === 2 && `🥈 Du bist auf Platz 2 von ${dashboardData.ranking.length}!`}
-                    {rank === 3 && `🥉 Du bist auf Platz 3 von ${dashboardData.ranking.length}!`}
-                    {rank > 3 && `Du bist auf Platz ${rank} von ${dashboardData.ranking.length}`}
+                    {rank === 1 && `🥇 Du bist auf Platz 1!`}
+                    {rank === 2 && `🥈 Du bist auf Platz 2!`}
+                    {rank === 3 && `🥉 Du bist auf Platz 3!`}
+                    {rank > 3 && `Du bist auf Platz ${rank}`}
                   </div>
                 </div>
               );
