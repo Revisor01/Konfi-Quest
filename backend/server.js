@@ -200,6 +200,7 @@ const chatRoutes = require('./routes/chat');
 const statisticsRoutes = require('./routes/statistics');
 const settingsRoutes = require('./routes/settings');
 const notificationsRoutes = require('./routes/notifications');
+const tageslosungRoutes = require('./routes/tageslosung');
 const BackgroundService = require('./services/backgroundService');
 
 const adminBadgesRoutes = require('./routes/badges');
@@ -237,6 +238,7 @@ app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload,
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
+app.use('/api/tageslosung', tageslosungRoutes);
 
 app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission, badgesRouter.checkAndAwardBadges));
 app.use('/api/settings', settingsRoutes(db, rbacVerifier, checkPermission));
