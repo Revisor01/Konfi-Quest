@@ -91,87 +91,29 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
 
-  // Load Tageslosung from API based on user's profile translation setting
+  // Load Tageslosung directly from backend
   useEffect(() => {
     const loadTageslosung = async () => {
-      // Get user's bible translation from profile (default to BIGS)
-      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-      const translation = userProfile.bible_translation || 'BIGS';
-      
       try {
-        // Nutze die öffentliche URL - sollte durch Apache CORS headers funktionieren
-        const apiUrl = `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
-        console.log('Loading Tageslosung from:', apiUrl);
+        console.log('Loading Tageslosung from backend...');
+        const response = await api.get('/konfi/tageslosung');
         
-        // Verwende Capacitor's HTTP plugin falls verfügbar, sonst normales fetch
-        const response = await fetch(apiUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log('Response status:', response.status);
-        
-        if (response.ok) {
-          const text = await response.text();
-          console.log('Response text:', text);
-          
-          try {
-            const apiResponse = JSON.parse(text);
-            console.log('Parsed response:', apiResponse);
-            
-            // API gibt verschachteltes JSON zurück
-            if (apiResponse.success && apiResponse.data) {
-              const { losung, lehrtext } = apiResponse.data;
-              console.log('Setting daily verse:', { losung, lehrtext });
-              setActualDailyVerse({
-                losungstext: losung?.text,
-                losungsvers: losung?.reference,
-                lehrtext: lehrtext?.text,
-                lehrtextvers: lehrtext?.reference
-              });
-            } else {
-              console.error('Invalid API response format:', apiResponse);
-              throw new Error('Invalid API response format');
-            }
-          } catch (parseError) {
-            console.error('JSON parsing error:', parseError);
-            throw parseError;
-          }
+        if (response.data && response.data.success) {
+          const { losung, lehrtext } = response.data.data;
+          setActualDailyVerse({
+            losungstext: losung?.text,
+            losungsvers: losung?.reference,
+            lehrtext: lehrtext?.text,
+            lehrtextvers: lehrtext?.reference
+          });
+          console.log('Tageslosung loaded successfully from backend');
         } else {
-          const errorText = await response.text();
-          console.error('HTTP Error:', response.status, response.statusText, errorText);
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      } catch (error: any) {
-        console.error('Failed to load Tageslosung - Full error:', error);
-        console.error('Error details:', {
-          message: error?.message,
-          stack: error?.stack,
-          type: error?.name
-        });
-        
-        // Fallback: Verwende die bereits existierende Backend-Route
-        try {
-          console.log('Trying backend route /konfi/tageslosung...');
-          const proxyResponse = await api.get('/konfi/tageslosung');
-          
-          if (proxyResponse.data && proxyResponse.data.success) {
-            const { losung, lehrtext } = proxyResponse.data.data;
-            setActualDailyVerse({
-              losungstext: losung?.text,
-              losungsvers: losung?.reference,
-              lehrtext: lehrtext?.text,
-              lehrtextvers: lehrtext?.reference
-            });
-            console.log('Tageslosung loaded via proxy successfully');
-          }
-        } catch (proxyError) {
-          console.error('Proxy fallback also failed:', proxyError);
+          console.error('Invalid response from backend:', response.data);
           setActualDailyVerse(null);
         }
+      } catch (error: any) {
+        console.error('Failed to load Tageslosung from backend:', error);
+        setActualDailyVerse(null);
       } finally {
         setLoadingVerse(false);
       }
@@ -841,7 +783,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       {/* Badge Name */}
                       <h4 style={{
                         fontSize: '0.95rem',
-                        fontWeight: '800',
+                        fontWeight: '600',
                         color: '#1f2937',
                         margin: '0 0 6px 0',
                         lineHeight: '1.2',
@@ -1052,247 +994,67 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {(() => {
               // Finde die Position des aktuellen Konfis
               const myRank = dashboardData.ranking.findIndex(p => p.id === dashboardData.konfi.id);
+              const currentPlayer = dashboardData.ranking[myRank];
+              const rank = myRank + 1;
               
-              // Wenn Konfi in Top 3 ist, zeige Top 5
-              if (myRank < 3) {
-                const topPlayers = dashboardData.ranking.slice(0, 5);
-                return (
-                  <>
-                    {/* Treppchen für Top 3 - breiter und stylischer */}
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: '12px', marginBottom: '20px' }}>
-                      {/* Platz 2 */}
-                      {topPlayers[1] && (
-                        <div style={{ textAlign: 'center', width: '85px' }}>
-                          <IonAvatar style={{ width: '55px', height: '55px', margin: '0 auto 10px' }}>
-                            <div style={{
-                              width: '100%', height: '100%', borderRadius: '50%',
-                              background: 'rgba(192,192,192,0.15)', 
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'white', fontWeight: '700', fontSize: '1rem',
-                              border: '2px solid rgba(192,192,192,0.3)',
-                              backdropFilter: 'blur(10px)'
-                            }}>
-                              {getInitials(topPlayers[1].display_name)}
-                            </div>
-                          </IonAvatar>
-                          <div style={{ color: 'white', fontSize: '0.85rem', fontWeight: '700', marginBottom: '6px', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                            {getFirstName(topPlayers[1].display_name)}
-                            {topPlayers[1].id === dashboardData.konfi.id && <div style={{ fontSize: '0.65rem', opacity: 0.9 }}>(Du)</div>}
-                          </div>
-                          <div style={{ 
-                            background: 'rgba(255,255,255,0.15)', 
-                            borderRadius: '12px 12px 0 0', 
-                            padding: '12px 8px', color: 'white', fontWeight: '700', fontSize: '0.75rem',
-                            height: '70px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                            backdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                          }}>
-                            2<br/><span style={{ fontSize: '0.65rem' }}>{topPlayers[1].points}P</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Platz 1 */}
-                      {topPlayers[0] && (
-                        <div style={{ textAlign: 'center', width: '95px' }}>
-                          <IonAvatar style={{ width: '65px', height: '65px', margin: '0 auto 10px' }}>
-                            <div style={{
-                              width: '100%', height: '100%', borderRadius: '50%',
-                              background: 'rgba(255,215,0,0.2)', 
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#fbbf24', fontWeight: '800', fontSize: '1.2rem',
-                              border: '2px solid rgba(255,215,0,0.4)',
-                              backdropFilter: 'blur(10px)',
-                              boxShadow: '0 4px 15px rgba(255,215,0,0.2)'
-                            }}>
-                              {getInitials(topPlayers[0].display_name)}
-                            </div>
-                          </IonAvatar>
-                          <div style={{ color: 'white', fontSize: '0.95rem', fontWeight: '800', marginBottom: '6px', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                            {getFirstName(topPlayers[0].display_name)}
-                            {topPlayers[0].id === dashboardData.konfi.id && <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>(Du)</div>}
-                          </div>
-                          <div style={{ 
-                            background: 'rgba(255,255,255,0.2)', 
-                            borderRadius: '12px 12px 0 0', 
-                            padding: '12px 8px', color: 'white', fontWeight: '800', fontSize: '0.85rem',
-                            height: '90px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                            backdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(255,215,0,0.3)',
-                            textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                          }}>
-                            1<br/><span style={{ fontSize: '0.7rem' }}>{topPlayers[0].points}P</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Platz 3 */}
-                      {topPlayers[2] && (
-                        <div style={{ textAlign: 'center', width: '80px' }}>
-                          <IonAvatar style={{ width: '50px', height: '50px', margin: '0 auto 10px' }}>
-                            <div style={{
-                              width: '100%', height: '100%', borderRadius: '50%',
-                              background: 'rgba(205,127,50,0.15)', 
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'white', fontWeight: '700', fontSize: '0.9rem',
-                              border: '2px solid rgba(205,127,50,0.3)',
-                              backdropFilter: 'blur(10px)'
-                            }}>
-                              {getInitials(topPlayers[2].display_name)}
-                            </div>
-                          </IonAvatar>
-                          <div style={{ color: 'white', fontSize: '0.8rem', fontWeight: '700', marginBottom: '6px', textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}>
-                            {getFirstName(topPlayers[2].display_name)}
-                            {topPlayers[2].id === dashboardData.konfi.id && <div style={{ fontSize: '0.6rem', opacity: 0.9 }}>(Du)</div>}
-                          </div>
-                          <div style={{ 
-                            background: 'rgba(255,255,255,0.15)', 
-                            borderRadius: '12px 12px 0 0', 
-                            padding: '12px 8px', color: 'white', fontWeight: '700', fontSize: '0.7rem',
-                            height: '50px', display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                            backdropFilter: 'blur(10px)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-                          }}>
-                            3<br/><span style={{ fontSize: '0.6rem' }}>{topPlayers[2].points}P</span>
-                          </div>
-                        </div>
-                      )}
+              return (
+                <div style={{ textAlign: 'center' }}>
+                  {/* Platzierungsanzeige */}
+                  <div style={{
+                    width: '80px', height: '80px',
+                    margin: '0 auto 16px',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)', 
+                    borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    backdropFilter: 'blur(20px)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.2), 0 0 15px rgba(255,255,255,0.1)'
+                  }}>
+                    <div style={{
+                      fontSize: '2rem',
+                      fontWeight: '900',
+                      color: 'white',
+                      textShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                    }}>
+                      {rank}
                     </div>
-
-                    {/* Plätze 4-5 als Liste */}
-                    {topPlayers.slice(3).map((player, index) => {
-                      const isMe = player.id === dashboardData.konfi.id;
-                      const rank = index + 4;
-                      
-                      return (
-                        <div key={player.id} style={{
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          backdropFilter: 'blur(10px)',
-                          borderRadius: '12px',
-                          padding: '8px 12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px',
-                          border: isMe ? '2px solid rgba(255,255,255,0.3)' : '1px solid rgba(255,255,255,0.1)'
-                        }}>
-                          <div style={{
-                            width: '24px', height: '24px', borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.7rem', fontWeight: '800', color: 'white'
-                          }}>
-                            {rank}
-                          </div>
-                          <IonAvatar style={{ width: '28px', height: '28px' }}>
-                            <div style={{
-                              width: '100%', height: '100%', borderRadius: '50%',
-                              background: isMe ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.2)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'white', fontWeight: '700', fontSize: '0.8rem'
-                            }}>
-                              {getInitials(player.display_name)}
-                            </div>
-                          </IonAvatar>
-                          <div style={{ flex: 1, fontSize: '0.85rem', fontWeight: isMe ? '800' : '600', color: 'white' }}>
-                            {getFirstName(player.display_name)}
-                            {isMe && <span style={{ fontSize: '0.7rem', opacity: 0.8, marginLeft: '4px' }}>(Du)</span>}
-                          </div>
-                          <div style={{
-                            background: 'rgba(255,255,255,0.2)', borderRadius: '6px', padding: '2px 8px',
-                            fontSize: '0.75rem', fontWeight: '700', color: 'white'
-                          }}>
-                            {player.points}P
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                );
-              } else {
-                // Zeige Plätze um den aktuellen Konfi herum
-                const start = Math.max(0, myRank - 2);
-                const end = Math.min(dashboardData.ranking.length, myRank + 3);
-                const relevantPlayers = dashboardData.ranking.slice(start, end);
-                
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {relevantPlayers.map((player, index) => {
-                      const isMe = player.id === dashboardData.konfi.id;
-                      const rank = start + index + 1;
-                      
-                      return (
-                        <div key={player.id} style={{
-                          background: isMe ? 'rgba(255,255,255,0.25)' : 'rgba(255, 255, 255, 0.15)',
-                          backdropFilter: 'blur(10px)',
-                          borderRadius: '12px',
-                          padding: '10px 14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          border: isMe ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                          boxShadow: isMe ? '0 4px 12px rgba(255,255,255,0.2)' : 'none',
-                          transform: isMe ? 'scale(1.02)' : 'scale(1)'
-                        }}>
-                          <div style={{
-                            width: '30px', height: '30px', borderRadius: '50%',
-                            background: rank <= 3 
-                              ? 'linear-gradient(135deg, rgba(255,215,0,0.8) 0%, rgba(255,193,7,0.8) 100%)'
-                              : 'rgba(255,255,255,0.2)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.8rem', fontWeight: '800',
-                            color: rank <= 3 ? '#1a1a1a' : 'white'
-                          }}>
-                            {rank}
-                          </div>
-                          <IonAvatar style={{ width: '36px', height: '36px' }}>
-                            <div style={{
-                              width: '100%', height: '100%', borderRadius: '50%',
-                              background: isMe
-                                ? 'rgba(255,255,255,0.4)'
-                                : 'rgba(255,255,255,0.25)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: 'white', fontWeight: '700', fontSize: '0.9rem'
-                            }}>
-                              {getInitials(player.display_name)}
-                            </div>
-                          </IonAvatar>
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              fontSize: '0.95rem',
-                              fontWeight: isMe ? '800' : '600',
-                              color: 'white'
-                            }}>
-                              {getFirstName(player.display_name)}
-                              {isMe && (
-                                <span style={{ 
-                                  fontSize: '0.75rem', 
-                                  fontWeight: '600',
-                                  opacity: 0.9,
-                                  marginLeft: '6px'
-                                }}>
-                                  (Du)
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{
-                            background: 'rgba(255,255,255,0.25)',
-                            borderRadius: '8px',
-                            padding: '4px 10px',
-                            fontSize: '0.8rem',
-                            fontWeight: '700',
-                            color: 'white'
-                          }}>
-                            {player.points}P
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
-                );
-              }
+                  
+                  {/* Name und Punkte */}
+                  <div style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '800',
+                    color: 'white',
+                    marginBottom: '6px',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.3)'
+                  }}>
+                    {currentPlayer?.display_name}
+                  </div>
+                  
+                  <div style={{
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.8)',
+                    marginBottom: '12px'
+                  }}>
+                    {currentPlayer?.points} Punkte
+                  </div>
+                  
+                  {/* Status-Info */}
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(10px)',
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    fontSize: '0.85rem',
+                    color: 'rgba(255, 255, 255, 0.9)'
+                  }}>
+                    {rank === 1 && `🥇 Du bist auf Platz 1 von ${dashboardData.ranking.length}!`}
+                    {rank === 2 && `🥈 Du bist auf Platz 2 von ${dashboardData.ranking.length}!`}
+                    {rank === 3 && `🥉 Du bist auf Platz 3 von ${dashboardData.ranking.length}!`}
+                    {rank > 3 && `Du bist auf Platz ${rank} von ${dashboardData.ranking.length}`}
+                  </div>
+                </div>
+              );
             })()}
           </div>
         </div>
