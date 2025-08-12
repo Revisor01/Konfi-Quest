@@ -242,16 +242,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const getRoomSubtitle = (room: ChatRoom) => {
     if (room.type === 'jahrgang') {
-      const jahrgangText = room.jahrgang_name ? `Jahrgang ${room.jahrgang_name}` : 'Jahrgangschat';
-      const participantText = room.participant_count ? ` • ${room.participant_count} Teilnehmer:innen` : '';
-      return jahrgangText + participantText;
+      return 'Jahrgangschat';
     }
     if (room.type === 'admin') {
       return 'Admin-Team Chat';
     }
     if (room.type === 'group') {
-      const participantText = room.participant_count ? `${room.participant_count} Teilnehmer:innen` : 'Gruppenchat';
-      return participantText;
+      return 'Gruppenchat';
     }
     if (room.type === 'direct') {
       return 'Direktnachricht';
@@ -292,12 +289,12 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
         {/* Chat Header - Dashboard-Style */}
         <div style={{
-          background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
           borderRadius: '24px',
           padding: '0',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: '0 20px 40px rgba(23, 162, 184, 0.3)',
+          boxShadow: '0 20px 40px rgba(6, 182, 212, 0.3)',
           position: 'relative',
           overflow: 'hidden',
           minHeight: '220px',
@@ -419,16 +416,14 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         </div>
 
 <IonCard style={{ margin: '16px' }}>
-  <IonCardContent style={{ padding: '16px' }}>
+  <IonCardContent style={{ padding: '14px 16px' }}>
     <IonItem 
       lines="none" 
       style={{ 
         '--background': '#f8f9fa',
         '--border-radius': '12px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         '--padding-start': '12px',
         '--padding-end': '12px',
-        '--min-height': '52px',
         margin: '0'
       }}
     >
@@ -490,7 +485,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                         '--border-radius': '12px',
                         margin: '6px 8px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #f0f0f0',
+                        border: '1px solid #e0e0e0',
                         borderRadius: '12px'
                       }}
                     >
@@ -568,11 +563,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px',
-                          fontSize: '0.85rem',
+                          fontSize: '0.8rem',
                           color: '#666',
                           marginBottom: '6px'
                         }}>
-                          <span style={{ fontWeight: '500', color: '#333' }}>
+                          <span style={{ fontWeight: '400', color: '#666' }}>
                             {getRoomSubtitle(room)}
                           </span>
                         </div>

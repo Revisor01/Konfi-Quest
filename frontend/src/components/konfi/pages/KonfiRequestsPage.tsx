@@ -66,7 +66,7 @@ const KonfiRequestsPage: React.FC = () => {
       const response = await api.get('/konfi/requests');
       setRequests(response.data);
     } catch (err) {
-      setError('Fehler beim Laden der Anträge');
+      setError('Fehler beim Laden der Aktivitäten');
       console.error('Error loading requests:', err);
     } finally {
       setLoading(false);
@@ -163,7 +163,7 @@ const KonfiRequestsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>Anträge</IonTitle>
+          <IonTitle>Aktivitäten</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleAddRequest}>
               <IonIcon icon={add} />
@@ -176,7 +176,7 @@ const KonfiRequestsPage: React.FC = () => {
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
             <IonTitle size="large" style={{ color: 'black' }}>
-              Anträge
+              Aktivitäten
             </IonTitle>
           </IonToolbar>
         </IonHeader>
@@ -189,7 +189,7 @@ const KonfiRequestsPage: React.FC = () => {
         </IonRefresher>
 
         {loading ? (
-          <LoadingSpinner message="Anträge werden geladen..." />
+          <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (
           <RequestsView 
             requests={getFilteredRequests()}

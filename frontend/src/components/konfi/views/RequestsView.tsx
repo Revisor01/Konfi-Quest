@@ -173,7 +173,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
             lineHeight: '0.8',
             letterSpacing: '-2px'
           }}>
-            ANT
+            AKTIV
           </h2>
           <h2 style={{
             fontSize: '4rem',
@@ -183,7 +183,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
             lineHeight: '0.8',
             letterSpacing: '-2px'
           }}>
-            RÄGE
+            ITÄTEN
           </h2>
         </div>
         
@@ -335,8 +335,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '6px 8px',
-                    boxShadow: request.activity_type === 'gottesdienst' ? '0 2px 8px rgba(59, 130, 246, 0.15)' : '0 2px 8px rgba(40, 167, 69, 0.15)',
-                    border: request.activity_type === 'gottesdienst' ? '1px solid #93c5fd' : '1px solid #90ee90',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    border: '1px solid #e0e0e0',
                     borderRadius: '12px',
                     cursor: request.photo_filename ? 'pointer' : 'default'
                   }}

@@ -217,14 +217,14 @@ const KonfiBadgesPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>Achievements</IonTitle>
+          <IonTitle>Badges</IonTitle>
         </IonToolbar>
       </IonHeader>
       
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Achievements</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>Badges</IonTitle>
           </IonToolbar>
         </IonHeader>
         

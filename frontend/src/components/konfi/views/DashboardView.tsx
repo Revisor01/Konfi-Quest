@@ -93,9 +93,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
+  const [showLosung, setShowLosung] = useState(true); // Wechselt bei jedem Reload
 
   // Load Tageslosung directly from backend
   useEffect(() => {
+    // Wechsle bei jedem Reload zwischen AT und NT
+    setShowLosung(Math.random() > 0.5);
+    
     const loadTageslosung = async () => {
       try {
         console.log('Loading Tageslosung from backend...');
@@ -490,11 +494,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Tageslosung - nur wenn echte API-Daten verfügbar */}
       {!loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
         <div style={{
-          background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
           borderRadius: '20px',
           padding: '0',
           marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(23, 162, 184, 0.25)',
+          boxShadow: '0 8px 32px rgba(6, 182, 212, 0.25)',
           position: 'relative',
           overflow: 'hidden',
           minHeight: '160px'
@@ -534,8 +538,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               const hasLosung = actualDailyVerse.losungstext;
               const hasLehrtext = actualDailyVerse.lehrtext;
               
-              // Wechsle täglich zwischen AT (Losung) und NT (Lehrtext)
-              const showLosung = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % 2 === 0;
+              // showLosung wird bereits per State bei jedem Reload gewechselt
               
               let text, reference;
               if (hasLosung && hasLehrtext) {
@@ -751,7 +754,7 @@ Deine nächsten {regularEvents.length} Events
               lineHeight: '0.9',
               letterSpacing: '-2px'
             }}>
-              BADGES
+              DEINE BADGES
             </h2>
           </div>
 
@@ -954,7 +957,7 @@ Deine nächsten {regularEvents.length} Events
               lineHeight: '0.9',
               letterSpacing: '-2px'
             }}>
-              RANKING
+              DEIN RANKING
             </h2>
           </div>
 
@@ -1179,6 +1182,7 @@ Deine nächsten {regularEvents.length} Events
           </div>
         </div>
       )}
+
     </div>
   );
 };

@@ -105,29 +105,19 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: '-10px',
+          top: '-5px',
           left: '12px',
           zIndex: 1
         }}>
           <h2 style={{
-            fontSize: '3.5rem',
+            fontSize: '4rem',
             fontWeight: '900',
             color: 'rgba(255, 255, 255, 0.1)',
             margin: '0',
             lineHeight: '0.8',
             letterSpacing: '-2px'
           }}>
-            ACHIEVE
-          </h2>
-          <h2 style={{
-            fontSize: '3.5rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            MENTS
+            BADGES
           </h2>
         </div>
         
@@ -270,7 +260,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                 }} 
               />
               <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-              <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Achievements!</p>
+              <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Badges!</p>
             </div>
           ) : (
             <IonGrid style={{ padding: '0', margin: '0 4px' }}>

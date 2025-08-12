@@ -229,7 +229,7 @@ const MainTabs: React.FC = () => {
             </IonTabButton>
             <IonTabButton tab="requests" href="/konfi/requests">
               <IonIcon icon={document} />
-              <IonLabel>Anfragen</IonLabel>
+              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
             <IonTabButton tab="profile" href="/konfi/profile">
               <IonIcon icon={person} />

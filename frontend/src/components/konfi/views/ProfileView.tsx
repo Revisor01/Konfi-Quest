@@ -299,7 +299,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </div>
         
         {/* Card ohne Header */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px' }}>
           <IonCardContent style={{ padding: '12px 0' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none">
@@ -375,7 +375,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </div>
         
         {/* Passwort-Felder */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px' }}>
           <IonCardContent style={{ padding: '12px 0' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none">
@@ -436,7 +436,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </IonCard>
 
         {/* Hinweis-Card */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'rgba(56, 128, 255, 0.1)' }}>
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px', background: 'rgba(56, 128, 255, 0.1)' }}>
           <IonCardContent style={{ padding: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <IonIcon icon={checkmark} color="primary" />
@@ -511,7 +511,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
     <div>
       {/* Profile Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)',
+        background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
@@ -557,7 +557,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
+                  borderRadius: '8px',
                   padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
@@ -583,7 +583,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
+                  borderRadius: '8px',
                   padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
@@ -609,7 +609,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
+                  borderRadius: '8px',
                   padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
@@ -638,7 +638,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
       </div>
 
       {/* Persönliche Informationen - Erweitert */}
-      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
         <IonCardContent>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <IonAvatar style={{ 
@@ -685,25 +685,58 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
         </IonCardContent>
       </IonCard>
 
-      {/* Konfirmationstermin Card - Schön gestylt */}
-      <IonCard style={{ 
+      {/* Konfirmationstermin Card - Dashboard Blau Style mit Background Header */}
+      <div style={{ 
         margin: '16px', 
-        borderRadius: '12px',
-        background: profile.confirmation_date ? 'linear-gradient(135deg, #f0e6ff 0%, #e6d9ff 100%)' : '#fff',
-        border: profile.confirmation_date ? '1px solid #d4b5fd' : '1px solid #e0e0e0'
+        borderRadius: '24px',
+        background: profile.confirmation_date ? 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)' : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+        border: 'none',
+        boxShadow: profile.confirmation_date ? '0 10px 40px rgba(30, 58, 138, 0.3)' : '0 10px 40px rgba(100, 116, 139, 0.3)',
+        position: 'relative',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        <IonCardContent>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Überschrift - groß und überlappend */}
+        <div style={{
+          position: 'absolute',
+          top: '-8px',
+          left: '12px',
+          zIndex: 1
+        }}>
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-1px'
+          }}>
+            KONFI
+          </h2>
+        </div>
+
+        {/* Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '50px 24px 24px 24px',
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%' }}>
             <div style={{ 
               width: '48px', 
               height: '48px',
-              backgroundColor: '#8b5cf6',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-              flexShrink: 0
+              backdropFilter: 'blur(10px)',
+              flexShrink: 0,
+              border: '2px solid rgba(255, 255, 255, 0.3)'
             }}>
               <IonIcon 
                 icon={calendar} 
@@ -714,21 +747,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               />
             </div>
             <div style={{ flex: 1 }}>
-              <h3 style={{ 
-                margin: '0 0 6px 0', 
-                fontSize: '1rem', 
-                fontWeight: '700',
-                color: '#8b5cf6',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Konfirmationstermin
-              </h3>
               {profile.confirmation_date ? (
                 <div>
                   <p style={{ 
                     margin: '0 0 4px 0', 
-                    color: '#333', 
+                    color: 'white', 
                     fontSize: '1.1rem', 
                     fontWeight: '600' 
                   }}>
@@ -736,7 +759,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
                   </p>
                   <p style={{ 
                     margin: '0 0 4px 0', 
-                    color: '#666', 
+                    color: 'rgba(255, 255, 255, 0.8)', 
                     fontSize: '0.9rem' 
                   }}>
                     {new Date(profile.confirmation_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
@@ -745,7 +768,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
                     <p 
                       style={{ 
                         margin: '0', 
-                        color: '#8b5cf6', 
+                        color: 'rgba(255, 255, 255, 0.9)', 
                         fontSize: '0.9rem',
                         cursor: 'pointer',
                         fontWeight: '500',
@@ -765,7 +788,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
                   )}
                 </div>
               ) : (
-                <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
+                <p style={{ margin: '0', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem' }}>
                   {profile.jahrgang_name && profile.jahrgang_year 
                     ? `Noch kein Termin gebucht`
                     : 'Kein Termin verfügbar'
@@ -774,12 +797,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
               )}
             </div>
           </div>
-        </IonCardContent>
-      </IonCard>
+        </div>
+      </div>
 
       {/* Next Badge Progress */}
       {profile.progress_overview?.next_badge && (
-        <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+        <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
           <IonCardContent>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
               <IonIcon icon={rocket} style={{ fontSize: '1.2rem', color: '#ff6b35', marginRight: '8px' }} />
@@ -809,7 +832,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
 
       {/* Recent Activities */}
       {profile.recent_activities && profile.recent_activities.length > 0 && (
-        <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+        <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
           <IonCardContent>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
               Letzte Aktivitäten
@@ -852,7 +875,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
       )}
 
       {/* Account Settings */}
-      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
         <IonCardContent>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
             Konto-Einstellungen
@@ -946,7 +969,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
       </IonCard>
 
       {/* Logout */}
-      <IonCard style={{ margin: '16px 16px 32px 16px', borderRadius: '12px' }}>
+      <IonCard style={{ margin: '16px 16px 32px 16px', borderRadius: '8px' }}>
         <IonCardContent>
           <IonButton 
             expand="block" 
