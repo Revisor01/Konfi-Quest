@@ -93,7 +93,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
       }));
 
-      // Get user's ranking position (like in profile route)
+      // Get user's ranking position (like in profile route)  
+      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
       const userRankingQuery = `
         WITH MyRank AS (
           SELECT 
@@ -145,7 +146,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
 
       // Get level information for this konfi
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
       
       // Get next level
       const nextLevelQuery = `
