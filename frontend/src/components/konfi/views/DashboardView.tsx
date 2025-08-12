@@ -153,12 +153,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           type: error?.name
         });
         
-        // Fallback: Verwende die API über unseren eigenen Server als Proxy
+        // Fallback: Verwende die bereits existierende Backend-Route
         try {
-          console.log('Trying fallback via backend proxy...');
-          const proxyResponse = await api.get('/tageslosung', {
-            params: { translation: translation }
-          });
+          console.log('Trying backend route /konfi/tageslosung...');
+          const proxyResponse = await api.get('/konfi/tageslosung');
           
           if (proxyResponse.data && proxyResponse.data.success) {
             const { losung, lehrtext } = proxyResponse.data.data;
