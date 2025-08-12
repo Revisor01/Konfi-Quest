@@ -93,6 +93,30 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
       }));
 
+      // Get user's ranking position (like in profile route)
+      const userRankingQuery = `
+        WITH MyRank AS (
+          SELECT 
+            (kp.gottesdienst_points + kp.gemeinde_points) as total_points,
+            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY (kp.gottesdienst_points + kp.gemeinde_points) DESC) as rank_in_jahrgang
+          FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
+        ), TotalCount AS (
+           SELECT COUNT(*) as total_in_jahrgang 
+           FROM users u2 
+           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id 
+           JOIN roles r2 ON u2.role_id = r2.id 
+           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi'
+        )
+        SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
+        FROM MyRank r, TotalCount tc
+        WHERE r.total_points = $2
+        LIMIT 1;
+      `;
+      const { rows: [userRanking] } = await db.query(userRankingQuery, [konfi.jahrgang_id, totalPoints]);
+
       // Get registered events count
       const { rows: [eventCountResult] } = await db.query(
         'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1',
@@ -156,6 +180,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         event_count: eventCount,
         ranking: rankingWithInitials,
         total_points: totalPoints,
+        rank_in_jahrgang: userRanking ? userRanking.rank_in_jahrgang : null,
+        total_in_jahrgang: userRanking ? userRanking.total_in_jahrgang : null,
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
         confirmation_date: konfi.confirmation_date,
         level_info: {
