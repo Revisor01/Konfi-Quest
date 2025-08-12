@@ -9,7 +9,8 @@ import {
   location,
   calendar,
   eyeOff,
-  star
+  star,
+  trophy
 } from 'ionicons/icons';
 import api from '../../../services/api';
 
@@ -31,6 +32,8 @@ interface DashboardData {
   ranking: any[];
   days_to_confirmation?: number;
   confirmation_date?: string;
+  rank_in_jahrgang?: number;
+  total_in_jahrgang?: number;
   level_info?: {
     current_level?: {
       id: number;
@@ -526,108 +529,52 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div style={{ position: 'relative', zIndex: 2, padding: '60px 24px 24px 24px' }}>
-            {(() => {
-              // Zeige beide Texte (AT und NT) wenn verfügbar
+{(() => {
+              // Wähle nur einen Text aus - wechselnd zwischen AT und NT
               const hasLosung = actualDailyVerse.losungstext;
               const hasLehrtext = actualDailyVerse.lehrtext;
               
+              // Wechsle täglich zwischen AT (Losung) und NT (Lehrtext)
+              const showLosung = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % 2 === 0;
+              
+              let text, reference;
               if (hasLosung && hasLehrtext) {
-                // Beide verfügbar - zufällig einen auswählen oder beide zeigen
-                const showLosung = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % 2 === 0; // Wechselt täglich
-                
-                return (
-                  <div>
-                    <div style={{ marginBottom: hasLosung && hasLehrtext ? '20px' : '0' }}>
-                      <blockquote style={{ 
-                        fontSize: '1.2rem', 
-                        lineHeight: '1.5',
-                        fontStyle: 'italic',
-                        marginBottom: '12px',
-                        color: 'white',
-                        fontWeight: '400',
-                        margin: '0 0 12px 0',
-                        textAlign: 'center',
-                        fontFamily: 'Georgia, serif'
-                      }}>
-                        "{showLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext}"
-                      </blockquote>
-                      <cite style={{ 
-                        fontSize: '0.85rem',
-                        color: 'rgba(255, 255, 255, 0.85)',
-                        textAlign: 'center',
-                        fontWeight: '600',
-                        display: 'block',
-                        fontStyle: 'normal'
-                      }}>
-                        {showLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers}
-                      </cite>
-                      
-                      {/* Zeige auch den anderen Text kleiner */}
-                      <div style={{ 
-                        marginTop: '16px',
-                        padding: '12px',
-                        background: 'rgba(255,255,255,0.05)',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255,255,255,0.1)'
-                      }}>
-                        <div style={{ 
-                          fontSize: '0.9rem', 
-                          lineHeight: '1.4',
-                          fontStyle: 'italic',
-                          marginBottom: '6px',
-                          color: 'rgba(255, 255, 255, 0.9)',
-                          fontWeight: '400',
-                          textAlign: 'center',
-                          fontFamily: 'Georgia, serif'
-                        }}>
-                          "{!showLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext}"
-                        </div>
-                        <div style={{ 
-                          fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.7)',
-                          textAlign: 'center',
-                          fontWeight: '500',
-                          fontStyle: 'normal'
-                        }}>
-                          {!showLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
+                // Beide verfügbar - wähle einen aus
+                text = showLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext;
+                reference = showLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers;
               } else {
                 // Nur einer verfügbar
-                const text = hasLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext || actualDailyVerse.text;
-                const reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
-                
-                return (
-                  <div>
-                    <blockquote style={{ 
-                      fontSize: '1.25rem', 
-                      lineHeight: '1.5',
-                      fontStyle: 'italic',
-                      marginBottom: '16px',
-                      color: 'white',
-                      fontWeight: '400',
-                      margin: '0 0 16px 0',
-                      textAlign: 'center',
-                      fontFamily: 'Georgia, serif'
-                    }}>
-                      "{text}"
-                    </blockquote>
-                    <cite style={{ 
-                      fontSize: '0.9rem',
-                      color: 'rgba(255, 255, 255, 0.85)',
-                      textAlign: 'center',
-                      fontWeight: '500',
-                      display: 'block',
-                      fontStyle: 'normal'
-                    }}>
-                      {reference}
-                    </cite>
-                  </div>
-                );
+                text = hasLosung ? actualDailyVerse.losungstext : actualDailyVerse.lehrtext || actualDailyVerse.text;
+                reference = hasLosung ? actualDailyVerse.losungsvers : actualDailyVerse.lehrtextvers || actualDailyVerse.reference;
               }
+              
+              return (
+                <div>
+                  <blockquote style={{ 
+                    fontSize: '1.25rem', 
+                    lineHeight: '1.5',
+                    fontStyle: 'italic',
+                    marginBottom: '16px',
+                    color: 'white',
+                    fontWeight: '400',
+                    margin: '0 0 16px 0',
+                    textAlign: 'center',
+                    fontFamily: 'Georgia, serif'
+                  }}>
+                    "{text}"
+                  </blockquote>
+                  <cite style={{ 
+                    fontSize: '0.9rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    textAlign: 'center',
+                    fontWeight: '500',
+                    display: 'block',
+                    fontStyle: 'normal'
+                  }}>
+                    {reference}
+                  </cite>
+                </div>
+              );
             })()}
           </div>
         </div>
@@ -943,12 +890,16 @@ Deine nächsten {regularEvents.length} Events
 
                       {/* Badge Beschreibung */}
                       <p style={{
-                        fontSize: '0.7rem',
+                        fontSize: '0.65rem',
                         color: '#6b7280',
-                        margin: '0 0 8px 0',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        textAlign: 'center'
+                        margin: '0 0 6px 0',
+                        lineHeight: '1.2',
+                        textAlign: 'center',
+                        height: '24px',
+                        overflow: 'hidden',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical'
                       }}>
                         {badge.description}
                       </p>
@@ -1008,68 +959,220 @@ Deine nächsten {regularEvents.length} Events
           </div>
 
           <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
+            {/* Platzierung Header - wie Punkte-Display */}
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: '16px',
+              padding: '16px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'baseline', 
+                gap: '8px', 
+                marginBottom: '8px',
+                justifyContent: 'center'
+              }}>
+                <span style={{ 
+                  fontSize: '2.5rem', 
+                  fontWeight: '900', 
+                  color: 'white' 
+                }}>
+                  {dashboardData.rank_in_jahrgang || 1}
+                </span>
+                <span style={{ 
+                  fontSize: '1.5rem', 
+                  color: 'rgba(255, 255, 255, 0.7)' 
+                }}>
+                  / {dashboardData.total_in_jahrgang || 1}
+                </span>
+              </div>
+              
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}>
+                <IonIcon icon={trophy} style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'rgba(255, 255, 255, 0.8)' 
+                }} />
+                <span style={{
+                  fontSize: '0.9rem',
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  textAlign: 'center'
+                }}>
+                  Deine Platzierung im Jahrgang
+                </span>
+              </div>
+            </div>
+
+            {/* Intelligente Ranking-Liste */}
             {(() => {
-              // Finde die Position des aktuellen Konfis
-              const myRank = dashboardData.ranking.findIndex(p => p.id === dashboardData.konfi.id);
-              const currentPlayer = dashboardData.ranking[myRank];
-              const rank = myRank + 1;
+              const currentUserRank = dashboardData.rank_in_jahrgang || 1;
+              const totalRanking = dashboardData.ranking;
+              const playersToShow = [];
+              
+              // Immer Platz 1 zeigen
+              if (totalRanking.length > 0) {
+                playersToShow.push({ ...totalRanking[0], actualRank: 1 });
+              }
+              
+              // Falls User nicht auf Platz 1-3 ist, zeige Nachbarn
+              if (currentUserRank > 3) {
+                // Trennlinie einfügen falls nötig
+                if (currentUserRank > 2) {
+                  playersToShow.push({ separator: true });
+                }
+                
+                // Nachbarn um User herum zeigen (User ± 1)
+                const startRank = Math.max(1, currentUserRank - 1);
+                const endRank = Math.min(dashboardData.total_in_jahrgang || currentUserRank, currentUserRank + 1);
+                
+                // Erstelle Mock-Player für Nachbarn basierend auf Backend-Ranking-Daten
+                for (let rank = startRank; rank <= endRank; rank++) {
+                  if (rank === currentUserRank) {
+                    // Aktueller User
+                    playersToShow.push({
+                      id: dashboardData.konfi.id,
+                      display_name: dashboardData.konfi.display_name,
+                      points: (dashboardData.konfi.gottesdienst_points || 0) + (dashboardData.konfi.gemeinde_points || 0),
+                      initials: getInitials(dashboardData.konfi.display_name),
+                      actualRank: rank,
+                      isCurrentUser: true
+                    });
+                  } else {
+                    // Nachbar-Platz (wir können nur schätzen, da Backend nur Top 3 liefert)
+                    playersToShow.push({
+                      id: `neighbor-${rank}`,
+                      display_name: rank === startRank ? 'Konfi vor dir' : 'Konfi nach dir',
+                      points: rank < currentUserRank ? 
+                        (dashboardData.konfi.gottesdienst_points || 0) + (dashboardData.konfi.gemeinde_points || 0) + (currentUserRank - rank) :
+                        Math.max(0, (dashboardData.konfi.gottesdienst_points || 0) + (dashboardData.konfi.gemeinde_points || 0) - (rank - currentUserRank)),
+                      initials: '??',
+                      actualRank: rank,
+                      isNeighbor: true
+                    });
+                  }
+                }
+              } else {
+                // User ist in Top 3, zeige normale Top 3
+                for (let i = 1; i < Math.min(3, totalRanking.length); i++) {
+                  playersToShow.push({ ...totalRanking[i], actualRank: i + 1 });
+                }
+              }
               
               return (
-                <div style={{ textAlign: 'center' }}>
-                  {/* Platzierungsanzeige */}
-                  <div style={{
-                    width: '80px', height: '80px',
-                    margin: '0 auto 16px',
-                    background: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)', 
-                    borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: '2px solid rgba(255,255,255,0.3)',
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: '0 8px 30px rgba(0,0,0,0.2), 0 0 15px rgba(255,255,255,0.1)'
-                  }}>
-                    <div style={{
-                      fontSize: '2rem',
-                      fontWeight: '900',
-                      color: 'white',
-                      textShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                    }}>
-                      {rank}
-                    </div>
-                  </div>
-                  
-                  {/* Name und Punkte */}
-                  <div style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '800',
-                    color: 'white',
-                    marginBottom: '6px',
-                    textShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                  }}>
-                    {currentPlayer?.display_name}
-                  </div>
-                  
-                  <div style={{
-                    fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    marginBottom: '12px'
-                  }}>
-                    {currentPlayer?.points} Punkte
-                  </div>
-                  
-                  {/* Status-Info */}
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(10px)',
-                    borderRadius: '10px',
-                    padding: '10px 14px',
-                    fontSize: '0.85rem',
-                    color: 'rgba(255, 255, 255, 0.9)'
-                  }}>
-                    {rank === 1 && `🥇 Du bist auf Platz 1!`}
-                    {rank === 2 && `🥈 Du bist auf Platz 2!`}
-                    {rank === 3 && `🥉 Du bist auf Platz 3!`}
-                    {rank > 3 && `Du bist auf Platz ${rank}`}
-                  </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {playersToShow.map((item, index) => {
+                    if (item.separator) {
+                      return (
+                        <div key="separator" style={{
+                          height: '1px',
+                          background: 'rgba(255, 255, 255, 0.2)',
+                          margin: '8px 0',
+                          position: 'relative'
+                        }}>
+                          <div style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            color: 'rgba(255, 255, 255, 0.6)',
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            fontWeight: '500'
+                          }}>
+                            ...
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    const isCurrentUser = item.isCurrentUser || item.id === dashboardData.konfi.id;
+                    const rank = item.actualRank;
+                    
+                    return (
+                      <div key={item.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        background: isCurrentUser 
+                          ? 'rgba(255, 255, 255, 0.2)' 
+                          : item.isNeighbor
+                          ? 'rgba(255, 255, 255, 0.05)'
+                          : 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '12px',
+                        padding: '12px',
+                        border: isCurrentUser 
+                          ? '2px solid rgba(255, 255, 255, 0.4)' 
+                          : '1px solid rgba(255, 255, 255, 0.15)',
+                        opacity: item.isNeighbor ? 0.7 : 1
+                      }}>
+                        {/* Ranking Position */}
+                        <div style={{
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: rank === 1 
+                            ? 'linear-gradient(135deg, #ffd700 0%, #ffed4e 100%)'
+                            : rank === 2 
+                            ? 'linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%)'
+                            : rank === 3 
+                            ? 'linear-gradient(135deg, #cd7f32 0%, #deb887 100%)'
+                            : 'rgba(255, 255, 255, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: rank <= 3 ? '#1a1a1a' : 'white',
+                          fontWeight: '700',
+                          fontSize: '0.9rem'
+                        }}>
+                          {rank}
+                        </div>
+
+                        {/* Avatar */}
+                        <div style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: 'rgba(255, 255, 255, 0.2)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: '600',
+                          fontSize: '0.9rem',
+                          backdropFilter: 'blur(10px)'
+                        }}>
+                          {item.initials}
+                        </div>
+
+                        {/* Name und Punkte */}
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            color: 'white',
+                            marginBottom: '2px'
+                          }}>
+                            {item.display_name}
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: 'rgba(255, 255, 255, 0.7)'
+                          }}>
+                            {item.points} Punkte
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
