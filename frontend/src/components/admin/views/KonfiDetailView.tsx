@@ -400,12 +400,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
         {/* Konfi Header - Dashboard-Style */}
         <div style={{
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
           borderRadius: '24px',
           padding: '0',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
+          boxShadow: '0 20px 40px rgba(91, 33, 182, 0.3)',
           position: 'relative',
           overflow: 'hidden',
           minHeight: '220px',
@@ -457,106 +457,54 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
             <IonGrid style={{ padding: '0', margin: '0 4px' }}>
               <IonRow>
-                <IonCol size="3" style={{ padding: '0 4px' }}>
+                <IonCol size="6" style={{ padding: '0 4px' }}>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    padding: '16px 8px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon
-                      icon={school}
-                      style={{
-                        fontSize: '1.2rem',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        marginBottom: '4px',
-                        display: 'block',
-                        margin: '0 auto 4px auto'
-                      }}
-                    />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.gottesdienst_points ?? currentKonfi?.points?.gottesdienst ?? 0}</span>
-                    </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
-                      G'dienst
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol size="3" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 8px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon
-                      icon={star}
-                      style={{
-                        fontSize: '1.2rem',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        marginBottom: '4px',
-                        display: 'block',
-                        margin: '0 auto 4px auto'
-                      }}
-                    />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.gemeinde_points ?? currentKonfi?.points?.gemeinde ?? 0}</span>
-                    </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
-                      Gemeinde
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol size="3" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 8px',
+                    padding: '16px 12px',
                     color: 'white',
                     textAlign: 'center'
                   }}>
                     <IonIcon
                       icon={trophy}
                       style={{
-                        fontSize: '1.2rem',
+                        fontSize: '1.5rem',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        marginBottom: '4px',
+                        marginBottom: '8px',
                         display: 'block',
-                        margin: '0 auto 4px auto'
+                        margin: '0 auto 8px auto'
                       }}
                     />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.badgeCount || 0}</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{currentKonfi?.badgeCount || 0}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       Badges
                     </div>
                   </div>
                 </IonCol>
-                <IonCol size="3" style={{ padding: '0 4px' }}>
+                <IonCol size="6" style={{ padding: '0 4px' }}>
                   <div style={{
                     background: 'rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    padding: '16px 8px',
+                    padding: '16px 12px',
                     color: 'white',
                     textAlign: 'center'
                   }}>
                     <IonIcon
                       icon={flash}
                       style={{
-                        fontSize: '1.2rem',
+                        fontSize: '1.5rem',
                         color: 'rgba(255, 255, 255, 0.9)',
-                        marginBottom: '4px',
+                        marginBottom: '8px',
                         display: 'block',
-                        margin: '0 auto 4px auto'
+                        margin: '0 auto 8px auto'
                       }}
                     />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.2rem' }}>{getTotalPoints()}</span>
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{getTotalPoints()}</span>
                     </div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       Gesamt
                     </div>
                   </div>
@@ -576,51 +524,125 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonCardHeader>
           <IonCardContent>
             {bonusEntries.length > 0 ? (
-              <IonList>
-                {bonusEntries.map((bonus: any, index: number) => (
-                  <IonItemSliding key={index}>
-                    <IonItem>
-                      <IonLabel>
-                        <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {bonus.description || 'Bonuspunkte'}
-                          <IonChip 
-                            color={bonus.type === 'gottesdienst' ? 'primary' : 'success'}
-                            style={{ 
-                              fontSize: '0.7rem', 
-                              height: '18px',
-                              opacity: 0.8,
-                              '--background': bonus.type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                              '--color': bonus.type === 'gottesdienst' ? '#3880ff' : '#2dd36f'
-                            }}
-                          >
-                            {bonus.type === 'gottesdienst' ? 'G' : 'Gem'}
-                          </IonChip>
-                        </h3>
-                        <p>{formatDate(bonus.completed_date || bonus.date)} • {bonus.admin || 'Admin'}</p>
-                      </IonLabel>
-                      <IonBadge 
+              <div style={{ padding: '0' }}>
+                <IonList lines="none" style={{ background: 'transparent' }}>
+                  {bonusEntries.map((bonus: any, index: number) => (
+                    <IonItemSliding key={index}>
+                      <IonItem
                         style={{
-                          '--background': 'rgba(255, 152, 0, 0.15)',
-                          '--color': '#ff9800',
-                          opacity: 0.8,
-                          fontSize: '0.8rem',
-                          fontWeight: '500'
+                          '--min-height': '80px',
+                          '--padding-start': '16px',
+                          '--padding-top': '0px',
+                          '--padding-bottom': '0px',
+                          '--background': '#fbfbfb',
+                          '--border-radius': '12px',
+                          margin: '6px 8px',
+                          boxShadow: 'none',
+                          border: 'none',
+                          borderRadius: '12px'
                         }}
                       >
-                        +{bonus.points}
-                      </IonBadge>
-                    </IonItem>
-                    <IonItemOptions side="end">
-                      <IonItemOption 
-                        color="danger" 
-                        onClick={() => handleDeleteBonus(bonus)}
-                      >
-                        <IonIcon icon={trash} />
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
-                ))}
-              </IonList>
+                        <IonLabel>
+                          {/* Header mit Icon und Badge */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '4px',
+                            position: 'relative'
+                          }}>
+                            {/* Bonus Icon */}
+                            <div style={{
+                              width: '28px',
+                              height: '28px',
+                              backgroundColor: '#ff9800',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}>
+                              <IonIcon
+                                icon={gift}
+                                style={{
+                                  fontSize: '0.9rem',
+                                  color: 'white'
+                                }}
+                              />
+                            </div>
+
+                            {/* Bonus Description */}
+                            <h3 style={{
+                              fontWeight: '600',
+                              fontSize: '1rem',
+                              margin: '0',
+                              color: '#333',
+                              lineHeight: '1.3',
+                              flex: 1,
+                              minWidth: 0,
+                              marginRight: '80px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {bonus.description || 'Bonuspunkte'}
+                            </h3>
+
+                            {/* Points Badge */}
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: '#ff9800',
+                              fontWeight: '600',
+                              backgroundColor: 'rgba(255, 152, 0, 0.15)',
+                              padding: '3px 6px',
+                              borderRadius: '6px',
+                              border: '1px solid rgba(255, 152, 0, 0.3)',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                              position: 'absolute',
+                              right: '16px',
+                              top: '50%',
+                              transform: 'translateY(-50%)'
+                            }}>
+                              +{bonus.points}
+                            </span>
+                          </div>
+
+                          {/* Date, Admin and Type */}
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginLeft: '40px'
+                          }}>
+                            <span>{formatDate(bonus.completed_date || bonus.date)} • {bonus.admin || 'Admin'}</span>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: bonus.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              fontWeight: '500',
+                              backgroundColor: bonus.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(45, 211, 111, 0.1)',
+                              padding: '1px 4px',
+                              borderRadius: '3px'
+                            }}>
+                              {bonus.type === 'gottesdienst' ? 'G' : 'Gem'}
+                            </span>
+                          </div>
+                        </IonLabel>
+                      </IonItem>
+                      <IonItemOptions side="end">
+                        <IonItemOption
+                          color="danger"
+                          onClick={() => handleDeleteBonus(bonus)}
+                        >
+                          <IonIcon icon={trash} />
+                        </IonItemOption>
+                      </IonItemOptions>
+                    </IonItemSliding>
+                  ))}
+                </IonList>
+              </div>
             ) : (
               <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
                 Noch keine Bonuspunkte vorhanden
@@ -706,81 +728,155 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonCardHeader>
           <IonCardContent>
             {activities.length > 0 ? (
-              <IonList>
-                {activities.slice(0, 10).map((activity) => (
-                  <IonItemSliding key={activity.id}>
-                    <IonItem 
-                      button={activity.hasPhoto}
-                      onClick={async () => {
-                        if (activity.hasPhoto && (activity as any).requestId) {
-                          try {
-                            console.log('Fetching photo for request:', (activity as any).requestId);
-                            // Photo über API mit Auth-Token laden
-                            const response = await api.get(`/activity-requests/${(activity as any).requestId}/photo`, {
-                              responseType: 'blob'
-                            });
-                            const photoUrl = URL.createObjectURL(response.data);
-                            setSelectedPhoto(photoUrl);
-                            presentPhotoModalHook({
-              presentingElement: presentingElement || undefined
-            });
-                          } catch (error) {
-                            console.error('Error loading photo:', error);
-                            setError('Foto konnte nicht geladen werden');
+              <div style={{ padding: '0' }}>
+                <IonList lines="none" style={{ background: 'transparent' }}>
+                  {activities.slice(0, 10).map((activity) => (
+                    <IonItemSliding key={activity.id}>
+                      <IonItem
+                        button={activity.hasPhoto}
+                        onClick={async () => {
+                          if (activity.hasPhoto && (activity as any).requestId) {
+                            try {
+                              console.log('Fetching photo for request:', (activity as any).requestId);
+                              const response = await api.get(`/activity-requests/${(activity as any).requestId}/photo`, {
+                                responseType: 'blob'
+                              });
+                              const photoUrl = URL.createObjectURL(response.data);
+                              setSelectedPhoto(photoUrl);
+                              presentPhotoModalHook({
+                                presentingElement: presentingElement || undefined
+                              });
+                            } catch (error) {
+                              console.error('Error loading photo:', error);
+                              setError('Foto konnte nicht geladen werden');
+                            }
+                          } else {
+                            console.log('No photo for activity:', activity.name, 'hasPhoto:', activity.hasPhoto, 'requestId:', (activity as any).requestId);
                           }
-                        } else {
-                          console.log('No photo for activity:', activity.name, 'hasPhoto:', activity.hasPhoto, 'requestId:', (activity as any).requestId);
-                        }
-                      }}
-                    >
-                      <IonLabel>
-                        <h3 style={{ 
-                          color: activity.isPending ? '#f59e0b' : 'inherit',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          {activity.name}
-                          {activity.hasPhoto && (
-                            <IonIcon 
-                              icon={image} 
-                              style={{ 
-                                fontSize: '0.9rem', 
-                                color: '#667eea',
-                                opacity: 0.7 
-                              }} 
-                            />
-                          )}
-                        </h3>
-                        <p>{formatDate(activity.date)} • {activity.admin}</p>
-                      </IonLabel>
-                      <IonBadge 
+                        }}
                         style={{
-                          '--background': activity.isPending ? 'rgba(255, 193, 7, 0.15)' :
-                                         activity.type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                          '--color': activity.isPending ? '#ffc107' :
-                                    activity.type === 'gottesdienst' ? '#3880ff' : '#2dd36f',
-                          opacity: 0.7,
-                          fontSize: '0.8rem',
-                          fontWeight: '500'
+                          '--min-height': '80px',
+                          '--padding-start': '16px',
+                          '--padding-top': '0px',
+                          '--padding-bottom': '0px',
+                          '--background': '#fbfbfb',
+                          '--border-radius': '12px',
+                          margin: '6px 8px',
+                          boxShadow: 'none',
+                          border: 'none',
+                          borderRadius: '12px'
                         }}
                       >
-                        {activity.isPending ? '?' : '+'}{activity.points}
-                      </IonBadge>
-                    </IonItem>
-                    {!activity.isPending && (
-                      <IonItemOptions side="end">
-                        <IonItemOption 
-                          color="danger" 
-                          onClick={() => handleDeleteActivity(activity)}
-                        >
-                          <IonIcon icon={trash} />
-                        </IonItemOption>
-                      </IonItemOptions>
-                    )}
-                  </IonItemSliding>
-                ))}
-              </IonList>
+                        <IonLabel>
+                          {/* Header mit Icon und Badge */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '4px',
+                            position: 'relative'
+                          }}>
+                            {/* Status Icon */}
+                            <div style={{
+                              width: '28px',
+                              height: '28px',
+                              backgroundColor: activity.isPending ? '#f59e0b' :
+                                             activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}>
+                              <IonIcon
+                                icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : star}
+                                style={{
+                                  fontSize: '0.9rem',
+                                  color: 'white'
+                                }}
+                              />
+                            </div>
+
+                            {/* Activity Name */}
+                            <h3 style={{
+                              fontWeight: '600',
+                              fontSize: '1rem',
+                              margin: '0',
+                              color: activity.isPending ? '#f59e0b' : '#333',
+                              lineHeight: '1.3',
+                              flex: 1,
+                              minWidth: 0,
+                              marginRight: '80px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              {activity.name}
+                              {activity.hasPhoto && (
+                                <IonIcon
+                                  icon={image}
+                                  style={{
+                                    fontSize: '0.8rem',
+                                    color: '#5b21b6',
+                                    opacity: 0.7
+                                  }}
+                                />
+                              )}
+                            </h3>
+
+                            {/* Points Badge */}
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: activity.isPending ? '#f59e0b' :
+                                     activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              fontWeight: '600',
+                              backgroundColor: activity.isPending ? 'rgba(245, 158, 11, 0.15)' :
+                                             activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
+                              padding: '3px 6px',
+                              borderRadius: '6px',
+                              border: `1px solid ${activity.isPending ? 'rgba(245, 158, 11, 0.3)' :
+                                                  activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.3)' : 'rgba(45, 211, 111, 0.3)'}`,
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                              position: 'absolute',
+                              right: '16px',
+                              top: '50%',
+                              transform: 'translateY(-50%)'
+                            }}>
+                              {activity.isPending ? '?' : '+'}{activity.points}
+                            </span>
+                          </div>
+
+                          {/* Date and Admin */}
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginLeft: '40px'
+                          }}>
+                            <span>{formatDate(activity.date)} • {activity.admin}</span>
+                          </div>
+                        </IonLabel>
+                      </IonItem>
+                      {!activity.isPending && (
+                        <IonItemOptions side="end">
+                          <IonItemOption
+                            color="danger"
+                            onClick={() => handleDeleteActivity(activity)}
+                          >
+                            <IonIcon icon={trash} />
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
+                    </IonItemSliding>
+                  ))}
+                </IonList>
+              </div>
             ) : (
               <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
                 Noch keine Aktivitäten vorhanden
