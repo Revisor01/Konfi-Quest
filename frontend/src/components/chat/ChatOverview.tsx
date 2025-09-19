@@ -415,42 +415,40 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           </div>
         </div>
 
-<IonCard style={{ margin: '16px' }}>
-  <IonCardContent style={{ padding: '14px 16px' }}>
-    <IonItem 
-      lines="none" 
-      style={{ 
-        '--background': '#f8f9fa',
-        '--border-radius': '12px',
-        '--padding-start': '12px',
-        '--padding-end': '12px',
-        margin: '0'
-      }}
-    >
-      <IonIcon 
-        icon={search} 
-        slot="start" 
-        style={{ 
-          color: '#8e8e93',
-          marginRight: '8px',
-          fontSize: '1rem'
-        }} 
-      />
-      <IonInput
-        value={searchText}
-        onIonInput={(e) => setSearchText(e.detail.value!)}
-        placeholder="Chaträume durchsuchen..."
-        style={{ 
-          '--color': '#000',
-          '--placeholder-color': '#8e8e93'
-        }}
-      />
-    </IonItem>
-  </IonCardContent>
-</IonCard>
-    
-    
-
+        {/* Suchfeld Navigation */}
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '14px 16px' }}>
+            <IonItem 
+              lines="none" 
+              style={{ 
+                '--background': '#f8f9fa',
+                '--border-radius': '12px',
+                '--padding-start': '12px',
+                '--padding-end': '12px',
+                margin: '0'
+              }}
+            >
+              <IonIcon 
+                icon={search} 
+                slot="start" 
+                style={{ 
+                  color: '#8e8e93',
+                  marginRight: '8px',
+                  fontSize: '1rem'
+                }} 
+              />
+              <IonInput
+                value={searchText}
+                onIonInput={(e) => setSearchText(e.detail.value!)}
+                placeholder="Chaträume durchsuchen..."
+                style={{ 
+                  '--color': '#000',
+                  '--placeholder-color': '#8e8e93'
+                }}
+              />
+            </IonItem>
+          </IonCardContent>
+        </IonCard>
 
         {/* Chat Rooms Liste - Events Design */}
         <IonCard style={{ margin: '16px' }}>
@@ -490,7 +488,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                       }}
                     >
                       <IonLabel>
-                        {/* Titel mit Icon und Unread Badge in einer Reihe */}
+                        {/* Titel mit Icon und Status Badge in einer Reihe */}
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'center',
@@ -527,7 +525,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             lineHeight: '1.3',
                             flex: 1,
                             minWidth: 0,
-                            marginRight: '80px',
+                            marginRight: '110px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -535,25 +533,44 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             {getDisplayRoomName(room)}
                           </h2>
                           
-                          {/* Unread Badge rechts */}
+                          {/* Unread Badge rechts - Standard rot */}
                           {room.unread_count > 0 && (
                             <span style={{
                               fontSize: '0.7rem',
-                              color: '#17a2b8',
+                              color: 'white',
                               fontWeight: '600',
-                              backgroundColor: '#e3f2fd',
+                              backgroundColor: '#dc3545',
                               padding: '3px 6px',
-                              borderRadius: '6px',
-                              border: '1px solid #81c784',
+                              borderRadius: '10px',
                               whiteSpace: 'nowrap',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                               flexShrink: 0,
                               position: 'absolute',
-                              right: '0',
+                              right: '16px',
                               top: '50%',
                               transform: 'translateY(-50%)'
                             }}>
-                              {room.unread_count > 99 ? '99+' : room.unread_count} NEU
+                              {room.unread_count > 99 ? '99+' : room.unread_count}
+                            </span>
+                          )}
+                          
+                          {/* Versteckter Platzhalter um Layout zu halten */}
+                          {room.unread_count === 0 && room.last_message?.created_at && (
+                            <span style={{
+                              fontSize: '0.7rem',
+                              fontWeight: '600',
+                              padding: '3px 6px',
+                              borderRadius: '10px',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
+                              position: 'absolute',
+                              right: '16px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              opacity: 0,
+                              visibility: 'hidden'
+                            }}>
+                              00
                             </span>
                           )}
                         </div>
@@ -572,7 +589,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           </span>
                         </div>
                         
-                        {/* Letzte Nachricht - mit fixer Zeitstempel-Position */}
+                        {/* Letzte Nachricht - mit Zeitstempel unten rechts */}
                         {room.last_message && (room.last_message.content || room.last_message.file_name) && (
                           <div style={{ 
                             fontSize: '0.8rem',
@@ -580,17 +597,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             marginTop: '6px'
                           }}>
                             <div style={{ 
-                              display: 'grid',
-                              gridTemplateColumns: '1fr auto',
-                              gap: '12px',
-                              alignItems: 'center'
+                              position: 'relative',
+                              paddingRight: '60px',
+                              minHeight: '44px',
+                              display: 'flex',
+                              alignItems: 'flex-start'
                             }}>
-                              {/* Nachricht links */}
+                              {/* Nachricht */}
                               <div style={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
-                                gap: '4px',
-                                minWidth: 0
+                                gap: '4px'
                               }}>
                                 <span style={{ 
                                   fontWeight: '600',
@@ -612,7 +629,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 </span>
                               </div>
                               
-                              {/* Zeitstempel rechts - fixe Position im Grid */}
+                              {/* Zeit Badge fest positioniert rechts */}
                               {room.last_message.created_at && (
                                 <span style={{
                                   fontSize: '0.7rem',
@@ -624,7 +641,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   border: '1px solid #b3e5fc',
                                   whiteSpace: 'nowrap',
                                   boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  justifySelf: 'end'
+                                  position: 'absolute',
+                                  right: '0',
+                                  bottom: '0'
                                 }}>
                                   {formatLastMessageTime(room.last_message.created_at)}
                                 </span>

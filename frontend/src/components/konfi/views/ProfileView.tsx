@@ -789,10 +789,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
                 </div>
               ) : (
                 <p style={{ margin: '0', color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem' }}>
-                  {profile.jahrgang_name && profile.jahrgang_year 
-                    ? `Noch kein Termin gebucht`
-                    : 'Kein Termin verfügbar'
-                  }
+                  Noch kein Termin gebucht
                 </p>
               )}
             </div>

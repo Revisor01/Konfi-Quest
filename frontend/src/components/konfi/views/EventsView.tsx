@@ -315,7 +315,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--border-radius': '12px',
                   margin: '6px 8px',
                   boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
-                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #f0f0f0',
+                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #e0e0e0',
                   borderRadius: '12px',
                   opacity: isPastEvent ? 0.6 : 1
                 }}

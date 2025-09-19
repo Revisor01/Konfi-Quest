@@ -194,15 +194,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const totalTarget = targetGottesdienst + targetGemeinde;
   const totalCurrentPoints = gottesdienstPoints + gemeindePoints;
 
-  // Separate confirmation events from regular events
-  const allUpcomingEvents = upcomingEvents
+  // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
+  const myRegisteredEvents = upcomingEvents
+    .filter(e => e.is_registered || (e as any).booking_status === 'waitlist')
     .filter(e => new Date(e.event_date || e.date) >= new Date())
     .sort((a, b) => new Date(a.event_date || a.date).getTime() - new Date(b.event_date || b.date).getTime());
 
-  const confirmationEvents = allUpcomingEvents
+  const confirmationEvents = myRegisteredEvents
     .filter(e => e.title?.toLowerCase().includes('konfirmation') || e.name?.toLowerCase().includes('konfirmation'));
 
-  const regularEvents = allUpcomingEvents
+  const regularEvents = myRegisteredEvents
     .filter(e => !e.title?.toLowerCase().includes('konfirmation') && !e.name?.toLowerCase().includes('konfirmation'))
     .slice(0, 3);
 
@@ -406,12 +407,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Background Text */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-5px',
             left: '10px',
             zIndex: 1
           }}>
             <h2 style={{
-              fontSize: '3rem',
+              fontSize: '2.9rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.08)',
               margin: '0',
@@ -421,7 +422,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               DEINE
             </h2>
             <h2 style={{
-              fontSize: '2.5rem',
+              fontSize: '2.9rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.08)',
               margin: '0',
@@ -506,7 +507,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Background Text */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-5px',
             left: '10px',
             zIndex: 1
           }}>
@@ -598,7 +599,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Background Text */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-5px',
             left: '10px',
             zIndex: 1
           }}>
@@ -638,12 +639,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             fontWeight: '700',
             zIndex: 3
           }}>
-Deine nächsten {regularEvents.length} Events
+{regularEvents.length === 0 ? 'DEINE EVENTS' : `DEINE ${regularEvents.length} EVENTS`}
           </div>
 
           <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {regularEvents.map((event) => (
+            {regularEvents.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '0.9rem'
+              }}>
+                Keine Events gebucht
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {regularEvents.map((event) => (
                 <div key={event.id} style={{
                   background: 'rgba(255, 255, 255, 0.15)',
                   backdropFilter: 'blur(10px)',
@@ -708,11 +718,15 @@ Deine nächsten {regularEvents.length} Events
                     color: 'white',
                     whiteSpace: 'nowrap'
                   }}>
-                    {event.cancelled ? 'ABGESAGT' : `In ${formatTimeUntil(event.event_date || event.date)}`}
+                    {event.cancelled ? 'ABGESAGT' : 
+                     (event as any).booking_status === 'waitlist' ? 
+                       `WARTELISTE (${(event as any).waitlist_position || 1})` :
+                       `In ${formatTimeUntil(event.event_date || event.date)}`}
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -732,35 +746,55 @@ Deine nächsten {regularEvents.length} Events
           {/* Background Text */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-5px',
             left: '10px',
             zIndex: 1
           }}>
-            <h2 style={{
-              fontSize: '3rem',
+                        <h2 style={{
+              fontSize: '2.8rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.08)',
               margin: '0',
               lineHeight: '0.9',
               letterSpacing: '-2px'
             }}>
-              NEUE
+              DEINE
             </h2>
             <h2 style={{
-              fontSize: '3rem',
+              fontSize: '2.8rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.08)',
               margin: '0',
               lineHeight: '0.9',
               letterSpacing: '-2px'
             }}>
-              DEINE BADGES
+              BADGES
             </h2>
           </div>
 
           <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              {dashboardData.recent_badges.slice(0, 2).map((badge, index) => (
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '12px', 
+              justifyItems: 'center',
+              maxWidth: '320px',
+              margin: '0 auto'
+            }}>
+              {/* Zeige alle neuen Badges, mindestens aber 2 Plätze */}
+              {Array.from({ length: Math.max(2, dashboardData.recent_badges.length) }).map((_, index) => {
+                const badge = dashboardData.recent_badges[index];
+                if (!badge) {
+                  // Placeholder für leere Slots
+                  return (
+                    <div key={`placeholder-${index}`} style={{
+                      width: '140px',
+                      aspectRatio: '1',
+                      opacity: 0
+                    }} />
+                  );
+                }
+                return (
                 <div key={badge.id} style={{
                   margin: '0',
                   background: `
@@ -781,7 +815,7 @@ Deine nächsten {regularEvents.length} Events
                   aspectRatio: '1',
                   width: '140px',
                   borderRadius: '20px',
-                  transform: index === 0 ? 'rotate(-3deg)' : 'rotate(3deg)',
+                  transform: `rotate(${index % 2 === 0 ? '-3deg' : '3deg'})`,
                   overflow: 'visible'
                 }}>
                   {/* NEU Stern - außerhalb des Containers */}
@@ -924,7 +958,8 @@ Deine nächsten {regularEvents.length} Events
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
             
           </div>
@@ -945,19 +980,29 @@ Deine nächsten {regularEvents.length} Events
           {/* Background Text */}
           <div style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-5px',
             left: '10px',
             zIndex: 1
           }}>
             <h2 style={{
-              fontSize: '3.5rem',
+              fontSize: '2.9rem',
               fontWeight: '900',
               color: 'rgba(255, 255, 255, 0.08)',
               margin: '0',
               lineHeight: '0.9',
               letterSpacing: '-2px'
             }}>
-              DEIN RANKING
+              DEIN
+            </h2>
+            <h2 style={{
+              fontSize: '2.9rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.08)',
+              margin: '0',
+              lineHeight: '0.9',
+              letterSpacing: '-2px'
+            }}>
+              RANKING
             </h2>
           </div>
 

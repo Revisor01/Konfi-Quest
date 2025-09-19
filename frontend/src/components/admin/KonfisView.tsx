@@ -146,54 +146,133 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
   return (
     <>
-      {/* Header Card mit Statistiken */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '16px',
+      {/* Header Card mit Statistiken - Dashboard-Style */}
+      <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+        borderRadius: '24px',
+        padding: '0',
+        margin: '16px',
+        marginBottom: '16px',
+        boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: '220px',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        <IonCardContent>
-          <IonGrid>
+        {/* Überschrift - groß und überlappend */}
+        <div style={{
+          position: 'absolute',
+          top: '-5px',
+          left: '12px',
+          zIndex: 1
+        }}>
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
+          }}>
+            KONFIS
+          </h2>
+        </div>
+
+        {/* Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '70px 24px 24px 24px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
-              <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={trophy} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {konfis.length}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={people}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{konfis.length}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Konfis
-                  </p>
+                  </div>
                 </div>
               </IonCol>
-              <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={star} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {konfis.reduce((sum, k) => sum + getTotalPoints(k), 0)}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={star}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{konfis.reduce((sum, k) => sum + getTotalPoints(k), 0)}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Punkte
-                  </p>
+                  </div>
                 </div>
               </IonCol>
-              <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={calendar} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {jahrgaenge.length}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={calendar}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{jahrgaenge.length}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Jahrgänge
-                  </p>
+                  </div>
                 </div>
               </IonCol>
             </IonRow>
           </IonGrid>
-        </IonCardContent>
-      </IonCard>
+        </div>
+      </div>
 
       {/* Controls Card */}
       <IonCard style={{ margin: '16px' }}>

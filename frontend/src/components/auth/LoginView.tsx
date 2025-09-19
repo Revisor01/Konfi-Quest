@@ -16,7 +16,7 @@ import {
   IonText,
   IonImg
 } from '@ionic/react';
-import { key, person, trophy, star, sparkles, gameController } from 'ionicons/icons';
+import { key, person, trophy, star, sparkles } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
@@ -46,7 +46,14 @@ const LoginView: React.FC = () => {
         history.replace('/konfi/dashboard');
       }
     } catch (err: any) {
-      setError('Ungültige Anmeldedaten: ' + (err.response?.data?.error || err.message));
+      const errorMessage = err.response?.data?.error || err.message;
+      if (errorMessage.includes('password') || errorMessage.includes('Passwort')) {
+        setError('Das Passwort ist falsch');
+      } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden')) {
+        setError('Der Nutzername wurde nicht gefunden');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -119,28 +126,20 @@ const LoginView: React.FC = () => {
                 textAlign: 'center',
                 marginBottom: '32px'
               }}>
-                <IonIcon 
-                  icon={gameController} 
-                  style={{
-                    fontSize: '3rem',
-                    color: '#667eea',
-                    marginBottom: '16px'
-                  }}
-                />
                 <h2 style={{
                   fontSize: '1.5rem',
                   fontWeight: '600',
                   margin: '0',
                   color: '#2c3e50'
                 }}>
-                  Willkommen zurück!
+                  Willkommen!
                 </h2>
                 <p style={{
                   color: '#7f8c8d',
                   margin: '8px 0 0 0',
                   fontSize: '0.9rem'
                 }}>
-                  Melde dich an um deine Quest fortzusetzen
+                  Melde dich an um deine Quest zu starten
                 </p>
               </div>
 
@@ -156,7 +155,7 @@ const LoginView: React.FC = () => {
                 <IonInput
                   value={username}
                   onIonInput={(e) => setUsername(e.detail.value!)}
-                  placeholder="admin oder dein Konfi-Name"
+                  placeholder="Dein Nutzername"
                   style={{ '--color': '#2c3e50' }}
                 />
               </IonItem>
@@ -210,7 +209,7 @@ const LoginView: React.FC = () => {
                 color: '#95a5a6'
               }}>
                 <p style={{ margin: '0' }}>
-                  🏆 Sammle Punkte • ⭐ Erreiche Badges • 🎮 Erlebe Abenteuer
+                  Sammle Punkte • Erreiche Badges • Erlebe Abenteuer
                 </p>
               </div>
             </IonCardContent>
