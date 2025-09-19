@@ -530,7 +530,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                     <IonItemSliding key={index}>
                       <IonItem
                         style={{
-                          '--min-height': '80px',
+                          '--min-height': '110px',
                           '--padding-start': '16px',
                           '--padding-top': '0px',
                           '--padding-bottom': '0px',
@@ -591,12 +591,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             {/* Points Badge */}
                             <span style={{
                               fontSize: '0.7rem',
-                              color: '#ff9800',
+                              color: bonus.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                               fontWeight: '600',
-                              backgroundColor: 'rgba(255, 152, 0, 0.15)',
+                              backgroundColor: bonus.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
                               padding: '3px 6px',
                               borderRadius: '6px',
-                              border: '1px solid rgba(255, 152, 0, 0.3)',
+                              border: bonus.type === 'gottesdienst' ? '1px solid rgba(0, 122, 255, 0.3)' : '1px solid rgba(45, 211, 111, 0.3)',
                               whiteSpace: 'nowrap',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                               position: 'absolute',
@@ -618,16 +618,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             marginLeft: '40px'
                           }}>
                             <span>{formatDate(bonus.completed_date || bonus.date)} • {bonus.admin || 'Admin'}</span>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: bonus.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                              fontWeight: '500',
-                              backgroundColor: bonus.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(45, 211, 111, 0.1)',
-                              padding: '1px 4px',
-                              borderRadius: '3px'
-                            }}>
-                              {bonus.type === 'gottesdienst' ? 'G' : 'Gem'}
-                            </span>
                           </div>
                         </IonLabel>
                       </IonItem>
@@ -739,12 +729,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           {/* Points Badge */}
                           <span style={{
                             fontSize: '0.7rem',
-                            color: '#eb445a',
+                            color: eventPoint.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                             fontWeight: '600',
-                            backgroundColor: 'rgba(235, 68, 90, 0.15)',
+                            backgroundColor: eventPoint.point_type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
                             padding: '3px 6px',
                             borderRadius: '6px',
-                            border: '1px solid rgba(235, 68, 90, 0.3)',
+                            border: eventPoint.point_type === 'gottesdienst' ? '1px solid rgba(0, 122, 255, 0.3)' : '1px solid rgba(45, 211, 111, 0.3)',
                             whiteSpace: 'nowrap',
                             boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                             position: 'absolute',
@@ -768,16 +758,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           <span>
                             {eventPoint.event_date && formatDate(eventPoint.event_date)} • {eventPoint.admin_name || 'Admin'}
                             {eventPoint.awarded_date && ` • Vergeben: ${formatDate(eventPoint.awarded_date)}`}
-                          </span>
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: eventPoint.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                            fontWeight: '500',
-                            backgroundColor: eventPoint.point_type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(45, 211, 111, 0.1)',
-                            padding: '1px 4px',
-                            borderRadius: '3px'
-                          }}>
-                            {eventPoint.point_type === 'gottesdienst' ? 'G' : 'Gem'}
                           </span>
                         </div>
                       </IonLabel>
@@ -830,7 +810,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           }
                         }}
                         style={{
-                          '--min-height': '80px',
+                          '--min-height': '110px',
                           '--padding-start': '16px',
                           '--padding-top': '0px',
                           '--padding-bottom': '0px',
