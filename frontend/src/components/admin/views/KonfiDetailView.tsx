@@ -398,70 +398,173 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         </IonHeader>
 
 
-        {/* Gradient Header Card */}
-        <IonCard style={{
+        {/* Konfi Header - Dashboard-Style */}
+        <div style={{
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          borderRadius: '24px',
+          padding: '0',
           margin: '16px',
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)'
+          marginBottom: '16px',
+          boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          <IonCardContent>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <p style={{ margin: '0', opacity: 0.9, fontSize: '0.9rem' }}>
-                {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} • @{currentKonfi?.username}
-              </p>
+          {/* Überschrift - groß und überlappend */}
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            left: '12px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '3.5rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '280px'
+            }}>
+              {(currentKonfi?.name || 'KONFI').toUpperCase()}
+            </h2>
+          </div>
+
+          {/* Konfi Info */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '60px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            {/* Username und Jahrgang */}
+            <div style={{
+              textAlign: 'center',
+              marginBottom: '16px',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: '0.9rem'
+            }}>
+              {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} • @{currentKonfi?.username}
             </div>
-            <IonGrid>
+
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
               <IonRow>
-                <IonCol size="3">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={school} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                    <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {currentKonfi?.gottesdienst_points ?? currentKonfi?.points?.gottesdienst ?? 0}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                      Gottesdienst
-                    </p>
+                <IonCol size="3" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 8px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={school}
+                      style={{
+                        fontSize: '1.2rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '4px',
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.gottesdienst_points ?? currentKonfi?.points?.gottesdienst ?? 0}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
+                      G'dienst
+                    </div>
                   </div>
                 </IonCol>
-                <IonCol size="3">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={star} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                    <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {currentKonfi?.gemeinde_points ?? currentKonfi?.points?.gemeinde ?? 0}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
+                <IonCol size="3" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 8px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={star}
+                      style={{
+                        fontSize: '1.2rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '4px',
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.gemeinde_points ?? currentKonfi?.points?.gemeinde ?? 0}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
                       Gemeinde
-                    </p>
+                    </div>
                   </div>
                 </IonCol>
-                <IonCol size="3">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={trophy} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                    <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {currentKonfi?.badgeCount || 0}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
+                <IonCol size="3" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 8px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={trophy}
+                      style={{
+                        fontSize: '1.2rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '4px',
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{currentKonfi?.badgeCount || 0}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
                       Badges
-                    </p>
+                    </div>
                   </div>
                 </IonCol>
-                <IonCol size="3">
-                  <div style={{ textAlign: 'center' }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                    <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                      {getTotalPoints()}
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
+                <IonCol size="3" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 8px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={flash}
+                      style={{
+                        fontSize: '1.2rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '4px',
+                        display: 'block',
+                        margin: '0 auto 4px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.2rem' }}>{getTotalPoints()}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.9 }}>
                       Gesamt
-                    </p>
+                    </div>
                   </div>
                 </IonCol>
               </IonRow>
             </IonGrid>
-          </IonCardContent>
-        </IonCard>
+          </div>
+        </div>
 
         {/* Bonuspunkte */}
         <IonCard style={{ margin: '16px' }}>

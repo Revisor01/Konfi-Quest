@@ -148,12 +148,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     <>
       {/* Header Card mit Statistiken - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+        boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         minHeight: '220px',
@@ -360,105 +360,152 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
       {/* Konfis Liste */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '0', paddingBottom: '8px' }}>
-          <IonList>
+        <IonCardContent style={{ padding: '8px 0' }}>
+          <IonList lines="none" style={{ background: 'transparent' }}>
             {filteredAndSortedKonfis.map((konfi) => (
               <IonItemSliding key={konfi.id}>
-                <IonItem 
-                  button 
+                <IonItem
+                  button
                   onClick={() => onSelectKonfi(konfi)}
-                  style={{ '--min-height': '70px', '--padding-start': '16px' }}
+                  style={{
+                    '--min-height': '110px',
+                    '--padding-start': '16px',
+                    '--padding-top': '0px',
+                    '--padding-bottom': '0px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '6px 8px',
+                    boxShadow: '0 2px 8px rgba(139, 92, 246, 0.15)',
+                    border: '1px solid #c4b5fd',
+                    borderRadius: '12px'
+                  }}
                 >
                   <IonLabel>
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '6px' }}>
-                      {/* Initialen-Kreis */}
-                      <div 
-                        style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                    {/* Titel mit Icon und Status Badge in einer Reihe */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      marginBottom: '8px',
+                      position: 'relative'
+                    }}>
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
+                        flexShrink: 0
+                      }}>
+                        <div style={{
                           color: 'white',
                           fontWeight: '600',
-                          fontSize: '0.75rem',
-                          marginRight: '10px',
-                          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                          flexShrink: 0
-                        }}
-                      >
-                        {getInitials(konfi.name)}
+                          fontSize: '0.75rem'
+                        }}>
+                          {getInitials(konfi.name)}
+                        </div>
                       </div>
-                      
-                      <h2 style={{ 
-                        fontWeight: '600', 
-                        fontSize: '1.1rem',
-                        margin: '0'
+                      <h2 style={{
+                        fontWeight: '600',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                        margin: '0',
+                        color: '#333',
+                        lineHeight: '1.3',
+                        flex: 1,
+                        minWidth: 0,
+                        marginRight: '110px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}>
                         {konfi.name}
                       </h2>
+
+                      {/* Gesamt-Punkte Badge rechts */}
+                      <span style={{
+                        fontSize: '0.7rem',
+                        color: '#8b5cf6',
+                        fontWeight: '600',
+                        backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                        padding: '3px 6px',
+                        borderRadius: '6px',
+                        border: '1px solid #c4b5fd',
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                        position: 'absolute',
+                        right: '16px',
+                        top: '50%',
+                        transform: 'translateY(-50%)'
+                      }}>
+                        {getTotalPoints(konfi)} PKT
+                      </span>
                     </div>
-                    
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      {showGottesdienstTarget && (
-                        <IonChip 
-                          color="primary"
-                          style={{ 
-                            fontSize: '0.65rem', 
-                            height: '18px',
-                            opacity: 0.7,
-                            '--background': 'rgba(56, 128, 255, 0.15)',
-                            '--color': '#3880ff',
-                            minWidth: 'auto',
-                            padding: '0 6px'
-                          }}
-                        >
-                          G: {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
-                        </IonChip>
-                      )}
-                      
-                      {showGemeindeTarget && (
-                        <IonChip 
-                          color="success"
-                          style={{ 
-                            fontSize: '0.65rem', 
-                            height: '18px',
-                            opacity: 0.7,
-                            '--background': 'rgba(45, 211, 111, 0.15)',
-                            '--color': '#2dd36f',
-                            minWidth: 'auto',
-                            padding: '0 6px'
-                          }}
-                        >
-                          Gem: {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
-                        </IonChip>
-                      )}
-                      
-                      <IonChip 
-                        color="tertiary"
-                        style={{ 
-                          fontSize: '0.65rem', 
-                          height: '18px',
-                          opacity: 0.7,
-                          '--background': 'rgba(112, 69, 246, 0.15)',
-                          '--color': '#7045f6',
-                          minWidth: 'auto',
-                          padding: '0 6px'
-                        }}
-                      >
-                        Gesamt: {getTotalPoints(konfi)}
-                      </IonChip>
-                    </div>
-                    
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.85rem',
-                      color: '#666'
+
+                    {/* Jahrgang Info */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      marginBottom: '6px'
                     }}>
-                      {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
-                    </p>
+                      <span style={{ fontWeight: '400', color: '#666' }}>
+                        {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
+                      </span>
+                    </div>
+
+                    {/* Punkte Details */}
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: '#666',
+                      marginTop: '6px'
+                    }}>
+                      <div style={{
+                        position: 'relative',
+                        paddingRight: '60px',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'flex-start'
+                      }}>
+                        {/* Punkte Aufschlüsselung */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          flexWrap: 'wrap'
+                        }}>
+                          {showGottesdienstTarget && (
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#007aff',
+                              fontWeight: '500',
+                              backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}>
+                              G: {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
+                            </div>
+                          )}
+
+                          {showGemeindeTarget && (
+                            <div style={{
+                              fontSize: '0.7rem',
+                              color: '#2dd36f',
+                              fontWeight: '500',
+                              backgroundColor: 'rgba(45, 211, 111, 0.1)',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}>
+                              Gem: {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </IonLabel>
 
                 </IonItem>
@@ -475,11 +522,20 @@ const KonfisView: React.FC<KonfisViewProps> = ({
             ))}
             
             {filteredAndSortedKonfis.length === 0 && (
-              <IonItem>
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Keine Konfirmanden gefunden</p>
-                </IonLabel>
-              </IonItem>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={people}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#8b5cf6',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Konfirmanden gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Versuche andere Suchkriterien!</p>
+              </div>
             )}
           </IonList>
         </IonCardContent>
