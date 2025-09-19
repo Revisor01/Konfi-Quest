@@ -381,13 +381,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   }}
                 >
                   <IonLabel>
-                    {/* Titel mit Icon und Status Badge in einer Reihe */}
+                    {/* Konfi Name */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '8px',
-                      position: 'relative'
+                      marginBottom: '4px'
                     }}>
                       <div style={{
                         width: '32px',
@@ -413,153 +412,38 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
                         margin: '0',
                         color: '#333',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        minWidth: 0,
-                        marginRight: '110px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
+                        lineHeight: '1.3'
                       }}>
                         {konfi.name}
                       </h2>
-
-                      {/* Gesamt-Punkte Badge rechts */}
-                      <span style={{
-                        fontSize: '0.7rem',
-                        color: '#5b21b6',
-                        fontWeight: '600',
-                        backgroundColor: 'rgba(91, 33, 182, 0.15)',
-                        padding: '3px 6px',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(91, 33, 182, 0.2)',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                        position: 'absolute',
-                        right: '16px',
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-                      }}>
-                        {getTotalPoints(konfi)} PKT
-                      </span>
                     </div>
 
-                    {/* Jahrgang Info */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.8rem',
-                      color: '#666',
-                      marginBottom: '6px'
-                    }}>
-                      <span style={{ fontWeight: '400', color: '#666' }}>
-                        {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
-                      </span>
-                    </div>
-
-                    {/* Punkte Details */}
+                    {/* Jahrgang und Badges */}
                     <div style={{
                       fontSize: '0.8rem',
                       color: '#666',
-                      marginTop: '6px'
+                      marginBottom: '12px',
+                      marginLeft: '44px'
                     }}>
+                      {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
+                    </div>
+
+                    {/* Punkte Container mit grauem Hintergrund */}
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      marginTop: '8px'
+                    }}>
+                      {/* Gottesdienst und Gemeinde nebeneinander */}
                       <div style={{
-                        position: 'relative',
-                        paddingRight: '60px',
-                        minHeight: '44px',
-                        display: 'flex',
-                        alignItems: 'flex-start'
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '12px',
+                        marginBottom: '12px'
                       }}>
-                        {/* Punkte mit Fortschrittsbalken */}
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px'
-                        }}>
-                          {/* Gottesdienst Balken */}
-                          {showGottesdienstTarget && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  color: '#007aff',
-                                  fontWeight: '600'
-                                }}>
-                                  Gottesdienst
-                                </span>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  color: '#666',
-                                  fontWeight: '500'
-                                }}>
-                                  {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
-                                </span>
-                              </div>
-                              <div style={{
-                                width: '100%',
-                                height: '4px',
-                                backgroundColor: 'rgba(0, 122, 255, 0.15)',
-                                borderRadius: '2px',
-                                overflow: 'hidden'
-                              }}>
-                                <div style={{
-                                  width: `${Math.min(100, ((konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0) / parseInt(settings.target_gottesdienst || '10')) * 100)}%`,
-                                  height: '100%',
-                                  backgroundColor: '#007aff',
-                                  borderRadius: '2px',
-                                  transition: 'width 0.3s ease'
-                                }} />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Gemeinde Balken */}
-                          {showGemeindeTarget && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  color: '#2dd36f',
-                                  fontWeight: '600'
-                                }}>
-                                  Gemeinde
-                                </span>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  color: '#666',
-                                  fontWeight: '500'
-                                }}>
-                                  {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
-                                </span>
-                              </div>
-                              <div style={{
-                                width: '100%',
-                                height: '4px',
-                                backgroundColor: 'rgba(45, 211, 111, 0.15)',
-                                borderRadius: '2px',
-                                overflow: 'hidden'
-                              }}>
-                                <div style={{
-                                  width: `${Math.min(100, ((konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0) / parseInt(settings.target_gemeinde || '10')) * 100)}%`,
-                                  height: '100%',
-                                  backgroundColor: '#2dd36f',
-                                  borderRadius: '2px',
-                                  transition: 'width 0.3s ease'
-                                }} />
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Gesamt Balken */}
+                        {/* Gottesdienst */}
+                        {showGottesdienstTarget && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <div style={{
                               display: 'flex',
@@ -568,35 +452,115 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             }}>
                               <span style={{
                                 fontSize: '0.7rem',
-                                color: '#5b21b6',
+                                color: '#007aff',
                                 fontWeight: '600'
                               }}>
-                                Gesamt
+                                Gottesdienst
                               </span>
                               <span style={{
                                 fontSize: '0.7rem',
                                 color: '#666',
                                 fontWeight: '500'
                               }}>
-                                {getTotalPoints(konfi)}/{(parseInt(settings.target_gottesdienst || '10') + parseInt(settings.target_gemeinde || '10'))}
+                                {konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0}/{settings.target_gottesdienst}
                               </span>
                             </div>
                             <div style={{
                               width: '100%',
                               height: '4px',
-                              backgroundColor: 'rgba(91, 33, 182, 0.15)',
+                              backgroundColor: 'rgba(0, 122, 255, 0.15)',
                               borderRadius: '2px',
                               overflow: 'hidden'
                             }}>
                               <div style={{
-                                width: `${Math.min(100, (getTotalPoints(konfi) / (parseInt(settings.target_gottesdienst || '10') + parseInt(settings.target_gemeinde || '10'))) * 100)}%`,
+                                width: `${Math.min(100, ((konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0) / parseInt(settings.target_gottesdienst || '10')) * 100)}%`,
                                 height: '100%',
-                                backgroundColor: '#5b21b6',
+                                backgroundColor: '#007aff',
                                 borderRadius: '2px',
                                 transition: 'width 0.3s ease'
                               }} />
                             </div>
                           </div>
+                        )}
+
+                        {/* Gemeinde */}
+                        {showGemeindeTarget && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <span style={{
+                                fontSize: '0.7rem',
+                                color: '#2dd36f',
+                                fontWeight: '600'
+                              }}>
+                                Gemeinde
+                              </span>
+                              <span style={{
+                                fontSize: '0.7rem',
+                                color: '#666',
+                                fontWeight: '500'
+                              }}>
+                                {konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0}/{settings.target_gemeinde}
+                              </span>
+                            </div>
+                            <div style={{
+                              width: '100%',
+                              height: '4px',
+                              backgroundColor: 'rgba(45, 211, 111, 0.15)',
+                              borderRadius: '2px',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                width: `${Math.min(100, ((konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0) / parseInt(settings.target_gemeinde || '10')) * 100)}%`,
+                                height: '100%',
+                                backgroundColor: '#2dd36f',
+                                borderRadius: '2px',
+                                transition: 'width 0.3s ease'
+                              }} />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Gesamt über die ganze Länge */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#5b21b6',
+                            fontWeight: '700'
+                          }}>
+                            Gesamt
+                          </span>
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#333',
+                            fontWeight: '600'
+                          }}>
+                            {getTotalPoints(konfi)}/{(parseInt(settings.target_gottesdienst || '10') + parseInt(settings.target_gemeinde || '10'))}
+                          </span>
+                        </div>
+                        <div style={{
+                          width: '100%',
+                          height: '6px',
+                          backgroundColor: 'rgba(91, 33, 182, 0.15)',
+                          borderRadius: '3px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${Math.min(100, (getTotalPoints(konfi) / (parseInt(settings.target_gottesdienst || '10') + parseInt(settings.target_gemeinde || '10'))) * 100)}%`,
+                            height: '100%',
+                            backgroundColor: '#5b21b6',
+                            borderRadius: '3px',
+                            transition: 'width 0.3s ease'
+                          }} />
                         </div>
                       </div>
                     </div>

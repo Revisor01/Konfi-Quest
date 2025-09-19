@@ -537,8 +537,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           '--background': '#fbfbfb',
                           '--border-radius': '12px',
                           margin: '6px 8px',
-                          boxShadow: 'none',
-                          border: 'none',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          border: '1px solid #e0e0e0',
                           borderRadius: '12px'
                         }}
                       >
@@ -672,44 +672,119 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonCardHeader>
           <IonCardContent>
             {eventPoints.length > 0 ? (
-              <IonList>
-                {eventPoints.map((eventPoint: any, index: number) => (
-                  <IonItem key={index}>
-                    <IonLabel>
-                      <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {eventPoint.event_name || 'Event'}
-                        <IonChip 
-                          color={eventPoint.point_type === 'gottesdienst' ? 'primary' : 'success'}
-                          style={{ 
-                            fontSize: '0.7rem', 
-                            height: '18px',
-                            opacity: 0.8,
-                            '--background': eventPoint.point_type === 'gottesdienst' ? 'rgba(56, 128, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                            '--color': eventPoint.point_type === 'gottesdienst' ? '#3880ff' : '#2dd36f'
-                          }}
-                        >
-                          {eventPoint.point_type === 'gottesdienst' ? 'G' : 'Gem'}
-                        </IonChip>
-                      </h3>
-                      <p>
-                        {eventPoint.event_date && formatDate(eventPoint.event_date)} • {eventPoint.admin_name || 'Admin'}
-                        {eventPoint.awarded_date && ` • Vergeben: ${formatDate(eventPoint.awarded_date)}`}
-                      </p>
-                    </IonLabel>
-                    <IonBadge 
+              <div style={{ padding: '0' }}>
+                <IonList lines="none" style={{ background: 'transparent' }}>
+                  {eventPoints.map((eventPoint: any, index: number) => (
+                    <IonItem
+                      key={index}
                       style={{
-                        '--background': 'rgba(235, 68, 90, 0.15)',
-                        '--color': '#eb445a',
-                        opacity: 0.8,
-                        fontSize: '0.8rem',
-                        fontWeight: '500'
+                        '--min-height': '80px',
+                        '--padding-start': '16px',
+                        '--padding-top': '0px',
+                        '--padding-bottom': '0px',
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        margin: '6px 8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '12px'
                       }}
                     >
-                      +{eventPoint.points}
-                    </IonBadge>
-                  </IonItem>
-                ))}
-              </IonList>
+                      <IonLabel>
+                        {/* Header mit Icon und Badge */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          marginBottom: '4px',
+                          position: 'relative'
+                        }}>
+                          {/* Event Icon */}
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            backgroundColor: '#eb445a',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <IonIcon
+                              icon={podium}
+                              style={{
+                                fontSize: '0.9rem',
+                                color: 'white'
+                              }}
+                            />
+                          </div>
+
+                          {/* Event Name */}
+                          <h3 style={{
+                            fontWeight: '600',
+                            fontSize: '1rem',
+                            margin: '0',
+                            color: '#333',
+                            lineHeight: '1.3',
+                            flex: 1,
+                            minWidth: 0,
+                            marginRight: '80px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {eventPoint.event_name || 'Event'}
+                          </h3>
+
+                          {/* Points Badge */}
+                          <span style={{
+                            fontSize: '0.7rem',
+                            color: '#eb445a',
+                            fontWeight: '600',
+                            backgroundColor: 'rgba(235, 68, 90, 0.15)',
+                            padding: '3px 6px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(235, 68, 90, 0.3)',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                            position: 'absolute',
+                            right: '16px',
+                            top: '50%',
+                            transform: 'translateY(-50%)'
+                          }}>
+                            +{eventPoint.points}
+                          </span>
+                        </div>
+
+                        {/* Date, Admin and Type */}
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: '#666',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginLeft: '40px'
+                        }}>
+                          <span>
+                            {eventPoint.event_date && formatDate(eventPoint.event_date)} • {eventPoint.admin_name || 'Admin'}
+                            {eventPoint.awarded_date && ` • Vergeben: ${formatDate(eventPoint.awarded_date)}`}
+                          </span>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            color: eventPoint.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            fontWeight: '500',
+                            backgroundColor: eventPoint.point_type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'rgba(45, 211, 111, 0.1)',
+                            padding: '1px 4px',
+                            borderRadius: '3px'
+                          }}>
+                            {eventPoint.point_type === 'gottesdienst' ? 'G' : 'Gem'}
+                          </span>
+                        </div>
+                      </IonLabel>
+                    </IonItem>
+                  ))}
+                </IonList>
+              </div>
             ) : (
               <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
                 Noch keine Event-Punkte erhalten
@@ -762,8 +837,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           '--background': '#fbfbfb',
                           '--border-radius': '12px',
                           margin: '6px 8px',
-                          boxShadow: 'none',
-                          border: 'none',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          border: '1px solid #e0e0e0',
                           borderRadius: '12px'
                         }}
                       >
