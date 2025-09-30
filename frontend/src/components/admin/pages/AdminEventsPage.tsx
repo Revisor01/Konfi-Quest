@@ -105,8 +105,11 @@ const AdminEventsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.get('/events');
-      // Show all active events (non-cancelled)
-      setEvents(response.data);
+      // Filter out cancelled events (they're loaded separately)
+      const activeEvents = response.data.filter((event: Event) =>
+        event.registration_status !== 'cancelled'
+      );
+      setEvents(activeEvents);
     } catch (err) {
       setError('Fehler beim Laden der Events');
       console.error('Error loading events:', err);

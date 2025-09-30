@@ -42,7 +42,8 @@ import {
   checkmarkCircle,
   close,
   trophy,
-  listOutline
+  listOutline,
+  calendarOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -582,16 +583,40 @@ const EventsView: React.FC<EventsViewProps> = ({
               );
             })}
 
-            {filteredAndSortedEvents.length === 0 && (
-              <IonItem>
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Keine Events gefunden</p>
-                </IonLabel>
-              </IonItem>
-            )}
           </IonList>
         </IonCardContent>
       </IonCard>
+
+      {/* Keine Events gefunden */}
+      {filteredAndSortedEvents.length === 0 && (
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent>
+            <div style={{ textAlign: 'center', padding: '32px' }}>
+              <IonIcon
+                icon={calendarOutline}
+                style={{
+                  fontSize: '3rem',
+                  color: '#dc2626',
+                  marginBottom: '16px',
+                  display: 'block',
+                  margin: '0 auto 16px auto'
+                }}
+              />
+              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
+              <p style={{ color: '#999', margin: '0' }}>
+                {activeTab === 'past'
+                  ? 'Keine vergangenen Events'
+                  : activeTab === 'konfirmation'
+                  ? 'Keine Konfirmationstermine verfügbar'
+                  : activeTab === 'all'
+                  ? 'Noch keine Events erstellt'
+                  : 'Keine anstehenden Events'
+                }
+              </p>
+            </div>
+          </IonCardContent>
+        </IonCard>
+      )}
     </>
   );
 };
