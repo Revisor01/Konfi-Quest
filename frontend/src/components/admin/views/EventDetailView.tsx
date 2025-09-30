@@ -23,7 +23,10 @@ import {
   useIonModal,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  IonGrid,
+  IonRow,
+  IonCol
 } from '@ionic/react';
 import {
   arrowBack,
@@ -338,74 +341,111 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Event Info Card */}
-        {/* Gradient Header Card */}
-        <IonCard style={{
+        {/* Event Header - Dashboard-Style */}
+        <div style={{
+          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+          borderRadius: '24px',
+          padding: '0',
           margin: '16px',
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, #eb445a 0%, #e91e63 50%, #d81b60 100%)',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(235, 68, 90, 0.4)'
+          marginBottom: '16px',
+          boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          <IonCardContent>
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <p style={{ margin: '0', opacity: 0.9, fontSize: '0.9rem' }}>
-                {eventData?.categories && eventData.categories.length > 0 
-                  ? eventData.categories.map(cat => cat.name).join(', ')
-                  : 'Event'
-                } • {eventData?.event_date && `${formatDate(eventData.event_date)} • ${formatTime(eventData.event_date)}`}
-                {eventData?.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
-              </p>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
-              <div>
-                <IonIcon icon={people} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {participants.filter(p => p.status === 'confirmed').length}/{eventData?.max_participants || 0}
-                </h3>
-                <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                  Anmeldungen
-                </p>
-                {participants.filter(p => p.status === 'pending').length > 0 && (
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
-                    +{participants.filter(p => p.status === 'pending').length} Warteliste
-                  </p>
-                )}
-                {participants.filter(p => p.status === 'confirmed').length > 0 && (
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
-                    {participants.filter(p => p.attendance_status === 'present').length} anwesend
-                  </p>
-                )}
-              </div>
-              <div>
-                <IonIcon icon={flash} style={{ fontSize: '1.2rem', marginBottom: '4px' }} />
-                <h3 style={{ margin: '0', fontSize: '1.2rem' }}>
-                  {eventData?.points || 0}
-                </h3>
-                <p style={{ margin: '0', fontSize: '0.8rem', opacity: 0.8 }}>
-                  {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                </p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
-                  Punkte
-                </p>
-              </div>
-              <div>
-                <div style={{
-                  color: getRegistrationStatusColor(eventData ? calculateRegistrationStatus(eventData) : 'closed') === 'success' ? '#2dd36f' : 
-                         getRegistrationStatusColor(eventData ? calculateRegistrationStatus(eventData) : 'closed') === 'danger' ? '#eb445a' : 'white',
-                  fontSize: '1.2rem',
-                  marginBottom: '4px'
-                }}>
-                  ●
-                </div>
-                <h3 style={{ margin: '0', fontSize: '0.9rem' }}>
-                  {getRegistrationStatusText(eventData ? calculateRegistrationStatus(eventData) : 'closed')}
-                </h3>
-              </div>
-            </div>
-          </IonCardContent>
-        </IonCard>
+          {/* Überschrift - groß und überlappend */}
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            left: '12px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '280px'
+            }}>
+              {(eventData?.name || 'EVENT').toUpperCase()}
+            </h2>
+          </div>
+
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '60px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            {/* Event Info */}
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+              <IonRow>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.status === 'confirmed').length}/{eventData?.max_participants || 0}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Anmeldungen
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={flash} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{eventData?.points || 0}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Punkte
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.attendance_status === 'present').length}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Anwesend
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+          </div>
+        </div>
 
         {/* Event Details */}
         <IonCard style={{ margin: '16px' }}>
