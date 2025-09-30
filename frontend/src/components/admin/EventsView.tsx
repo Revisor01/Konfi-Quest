@@ -87,12 +87,11 @@ interface EventsViewProps {
   onDeleteEvent?: (event: Event) => void;
   onCopyEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
-  activeTab?: 'all' | 'upcoming' | 'past' | 'konfirmation';
-  onTabChange?: (tab: 'all' | 'upcoming' | 'past' | 'konfirmation') => void;
+  activeTab?: 'all' | 'upcoming' | 'konfirmation';
+  onTabChange?: (tab: 'all' | 'upcoming' | 'konfirmation') => void;
   eventCounts?: {
     all: number;
     upcoming: number;
-    past: number;
     konfirmation: number;
   };
 }
@@ -336,9 +335,6 @@ const EventsView: React.FC<EventsViewProps> = ({
               <IonSegmentButton value="all">
                 <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
               </IonSegmentButton>
-              <IonSegmentButton value="past">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Vergangen</IonLabel>
-              </IonSegmentButton>
               <IonSegmentButton value="konfirmation">
                 <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfirmation</IonLabel>
               </IonSegmentButton>
@@ -382,8 +378,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '8px',
-                      position: 'relative'
+                      marginBottom: '8px'
                     }}>
                       <div style={{
                         width: '32px',
@@ -423,7 +418,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                         lineHeight: '1.3',
                         flex: 1,
                         minWidth: 0,
-                        marginRight: '110px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
@@ -442,7 +436,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         )}
                       </h2>
 
-                      {/* Status Badge */}
+                      {/* Status Badge - rechtsbündig fixiert */}
                       <span style={{
                         fontSize: '0.7rem',
                         color: (() => {
@@ -471,10 +465,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                         })(),
                         whiteSpace: 'nowrap',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                        position: 'absolute',
-                        right: '0px',
-                        top: '50%',
-                        transform: 'translateY(-50%)'
+                        marginLeft: 'auto',
+                        flexShrink: 0
                       }}>
                         {(() => {
                           const status = calculateRegistrationStatus(event);
@@ -604,9 +596,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               />
               <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
               <p style={{ color: '#999', margin: '0' }}>
-                {activeTab === 'past'
-                  ? 'Keine vergangenen Events'
-                  : activeTab === 'konfirmation'
+                {activeTab === 'konfirmation'
                   ? 'Keine Konfirmationstermine verfügbar'
                   : activeTab === 'all'
                   ? 'Noch keine Events erstellt'

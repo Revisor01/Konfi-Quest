@@ -63,7 +63,7 @@ const AdminEventsPage: React.FC = () => {
   const [cancelledEvents, setCancelledEvents] = useState<Event[]>([]);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'konfirmation'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'konfirmation'>('upcoming');
   
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -354,7 +354,7 @@ const AdminEventsPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Events</IonTitle>
           <IonButtons slot="end">
-            {canCreate && activeTab !== 'past' && (
+            {canCreate && (
               <IonButton onClick={handleAddEventClick}>
                 <IonIcon icon={add} />
               </IonButton>
@@ -387,23 +387,20 @@ const AdminEventsPage: React.FC = () => {
           <EventsView
             events={
               activeTab === 'all' ? getAllEvents() :
-              activeTab === 'upcoming' ? getFutureEvents() :
-              activeTab === 'past' ? pastEvents :
               activeTab === 'konfirmation' ? getKonfirmationEvents() :
-              []
+              getFutureEvents()
             }
             onUpdate={loadEvents}
             onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
-            onDeleteEvent={canDelete && activeTab !== 'past' ? handleDeleteEvent : undefined}
+            onDeleteEvent={canDelete ? handleDeleteEvent : undefined}
             onCopyEvent={canCopy ? handleCopyEvent : undefined}
-            onCancelEvent={canCancel && activeTab !== 'past' ? handleCancelEvent : undefined}
+            onCancelEvent={canCancel ? handleCancelEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{
               all: getAllEvents().length,
               upcoming: getFutureEvents().length,
-              past: pastEvents.length,
               konfirmation: getKonfirmationEvents().length
             }}
           />
