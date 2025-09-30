@@ -87,7 +87,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
         return {
           ...row,
           categories: categories,
-          jahrgaenge: jahrgaenge
+          jahrgaenge: jahrgaenge,
+          waitlist_count: parseInt(row.pending_count, 10) || 0
         };
       });
       
