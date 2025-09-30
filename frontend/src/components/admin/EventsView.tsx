@@ -63,6 +63,7 @@ interface Event {
   location_maps_url?: string;
   points: number;
   categories?: Category[];
+  category_names?: string;
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -85,19 +86,19 @@ interface EventsViewProps {
   onDeleteEvent?: (event: Event) => void;
   onCopyEvent?: (event: Event) => void;
   onCancelEvent?: (event: Event) => void;
-  activeTab?: 'all' | 'upcoming' | 'past' | 'cancelled';
-  onTabChange?: (tab: 'all' | 'upcoming' | 'past' | 'cancelled') => void;
+  activeTab?: 'all' | 'upcoming' | 'past' | 'konfirmation';
+  onTabChange?: (tab: 'all' | 'upcoming' | 'past' | 'konfirmation') => void;
   eventCounts?: {
     all: number;
     upcoming: number;
     past: number;
-    cancelled: number;
+    konfirmation: number;
   };
 }
 
-const EventsView: React.FC<EventsViewProps> = ({ 
-  events, 
-  onUpdate, 
+const EventsView: React.FC<EventsViewProps> = ({
+  events,
+  onUpdate,
   onAddEventClick,
   onSelectEvent,
   onDeleteEvent,
@@ -107,40 +108,11 @@ const EventsView: React.FC<EventsViewProps> = ({
   onTabChange,
   eventCounts
 }) => {
-  const [presentActionSheet] = useIonActionSheet();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('alle');
-  const [sortBy, setSortBy] = useState('date'); // 'date', 'name', 'participants'
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
+  // Events nach Datum sortieren
   const filteredAndSortedEvents = (() => {
-    let result = events.filter(event => {
-      const searchFields = [
-        event.name,
-        event.description || '',
-        ...(event.categories?.map(cat => cat.name) || [])
-      ];
-      return searchFields.some(field => 
-        field.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
-    
-    // Filter by status
-    if (selectedStatus !== 'alle') {
-      result = result.filter(event => calculateRegistrationStatus(event) === selectedStatus);
-    }
-    
-    // Sortierung
-    if (sortBy === 'name') {
-      result = result.sort((a, b) => a.name.localeCompare(b.name));
-    } else if (sortBy === 'participants') {
-      result = result.sort((a, b) => b.registered_count - a.registered_count);
-    } else {
-      // Default: nach Datum sortieren
-      result = result.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-    }
-    
-    return result;
+    return [...events].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   })();
 
   const getUpcomingEvents = () => {
@@ -334,7 +306,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{events.reduce((sum, e) => sum + e.registered_count, 0)}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Buchungen
+                    Gebucht
                   </div>
                 </div>
               </IonCol>
@@ -343,106 +315,6 @@ const EventsView: React.FC<EventsViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
-          <IonItem
-            lines="none"
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '12px',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              margin: '0'
-            }}
-          >
-            <IonIcon
-              icon={search}
-              slot="start"
-              style={{
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }}
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Event suchen..."
-              style={{
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
-        </IonCardContent>
-      </IonCard>
-
-      {/* Filter Controls */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
-          <IonGrid style={{ padding: '0' }}>
-            <IonRow>
-              <IonCol size="6" style={{ paddingLeft: '0', paddingRight: '4px' }}>
-                <IonItem button lines="none" style={{
-                  '--background': '#f8f9fa',
-                  '--border-radius': '12px',
-                  '--padding-start': '12px',
-                  '--padding-end': '12px',
-                  '--min-height': '36px',
-                  margin: '0'
-                }} onClick={() => {
-                  presentActionSheet({
-                    header: 'Status filtern',
-                    buttons: [
-                      { text: 'Alle Events', handler: () => setSelectedStatus('alle') },
-                      { text: 'Anmeldung offen', handler: () => setSelectedStatus('open') },
-                      { text: 'Anmeldung geschlossen', handler: () => setSelectedStatus('closed') },
-                      { text: 'Bald verfügbar', handler: () => setSelectedStatus('upcoming') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}>
-                  <IonIcon icon={flash} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-                  <IonLabel style={{ fontSize: '0.85rem' }}>
-                    {selectedStatus === 'alle' ? 'Alle' :
-                     selectedStatus === 'open' ? 'Offen' :
-                     selectedStatus === 'closed' ? 'Geschlossen' :
-                     'Bald'}
-                  </IonLabel>
-                </IonItem>
-              </IonCol>
-              <IonCol size="6" style={{ paddingRight: '0', paddingLeft: '4px' }}>
-                <IonItem button lines="none" style={{
-                  '--background': '#f8f9fa',
-                  '--border-radius': '12px',
-                  '--padding-start': '12px',
-                  '--padding-end': '12px',
-                  '--min-height': '36px',
-                  margin: '0'
-                }} onClick={() => {
-                  presentActionSheet({
-                    header: 'Sortierung wählen',
-                    buttons: [
-                      { text: 'Nach Datum', handler: () => setSortBy('date') },
-                      { text: 'Nach Name', handler: () => setSortBy('name') },
-                      { text: 'Nach Teilnehmern', handler: () => setSortBy('participants') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}>
-                  <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-                  <IonLabel style={{ fontSize: '0.85rem' }}>
-                    {sortBy === 'date' ? 'Datum' :
-                     sortBy === 'name' ? 'Name' :
-                     'Teilnehmer'}
-                  </IonLabel>
-                </IonItem>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </IonCardContent>
-      </IonCard>
 
       {/* Tab Navigation */}
       {onTabChange && (
@@ -466,8 +338,8 @@ const EventsView: React.FC<EventsViewProps> = ({
               <IonSegmentButton value="past">
                 <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Vergangen</IonLabel>
               </IonSegmentButton>
-              <IonSegmentButton value="cancelled">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Abgesagt</IonLabel>
+              <IonSegmentButton value="konfirmation">
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfirmation</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>
@@ -481,6 +353,7 @@ const EventsView: React.FC<EventsViewProps> = ({
             {filteredAndSortedEvents.map((event) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
+              const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
 
               return (
               <IonItemSliding key={event.id}>
@@ -489,15 +362,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                   onClick={() => onSelectEvent(event)}
                   detail={false}
                   style={{
-                    '--min-height': '110px',
+                    '--min-height': '130px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '6px 8px',
-                    boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : '0 2px 8px rgba(0,0,0,0.06)',
-                    border: isCancelled ? '1px solid #fca5a5' : '1px solid #e0e0e0',
+                    boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
+                    border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #e0e0e0',
                     borderRadius: '12px',
                     opacity: isPastEvent ? 0.6 : 1
                   }}
@@ -612,7 +485,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Datum und Zeit - Separate Zeile */}
+                    {/* Datum und Zeit - Zeile 1 */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -632,7 +505,23 @@ const EventsView: React.FC<EventsViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Location, Teilnehmer, Punkte - Separate Zeile */}
+                    {/* Location - Zeile 2 */}
+                    {event.location && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '0.8rem',
+                        color: isPastEvent ? '#999' : '#666',
+                        marginBottom: '6px',
+                        marginLeft: '44px'
+                      }}>
+                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#007aff' }} />
+                        <span>{event.location}</span>
+                      </div>
+                    )}
+
+                    {/* Teilnehmer, Warteliste, Punkte - Zeile 3 */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -641,22 +530,16 @@ const EventsView: React.FC<EventsViewProps> = ({
                       color: isPastEvent ? '#999' : '#666',
                       marginLeft: '44px'
                     }}>
-                      {event.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#007aff' }} />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon icon={people} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#34c759' }} />
                         <span>{event.registered_count}/{event.max_participants}</span>
-                        {event.waitlist_enabled && event.waitlist_count && event.waitlist_count > 0 && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
-                            <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: isPastEvent ? '#999' : '#fd7e14' }} />
-                            <span style={{ color: isPastEvent ? '#999' : '#666' }}>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
-                          </span>
-                        )}
                       </div>
+                      {event.waitlist_enabled && event.waitlist_count && event.waitlist_count > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={listOutline} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#fd7e14' }} />
+                          <span>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
+                        </div>
+                      )}
                       {event.points > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#ff9500' }} />

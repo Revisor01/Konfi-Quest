@@ -37,6 +37,7 @@ interface Event {
   location_maps_url?: string;
   points: number;
   categories?: Category[];
+  category_names?: string;
   type: string;
   max_participants: number;
   registration_opens_at?: string;
@@ -48,6 +49,7 @@ interface Event {
   max_waitlist_size?: number;
   is_series?: boolean;
   series_id?: number;
+  waitlist_count?: number;
 }
 
 const AdminEventsPage: React.FC = () => {
@@ -61,7 +63,7 @@ const AdminEventsPage: React.FC = () => {
   const [cancelledEvents, setCancelledEvents] = useState<Event[]>([]);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'cancelled'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'past' | 'konfirmation'>('upcoming');
   
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -142,12 +144,20 @@ const AdminEventsPage: React.FC = () => {
     return combinedEvents.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };
 
-  // Get future events only (exclude past and cancelled)
+  // Get future events only (exclude past, cancelled and konfirmation)
   const getFutureEvents = () => {
     const now = new Date();
     return events.filter(event =>
       new Date(event.event_date) >= now &&
-      event.registration_status !== 'cancelled'
+      event.registration_status !== 'cancelled' &&
+      !event.category_names?.toLowerCase().includes('konfirmation')
+    );
+  };
+
+  // Get konfirmation events
+  const getKonfirmationEvents = () => {
+    return events.filter(event =>
+      event.category_names?.toLowerCase().includes('konfirmation')
     );
   };
 
@@ -341,7 +351,7 @@ const AdminEventsPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Events</IonTitle>
           <IonButtons slot="end">
-            {canCreate && activeTab !== 'cancelled' && activeTab !== 'past' && (
+            {canCreate && activeTab !== 'past' && (
               <IonButton onClick={handleAddEventClick}>
                 <IonIcon icon={add} />
               </IonButton>
@@ -371,30 +381,27 @@ const AdminEventsPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Events werden geladen..." />
         ) : (
-          <EventsView 
+          <EventsView
             events={
               activeTab === 'all' ? getAllEvents() :
-              activeTab === 'upcoming' ? getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open') :
+              activeTab === 'upcoming' ? getFutureEvents() :
               activeTab === 'past' ? pastEvents :
-              cancelledEvents
+              activeTab === 'konfirmation' ? getKonfirmationEvents() :
+              []
             }
-            onUpdate={
-              activeTab === 'past' ? loadPastEvents :
-              activeTab === 'cancelled' ? loadCancelledEvents :
-              loadEvents
-            }
+            onUpdate={loadEvents}
             onAddEventClick={handleAddEventClick}
             onSelectEvent={handleSelectEvent}
-            onDeleteEvent={canDelete && activeTab !== 'cancelled' && activeTab !== 'past' ? handleDeleteEvent : undefined}
+            onDeleteEvent={canDelete && activeTab !== 'past' ? handleDeleteEvent : undefined}
             onCopyEvent={canCopy ? handleCopyEvent : undefined}
-            onCancelEvent={canCancel && activeTab !== 'cancelled' && activeTab !== 'past' ? handleCancelEvent : undefined}
+            onCancelEvent={canCancel && activeTab !== 'past' ? handleCancelEvent : undefined}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{
               all: getAllEvents().length,
-              upcoming: getFutureEvents().filter(e => e.registration_status === 'upcoming' || e.registration_status === 'open').length,
+              upcoming: getFutureEvents().length,
               past: pastEvents.length,
-              cancelled: cancelledEvents.length
+              konfirmation: getKonfirmationEvents().length
             }}
           />
         )}
