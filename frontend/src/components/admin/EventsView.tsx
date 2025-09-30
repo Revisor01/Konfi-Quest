@@ -41,7 +41,8 @@ import {
   list,
   checkmarkCircle,
   close,
-  trophy
+  trophy,
+  listOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -73,6 +74,7 @@ interface Event {
   max_waitlist_size?: number;
   is_series?: boolean;
   series_id?: number;
+  waitlist_count?: number;
 }
 
 interface EventsViewProps {
@@ -332,7 +334,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{events.reduce((sum, e) => sum + e.registered_count, 0)}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Vorbei
+                    Buchungen
                   </div>
                 </div>
               </IonCol>
@@ -387,6 +389,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--border-radius': '12px',
                   '--padding-start': '12px',
                   '--padding-end': '12px',
+                  '--min-height': '36px',
                   margin: '0'
                 }} onClick={() => {
                   presentActionSheet({
@@ -401,7 +404,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   });
                 }}>
                   <IonIcon icon={flash} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-                  <IonLabel style={{ fontSize: '0.9rem' }}>
+                  <IonLabel style={{ fontSize: '0.85rem' }}>
                     {selectedStatus === 'alle' ? 'Alle' :
                      selectedStatus === 'open' ? 'Offen' :
                      selectedStatus === 'closed' ? 'Geschlossen' :
@@ -415,6 +418,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   '--border-radius': '12px',
                   '--padding-start': '12px',
                   '--padding-end': '12px',
+                  '--min-height': '36px',
                   margin: '0'
                 }} onClick={() => {
                   presentActionSheet({
@@ -428,7 +432,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                   });
                 }}>
                   <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-                  <IonLabel style={{ fontSize: '0.9rem' }}>
+                  <IonLabel style={{ fontSize: '0.85rem' }}>
                     {sortBy === 'date' ? 'Datum' :
                      sortBy === 'name' ? 'Name' :
                      'Teilnehmer'}
@@ -443,31 +447,27 @@ const EventsView: React.FC<EventsViewProps> = ({
       {/* Tab Navigation */}
       {onTabChange && (
         <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonSegment 
-              value={activeTab} 
+          <IonCardContent style={{ padding: '14px 16px' }}>
+            <IonSegment
+              value={activeTab}
               onIonChange={(e) => onTabChange(e.detail.value as any)}
-              style={{ 
+              style={{
                 '--background': '#f8f9fa',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 padding: '4px'
               }}
             >
               <IonSegmentButton value="upcoming">
-                <IonIcon icon={calendar} style={{ fontSize: '1rem', marginRight: '4px', color: '#28a745' }} />
-                <IonLabel>Anstehend</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Anstehend</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="all">
-                <IonIcon icon={list} style={{ fontSize: '1rem', marginRight: '4px' }} />
-                <IonLabel>Alle</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="past">
-                <IonIcon icon={checkmarkCircle} style={{ fontSize: '1rem', marginRight: '4px', color: '#dc3545' }} />
-                <IonLabel>Vergangen</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Vergangen</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="cancelled">
-                <IonIcon icon={close} style={{ fontSize: '1rem', marginRight: '4px', color: '#dc3545' }} />
-                <IonLabel>Abgesagt</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Abgesagt</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>
@@ -650,6 +650,12 @@ const EventsView: React.FC<EventsViewProps> = ({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon icon={people} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#34c759' }} />
                         <span>{event.registered_count}/{event.max_participants}</span>
+                        {event.waitlist_enabled && event.waitlist_count && event.waitlist_count > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
+                            <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: isPastEvent ? '#999' : '#fd7e14' }} />
+                            <span style={{ color: isPastEvent ? '#999' : '#666' }}>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
+                          </span>
+                        )}
                       </div>
                       {event.points > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

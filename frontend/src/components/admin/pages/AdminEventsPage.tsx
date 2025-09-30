@@ -142,10 +142,13 @@ const AdminEventsPage: React.FC = () => {
     return combinedEvents.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   };
 
-  // Get future events only
+  // Get future events only (exclude past and cancelled)
   const getFutureEvents = () => {
     const now = new Date();
-    return events.filter(event => new Date(event.event_date) >= now);
+    return events.filter(event =>
+      new Date(event.event_date) >= now &&
+      event.registration_status !== 'cancelled'
+    );
   };
 
   const handleDeleteEvent = async (event: Event) => {
