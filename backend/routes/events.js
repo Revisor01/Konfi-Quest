@@ -88,7 +88,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           ...row,
           categories: categories,
           jahrgaenge: jahrgaenge,
-          waitlist_count: parseInt(row.pending_count, 10) || 0
+          waitlist_count: parseInt(row.pending_count, 10) || 0,
+          pending_bookings_count: parseInt(row.pending_count, 10) || 0
         };
       });
       
@@ -154,7 +155,9 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           ...row,
           categories: categories,
           jahrgaenge: jahrgaenge,
-          registration_status: 'cancelled'
+          registration_status: 'cancelled',
+          waitlist_count: parseInt(row.pending_count, 10) || 0,
+          pending_bookings_count: parseInt(row.pending_count, 10) || 0
         };
       });
       

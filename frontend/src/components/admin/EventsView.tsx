@@ -77,6 +77,7 @@ interface Event {
   is_series?: boolean;
   series_id?: number;
   waitlist_count?: number;
+  pending_bookings_count?: number;
 }
 
 interface EventsViewProps {
@@ -328,13 +329,13 @@ const EventsView: React.FC<EventsViewProps> = ({
               }}
             >
               <IonSegmentButton value="upcoming">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Anstehend</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktuell</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="all">
                 <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="konfirmation">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfirmation</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem', color: '#8b5cf6' }}>Konfirmation</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>
@@ -434,10 +435,31 @@ const EventsView: React.FC<EventsViewProps> = ({
                         )}
                       </h2>
 
+                      {/* Pending Bookings Badge */}
+                      {event.pending_bookings_count && event.pending_bookings_count > 0 && (
+                        <span style={{
+                          fontSize: '0.7rem',
+                          color: '#ff6b35',
+                          fontWeight: '600',
+                          backgroundColor: 'rgba(255, 107, 53, 0.15)',
+                          padding: '3px 6px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255, 107, 53, 0.3)',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                          marginLeft: 'auto',
+                          flexShrink: 0,
+                          marginRight: '6px'
+                        }}>
+                          {event.pending_bookings_count} OFFEN
+                        </span>
+                      )}
+
                       {/* Status Badge - rechtsbündig fixiert */}
                       <span style={{
                         fontSize: '0.7rem',
                         color: (() => {
+                          if (isKonfirmationEvent) return '#8b5cf6';
                           const status = calculateRegistrationStatus(event);
                           if (isCancelled) return '#dc3545';
                           if (status === 'open') return '#007aff';
@@ -446,6 +468,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         })(),
                         fontWeight: '600',
                         backgroundColor: (() => {
+                          if (isKonfirmationEvent) return 'rgba(139, 92, 246, 0.15)';
                           const status = calculateRegistrationStatus(event);
                           if (isCancelled) return 'rgba(220, 38, 38, 0.15)';
                           if (status === 'open') return 'rgba(0, 122, 255, 0.15)';
@@ -455,6 +478,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         padding: '3px 6px',
                         borderRadius: '6px',
                         border: (() => {
+                          if (isKonfirmationEvent) return '1px solid rgba(139, 92, 246, 0.3)';
                           const status = calculateRegistrationStatus(event);
                           if (isCancelled) return '1px solid rgba(220, 38, 38, 0.3)';
                           if (status === 'open') return '1px solid rgba(0, 122, 255, 0.3)';
@@ -463,7 +487,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         })(),
                         whiteSpace: 'nowrap',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                        marginLeft: 'auto',
+                        marginLeft: event.pending_bookings_count && event.pending_bookings_count > 0 ? '0' : 'auto',
                         flexShrink: 0
                       }}>
                         {(() => {
@@ -483,14 +507,13 @@ const EventsView: React.FC<EventsViewProps> = ({
                       gap: '6px',
                       fontSize: '0.85rem',
                       color: isPastEvent ? '#999' : '#666',
-                      marginBottom: '6px',
-                      marginLeft: '44px'
+                      marginBottom: '6px'
                     }}>
-                      <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#dc2626' }} />
+                      <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#dc2626' }} />
                       <span style={{ fontWeight: '500', color: isPastEvent ? '#999' : '#333' }}>
                         {formatDate(event.event_date)}
                       </span>
-                      <IonIcon icon={time} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#ff6b35', marginLeft: '8px' }} />
+                      <IonIcon icon={time} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#ff6b35', marginLeft: '8px' }} />
                       <span style={{ color: isPastEvent ? '#999' : '#666' }}>
                         {formatTime(event.event_date)}
                       </span>
@@ -504,10 +527,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                         gap: '4px',
                         fontSize: '0.8rem',
                         color: isPastEvent ? '#999' : '#666',
-                        marginBottom: '6px',
-                        marginLeft: '44px'
+                        marginBottom: '6px'
                       }}>
-                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#007aff' }} />
+                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#007aff' }} />
                         <span>{event.location}</span>
                       </div>
                     )}
@@ -518,8 +540,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       alignItems: 'center',
                       gap: '16px',
                       fontSize: '0.8rem',
-                      color: isPastEvent ? '#999' : '#666',
-                      marginLeft: '44px'
+                      color: isPastEvent ? '#999' : '#666'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon icon={people} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#34c759' }} />

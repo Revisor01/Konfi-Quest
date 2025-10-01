@@ -50,6 +50,7 @@ interface Event {
   is_series?: boolean;
   series_id?: number;
   waitlist_count?: number;
+  pending_bookings_count?: number;
 }
 
 const AdminEventsPage: React.FC = () => {
@@ -149,14 +150,18 @@ const AdminEventsPage: React.FC = () => {
     return uniqueEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
-  // Get future events only (exclude past, cancelled and konfirmation)
+  // Get current events: future events OR events with pending bookings (exclude cancelled and konfirmation)
   const getFutureEvents = () => {
     const now = new Date();
     const futureEvents = events.filter(event => {
       const eventDate = new Date(event.event_date);
-      return eventDate >= now &&
+      const hasPendingBookings = event.pending_bookings_count && event.pending_bookings_count > 0;
+
+      return (
+        (eventDate >= now || hasPendingBookings) &&
         event.registration_status !== 'cancelled' &&
-        !event.category_names?.toLowerCase().includes('konfirmation');
+        !event.category_names?.toLowerCase().includes('konfirmation')
+      );
     });
     return futureEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
