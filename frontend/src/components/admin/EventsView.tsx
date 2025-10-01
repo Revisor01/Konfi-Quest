@@ -110,10 +110,8 @@ const EventsView: React.FC<EventsViewProps> = ({
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
-  // Events nach Datum sortieren
-  const filteredAndSortedEvents = (() => {
-    return [...events].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
-  })();
+  // Events werden bereits von der Page sortiert übergeben
+  const filteredAndSortedEvents = events;
 
   const getUpcomingEvents = () => {
     const now = new Date();

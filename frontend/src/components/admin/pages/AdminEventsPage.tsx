@@ -141,27 +141,32 @@ const AdminEventsPage: React.FC = () => {
     }
   };
 
-  // Get combined events for "Alle" tab (active + cancelled)
+  // Get combined events for "Alle" tab (active + cancelled) - ohne Duplikate
   const getAllEvents = () => {
     const combinedEvents = [...events, ...cancelledEvents];
-    return combinedEvents.sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+    // Duplikate entfernen basierend auf ID
+    const uniqueEvents = Array.from(new Map(combinedEvents.map(e => [e.id, e])).values());
+    return uniqueEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
   // Get future events only (exclude past, cancelled and konfirmation)
   const getFutureEvents = () => {
     const now = new Date();
-    return events.filter(event =>
-      new Date(event.event_date) >= now &&
-      event.registration_status !== 'cancelled' &&
-      !event.category_names?.toLowerCase().includes('konfirmation')
-    );
+    const futureEvents = events.filter(event => {
+      const eventDate = new Date(event.event_date);
+      return eventDate >= now &&
+        event.registration_status !== 'cancelled' &&
+        !event.category_names?.toLowerCase().includes('konfirmation');
+    });
+    return futureEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
   // Get konfirmation events
   const getKonfirmationEvents = () => {
-    return events.filter(event =>
+    const konfirmationEvents = events.filter(event =>
       event.category_names?.toLowerCase().includes('konfirmation')
     );
+    return konfirmationEvents.sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
   };
 
   const handleDeleteEvent = async (event: Event) => {
