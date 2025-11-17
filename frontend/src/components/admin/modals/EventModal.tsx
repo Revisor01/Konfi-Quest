@@ -27,7 +27,7 @@ import {
   IonDatetimeButton,
   IonCheckbox
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -448,10 +448,16 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Event Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -462,7 +468,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
@@ -517,20 +523,26 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked">Anmeldung ab</IonLabel>
                 <IonDatetimeButton datetime="registration-opens-picker" />
               </IonItem>
@@ -573,33 +585,60 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Punkte</IonLabel>
-                <IonInput
-                  type="text"
-                  inputMode="numeric"
-                  value={formData.points.toString()}
-                  onIonInput={(e) => {
-                    const value = e.detail.value!;
-                    if (value === '') {
-                      setFormData({ ...formData, points: 0 });
-                    } else {
-                      const num = parseInt(value);
-                      if (!isNaN(num) && num >= 0) {
-                        setFormData({ ...formData, points: num });
+              {/* Punkte mit Stepper */}
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.points <= 0}
+                    onClick={() => setFormData({ ...formData, points: Math.max(0, formData.points - 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.points.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setFormData({ ...formData, points: 0 });
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 0 && num <= 999) {
+                          setFormData({ ...formData, points: num });
+                        }
                       }
-                    }
-                  }}
-                  placeholder="z.B. 5"
-                  disabled={loading}
-                  clearInput={true}
-                />
+                    }}
+                    placeholder="0"
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.points >= 999}
+                    onClick={() => setFormData({ ...formData, points: Math.min(999, formData.points + 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
+                </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked">Punkte-Art</IonLabel>
                 <IonSelect
                   value={formData.point_type}
@@ -616,27 +655,48 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonSelect>
               </IonItem>
 
+              {/* Max. Teilnehmer mit Stepper */}
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Max. Teilnehmer *</IonLabel>
-                <IonInput
-                  type="text"
-                  inputMode="numeric"
-                  value={formData.max_participants.toString()}
-                  onIonInput={(e) => {
-                    const value = e.detail.value!;
-                    if (value === '') {
-                      setFormData({ ...formData, max_participants: 0 });
-                    } else {
-                      const num = parseInt(value);
-                      if (!isNaN(num) && num >= 0) {
-                        setFormData({ ...formData, max_participants: num });
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer *</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.max_participants <= 1}
+                    onClick={() => setFormData({ ...formData, max_participants: Math.max(1, formData.max_participants - 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.max_participants.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setFormData({ ...formData, max_participants: 1 });
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 1 && num <= 999) {
+                          setFormData({ ...formData, max_participants: num });
+                        }
                       }
-                    }
-                  }}
-                  placeholder="z.B. 20"
-                  disabled={loading}
-                  clearInput={true}
-                />
+                    }}
+                    placeholder="5"
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.max_participants >= 999}
+                    onClick={() => setFormData({ ...formData, max_participants: Math.min(999, formData.max_participants + 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
+                </div>
               </IonItem>
             </IonList>
           </IonCardContent>
@@ -672,8 +732,14 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               {categories.length > 0 ? (
                 <>
@@ -804,10 +870,16 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
                   checked={formData.waitlist_enabled}
@@ -820,26 +892,46 @@ const EventModal: React.FC<EventModalProps> = ({
 
               {formData.waitlist_enabled && (
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Max. Wartelisten-Plätze</IonLabel>
-                  <IonInput
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.max_waitlist_size.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') {
-                        setFormData({ ...formData, max_waitlist_size: 0 });
-                      } else {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num >= 0) {
-                          setFormData({ ...formData, max_waitlist_size: num });
+                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.max_waitlist_size <= 0}
+                      onClick={() => setFormData({ ...formData, max_waitlist_size: Math.max(0, formData.max_waitlist_size - 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={removeOutline} />
+                    </IonButton>
+                    <IonInput
+                      type="text"
+                      inputMode="numeric"
+                      value={formData.max_waitlist_size.toString()}
+                      onIonInput={(e) => {
+                        const value = e.detail.value!;
+                        if (value === '') {
+                          setFormData({ ...formData, max_waitlist_size: 0 });
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num >= 0 && num <= 999) {
+                            setFormData({ ...formData, max_waitlist_size: num });
+                          }
                         }
-                      }
-                    }}
-                    placeholder="z.B. 10"
-                    disabled={loading}
-                    clearInput={true}
-                  />
+                      }}
+                      placeholder="10"
+                      disabled={loading}
+                      style={{ textAlign: 'center', flex: 1 }}
+                    />
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.max_waitlist_size >= 999}
+                      onClick={() => setFormData({ ...formData, max_waitlist_size: Math.min(999, formData.max_waitlist_size + 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={addOutline} />
+                    </IonButton>
+                  </div>
                 </IonItem>
               )}
 
@@ -886,10 +978,16 @@ const EventModal: React.FC<EventModalProps> = ({
               </h2>
             </div>
 
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-              <IonCardContent style={{ padding: '12px 16px' }}>
+            <IonCard style={{
+              margin: '0 16px 16px 16px',
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                     <IonLabel>Als Serie erstellen</IonLabel>
                     <IonToggle
                       checked={formData.is_series}
@@ -900,27 +998,47 @@ const EventModal: React.FC<EventModalProps> = ({
 
                   {formData.is_series && (
                     <>
-                      <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                        <IonLabel position="stacked">Anzahl Events</IonLabel>
-                        <IonInput
-                          type="text"
-                          inputMode="numeric"
-                          value={formData.series_count.toString()}
-                          onIonInput={(e) => {
-                            const value = e.detail.value!;
-                            if (value === '') {
-                              setFormData({ ...formData, series_count: 1 });
-                            } else {
-                              const num = parseInt(value);
-                              if (!isNaN(num) && num >= 1) {
-                                setFormData({ ...formData, series_count: num });
+                      <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                        <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Anzahl Events</IonLabel>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                          <IonButton
+                            fill="outline"
+                            size="small"
+                            disabled={loading || formData.series_count <= 2}
+                            onClick={() => setFormData({ ...formData, series_count: Math.max(2, formData.series_count - 1) })}
+                            style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                          >
+                            <IonIcon icon={removeOutline} />
+                          </IonButton>
+                          <IonInput
+                            type="text"
+                            inputMode="numeric"
+                            value={formData.series_count.toString()}
+                            onIonInput={(e) => {
+                              const value = e.detail.value!;
+                              if (value === '') {
+                                setFormData({ ...formData, series_count: 2 });
+                              } else {
+                                const num = parseInt(value);
+                                if (!isNaN(num) && num >= 2 && num <= 52) {
+                                  setFormData({ ...formData, series_count: num });
+                                }
                               }
-                            }
-                          }}
-                          placeholder="z.B. 4"
-                          disabled={loading}
-                          clearInput={true}
-                        />
+                            }}
+                            placeholder="4"
+                            disabled={loading}
+                            style={{ textAlign: 'center', flex: 1 }}
+                          />
+                          <IonButton
+                            fill="outline"
+                            size="small"
+                            disabled={loading || formData.series_count >= 52}
+                            onClick={() => setFormData({ ...formData, series_count: Math.min(52, formData.series_count + 1) })}
+                            style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                          >
+                            <IonIcon icon={addOutline} />
+                          </IonButton>
+                        </div>
                       </IonItem>
 
                       <IonItem lines="none" style={{ '--background': 'transparent' }}>
@@ -987,10 +1105,16 @@ const EventModal: React.FC<EventModalProps> = ({
           </h2>
         </div>
 
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-          <IonCardContent style={{ padding: '12px 16px' }}>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
                 <IonToggle
                   checked={formData.has_timeslots}
@@ -1073,10 +1197,16 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonButton>
             </div>
 
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: '#f8f9fa' }}>
-              <IonCardContent style={{ padding: '12px 16px' }}>
+            <IonCard style={{
+              margin: '0 16px 16px 16px',
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                     <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
                     <IonInput
                       type="time"
@@ -1103,7 +1233,7 @@ const EventModal: React.FC<EventModalProps> = ({
                       step="900"
                     />
                   </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                     <IonLabel position="stacked">Endzeit (HH:MM)</IonLabel>
                     <IonInput
                       type="time"
@@ -1131,26 +1261,46 @@ const EventModal: React.FC<EventModalProps> = ({
                     />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Max. Teilnehmer</IonLabel>
-                    <IonInput
-                      type="text"
-                      inputMode="numeric"
-                      value={timeslot.max_participants.toString()}
-                      onIonInput={(e) => {
-                        const value = e.detail.value!;
-                        if (value === '') {
-                          updateTimeslot(index, 'max_participants', 0);
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 0) {
-                            updateTimeslot(index, 'max_participants', num);
+                    <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={loading || timeslot.max_participants <= 1}
+                        onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={removeOutline} />
+                      </IonButton>
+                      <IonInput
+                        type="text"
+                        inputMode="numeric"
+                        value={timeslot.max_participants.toString()}
+                        onIonInput={(e) => {
+                          const value = e.detail.value!;
+                          if (value === '') {
+                            updateTimeslot(index, 'max_participants', 1);
+                          } else {
+                            const num = parseInt(value);
+                            if (!isNaN(num) && num >= 1 && num <= 999) {
+                              updateTimeslot(index, 'max_participants', num);
+                            }
                           }
-                        }
-                      }}
-                      placeholder="z.B. 10"
-                      disabled={loading}
-                      clearInput={true}
-                    />
+                        }}
+                        placeholder="10"
+                        disabled={loading}
+                        style={{ textAlign: 'center', flex: 1 }}
+                      />
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={loading || timeslot.max_participants >= 999}
+                        onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={addOutline} />
+                      </IonButton>
+                    </div>
                   </IonItem>
                 </IonList>
               </IonCardContent>
