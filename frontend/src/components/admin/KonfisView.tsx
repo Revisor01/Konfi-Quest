@@ -274,48 +274,54 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </div>
       </div>
 
-      {/* Controls Card */}
+      {/* Suchfeld */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonGrid>
+        <IonCardContent style={{ padding: '14px 16px' }}>
+          <IonItem
+            lines="none"
+            style={{
+              '--background': '#f8f9fa',
+              '--border-radius': '12px',
+              '--padding-start': '12px',
+              '--padding-end': '12px',
+              margin: '0'
+            }}
+          >
+            <IonIcon
+              icon={search}
+              slot="start"
+              style={{
+                color: '#8e8e93',
+                marginRight: '8px',
+                fontSize: '1rem'
+              }}
+            />
+            <IonInput
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Konfi suchen..."
+              style={{
+                '--color': '#000',
+                '--placeholder-color': '#8e8e93'
+              }}
+            />
+          </IonItem>
+        </IonCardContent>
+      </IonCard>
+
+      {/* Filter Controls */}
+      <IonCard style={{ margin: '16px' }}>
+        <IonCardContent style={{ padding: '14px 16px' }}>
+          <IonGrid style={{ padding: '0' }}>
             <IonRow>
-              <IonCol size="12">
-                <IonItem 
-                  lines="none" 
-                  style={{ 
-                    '--background': '#f8f9fa',
-                    '--border-radius': '8px',
-                    marginBottom: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    '--padding-start': '12px',
-                    '--padding-end': '12px',
-                    '--min-height': '44px'
-                  }}
-                >
-                  <IonIcon 
-                    icon={search} 
-                    slot="start" 
-                    style={{ 
-                      color: '#8e8e93',
-                      marginRight: '8px',
-                      fontSize: '1rem'
-                    }} 
-                  />
-                  <IonInput
-                    value={searchTerm}
-                    onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                    placeholder="Konfi suchen..."
-                    style={{ 
-                      '--color': '#000',
-                      '--placeholder-color': '#8e8e93'
-                    }}
-                  />
-                </IonItem>
-              </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem button lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '8px', marginBottom: '12px' }} onClick={() => {
+              <IonCol size="6" style={{ paddingLeft: '0', paddingRight: '4px' }}>
+                <IonItem button lines="none" style={{
+                  '--background': '#f8f9fa',
+                  '--border-radius': '12px',
+                  '--padding-start': '12px',
+                  '--padding-end': '12px',
+                  margin: '0'
+                }} onClick={() => {
                   presentActionSheet({
                     header: 'Jahrgang wählen',
                     buttons: [
@@ -328,28 +334,32 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     ]
                   });
                 }}>
-                  <IonIcon icon={people} slot="start" />
-                  <IonLabel>
-                    {selectedJahrgang === 'alle' ? 'Alle Jahrgänge' : selectedJahrgang || 'Jahrgang wählen'}
+                  <IonIcon icon={people} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonLabel style={{ fontSize: '0.9rem' }}>
+                    {selectedJahrgang === 'alle' ? 'Alle' : selectedJahrgang || 'Jahrgang'}
                   </IonLabel>
                 </IonItem>
               </IonCol>
-            </IonRow>
-            <IonRow>
-              <IonCol size="12">
-                <IonItem button lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '8px' }} onClick={() => {
+              <IonCol size="6" style={{ paddingRight: '0', paddingLeft: '4px' }}>
+                <IonItem button lines="none" style={{
+                  '--background': '#f8f9fa',
+                  '--border-radius': '12px',
+                  '--padding-start': '12px',
+                  '--padding-end': '12px',
+                  margin: '0'
+                }} onClick={() => {
                   presentActionSheet({
                     header: 'Sortierung wählen',
                     buttons: [
                       { text: 'Nach Name (A-Z)', handler: () => setSortBy('name') },
-                      { text: 'Nach Punkte (hoch-niedrig)', handler: () => setSortBy('points') },
+                      { text: 'Nach Punkte', handler: () => setSortBy('points') },
                       { text: 'Abbrechen', role: 'cancel' }
                     ]
                   });
                 }}>
-                  <IonIcon icon={swapVertical} slot="start" />
-                  <IonLabel>
-                    {sortBy === 'name' ? 'Nach Name (A-Z)' : 'Nach Punkte (hoch-niedrig)'}
+                  <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonLabel style={{ fontSize: '0.9rem' }}>
+                    {sortBy === 'name' ? 'A-Z' : 'Punkte'}
                   </IonLabel>
                 </IonItem>
               </IonCol>
@@ -367,6 +377,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 <IonItem
                   button
                   onClick={() => onSelectKonfi(konfi)}
+                  detail={false}
                   style={{
                     '--min-height': '110px',
                     '--padding-start': '16px',

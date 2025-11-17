@@ -517,20 +517,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Bonuspunkte */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={gift} style={{ marginRight: '8px', color: '#f59e0b' }} />
+            <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IonIcon icon={gift} style={{ color: '#f59e0b', fontSize: '1.2rem' }} />
               Bonus ({getBonusPoints()})
             </IonCardTitle>
           </IonCardHeader>
-          <IonCardContent>
-            {bonusEntries.length > 0 ? (
-              <div style={{ padding: '0' }}>
-                <IonList lines="none" style={{ background: 'transparent' }}>
+          {bonusEntries.length > 0 && (
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
                   {bonusEntries.map((bonus: any, index: number) => (
                     <IonItemSliding key={index}>
                       <IonItem
                         style={{
-                          '--min-height': '110px',
+                          '--min-height': '80px',
                           '--padding-start': '16px',
                           '--padding-top': '0px',
                           '--padding-bottom': '0px',
@@ -580,7 +579,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               lineHeight: '1.3',
                               flex: 1,
                               minWidth: 0,
-                              marginRight: '80px',
+                              maxWidth: 'calc(100% - 100px)',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap'
@@ -600,7 +599,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               whiteSpace: 'nowrap',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                               position: 'absolute',
-                              right: '16px',
+                              right: '0px',
                               top: '50%',
                               transform: 'translateY(-50%)'
                             }}>
@@ -631,20 +630,23 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                       </IonItemOptions>
                     </IonItemSliding>
                   ))}
-                </IonList>
-              </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
-                Noch keine Bonuspunkte vorhanden
+              </IonList>
+            </IonCardContent>
+          )}
+          {bonusEntries.length === 0 && (
+            <IonCardContent style={{ padding: '16px' }}>
+              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
+                Noch keine Bonuspunkte erhalten
               </p>
-            )}
-            <IonButton 
-              expand="block" 
-              fill="outline" 
+            </IonCardContent>
+          )}
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonButton
+              expand="block"
+              fill="outline"
               onClick={() => presentBonusModalHook({
                 presentingElement: presentingElement || undefined
               })}
-              style={{ marginTop: '16px' }}
             >
               <IonIcon icon={add} style={{ marginRight: '8px' }} />
               Bonuspunkte hinzufügen
@@ -655,18 +657,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Event Points */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={podium} style={{ marginRight: '8px', color: '#eb445a' }} />
+            <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IonIcon icon={podium} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
               Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})
             </IonCardTitle>
           </IonCardHeader>
-          <IonCardContent>
-            {eventPoints.length > 0 ? (
-              <div style={{ padding: '0' }}>
-                <IonList lines="none" style={{ background: 'transparent' }}>
+          {eventPoints.length > 0 && (
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
                   {eventPoints.map((eventPoint: any, index: number) => (
                     <IonItem
                       key={index}
+                      detail={false}
                       style={{
                         '--min-height': '80px',
                         '--padding-start': '16px',
@@ -716,9 +718,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             margin: '0',
                             color: '#333',
                             lineHeight: '1.3',
-                            flex: 1,
-                            minWidth: 0,
-                            marginRight: '80px',
+                            paddingRight: '60px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -738,7 +738,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             whiteSpace: 'nowrap',
                             boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                             position: 'absolute',
-                            right: '16px',
+                            right: '0px',
                             top: '50%',
                             transform: 'translateY(-50%)'
                           }}>
@@ -746,7 +746,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           </span>
                         </div>
 
-                        {/* Date, Admin and Type */}
+                        {/* Date and Admin */}
                         <div style={{
                           fontSize: '0.8rem',
                           color: '#666',
@@ -756,35 +756,35 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           marginLeft: '40px'
                         }}>
                           <span>
-                            {eventPoint.event_date && formatDate(eventPoint.event_date)} • {eventPoint.admin_name || 'Admin'}
-                            {eventPoint.awarded_date && ` • Vergeben: ${formatDate(eventPoint.awarded_date)}`}
+                            {eventPoint.awarded_date && new Date(eventPoint.awarded_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} • {eventPoint.admin_name || 'Admin'}
                           </span>
                         </div>
                       </IonLabel>
                     </IonItem>
                   ))}
-                </IonList>
-              </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
+              </IonList>
+            </IonCardContent>
+          )}
+          {eventPoints.length === 0 && (
+            <IonCardContent style={{ padding: '16px' }}>
+              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
                 Noch keine Event-Punkte erhalten
               </p>
-            )}
-          </IonCardContent>
+            </IonCardContent>
+          )}
         </IonCard>
 
         {/* Letzte Aktivitäten */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#667eea' }} />
-              Aktivitäten ({activities.length})
+            <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IonIcon icon={flash} style={{ color: '#5b21b6', fontSize: '1.2rem' }} />
+              Aktivitäten ({activities.filter(a => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})
             </IonCardTitle>
           </IonCardHeader>
-          <IonCardContent>
-            {activities.length > 0 ? (
-              <div style={{ padding: '0' }}>
-                <IonList lines="none" style={{ background: 'transparent' }}>
+          {activities.length > 0 && (
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
                   {activities.slice(0, 10).map((activity) => (
                     <IonItemSliding key={activity.id}>
                       <IonItem
@@ -810,7 +810,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           }
                         }}
                         style={{
-                          '--min-height': '110px',
+                          '--min-height': '80px',
                           '--padding-start': '16px',
                           '--padding-top': '0px',
                           '--padding-bottom': '0px',
@@ -861,7 +861,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               lineHeight: '1.3',
                               flex: 1,
                               minWidth: 0,
-                              marginRight: '80px',
+                              maxWidth: '180px',
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
@@ -897,7 +897,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               whiteSpace: 'nowrap',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
                               position: 'absolute',
-                              right: '16px',
+                              right: '0px',
                               top: '50%',
                               transform: 'translateY(-50%)'
                             }}>
@@ -931,19 +931,22 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                     </IonItemSliding>
                   ))}
                 </IonList>
-              </div>
-            ) : (
-              <p style={{ textAlign: 'center', color: '#666', margin: '20px 0' }}>
+            </IonCardContent>
+          )}
+          {activities.length === 0 && (
+            <IonCardContent style={{ padding: '16px' }}>
+              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
                 Noch keine Aktivitäten vorhanden
               </p>
-            )}
-            <IonButton 
-              expand="block" 
-              fill="outline" 
+            </IonCardContent>
+          )}
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonButton
+              expand="block"
+              fill="outline"
               onClick={() => presentActivityModalHook({
                 presentingElement: presentingElement || undefined
               })}
-              style={{ marginTop: '16px' }}
             >
               <IonIcon icon={add} style={{ marginRight: '8px' }} />
               Aktivität hinzufügen
