@@ -479,7 +479,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   }
                 }}
               >
-                <IonIcon icon={location} slot="start" color="primary" />
+                <div slot="start" style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#eb445a',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
+                  flexShrink: 0
+                }}>
+                  <IonIcon icon={location} style={{ fontSize: '1rem', color: 'white' }} />
+                </div>
                 <IonLabel>
                   <h3>Ort</h3>
                   <p style={{ color: eventData.location_maps_url || eventData.location ? '#007aff' : undefined }}>
@@ -491,15 +503,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             )}
 
             <IonItem lines="none">
-              <IonIcon icon={time} slot="start" color="primary" />
+              <div slot="start" style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#eb445a',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
+              </div>
               <IonLabel>
                 <h3>Anmeldung</h3>
                 <p>
-                  {eventData?.registration_opens_at ? 
-                    `Ab ${formatDate(eventData.registration_opens_at)} ${formatTime(eventData.registration_opens_at)}` : 
+                  {eventData?.registration_opens_at ?
+                    `Ab ${formatDate(eventData.registration_opens_at)} ${formatTime(eventData.registration_opens_at)}` :
                     'Sofort möglich'
                   }
-                  {eventData?.registration_closes_at && 
+                  {eventData?.registration_closes_at &&
                     ` bis ${formatDate(eventData.registration_closes_at)} ${formatTime(eventData.registration_closes_at)}`
                   }
                 </p>
@@ -508,7 +532,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
             {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
               <IonItem lines="none">
-                <IonIcon icon={people} slot="start" color="primary" />
+                <div slot="start" style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#eb445a',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
+                  flexShrink: 0
+                }}>
+                  <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
+                </div>
                 <IonLabel>
                   <h3>Jahrgänge</h3>
                   <p>{eventData.jahrgaenge.map(j => j.name).join(', ')}</p>
