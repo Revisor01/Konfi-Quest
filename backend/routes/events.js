@@ -169,6 +169,41 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
     }
   });
   
+  // Get timeslots for an event
+  router.get('/:id/timeslots', rbacVerifier, async (req, res) => {
+    const eventId = req.params.id;
+    try {
+      console.log("Fetching timeslots for event:", eventId, "org:", req.user.organization_id);
+
+      // Verify event exists and belongs to organization
+      const { rows: [event] } = await db.query("SELECT id, has_timeslots FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      if (!event.has_timeslots) {
+        return res.json([]); // Return empty array if event doesn't use timeslots
+      }
+
+      const timeslotsQuery = `
+        SELECT et.*, COUNT(eb.id) as registered_count
+        FROM event_timeslots et
+        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id AND eb.status = 'confirmed'
+        WHERE et.event_id = $1 AND et.organization_id = $2
+        GROUP BY et.id
+        ORDER BY et.start_time ASC
+      `;
+      const { rows: timeslots } = await db.query(timeslotsQuery, [eventId, req.user.organization_id]);
+
+      res.json(timeslots);
+
+    } catch (err) {
+      console.error(`Database error in GET /events/${req.params.id}/timeslots:`, err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Get event details with participants
   router.get('/:id', rbacVerifier, async (req, res) => {
     const eventId = req.params.id;
@@ -816,7 +851,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       
       for (let i = 0; i < seriesDates.length; i++) {
         const date = seriesDates[i];
-        const eventName = `${name} - Termin ${i + 1}`;
+        const eventName = `${name} #${i + 1}`;
         
         // Calculate dates for this specific event in series
         const eventStartDate = new Date(date);
