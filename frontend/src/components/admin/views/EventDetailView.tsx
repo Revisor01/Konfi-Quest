@@ -404,7 +404,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.status === 'confirmed').length}/{eventData?.max_participants || 0}</span>
                     </div>
                     <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                      Anmeldungen
+                      TN
                     </div>
                   </div>
                 </IonCol>
