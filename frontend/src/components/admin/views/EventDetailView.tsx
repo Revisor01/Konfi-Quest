@@ -490,7 +490,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonRow>
                 <IonCol size="12">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#eb445a', fontSize: '1.2rem' }} />
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#eb445a',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px',
+                      flexShrink: 0
+                    }}>
+                      <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
+                    </div>
                     <div>
                       <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
                         {formatDate(eventData?.event_date || '')}
@@ -522,7 +534,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         }
                       }}
                     >
-                      <IonIcon icon={location} style={{ marginRight: '12px', color: '#eb445a', fontSize: '1.2rem' }} />
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#eb445a',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '12px',
+                        flexShrink: 0
+                      }}>
+                        <IonIcon icon={location} style={{ fontSize: '1rem', color: 'white' }} />
+                      </div>
                       <div style={{ fontSize: '1rem', color: '#007aff', textDecoration: 'underline' }}>
                         {eventData.location}
                       </div>
@@ -530,7 +554,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={time} style={{ marginRight: '12px', color: '#eb445a', fontSize: '1.2rem' }} />
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#eb445a',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px',
+                      flexShrink: 0
+                    }}>
+                      <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
+                    </div>
                     <div style={{ fontSize: '1rem', color: '#333' }}>
                       {eventData?.registration_opens_at
                         ? `Ab ${formatDate(eventData.registration_opens_at)} ${formatTime(eventData.registration_opens_at)}`
@@ -542,7 +578,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
                   {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={people} style={{ marginRight: '12px', color: '#eb445a', fontSize: '1.2rem' }} />
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#eb445a',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '12px',
+                        flexShrink: 0
+                      }}>
+                        <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
+                      </div>
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         {eventData.jahrgaenge.map(j => j.name).join(', ')}
                       </div>
@@ -737,21 +785,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {/* Participants List */}
         <IonCard style={{ margin: '16px' }}>
           <IonCardHeader>
-            <IonCardTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IonIcon icon={people} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
-                Teilnehmer ({participants.filter(p => p.status === 'confirmed').length})
-                {participants.filter(p => p.status === 'pending').length > 0 &&
-                  ` • Warteliste (${participants.filter(p => p.status === 'pending').length})`
-                }
-              </span>
-              <IonButton
-                fill="clear"
-                size="small"
-                onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
-              >
-                <IonIcon icon={personAdd} style={{ color: '#eb445a' }} />
-              </IonButton>
+            <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <IonIcon icon={people} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
+              Teilnehmer ({participants.filter(p => p.status === 'confirmed').length}
+              {participants.filter(p => p.status === 'pending').length > 0 &&
+                ` + ${participants.filter(p => p.status === 'pending').length}`
+              })
             </IonCardTitle>
           </IonCardHeader>
           {participants.length === 0 ? (
@@ -901,15 +940,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <IonItemOption
                           color="warning"
                           onClick={() => handleDemoteParticipant(participant)}
+                          style={{ paddingRight: '8px' }}
                         >
-                          <div style={{ paddingRight: '8px' }}>Warteliste</div>
+                          Warteliste
                         </IonItemOption>
                       )}
                       <IonItemOption
                         color="danger"
                         onClick={() => handleRemoveParticipant(participant)}
+                        style={{ paddingRight: '8px' }}
                       >
-                        <IonIcon icon={trash} style={{ paddingRight: '8px' }} />
+                        <IonIcon icon={trash} />
                       </IonItemOption>
                     </IonItemOptions>
                   </IonItemSliding>
@@ -917,6 +958,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               </IonList>
             </IonCardContent>
           )}
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonButton
+              expand="block"
+              fill="outline"
+              onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+            >
+              <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
+              Teilnehmer hinzufügen
+            </IonButton>
+          </IonCardContent>
         </IonCard>
 
       </IonContent>

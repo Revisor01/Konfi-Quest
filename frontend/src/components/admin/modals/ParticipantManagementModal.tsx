@@ -270,50 +270,87 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               </IonItem>
             )}
 
-            <IonList>
+            <IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
               {filteredKonfis.length === 0 ? (
-                <IonItem lines="none">
-                  <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                    <p>Keine verfügbaren Konfis gefunden</p>
-                  </IonLabel>
-                </IonItem>
+                <div style={{ padding: '16px', textAlign: 'center' }}>
+                  <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
+                    Keine verfügbaren Konfis gefunden
+                  </p>
+                </div>
               ) : (
                 filteredKonfis.map((konfi) => (
-                  <IonItem 
-                    key={konfi.id} 
-                    button 
+                  <IonItem
+                    key={konfi.id}
+                    button
                     onClick={() => handleKonfiSelection(konfi.id)}
+                    detail={false}
+                    style={{
+                      '--min-height': '70px',
+                      '--padding-start': '16px',
+                      '--padding-top': '0px',
+                      '--padding-bottom': '0px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
                   >
                     <IonCheckbox
                       slot="start"
                       checked={selectedKonfis.includes(konfi.id)}
                       onIonChange={() => handleKonfiSelection(konfi.id)}
+                      style={{ marginRight: '12px' }}
                     />
-                    <IonAvatar slot="start" style={{ 
-                      width: '32px', 
-                      height: '32px',
-                      backgroundColor: '#007aff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginLeft: '12px'
-                    }}>
-                      <IonIcon 
-                        icon={person} 
-                        style={{ 
-                          fontSize: '1rem', 
-                          color: 'white'
-                        }} 
-                      />
-                    </IonAvatar>
                     <IonLabel>
-                      <h3>{konfi.name}</h3>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '4px'
+                      }}>
+                        {/* Person Icon */}
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          backgroundColor: '#007aff',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          <IonIcon
+                            icon={person}
+                            style={{
+                              fontSize: '0.9rem',
+                              color: 'white'
+                            }}
+                          />
+                        </div>
+
+                        {/* Konfi Name */}
+                        <h3 style={{
+                          fontWeight: '600',
+                          fontSize: '1rem',
+                          margin: '0',
+                          color: '#333',
+                          lineHeight: '1.3'
+                        }}>
+                          {konfi.name}
+                        </h3>
+                      </div>
+
+                      {/* Jahrgang */}
                       {konfi.jahrgang_name && (
-                        <p>
-                          <IonChip color="medium" style={{ fontSize: '0.8rem' }}>
-                            {konfi.jahrgang_name}
-                          </IonChip>
-                        </p>
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: '#666',
+                          marginLeft: '40px'
+                        }}>
+                          {konfi.jahrgang_name}
+                        </div>
                       )}
                     </IonLabel>
                   </IonItem>
