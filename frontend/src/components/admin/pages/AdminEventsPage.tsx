@@ -329,25 +329,7 @@ const AdminEventsPage: React.FC = () => {
   };
 
   const handleAddEventClick = () => {
-    presentActionSheet({
-      header: 'Event erstellen',
-      buttons: [
-        {
-          text: 'Einzelnes Event erstellen',
-          icon: 'calendar-outline',
-          handler: () => presentEventModal('single')
-        },
-        {
-          text: 'Event-Serie erstellen',
-          icon: 'copy-outline', 
-          handler: () => presentEventModal('series')
-        },
-        {
-          text: 'Abbrechen',
-          role: 'cancel'
-        }
-      ]
-    });
+    presentEventModal('single');
   };
 
   // Permission checks

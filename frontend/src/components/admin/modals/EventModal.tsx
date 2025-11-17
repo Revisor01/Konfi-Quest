@@ -27,7 +27,7 @@ import {
   IonDatetimeButton,
   IonCheckbox
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -419,27 +419,27 @@ const EventModal: React.FC<EventModalProps> = ({
 
       <IonContent style={{ '--padding-top': '16px' }}>
         {/* EVENT GRUNDDATEN */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '16px 16px 8px 16px'
+          margin: '16px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#007aff',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 123, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -447,68 +447,64 @@ const EventModal: React.FC<EventModalProps> = ({
             Event Grunddaten
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
-                <IonLabel position="stacked">Event Name *</IonLabel>
-                <IonInput
-                  value={formData.name}
-                  onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-                  placeholder="z.B. Konfirmandenausflug"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
 
-              <IonItem>
-                <IonLabel position="stacked">Beschreibung</IonLabel>
-                <IonTextarea
-                  value={formData.description}
-                  onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-                  placeholder="Beschreibung des Events..."
-                  rows={3}
-                  disabled={loading}
-                />
-              </IonItem>
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
+          <IonItem>
+            <IonLabel position="stacked">Event Name *</IonLabel>
+            <IonInput
+              value={formData.name}
+              onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+              placeholder="z.B. Konfirmandenausflug"
+              disabled={loading}
+              clearInput={true}
+            />
+          </IonItem>
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Ort</IonLabel>
-                <IonInput
-                  value={formData.location}
-                  onIonInput={(e) => setFormData({ ...formData, location: e.detail.value! })}
-                  placeholder="z.B. Gemeindehaus"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+          <IonItem>
+            <IonLabel position="stacked">Beschreibung</IonLabel>
+            <IonTextarea
+              value={formData.description}
+              onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+              placeholder="Beschreibung des Events..."
+              rows={3}
+              disabled={loading}
+            />
+          </IonItem>
+
+          <IonItem lines="none">
+            <IonLabel position="stacked">Ort</IonLabel>
+            <IonInput
+              value={formData.location}
+              onIonInput={(e) => setFormData({ ...formData, location: e.detail.value! })}
+              placeholder="z.B. Gemeindehaus"
+              disabled={loading}
+              clearInput={true}
+            />
+          </IonItem>
+        </IonList>
 
         {/* DATUM & ZEIT */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#28a745',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -516,55 +512,51 @@ const EventModal: React.FC<EventModalProps> = ({
             Datum & Zeit
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
-                <IonDatetimeButton datetime="event-date-picker" />
-              </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Endzeit (optional)</IonLabel>
-                <IonDatetimeButton datetime="end-time-picker" />
-              </IonItem>
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
+          <IonItem lines="none" style={{ paddingBottom: '12px' }}>
+            <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
+            <IonDatetimeButton datetime="event-date-picker" />
+          </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Anmeldung ab</IonLabel>
-                <IonDatetimeButton datetime="registration-opens-picker" />
-              </IonItem>
+          <IonItem lines="none" style={{ paddingBottom: '12px' }}>
+            <IonLabel position="stacked">Endzeit (optional)</IonLabel>
+            <IonDatetimeButton datetime="end-time-picker" />
+          </IonItem>
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Anmeldeschluss</IonLabel>
-                <IonDatetimeButton datetime="registration-closes-picker" />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+          <IonItem lines="none" style={{ paddingBottom: '12px' }}>
+            <IonLabel position="stacked">Anmeldung ab</IonLabel>
+            <IonDatetimeButton datetime="registration-opens-picker" />
+          </IonItem>
+
+          <IonItem lines="none">
+            <IonLabel position="stacked">Anmeldeschluss</IonLabel>
+            <IonDatetimeButton datetime="registration-closes-picker" />
+          </IonItem>
+        </IonList>
 
         {/* PUNKTE & TEILNEHMER */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#f39c12',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(243, 156, 18, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -572,12 +564,10 @@ const EventModal: React.FC<EventModalProps> = ({
             Punkte & Teilnehmer
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
-                <IonLabel position="stacked">Punkte</IonLabel>
+
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
+          <IonItem>
+            <IonLabel position="stacked">Punkte</IonLabel>
                 <IonInput
                   type="text"
                   inputMode="numeric"
@@ -639,31 +629,29 @@ const EventModal: React.FC<EventModalProps> = ({
                 />
               </IonItem>
             </IonList>
-          </IonCardContent>
-        </IonCard>
 
         {/* KATEGORIEN & ZIELGRUPPE */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#9b59b6',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -671,10 +659,8 @@ const EventModal: React.FC<EventModalProps> = ({
             Kategorien & Zielgruppe
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
+
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
               {categories.length > 0 ? (
                 <>
                   <IonItem lines="none" style={{ paddingBottom: '8px' }}>
@@ -771,31 +757,29 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonItem>
               ))}
             </IonList>
-          </IonCardContent>
-        </IonCard>
 
         {/* ANMELDUNGEN & WARTELISTE */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#e74c3c',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -803,10 +787,8 @@ const EventModal: React.FC<EventModalProps> = ({
             Anmeldungen & Warteliste
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
+
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
               <IonItem>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
@@ -851,31 +833,124 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonItem>
               )}
             </IonList>
-          </IonCardContent>
-        </IonCard>
 
-        {/* ZEITFENSTER */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        {/* SERIEN-EVENT */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#6c757d',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(108, 117, 125, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={copy} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Event-Serie (optional)
+          </h2>
+        </div>
+
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
+          <IonItem>
+            <IonLabel>Als Serie erstellen</IonLabel>
+            <IonToggle
+              checked={formData.is_series}
+              onIonChange={(e) => setFormData({ ...formData, is_series: e.detail.checked })}
+              disabled={loading}
+            />
+          </IonItem>
+
+          {formData.is_series && (
+            <>
+              <IonItem>
+                <IonLabel position="stacked">Anzahl Events</IonLabel>
+                <IonInput
+                  type="text"
+                  inputMode="numeric"
+                  value={formData.series_count.toString()}
+                  onIonInput={(e) => {
+                    const value = e.detail.value!;
+                    if (value === '') {
+                      setFormData({ ...formData, series_count: 1 });
+                    } else {
+                      const num = parseInt(value);
+                      if (!isNaN(num) && num >= 1) {
+                        setFormData({ ...formData, series_count: num });
+                      }
+                    }
+                  }}
+                  placeholder="z.B. 4"
+                  disabled={loading}
+                  clearInput={true}
+                />
+              </IonItem>
+
+              <IonItem lines="none">
+                <IonLabel position="stacked">Intervall</IonLabel>
+                <IonSelect
+                  value={formData.series_interval}
+                  onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
+                  placeholder="Intervall wählen"
+                  disabled={loading}
+                  interface="action-sheet"
+                  interfaceOptions={{
+                    header: 'Intervall auswählen'
+                  }}
+                >
+                  <IonSelectOption value="day">Täglich</IonSelectOption>
+                  <IonSelectOption value="week">Wöchentlich</IonSelectOption>
+                  <IonSelectOption value="2weeks">Alle 2 Wochen</IonSelectOption>
+                  <IonSelectOption value="month">Monatlich</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+            </>
+          )}
+
+          {!formData.is_series && (
+            <IonItem lines="none" style={{ opacity: 0.6 }}>
+              <IonLabel color="medium">
+                <p>Einzelnes Event</p>
+              </IonLabel>
+            </IonItem>
+          )}
+        </IonList>
+
+        {/* ZEITFENSTER */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '24px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#eb445a',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -883,10 +958,8 @@ const EventModal: React.FC<EventModalProps> = ({
             Zeitfenster (optional)
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
+
+        <IonList style={{ padding: '0 16px 16px 16px' }}>
               <IonItem>
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
                 <IonToggle
@@ -924,22 +997,20 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonItem>
               )}
             </IonList>
-          </IonCardContent>
-        </IonCard>
 
         {/* ZEITFENSTER DETAILS */}
         {formData.has_timeslots && timeslots.map((timeslot, index) => (
           <div key={index}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '12px',
-              margin: '24px 16px 8px 16px'
+              margin: '24px 16px 12px 16px'
             }}>
-              <div style={{ 
-                width: '24px', 
+              <div style={{
+                width: '24px',
                 height: '24px',
-                backgroundColor: '#6c757d',
+                backgroundColor: '#eb445a',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -950,8 +1021,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   {index + 1}
                 </span>
               </div>
-              <h3 style={{ 
-                fontWeight: '500', 
+              <h3 style={{
+                fontWeight: '500',
                 fontSize: '1rem',
                 margin: '0',
                 color: '#333',
@@ -969,10 +1040,8 @@ const EventModal: React.FC<EventModalProps> = ({
                 <IonIcon icon={trash} />
               </IonButton>
             </div>
-            
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-            <IonCardContent style={{ padding: '12px 0' }}>
-              <IonList style={{ background: 'transparent' }}>
+
+            <IonList style={{ padding: '0 16px 16px 16px' }}>
                 <IonItem>
                   <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
                   <IonInput
@@ -1050,124 +1119,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   />
                 </IonItem>
               </IonList>
-            </IonCardContent>
-          </IonCard>
           </div>
         ))}
-
-        {/* EVENT-SERIE (nur für neue Events) */}
-        {(!event?.id || event?.id === 0) && (
-          <>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '12px',
-              margin: '24px 16px 8px 16px'
-            }}>
-              <div style={{ 
-                width: '32px', 
-                height: '32px',
-                backgroundColor: '#17a2b8',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
-              </div>
-              <h2 style={{ 
-                fontWeight: '600', 
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Event-Serie (optional)
-              </h2>
-            </div>
-            
-            <IonCard style={{ margin: '0 16px 48px 16px', borderRadius: '12px' }}>
-              <IonCardContent style={{ padding: '12px 0' }}>
-                <IonList style={{ background: 'transparent' }}>
-                  {/* Serienoptionen nur bei neuen Events anzeigen (Serienkaskaden verhindern) */}
-                  {!event && (
-                    <>
-                      <IonItem>
-                        <IonLabel>Event-Serie erstellen</IonLabel>
-                        <IonToggle
-                          checked={formData.is_series}
-                          onIonChange={(e) => {
-                            const isSeries = e.detail.checked;
-                            setFormData({ ...formData, is_series: isSeries });
-                          }}
-                          disabled={loading}
-                        />
-                      </IonItem>
-
-                      {formData.is_series && (
-                        <>
-                          <IonItem>
-                            <IonLabel position="stacked">Anzahl Wiederholungen</IonLabel>
-                            <IonInput
-                              type="text"
-                              inputMode="numeric"
-                              value={formData.series_count.toString()}
-                              onIonInput={(e) => {
-                                const value = e.detail.value!;
-                                if (value === '') {
-                                  setFormData({ ...formData, series_count: 1 });
-                                } else {
-                                  const num = parseInt(value);
-                                  if (!isNaN(num) && num >= 1 && num <= 52) {
-                                    setFormData({ ...formData, series_count: num });
-                                  }
-                                }
-                              }}
-                              placeholder="z.B. 4"
-                              disabled={loading}
-                              clearInput={true}
-                            />
-                          </IonItem>
-
-                          <IonItem lines="none">
-                            <IonLabel position="stacked">Wiederholung</IonLabel>
-                            <IonSelect
-                              value={formData.series_interval}
-                              onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
-                              interface="action-sheet"
-                              disabled={loading}
-                            >
-                              <IonSelectOption value="week">Wöchentlich</IonSelectOption>
-                              <IonSelectOption value="month">Monatlich</IonSelectOption>
-                            </IonSelect>
-                          </IonItem>
-                        </>
-                      )}
-
-                      {!formData.is_series && (
-                        <IonItem lines="none" style={{ opacity: 0.6 }}>
-                          <IonLabel color="medium">
-                            <p>Event-Serie deaktiviert</p>
-                          </IonLabel>
-                        </IonItem>
-                      )}
-                    </>
-                  )}
-
-                  {/* Hinweis bei bestehenden Events */}
-                  {event && (
-                    <IonItem lines="none" style={{ opacity: 0.7 }}>
-                      <IonLabel color="medium">
-                        <p>ℹ️ Serienoptionen sind bei bestehenden Events nicht verfügbar</p>
-                      </IonLabel>
-                    </IonItem>
-                  )}
-                </IonList>
-              </IonCardContent>
-            </IonCard>
-          </>
-        )}
       </IonContent>
 
       {/* DateTime Modals */}
