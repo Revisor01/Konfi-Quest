@@ -775,13 +775,24 @@ const EventModal: React.FC<EventModalProps> = ({
                         }
                       }}
                       disabled={loading}
+                      style={{
+                        '--min-height': '56px',
+                        '--padding-start': '16px',
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        margin: '6px 0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '12px'
+                      }}
                     >
                       <IonCheckbox
                         slot="start"
                         checked={formData.category_ids.includes(category.id)}
                         disabled={loading}
+                        style={{ marginRight: '12px' }}
                       />
-                      <IonLabel style={{ marginLeft: '12px' }}>
+                      <IonLabel>
                         {category.name}
                       </IonLabel>
                     </IonItem>
@@ -827,13 +838,24 @@ const EventModal: React.FC<EventModalProps> = ({
                     }
                   }}
                   disabled={loading}
+                  style={{
+                    '--min-height': '56px',
+                    '--padding-start': '16px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '6px 0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}
                 >
                   <IonCheckbox
                     slot="start"
                     checked={formData.jahrgang_ids.includes(jahrgang.id)}
                     disabled={loading}
+                    style={{ marginRight: '12px' }}
                   />
-                  <IonLabel style={{ marginLeft: '12px' }}>
+                  <IonLabel>
                     {jahrgang.name}
                   </IonLabel>
                 </IonItem>

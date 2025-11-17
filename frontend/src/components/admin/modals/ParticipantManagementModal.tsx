@@ -25,7 +25,7 @@ import {
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
-import { close, person, people, trash, add, checkmark } from 'ionicons/icons';
+import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -204,33 +204,78 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>Teilnehmer verwalten</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
-              <IonIcon icon={close} />
+            <IonButton
+              onClick={handleClose}
+              disabled={loading}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
+              <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
-              <IonButton 
+              <IonButton
                 onClick={handleAddParticipants}
                 disabled={loading}
                 color="primary"
+                style={{
+                  '--background': '#eb445a',
+                  '--background-hover': '#d73847',
+                  '--color': 'white',
+                  '--border-radius': '8px'
+                }}
               >
-                <IonIcon icon={checkmark} />
+                <IonIcon icon={checkmarkOutline} />
               </IonButton>
             )}
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      
-      <IonContent>
-        {/* Add New Participants */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle>
-              <IonIcon icon={add} style={{ marginRight: '8px', color: '#eb445a' }} />
-              Teilnehmer hinzufügen
-            </IonCardTitle>
-          </IonCardHeader>
+
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION HEADER */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#eb445a',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={personAdd} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Teilnehmer hinzufügen
+          </h2>
+        </div>
+
+        {/* SEKTION CARD */}
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonSearchbar
               value={searchTerm}
@@ -241,7 +286,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
             {/* Timeslot Selection for events with timeslots */}
             {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
-              <IonItem style={{ marginBottom: '16px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked">Zeitslot auswählen *</IonLabel>
                 <IonSelect
                   value={selectedTimeslot}
@@ -255,12 +300,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   {eventData.timeslots.map((timeslot) => {
                     const available = (timeslot.registered_count || 0) < timeslot.max_participants;
                     return (
-                      <IonSelectOption 
-                        key={timeslot.id} 
+                      <IonSelectOption
+                        key={timeslot.id}
                         value={timeslot.id}
                         disabled={!available}
                       >
-                        {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} 
+                        {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
                         ({timeslot.registered_count || 0}/{timeslot.max_participants})
                         {!available && ' - Voll'}
                       </IonSelectOption>
