@@ -490,19 +490,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonRow>
                 <IonCol size="12">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#eb445a',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px',
-                      flexShrink: 0
-                    }}>
-                      <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
-                    </div>
+                    <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
                     <div>
                       <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
                         {formatDate(eventData?.event_date || '')}
@@ -534,19 +522,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         }
                       }}
                     >
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: '#eb445a',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '12px',
-                        flexShrink: 0
-                      }}>
-                        <IonIcon icon={location} style={{ fontSize: '1rem', color: 'white' }} />
-                      </div>
+                      <IonIcon icon={location} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#007aff', textDecoration: 'underline' }}>
                         {eventData.location}
                       </div>
@@ -554,19 +530,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   )}
 
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#eb445a',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px',
-                      flexShrink: 0
-                    }}>
-                      <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
+                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer
                     </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
                     <div style={{ fontSize: '1rem', color: '#333' }}>
                       {eventData?.registration_opens_at
                         ? `Ab ${formatDate(eventData.registration_opens_at)} ${formatTime(eventData.registration_opens_at)}`
@@ -578,19 +549,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
                   {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: '#eb445a',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '12px',
-                        flexShrink: 0
-                      }}>
-                        <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
-                      </div>
+                      <IonIcon icon={people} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         {eventData.jahrgaenge.map(j => j.name).join(', ')}
                       </div>

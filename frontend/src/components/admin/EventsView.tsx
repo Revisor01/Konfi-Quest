@@ -637,8 +637,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                           '--background-focused': 'white',
                           '--background-hover': 'white',
                           padding: '0 2px',
+                          paddingRight: '20px',
                           minWidth: '48px',
-                          maxWidth: '48px'
+                          maxWidth: '68px'
                         }}
                       >
                         <div style={{
