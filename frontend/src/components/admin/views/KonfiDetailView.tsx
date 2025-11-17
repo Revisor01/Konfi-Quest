@@ -625,7 +625,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           color="danger"
                           onClick={() => handleDeleteBonus(bonus)}
                         >
-                          <IonIcon icon={trash} />
+                          <IonIcon icon={trash} style={{ paddingRight: '8px' }} />
                         </IonItemOption>
                       </IonItemOptions>
                     </IonItemSliding>
@@ -924,7 +924,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             color="danger"
                             onClick={() => handleDeleteActivity(activity)}
                           >
-                            <IonIcon icon={trash} />
+                            <IonIcon icon={trash} style={{ paddingRight: '8px' }} />
                           </IonItemOption>
                         </IonItemOptions>
                       )}
