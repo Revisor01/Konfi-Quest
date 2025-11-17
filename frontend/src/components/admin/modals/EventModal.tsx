@@ -759,10 +759,11 @@ const EventModal: React.FC<EventModalProps> = ({
                     </IonLabel>
                   </IonItem>
                   {categories.map((category) => (
-                    <IonItem 
-                      key={category.id} 
+                    <IonItem
+                      key={category.id}
                       lines="none"
                       button
+                      detail={false}
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -810,10 +811,11 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonLabel>
               </IonItem>
               {jahrgaenge.map((jahrgang) => (
-                <IonItem 
-                  key={jahrgang.id} 
+                <IonItem
+                  key={jahrgang.id}
                   lines="none"
                   button
+                  detail={false}
                   onClick={() => {
                     if (!loading) {
                       setFormData(prev => ({
@@ -882,6 +884,7 @@ const EventModal: React.FC<EventModalProps> = ({
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
+                  slot="end"
                   checked={formData.waitlist_enabled}
                   onIonChange={(e) => {
                     setFormData({ ...formData, waitlist_enabled: e.detail.checked });
@@ -990,6 +993,7 @@ const EventModal: React.FC<EventModalProps> = ({
                   <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                     <IonLabel>Als Serie erstellen</IonLabel>
                     <IonToggle
+                      slot="end"
                       checked={formData.is_series}
                       onIonChange={(e) => setFormData({ ...formData, is_series: e.detail.checked })}
                       disabled={loading}
@@ -1117,6 +1121,7 @@ const EventModal: React.FC<EventModalProps> = ({
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
                 <IonToggle
+                  slot="end"
                   checked={formData.has_timeslots}
                   onIonChange={(e) => {
                     const hasTimeslots = e.detail.checked;
