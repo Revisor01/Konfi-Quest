@@ -8,9 +8,10 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   router.get('/', rbacVerifier, async (req, res) => {
     try {
       const query = `
-        SELECT e.*, 
+        SELECT e.*,
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as waitlist_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
                 COUNT(DISTINCT eb.id) as total_participants,
                 CASE 
                   WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
@@ -26,11 +27,11 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
                 CASE 
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at THEN 'closed'
-                  WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= 
-                    CASE 
+                  WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >=
+                    CASE
                       WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
                       ELSE e.max_participants
-                    END AND 
+                    END AND
                        (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status
@@ -55,7 +56,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       
       // Debug: Log registration status calculations
       rows.forEach(event => {
-        console.log(`Event ${event.name}: registered=${event.registered_count}/${event.max_participants}, pending=${event.pending_count}, waitlist_enabled=${event.waitlist_enabled}, max_waitlist=${event.max_waitlist_size}, status=${event.registration_status}`);
+        console.log(`Event ${event.name}: registered=${event.registered_count}/${event.max_participants}, waitlist=${event.waitlist_count}, unprocessed=${event.unprocessed_count}, status=${event.registration_status}`);
       });
       
       // Transform the data to include categories and jahrgaenge arrays
@@ -88,8 +89,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           ...row,
           categories: categories,
           jahrgaenge: jahrgaenge,
-          waitlist_count: parseInt(row.pending_count, 10) || 0,
-          pending_bookings_count: parseInt(row.pending_count, 10) || 0
+          waitlist_count: parseInt(row.waitlist_count, 10) || 0,
+          pending_bookings_count: parseInt(row.unprocessed_count, 10) || 0
         };
       });
       
@@ -107,7 +108,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       const query = `
         SELECT e.*, 
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as pending_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as waitlist_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
                 STRING_AGG(DISTINCT c.name, ',') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
@@ -156,8 +158,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           categories: categories,
           jahrgaenge: jahrgaenge,
           registration_status: 'cancelled',
-          waitlist_count: parseInt(row.pending_count, 10) || 0,
-          pending_bookings_count: parseInt(row.pending_count, 10) || 0
+          waitlist_count: parseInt(row.waitlist_count, 10) || 0,
+          pending_bookings_count: parseInt(row.unprocessed_count, 10) || 0
         };
       });
       
