@@ -417,29 +417,29 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* EVENT GRUNDDATEN */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '16px 16px 8px 16px'
+          margin: '16px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#007aff',
+            backgroundColor: '#eb445a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 123, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -447,40 +447,78 @@ const EventModal: React.FC<EventModalProps> = ({
             Event Grunddaten
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
-                <IonLabel position="stacked">Event Name *</IonLabel>
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Event Name *</IonLabel>
                 <IonInput
                   value={formData.name}
                   onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                   placeholder="z.B. Konfirmandenausflug"
                   disabled={loading}
                   clearInput={true}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    'border': '1px solid #e0e0e0',
+                    'borderRadius': '8px',
+                    'marginTop': '4px'
+                  }}
                 />
               </IonItem>
 
-              <IonItem>
-                <IonLabel position="stacked">Beschreibung</IonLabel>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
                   onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                   placeholder="Beschreibung des Events..."
                   rows={3}
                   disabled={loading}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    '--padding-top': '8px',
+                    '--padding-bottom': '8px',
+                    'border': '1px solid #e0e0e0',
+                    'borderRadius': '8px',
+                    'marginTop': '4px'
+                  }}
                 />
               </IonItem>
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Ort</IonLabel>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Ort</IonLabel>
                 <IonInput
                   value={formData.location}
                   onIonInput={(e) => setFormData({ ...formData, location: e.detail.value! })}
                   placeholder="z.B. Gemeindehaus"
                   disabled={loading}
                   clearInput={true}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    'border': '1px solid #e0e0e0',
+                    'borderRadius': '8px',
+                    'marginTop': '4px'
+                  }}
                 />
               </IonItem>
             </IonList>
@@ -488,27 +526,27 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonCard>
 
         {/* DATUM & ZEIT */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#28a745',
+            backgroundColor: '#16a34a',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(40, 167, 69, 0.3)',
+            boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -516,55 +554,82 @@ const EventModal: React.FC<EventModalProps> = ({
             Datum & Zeit
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
-                <IonDatetimeButton datetime="event-date-picker" />
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent',
+                paddingBottom: '12px'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Event Datum & Uhrzeit *</IonLabel>
+                <IonDatetimeButton datetime="event-date-picker" style={{
+                  marginTop: '4px'
+                }} />
               </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Endzeit (optional)</IonLabel>
-                <IonDatetimeButton datetime="end-time-picker" />
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent',
+                paddingBottom: '12px'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Endzeit (optional)</IonLabel>
+                <IonDatetimeButton datetime="end-time-picker" style={{
+                  marginTop: '4px'
+                }} />
               </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '12px' }}>
-                <IonLabel position="stacked">Anmeldung ab</IonLabel>
-                <IonDatetimeButton datetime="registration-opens-picker" />
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent',
+                paddingBottom: '12px'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Anmeldung ab</IonLabel>
+                <IonDatetimeButton datetime="registration-opens-picker" style={{
+                  marginTop: '4px'
+                }} />
               </IonItem>
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Anmeldeschluss</IonLabel>
-                <IonDatetimeButton datetime="registration-closes-picker" />
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Anmeldeschluss</IonLabel>
+                <IonDatetimeButton datetime="registration-closes-picker" style={{
+                  marginTop: '4px'
+                }} />
               </IonItem>
             </IonList>
           </IonCardContent>
         </IonCard>
 
         {/* PUNKTE & TEILNEHMER */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#f39c12',
+            backgroundColor: '#f59e0b',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(243, 156, 18, 0.3)',
+            boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -572,12 +637,16 @@ const EventModal: React.FC<EventModalProps> = ({
             Punkte & Teilnehmer
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
-                <IonLabel position="stacked">Punkte</IonLabel>
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Punkte</IonLabel>
                 <IonInput
                   type="text"
                   inputMode="numeric"
@@ -596,11 +665,23 @@ const EventModal: React.FC<EventModalProps> = ({
                   placeholder="z.B. 5"
                   disabled={loading}
                   clearInput={true}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    'border': '1px solid #e0e0e0',
+                    'borderRadius': '8px',
+                    'marginTop': '4px'
+                  }}
                 />
               </IonItem>
 
-              <IonItem>
-                <IonLabel position="stacked">Punkte-Art</IonLabel>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Punkte-Art</IonLabel>
                 <IonSelect
                   value={formData.point_type}
                   onIonChange={(e) => setFormData({ ...formData, point_type: e.detail.value })}
@@ -610,14 +691,24 @@ const EventModal: React.FC<EventModalProps> = ({
                   interfaceOptions={{
                     header: 'Punkte-Art auswählen'
                   }}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    'marginTop': '4px'
+                  }}
                 >
                   <IonSelectOption value="gemeinde">Gemeindepunkte</IonSelectOption>
                   <IonSelectOption value="gottesdienst">Gottesdienstpunkte</IonSelectOption>
                 </IonSelect>
               </IonItem>
 
-              <IonItem lines="none">
-                <IonLabel position="stacked">Max. Teilnehmer *</IonLabel>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Max. Teilnehmer *</IonLabel>
                 <IonInput
                   type="text"
                   inputMode="numeric"
@@ -636,6 +727,14 @@ const EventModal: React.FC<EventModalProps> = ({
                   placeholder="z.B. 20"
                   disabled={loading}
                   clearInput={true}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    'border': '1px solid #e0e0e0',
+                    'borderRadius': '8px',
+                    'marginTop': '4px'
+                  }}
                 />
               </IonItem>
             </IonList>
@@ -643,27 +742,27 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonCard>
 
         {/* KATEGORIEN & ZIELGRUPPE */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#9b59b6',
+            backgroundColor: '#8b5cf6',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -671,21 +770,26 @@ const EventModal: React.FC<EventModalProps> = ({
             Kategorien & Zielgruppe
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
               {categories.length > 0 ? (
                 <>
-                  <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                  <IonItem style={{
+                    '--padding-start': '16px',
+                    '--padding-end': '16px',
+                    '--background': 'transparent',
+                    paddingBottom: '8px'
+                  }}>
                     <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
                       Kategorien (mehrere möglich)
                       {formData.category_ids.length > 0 && (
-                        <span style={{ 
-                          marginLeft: '8px', 
-                          fontSize: '0.8rem', 
-                          color: '#007aff',
-                          fontWeight: 'normal' 
+                        <span style={{
+                          marginLeft: '8px',
+                          fontSize: '0.8rem',
+                          color: '#eb445a',
+                          fontWeight: 'normal'
                         }}>
                           ({formData.category_ids.length} ausgewählt)
                         </span>
@@ -693,9 +797,8 @@ const EventModal: React.FC<EventModalProps> = ({
                     </IonLabel>
                   </IonItem>
                   {categories.map((category) => (
-                    <IonItem 
-                      key={category.id} 
-                      lines="none"
+                    <IonItem
+                      key={category.id}
                       button
                       onClick={() => {
                         if (!loading) {
@@ -708,6 +811,11 @@ const EventModal: React.FC<EventModalProps> = ({
                         }
                       }}
                       disabled={loading}
+                      style={{
+                        '--padding-start': '16px',
+                        '--padding-end': '16px',
+                        '--background': 'transparent'
+                      }}
                     >
                       <IonCheckbox
                         slot="start"
@@ -721,22 +829,32 @@ const EventModal: React.FC<EventModalProps> = ({
                   ))}
                 </>
               ) : (
-                <IonItem>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent'
+                }}>
                   <IonLabel color="medium">
                     <p>Keine Kategorien verfügbar</p>
                   </IonLabel>
                 </IonItem>
               )}
 
-              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent',
+                paddingBottom: '8px',
+                paddingTop: '16px'
+              }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
                   Jahrgänge (mehrere möglich) *
                   {formData.jahrgang_ids.length > 0 && (
-                    <span style={{ 
-                      marginLeft: '8px', 
-                      fontSize: '0.8rem', 
-                      color: '#007aff',
-                      fontWeight: 'normal' 
+                    <span style={{
+                      marginLeft: '8px',
+                      fontSize: '0.8rem',
+                      color: '#eb445a',
+                      fontWeight: 'normal'
                     }}>
                       ({formData.jahrgang_ids.length} ausgewählt)
                     </span>
@@ -744,9 +862,8 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonLabel>
               </IonItem>
               {jahrgaenge.map((jahrgang) => (
-                <IonItem 
-                  key={jahrgang.id} 
-                  lines="none"
+                <IonItem
+                  key={jahrgang.id}
                   button
                   onClick={() => {
                     if (!loading) {
@@ -759,6 +876,11 @@ const EventModal: React.FC<EventModalProps> = ({
                     }
                   }}
                   disabled={loading}
+                  style={{
+                    '--padding-start': '16px',
+                    '--padding-end': '16px',
+                    '--background': 'transparent'
+                  }}
                 >
                   <IonCheckbox
                     slot="start"
@@ -775,27 +897,27 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonCard>
 
         {/* ANMELDUNGEN & WARTELISTE */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#e74c3c',
+            backgroundColor: '#dc2626',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)',
+            boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -803,11 +925,15 @@ const EventModal: React.FC<EventModalProps> = ({
             Anmeldungen & Warteliste
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
                   checked={formData.waitlist_enabled}
@@ -819,8 +945,12 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonItem>
 
               {formData.waitlist_enabled && (
-                <IonItem lines="none">
-                  <IonLabel position="stacked">Max. Wartelisten-Plätze</IonLabel>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent'
+                }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Max. Wartelisten-Plätze</IonLabel>
                   <IonInput
                     type="text"
                     inputMode="numeric"
@@ -839,12 +969,25 @@ const EventModal: React.FC<EventModalProps> = ({
                     placeholder="z.B. 10"
                     disabled={loading}
                     clearInput={true}
+                    style={{
+                      '--background': '#f8f9fa',
+                      '--padding-start': '12px',
+                      '--padding-end': '12px',
+                      'border': '1px solid #e0e0e0',
+                      'borderRadius': '8px',
+                      'marginTop': '4px'
+                    }}
                   />
                 </IonItem>
               )}
 
               {!formData.waitlist_enabled && (
-                <IonItem lines="none" style={{ opacity: 0.6 }}>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent',
+                  opacity: 0.6
+                }}>
                   <IonLabel color="medium">
                     <p>Warteliste deaktiviert</p>
                   </IonLabel>
@@ -855,27 +998,27 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonCard>
 
         {/* ZEITFENSTER */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '12px',
-          margin: '24px 16px 8px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
-          <div style={{ 
-            width: '32px', 
+          <div style={{
+            width: '32px',
             height: '32px',
-            backgroundColor: '#6c757d',
+            backgroundColor: '#6366f1',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(108, 117, 125, 0.3)',
+            boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-          <h2 style={{ 
-            fontWeight: '600', 
+          <h2 style={{
+            fontWeight: '600',
             fontSize: '1.1rem',
             margin: '0',
             color: '#333'
@@ -883,11 +1026,15 @@ const EventModal: React.FC<EventModalProps> = ({
             Zeitfenster (optional)
           </h2>
         </div>
-        
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem>
+
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              <IonItem style={{
+                '--padding-start': '16px',
+                '--padding-end': '16px',
+                '--background': 'transparent'
+              }}>
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
                 <IonToggle
                   checked={formData.has_timeslots}
@@ -903,10 +1050,15 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonItem>
 
               {formData.has_timeslots && (
-                <IonItem lines="none" style={{ padding: '8px 16px' }}>
-                  <IonButton 
-                    fill="outline" 
-                    onClick={addTimeslot} 
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent',
+                  padding: '8px 16px'
+                }}>
+                  <IonButton
+                    fill="outline"
+                    onClick={addTimeslot}
                     disabled={loading}
                     style={{ width: '100%' }}
                   >
@@ -917,7 +1069,12 @@ const EventModal: React.FC<EventModalProps> = ({
               )}
 
               {!formData.has_timeslots && (
-                <IonItem lines="none" style={{ opacity: 0.6 }}>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent',
+                  opacity: 0.6
+                }}>
                   <IonLabel color="medium">
                     <p>Zeitfenster deaktiviert</p>
                   </IonLabel>
@@ -930,16 +1087,16 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* ZEITFENSTER DETAILS */}
         {formData.has_timeslots && timeslots.map((timeslot, index) => (
           <div key={index}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '12px',
-              margin: '24px 16px 8px 16px'
+              margin: '16px 16px 8px 16px'
             }}>
-              <div style={{ 
-                width: '24px', 
+              <div style={{
+                width: '24px',
                 height: '24px',
-                backgroundColor: '#6c757d',
+                backgroundColor: '#6366f1',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -950,8 +1107,8 @@ const EventModal: React.FC<EventModalProps> = ({
                   {index + 1}
                 </span>
               </div>
-              <h3 style={{ 
-                fontWeight: '500', 
+              <h3 style={{
+                fontWeight: '500',
                 fontSize: '1rem',
                 margin: '0',
                 color: '#333',
@@ -969,12 +1126,16 @@ const EventModal: React.FC<EventModalProps> = ({
                 <IonIcon icon={trash} />
               </IonButton>
             </div>
-            
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', border: '1px solid #e0e0e0' }}>
-            <IonCardContent style={{ padding: '12px 0' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem>
-                  <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
+
+            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', border: '1px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent'
+                }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Startzeit (HH:MM)</IonLabel>
                   <IonInput
                     type="time"
                     value={timeslot.start_time ? new Date(timeslot.start_time).toTimeString().slice(0, 5) : ''}
@@ -985,23 +1146,35 @@ const EventModal: React.FC<EventModalProps> = ({
                         const [hours, minutes] = timeValue.split(':');
                         const eventDate = new Date(formData.event_date);
                         eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                        
+
                         // Helper function für konsistente ISO-Strings
                         const toIonDatetimeISO = (date: Date) => {
                           const pad = (num: number) => num.toString().padStart(2, '0');
                           return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
                         };
-                        
+
                         updateTimeslot(index, 'start_time', toIonDatetimeISO(eventDate));
                       }
                     }}
                     placeholder="z.B. 10:00"
                     disabled={loading}
                     step="900"
+                    style={{
+                      '--background': '#f8f9fa',
+                      '--padding-start': '12px',
+                      '--padding-end': '12px',
+                      'border': '1px solid #e0e0e0',
+                      'borderRadius': '8px',
+                      'marginTop': '4px'
+                    }}
                   />
                 </IonItem>
-                <IonItem>
-                  <IonLabel position="stacked">Endzeit (HH:MM)</IonLabel>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent'
+                }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Endzeit (HH:MM)</IonLabel>
                   <IonInput
                     type="time"
                     value={timeslot.end_time ? new Date(timeslot.end_time).toTimeString().slice(0, 5) : ''}
@@ -1012,23 +1185,35 @@ const EventModal: React.FC<EventModalProps> = ({
                         const [hours, minutes] = timeValue.split(':');
                         const eventDate = new Date(formData.event_date);
                         eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                        
+
                         // Helper function für konsistente ISO-Strings
                         const toIonDatetimeISO = (date: Date) => {
                           const pad = (num: number) => num.toString().padStart(2, '0');
                           return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
                         };
-                        
+
                         updateTimeslot(index, 'end_time', toIonDatetimeISO(eventDate));
                       }
                     }}
                     placeholder="z.B. 11:00"
                     disabled={loading}
                     step="900"
+                    style={{
+                      '--background': '#f8f9fa',
+                      '--padding-start': '12px',
+                      '--padding-end': '12px',
+                      'border': '1px solid #e0e0e0',
+                      'borderRadius': '8px',
+                      'marginTop': '4px'
+                    }}
                   />
                 </IonItem>
-                <IonItem lines="none">
-                  <IonLabel position="stacked">Max. Teilnehmer</IonLabel>
+                <IonItem style={{
+                  '--padding-start': '16px',
+                  '--padding-end': '16px',
+                  '--background': 'transparent'
+                }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Max. Teilnehmer</IonLabel>
                   <IonInput
                     type="text"
                     inputMode="numeric"
@@ -1047,6 +1232,14 @@ const EventModal: React.FC<EventModalProps> = ({
                     placeholder="z.B. 10"
                     disabled={loading}
                     clearInput={true}
+                    style={{
+                      '--background': '#f8f9fa',
+                      '--padding-start': '12px',
+                      '--padding-end': '12px',
+                      'border': '1px solid #e0e0e0',
+                      'borderRadius': '8px',
+                      'marginTop': '4px'
+                    }}
                   />
                 </IonItem>
               </IonList>
@@ -1058,27 +1251,27 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* EVENT-SERIE (nur für neue Events) */}
         {(!event?.id || event?.id === 0) && (
           <>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '12px',
-              margin: '24px 16px 8px 16px'
+              margin: '24px 16px 12px 16px'
             }}>
-              <div style={{ 
-                width: '32px', 
+              <div style={{
+                width: '32px',
                 height: '32px',
-                backgroundColor: '#17a2b8',
+                backgroundColor: '#0ea5e9',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
+                boxShadow: '0 2px 8px rgba(14, 165, 233, 0.3)',
                 flexShrink: 0
               }}>
                 <IonIcon icon={time} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
-              <h2 style={{ 
-                fontWeight: '600', 
+              <h2 style={{
+                fontWeight: '600',
                 fontSize: '1.1rem',
                 margin: '0',
                 color: '#333'
@@ -1086,14 +1279,18 @@ const EventModal: React.FC<EventModalProps> = ({
                 Event-Serie (optional)
               </h2>
             </div>
-            
-            <IonCard style={{ margin: '0 16px 48px 16px', borderRadius: '12px' }}>
-              <IonCardContent style={{ padding: '12px 0' }}>
-                <IonList style={{ background: 'transparent' }}>
+
+            <IonCard style={{ margin: '0 16px 48px 16px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <IonCardContent style={{ padding: '8px 0' }}>
+                <IonList lines="none" style={{ background: 'transparent' }}>
                   {/* Serienoptionen nur bei neuen Events anzeigen (Serienkaskaden verhindern) */}
                   {!event && (
                     <>
-                      <IonItem>
+                      <IonItem style={{
+                        '--padding-start': '16px',
+                        '--padding-end': '16px',
+                        '--background': 'transparent'
+                      }}>
                         <IonLabel>Event-Serie erstellen</IonLabel>
                         <IonToggle
                           checked={formData.is_series}
@@ -1107,8 +1304,12 @@ const EventModal: React.FC<EventModalProps> = ({
 
                       {formData.is_series && (
                         <>
-                          <IonItem>
-                            <IonLabel position="stacked">Anzahl Wiederholungen</IonLabel>
+                          <IonItem style={{
+                            '--padding-start': '16px',
+                            '--padding-end': '16px',
+                            '--background': 'transparent'
+                          }}>
+                            <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Anzahl Wiederholungen</IonLabel>
                             <IonInput
                               type="text"
                               inputMode="numeric"
@@ -1127,16 +1328,34 @@ const EventModal: React.FC<EventModalProps> = ({
                               placeholder="z.B. 4"
                               disabled={loading}
                               clearInput={true}
+                              style={{
+                                '--background': '#f8f9fa',
+                                '--padding-start': '12px',
+                                '--padding-end': '12px',
+                                'border': '1px solid #e0e0e0',
+                                'borderRadius': '8px',
+                                'marginTop': '4px'
+                              }}
                             />
                           </IonItem>
 
-                          <IonItem lines="none">
-                            <IonLabel position="stacked">Wiederholung</IonLabel>
+                          <IonItem style={{
+                            '--padding-start': '16px',
+                            '--padding-end': '16px',
+                            '--background': 'transparent'
+                          }}>
+                            <IonLabel position="stacked" style={{ marginBottom: '8px', fontWeight: '500', fontSize: '0.9rem' }}>Wiederholung</IonLabel>
                             <IonSelect
                               value={formData.series_interval}
                               onIonChange={(e) => setFormData({ ...formData, series_interval: e.detail.value })}
                               interface="action-sheet"
                               disabled={loading}
+                              style={{
+                                '--background': '#f8f9fa',
+                                '--padding-start': '12px',
+                                '--padding-end': '12px',
+                                'marginTop': '4px'
+                              }}
                             >
                               <IonSelectOption value="week">Wöchentlich</IonSelectOption>
                               <IonSelectOption value="month">Monatlich</IonSelectOption>
@@ -1146,7 +1365,12 @@ const EventModal: React.FC<EventModalProps> = ({
                       )}
 
                       {!formData.is_series && (
-                        <IonItem lines="none" style={{ opacity: 0.6 }}>
+                        <IonItem style={{
+                          '--padding-start': '16px',
+                          '--padding-end': '16px',
+                          '--background': 'transparent',
+                          opacity: 0.6
+                        }}>
                           <IonLabel color="medium">
                             <p>Event-Serie deaktiviert</p>
                           </IonLabel>
@@ -1157,9 +1381,14 @@ const EventModal: React.FC<EventModalProps> = ({
 
                   {/* Hinweis bei bestehenden Events */}
                   {event && (
-                    <IonItem lines="none" style={{ opacity: 0.7 }}>
+                    <IonItem style={{
+                      '--padding-start': '16px',
+                      '--padding-end': '16px',
+                      '--background': 'transparent',
+                      opacity: 0.7
+                    }}>
                       <IonLabel color="medium">
-                        <p>ℹ️ Serienoptionen sind bei bestehenden Events nicht verfügbar</p>
+                        <p>Serienoptionen sind bei bestehenden Events nicht verfügbar</p>
                       </IonLabel>
                     </IonItem>
                   )}
