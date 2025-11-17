@@ -895,7 +895,9 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           ]);
           eventId = newEvent.id;
         }
-        
+
+        // IMPORTANT: Create relationPromises array INSIDE the loop for each event
+        // This prevents promises from previous events being executed again
         const relationPromises = [];
         if (category_ids && category_ids.length) {
           const catQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
@@ -913,19 +915,20 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
             const slotEnd = new Date(slot.end_time);
             const adjustedStart = new Date(date);
             const adjustedEnd = new Date(date);
-            
+
             adjustedStart.setHours(slotStart.getHours(), slotStart.getMinutes(), 0, 0);
             adjustedEnd.setHours(slotEnd.getHours(), slotEnd.getMinutes(), 0, 0);
-            
+
             relationPromises.push(db.query(tsQuery, [
-              eventId, 
-              adjustedStart.toISOString(), 
-              adjustedEnd.toISOString(), 
-              slot.max_participants, 
+              eventId,
+              adjustedStart.toISOString(),
+              adjustedEnd.toISOString(),
+              slot.max_participants,
               req.user.organization_id
             ]));
           });
         }
+        // Wait for all relations of THIS event to be created before moving to next event
         await Promise.all(relationPromises);
       }
       
