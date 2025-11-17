@@ -85,12 +85,13 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           }
         }
         
+        const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
         return {
           ...row,
           categories: categories,
           jahrgaenge: jahrgaenge,
           waitlist_count: parseInt(row.waitlist_count, 10) || 0,
-          pending_bookings_count: parseInt(row.unprocessed_count, 10) || 0
+          pending_bookings_count: unprocessedCount > 0 ? unprocessedCount : undefined
         };
       });
       
@@ -153,13 +154,14 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
           }
         }
         
+        const unprocessedCount = parseInt(row.unprocessed_count, 10) || 0;
         return {
           ...row,
           categories: categories,
           jahrgaenge: jahrgaenge,
           registration_status: 'cancelled',
           waitlist_count: parseInt(row.waitlist_count, 10) || 0,
-          pending_bookings_count: parseInt(row.unprocessed_count, 10) || 0
+          pending_bookings_count: unprocessedCount > 0 ? unprocessedCount : undefined
         };
       });
       
