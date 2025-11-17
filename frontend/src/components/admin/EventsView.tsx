@@ -335,7 +335,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
               </IonSegmentButton>
               <IonSegmentButton value="konfirmation">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem', color: '#8b5cf6' }}>Konfirmation</IonLabel>
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfi</IonLabel>
               </IonSegmentButton>
             </IonSegment>
           </IonCardContent>
