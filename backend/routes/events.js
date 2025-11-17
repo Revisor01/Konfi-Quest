@@ -394,7 +394,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
-      waitlist_enabled, max_waitlist_size
+      waitlist_enabled, max_waitlist_size, timeslots
     } = req.body;
     
     // For robust transactions, a dedicated client from the pool is best practice.
@@ -427,8 +427,8 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       // Clear and re-add categories and jahrgaenge
       await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
       await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
-      
-      // Add categories and jahrgaenge back sequentially 
+
+      // Add categories and jahrgaenge back sequentially
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
         const categoryQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
         await db.query(categoryQuery, [id, category_ids]);
@@ -437,7 +437,16 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
         const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
         await db.query(jahrgangQuery, [id, jahrgang_ids]);
       }
-      
+
+      // Handle timeslots - delete existing and add new ones
+      await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
+      if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
+        const timeslotQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
+        for (const slot of timeslots) {
+          await db.query(timeslotQuery, [id, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]);
+        }
+      }
+
       await db.query('COMMIT');
       res.json({ message: 'Event updated successfully' });
       
