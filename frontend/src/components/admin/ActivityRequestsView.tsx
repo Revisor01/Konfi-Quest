@@ -95,7 +95,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
   return (
     <>
-      {/* Header Gradient - Aktivitäten-Grün */}
+      {/* Header - Dashboard-Style */}
       <div style={{
         background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
         borderRadius: '24px',
@@ -103,138 +103,117 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         margin: '16px',
         marginBottom: '16px',
         boxShadow: '0 20px 40px rgba(22, 163, 74, 0.3)',
-        overflow: 'hidden'
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: '220px',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
+        {/* Überschrift - groß und überlappend */}
         <div style={{
-          padding: '32px 24px 24px 24px',
-          background: 'radial-gradient(circle at top right, rgba(255,255,255,0.15) 0%, transparent 70%)'
+          position: 'absolute',
+          top: '-5px',
+          left: '12px',
+          zIndex: 1
         }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: '20px'
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
           }}>
-            <div>
-              <h1 style={{
-                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
-                fontWeight: '700',
-                color: 'white',
-                margin: '0 0 4px 0',
-                letterSpacing: '-0.02em'
-              }}>
-                Anträge
-              </h1>
-              <p style={{
-                fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                color: 'rgba(255, 255, 255, 0.85)',
-                margin: '0'
-              }}>
-                Aktivitäten-Anträge verwalten
-              </p>
-            </div>
-          </div>
+            ANTRÄGE
+          </h2>
+        </div>
 
-          {/* Statistiken */}
-          <IonGrid style={{ padding: '0' }}>
+        {/* Content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          padding: '70px 24px 24px 24px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center'
+        }}>
+          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
-              <IonCol size="4">
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
                   padding: '16px 12px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                  color: 'white',
+                  textAlign: 'center'
                 }}>
-                  <IonIcon icon={document} style={{
-                    fontSize: '1.8rem',
-                    color: 'white',
-                    display: 'block',
-                    margin: '0 auto 8px'
-                  }} />
-                  <div style={{
-                    fontSize: '1.8rem',
-                    fontWeight: '700',
-                    color: 'white',
-                    lineHeight: '1',
-                    marginBottom: '4px'
-                  }}>
-                    {requests.length}
+                  <IonIcon
+                    icon={document}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{requests.length}</span>
                   </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    fontWeight: '500'
-                  }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Gesamt
                   </div>
                 </div>
               </IonCol>
-
-              <IonCol size="4">
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
                   padding: '16px 12px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                  color: 'white',
+                  textAlign: 'center'
                 }}>
-                  <IonIcon icon={hourglass} style={{
-                    fontSize: '1.8rem',
-                    color: 'white',
-                    display: 'block',
-                    margin: '0 auto 8px'
-                  }} />
-                  <div style={{
-                    fontSize: '1.8rem',
-                    fontWeight: '700',
-                    color: 'white',
-                    lineHeight: '1',
-                    marginBottom: '4px'
-                  }}>
-                    {getPendingCount()}
+                  <IonIcon
+                    icon={hourglass}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{getPendingCount()}</span>
                   </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    fontWeight: '500'
-                  }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Offen
                   </div>
                 </div>
               </IonCol>
-
-              <IonCol size="4">
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
                   padding: '16px 12px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                  color: 'white',
+                  textAlign: 'center'
                 }}>
-                  <IonIcon icon={checkmarkCircle} style={{
-                    fontSize: '1.8rem',
-                    color: 'white',
-                    display: 'block',
-                    margin: '0 auto 8px'
-                  }} />
-                  <div style={{
-                    fontSize: '1.8rem',
-                    fontWeight: '700',
-                    color: 'white',
-                    lineHeight: '1',
-                    marginBottom: '4px'
-                  }}>
-                    {getApprovedCount()}
+                  <IonIcon
+                    icon={checkmarkCircle}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{getApprovedCount()}</span>
                   </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    fontWeight: '500'
-                  }}>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                     Genehmigt
                   </div>
                 </div>
