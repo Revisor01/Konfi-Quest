@@ -377,7 +377,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {/* Header mit Icon und Status Badge */}
                     <div style={{
                       display: 'flex',
-                      alignItems: 'flex-start',
+                      alignItems: 'center',
                       gap: '12px',
                       marginBottom: '8px'
                     }}>
@@ -441,15 +441,36 @@ const EventsView: React.FC<EventsViewProps> = ({
                         )}
                       </h2>
 
-                      {/* Status Badge - rechtsbündig fixiert */}
+                      {/* Status Badges - rechtsbündig fixiert, in einer Zeile */}
                       <div style={{
                         marginLeft: 'auto',
                         display: 'flex',
-                        flexDirection: 'column',
                         gap: '4px',
-                        alignItems: 'flex-end',
+                        alignItems: 'center',
                         flexShrink: 0
                       }}>
+                        {/* Verbuchungs-Icon (vor Event-Status) */}
+                        {hasUnprocessedBookings && (
+                          <IonIcon
+                            icon={hourglass}
+                            style={{
+                              fontSize: '0.9rem',
+                              color: '#ff6b35'
+                            }}
+                          />
+                        )}
+
+                        {isFullyProcessed && (
+                          <IonIcon
+                            icon={checkmarkCircle}
+                            style={{
+                              fontSize: '0.9rem',
+                              color: '#34c759'
+                            }}
+                          />
+                        )}
+
+                        {/* Event-Status Badge */}
                         <span style={{
                           fontSize: '0.7rem',
                           color: (() => {
@@ -493,47 +514,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                             return 'GESCHLOSSEN';
                           })()}
                         </span>
-
-                        {/* Verbuchungs-Badge */}
-                        {hasUnprocessedBookings && (
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: '#ff6b35',
-                            fontWeight: '600',
-                            backgroundColor: 'rgba(255, 107, 53, 0.15)',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(255, 107, 53, 0.3)',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            <IonIcon icon={hourglass} style={{ fontSize: '0.7rem' }} />
-                            VERBUCHEN
-                          </span>
-                        )}
-
-                        {isFullyProcessed && (
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: '#34c759',
-                            fontWeight: '600',
-                            backgroundColor: 'rgba(52, 199, 89, 0.15)',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(52, 199, 89, 0.3)',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.7rem' }} />
-                            VERBUCHT
-                          </span>
-                        )}
                       </div>
                     </div>
 
