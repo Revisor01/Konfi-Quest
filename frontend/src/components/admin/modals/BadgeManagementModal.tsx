@@ -229,7 +229,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     switch (formData.criteria_type) {
       case 'specific_activity':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
             <IonLabel position="stacked" color="dark">
               <strong>Aktivität auswählen</strong>
             </IonLabel>
@@ -237,7 +237,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               value={extraCriteria.activity_id}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_id: e.detail.value })}
               placeholder="Aktivität wählen"
-              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+              interface="action-sheet"
             >
               {activities.map(activity => (
                 <IonSelectOption key={activity.id} value={activity.id}>
@@ -250,7 +250,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'category_activities':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
             <IonLabel position="stacked" color="dark">
               <strong>Kategorie auswählen</strong>
             </IonLabel>
@@ -258,7 +258,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               value={extraCriteria.required_category}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, required_category: e.detail.value })}
               placeholder="Kategorie wählen"
-              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+              interface="action-sheet"
             >
               {categories.map(category => (
                 <IonSelectOption key={category.id} value={category.name}>
@@ -271,7 +271,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'time_based':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
             <IonLabel position="stacked" color="dark">
               <strong>Zeitraum (Tage)</strong>
             </IonLabel>
@@ -282,14 +282,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               placeholder="7"
               min={1}
               max={365}
-              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
             />
           </IonItem>
         );
 
       case 'activity_combination':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent' }}>
+          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
             <IonLabel position="stacked" color="dark">
               <strong>Aktivitäten kombinieren</strong>
             </IonLabel>
@@ -298,7 +297,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               value={extraCriteria.activity_ids || []}
               onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_ids: e.detail.value })}
               placeholder="Aktivitäten wählen"
-              style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+              interface="action-sheet"
             >
               {activities.map(activity => (
                 <IonSelectOption key={activity.id} value={activity.id}>
@@ -341,29 +340,72 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} fill="clear">
+            <IonButton onClick={onClose} style={{
+              '--background': '#f8f9fa',
+              '--background-hover': '#e9ecef',
+              '--color': '#6c757d',
+              '--border-radius': '8px'
+            }}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={loading} fill="clear">
+            <IonButton
+              onClick={handleSave}
+              disabled={loading || !formData.name.trim()}
+              style={{
+                '--background': (loading || !formData.name.trim()) ? '#ccc' : '#667eea',
+                '--background-hover': '#5568d3',
+                '--color': 'white',
+                '--border-radius': '8px'
+              }}
+            >
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding"  style={{ '--background': '#f8f9fa' }}>
-        {/* Basis-Informationen */}
-        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
-              <IonIcon icon={trophy} style={{ marginRight: '8px', color: '#ffd700' }} />
-              Badge-Informationen
-            </IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+      <IonContent style={{ '--padding-top': '16px', '--background': '#f8f9fa' }}>
+        {/* SEKTION: Badge-Informationen */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#ffd700',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={trophy} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Badge-Informationen
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>Name *</strong>
               </IonLabel>
@@ -372,27 +414,26 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
                 placeholder="Badge-Name eingeben"
                 required
-                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+                clearInput
               />
             </IonItem>
 
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>Icon (Emoji)</strong>
               </IonLabel>
               <IonInput
                 value={formData.icon}
                 onIonInput={(e) => setFormData({ ...formData, icon: e.detail.value! })}
-                placeholder="🏆"
-                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+                placeholder="Verwende ein Icon aus ionicons/icons"
               />
             </IonItem>
 
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>Badge-Farbe</strong>
               </IonLabel>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
                 <input
                   type="color"
                   value={formData.color}
@@ -400,7 +441,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   style={{
                     width: '50px',
                     height: '40px',
-                    border: 'none',
+                    border: '2px solid #e0e0e0',
                     borderRadius: '8px',
                     cursor: 'pointer'
                   }}
@@ -409,12 +450,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   value={formData.color}
                   onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
                   placeholder="#667eea"
-                  style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+                  style={{ flex: 1 }}
                 />
               </div>
             </IonItem>
 
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>Beschreibung</strong>
               </IonLabel>
@@ -423,27 +464,57 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
                 placeholder="Beschreibung des Badges"
                 rows={3}
-                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
           </IonCardContent>
         </IonCard>
 
-        {/* Kriterien */}
-        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
-              <IonIcon icon={settings} style={{ marginRight: '8px', color: '#667eea' }} />
-              Badge-Kriterien
-            </IonCardTitle>
-            <IonText color="medium">
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem' }}>
-                Bestimme, wann dieses Badge verliehen wird
-              </p>
-            </IonText>
-          </IonCardHeader>
-          <IonCardContent>
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+        {/* SEKTION: Badge-Kriterien */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#667eea',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={settings} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Badge-Kriterien
+          </h2>
+        </div>
+        <div style={{
+          margin: '0 16px 8px 16px',
+          fontSize: '0.85rem',
+          color: '#666'
+        }}>
+          Bestimme, wann dieses Badge verliehen wird
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>Kriterium-Typ</strong>
               </IonLabel>
@@ -453,7 +524,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   setFormData({ ...formData, criteria_type: e.detail.value });
                   setExtraCriteria({}); // Reset extra criteria when type changes
                 }}
-                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
+                interface="action-sheet"
               >
                 {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => (
                   <IonSelectOption key={value} value={value}>
@@ -463,7 +534,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               </IonSelect>
             </IonItem>
 
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
                 <strong>{getValueLabel()}</strong>
               </IonLabel>
@@ -474,7 +545,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 placeholder="10"
                 min={1}
                 max={1000}
-                style={{ '--background': '#f8f9fa', '--border-radius': '8px', '--padding-start': '12px', '--padding-end': '12px' }}
               />
             </IonItem>
 
@@ -482,24 +552,55 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* Status-Einstellungen */}
-        <IonCard style={{ '--background': 'white', marginBottom: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle style={{ color: '#333', fontSize: '1.2rem' }}>
-              <IonIcon icon={ribbon} style={{ marginRight: '8px', color: '#ff6b6b' }} />
-              Badge-Status
-            </IonCardTitle>
-            <IonText color="medium">
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.9rem' }}>
-                Sichtbarkeit und Aktivierung des Badges
-              </p>
-            </IonText>
-          </IonCardHeader>
-          <IonCardContent>
-            <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+        {/* SEKTION: Badge-Status */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#ff6b6b',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={ribbon} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Badge-Status
+          </h2>
+        </div>
+        <div style={{
+          margin: '0 16px 8px 16px',
+          fontSize: '0.85rem',
+          color: '#666'
+        }}>
+          Sichtbarkeit und Aktivierung des Badges
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel>
-                <h3 style={{ color: '#333', margin: '0 0 4px 0' }}>Aktiv</h3>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>Badge kann verliehen werden</p>
+                <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
+                <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
               </IonLabel>
               <IonToggle
                 checked={formData.is_active}
@@ -508,10 +609,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               />
             </IonItem>
 
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
+            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
               <IonLabel>
-                <h3 style={{ color: '#333', margin: '0 0 4px 0' }}>Versteckt (Geheimes Badge)</h3>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
+                <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Versteckt (Geheimes Badge)</h3>
+                <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
               </IonLabel>
               <IonToggle
                 checked={formData.is_hidden}
