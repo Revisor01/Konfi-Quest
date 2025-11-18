@@ -315,6 +315,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     });
   };
 
+  const showWaitlistActionSheet = (participant: Participant) => {
+    presentActionSheet({
+      header: participant.participant_name,
+      subHeader: 'Warteliste verwalten',
+      buttons: [
+        {
+          text: 'Bestätigen',
+          icon: checkmark,
+          handler: () => handlePromoteParticipant(participant)
+        },
+        {
+          text: 'Entfernen',
+          icon: trash,
+          role: 'destructive',
+          handler: () => handleRemoveParticipant(participant)
+        },
+        {
+          text: 'Abbrechen',
+          role: 'cancel'
+        }
+      ]
+    });
+  };
+
   const handlePromoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, {
@@ -820,11 +844,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     }}
                   >
                     <IonItem
-                      button={participant.status === 'confirmed'}
+                      button
                       detail={false}
                       onClick={() => {
                         if (participant.status === 'confirmed') {
                           showAttendanceActionSheet(participant);
+                        } else if (participant.status === 'pending') {
+                          showWaitlistActionSheet(participant);
                         }
                       }}
                       style={{
@@ -931,64 +957,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       gap: '4px',
                       '--ion-item-background': 'transparent'
                     }}>
-                      {participant.status === 'pending' && (
-                        <IonItemOption
-                          onClick={() => handlePromoteParticipant(participant)}
-                          style={{
-                            '--background': 'transparent',
-                            '--background-activated': 'transparent',
-                            '--background-focused': 'transparent',
-                            '--background-hover': 'transparent',
-                            '--color': 'transparent',
-                            '--ripple-color': 'transparent',
-                            padding: '0 2px',
-                            minWidth: '48px',
-                            maxWidth: '48px'
-                          }}
-                        >
-                          <div style={{
-                            width: '44px',
-                            height: '44px',
-                            backgroundColor: '#2dd36f',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon icon={checkmark} style={{ fontSize: '1.2rem', color: 'white' }} />
-                          </div>
-                        </IonItemOption>
-                      )}
-                      {participant.status === 'confirmed' && (
-                        <IonItemOption
-                          onClick={() => handleDemoteParticipant(participant)}
-                          style={{
-                            '--background': 'transparent',
-                            '--background-activated': 'transparent',
-                            '--background-focused': 'transparent',
-                            '--background-hover': 'transparent',
-                            '--color': 'transparent',
-                            '--ripple-color': 'transparent',
-                            padding: '0 2px',
-                            minWidth: '48px',
-                            maxWidth: '48px'
-                          }}
-                        >
-                          <div style={{
-                            width: '44px',
-                            height: '44px',
-                            backgroundColor: '#ff9500',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon icon={list} style={{ fontSize: '1.2rem', color: 'white' }} />
-                          </div>
-                        </IonItemOption>
-                      )}
                       <IonItemOption
                         onClick={() => handleRemoveParticipant(participant)}
                         style={{
