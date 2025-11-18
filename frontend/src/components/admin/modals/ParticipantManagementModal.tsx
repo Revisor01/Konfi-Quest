@@ -336,76 +336,54 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     onClick={() => handleKonfiSelection(konfi.id)}
                     detail={false}
                     style={{
-                      '--min-height': '70px',
-                      '--padding-start': '16px',
-                      '--padding-top': '0px',
-                      '--padding-bottom': '0px',
+                      '--min-height': '60px',
+                      '--padding-start': '12px',
                       '--background': '#fbfbfb',
                       '--border-radius': '12px',
-                      margin: '6px 0',
+                      margin: '4px 0',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                       border: '1px solid #e0e0e0',
                       borderRadius: '12px'
                     }}
                   >
-                    <IonCheckbox
-                      slot="start"
-                      checked={selectedKonfis.includes(konfi.id)}
-                      onIonChange={() => handleKonfiSelection(konfi.id)}
-                      style={{ marginRight: '12px' }}
-                    />
-                    <IonLabel>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '4px'
-                      }}>
-                        {/* Initials Icon */}
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          backgroundColor: '#8b5cf6',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                        }}>
-                          <span style={{
-                            fontSize: '0.7rem',
-                            fontWeight: '600',
-                            color: 'white',
-                            textTransform: 'uppercase'
-                          }}>
-                            {konfi.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                          </span>
-                        </div>
-
-                        {/* Konfi Name */}
-                        <h3 style={{
-                          fontWeight: '600',
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#eb445a',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px',
+                      flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(235, 68, 90, 0.4)'
+                    }}>
+                      <IonIcon
+                        icon={person}
+                        style={{
                           fontSize: '1rem',
-                          margin: '0',
-                          color: '#333',
-                          lineHeight: '1.3'
-                        }}>
-                          {konfi.name}
-                        </h3>
-                      </div>
+                          color: 'white'
+                        }}
+                      />
+                    </div>
 
-                      {/* Jahrgang */}
+                    <IonLabel>
+                      <div style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '2px' }}>
+                        {konfi.name}
+                      </div>
                       {konfi.jahrgang_name && (
-                        <div style={{
-                          fontSize: '0.8rem',
-                          color: '#666',
-                          marginLeft: '40px'
-                        }}>
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
                           {konfi.jahrgang_name}
                         </div>
                       )}
                     </IonLabel>
+
+                    <IonCheckbox
+                      slot="end"
+                      checked={selectedKonfis.includes(konfi.id)}
+                      onIonChange={() => handleKonfiSelection(konfi.id)}
+                      color="danger"
+                    />
                   </IonItem>
                 ))
               )}
