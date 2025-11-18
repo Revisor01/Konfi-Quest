@@ -275,10 +275,11 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       onClick={() => onSelectRequest(request)}
                       detail={false}
                       style={{
-                        '--min-height': '110px',
-                        '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
+                        '--min-height': '60px',
+                        '--padding-start': '12px',
+                        '--padding-end': '12px',
+                        '--padding-top': '8px',
+                        '--padding-bottom': '8px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
                         margin: '4px 8px',
@@ -289,42 +290,25 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       }}
                     >
                       <IonLabel>
-                        {/* ZEILE 1: Header mit Icon und Status Badge */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '6px'
+                          gap: '10px'
                         }}>
-                          {/* 32px Status Icon */}
+                          {/* Status Indikator - klein */}
                           <div style={{
-                            width: '32px',
-                            height: '32px',
+                            width: '8px',
+                            height: '8px',
                             backgroundColor: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
                             borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: isPending
-                              ? '0 2px 8px rgba(255, 149, 0, 0.3)'
-                              : isApproved
-                              ? '0 2px 8px rgba(45, 211, 111, 0.3)'
-                              : '0 2px 8px rgba(220, 53, 69, 0.3)',
                             flexShrink: 0
-                          }}>
-                            <IonIcon
-                              icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
-                              style={{ fontSize: '1rem', color: 'white' }}
-                            />
-                          </div>
+                          }} />
 
                           {/* Konfi Name */}
-                          <h2 style={{
+                          <div style={{
                             fontWeight: '600',
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                            margin: '0',
+                            fontSize: '0.95rem',
                             color: '#333',
-                            lineHeight: '1.3',
                             flex: 1,
                             minWidth: 0,
                             overflow: 'hidden',
@@ -332,78 +316,43 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             whiteSpace: 'nowrap'
                           }}>
                             {request.konfi_name}
-                          </h2>
+                          </div>
 
-                          {/* Status Badge */}
+                          {/* Aktivität - verkürzt */}
                           <div style={{
-                            marginLeft: 'auto',
-                            display: 'flex',
-                            gap: '4px',
-                            alignItems: 'center',
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            maxWidth: '120px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                             flexShrink: 0
                           }}>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
-                              fontWeight: '600',
-                              backgroundColor: isPending
-                                ? 'rgba(255, 149, 0, 0.15)'
-                                : isApproved
-                                ? 'rgba(45, 211, 111, 0.15)'
-                                : 'rgba(220, 53, 69, 0.15)',
-                              padding: '3px 6px',
-                              borderRadius: '6px',
-                              border: isPending
-                                ? '1px solid rgba(255, 149, 0, 0.3)'
-                                : isApproved
-                                ? '1px solid rgba(45, 211, 111, 0.3)'
-                                : '1px solid rgba(220, 53, 69, 0.3)',
-                              whiteSpace: 'nowrap',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
-                            }}>
-                              {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
-                            </span>
+                            {request.activity_name}
                           </div>
-                        </div>
 
-                        {/* ZEILE 2: Aktivitäts-Name und Datum */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '0.85rem',
-                          color: '#666',
-                          marginBottom: '4px'
-                        }}>
-                          <IonIcon icon={document} style={{ fontSize: '0.9rem', color: '#2dd36f' }} />
-                          <span style={{ fontWeight: '500', color: '#333' }}>{request.activity_name}</span>
-                          <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: '#dc2626', marginLeft: '8px' }} />
-                          <span>{formatDate(request.requested_date)}</span>
-                        </div>
-
-                        {/* ZEILE 3: Zusatzinfos */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '16px',
-                          fontSize: '0.8rem',
-                          color: '#666'
-                        }}>
-                          {request.jahrgang_name && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={person} style={{ fontSize: '0.8rem', color: '#8b5cf6' }} />
-                              <span>{request.jahrgang_name}</span>
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#ff6b35' }} />
-                            <span>{formatDate(request.created_at)} {formatTime(request.created_at)}</span>
-                          </div>
-                          {request.comment && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={chatbubbleEllipses} style={{ fontSize: '0.8rem', color: '#007aff' }} />
-                            </div>
-                          )}
+                          {/* Status Badge */}
+                          <span style={{
+                            fontSize: '0.65rem',
+                            color: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
+                            fontWeight: '600',
+                            backgroundColor: isPending
+                              ? 'rgba(255, 149, 0, 0.15)'
+                              : isApproved
+                              ? 'rgba(45, 211, 111, 0.15)'
+                              : 'rgba(220, 53, 69, 0.15)',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
+                            border: isPending
+                              ? '1px solid rgba(255, 149, 0, 0.3)'
+                              : isApproved
+                              ? '1px solid rgba(45, 211, 111, 0.3)'
+                              : '1px solid rgba(220, 53, 69, 0.3)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0
+                          }}>
+                            {isPending ? 'OFFEN' : isApproved ? 'OK' : 'ABGELEHNT'}
+                          </span>
                         </div>
                       </IonLabel>
                     </IonItem>
