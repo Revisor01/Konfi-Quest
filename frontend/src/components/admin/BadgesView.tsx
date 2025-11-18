@@ -343,7 +343,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                     onClick={() => onSelectBadge(badge)}
                     detail={false}
                     style={{
-                      '--min-height': '110px',
+                      '--min-height': '95px',
                       '--padding-start': '16px',
                       '--padding-top': '0px',
                       '--padding-bottom': '0px',
@@ -366,18 +366,25 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         position: 'relative'
                       }}>
                         <div style={{
-                          width: '32px',
-                          height: '32px',
+                          width: '28px',
+                          height: '28px',
                           backgroundColor: isInactive ? '#6c757d' : badgeColor,
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: isInactive ? '0 2px 8px rgba(108, 117, 125, 0.3)' : `0 2px 8px ${badgeColor}50`,
-                          flexShrink: 0,
-                          fontSize: '1rem'
+                          boxShadow: isInactive
+                            ? '0 2px 8px rgba(108, 117, 125, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                            : `0 2px 8px ${badgeColor}50, inset 0 1px 2px rgba(255, 255, 255, 0.3)`,
+                          flexShrink: 0
                         }}>
-                          {badge.icon || '🏆'}
+                          <IonIcon
+                            icon={ribbon}
+                            style={{
+                              fontSize: '0.9rem',
+                              color: 'white'
+                            }}
+                          />
                         </div>
                         <h2 style={{
                           fontWeight: '600',
@@ -437,7 +444,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           fontSize: '0.85rem',
                           color: isInactive ? '#999' : '#666',
                           marginBottom: '6px',
-                          marginLeft: '44px',
+                          marginLeft: '40px',
                           display: '-webkit-box',
                           WebkitLineClamp: 1,
                           WebkitBoxOrient: 'vertical',
@@ -454,7 +461,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         gap: '16px',
                         fontSize: '0.8rem',
                         color: isInactive ? '#999' : '#666',
-                        marginLeft: '44px'
+                        marginLeft: '40px'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <IonIcon icon={star} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : '#ffc409' }} />
@@ -474,12 +481,37 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                     </IonLabel>
                   </IonItem>
 
-                  <IonItemOptions side="end">
+                  <IonItemOptions side="end" style={{
+                    gap: '4px',
+                    '--ion-item-background': 'transparent'
+                  }}>
                     <IonItemOption
-                      color="danger"
                       onClick={() => onDeleteBadge(badge)}
+                      style={{
+                        '--background': 'transparent',
+                        '--background-activated': 'transparent',
+                        '--background-focused': 'transparent',
+                        '--background-hover': 'transparent',
+                        '--color': 'transparent',
+                        '--ripple-color': 'transparent',
+                        padding: '0 2px',
+                        paddingRight: '20px',
+                        minWidth: '48px',
+                        maxWidth: '68px'
+                      }}
                     >
-                      <IonIcon icon={trash} />
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: '#dc3545',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                      }}>
+                        <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
                     </IonItemOption>
                   </IonItemOptions>
                 </IonItemSliding>
