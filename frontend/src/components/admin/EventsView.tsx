@@ -377,7 +377,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {/* Header mit Icon und Status Badge */}
                     <div style={{
                       display: 'flex',
-                      alignItems: 'center',
+                      alignItems: 'flex-start',
                       gap: '12px',
                       marginBottom: '8px'
                     }}>

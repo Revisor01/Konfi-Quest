@@ -116,6 +116,7 @@ interface EventDetailViewProps {
 
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
+  const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const { setSuccess, setError } = useApp();
   const [presentActionSheet] = useIonActionSheet();
 
@@ -271,7 +272,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
       }
 
-      loadEventData(); // Reload to update status
+      await loadEventData(); // Reload to update status
+
+      // Trigger events update for main list
+      window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (error) {
       setError('Fehler beim Aktualisieren der Anwesenheit');
     }
@@ -317,7 +321,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         status: 'confirmed'
       });
       setSuccess(`${participant.participant_name} von Warteliste bestätigt`);
-      loadEventData(); // Reload to update list
+      await loadEventData(); // Reload to update list
+
+      // Trigger events update for main list
+      window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (error) {
       console.error('Promote participant error:', error);
       setError('Fehler beim Bestätigen des Teilnehmers');
@@ -330,7 +337,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         status: 'pending'
       });
       setSuccess(`${participant.participant_name} auf Warteliste gesetzt`);
-      loadEventData(); // Reload to update list
+
+      // Close sliding item
+      const slidingItem = slidingRefs.current.get(participant.id);
+      if (slidingItem) {
+        await slidingItem.close();
+      }
+
+      await loadEventData(); // Reload to update list
+
+      // Trigger events update for main list
+      window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (error) {
       console.error('Demote participant error:', error);
       setError('Fehler beim Verschieben auf Warteliste');
@@ -342,7 +359,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       // Use booking ID for deletion, not user ID
       await api.delete(`/events/${eventId}/bookings/${participant.id}`);
       setSuccess('Teilnehmer entfernt');
-      loadEventData(); // Reload to update list
+      await loadEventData(); // Reload to update list
+
+      // Trigger events update for main list
+      window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (error) {
       console.error('Delete participant error:', error);
       setError('Fehler beim Entfernen des Teilnehmers');
@@ -789,7 +809,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonCardContent style={{ padding: '8px 0' }}>
               <IonList lines="none" style={{ background: 'transparent' }}>
                 {participants.map((participant) => (
-                  <IonItemSliding key={participant.id}>
+                  <IonItemSliding
+                    key={participant.id}
+                    ref={(el) => {
+                      if (el) {
+                        slidingRefs.current.set(participant.id, el);
+                      } else {
+                        slidingRefs.current.delete(participant.id);
+                      }
+                    }}
+                  >
                     <IonItem
                       button={participant.status === 'confirmed'}
                       detail={false}
