@@ -195,11 +195,29 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       let newBadges = 0;
       if (status === 'approved') {
         await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
-        
+
         const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
         await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
-        
+
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
+
+        // Datenschutz: Foto löschen nach Genehmigung
+        if (request.photo_filename) {
+          const fs = require('fs');
+          const path = require('path');
+          const photoPath = path.join(__dirname, '../uploads/activity-requests', request.photo_filename);
+
+          fs.unlink(photoPath, (err) => {
+            if (err) {
+              console.error('Error deleting photo:', err);
+            } else {
+              console.log(`Photo deleted for approved request ${requestId}: ${request.photo_filename}`);
+            }
+          });
+
+          // Foto-Referenz in DB entfernen
+          await db.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
+        }
       }
 
       // Send push notification to konfi
