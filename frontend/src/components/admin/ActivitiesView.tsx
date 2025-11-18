@@ -441,12 +441,34 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                 </IonItem>
 
                 {canDelete && (
-                  <IonItemOptions side="end">
-                    <IonItemOption 
-                      color="danger" 
+                  <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                    <IonItemOption
                       onClick={() => handleDeleteWithSlideClose(activity)}
+                      style={{
+                        '--background': 'transparent',
+                        '--background-activated': 'transparent',
+                        '--background-focused': 'transparent',
+                        '--background-hover': 'transparent',
+                        '--color': 'transparent',
+                        '--ripple-color': 'transparent',
+                        padding: '0 2px',
+                        paddingRight: '20px',
+                        minWidth: '48px',
+                        maxWidth: '68px'
+                      }}
                     >
-                      <IonIcon icon={trash} />
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: '#dc3545',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                      }}>
+                        <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
                     </IonItemOption>
                   </IonItemOptions>
                 )}

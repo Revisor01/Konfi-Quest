@@ -15,9 +15,11 @@ import {
   IonSelectOption,
   IonIcon,
   IonSpinner,
-  IonList
+  IonList,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
-import { checkmark, close } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, pricetag } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -64,7 +66,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       onClose();
     }
   };
-  
+
   const [formData, setFormData] = useState({
     name: '',
     points: 1,
@@ -80,7 +82,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       const response = await api.get('/admin/activities');
       const activities = response.data;
       const activityData = activities.find((act: Activity) => act.id === id);
-      
+
       if (activityData) {
         console.log('📦 Activity data found:', activityData);
         console.log('🏷️ Activity categories:', activityData.categories);
@@ -107,11 +109,11 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     const initializeModal = async () => {
       setInitializing(true);
       console.log('🔄 Starting modal initialization...');
-      
+
       try {
         // First load categories
         await loadCategories();
-        
+
         // Then load activity if activityId is provided
         if (activityId) {
           await loadActivity(activityId);
@@ -143,7 +145,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         console.log('✅ Modal initialization completed');
       }
     };
-    
+
     initializeModal();
   }, [activityId, activity]);
 
@@ -152,7 +154,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       console.log('🔄 Loading categories...');
       const response = await api.get('/admin/categories');
       console.log('📦 Categories received:', response.data);
-      
+
       // Don't filter - show ALL categories for activities
       // Categories with type=null should also be available for activities
       const allCategories = response.data;
@@ -185,7 +187,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         await api.post('/admin/activities', payload);
         setSuccess('Aktivität erstellt');
       }
-      
+
       onSuccess();
     } catch (error: any) {
       if (error.response?.data?.error) {
@@ -208,125 +210,222 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             {currentActivity ? 'Aktivität bearbeiten' : 'Neue Aktivität'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
-              <IonIcon icon={close} />
+            <IonButton
+              onClick={handleClose}
+              disabled={loading}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
+              <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton 
-              onClick={handleSubmit} 
+            <IonButton
+              onClick={handleSubmit}
               disabled={!isFormValid || loading}
-              color="primary"
+              style={{
+                '--background': '#eb445a',
+                '--background-hover': '#d73847',
+                '--color': 'white',
+                '--border-radius': '8px'
+              }}
             >
               {loading ? (
                 <IonSpinner name="crescent" />
               ) : (
-                <IonIcon icon={checkmark} />
+                <IonIcon icon={checkmarkOutline} />
               )}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
-        <IonList style={{ padding: '0' }}>
-          <IonItem>
-            <IonLabel position="stacked">Name *</IonLabel>
-            <IonInput
-              value={formData.name}
-              onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-              placeholder="z.B. Sonntagsgottesdienst"
-              disabled={loading}
-              clearInput={true}
-            />
-          </IonItem>
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION: Grunddaten */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#3880ff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Grunddaten
+          </h2>
+        </div>
 
-          <IonItem>
-            <IonLabel position="stacked">Punkte *</IonLabel>
-            <IonInput
-              type="number"
-              value={formData.points}
-              onIonInput={(e) => setFormData({ ...formData, points: parseInt(e.detail.value!) || 1 })}
-              placeholder="Punkte eingeben"
-              disabled={loading}
-              min={1}
-              max={50}
-              clearInput={true}
-            />
-          </IonItem>
-
-          <IonItem>
-            <IonLabel position="stacked">Typ *</IonLabel>
-            <IonSelect
-              value={formData.type}
-              onIonChange={(e: any) => setFormData({ ...formData, type: e.detail.value })}
-              placeholder="Typ wählen"
-              disabled={loading}
-              interface="action-sheet"
-              interfaceOptions={{
-                header: 'Typ auswählen'
-              }}
-            >
-              <IonSelectOption value="gottesdienst">Gottesdienst</IonSelectOption>
-              <IonSelectOption value="gemeinde">Gemeinde</IonSelectOption>
-            </IonSelect>
-          </IonItem>
-
-          {initializing ? (
-            <IonItem>
-              <IonLabel color="medium">
-                <p>Kategorien werden geladen...</p>
-              </IonLabel>
-            </IonItem>
-          ) : categories.length > 0 ? (
-            <>
-              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
-                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                  Kategorien (mehrere möglich) - {categories.length} verfügbar
-                </IonLabel>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked">Name *</IonLabel>
+                <IonInput
+                  value={formData.name}
+                  onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                  placeholder="z.B. Sonntagsgottesdienst"
+                  disabled={loading}
+                  clearInput={true}
+                />
               </IonItem>
-              <IonList style={{ padding: '0 16px', marginTop: '0' }}>
-              {categories.map((category) => {
-                const isChecked = formData.category_ids.includes(category.id);
-                console.log(`🔘 Category "${category.name}" (ID: ${category.id}) - Checked: ${isChecked}`);
-                return (
-                  <IonItem key={category.id} lines="none">
-                    <IonCheckbox
-                      slot="start"
-                      checked={isChecked}
-                      onIonChange={(e) => {
-                        const newChecked = e.detail.checked;
-                        console.log(`🔄 Category "${category.name}" changed to: ${newChecked}`);
-                        setFormData(prev => {
-                          const newCategoryIds = newChecked 
-                            ? [...prev.category_ids, category.id]
-                            : prev.category_ids.filter(id => id !== category.id);
-                          console.log('📝 New category_ids:', newCategoryIds);
-                          return {
-                            ...prev,
-                            category_ids: newCategoryIds
-                          };
-                        });
+
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked">Punkte *</IonLabel>
+                <IonInput
+                  type="number"
+                  value={formData.points}
+                  onIonInput={(e) => setFormData({ ...formData, points: parseInt(e.detail.value!) || 1 })}
+                  placeholder="Punkte eingeben"
+                  disabled={loading}
+                  min={1}
+                  max={50}
+                  clearInput={true}
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Typ *</IonLabel>
+                <IonSelect
+                  value={formData.type}
+                  onIonChange={(e: any) => setFormData({ ...formData, type: e.detail.value })}
+                  placeholder="Typ wählen"
+                  disabled={loading}
+                  interface="action-sheet"
+                  interfaceOptions={{
+                    header: 'Typ auswählen'
+                  }}
+                >
+                  <IonSelectOption value="gottesdienst">Gottesdienst</IonSelectOption>
+                  <IonSelectOption value="gemeinde">Gemeinde</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        {/* SEKTION: Kategorien */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '24px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#ffc409',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(255, 196, 9, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={pricetag} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Kategorien
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            {initializing ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <IonSpinner name="crescent" />
+              </div>
+            ) : categories.length > 0 ? (
+              <IonList style={{ background: 'transparent' }} lines="none">
+                {categories.map((category) => {
+                  const isChecked = formData.category_ids.includes(category.id);
+                  return (
+                    <IonItem
+                      key={category.id}
+                      lines="none"
+                      detail={false}
+                      style={{
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        margin: '4px 8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '12px',
+                        '--min-height': '48px'
                       }}
-                      disabled={loading || initializing}
-                    />
-                    <IonLabel style={{ marginLeft: '12px' }}>
-                      {category.name}
-                    </IonLabel>
-                  </IonItem>
-                );
-              })}
+                    >
+                      <IonCheckbox
+                        slot="start"
+                        checked={isChecked}
+                        onIonChange={(e) => {
+                          const newChecked = e.detail.checked;
+                          setFormData(prev => {
+                            const newCategoryIds = newChecked
+                              ? [...prev.category_ids, category.id]
+                              : prev.category_ids.filter(id => id !== category.id);
+                            return {
+                              ...prev,
+                              category_ids: newCategoryIds
+                            };
+                          });
+                        }}
+                        disabled={loading || initializing}
+                      />
+                      <IonLabel style={{ marginLeft: '12px', fontSize: '0.95rem' }}>
+                        {category.name}
+                      </IonLabel>
+                    </IonItem>
+                  );
+                })}
               </IonList>
-            </>
-          ) : (
-            <IonItem>
-              <IonLabel color="medium">
-                <p>Keine Kategorien verfügbar</p>
-              </IonLabel>
-            </IonItem>
-          )}
-          
-        </IonList>
+            ) : (
+              <div style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: '#666'
+              }}>
+                <IonIcon icon={pricetag} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                <p style={{ margin: '0', fontSize: '1rem' }}>Keine Kategorien verfügbar</p>
+              </div>
+            )}
+          </IonCardContent>
+        </IonCard>
       </IonContent>
     </IonPage>
   );
