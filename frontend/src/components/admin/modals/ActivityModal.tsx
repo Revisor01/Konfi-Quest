@@ -13,9 +13,12 @@ import {
   IonList,
   IonIcon,
   IonTextarea,
-  IonActionSheet
+  IonActionSheet,
+  IonCard,
+  IonCardContent,
+  IonSpinner
 } from '@ionic/react';
-import { close, checkmark } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, trophy, calendar } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface Activity {
@@ -83,49 +86,146 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         <IonToolbar>
           <IonTitle>Aktivität hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
-              <IonIcon icon={close} />
+            <IonButton onClick={handleClose} style={{
+              '--background': '#f8f9fa',
+              '--background-hover': '#e9ecef',
+              '--color': '#6c757d',
+              '--border-radius': '8px'
+            }}>
+              <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity}>
-              <IonIcon icon={checkmark} />
+            <IonButton
+              onClick={handleSave}
+              disabled={!selectedActivity}
+              style={{
+                '--background': selectedActivity ? '#2dd36f' : '#ccc',
+                '--background-hover': '#28ba62',
+                '--color': 'white',
+                '--border-radius': '8px'
+              }}
+            >
+              <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        <IonList>
-          <IonItem button onClick={() => setIsActionSheetOpen(true)}>
-            <IonLabel position="stacked">Aktivität</IonLabel>
-            <IonLabel>
-              {selectedActivity ? (() => {
-                const activity = activities.find(a => a.id === selectedActivity);
-                return activity ? 
-                  `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})` : 
-                  'Aktivität wählen';
-              })() : 'Aktivität wählen'}
-            </IonLabel>
-          </IonItem>
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION: Aktivität */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#2dd36f',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={trophy} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Aktivität Details
+          </h2>
+        </div>
 
-          <IonItem>
-            <IonLabel position="stacked">Datum</IonLabel>
-            <IonInput
-              type="date"
-              value={selectedDate}
-              onIonInput={(e) => setSelectedDate(e.detail.value!)}
-            />
-          </IonItem>
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              <IonItem button onClick={() => setIsActionSheetOpen(true)} lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonLabel position="stacked">Aktivität *</IonLabel>
+                <IonLabel>
+                  {selectedActivity ? (() => {
+                    const activity = activities.find(a => a.id === selectedActivity);
+                    return activity ?
+                      `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})` :
+                      'Aktivität wählen';
+                  })() : 'Aktivität wählen'}
+                </IonLabel>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
 
-          <IonItem>
-            <IonLabel position="stacked">Kommentar (optional)</IonLabel>
-            <IonTextarea
-              value={comment}
-              onIonInput={(e) => setComment(e.detail.value!)}
-              placeholder="Zusätzliche Informationen..."
-            />
-          </IonItem>
-        </IonList>
+        {/* SEKTION: Datum & Kommentar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#007aff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Datum & Kommentar
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonLabel position="stacked">Datum *</IonLabel>
+                <IonInput
+                  type="date"
+                  value={selectedDate}
+                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonLabel position="stacked">Kommentar (optional)</IonLabel>
+                <IonTextarea
+                  value={comment}
+                  onIonInput={(e) => setComment(e.detail.value!)}
+                  placeholder="Zusätzliche Informationen..."
+                  rows={4}
+                />
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
 
         <IonActionSheet
           isOpen={isActionSheetOpen}
