@@ -19,7 +19,7 @@ import {
   IonCard,
   IonCardContent
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -283,8 +283,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -296,17 +296,46 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               </IonItem>
 
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Punkte *</IonLabel>
-                <IonInput
-                  type="number"
-                  value={formData.points}
-                  onIonInput={(e) => setFormData({ ...formData, points: parseInt(e.detail.value!) || 1 })}
-                  placeholder="Punkte eingeben"
-                  disabled={loading}
-                  min={1}
-                  max={50}
-                  clearInput={true}
-                />
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.points <= 1}
+                    onClick={() => setFormData({ ...formData, points: Math.max(1, formData.points - 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.points.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setFormData({ ...formData, points: 1 });
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 1 && num <= 50) {
+                          setFormData({ ...formData, points: num });
+                        }
+                      }
+                    }}
+                    placeholder="1"
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.points >= 50}
+                    onClick={() => setFormData({ ...formData, points: Math.min(50, formData.points + 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
+                </div>
               </IonItem>
 
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
@@ -366,7 +395,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
           border: '1px solid #e0e0e0'
         }}>
-          <IonCardContent style={{ padding: '8px 0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
             {initializing ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                 <IonSpinner name="crescent" />
@@ -379,35 +408,37 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     <IonItem
                       key={category.id}
                       lines="none"
+                      button
                       detail={false}
+                      onClick={() => {
+                        if (!loading) {
+                          setFormData(prev => ({
+                            ...prev,
+                            category_ids: prev.category_ids.includes(category.id)
+                              ? prev.category_ids.filter(id => id !== category.id)
+                              : [...prev.category_ids, category.id]
+                          }));
+                        }
+                      }}
+                      disabled={loading}
                       style={{
+                        '--min-height': '56px',
+                        '--padding-start': '16px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
-                        margin: '4px 8px',
+                        margin: '6px 0',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        '--min-height': '48px'
+                        borderRadius: '12px'
                       }}
                     >
                       <IonCheckbox
                         slot="start"
                         checked={isChecked}
-                        onIonChange={(e) => {
-                          const newChecked = e.detail.checked;
-                          setFormData(prev => {
-                            const newCategoryIds = newChecked
-                              ? [...prev.category_ids, category.id]
-                              : prev.category_ids.filter(id => id !== category.id);
-                            return {
-                              ...prev,
-                              category_ids: newCategoryIds
-                            };
-                          });
-                        }}
-                        disabled={loading || initializing}
+                        disabled={loading}
+                        style={{ marginRight: '12px' }}
                       />
-                      <IonLabel style={{ marginLeft: '12px', fontSize: '0.95rem' }}>
+                      <IonLabel>
                         {category.name}
                       </IonLabel>
                     </IonItem>
