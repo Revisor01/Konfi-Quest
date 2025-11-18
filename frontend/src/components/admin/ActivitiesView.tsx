@@ -309,13 +309,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
             }}
           >
             <IonSegmentButton value="alle">
-              <IonLabel style={{ fontSize: '0.9rem' }}>Alle</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="gemeinde">
-              <IonLabel style={{ fontSize: '0.9rem' }}>Gemeinde</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Gemeinde</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="gottesdienst">
-              <IonLabel style={{ fontSize: '0.9rem' }}>GoDi</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>GoDi</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </IonCardContent>

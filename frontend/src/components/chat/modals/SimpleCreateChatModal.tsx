@@ -443,12 +443,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#3880ff',
+            backgroundColor: chatType === 'group' ? '#17a2b8' : '#7045f6',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            boxShadow: chatType === 'group'
+              ? '0 2px 8px rgba(23, 162, 184, 0.3)'
+              : '0 2px 8px rgba(112, 69, 246, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={chatbubbleEllipses} style={{ fontSize: '1rem', color: 'white' }} />

@@ -786,15 +786,14 @@ const EventModal: React.FC<EventModalProps> = ({
                         borderRadius: '12px'
                       }}
                     >
-                      <IonCheckbox
-                        slot="start"
-                        checked={formData.category_ids.includes(category.id)}
-                        disabled={loading}
-                        style={{ marginRight: '12px' }}
-                      />
                       <IonLabel>
                         {category.name}
                       </IonLabel>
+                      <IonCheckbox
+                        slot="end"
+                        checked={formData.category_ids.includes(category.id)}
+                        disabled={loading}
+                      />
                     </IonItem>
                   ))}
                 </>
@@ -849,15 +848,14 @@ const EventModal: React.FC<EventModalProps> = ({
                     borderRadius: '12px'
                   }}
                 >
-                  <IonCheckbox
-                    slot="start"
-                    checked={formData.jahrgang_ids.includes(jahrgang.id)}
-                    disabled={loading}
-                    style={{ marginRight: '12px' }}
-                  />
                   <IonLabel>
                     {jahrgang.name}
                   </IonLabel>
+                  <IonCheckbox
+                    slot="end"
+                    checked={formData.jahrgang_ids.includes(jahrgang.id)}
+                    disabled={loading}
+                  />
                 </IonItem>
               ))}
             </IonList>

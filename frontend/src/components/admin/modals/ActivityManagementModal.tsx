@@ -227,6 +227,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonButton
               onClick={handleSubmit}
               disabled={!isFormValid || loading}
+              color="primary"
               style={{
                 '--background': '#eb445a',
                 '--background-hover': '#d73847',
@@ -432,15 +433,14 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                         borderRadius: '12px'
                       }}
                     >
-                      <IonCheckbox
-                        slot="start"
-                        checked={isChecked}
-                        disabled={loading}
-                        style={{ marginRight: '12px' }}
-                      />
                       <IonLabel>
                         {category.name}
                       </IonLabel>
+                      <IonCheckbox
+                        slot="end"
+                        checked={isChecked}
+                        disabled={loading}
+                      />
                     </IonItem>
                   );
                 })}
