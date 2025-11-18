@@ -103,10 +103,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   }, [chatType]);
 
   useEffect(() => {
-    // Set initial chat type based on user type and permissions
+    // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten an Admins senden
     if (user?.type === 'konfi') {
-      const permissions = settings.konfi_chat_permissions || 'direct_only';
-      setChatType('direct'); // Default to direct for konfis
+      setChatType('direct'); // Konfis haben nur Direktnachrichten
       loadUsers();
     }
   }, [user, settings]);
@@ -387,18 +386,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       ];
     }
 
-    const permissions = settings.konfi_chat_permissions || 'direct_only_admin';
-    const types = [];
-
-    // All new permissions include direct chats
-    types.push({ value: 'direct', label: 'Direktnachricht' });
-
-    // Only group permissions include group chats
-    if (permissions.includes('group_')) {
-      types.push({ value: 'group', label: 'Gruppenchat' });
-    }
-
-    return types;
+    // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten an Admins senden
+    return [
+      { value: 'direct', label: 'Direktnachricht' }
+    ];
   };
 
   const isFormValid = chatType && (chatType === 'direct' || (chatType === 'group' && groupName.trim() && selectedParticipants.size > 0));
@@ -487,6 +478,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 // Wenn nur eine Option verfügbar ist, zeige Info
                 if (availableTypes.length === 1) {
                   const singleType = availableTypes[0];
+                  const infoText = user?.type === 'konfi'
+                    ? 'Direktnachrichten mit Admins (moderiert)'
+                    : (singleType.value === 'direct'
+                      ? 'Direktnachrichten mit anderen Personen'
+                      : 'Gruppenchats mit mehreren Teilnehmern');
+
                   return (
                     <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonLabel>
@@ -494,10 +491,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           {singleType.label}
                         </div>
                         <div style={{ fontSize: '0.9rem', color: '#333' }}>
-                          {singleType.value === 'direct'
-                            ? 'Direktnachrichten mit anderen Personen'
-                            : 'Gruppenchats mit mehreren Teilnehmern'
-                          }
+                          {infoText}
                         </div>
                       </IonLabel>
                     </IonItem>
@@ -569,7 +563,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 margin: '0',
                 color: '#333'
               }}>
-                {chatType === 'direct' ? 'Person wählen' : 'Teilnehmer wählen'}
+                {user?.type === 'konfi' ? 'Admin wählen' : (chatType === 'direct' ? 'Person wählen' : 'Teilnehmer wählen')}
               </h2>
             </div>
 

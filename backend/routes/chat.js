@@ -217,7 +217,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       if (!['admin', 'konfi'].includes(target_user_type)) {
         return res.status(400).json({ error: 'Invalid target user type' });
       }
-      
+
+      // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben
+      if (req.user.type === 'konfi' && target_user_type !== 'admin') {
+        return res.status(403).json({ error: 'Konfirmanden dürfen nur Admins anschreiben' });
+      }
+
       const { rows: [validUser] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [target_user_id, organizationId]);
       if (!validUser) {
         return res.status(403).json({ error: 'Target user not found in your organization' });
@@ -281,25 +286,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return res.status(400).json({ error: 'Invalid chat type' });
       }
       
+      // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten mit Admins erstellen (keine Gruppen, keine Konfi-zu-Konfi Chats)
       if (req.user.type === 'konfi') {
-        const { rows: [setting] } = await db.query("SELECT value FROM settings WHERE key = 'konfi_chat_permissions'", []);
-        const permissions = setting?.value || 'direct_only_admin';
-        
-        // Determine allowed chat types based on permissions
-        let allowedTypes = [];
-        if (permissions.includes('direct_')) {
-          allowedTypes.push('direct');
-        }
-        if (permissions.includes('group_')) {
-          allowedTypes.push('group');
-        }
-        
-        if (!allowedTypes.includes(type)) {
+        if (type !== 'direct') {
           return res.status(403).json({
-            error: `Konfirmanden können nur diese Chat-Arten erstellen: ${allowedTypes.join(', ')}`,
-            allowed_types: allowedTypes,
-            user_type: req.user.type,
-            current_permission: permissions
+            error: 'Konfirmanden können nur Direktnachrichten mit Admins erstellen',
+            allowed_types: ['direct'],
+            user_type: req.user.type
           });
         }
       }
@@ -1472,52 +1465,22 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return res.status(400).json({ error: 'Konfi not assigned to jahrgang' });
       }
 
-      let availableUsers = [];
-      
-      // 2. Get chat permissions from settings  
-      const settingsQuery = `SELECT value FROM settings WHERE key = 'konfi_chat_permissions'`;
-      const { rows: [settings] } = await db.query(settingsQuery);
-      const chatPermissions = settings?.value || 'direct_only_admin';
-
-      // 3. Check if Konfis can chat with other Konfis based on permissions
-      const canChatWithKonfis = chatPermissions.includes('_all');
-      const canCreateGroups = chatPermissions.includes('group_');
-
-      // 4. Always include admins assigned to the same jahrgang (if permission allows)
-      if (chatPermissions.includes('_admin') || chatPermissions.includes('_all')) {
-        const adminQuery = `
-          SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
-          FROM users u
-          JOIN roles r ON u.role_id = r.id
-          JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-          WHERE r.name = 'admin' 
-          AND u.organization_id = $1
-          AND uja.jahrgang_id = $2
-          AND uja.can_view = true
-          AND u.id != $3
-          ORDER BY u.display_name
-        `;
-        const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
-        availableUsers = [...admins];
-      }
-
-      // 5. Add other Konfis if allowed by settings
-      if (canChatWithKonfis) {
-        const konfiQuery = `
-          SELECT u.id, u.display_name as name, 'konfi' as type, j.name as jahrgang_name
-          FROM users u
-          JOIN roles r on u.role_id = r.id
-          JOIN konfi_profiles kp ON u.id = kp.user_id
-          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-          WHERE r.name = 'konfi'
-          AND u.organization_id = $1
-          AND kp.jahrgang_id = $2
-          AND u.id != $3
-          ORDER BY u.display_name
-        `;
-        const { rows: konfis } = await db.query(konfiQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
-        availableUsers = [...availableUsers, ...konfis];
-      }
+      // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
+      // Admins die dem Jahrgang des Konfis zugewiesen sind
+      const adminQuery = `
+        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
+        WHERE r.name = 'admin'
+        AND u.organization_id = $1
+        AND uja.jahrgang_id = $2
+        AND uja.can_view = true
+        AND u.id != $3
+        ORDER BY u.display_name
+      `;
+      const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
+      const availableUsers = admins;
 
       // 5. Get existing direct chats to filter out duplicates
       const existingChatsQuery = `
@@ -1550,7 +1513,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       res.json({
         users: filteredUsers,
         jahrgang: konfiProfile.jahrgang_name,
-        permissions: chatPermissions
+        permissions: 'direct_only_admin' // DATENSCHUTZ: Konfis dürfen nur Admins anschreiben
       });
 
     } catch (err) {
