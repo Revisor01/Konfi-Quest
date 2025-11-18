@@ -202,33 +202,50 @@ Für bessere mobile UX bei Zahleneingaben:
 </IonItem>
 ```
 
-### Checkbox (ohne Chevron)
+### Checkbox (ohne Chevron) - Graues Listen-Format
+
+**WICHTIG:** Checkboxen IMMER im grauen Listen-Format für Konsistenz:
 
 ```tsx
-<IonItem
-  key={item.id}
-  lines="none"
-  button
-  detail={false}  {/* WICHTIG: entfernt Chevron */}
-  onClick={() => {
-    if (!loading) {
-      setFormData(prev => ({
-        ...prev,
-        selected_ids: prev.selected_ids.includes(item.id)
-          ? prev.selected_ids.filter(id => id !== item.id)
-          : [...prev.selected_ids, item.id]
-      }));
-    }
-  }}
-  style={{ '--background': 'transparent', marginBottom: '4px' }}
->
-  <IonCheckbox
-    slot="start"
-    checked={formData.selected_ids.includes(item.id)}
-    disabled={loading}
-  />
-  <IonLabel>{item.name}</IonLabel>
-</IonItem>
+<IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
+  {items.map((item) => (
+    <IonItem
+      key={item.id}
+      lines="none"
+      button
+      detail={false}  {/* WICHTIG: entfernt Chevron */}
+      onClick={() => {
+        if (!loading) {
+          setFormData(prev => ({
+            ...prev,
+            selected_ids: prev.selected_ids.includes(item.id)
+              ? prev.selected_ids.filter(id => id !== item.id)
+              : [...prev.selected_ids, item.id]
+          }));
+        }
+      }}
+      disabled={loading}
+      style={{
+        '--min-height': '56px',
+        '--padding-start': '16px',
+        '--background': '#fbfbfb',
+        '--border-radius': '12px',
+        margin: '6px 0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        border: '1px solid #e0e0e0',
+        borderRadius: '12px'
+      }}
+    >
+      <IonCheckbox
+        slot="start"
+        checked={formData.selected_ids.includes(item.id)}
+        disabled={loading}
+        style={{ marginRight: '12px' }}
+      />
+      <IonLabel>{item.name}</IonLabel>
+    </IonItem>
+  ))}
+</IonList>
 ```
 
 ### Toggle (rechtsbündig)
@@ -278,6 +295,7 @@ Für bessere mobile UX bei Zahleneingaben:
 - **Border**: `1px solid #e0e0e0`
 - **Background**: `transparent` für Items in Cards
 - **Icon Shadow**: `0 2px 8px rgba(235, 68, 90, 0.3)`
+- **Graue Listen-Items**: `#fbfbfb` mit `boxShadow: '0 2px 8px rgba(0,0,0,0.06)'` und `border: 1px solid #e0e0e0`
 
 ## Validation
 
