@@ -591,7 +591,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 </IonItem>
 
                 {(onDeleteEvent || onCancelEvent) && (
-                  <IonItemOptions side="end" style={{ gap: '4px' }}>
+                  <IonItemOptions side="end" style={{
+                    gap: '4px',
+                    '--ion-item-background': 'transparent'
+                  }}>
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
