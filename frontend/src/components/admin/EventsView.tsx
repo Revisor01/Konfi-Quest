@@ -556,22 +556,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       </span>
                     </div>
 
-                    {/* Location - Zeile 2 */}
-                    {event.location && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '0.8rem',
-                        color: shouldGrayOut ? '#999' : '#666',
-                        marginBottom: '6px'
-                      }}>
-                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#007aff' }} />
-                        <span>{event.location}</span>
-                      </div>
-                    )}
-
-                    {/* Teilnehmer, Warteliste, Punkte - Zeile 3 */}
+                    {/* Location, Teilnehmer, Warteliste, Punkte - Zeile 2 */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -579,16 +564,22 @@ const EventsView: React.FC<EventsViewProps> = ({
                       fontSize: '0.8rem',
                       color: shouldGrayOut ? '#999' : '#666'
                     }}>
+                      {event.location && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={location} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#007aff' }} />
+                          <span>{event.location}</span>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon icon={people} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#34c759' }} />
                         <span>{event.registered_count}/{event.max_participants}</span>
+                        {event.waitlist_enabled && event.waitlist_count && event.waitlist_count > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
+                            <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                            <span style={{ color: shouldGrayOut ? '#999' : '#666' }}>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
+                          </span>
+                        )}
                       </div>
-                      {event.waitlist_enabled && event.waitlist_count && event.waitlist_count > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={listOutline} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
-                          <span>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
-                        </div>
-                      )}
                       {event.points > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#ff9500' }} />
