@@ -97,12 +97,12 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
     <>
       {/* Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+        background: 'linear-gradient(135deg, #2dd36f 0%, #28ba62 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(22, 163, 74, 0.3)',
+        boxShadow: '0 20px 40px rgba(45, 211, 111, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         minHeight: '220px',
@@ -112,8 +112,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: '-5px',
-          left: '12px',
+          top: '-10px',
+          left: '20px',
           zIndex: 1
         }}>
           <h2 style={{
@@ -121,8 +121,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
             fontWeight: '900',
             color: 'rgba(255, 255, 255, 0.1)',
             margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
+            lineHeight: '0.9',
+            letterSpacing: '-0.02em'
           }}>
             ANTRÄGE
           </h2>
@@ -275,14 +275,13 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       onClick={() => onSelectRequest(request)}
                       detail={false}
                       style={{
-                        '--min-height': '60px',
-                        '--padding-start': '12px',
-                        '--padding-end': '12px',
-                        '--padding-top': '8px',
-                        '--padding-bottom': '8px',
+                        '--min-height': '90px',
+                        '--padding-start': '16px',
+                        '--padding-top': '0px',
+                        '--padding-bottom': '0px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
-                        margin: '4px 8px',
+                        margin: '6px 8px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                         border: '1px solid #e0e0e0',
                         borderRadius: '12px',
@@ -293,22 +292,38 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '10px'
+                          gap: '12px',
+                          marginBottom: '4px'
                         }}>
-                          {/* Status Indikator - klein */}
+                          {/* Status Icon Circle */}
                           <div style={{
-                            width: '8px',
-                            height: '8px',
+                            width: '28px',
+                            height: '28px',
                             backgroundColor: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
                             borderRadius: '50%',
-                            flexShrink: 0
-                          }} />
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            boxShadow: isPending
+                              ? '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                              : isApproved
+                              ? '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                              : '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                          }}>
+                            <IonIcon
+                              icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
+                              style={{ fontSize: '0.9rem', color: 'white' }}
+                            />
+                          </div>
 
                           {/* Konfi Name */}
-                          <div style={{
+                          <h3 style={{
                             fontWeight: '600',
-                            fontSize: '0.95rem',
+                            fontSize: '1rem',
+                            margin: '0',
                             color: '#333',
+                            lineHeight: '1.3',
                             flex: 1,
                             minWidth: 0,
                             overflow: 'hidden',
@@ -316,24 +331,11 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             whiteSpace: 'nowrap'
                           }}>
                             {request.konfi_name}
-                          </div>
-
-                          {/* Aktivität - verkürzt */}
-                          <div style={{
-                            fontSize: '0.8rem',
-                            color: '#666',
-                            maxWidth: '120px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0
-                          }}>
-                            {request.activity_name}
-                          </div>
+                          </h3>
 
                           {/* Status Badge */}
                           <span style={{
-                            fontSize: '0.65rem',
+                            fontSize: '0.7rem',
                             color: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
                             fontWeight: '600',
                             backgroundColor: isPending
@@ -341,18 +343,34 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                               : isApproved
                               ? 'rgba(45, 211, 111, 0.15)'
                               : 'rgba(220, 53, 69, 0.15)',
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            border: isPending
-                              ? '1px solid rgba(255, 149, 0, 0.3)'
-                              : isApproved
-                              ? '1px solid rgba(45, 211, 111, 0.3)'
-                              : '1px solid rgba(220, 53, 69, 0.3)',
+                            padding: '3px 6px',
+                            borderRadius: '10px',
                             whiteSpace: 'nowrap',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
                           }}>
-                            {isPending ? 'OFFEN' : isApproved ? 'OK' : 'ABGELEHNT'}
+                            {isPending ? 'OFFEN' : isApproved ? 'OK' : 'ABG'}
                           </span>
+                        </div>
+
+                        {/* Details - zweite Zeile */}
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: '#666',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginLeft: '40px'
+                        }}>
+                          <span>{request.activity_name}</span>
+                          {request.jahrgang_name && (
+                            <>
+                              <span>•</span>
+                              <span>{request.jahrgang_name}</span>
+                            </>
+                          )}
+                          <span>•</span>
+                          <span>{formatDate(request.requested_date)}</span>
                         </div>
                       </IonLabel>
                     </IonItem>
