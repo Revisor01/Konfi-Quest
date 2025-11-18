@@ -452,7 +452,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                         <span style={{
                           fontSize: '0.7rem',
                           color: (() => {
-                            if (isKonfirmationEvent) return '#8b5cf6';
                             if (isCancelled) return '#dc3545';
                             if (hasUnprocessedBookings) return '#ff6b35'; // Orange für zu verbuchen
                             if (isFullyProcessed) return '#34c759'; // Grün für verbucht
@@ -463,7 +462,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                           })(),
                           fontWeight: '600',
                           backgroundColor: (() => {
-                            if (isKonfirmationEvent) return 'rgba(139, 92, 246, 0.15)';
                             if (isCancelled) return 'rgba(220, 38, 38, 0.15)';
                             if (hasUnprocessedBookings) return 'rgba(255, 107, 53, 0.15)';
                             if (isFullyProcessed) return 'rgba(52, 199, 89, 0.15)';
@@ -475,7 +473,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                           padding: '3px 6px',
                           borderRadius: '6px',
                           border: (() => {
-                            if (isKonfirmationEvent) return '1px solid rgba(139, 92, 246, 0.3)';
                             if (isCancelled) return '1px solid rgba(220, 38, 38, 0.3)';
                             if (hasUnprocessedBookings) return '1px solid rgba(255, 107, 53, 0.3)';
                             if (isFullyProcessed) return '1px solid rgba(52, 199, 89, 0.3)';
@@ -512,11 +509,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                       color: shouldGrayOut ? '#999' : '#666',
                       marginBottom: '6px'
                     }}>
-                      <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#dc2626' }} />
+                      <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : '#dc2626' }} />
                       <span style={{ fontWeight: '500', color: shouldGrayOut ? '#999' : '#333' }}>
                         {formatDate(event.event_date)}
                       </span>
-                      <IonIcon icon={time} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : isKonfirmationEvent ? '#8b5cf6' : '#ff6b35', marginLeft: '8px' }} />
+                      <IonIcon icon={time} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : '#ff6b35', marginLeft: '8px' }} />
                       <span style={{ color: shouldGrayOut ? '#999' : '#666' }}>
                         {formatTime(event.event_date)}
                       </span>
