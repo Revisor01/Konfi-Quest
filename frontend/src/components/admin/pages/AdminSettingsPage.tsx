@@ -24,7 +24,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
-import ChatPermissionsSettings from '../settings/ChatPermissionsSettings';
 import PushNotificationSettings from '../../common/PushNotificationSettings';
 
 const AdminSettingsPage: React.FC = () => {
@@ -128,7 +127,6 @@ const AdminSettingsPage: React.FC = () => {
           </IonCardContent>
         </IonCard>
 
-        <ChatPermissionsSettings />
         <PushNotificationSettings />
 
         <IonCard>
