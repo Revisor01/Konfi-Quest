@@ -573,7 +573,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon icon={people} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#34c759' }} />
                         <span>{event.registered_count}/{event.max_participants}</span>
-                        {event.waitlist_enabled && event.waitlist_count > 0 && (
+                        {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                           <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
                             <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
                             <span style={{ color: shouldGrayOut ? '#999' : '#666' }}>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
