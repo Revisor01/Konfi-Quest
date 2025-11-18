@@ -503,27 +503,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   </div>
 
                   {eventData?.location && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: '12px',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '8px',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onClick={() => {
-                        if (eventData.location_maps_url) {
-                          window.open(eventData.location_maps_url, '_blank');
-                        } else if (eventData.location) {
-                          const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
-                          window.open(mapsUrl, '_blank');
-                        }
-                      }}
-                    >
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                       <IonIcon icon={location} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#007aff', textDecoration: 'underline' }}>
+                      <div
+                        style={{
+                          fontSize: '1rem',
+                          color: '#007aff',
+                          textDecoration: 'underline',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          if (eventData.location_maps_url) {
+                            window.open(eventData.location_maps_url, '_blank');
+                          } else if (eventData.location) {
+                            const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
+                            window.open(mapsUrl, '_blank');
+                          }
+                        }}
+                      >
                         {eventData.location}
                       </div>
                     </div>
@@ -532,7 +529,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                     <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
                     <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer
+                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
                     </div>
                   </div>
 
@@ -552,6 +549,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonIcon icon={people} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         {eventData.jahrgaenge.map(j => j.name).join(', ')}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timeslots anzeigen wenn vorhanden */}
+                  {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {eventData.timeslots.map((slot, index) => (
+                          <div key={slot.id} style={{ marginBottom: index < eventData.timeslots!.length - 1 ? '4px' : '0' }}>
+                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
+                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            <span style={{ color: '#666', marginLeft: '8px' }}>
+                              ({slot.registered_count || 0}/{slot.max_participants})
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -746,7 +761,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonCardHeader>
             <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <IonIcon icon={people} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
-              Teilnehmer ({participants.filter(p => p.status === 'confirmed').length}
+              Teilnehmer:innen ({participants.filter(p => p.status === 'confirmed').length}
               {participants.filter(p => p.status === 'pending').length > 0 &&
                 ` + ${participants.filter(p => p.status === 'pending').length}`
               })
@@ -924,7 +939,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
             >
               <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
-              Teilnehmer hinzufügen
+              Teilnehmer:in hinzufügen
             </IonButton>
           </IonCardContent>
         </IonCard>

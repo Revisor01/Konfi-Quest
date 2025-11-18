@@ -281,7 +281,15 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Konfi suchen..."
-              style={{ '--background': '#f8f9fa', marginBottom: '16px' }}
+              style={{
+                '--background': 'white',
+                '--box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
+                '--border-radius': '12px',
+                '--placeholder-color': '#999',
+                '--icon-color': '#eb445a',
+                marginBottom: '16px',
+                padding: '0'
+              }}
             />
 
             {/* Timeslot Selection for events with timeslots */}
@@ -355,24 +363,25 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                         gap: '12px',
                         marginBottom: '4px'
                       }}>
-                        {/* Person Icon */}
+                        {/* Initials Icon */}
                         <div style={{
                           width: '28px',
                           height: '28px',
-                          backgroundColor: '#007aff',
+                          backgroundColor: '#8b5cf6',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0
                         }}>
-                          <IonIcon
-                            icon={person}
-                            style={{
-                              fontSize: '0.9rem',
-                              color: 'white'
-                            }}
-                          />
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            color: 'white',
+                            textTransform: 'uppercase'
+                          }}>
+                            {konfi.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+                          </span>
                         </div>
 
                         {/* Konfi Name */}
