@@ -596,10 +596,12 @@ const EventsView: React.FC<EventsViewProps> = ({
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
                         style={{
-                          '--background': 'white',
-                          '--background-activated': 'white',
-                          '--background-focused': 'white',
-                          '--background-hover': 'white',
+                          '--background': 'transparent',
+                          '--background-activated': 'transparent',
+                          '--background-focused': 'transparent',
+                          '--background-hover': 'transparent',
+                          '--color': 'transparent',
+                          '--ripple-color': 'transparent',
                           padding: '0 2px',
                           minWidth: '48px',
                           maxWidth: '48px'
@@ -613,7 +615,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4)'
+                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                         }}>
                           <IonIcon icon={ban} style={{ fontSize: '1.2rem', color: 'white' }} />
                         </div>
@@ -623,10 +625,12 @@ const EventsView: React.FC<EventsViewProps> = ({
                       <IonItemOption
                         onClick={() => onDeleteEvent(event)}
                         style={{
-                          '--background': 'white',
-                          '--background-activated': 'white',
-                          '--background-focused': 'white',
-                          '--background-hover': 'white',
+                          '--background': 'transparent',
+                          '--background-activated': 'transparent',
+                          '--background-focused': 'transparent',
+                          '--background-hover': 'transparent',
+                          '--color': 'transparent',
+                          '--ripple-color': 'transparent',
                           padding: '0 2px',
                           paddingRight: '20px',
                           minWidth: '48px',
@@ -641,7 +645,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4)'
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                         }}>
                           <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
                         </div>

@@ -581,6 +581,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonGrid style={{ padding: '0' }}>
               <IonRow>
                 <IonCol size="12">
+                  {/* Datum */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                     <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
                     <div>
@@ -594,11 +595,38 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
+                  {/* Timeslots direkt unter Datum */}
+                  {(eventData as any).has_timeslots && (eventData as any).timeslots && (eventData as any).timeslots.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {(eventData as any).timeslots.map((slot: any, index: number) => (
+                          <div key={slot.id} style={{ marginBottom: index < (eventData as any).timeslots.length - 1 ? '4px' : '0' }}>
+                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
+                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            <span style={{ color: '#666', marginLeft: '8px' }}>
+                              ({slot.registered_count || 0}/{slot.max_participants})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TN gesamt */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData.registered_count} / {eventData.max_participants} Teilnehmer:innen
+                    </div>
+                  </div>
+
+                  {/* Ort */}
                   {eventData.location && (
-                    <div 
-                      style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
                         marginBottom: '12px',
                         cursor: 'pointer',
                         padding: '4px',
@@ -612,7 +640,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           // Fallback to Apple Maps on iOS, Google Maps otherwise
                           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
                           const encodedLocation = encodeURIComponent(eventData.location || '');
-                          const mapsUrl = isIOS 
+                          const mapsUrl = isIOS
                             ? `maps://maps.apple.com/?q=${encodedLocation}`
                             : `https://maps.google.com/maps?q=${encodedLocation}`;
                           window.open(mapsUrl, '_blank');
@@ -632,12 +660,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData.registered_count} / {eventData.max_participants} Teilnehmer
+                  {/* Anmeldezeitraum mit Umbruch */}
+                  {(eventData.registration_opens_at || eventData.registration_closes_at) && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem', marginTop: '2px' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {eventData.registration_opens_at ? (
+                          <>
+                            <div>Ab {formatDate(eventData.registration_opens_at)} - {formatTime(eventData.registration_opens_at)}</div>
+                            {eventData.registration_closes_at && (
+                              <div>bis {formatDate(eventData.registration_closes_at)} - {formatTime(eventData.registration_closes_at)}</div>
+                            )}
+                          </>
+                        ) : (
+                          'Sofort möglich'
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {eventData.waitlist_enabled && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>

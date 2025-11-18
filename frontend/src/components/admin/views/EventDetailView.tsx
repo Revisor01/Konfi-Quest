@@ -489,6 +489,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonGrid style={{ padding: '0' }}>
               <IonRow>
                 <IonCol size="12">
+                  {/* Datum */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                     <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
                     <div>
@@ -502,6 +503,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
+                  {/* Timeslots direkt unter Datum */}
+                  {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {eventData.timeslots.map((slot, index) => (
+                          <div key={slot.id} style={{ marginBottom: index < eventData.timeslots!.length - 1 ? '4px' : '0' }}>
+                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
+                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                            <span style={{ color: '#666', marginLeft: '8px' }}>
+                              ({slot.registered_count || 0}/{slot.max_participants})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TN gesamt */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
+                    </div>
+                  </div>
+
+                  {/* Ort */}
                   {eventData?.location && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                       <IonIcon icon={location} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
@@ -526,47 +554,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
+                  {/* Anmeldezeitraum mit Umbruch */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem', marginTop: '2px' }} />
                     <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
+                      {eventData?.registration_opens_at ? (
+                        <>
+                          <div>Ab {formatDate(eventData.registration_opens_at)} - {formatTime(eventData.registration_opens_at)}</div>
+                          {eventData?.registration_closes_at && (
+                            <div>bis {formatDate(eventData.registration_closes_at)} - {formatTime(eventData.registration_closes_at)}</div>
+                          )}
+                        </>
+                      ) : (
+                        'Sofort möglich'
+                      )}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.registration_opens_at
-                        ? `Ab ${formatDate(eventData.registration_opens_at)} ${formatTime(eventData.registration_opens_at)}`
-                        : 'Sofort möglich'}
-                      {eventData?.registration_closes_at &&
-                        ` bis ${formatDate(eventData.registration_closes_at)} ${formatTime(eventData.registration_closes_at)}`}
-                    </div>
-                  </div>
-
+                  {/* Jahrgang */}
                   {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                       <IonIcon icon={people} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         {eventData.jahrgaenge.map(j => j.name).join(', ')}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Timeslots anzeigen wenn vorhanden */}
-                  {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.timeslots.map((slot, index) => (
-                          <div key={slot.id} style={{ marginBottom: index < eventData.timeslots!.length - 1 ? '4px' : '0' }}>
-                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
-                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                            <span style={{ color: '#666', marginLeft: '8px' }}>
-                              ({slot.registered_count || 0}/{slot.max_participants})
-                            </span>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}
@@ -640,7 +650,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                           }}>
                             <IonIcon
                               icon={time}
@@ -819,7 +830,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            boxShadow: participant.attendance_status === 'present' ? '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
+                                       participant.attendance_status === 'absent' ? '0 2px 8px rgba(235, 68, 90, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
+                                       participant.status === 'pending' ? '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
+                                       '0 2px 8px rgba(0, 122, 255, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                           }}>
                             <IonIcon
                               icon={participant.attendance_status === 'present' ? checkmarkCircle :

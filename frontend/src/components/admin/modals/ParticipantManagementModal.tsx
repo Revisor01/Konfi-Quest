@@ -282,13 +282,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
               placeholder="Konfi suchen..."
               style={{
-                '--background': 'white',
-                '--box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
+                '--background': '#f8f9fa',
                 '--border-radius': '12px',
                 '--placeholder-color': '#999',
-                '--icon-color': '#eb445a',
                 marginBottom: '16px',
-                padding: '0'
+                padding: '0',
+                border: '1px solid #e0e0e0'
               }}
             />
 
@@ -372,7 +371,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                         }}>
                           <span style={{
                             fontSize: '0.7rem',
