@@ -1,6 +1,5 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import {
-  IonModal,
   IonPage,
   IonHeader,
   IonToolbar,
@@ -12,30 +11,37 @@ import {
   IonList,
   IonItem,
   IonLabel,
-  IonAvatar
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
-import { 
-  close, 
-  people, 
-  person, 
+import {
+  closeOutline,
+  people,
+  person,
   chatbubbles,
-  chevronForward
+  informationCircle
 } from 'ionicons/icons';
 
 interface ChatOptionsModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSelectOption: (option: 'group' | 'direct' | 'jahrgang') => void;
+  dismiss?: () => void;
 }
 
-const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ isOpen, onClose, onSelectOption }) => {
-  const pageRef = useRef<HTMLElement>(null);
+const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOption, dismiss }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
 
   const chatOptions = [
     {
       type: 'group' as const,
       title: 'Gruppenchat erstellen',
-      subtitle: 'Chat mit ausgewählten Teilnehmer:innen',
+      subtitle: 'Chat mit ausgewählten Teilnehmern',
       icon: people,
       color: '#2dd36f'
     },
@@ -44,124 +50,180 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ isOpen, onClose, on
       title: 'Direktnachricht',
       subtitle: '1-zu-1 Unterhaltung starten',
       icon: person,
-      color: '#ff6b35'
+      color: '#17a2b8'
     }
   ];
 
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={onClose}
-      presentingElement={pageRef.current || undefined}
-      canDismiss={true}
-      backdropDismiss={true}
-    >
-      <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Neuen Chat erstellen</IonTitle>
-            <IonButtons slot="start">
-              <IonButton onClick={onClose}>
-                <IonIcon icon={close} />
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        
-        <IonContent>
-          <div style={{ padding: '16px 0' }}>
-            <IonList>
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Neuen Chat erstellen</IonTitle>
+          <IonButtons slot="start">
+            <IonButton
+              onClick={handleClose}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
+              <IonIcon icon={closeOutline} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION: Chat-Optionen */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#3880ff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={chatbubbles} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Chat-Optionen
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
               {chatOptions.map((option) => (
-                <IonItem 
+                <IonItem
                   key={option.type}
-                  button 
+                  button
                   onClick={() => {
                     onSelectOption(option.type);
-                    onClose();
+                    handleClose();
                   }}
-                  style={{ '--min-height': '64px' }}
+                  detail={false}
+                  style={{
+                    '--min-height': '70px',
+                    '--padding-start': '16px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '4px 8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}
                 >
-                  <IonAvatar slot="start" style={{ 
-                    width: '44px', 
+                  <div style={{
+                    width: '44px',
                     height: '44px',
                     backgroundColor: option.color,
+                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    marginRight: '12px',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
                   }}>
-                    <IonIcon 
-                      icon={option.icon} 
-                      style={{ 
-                        fontSize: '1.3rem', 
+                    <IonIcon
+                      icon={option.icon}
+                      style={{
+                        fontSize: '1.3rem',
                         color: 'white'
-                      }} 
+                      }}
                     />
-                  </IonAvatar>
-                  
+                  </div>
+
                   <IonLabel>
-                    <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
+                    <h2 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '4px' }}>
                       {option.title}
                     </h2>
-                    <p style={{ 
-                      margin: '0', 
-                      fontSize: '0.9rem', 
-                      color: '#666' 
+                    <p style={{
+                      margin: '0',
+                      fontSize: '0.85rem',
+                      color: '#666'
                     }}>
                       {option.subtitle}
                     </p>
                   </IonLabel>
-
-                  <IonIcon 
-                    icon={chevronForward} 
-                    slot="end" 
-                    style={{ color: '#c7c7cc' }}
-                  />
                 </IonItem>
               ))}
             </IonList>
+          </IonCardContent>
+        </IonCard>
 
-            {/* Hinweis zu Jahrgangschats */}
-            <div style={{ 
-              margin: '24px 16px 0 16px',
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '12px'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px',
-                marginBottom: '8px'
-              }}>
-                <IonIcon 
-                  icon={chatbubbles} 
-                  style={{ 
-                    fontSize: '1.2rem', 
-                    color: '#17a2b8' 
-                  }} 
-                />
-                <h3 style={{ 
-                  margin: '0', 
-                  fontSize: '1rem', 
-                  fontWeight: '600',
-                  color: '#17a2b8'
-                }}>
-                  Jahrgangschats
-                </h3>
-              </div>
-              <p style={{ 
-                margin: '0', 
-                fontSize: '0.9rem', 
-                color: '#666',
-                lineHeight: '1.4'
-              }}>
-                Jahrgangschats werden automatisch für alle Jahrgänge erstellt und sind in der Chat-Übersicht verfügbar.
-              </p>
-            </div>
+        {/* SEKTION: Hinweis */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '24px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#17a2b8',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={informationCircle} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
-        </IonContent>
-      </IonPage>
-    </IonModal>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Jahrgangschats
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <p style={{
+              margin: '0',
+              fontSize: '0.9rem',
+              color: '#666',
+              lineHeight: '1.5'
+            }}>
+              Jahrgangschats werden automatisch für alle Jahrgänge erstellt und sind in der Chat-Übersicht verfügbar.
+            </p>
+          </IonCardContent>
+        </IonCard>
+      </IonContent>
+    </IonPage>
   );
 };
 

@@ -21,13 +21,23 @@ import {
   IonAlert,
   IonGrid,
   IonRow,
-  IonCol
+  IonCol,
+  IonCard,
+  IonCardContent,
+  IonSpinner
 } from '@ionic/react';
-import { close, checkmark, person, people, chevronForward } from 'ionicons/icons';
+import {
+  closeOutline,
+  checkmarkOutline,
+  person,
+  people,
+  chatbubbleEllipses,
+  create,
+  search
+} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
 import api from '../../../services/api';
-import LoadingSpinner from '../../common/LoadingSpinner';
 
 interface User {
   id: number;
@@ -52,10 +62,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const { user, setError, setSuccess } = useApp();
   const { refreshFromAPI } = useBadge();
   const pageRef = useRef<HTMLElement>(null);
-  
+
   // State
   const [settings, setSettings] = useState<Settings>({});
-  // Konfis standardmäßig auf direct setzen, aber je nach Settings flexibel
   const [chatType, setChatType] = useState<'direct' | 'group' | ''>('');
 
   const handleClose = () => {
@@ -72,12 +81,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [creating, setCreating] = useState(false);
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
   const [duplicateMessage, setDuplicateMessage] = useState('');
-  
+
   // Filter states
   const [selectedRole, setSelectedRole] = useState<string>('alle');
   const [selectedJahrgang, setSelectedJahrgang] = useState<string>('alle');
   const [availableJahrgaenge, setAvailableJahrgaenge] = useState<string[]>([]);
-  
+
   // Group chat specific
   const [groupName, setGroupName] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
@@ -133,37 +142,37 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           type: u.type as 'admin' | 'konfi',
           jahrgang_name: u.jahrgang_name
         }));
-        
+
         console.log('Loaded users for konfi chat:', {
           users: availableUsers.length,
           jahrgang: response.data.jahrgang,
           permissions: response.data.permissions,
           chatType
         });
-        
+
         // Verfügbare Jahrgänge ermitteln
         const jahrgaenge = [...new Set(availableUsers
           .filter((u: any) => u.jahrgang_name)
           .map((u: any) => u.jahrgang_name!))]
           .sort() as string[];
         setAvailableJahrgaenge(jahrgaenge);
-        
+
         setUsers(availableUsers);
-        
+
       } else if (user?.type === 'admin') {
         // Admin: Verwende bestehende Admin-APIs
         const [konfisRes, userJahrgangRes] = await Promise.all([
           api.get('/admin/konfis'),
           api.get('/admin/users/me/jahrgaenge').catch(() => ({ data: [] }))
         ]);
-        
+
         // Filtere Konfis basierend auf Jahrgangs-Zuweisungen
         let allowedJahrgangIds: number[] = [];
         if (userJahrgangRes.data.length > 0) {
           allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
           console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
         }
-        
+
         let konfis: User[] = konfisRes.data
           .filter((konfi: any) => {
             // Nur Konfis mit erlaubten Jahrgängen zeigen
@@ -180,7 +189,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             jahrgang: konfi.jahrgang,
             jahrgang_name: konfi.jahrgang_name
           }));
-        
+
         // Auch andere Admins laden
         let adminUsers: User[] = [];
         try {
@@ -199,7 +208,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         } catch (err) {
           console.log('Could not load admins for chat:', err);
         }
-        
+
         const allUsers = [...konfis, ...adminUsers];
         console.log('Loaded users for admin chat:', {
           konfis: konfis.length,
@@ -207,7 +216,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           total: allUsers.length,
           chatType
         });
-        
+
         // Extrahiere verfügbare Jahrgänge (nur von gefilterten Konfis)
         const jahrgaenge = [...new Set(
           konfis
@@ -215,10 +224,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             .map(u => u.jahrgang_name || u.jahrgang)
         )].filter(Boolean) as string[];
         setAvailableJahrgaenge(jahrgaenge);
-        
+
         // Filter out current user for direct messages
         if (chatType === 'direct') {
-          const filteredUsers = allUsers.filter(u => 
+          const filteredUsers = allUsers.filter(u =>
             !(u.id === user?.id && u.type === user?.type)
           );
           setUsers(filteredUsers);
@@ -226,7 +235,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           setUsers(allUsers);
         }
       }
-      
+
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
       console.error('Error loading users:', err);
@@ -236,10 +245,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   };
 
   const checkDirectChatExists = (targetUser: User) => {
-    return existingChats.some(chat => 
-      chat.type === 'direct' && 
+    return existingChats.some(chat =>
+      chat.type === 'direct' &&
       chat.participants &&
-      chat.participants.some((p: any) => 
+      chat.participants.some((p: any) =>
         p.id === targetUser.id && p.type === targetUser.type
       )
     );
@@ -269,7 +278,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         target_user_id: targetUser.id,
         target_user_type: targetUser.type
       });
-      
+
       setSuccess(`Direktnachricht mit ${targetUser.name || targetUser.display_name} erstellt`);
       await refreshFromAPI(); // Update badge context
       handleModalClose();
@@ -313,7 +322,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       console.log('Creating group chat with data:', groupData);
       const response = await api.post('/chat/rooms', groupData);
       console.log('Group chat created successfully:', response.data);
-      
+
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
       await refreshFromAPI(); // Update badge context
       handleModalClose();
@@ -341,21 +350,21 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     const name = user.name || user.display_name || '';
     const matchesSearch = name.toLowerCase().includes(searchText.toLowerCase()) ||
            (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
-    
+
     if (!matchesSearch) return false;
-    
+
     // Rollenfilter
     if (selectedRole !== 'alle') {
       if (selectedRole === 'konfi' && user.type !== 'konfi') return false;
       if (selectedRole === 'admin' && user.type !== 'admin') return false;
     }
-    
+
     // Jahrgangsfilter (nur für Konfis)
     if (selectedJahrgang !== 'alle' && user.type === 'konfi') {
       const userJahrgang = user.jahrgang_name || user.jahrgang;
       if (userJahrgang !== selectedJahrgang) return false;
     }
-    
+
     return true;
   });
 
@@ -377,231 +386,352 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         { value: 'group', label: 'Gruppenchat' }
       ];
     }
-    
+
     const permissions = settings.konfi_chat_permissions || 'direct_only_admin';
     const types = [];
-    
+
     // All new permissions include direct chats
     types.push({ value: 'direct', label: 'Direktnachricht' });
-    
+
     // Only group permissions include group chats
     if (permissions.includes('group_')) {
       types.push({ value: 'group', label: 'Gruppenchat' });
     }
-    
+
     return types;
   };
 
+  const isFormValid = chatType && (chatType === 'direct' || (chatType === 'group' && groupName.trim() && selectedParticipants.size > 0));
+
   return (
     <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Neuen Chat erstellen</IonTitle>
-            <IonButtons slot="start">
-              <IonButton onClick={handleClose}>
-                <IonIcon icon={close} />
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Neuen Chat erstellen</IonTitle>
+          <IonButtons slot="start">
+            <IonButton
+              onClick={handleClose}
+              disabled={creating}
+              style={{
+                '--background': '#f8f9fa',
+                '--background-hover': '#e9ecef',
+                '--color': '#6c757d',
+                '--border-radius': '8px'
+              }}
+            >
+              <IonIcon icon={closeOutline} />
+            </IonButton>
+          </IonButtons>
+          {chatType === 'group' && (
+            <IonButtons slot="end">
+              <IonButton
+                onClick={createGroupChat}
+                disabled={!isFormValid || creating}
+                style={{
+                  '--background': '#2dd36f',
+                  '--background-hover': '#28ba62',
+                  '--color': 'white',
+                  '--border-radius': '8px'
+                }}
+              >
+                {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>
-            {chatType === 'group' && (
-              <IonButtons slot="end">
-                <IonButton 
-                  onClick={createGroupChat} 
-                  disabled={!canCreate() || creating}
-                  color="primary"
-                >
-                  <IonIcon icon={checkmark} />
-                </IonButton>
-              </IonButtons>
-            )}
-          </IonToolbar>
-        </IonHeader>
-        
-        <IonContent>
-          {/* Chat Type Selection - Basierend auf Benutzerrechten */}
-          {(() => {
-            const availableTypes = getAvailableChatTypes();
-            
-            // Wenn nur eine Option verfügbar ist, zeige Info statt Select
-            if (availableTypes.length === 1) {
-              const singleType = availableTypes[0];
-              return (
-                <IonItem>
-                  <IonLabel>
-                    <h3>{singleType.label} erstellen</h3>
-                    <p>
-                      {singleType.value === 'direct' 
-                        ? 'Sie können Direktnachrichten mit anderen Personen erstellen.'
-                        : 'Sie können Gruppenchats mit mehreren Teilnehmern erstellen.'
-                      }
-                    </p>
-                  </IonLabel>
-                </IonItem>
-              );
-            }
-            
-            // Mehrere Optionen: Zeige Select
-            return (
-              <IonItem>
-                <IonLabel position="stacked">Art des Chats</IonLabel>
-                <IonSelect
-                  value={chatType}
-                  onIonChange={(e) => setChatType(e.detail.value)}
-                  placeholder="Chat-Art wählen"
-                  interface="action-sheet"
-                >
-                  {availableTypes.map(type => (
-                    <IonSelectOption key={type.value} value={type.value}>
-                      {type.label}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
-            );
-          })()}
-
-          {/* Group Name Input */}
-          {chatType === 'group' && (
-            <IonItem>
-              <IonLabel position="stacked">Gruppenname</IonLabel>
-              <IonInput
-                value={groupName}
-                onIonInput={(e) => setGroupName(e.detail.value!)}
-                placeholder="Gruppenname eingeben"
-                clearInput={true}
-              />
-            </IonItem>
           )}
+        </IonToolbar>
+      </IonHeader>
 
-          {/* Search */}
-          {chatType && (
-            <>
-              <IonSearchbar
-                value={searchText}
-                onIonInput={(e) => setSearchText(e.detail.value!)}
-                placeholder={chatType === 'direct' ? 'Person suchen...' : 'Teilnehmer suchen...'}
-              />
-              
-              {/* Filter Controls */}
-              <div style={{ padding: '0 16px 16px' }}>
-                <IonGrid>
-                  <IonRow>
-                    <IonCol size="6">
-                      <IonItem lines="none">
-                        <IonSelect 
-                          value={selectedRole} 
-                          onIonChange={(e) => setSelectedRole(e.detail.value!)}
-                          placeholder="Alle Rollen"
-                          interface="action-sheet"
-                        >
-                          <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
-                          <IonSelectOption value="konfi">Konfis</IonSelectOption>
-                          <IonSelectOption value="admin">Admins</IonSelectOption>
-                        </IonSelect>
-                      </IonItem>
-                    </IonCol>
-                    <IonCol size="6">
-                      <IonItem lines="none">
-                        <IonSelect 
-                          value={selectedJahrgang} 
-                          onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
-                          placeholder="Alle Jahrgänge"
-                          interface="action-sheet"
-                        >
-                          <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                          {availableJahrgaenge.map(jg => (
-                            <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                          ))}
-                        </IonSelect>
-                      </IonItem>
-                    </IonCol>
-                  </IonRow>
-                </IonGrid>
-              </div>
-            </>
-          )}
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION: Chat-Typ */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#3880ff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={chatbubbleEllipses} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Chat-Typ
+          </h2>
+        </div>
 
-          {/* Users List */}
-          {chatType && (
-            <>
-              {loading ? (
-                <LoadingSpinner message="Benutzer werden geladen..." />
-              ) : filteredUsers.length === 0 ? (
-                <IonText color="medium" style={{ 
-                  display: 'block', 
-                  textAlign: 'center', 
-                  padding: '32px 16px' 
-                }}>
-                  <p>Keine Personen gefunden</p>
-                </IonText>
-              ) : (
-                <IonList>
-                  {filteredUsers.map((targetUser) => {
-                    const participantId = `${targetUser.type}-${targetUser.id}`;
-                    const isSelected = selectedParticipants.has(participantId);
-                    
-                    return (
-                      <IonItem 
-                        key={participantId}
-                        button 
-                        onClick={() => {
-                          if (chatType === 'direct') {
-                            createDirectMessage(targetUser);
-                          } else {
-                            handleParticipantToggle(participantId);
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              {(() => {
+                const availableTypes = getAvailableChatTypes();
+
+                // Wenn nur eine Option verfügbar ist, zeige Info
+                if (availableTypes.length === 1) {
+                  const singleType = availableTypes[0];
+                  return (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel>
+                        <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>
+                          {singleType.label}
+                        </div>
+                        <div style={{ fontSize: '0.9rem', color: '#333' }}>
+                          {singleType.value === 'direct'
+                            ? 'Direktnachrichten mit anderen Personen'
+                            : 'Gruppenchats mit mehreren Teilnehmern'
                           }
-                        }}
-                        disabled={creating}
-                      >
-                        <IonAvatar slot="start" style={{ 
-                          width: '40px', 
-                          height: '40px',
-                          backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#17a2b8',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <IonIcon 
-                            icon={targetUser.type === 'admin' ? person : people} 
-                            style={{ 
-                              fontSize: '1.2rem', 
-                              color: 'white'
-                            }} 
-                          />
-                        </IonAvatar>
-                        
-                        <IonLabel>
-                          <h3>{getUserDisplayName(targetUser)}</h3>
-                          <p>
-                            {targetUser.type === 'admin' ? 'Admin' : 
-                             (targetUser.jahrgang ? `Jahrgang ${targetUser.jahrgang}` : 'Konfi')}
-                          </p>
-                        </IonLabel>
-                        
-                        {chatType === 'group' && (
-                          <IonCheckbox 
-                            slot="end" 
-                            checked={isSelected}
-                            color={targetUser.type === 'admin' ? 'tertiary' : 'primary'}
-                          />
-                        )}
-                      </IonItem>
-                    );
-                  })}
-                </IonList>
-              )}
-            </>
-          )}
-        </IonContent>
+                        </div>
+                      </IonLabel>
+                    </IonItem>
+                  );
+                }
 
-        {/* Duplicate Alert */}
-        <IonAlert
-          isOpen={showDuplicateAlert}
-          onDidDismiss={() => setShowDuplicateAlert(false)}
-          header="Chat existiert bereits"
-          message={duplicateMessage}
-          buttons={['OK']}
-        />
-      </IonPage>
+                // Mehrere Optionen: Zeige Select
+                return (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Art des Chats</IonLabel>
+                    <IonSelect
+                      value={chatType}
+                      onIonChange={(e) => setChatType(e.detail.value)}
+                      placeholder="Chat-Art wählen"
+                      interface="action-sheet"
+                    >
+                      {availableTypes.map(type => (
+                        <IonSelectOption key={type.value} value={type.value}>
+                          {type.label}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
+                );
+              })()}
+
+              {/* Group Name Input */}
+              {chatType === 'group' && (
+                <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '12px' }}>
+                  <IonLabel position="stacked">Gruppenname *</IonLabel>
+                  <IonInput
+                    value={groupName}
+                    onIonInput={(e) => setGroupName(e.detail.value!)}
+                    placeholder="Gruppenname eingeben"
+                    clearInput={true}
+                    disabled={creating}
+                  />
+                </IonItem>
+              )}
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        {/* SEKTION: Teilnehmer */}
+        {chatType && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              margin: '24px 16px 12px 16px'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#17a2b8',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
+              </div>
+              <h2 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: '0',
+                color: '#333'
+              }}>
+                {chatType === 'direct' ? 'Person wählen' : 'Teilnehmer wählen'}
+              </h2>
+            </div>
+
+            <IonCard style={{
+              margin: '0 16px 16px 16px',
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
+                {/* Search */}
+                <IonSearchbar
+                  value={searchText}
+                  onIonInput={(e) => setSearchText(e.detail.value!)}
+                  placeholder={chatType === 'direct' ? 'Person suchen...' : 'Teilnehmer suchen...'}
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--border-radius': '12px',
+                    '--placeholder-color': '#999',
+                    padding: '0 0 12px 0'
+                  }}
+                />
+
+                {/* Filter Controls */}
+                <div style={{ paddingBottom: '12px' }}>
+                  <IonGrid style={{ padding: '0' }}>
+                    <IonRow>
+                      <IonCol size="6">
+                        <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+                          <IonSelect
+                            value={selectedRole}
+                            onIonChange={(e) => setSelectedRole(e.detail.value!)}
+                            placeholder="Alle Rollen"
+                            interface="action-sheet"
+                          >
+                            <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
+                            <IonSelectOption value="konfi">Konfis</IonSelectOption>
+                            <IonSelectOption value="admin">Admins</IonSelectOption>
+                          </IonSelect>
+                        </IonItem>
+                      </IonCol>
+                      <IonCol size="6">
+                        <IonItem lines="none" style={{ '--background': 'transparent', '--padding-end': '0' }}>
+                          <IonSelect
+                            value={selectedJahrgang}
+                            onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                            placeholder="Alle Jahrgänge"
+                            interface="action-sheet"
+                          >
+                            <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                            {availableJahrgaenge.map(jg => (
+                              <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                            ))}
+                          </IonSelect>
+                        </IonItem>
+                      </IonCol>
+                    </IonRow>
+                  </IonGrid>
+                </div>
+
+                {/* Users List */}
+                {loading ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                    <IonSpinner name="crescent" />
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#666'
+                  }}>
+                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
+                  </div>
+                ) : (
+                  <IonList lines="none" style={{ background: 'transparent' }}>
+                    {filteredUsers.map((targetUser) => {
+                      const participantId = `${targetUser.type}-${targetUser.id}`;
+                      const isSelected = selectedParticipants.has(participantId);
+
+                      return (
+                        <IonItem
+                          key={participantId}
+                          button
+                          onClick={() => {
+                            if (chatType === 'direct') {
+                              createDirectMessage(targetUser);
+                            } else {
+                              handleParticipantToggle(participantId);
+                            }
+                          }}
+                          disabled={creating}
+                          detail={false}
+                          style={{
+                            '--min-height': '60px',
+                            '--padding-start': '12px',
+                            '--background': '#fbfbfb',
+                            '--border-radius': '12px',
+                            margin: '4px 0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '12px'
+                          }}
+                        >
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#17a2b8',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: '12px',
+                            flexShrink: 0
+                          }}>
+                            <IonIcon
+                              icon={targetUser.type === 'admin' ? person : person}
+                              style={{
+                                fontSize: '1rem',
+                                color: 'white'
+                              }}
+                            />
+                          </div>
+
+                          <IonLabel>
+                            <div style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '2px' }}>
+                              {getUserDisplayName(targetUser)}
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                              {targetUser.type === 'admin' ? 'Admin' :
+                               (targetUser.jahrgang_name || targetUser.jahrgang ? `Jahrgang ${targetUser.jahrgang_name || targetUser.jahrgang}` : 'Konfi')}
+                            </div>
+                          </IonLabel>
+
+                          {chatType === 'group' && (
+                            <IonCheckbox
+                              slot="end"
+                              checked={isSelected}
+                              color={targetUser.type === 'admin' ? 'tertiary' : 'primary'}
+                            />
+                          )}
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </>
+        )}
+      </IonContent>
+
+      {/* Duplicate Alert */}
+      <IonAlert
+        isOpen={showDuplicateAlert}
+        onDidDismiss={() => setShowDuplicateAlert(false)}
+        header="Chat existiert bereits"
+        message={duplicateMessage}
+        buttons={['OK']}
+      />
+    </IonPage>
   );
 };
 
