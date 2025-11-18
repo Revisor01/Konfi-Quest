@@ -651,29 +651,44 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
     
     try {
       console.log("Canceling booking for event:", eventId, "user:", konfiId, "org:", req.user.organization_id);
-      
-      const { rowCount } = await db.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, konfiId, req.user.organization_id]);
-      
-      if (rowCount === 0) {
+
+      // Get booking details before deleting (need timeslot_id and status for waitlist promotion)
+      const { rows: [booking] } = await db.query(
+        "SELECT status, timeslot_id FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3",
+        [eventId, konfiId, req.user.organization_id]
+      );
+
+      if (!booking) {
         return res.status(404).json({ error: 'Booking not found' });
       }
-      
+
+      // Delete the booking
+      await db.query("DELETE FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND organization_id = $3", [eventId, konfiId, req.user.organization_id]);
+
       // If a confirmed spot was opened, auto-promote from waitlist
-      const { rows: [nextInLine] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1", [eventId]);
-      
-      if (nextInLine) {
-        try {
-          await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-          console.log('Promoted booking', nextInLine.id, 'from waitlist for event', eventId);
-          // TODO: Send push notification
-        } catch (promotionError) {
-          // Log the error but don't fail the main cancellation request
-          console.error('Error promoting from waitlist:', promotionError);
+      if (booking.status === 'confirmed') {
+        // For timeslot events, only promote from the same timeslot's waitlist
+        const query = booking.timeslot_id
+          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'pending' ORDER BY created_at ASC LIMIT 1"
+          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1";
+        const params = booking.timeslot_id ? [eventId, booking.timeslot_id] : [eventId];
+
+        const { rows: [nextInLine] } = await db.query(query, params);
+
+        if (nextInLine) {
+          try {
+            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
+            console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
+            // TODO: Send push notification
+          } catch (promotionError) {
+            // Log the error but don't fail the main cancellation request
+            console.error('Error promoting from waitlist:', promotionError);
+          }
         }
       }
-      
+
       res.json({ message: 'Booking canceled successfully' });
-      
+
     } catch (err) {
       console.error(`Database error in DELETE /events/${eventId}/book:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -788,11 +803,17 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
       
       // Auto-promote from waitlist if the deleted booking was confirmed
       if (booking.status === 'confirmed') {
-        const { rows: [nextInLine] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1", [eventId]);
+        // For timeslot events, only promote from the same timeslot's waitlist
+        const query = booking.timeslot_id
+          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'pending' ORDER BY created_at ASC LIMIT 1"
+          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1";
+        const params = booking.timeslot_id ? [eventId, booking.timeslot_id] : [eventId];
+
+        const { rows: [nextInLine] } = await db.query(query, params);
         if (nextInLine) {
           try {
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-            console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}`);
+            console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
             // TODO: Send push notification
           } catch (promotionError) {
             console.error('Error promoting from waitlist:', promotionError);
