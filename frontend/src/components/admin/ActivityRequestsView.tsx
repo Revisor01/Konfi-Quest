@@ -7,37 +7,26 @@ import {
   IonGrid,
   IonRow,
   IonCol,
-  IonButton,
   IonIcon,
   IonItem,
   IonLabel,
-  IonBadge,
   IonList,
-  IonChip,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonInput,
-  IonSegment,
-  IonSegmentButton,
-  IonAvatar,
-  IonImg,
-  useIonActionSheet
+  IonSearchbar
 } from '@ionic/react';
-import { 
-  checkmark,
-  close,
-  trash, 
-  create, 
-  search,
+import {
+  checkmarkCircle,
+  closeCircle,
+  trash,
+  hourglass,
   document,
   time,
   person,
   calendar,
-  image,
-  eye
+  chatbubbleEllipses
 } from 'ionicons/icons';
-import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 
 interface ActivityRequest {
@@ -64,59 +53,30 @@ interface ActivityRequestsViewProps {
   onDeleteRequest: (request: ActivityRequest) => void;
 }
 
-const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({ 
-  requests, 
-  onUpdate, 
+const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
+  requests,
+  onUpdate,
   onSelectRequest,
   onDeleteRequest
 }) => {
-  const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('alle');
 
   const filteredAndSortedRequests = (() => {
     let result = filterBySearchTerm(requests, searchTerm, ['konfi_name', 'activity_name', 'comment']);
-    
-    // Filter by status
-    if (selectedStatus !== 'alle') {
-      result = result.filter(request => request.status === selectedStatus);
-    }
-    
-    // Sort by created_at (newest first)
-    result = result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
+
+    // Sort: pending first, then by created_at (newest first)
+    result = result.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (a.status !== 'pending' && b.status === 'pending') return 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
     return result;
   })();
 
-  const getPendingRequests = () => {
-    return requests.filter(request => request.status === 'pending');
-  };
-
-  const getApprovedRequests = () => {
-    return requests.filter(request => request.status === 'approved');
-  };
-
-  const getRejectedRequests = () => {
-    return requests.filter(request => request.status === 'rejected');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return 'Ausstehend';
-      case 'approved': return 'Genehmigt';
-      case 'rejected': return 'Abgelehnt';
-      default: return status;
-    }
-  };
+  const getPendingCount = () => requests.filter(r => r.status === 'pending').length;
+  const getApprovedCount = () => requests.filter(r => r.status === 'approved').length;
+  const getRejectedCount = () => requests.filter(r => r.status === 'rejected').length;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -126,11 +86,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('de-DE', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -138,246 +95,379 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
   return (
     <>
-      {/* Header Card mit Statistiken - Grüner Gradient */}
-      <IonCard style={{
+      {/* Header Gradient - Aktivitäten-Grün */}
+      <div style={{
+        background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+        borderRadius: '24px',
+        padding: '0',
         margin: '16px',
-        borderRadius: '16px',
-        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-        color: 'white',
-        boxShadow: '0 8px 32px rgba(40, 167, 69, 0.3)'
+        marginBottom: '16px',
+        boxShadow: '0 20px 40px rgba(22, 163, 74, 0.3)',
+        overflow: 'hidden'
       }}>
-        <IonCardContent>
-          <IonGrid>
+        <div style={{
+          padding: '32px 24px 24px 24px',
+          background: 'radial-gradient(circle at top right, rgba(255,255,255,0.15) 0%, transparent 70%)'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '20px'
+          }}>
+            <div>
+              <h1 style={{
+                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                fontWeight: '700',
+                color: 'white',
+                margin: '0 0 4px 0',
+                letterSpacing: '-0.02em'
+              }}>
+                Anträge
+              </h1>
+              <p style={{
+                fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+                color: 'rgba(255, 255, 255, 0.85)',
+                margin: '0'
+              }}>
+                Aktivitäten-Anträge verwalten
+              </p>
+            </div>
+          </div>
+
+          {/* Statistiken */}
+          <IonGrid style={{ padding: '0' }}>
             <IonRow>
               <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={document} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '16px',
+                  padding: '16px 12px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <IonIcon icon={document} style={{
+                    fontSize: '1.8rem',
+                    color: 'white',
+                    display: 'block',
+                    margin: '0 auto 8px'
+                  }} />
+                  <div style={{
+                    fontSize: '1.8rem',
+                    fontWeight: '700',
+                    color: 'white',
+                    lineHeight: '1',
+                    marginBottom: '4px'
+                  }}>
                     {requests.length}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Anträge
-                  </p>
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontWeight: '500'
+                  }}>
+                    Gesamt
+                  </div>
                 </div>
               </IonCol>
+
               <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={time} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getPendingRequests().length}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                    Ausstehend
-                  </p>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '16px',
+                  padding: '16px 12px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <IonIcon icon={hourglass} style={{
+                    fontSize: '1.8rem',
+                    color: 'white',
+                    display: 'block',
+                    margin: '0 auto 8px'
+                  }} />
+                  <div style={{
+                    fontSize: '1.8rem',
+                    fontWeight: '700',
+                    color: 'white',
+                    lineHeight: '1',
+                    marginBottom: '4px'
+                  }}>
+                    {getPendingCount()}
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontWeight: '500'
+                  }}>
+                    Offen
+                  </div>
                 </div>
               </IonCol>
+
               <IonCol size="4">
-                <div style={{ textAlign: 'center' }}>
-                  <IonIcon icon={checkmark} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                  <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                    {getApprovedRequests().length}
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '16px',
+                  padding: '16px 12px',
+                  textAlign: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.2)'
+                }}>
+                  <IonIcon icon={checkmarkCircle} style={{
+                    fontSize: '1.8rem',
+                    color: 'white',
+                    display: 'block',
+                    margin: '0 auto 8px'
+                  }} />
+                  <div style={{
+                    fontSize: '1.8rem',
+                    fontWeight: '700',
+                    color: 'white',
+                    lineHeight: '1',
+                    marginBottom: '4px'
+                  }}>
+                    {getApprovedCount()}
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontWeight: '500'
+                  }}>
                     Genehmigt
-                  </p>
+                  </div>
                 </div>
               </IonCol>
             </IonRow>
           </IonGrid>
-        </IonCardContent>
-      </IonCard>
+        </div>
+      </div>
 
-      {/* Search and Filter */}
+      {/* Suchfeld */}
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '16px' }}>
-          {/* Search Bar */}
-          <IonItem 
-            lines="none" 
-            style={{ 
+          <IonSearchbar
+            value={searchTerm}
+            onIonInput={(e) => setSearchTerm(e.detail.value!)}
+            placeholder="Antrag suchen..."
+            style={{
               '--background': '#f8f9fa',
-              '--border-radius': '8px',
-              marginBottom: '16px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              '--min-height': '44px'
+              '--border-radius': '12px',
+              '--placeholder-color': '#999',
+              padding: '0'
             }}
-          >
-            <IonIcon 
-              icon={search} 
-              slot="start" 
-              style={{ 
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }} 
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Antrag suchen..."
-              style={{ 
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
-
-          {/* Tab Filter */}
-          <IonSegment 
-            value={selectedStatus} 
-            onIonChange={(e) => setSelectedStatus(e.detail.value as string)}
-            style={{ 
-              '--background': '#f8f9fa',
-              borderRadius: '8px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonIcon icon={document} style={{ fontSize: '1rem', marginRight: '4px' }} />
-              <IonLabel>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="pending">
-              <IonIcon icon={time} style={{ fontSize: '1rem', marginRight: '4px' }} />
-              <IonLabel>Ausstehend</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="approved">
-              <IonIcon icon={checkmark} style={{ fontSize: '1rem', marginRight: '4px' }} />
-              <IonLabel>Genehmigt</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="rejected">
-              <IonIcon icon={close} style={{ fontSize: '1rem', marginRight: '4px' }} />
-              <IonLabel>Abgelehnt</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
+          />
         </IonCardContent>
       </IonCard>
 
       {/* Anträge Liste */}
       <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '0' }}>
-          <IonList>
-            {filteredAndSortedRequests.map((request) => (
-              <IonItemSliding key={request.id}>
-                <IonItem 
-                  button 
-                  onClick={() => onSelectRequest(request)}
-                  style={{ '--min-height': '80px', '--padding-start': '16px' }}
-                >
-                  {request.photo_filename && (
-                    <IonAvatar slot="start" style={{ marginRight: '12px' }}>
-                      <IonIcon 
-                        icon={image} 
-                        style={{ 
-                          fontSize: '1.5rem', 
-                          color: '#007aff' 
-                        }} 
-                      />
-                    </IonAvatar>
-                  )}
-                  
-                  <IonLabel>
-                    <h2 style={{ 
-                      fontWeight: '600', 
-                      fontSize: '1.1rem',
-                      margin: '0 0 6px 0'
+        <IonCardContent style={{ padding: '8px 0' }}>
+          {filteredAndSortedRequests.length === 0 ? (
+            <div style={{
+              padding: '40px 20px',
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              <IonIcon
+                icon={document}
+                style={{
+                  fontSize: '3rem',
+                  opacity: 0.3,
+                  marginBottom: '16px'
+                }}
+              />
+              <p style={{ margin: '0', fontSize: '1rem' }}>
+                {searchTerm ? 'Keine Anträge gefunden' : 'Noch keine Anträge'}
+              </p>
+            </div>
+          ) : (
+            <IonList lines="none" style={{ background: 'transparent' }}>
+              {filteredAndSortedRequests.map((request) => {
+                const isPending = request.status === 'pending';
+                const isApproved = request.status === 'approved';
+                const isRejected = request.status === 'rejected';
+
+                return (
+                  <IonItemSliding key={request.id}>
+                    <IonItem
+                      button
+                      onClick={() => onSelectRequest(request)}
+                      detail={false}
+                      style={{
+                        '--min-height': '110px',
+                        '--padding-start': '16px',
+                        '--padding-top': '0px',
+                        '--padding-bottom': '0px',
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        margin: '4px 8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '12px',
+                        opacity: (isApproved || isRejected) ? 0.6 : 1
+                      }}
+                    >
+                      <IonLabel>
+                        {/* ZEILE 1: Header mit Icon und Status Badge */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          marginBottom: '6px'
+                        }}>
+                          {/* 32px Status Icon */}
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: isPending
+                              ? '0 2px 8px rgba(255, 149, 0, 0.3)'
+                              : isApproved
+                              ? '0 2px 8px rgba(45, 211, 111, 0.3)'
+                              : '0 2px 8px rgba(220, 53, 69, 0.3)',
+                            flexShrink: 0
+                          }}>
+                            <IonIcon
+                              icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
+                              style={{ fontSize: '1rem', color: 'white' }}
+                            />
+                          </div>
+
+                          {/* Konfi Name */}
+                          <h2 style={{
+                            fontWeight: '600',
+                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                            margin: '0',
+                            color: '#333',
+                            lineHeight: '1.3',
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {request.konfi_name}
+                          </h2>
+
+                          {/* Status Badge */}
+                          <div style={{
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            gap: '4px',
+                            alignItems: 'center',
+                            flexShrink: 0
+                          }}>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: isPending ? '#ff9500' : isApproved ? '#2dd36f' : '#dc3545',
+                              fontWeight: '600',
+                              backgroundColor: isPending
+                                ? 'rgba(255, 149, 0, 0.15)'
+                                : isApproved
+                                ? 'rgba(45, 211, 111, 0.15)'
+                                : 'rgba(220, 53, 69, 0.15)',
+                              padding: '3px 6px',
+                              borderRadius: '6px',
+                              border: isPending
+                                ? '1px solid rgba(255, 149, 0, 0.3)'
+                                : isApproved
+                                ? '1px solid rgba(45, 211, 111, 0.3)'
+                                : '1px solid rgba(220, 53, 69, 0.3)',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                            }}>
+                              {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* ZEILE 2: Aktivitäts-Name und Datum */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.85rem',
+                          color: '#666',
+                          marginBottom: '4px'
+                        }}>
+                          <IonIcon icon={document} style={{ fontSize: '0.9rem', color: '#2dd36f' }} />
+                          <span style={{ fontWeight: '500', color: '#333' }}>{request.activity_name}</span>
+                          <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: '#dc2626', marginLeft: '8px' }} />
+                          <span>{formatDate(request.requested_date)}</span>
+                        </div>
+
+                        {/* ZEILE 3: Zusatzinfos */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '16px',
+                          fontSize: '0.8rem',
+                          color: '#666'
+                        }}>
+                          {request.jahrgang_name && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <IonIcon icon={person} style={{ fontSize: '0.8rem', color: '#8b5cf6' }} />
+                              <span>{request.jahrgang_name}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#ff6b35' }} />
+                            <span>{formatDate(request.created_at)} {formatTime(request.created_at)}</span>
+                          </div>
+                          {request.comment && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <IonIcon icon={chatbubbleEllipses} style={{ fontSize: '0.8rem', color: '#007aff' }} />
+                            </div>
+                          )}
+                        </div>
+                      </IonLabel>
+                    </IonItem>
+
+                    {/* Swipe Actions */}
+                    <IonItemOptions side="end" style={{
+                      gap: '4px',
+                      '--ion-item-background': 'transparent'
                     }}>
-                      {request.konfi_name}
-                    </h2>
-                    
-                    <p style={{ 
-                      margin: '0 0 6px 0',
-                      fontSize: '0.85rem',
-                      color: '#666',
-                      fontWeight: '500'
-                    }}>
-                      {request.activity_name}
-                    </p>
-                    
-                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                      <IonChip 
-                        color={getStatusColor(request.status)}
-                        style={{ 
-                          fontSize: '0.75rem', 
-                          height: '22px',
-                          opacity: 0.7,
-                          '--background': getStatusColor(request.status) === 'success' ? 'rgba(45, 211, 111, 0.15)' : 
-                                         getStatusColor(request.status) === 'warning' ? 'rgba(255, 204, 0, 0.15)' : 
-                                         'rgba(245, 61, 61, 0.15)',
-                          '--color': getStatusColor(request.status) === 'success' ? '#2dd36f' : 
-                                    getStatusColor(request.status) === 'warning' ? '#ffcc00' : 
-                                    '#f53d3d'
+                      <IonItemOption
+                        onClick={() => onDeleteRequest(request)}
+                        style={{
+                          '--background': 'transparent',
+                          '--background-activated': 'transparent',
+                          '--background-focused': 'transparent',
+                          '--background-hover': 'transparent',
+                          '--color': 'transparent',
+                          '--ripple-color': 'transparent',
+                          padding: '0 2px',
+                          paddingRight: '20px',
+                          minWidth: '48px',
+                          maxWidth: '68px'
                         }}
                       >
-                        {getStatusText(request.status)}
-                      </IonChip>
-                      
-                      {request.jahrgang_name && (
-                        <IonChip 
-                          color="tertiary"
-                          style={{ 
-                            fontSize: '0.75rem', 
-                            height: '22px',
-                            opacity: 0.7,
-                            '--background': 'rgba(112, 69, 246, 0.15)',
-                            '--color': '#7045f6'
-                          }}
-                        >
-                          {request.jahrgang_name}
-                        </IonChip>
-                      )}
-                    </div>
-                    
-                    <p style={{ 
-                      margin: '0',
-                      fontSize: '0.8rem',
-                      color: '#999'
-                    }}>
-                      Teilnahme: {formatDate(request.requested_date)} • Eingereicht: {formatDateTime(request.created_at)}
-                    </p>
-                    
-                    {request.comment && (
-                      <p style={{ 
-                        margin: '4px 0 0 0',
-                        fontSize: '0.85rem',
-                        color: '#666',
-                        fontStyle: 'italic',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
-                      }}>
-                        "{request.comment}"
-                      </p>
-                    )}
-                  </IonLabel>
-                </IonItem>
-
-                <IonItemOptions side="end">
-                  <IonItemOption 
-                    color="primary" 
-                    onClick={() => onSelectRequest(request)}
-                  >
-                    <IonIcon icon={eye} />
-                  </IonItemOption>
-                  <IonItemOption 
-                    color="danger" 
-                    onClick={() => onDeleteRequest(request)}
-                  >
-                    <IonIcon icon={trash} />
-                  </IonItemOption>
-                </IonItemOptions>
-              </IonItemSliding>
-            ))}
-            
-            {filteredAndSortedRequests.length === 0 && (
-              <IonItem>
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Keine Anträge gefunden</p>
-                </IonLabel>
-              </IonItem>
-            )}
-          </IonList>
+                        <div style={{
+                          width: '44px',
+                          height: '44px',
+                          backgroundColor: '#dc3545',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                        }}>
+                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                        </div>
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                );
+              })}
+            </IonList>
+          )}
         </IonCardContent>
       </IonCard>
     </>
