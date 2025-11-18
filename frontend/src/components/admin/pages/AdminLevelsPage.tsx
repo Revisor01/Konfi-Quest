@@ -19,27 +19,33 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonProgressBar,
-  IonBadge,
   IonNote,
-  IonChip
+  IonChip,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
-import { add, trophy, star, pencil, trash, sparkles } from 'ionicons/icons';
-import axios from 'axios';
+import { add, trophy, trash, create } from 'ionicons/icons';
+import { useApp } from '../../../contexts/AppContext';
+import api from '../../../services/api';
 import LevelManagementModal from '../modals/LevelManagementModal';
 
 interface Level {
   id: number;
-  level_number: number;
   name: string;
-  required_points: number;
+  title: string;
   description?: string;
-  color?: string;
+  points_required: number;
   icon?: string;
+  color?: string;
+  reward_type?: string;
+  reward_value?: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
 
 const AdminLevelsPage: React.FC = () => {
+  const { setSuccess, setError } = useApp();
   const [levels, setLevels] = useState<Level[]>([]);
   const [loading, setLoading] = useState(true);
   const ionListRef = useRef<HTMLIonListElement>(null);
@@ -48,13 +54,12 @@ const AdminLevelsPage: React.FC = () => {
 
   const loadLevels = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/levels', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      setLoading(true);
+      const response = await api.get('/levels');
       setLevels(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fehler beim Laden der Level:', error);
+      setError(error.response?.data?.error || 'Fehler beim Laden der Level');
     } finally {
       setLoading(false);
     }
@@ -88,16 +93,14 @@ const AdminLevelsPage: React.FC = () => {
   };
 
   const handleDelete = async (level: Level) => {
-    if (!confirm(`Level "${level.name}" wirklich löschen?`)) return;
+    if (!confirm(`Level "${level.title}" wirklich löschen?`)) return;
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/levels/${level.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/levels/${level.id}`);
+      setSuccess('Level gelöscht');
       await loadLevels();
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Fehler beim Löschen des Levels');
+      setError(error.response?.data?.error || 'Fehler beim Löschen des Levels');
       ionListRef.current?.closeSlidingItems();
     }
   };
@@ -105,19 +108,6 @@ const AdminLevelsPage: React.FC = () => {
   const handleRefresh = async (event: CustomEvent) => {
     await loadLevels();
     event.detail.complete();
-  };
-
-  const getColorForLevel = (level: Level) => {
-    if (level.color) return level.color;
-    const colors = ['primary', 'secondary', 'tertiary', 'success', 'warning', 'danger'];
-    return colors[(level.level_number - 1) % colors.length];
-  };
-
-  const getIconForLevel = (level: Level) => {
-    if (level.icon) return level.icon;
-    if (level.level_number === 1) return star;
-    if (level.level_number <= 3) return sparkles;
-    return trophy;
   };
 
   return (
@@ -142,41 +132,94 @@ const AdminLevelsPage: React.FC = () => {
 
         {loading && <IonProgressBar type="indeterminate" />}
 
-        <IonList ref={ionListRef}>
-          {levels.map((level) => (
-            <IonItemSliding key={level.id}>
-              <IonItem>
-                <IonIcon 
-                  icon={getIconForLevel(level)} 
-                  slot="start" 
-                  color={getColorForLevel(level)}
-                  style={{ fontSize: '24px' }}
-                />
-                <IonLabel>
-                  <h2>Level {level.level_number}: {level.name}</h2>
-                  <p>{level.description || 'Keine Beschreibung'}</p>
-                </IonLabel>
-                <IonChip color={getColorForLevel(level)} slot="end">
-                  <IonLabel>{level.required_points} Punkte</IonLabel>
-                </IonChip>
-              </IonItem>
-              <IonItemOptions side="end">
-                <IonItemOption color="primary" onClick={() => handleEdit(level)}>
-                  <IonIcon icon={pencil} />
-                </IonItemOption>
-                <IonItemOption color="danger" onClick={() => handleDelete(level)}>
-                  <IonIcon icon={trash} />
-                </IonItemOption>
-              </IonItemOptions>
-            </IonItemSliding>
-          ))}
-        </IonList>
-
-        {!loading && levels.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <IonNote>Noch keine Level vorhanden</IonNote>
-          </div>
-        )}
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
+            {!loading && levels.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <IonIcon icon={trophy} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                <IonNote>Noch keine Level vorhanden</IonNote>
+              </div>
+            ) : (
+              <IonList ref={ionListRef} lines="none" style={{ background: 'transparent' }}>
+                {levels.map((level) => (
+                  <IonItemSliding key={level.id}>
+                    <IonItem
+                      button
+                      onClick={() => handleEdit(level)}
+                      detail={false}
+                      style={{
+                        '--min-height': '70px',
+                        '--padding-start': '16px',
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        margin: '4px 8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '12px'
+                      }}
+                    >
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: level.color || '#3880ff',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginRight: '12px',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)'
+                      }}>
+                        <span style={{ fontSize: '1.2rem' }}>{level.icon || '🏆'}</span>
+                      </div>
+                      <IonLabel>
+                        <h2 style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '4px' }}>
+                          {level.title}
+                        </h2>
+                        <p style={{ fontSize: '0.85rem', color: '#666' }}>
+                          {level.description || 'Keine Beschreibung'}
+                        </p>
+                      </IonLabel>
+                      <IonChip style={{ marginRight: '8px' }}>
+                        <IonLabel>{level.points_required} Punkte</IonLabel>
+                      </IonChip>
+                    </IonItem>
+                    <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                      <IonItemOption
+                        onClick={() => handleDelete(level)}
+                        style={{
+                          '--background': 'transparent',
+                          '--background-activated': 'transparent',
+                          '--background-focused': 'transparent',
+                          '--background-hover': 'transparent',
+                          '--color': 'transparent',
+                          '--ripple-color': 'transparent',
+                          padding: '0 2px',
+                          paddingRight: '20px',
+                          minWidth: '48px',
+                          maxWidth: '68px'
+                        }}
+                      >
+                        <div style={{
+                          width: '44px',
+                          height: '44px',
+                          backgroundColor: '#dc3545',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                        }}>
+                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                        </div>
+                      </IonItemOption>
+                    </IonItemOptions>
+                  </IonItemSliding>
+                ))}
+              </IonList>
+            )}
+          </IonCardContent>
+        </IonCard>
       </IonContent>
     </IonPage>
   );
