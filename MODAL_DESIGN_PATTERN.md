@@ -339,6 +339,103 @@ const handleSubmit = async () => {
 };
 ```
 
+## Listen in Modals (Graues Format)
+
+Für Listen innerhalb von Modals (z.B. Teilnehmer-Listen, Auswahllisten):
+
+```tsx
+<IonList lines="none" style={{ background: 'transparent' }}>
+  {items.map((item) => (
+    <IonItem
+      key={item.id}
+      detail={false}
+      style={{
+        '--min-height': '56px',
+        '--padding-start': '16px',
+        '--padding-top': '0px',
+        '--padding-bottom': '0px',
+        '--background': '#fbfbfb',
+        '--border-radius': '12px',
+        margin: '6px 0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        border: '1px solid #e0e0e0',
+        borderRadius: '12px'
+      }}
+    >
+      <IonLabel>
+        {/* Icon Circle mit Initialen */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '4px'
+        }}>
+          <div style={{
+            width: '28px',
+            height: '28px',
+            backgroundColor: '#8b5cf6',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+          }}>
+            <span style={{
+              fontSize: '0.7rem',
+              fontWeight: '600',
+              color: 'white',
+              textTransform: 'uppercase'
+            }}>
+              {item.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+            </span>
+          </div>
+          <h3 style={{
+            fontWeight: '600',
+            fontSize: '1rem',
+            margin: '0',
+            color: '#333',
+            flex: 1
+          }}>
+            {item.name}
+          </h3>
+        </div>
+        {/* Optional: Zusatzinfos */}
+        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+          {item.additionalInfo}
+        </div>
+      </IonLabel>
+    </IonItem>
+  ))}
+</IonList>
+```
+
+**Wichtig**:
+- Nutze 28px Icons mit Schimmer-Effekt (siehe ICON_STYLING_GUIDE.md)
+- Lila Kreise (#8b5cf6) für Konfi-/User-Initialen
+- Andere Farben je nach Kontext
+
+## Suchfeld in Modals
+
+Für Filter/Suche in Modals:
+
+```tsx
+<IonSearchbar
+  value={searchTerm}
+  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+  placeholder="Suchen..."
+  style={{
+    '--background': '#f8f9fa',
+    '--border-radius': '12px',
+    '--placeholder-color': '#999',
+    marginBottom: '16px',
+    padding: '0'
+  }}
+/>
+```
+
+**Einfach und nativ** - kein extra Rahmen, nutzt natives Ionic-Styling.
+
 ## Wichtige Regeln
 
 1. **Keine Unicode Emojis verwenden** - nur IonIcons
@@ -351,7 +448,12 @@ const handleSubmit = async () => {
 8. **Loading State** bei Submit-Button anzeigen
 9. **Validation** vor Submit durchführen
 10. **Deutsche Fehlermeldungen** verwenden
+11. **Listen in grauem Format** (#fbfbfb) mit Icon-Circles (28px)
+12. **Suchfelder nativ** ohne extra Styling, nur Hintergrund/Placeholder
 
-## Beispiel für vollständiges Modal Template
+## Referenzen
 
-Siehe `/frontend/src/components/admin/modals/EventModal.tsx` für vollständige Implementierung.
+- **Vollständiges Modal**: `/frontend/src/components/admin/modals/EventModal.tsx`
+- **Listen in Modals**: `/frontend/src/components/admin/modals/ParticipantManagementModal.tsx`
+- **Icon-Styling**: `ICON_STYLING_GUIDE.md`
+- **Listen-Design**: `LIST_DESIGN_GUIDE.md`
