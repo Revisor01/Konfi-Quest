@@ -559,7 +559,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              boxShadow: '0 2px 8px rgba(255, 152, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                             }}>
                               <IonIcon
                                 icon={gift}
@@ -725,7 +726,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                           }}>
                             <IonIcon
                               icon={podium}
@@ -866,7 +868,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              boxShadow: activity.isPending
+                                ? '0 2px 8px rgba(245, 158, 11, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                                : activity.type === 'gottesdienst'
+                                ? '0 2px 8px rgba(0, 122, 255, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                                : '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                             }}>
                               <IonIcon
                                 icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : star}
