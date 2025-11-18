@@ -360,13 +360,13 @@ const EventsView: React.FC<EventsViewProps> = ({
                   onClick={() => onSelectEvent(event)}
                   detail={false}
                   style={{
-                    '--min-height': '130px',
+                    '--min-height': '110px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
-                    margin: '6px 8px',
+                    margin: '4px 8px',
                     boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
                     border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #e0e0e0',
                     borderRadius: '12px',
@@ -379,7 +379,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '8px'
+                      marginBottom: '6px'
                     }}>
                       <div style={{
                         width: '32px',
@@ -507,7 +507,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                       gap: '6px',
                       fontSize: '0.85rem',
                       color: shouldGrayOut ? '#999' : '#666',
-                      marginBottom: '6px'
+                      marginBottom: '4px'
                     }}>
                       <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : '#dc2626' }} />
                       <span style={{ fontWeight: '500', color: shouldGrayOut ? '#999' : '#333' }}>
