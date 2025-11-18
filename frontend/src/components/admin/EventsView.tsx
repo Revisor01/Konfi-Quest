@@ -441,7 +441,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         )}
                       </h2>
 
-                      {/* Status Badges - rechtsbündig fixiert, in einer Zeile */}
+                      {/* Status Badge - vereinfacht, nur ein Badge */}
                       <div style={{
                         marginLeft: 'auto',
                         display: 'flex',
@@ -449,43 +449,25 @@ const EventsView: React.FC<EventsViewProps> = ({
                         alignItems: 'center',
                         flexShrink: 0
                       }}>
-                        {/* Verbuchungs-Icon (vor Event-Status) */}
-                        {hasUnprocessedBookings && (
-                          <IonIcon
-                            icon={hourglass}
-                            style={{
-                              fontSize: '0.9rem',
-                              color: '#ff6b35'
-                            }}
-                          />
-                        )}
-
-                        {isFullyProcessed && (
-                          <IonIcon
-                            icon={checkmarkCircle}
-                            style={{
-                              fontSize: '0.9rem',
-                              color: '#34c759'
-                            }}
-                          />
-                        )}
-
-                        {/* Event-Status Badge */}
                         <span style={{
                           fontSize: '0.7rem',
                           color: (() => {
                             if (isKonfirmationEvent) return '#8b5cf6';
-                            const status = calculateRegistrationStatus(event);
                             if (isCancelled) return '#dc3545';
+                            if (hasUnprocessedBookings) return '#ff6b35'; // Orange für zu verbuchen
+                            if (isFullyProcessed) return '#34c759'; // Grün für verbucht
+                            const status = calculateRegistrationStatus(event);
                             if (status === 'open') return '#007aff';
                             if (status === 'upcoming') return '#fd7e14';
-                            return '#dc3545';
+                            return '#dc3545'; // Geschlossen
                           })(),
                           fontWeight: '600',
                           backgroundColor: (() => {
                             if (isKonfirmationEvent) return 'rgba(139, 92, 246, 0.15)';
-                            const status = calculateRegistrationStatus(event);
                             if (isCancelled) return 'rgba(220, 38, 38, 0.15)';
+                            if (hasUnprocessedBookings) return 'rgba(255, 107, 53, 0.15)';
+                            if (isFullyProcessed) return 'rgba(52, 199, 89, 0.15)';
+                            const status = calculateRegistrationStatus(event);
                             if (status === 'open') return 'rgba(0, 122, 255, 0.15)';
                             if (status === 'upcoming') return 'rgba(253, 126, 20, 0.15)';
                             return 'rgba(220, 38, 38, 0.15)';
@@ -494,8 +476,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                           borderRadius: '6px',
                           border: (() => {
                             if (isKonfirmationEvent) return '1px solid rgba(139, 92, 246, 0.3)';
-                            const status = calculateRegistrationStatus(event);
                             if (isCancelled) return '1px solid rgba(220, 38, 38, 0.3)';
+                            if (hasUnprocessedBookings) return '1px solid rgba(255, 107, 53, 0.3)';
+                            if (isFullyProcessed) return '1px solid rgba(52, 199, 89, 0.3)';
+                            const status = calculateRegistrationStatus(event);
                             if (status === 'open') return '1px solid rgba(0, 122, 255, 0.3)';
                             if (status === 'upcoming') return '1px solid rgba(253, 126, 20, 0.3)';
                             return '1px solid rgba(220, 38, 38, 0.3)';
@@ -507,8 +491,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                           gap: '4px'
                         }}>
                           {(() => {
-                            const status = calculateRegistrationStatus(event);
                             if (isCancelled) return 'ABGESAGT';
+                            if (hasUnprocessedBookings) return 'VERBUCHEN';
+                            if (isFullyProcessed) return 'VERBUCHT';
+                            const status = calculateRegistrationStatus(event);
                             if (status === 'open') return 'OFFEN';
                             if (status === 'upcoming') return 'BALD';
                             return 'GESCHLOSSEN';
