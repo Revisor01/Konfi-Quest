@@ -276,14 +276,14 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   router.get('/', rbacVerifier, checkPermission('admin.badges.view'), async (req, res) => {
     try {
       const badgeQuery = `
-        SELECT cb.*, 
+        SELECT cb.*,
                 u.display_name as created_by_name,
                 COALESCE(badge_counts.earned_count, 0)::int as earned_count
-        FROM custom_badges cb 
+        FROM custom_badges cb
         LEFT JOIN users u ON cb.created_by = u.id
         LEFT JOIN (
-          SELECT badge_id, COUNT(*) as earned_count 
-          FROM konfi_badges 
+          SELECT badge_id, COUNT(*) as earned_count
+          FROM konfi_badges
           GROUP BY badge_id
         ) badge_counts ON cb.id = badge_counts.badge_id
         WHERE cb.organization_id = $1
@@ -293,6 +293,34 @@ module.exports = (db, rbacVerifier, checkPermission) => {
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /api/badges:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  router.get('/:id', rbacVerifier, checkPermission('admin.badges.view'), async (req, res) => {
+    try {
+      const badgeQuery = `
+        SELECT cb.*,
+                u.display_name as created_by_name,
+                COALESCE(badge_counts.earned_count, 0)::int as earned_count
+        FROM custom_badges cb
+        LEFT JOIN users u ON cb.created_by = u.id
+        LEFT JOIN (
+          SELECT badge_id, COUNT(*) as earned_count
+          FROM konfi_badges
+          GROUP BY badge_id
+        ) badge_counts ON cb.id = badge_counts.badge_id
+        WHERE cb.id = $1 AND cb.organization_id = $2
+      `;
+      const { rows: [badge] } = await db.query(badgeQuery, [req.params.id, req.user.organization_id]);
+
+      if (!badge) {
+        return res.status(404).json({ error: 'Badge not found' });
+      }
+
+      res.json(badge);
+    } catch (err) {
+      console.error('Database error in GET /api/badges/:id:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });

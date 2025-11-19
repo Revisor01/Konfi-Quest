@@ -13,7 +13,6 @@ import {
   IonList,
   IonIcon,
   IonTextarea,
-  IonActionSheet,
   IonCard,
   IonCardContent,
   IonSpinner
@@ -40,7 +39,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
   const handleClose = () => {
     if (dismiss) {
@@ -99,12 +97,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             <IonButton
               onClick={handleSave}
               disabled={!selectedActivity}
-              style={{
-                '--background': selectedActivity ? '#2dd36f' : '#ccc',
-                '--background-hover': '#28ba62',
-                '--color': 'white',
-                '--border-radius': '8px'
-              }}
             >
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
@@ -150,19 +142,70 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem button onClick={() => setIsActionSheetOpen(true)} lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
-                <IonLabel position="stacked">Aktivität *</IonLabel>
-                <IonLabel>
-                  {selectedActivity ? (() => {
-                    const activity = activities.find(a => a.id === selectedActivity);
-                    return activity ?
-                      `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})` :
-                      'Aktivität wählen';
-                  })() : 'Aktivität wählen'}
-                </IonLabel>
-              </IonItem>
-            </IonList>
+            <IonLabel position="stacked" style={{ marginBottom: '12px', display: 'block' }}>Aktivität *</IonLabel>
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {activities
+                .sort((a, b) => {
+                  if (a.type !== b.type) {
+                    return a.type.localeCompare(b.type);
+                  }
+                  return a.name.localeCompare(b.name);
+                })
+                .map(activity => (
+                  <div
+                    key={activity.id}
+                    onClick={() => setSelectedActivity(activity.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px',
+                      marginBottom: '8px',
+                      borderRadius: '8px',
+                      background: selectedActivity === activity.id ? 'rgba(45, 211, 111, 0.1)' : '#f8f9fa',
+                      border: `2px solid ${selectedActivity === activity.id ? '#2dd36f' : '#e0e0e0'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${selectedActivity === activity.id ? '#2dd36f' : '#999'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {selectedActivity === activity.id && (
+                        <div style={{
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          background: '#2dd36f'
+                        }} />
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '0.95rem',
+                        color: '#333',
+                        fontWeight: selectedActivity === activity.id ? '600' : '400',
+                        marginBottom: '2px'
+                      }}>
+                        {activity.name}
+                      </div>
+                      <div style={{
+                        fontSize: '0.8rem',
+                        color: '#666'
+                      }}>
+                        {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </IonCardContent>
         </IonCard>
 
@@ -227,35 +270,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           </IonCardContent>
         </IonCard>
 
-        <IonActionSheet
-          isOpen={isActionSheetOpen}
-          onDidDismiss={() => setIsActionSheetOpen(false)}
-          header="Aktivität wählen"
-          buttons={[
-            ...activities
-              .sort((a, b) => {
-                // Sortiere nach Type und dann nach Name
-                if (a.type !== b.type) {
-                  return a.type.localeCompare(b.type);
-                }
-                return a.name.localeCompare(b.name);
-              })
-              .map(activity => ({
-                text: `${activity.name} (${activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}, ${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})`,
-                handler: () => {
-                  setSelectedActivity(activity.id);
-                  setIsActionSheetOpen(false);
-                }
-              })),
-            {
-              text: 'Abbrechen',
-              role: 'cancel',
-              handler: () => {
-                setIsActionSheetOpen(false);
-              }
-            }
-          ]}
-        />
       </IonContent>
     </IonPage>
   );

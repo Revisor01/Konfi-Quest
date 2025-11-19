@@ -135,32 +135,37 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   const loadBadge = async () => {
     if (!badgeId) return;
-    
+
     setLoading(true);
     try {
       const response = await api.get(`/badges/${badgeId}`);
       const badge = response.data;
-      
+
       if (badge) {
+        // Parse extra criteria FIRST
+        let extra = {};
+        try {
+          extra = typeof badge.criteria_extra === 'string'
+            ? JSON.parse(badge.criteria_extra || '{}')
+            : (badge.criteria_extra || {});
+        } catch (e) {
+          console.error('Error parsing criteria_extra:', e);
+          extra = {};
+        }
+
         setFormData({
-          name: badge.name,
-          icon: badge.icon,
+          name: badge.name || '',
+          icon: badge.icon || '🏆',
           description: badge.description || '',
-          criteria_type: badge.criteria_type,
-          criteria_value: badge.criteria_value,
+          criteria_type: badge.criteria_type || 'total_points',
+          criteria_value: badge.criteria_value || 10,
           criteria_extra: badge.criteria_extra || '{}',
-          is_active: badge.is_active,
-          is_hidden: badge.is_hidden,
+          is_active: badge.is_active !== undefined ? badge.is_active : true,
+          is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
           color: badge.color || '#667eea'
         });
 
-        // Parse extra criteria
-        try {
-          const extra = JSON.parse(badge.criteria_extra || '{}');
-          setExtraCriteria(extra);
-        } catch (e) {
-          setExtraCriteria({});
-        }
+        setExtraCriteria(extra);
       }
     } catch (err) {
       setError('Fehler beim Laden des Badges');
@@ -353,12 +358,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonButton
               onClick={handleSave}
               disabled={loading || !formData.name.trim()}
-              style={{
-                '--background': (loading || !formData.name.trim()) ? '#ccc' : '#667eea',
-                '--background-hover': '#5568d3',
-                '--color': 'white',
-                '--border-radius': '8px'
-              }}
             >
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>

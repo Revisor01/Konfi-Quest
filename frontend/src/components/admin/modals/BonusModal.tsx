@@ -86,12 +86,6 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             <IonButton
               onClick={handleSave}
               disabled={!isValid}
-              style={{
-                '--background': isValid ? '#ff9800' : '#ccc',
-                '--background-hover': '#f57c00',
-                '--color': 'white',
-                '--border-radius': '8px'
-              }}
             >
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
@@ -151,29 +145,100 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
               <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
                 <IonLabel position="stacked">Punkte *</IonLabel>
-                <IonInput
-                  type="number"
-                  value={points}
-                  onIonInput={(e) => setPoints(parseInt(e.detail.value!) || 1)}
-                  placeholder="Anzahl Bonuspunkte"
-                  min="1"
-                  max="20"
-                />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginTop: '8px',
+                  width: '100%'
+                }}>
+                  <IonButton
+                    fill="solid"
+                    size="small"
+                    onClick={() => setPoints(Math.max(1, points - 1))}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      '--padding-start': '0',
+                      '--padding-end': '0'
+                    }}
+                  >
+                    −
+                  </IonButton>
+                  <div style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    fontSize: '1.5rem',
+                    fontWeight: '600',
+                    color: '#333'
+                  }}>
+                    {points}
+                  </div>
+                  <IonButton
+                    fill="solid"
+                    size="small"
+                    onClick={() => setPoints(Math.min(20, points + 1))}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      '--padding-start': '0',
+                      '--padding-end': '0'
+                    }}
+                  >
+                    +
+                  </IonButton>
+                </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', marginTop: '16px' }}>
                 <IonLabel position="stacked">Kategorie</IonLabel>
-                <IonSelect
-                  value={type}
-                  onIonChange={(e) => setType(e.detail.value)}
-                  interface="action-sheet"
-                >
+                <div style={{ width: '100%', marginTop: '12px' }}>
                   {bonusTypes.map(bonusType => (
-                    <IonSelectOption key={bonusType.value} value={bonusType.value}>
-                      {bonusType.label}
-                    </IonSelectOption>
+                    <div
+                      key={bonusType.value}
+                      onClick={() => setType(bonusType.value)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px',
+                        marginBottom: '8px',
+                        borderRadius: '8px',
+                        background: type === bonusType.value ? 'rgba(255, 152, 0, 0.1)' : '#f8f9fa',
+                        border: `2px solid ${type === bonusType.value ? '#ff9800' : '#e0e0e0'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <div style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: `2px solid ${type === bonusType.value ? '#ff9800' : '#999'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {type === bonusType.value && (
+                          <div style={{
+                            width: '10px',
+                            height: '10px',
+                            borderRadius: '50%',
+                            background: '#ff9800'
+                          }} />
+                        )}
+                      </div>
+                      <span style={{
+                        fontSize: '0.95rem',
+                        color: '#333',
+                        fontWeight: type === bonusType.value ? '600' : '400'
+                      }}>
+                        {bonusType.label}
+                      </span>
+                    </div>
                   ))}
-                </IonSelect>
+                </div>
               </IonItem>
             </IonList>
           </IonCardContent>

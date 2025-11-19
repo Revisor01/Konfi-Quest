@@ -110,7 +110,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
 
   const getTypeText = (type: string) => {
     switch (type) {
-      case 'gottesdienst': return 'GoDi';
+      case 'gottesdienst': return 'Gottesdienst';
       case 'gemeinde': return 'Gemeinde';
       default: return 'Unbekannt';
     }
@@ -252,7 +252,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{getGottesdienstActivities().length}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    GoDi
+                    Gottesdienst
                   </div>
                 </div>
               </IonCol>
