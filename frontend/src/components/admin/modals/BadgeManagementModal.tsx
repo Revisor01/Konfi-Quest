@@ -505,13 +505,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             Badge-Kriterien
           </h2>
         </div>
-        <div style={{
-          margin: '0 16px 8px 16px',
-          fontSize: '0.85rem',
-          color: '#666'
-        }}>
-          Bestimme, wann dieses Badge verliehen wird
-        </div>
 
         <IonCard style={{
           margin: '0 16px 16px 16px',
