@@ -13,13 +13,12 @@ import {
   IonList,
   IonIcon,
   IonTextarea,
-  IonSelect,
-  IonSelectOption,
   IonCard,
   IonCardContent,
-  IonSpinner
+  IonSpinner,
+  IonCheckbox
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, gift, calendar } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface BonusModalProps {
@@ -143,103 +142,76 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
-                <IonLabel position="stacked">Punkte *</IonLabel>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  marginTop: '8px',
-                  width: '100%'
-                }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
-                    fill="solid"
+                    fill="outline"
                     size="small"
+                    disabled={points <= 1}
                     onClick={() => setPoints(Math.max(1, points - 1))}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      '--padding-start': '0',
-                      '--padding-end': '0'
-                    }}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                   >
-                    −
+                    <IonIcon icon={removeOutline} />
                   </IonButton>
-                  <div style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    fontSize: '1.5rem',
-                    fontWeight: '600',
-                    color: '#333'
-                  }}>
-                    {points}
-                  </div>
-                  <IonButton
-                    fill="solid"
-                    size="small"
-                    onClick={() => setPoints(Math.min(20, points + 1))}
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      '--padding-start': '0',
-                      '--padding-end': '0'
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={points.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setPoints(1);
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 1 && num <= 50) {
+                          setPoints(num);
+                        }
+                      }
                     }}
+                    placeholder="1"
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={points >= 50}
+                    onClick={() => setPoints(Math.min(50, points + 1))}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                   >
-                    +
+                    <IonIcon icon={addOutline} />
                   </IonButton>
                 </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', marginTop: '16px' }}>
-                <IonLabel position="stacked">Kategorie</IonLabel>
-                <div style={{ width: '100%', marginTop: '12px' }}>
-                  {bonusTypes.map(bonusType => (
-                    <div
-                      key={bonusType.value}
-                      onClick={() => setType(bonusType.value)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '12px',
-                        marginBottom: '8px',
-                        borderRadius: '8px',
-                        background: type === bonusType.value ? 'rgba(255, 152, 0, 0.1)' : '#f8f9fa',
-                        border: `2px solid ${type === bonusType.value ? '#ff9800' : '#e0e0e0'}`,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        border: `2px solid ${type === bonusType.value ? '#ff9800' : '#999'}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        {type === bonusType.value && (
-                          <div style={{
-                            width: '10px',
-                            height: '10px',
-                            borderRadius: '50%',
-                            background: '#ff9800'
-                          }} />
-                        )}
-                      </div>
-                      <span style={{
-                        fontSize: '0.95rem',
-                        color: '#333',
-                        fontWeight: type === bonusType.value ? '600' : '400'
-                      }}>
-                        {bonusType.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
               </IonItem>
+              {bonusTypes.map(bonusType => (
+                <IonItem
+                  key={bonusType.value}
+                  lines="none"
+                  button
+                  detail={false}
+                  onClick={() => setType(bonusType.value)}
+                  style={{
+                    '--min-height': '56px',
+                    '--padding-start': '16px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '6px 0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}
+                >
+                  <IonLabel>{bonusType.label}</IonLabel>
+                  <IonCheckbox
+                    slot="end"
+                    checked={type === bonusType.value}
+                  />
+                </IonItem>
+              ))}
             </IonList>
           </IonCardContent>
         </IonCard>

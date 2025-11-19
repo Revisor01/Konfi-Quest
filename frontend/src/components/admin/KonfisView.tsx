@@ -439,9 +439,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                       {konfi.jahrgang_name || konfi.jahrgang} • {konfi.badgeCount || 0} Badges
                     </div>
 
-                    {/* Punkte Container mit grauem Hintergrund */}
+                    {/* Punkte Container */}
                     <div style={{
-                      backgroundColor: '#f8f9fa',
                       borderRadius: '8px',
                       padding: '12px',
                       marginTop: '8px'
@@ -592,10 +591,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                       '--background-hover': 'transparent',
                       '--color': 'transparent',
                       '--ripple-color': 'transparent',
-                      padding: '0 2px',
+                      padding: '0 8px',
                       paddingRight: '20px',
-                      minWidth: '48px',
-                      maxWidth: '48px'
+                      minWidth: '56px',
+                      maxWidth: '56px'
                     }}
                   >
                     <div style={{

@@ -11,8 +11,6 @@ import {
   IonLabel,
   IonInput,
   IonCheckbox,
-  IonSelect,
-  IonSelectOption,
   IonIcon,
   IonSpinner,
   IonList,
@@ -332,21 +330,64 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Typ *</IonLabel>
-                <IonSelect
-                  value={formData.type}
-                  onIonChange={(e: any) => setFormData({ ...formData, type: e.detail.value })}
-                  placeholder="Typ wählen"
+              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
+              </IonItem>
+              <IonItem
+                lines="none"
+                button
+                detail={false}
+                onClick={() => {
+                  if (!loading) {
+                    setFormData({ ...formData, type: 'gottesdienst' });
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>Gottesdienst</IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={formData.type === 'gottesdienst'}
                   disabled={loading}
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Typ auswählen'
-                  }}
-                >
-                  <IonSelectOption value="gottesdienst">Gottesdienst</IonSelectOption>
-                  <IonSelectOption value="gemeinde">Gemeinde</IonSelectOption>
-                </IonSelect>
+                />
+              </IonItem>
+              <IonItem
+                lines="none"
+                button
+                detail={false}
+                onClick={() => {
+                  if (!loading) {
+                    setFormData({ ...formData, type: 'gemeinde' });
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>Gemeinde</IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={formData.type === 'gemeinde'}
+                  disabled={loading}
+                />
               </IonItem>
             </IonList>
           </IonCardContent>

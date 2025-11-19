@@ -142,8 +142,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonLabel position="stacked" style={{ marginBottom: '12px', display: 'block' }}>Aktivität *</IonLabel>
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <IonList style={{ background: 'transparent', maxHeight: '400px', overflowY: 'auto' }}>
+              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Aktivität *</IonLabel>
+              </IonItem>
               {activities
                 .sort((a, b) => {
                   if (a.type !== b.type) {
@@ -152,60 +154,36 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                   return a.name.localeCompare(b.name);
                 })
                 .map(activity => (
-                  <div
+                  <IonItem
                     key={activity.id}
+                    lines="none"
+                    button
+                    detail={false}
                     onClick={() => setSelectedActivity(activity.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px',
-                      marginBottom: '8px',
-                      borderRadius: '8px',
-                      background: selectedActivity === activity.id ? 'rgba(45, 211, 111, 0.1)' : '#f8f9fa',
-                      border: `2px solid ${selectedActivity === activity.id ? '#2dd36f' : '#e0e0e0'}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      '--min-height': '56px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
                     }}
                   >
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      border: `2px solid ${selectedActivity === activity.id ? '#2dd36f' : '#999'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      {selectedActivity === activity.id && (
-                        <div style={{
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          background: '#2dd36f'
-                        }} />
-                      )}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: '0.95rem',
-                        color: '#333',
-                        fontWeight: selectedActivity === activity.id ? '600' : '400',
-                        marginBottom: '2px'
-                      }}>
-                        {activity.name}
-                      </div>
-                      <div style={{
-                        fontSize: '0.8rem',
-                        color: '#666'
-                      }}>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>
                         {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} • {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                      </div>
-                    </div>
-                  </div>
+                      </p>
+                    </IonLabel>
+                    <IonCheckbox
+                      slot="end"
+                      checked={selectedActivity === activity.id}
+                    />
+                  </IonItem>
                 ))}
-            </div>
+            </IonList>
           </IonCardContent>
         </IonCard>
 

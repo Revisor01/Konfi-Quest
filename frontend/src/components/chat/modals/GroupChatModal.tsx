@@ -23,7 +23,7 @@ import {
   IonText,
   IonModal
 } from '@ionic/react';
-import { close, checkmark, people, person } from 'ionicons/icons';
+import { close, checkmarkOutline, people, person } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -161,12 +161,11 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
               </IonButton>
             </IonButtons>
             <IonButtons slot="end">
-              <IonButton 
-                onClick={createGroupChat} 
+              <IonButton
+                onClick={createGroupChat}
                 disabled={!groupName.trim() || selectedParticipants.size === 0 || creating}
-                color="primary"
               >
-                <IonIcon icon={checkmark} />
+                <IonIcon icon={checkmarkOutline} />
               </IonButton>
             </IonButtons>
           </IonToolbar>

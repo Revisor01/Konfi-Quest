@@ -86,12 +86,12 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#3880ff',
+            backgroundColor: '#17a2b8',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={chatbubbles} style={{ fontSize: '1rem', color: 'white' }} />
