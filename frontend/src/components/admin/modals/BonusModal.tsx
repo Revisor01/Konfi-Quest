@@ -103,12 +103,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#007aff',
+            backgroundColor: '#ff9800',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />

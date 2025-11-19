@@ -403,12 +403,12 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#ffc409',
+            backgroundColor: '#2dd36f',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 196, 9, 0.3)',
+            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={pricetag} style={{ fontSize: '1rem', color: 'white' }} />
