@@ -26,9 +26,134 @@ import {
   IonCheckbox,
   IonSpinner
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, ribbon, settings, trophy } from 'ionicons/icons';
+import {
+  checkmarkOutline,
+  closeOutline,
+  ribbon,
+  settings,
+  trophy,
+  star,
+  medal,
+  flame,
+  heart,
+  thumbsUp,
+  flash,
+  diamond,
+  rocket,
+  shield,
+  sparkles,
+  sunny,
+  moon,
+  leaf,
+  rose,
+  gift,
+  balloon,
+  musicalNote,
+  book,
+  school,
+  restaurant,
+  fitness,
+  bicycle,
+  car,
+  airplane,
+  boat,
+  home,
+  business,
+  construct,
+  hammer,
+  brush,
+  colorPalette,
+  camera,
+  image,
+  chatbubbles,
+  people,
+  personAdd,
+  checkmarkCircle,
+  alertCircle,
+  informationCircle,
+  helpCircle,
+  flag,
+  pin,
+  navigate,
+  location,
+  compass,
+  timer,
+  stopwatch,
+  calendar,
+  today,
+  time
+} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+
+// Badge Icon Mapping
+const BADGE_ICONS = {
+  trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
+  medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },
+  ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
+  star: { icon: star, name: 'Stern', category: 'Erfolg' },
+  checkmarkCircle: { icon: checkmarkCircle, name: 'Bestanden', category: 'Erfolg' },
+  diamond: { icon: diamond, name: 'Diamant', category: 'Erfolg' },
+  shield: { icon: shield, name: 'Schild', category: 'Erfolg' },
+
+  flame: { icon: flame, name: 'Flamme', category: 'Engagement' },
+  flash: { icon: flash, name: 'Blitz', category: 'Engagement' },
+  rocket: { icon: rocket, name: 'Rakete', category: 'Engagement' },
+  sparkles: { icon: sparkles, name: 'Funken', category: 'Engagement' },
+  thumbsUp: { icon: thumbsUp, name: 'Daumen hoch', category: 'Engagement' },
+
+  heart: { icon: heart, name: 'Herz', category: 'Gemeinschaft' },
+  people: { icon: people, name: 'Gruppe', category: 'Gemeinschaft' },
+  personAdd: { icon: personAdd, name: 'Neue Person', category: 'Gemeinschaft' },
+  chatbubbles: { icon: chatbubbles, name: 'Chat', category: 'Gemeinschaft' },
+  gift: { icon: gift, name: 'Geschenk', category: 'Gemeinschaft' },
+
+  book: { icon: book, name: 'Buch', category: 'Lernen' },
+  school: { icon: school, name: 'Schule', category: 'Lernen' },
+  construct: { icon: construct, name: 'Werkzeug', category: 'Lernen' },
+  brush: { icon: brush, name: 'Pinsel', category: 'Lernen' },
+  colorPalette: { icon: colorPalette, name: 'Farbpalette', category: 'Lernen' },
+
+  sunny: { icon: sunny, name: 'Sonne', category: 'Natur' },
+  moon: { icon: moon, name: 'Mond', category: 'Natur' },
+  leaf: { icon: leaf, name: 'Blatt', category: 'Natur' },
+  rose: { icon: rose, name: 'Rose', category: 'Natur' },
+
+  calendar: { icon: calendar, name: 'Kalender', category: 'Zeit' },
+  today: { icon: today, name: 'Heute', category: 'Zeit' },
+  time: { icon: time, name: 'Uhr', category: 'Zeit' },
+  timer: { icon: timer, name: 'Timer', category: 'Zeit' },
+  stopwatch: { icon: stopwatch, name: 'Stoppuhr', category: 'Zeit' },
+
+  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitäten' },
+  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitäten' },
+  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitäten' },
+  car: { icon: car, name: 'Auto', category: 'Aktivitäten' },
+  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitäten' },
+  boat: { icon: boat, name: 'Boot', category: 'Aktivitäten' },
+  camera: { icon: camera, name: 'Kamera', category: 'Aktivitäten' },
+  image: { icon: image, name: 'Bild', category: 'Aktivitäten' },
+  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitäten' },
+  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitäten' },
+
+  home: { icon: home, name: 'Zuhause', category: 'Orte' },
+  business: { icon: business, name: 'Gebäude', category: 'Orte' },
+  location: { icon: location, name: 'Standort', category: 'Orte' },
+  navigate: { icon: navigate, name: 'Navigation', category: 'Orte' },
+  compass: { icon: compass, name: 'Kompass', category: 'Orte' },
+  pin: { icon: pin, name: 'Pin', category: 'Orte' },
+  flag: { icon: flag, name: 'Flagge', category: 'Orte' },
+
+  informationCircle: { icon: informationCircle, name: 'Info', category: 'Sonstiges' },
+  helpCircle: { icon: helpCircle, name: 'Hilfe', category: 'Sonstiges' },
+  alertCircle: { icon: alertCircle, name: 'Warnung', category: 'Sonstiges' },
+  hammer: { icon: hammer, name: 'Hammer', category: 'Sonstiges' }
+};
+
+// Helper function to get icon from string
+const getIconFromString = (iconName: string) => {
+  return BADGE_ICONS[iconName as keyof typeof BADGE_ICONS]?.icon || trophy;
+};
 
 interface Badge {
   id: number;
@@ -73,7 +198,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // Form data
   const [formData, setFormData] = useState({
     name: '',
-    icon: '🏆',
+    icon: 'trophy',
     description: '',
     criteria_type: 'total_points',
     criteria_value: 10,
@@ -427,13 +552,54 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
             <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
               <IonLabel position="stacked" color="dark">
-                <strong>Icon (Emoji)</strong>
+                <strong>Icon *</strong>
               </IonLabel>
-              <IonInput
-                value={formData.icon}
-                onIonInput={(e) => setFormData({ ...formData, icon: e.detail.value! })}
-                placeholder="Verwende ein Icon aus ionicons/icons"
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
+                <div style={{
+                  width: '50px',
+                  height: '50px',
+                  backgroundColor: formData.color,
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                  flexShrink: 0
+                }}>
+                  <IonIcon
+                    icon={getIconFromString(formData.icon)}
+                    style={{ fontSize: '1.8rem', color: 'white' }}
+                  />
+                </div>
+                <IonSelect
+                  value={formData.icon}
+                  onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
+                  interface="action-sheet"
+                  placeholder="Icon wählen"
+                  style={{ flex: 1 }}
+                >
+                  {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
+                    const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                    if (categoryIndex === -1) {
+                      acc.push({ category: data.category, icons: [{ key, data }] });
+                    } else {
+                      acc[categoryIndex].icons.push({ key, data });
+                    }
+                    return acc;
+                  }, [] as any[]).map((group: any) => (
+                    <React.Fragment key={group.category}>
+                      <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
+                        {group.category}
+                      </IonSelectOption>
+                      {group.icons.map(({ key, data }: any) => (
+                        <IonSelectOption key={key} value={key}>
+                          {data.name}
+                        </IonSelectOption>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </IonSelect>
+              </div>
             </IonItem>
 
             <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
