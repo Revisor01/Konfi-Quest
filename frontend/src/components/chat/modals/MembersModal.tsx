@@ -22,7 +22,9 @@ import {
   IonRefresherContent,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import { 
   close, 
@@ -282,67 +284,95 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
           {showAddMode ? (
             <>
-              <IonSearchbar
-                value={searchText}
-                onIonInput={(e) => setSearchText(e.detail.value!)}
-                placeholder="Person suchen..."
-              />
-              
+              <div style={{ padding: '0 16px', marginTop: '16px' }}>
+                <IonSearchbar
+                  value={searchText}
+                  onIonInput={(e) => setSearchText(e.detail.value!)}
+                  placeholder="Person suchen..."
+                  style={{
+                    '--background': '#f8f9fa',
+                    '--border-radius': '12px'
+                  }}
+                />
+              </div>
+
               {filteredAvailableUsers.length === 0 ? (
-                <IonText color="medium" style={{ 
-                  display: 'block', 
-                  textAlign: 'center', 
-                  padding: '32px 16px' 
+                <IonText color="medium" style={{
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '32px 16px'
                 }}>
                   <p>Keine verfügbaren Personen gefunden</p>
                 </IonText>
               ) : (
-                <IonList>
-                  {filteredAvailableUsers.map((user) => {
-                    const userId = `${user.type}-${user.id}`;
-                    const isSelected = selectedUsers.has(userId);
-                    
-                    return (
-                      <IonItem 
-                        key={userId}
-                        button 
-                        onClick={() => handleUserToggle(user)}
-                      >
-                        <IonAvatar slot="start" style={{
-                          width: '40px',
-                          height: '40px',
-                          backgroundColor: '#17a2b8'
-                        }}>
-                          <div style={{ 
-                            color: 'white', 
-                            fontSize: '0.8rem', 
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%'
-                          }}>
-                            {getUserDisplayName(user).charAt(0).toUpperCase()}
-                          </div>
-                        </IonAvatar>
-                        
-                        <IonLabel>
-                          <h3>{getUserDisplayName(user)}</h3>
-                          <p>
-                            {user.type === 'admin' ? 'Admin' : 
-                             (user.jahrgang ? `Jahrgang ${user.jahrgang}` : 'Konfi')}
-                          </p>
-                        </IonLabel>
-                        
-                        <IonCheckbox 
-                          slot="end" 
-                          checked={isSelected}
-                          color={user.type === 'admin' ? 'tertiary' : 'primary'}
-                        />
-                      </IonItem>
-                    );
-                  })}
-                </IonList>
+                <IonCard style={{
+                  margin: '16px',
+                  borderRadius: '12px',
+                  background: 'white',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <IonCardContent style={{ padding: '16px' }}>
+                    <IonList style={{ background: 'transparent' }}>
+                      {filteredAvailableUsers.map((user) => {
+                        const userId = `${user.type}-${user.id}`;
+                        const isSelected = selectedUsers.has(userId);
+
+                        return (
+                          <IonItem
+                            key={userId}
+                            lines="none"
+                            button
+                            detail={false}
+                            onClick={() => handleUserToggle(user)}
+                            style={{
+                              '--min-height': '56px',
+                              '--padding-start': '16px',
+                              '--background': '#fbfbfb',
+                              '--border-radius': '12px',
+                              margin: '6px 0',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: '12px'
+                            }}
+                          >
+                            <IonAvatar slot="start" style={{
+                              width: '40px',
+                              height: '40px',
+                              backgroundColor: '#17a2b8'
+                            }}>
+                              <div style={{
+                                color: 'white',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%'
+                              }}>
+                                {getUserDisplayName(user).charAt(0).toUpperCase()}
+                              </div>
+                            </IonAvatar>
+
+                            <IonLabel>
+                              <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{getUserDisplayName(user)}</h3>
+                              <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                                {user.type === 'admin' ? 'Admin' :
+                                 (user.jahrgang ? `Jahrgang ${user.jahrgang}` : 'Konfi')}
+                              </p>
+                            </IonLabel>
+
+                            <IonCheckbox
+                              slot="end"
+                              checked={isSelected}
+                              color={user.type === 'admin' ? 'tertiary' : 'primary'}
+                            />
+                          </IonItem>
+                        );
+                      })}
+                    </IonList>
+                  </IonCardContent>
+                </IonCard>
               )}
             </>
           ) : (
@@ -350,50 +380,96 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <IonList>
-                  {participants.map((participant) => (
-                    <IonItemSliding key={`${participant.user_type}-${participant.user_id}`}>
-                      <IonItem>
-                        <IonAvatar slot="start" style={{ 
-                          width: '40px', 
-                          height: '40px',
-                          backgroundColor: '#17a2b8'
-                        }}>
-                          <div style={{ 
-                            color: 'white', 
-                            fontSize: '0.8rem', 
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            height: '100%'
-                          }}>
-                            {(participant.name || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        </IonAvatar>
-                        
-                        <IonLabel>
-                          <h3>{participant.name || 'Unbekannter User'}</h3>
-                          <p>
-                            {participant.user_type === 'admin' ? 'Admin' : 
-                             (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}
-                          </p>
-                        </IonLabel>
-                      </IonItem>
-                      
-                      {canManageMembers && (
-                        <IonItemOptions side="end">
-                          <IonItemOption 
-                            color="danger" 
-                            onClick={() => confirmRemoveUser(participant)}
+                <IonCard style={{
+                  margin: '16px',
+                  borderRadius: '12px',
+                  background: 'white',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                  border: '1px solid #e0e0e0'
+                }}>
+                  <IonCardContent style={{ padding: '16px' }}>
+                    <IonList style={{ background: 'transparent' }}>
+                      {participants.map((participant) => (
+                        <IonItemSliding key={`${participant.user_type}-${participant.user_id}`}>
+                          <IonItem
+                            lines="none"
+                            style={{
+                              '--min-height': '56px',
+                              '--padding-start': '16px',
+                              '--background': '#fbfbfb',
+                              '--border-radius': '12px',
+                              margin: '6px 0',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                              border: '1px solid #e0e0e0',
+                              borderRadius: '12px'
+                            }}
                           >
-                            <IonIcon icon={trash} />
-                          </IonItemOption>
-                        </IonItemOptions>
-                      )}
-                    </IonItemSliding>
-                  ))}
-                </IonList>
+                            <IonAvatar slot="start" style={{
+                              width: '40px',
+                              height: '40px',
+                              backgroundColor: '#17a2b8'
+                            }}>
+                              <div style={{
+                                color: 'white',
+                                fontSize: '0.8rem',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '100%'
+                              }}>
+                                {(participant.name || 'U').charAt(0).toUpperCase()}
+                              </div>
+                            </IonAvatar>
+
+                            <IonLabel>
+                              <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{participant.name || 'Unbekannter User'}</h3>
+                              <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                                {participant.user_type === 'admin' ? 'Admin' :
+                                 (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}
+                              </p>
+                            </IonLabel>
+                          </IonItem>
+
+                          {canManageMembers && (
+                            <IonItemOptions side="end" style={{
+                              gap: '4px',
+                              '--ion-item-background': 'transparent'
+                            }}>
+                              <IonItemOption
+                                onClick={() => confirmRemoveUser(participant)}
+                                style={{
+                                  '--background': 'transparent',
+                                  '--border-radius': '50%',
+                                  minWidth: '44px',
+                                  maxWidth: '44px',
+                                  height: '44px',
+                                  padding: '0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <div style={{
+                                  width: '44px',
+                                  height: '44px',
+                                  backgroundColor: '#dc3545',
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                                }}>
+                                  <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                                </div>
+                              </IonItemOption>
+                            </IonItemOptions>
+                          )}
+                        </IonItemSliding>
+                      ))}
+                    </IonList>
+                  </IonCardContent>
+                </IonCard>
               )}
             </>
           )}
