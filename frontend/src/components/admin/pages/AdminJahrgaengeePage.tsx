@@ -134,15 +134,19 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             {jahrgang ? 'Jahrgang bearbeiten' : 'Neuer Jahrgang'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading} style={{
+              '--background': '#f8f9fa',
+              '--background-hover': '#e9ecef',
+              '--color': '#6c757d',
+              '--border-radius': '8px'
+            }}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton 
-              onClick={handleSubmit} 
+            <IonButton
+              onClick={handleSubmit}
               disabled={!formData.name.trim() || loading}
-              strong={true}
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -154,28 +158,81 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
-        <div style={{ padding: '16px' }}>
-          <IonItem>
-            <IonLabel position="stacked">Name *</IonLabel>
-            <IonInput
-              value={formData.name}
-              onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-              placeholder="z.B. Jahrgang 2024/2025"
-              disabled={loading}
-            />
-          </IonItem>
-
-          <IonItem style={{ marginTop: '16px' }}>
-            <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
-            <IonInput
-              type="date"
-              value={formData.confirmation_date}
-              onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
-              disabled={loading}
-            />
-          </IonItem>
+      <IonContent style={{ '--padding-top': '16px' }}>
+        {/* Section Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#007aff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={school} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Jahrgang Details
+          </h2>
         </div>
+
+        {/* Card */}
+        <IonCard style={{
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0',
+          margin: '0 16px 16px 16px'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Name *</IonLabel>
+              <IonInput
+                value={formData.name}
+                onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                placeholder="z.B. Jahrgang 2024/2025"
+                disabled={loading}
+              />
+            </IonItem>
+
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Konfirmationsdatum</IonLabel>
+              <IonInput
+                type="date"
+                value={formData.confirmation_date}
+                onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
+                disabled={loading}
+              />
+            </IonItem>
+          </IonCardContent>
+        </IonCard>
       </IonContent>
     </IonPage>
   );
@@ -344,88 +401,36 @@ const AdminJahrgaengeePage: React.FC = () => {
                 flexDirection: 'column',
                 justifyContent: 'center'
               }}>
-                <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-                  <IonRow>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={school}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            marginBottom: '8px',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '1.5rem' }}>{jahrgaenge.length}</span>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Gesamt
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={people}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            marginBottom: '8px',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '1.5rem' }}>0</span>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Konfis
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={calendar}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            marginBottom: '8px',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                          <span style={{ fontSize: '1.5rem' }}>0</span>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Anstehend
-                        </div>
-                      </div>
-                    </IonCol>
-                  </IonRow>
-                </IonGrid>
+                <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={school}
+                    style={{
+                      fontSize: '2rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      marginBottom: '8px',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '2rem', fontWeight: '800' }}>
+                    {jahrgaenge.length}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                    Jahrgänge
+                  </div>
+                </div>
+              </div>
               </div>
             </div>
 
@@ -466,7 +471,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                     style={{
                       '--min-height': '70px',
                       '--padding-start': '16px',
-                      '--background': '#fbfbfb',
+                      '--background': '#f5f5f5',
                       '--border-radius': '12px',
                       margin: '4px 8px',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
