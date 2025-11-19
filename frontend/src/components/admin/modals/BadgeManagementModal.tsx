@@ -556,7 +556,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     </h3>
                     {selectedActivities.length > 0 && (
                       <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
-                        {selectedActivities.length} Aktivität{selectedActivities.length > 1 ? 'en' : ''} ausgewählt
+                        {selectedActivities.map(a => a.name).join(', ')}
                       </p>
                     )}
                   </IonLabel>
@@ -929,6 +929,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                                 defaultValue = 5;
                               } else if (value === 'activity_combination') {
                                 defaultValue = 3;
+                              } else if (value === 'streak') {
+                                defaultValue = 4;
                               }
                               setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue });
                               setExtraCriteria({});
