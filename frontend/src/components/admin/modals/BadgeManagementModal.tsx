@@ -617,26 +617,19 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
+                <div style={{ marginTop: '8px', width: '100%' }}>
                   <input
                     type="color"
                     value={formData.color}
                     onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                     disabled={loading}
                     style={{
-                      width: '50px',
-                      height: '40px',
+                      width: '100%',
+                      height: '60px',
                       border: '2px solid #e0e0e0',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       cursor: 'pointer'
                     }}
-                  />
-                  <IonInput
-                    value={formData.color}
-                    onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
-                    placeholder="#667eea"
-                    disabled={loading}
-                    style={{ flex: 1 }}
                   />
                 </div>
               </IonItem>
@@ -682,25 +675,53 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Kriterium-Typ</IonLabel>
-                <IonSelect
-                  value={formData.criteria_type}
-                  onIonChange={(e) => {
-                    setFormData({ ...formData, criteria_type: e.detail.value });
-                    setExtraCriteria({});
-                  }}
-                  interface="action-sheet"
-                  placeholder="Typ wählen"
-                >
-                  {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => (
-                    <IonSelectOption key={value} value={value}>
-                      {type.label}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Kriterium-Typ</IonLabel>
               </IonItem>
+              {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => {
+                const isSelected = formData.criteria_type === value;
+                // Remove emojis from label
+                const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+
+                return (
+                  <IonItem
+                    key={value}
+                    lines="none"
+                    button
+                    detail={false}
+                    onClick={() => {
+                      if (!loading) {
+                        setFormData({ ...formData, criteria_type: value });
+                        setExtraCriteria({});
+                      }
+                    }}
+                    disabled={loading}
+                    style={{
+                      '--min-height': '72px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    <IonLabel>
+                      <h3 style={{ fontWeight: '500', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{labelWithoutEmoji}</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#666', margin: '0', whiteSpace: 'normal' }}>
+                        {type.help}
+                      </p>
+                    </IonLabel>
+                    <IonCheckbox
+                      slot="end"
+                      checked={isSelected}
+                      disabled={loading}
+                    />
+                  </IonItem>
+                );
+              })}
 
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
