@@ -139,7 +139,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
     setLoading(true);
     try {
-      const response = await api.get(`/badges/${badgeId}`);
+      const response = await api.get(`/admin/badges/${badgeId}`);
       const badge = response.data;
 
       console.log('📛 Badge geladen:', badge);
@@ -223,10 +223,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       };
 
       if (isEditMode) {
-        await api.put(`/badges/${badgeId}`, badgeData);
+        await api.put(`/admin/badges/${badgeId}`, badgeData);
         setSuccess('Badge erfolgreich aktualisiert');
       } else {
-        await api.post('/badges', badgeData);
+        await api.post('/admin/badges', badgeData);
         setSuccess('Badge erfolgreich erstellt');
       }
 
