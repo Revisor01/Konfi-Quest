@@ -33,6 +33,8 @@ import {
   settings,
   trophy,
   star,
+  removeOutline,
+  addOutline,
   medal,
   flame,
   heart,
@@ -509,15 +511,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#ffd700',
+            backgroundColor: '#ff9800',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
             flexShrink: 0
           }}>
-            <IonIcon icon={trophy} style={{ fontSize: '1rem', color: 'white' }} />
+            <IonIcon icon={ribbon} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
           <h2 style={{
             fontWeight: '600',
@@ -537,108 +539,107 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>Name *</strong>
-              </IonLabel>
-              <IonInput
-                value={formData.name}
-                onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-                placeholder="Badge-Name eingeben"
-                required
-                clearInput
-              />
-            </IonItem>
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Name *</IonLabel>
+                <IonInput
+                  value={formData.name}
+                  onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                  placeholder="Badge-Name eingeben"
+                  required
+                  clearInput={true}
+                  disabled={loading}
+                />
+              </IonItem>
 
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>Icon *</strong>
-              </IonLabel>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
-                <div style={{
-                  width: '50px',
-                  height: '50px',
-                  backgroundColor: formData.color,
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                  flexShrink: 0
-                }}>
-                  <IonIcon
-                    icon={getIconFromString(formData.icon)}
-                    style={{ fontSize: '1.8rem', color: 'white' }}
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Beschreibung</IonLabel>
+                <IonTextarea
+                  value={formData.description}
+                  onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                  placeholder="Beschreibung des Badges..."
+                  rows={3}
+                  disabled={loading}
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Icon *</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    backgroundColor: formData.color,
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    flexShrink: 0
+                  }}>
+                    <IonIcon
+                      icon={getIconFromString(formData.icon)}
+                      style={{ fontSize: '1.8rem', color: 'white' }}
+                    />
+                  </div>
+                  <IonSelect
+                    value={formData.icon}
+                    onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
+                    interface="action-sheet"
+                    placeholder="Icon wählen"
+                    style={{ flex: 1 }}
+                    disabled={loading}
+                  >
+                    {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
+                      const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                      if (categoryIndex === -1) {
+                        acc.push({ category: data.category, icons: [{ key, data }] });
+                      } else {
+                        acc[categoryIndex].icons.push({ key, data });
+                      }
+                      return acc;
+                    }, [] as any[]).map((group: any) => (
+                      <React.Fragment key={group.category}>
+                        <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
+                          {group.category}
+                        </IonSelectOption>
+                        {group.icons.map(({ key, data }: any) => (
+                          <IonSelectOption key={key} value={key}>
+                            {data.name}
+                          </IonSelectOption>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </IonSelect>
+                </div>
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Badge-Farbe</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
+                  <input
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    disabled={loading}
+                    style={{
+                      width: '50px',
+                      height: '40px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <IonInput
+                    value={formData.color}
+                    onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
+                    placeholder="#667eea"
+                    disabled={loading}
+                    style={{ flex: 1 }}
                   />
                 </div>
-                <IonSelect
-                  value={formData.icon}
-                  onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
-                  interface="action-sheet"
-                  placeholder="Icon wählen"
-                  style={{ flex: 1 }}
-                >
-                  {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
-                    const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
-                    if (categoryIndex === -1) {
-                      acc.push({ category: data.category, icons: [{ key, data }] });
-                    } else {
-                      acc[categoryIndex].icons.push({ key, data });
-                    }
-                    return acc;
-                  }, [] as any[]).map((group: any) => (
-                    <React.Fragment key={group.category}>
-                      <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
-                        {group.category}
-                      </IonSelectOption>
-                      {group.icons.map(({ key, data }: any) => (
-                        <IonSelectOption key={key} value={key}>
-                          {data.name}
-                        </IonSelectOption>
-                      ))}
-                    </React.Fragment>
-                  ))}
-                </IonSelect>
-              </div>
-            </IonItem>
-
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>Badge-Farbe</strong>
-              </IonLabel>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
-                <input
-                  type="color"
-                  value={formData.color}
-                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                  style={{
-                    width: '50px',
-                    height: '40px',
-                    border: '2px solid #e0e0e0',
-                    borderRadius: '8px',
-                    cursor: 'pointer'
-                  }}
-                />
-                <IonInput
-                  value={formData.color}
-                  onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
-                  placeholder="#667eea"
-                  style={{ flex: 1 }}
-                />
-              </div>
-            </IonItem>
-
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>Beschreibung</strong>
-              </IonLabel>
-              <IonTextarea
-                value={formData.description}
-                onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-                placeholder="Beschreibung des Badges"
-                rows={3}
-              />
-            </IonItem>
+              </IonItem>
+            </IonList>
           </IonCardContent>
         </IonCard>
 
@@ -647,17 +648,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          margin: '16px 16px 12px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#667eea',
+            backgroundColor: '#ff9800',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={settings} style={{ fontSize: '1rem', color: 'white' }} />
@@ -680,41 +681,70 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>Kriterium-Typ</strong>
-              </IonLabel>
-              <IonSelect
-                value={formData.criteria_type}
-                onIonChange={(e) => {
-                  setFormData({ ...formData, criteria_type: e.detail.value });
-                  setExtraCriteria({}); // Reset extra criteria when type changes
-                }}
-                interface="action-sheet"
-              >
-                {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => (
-                  <IonSelectOption key={value} value={value}>
-                    {type.label}
-                  </IonSelectOption>
-                ))}
-              </IonSelect>
-            </IonItem>
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Kriterium-Typ</IonLabel>
+                <IonSelect
+                  value={formData.criteria_type}
+                  onIonChange={(e) => {
+                    setFormData({ ...formData, criteria_type: e.detail.value });
+                    setExtraCriteria({});
+                  }}
+                  interface="action-sheet"
+                  placeholder="Typ wählen"
+                >
+                  {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => (
+                    <IonSelectOption key={value} value={value}>
+                      {type.label}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
 
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel position="stacked" color="dark">
-                <strong>{getValueLabel()}</strong>
-              </IonLabel>
-              <IonInput
-                type="number"
-                value={formData.criteria_value}
-                onIonInput={(e) => setFormData({ ...formData, criteria_value: parseInt(e.detail.value!) || 1 })}
-                placeholder="10"
-                min={1}
-                max={1000}
-              />
-            </IonItem>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.criteria_value <= 1}
+                    onClick={() => setFormData({ ...formData, criteria_value: Math.max(1, formData.criteria_value - 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.criteria_value.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setFormData({ ...formData, criteria_value: 1 });
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num)) {
+                          setFormData({ ...formData, criteria_value: Math.min(1000, Math.max(1, num)) });
+                        }
+                      }
+                    }}
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.criteria_value >= 1000}
+                    onClick={() => setFormData({ ...formData, criteria_value: Math.min(1000, formData.criteria_value + 1) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
+                </div>
+              </IonItem>
 
-            {renderCriteriaSpecificFields()}
+              {renderCriteriaSpecificFields()}
+            </IonList>
           </IonCardContent>
         </IonCard>
 
@@ -723,17 +753,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          margin: '16px 16px 12px 16px'
+          margin: '24px 16px 12px 16px'
         }}>
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#ff6b6b',
+            backgroundColor: '#ff9800',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 107, 107, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={ribbon} style={{ fontSize: '1rem', color: 'white' }} />
@@ -747,13 +777,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             Badge-Status
           </h2>
         </div>
-        <div style={{
-          margin: '0 16px 8px 16px',
-          fontSize: '0.85rem',
-          color: '#666'
-        }}>
-          Sichtbarkeit und Aktivierung des Badges
-        </div>
 
         <IonCard style={{
           margin: '0 16px 16px 16px',
@@ -763,31 +786,33 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent', marginBottom: '12px' }}>
-              <IonLabel>
-                <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
-              </IonLabel>
-              <IonToggle
-                slot="end"
-                checked={formData.is_active}
-                onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                color="success"
-              />
-            </IonItem>
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel>
+                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
+                  <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={formData.is_active}
+                  onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
+                  color="success"
+                />
+              </IonItem>
 
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-              <IonLabel>
-                <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Versteckt (Geheimes Badge)</h3>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
-              </IonLabel>
-              <IonToggle
-                slot="end"
-                checked={formData.is_hidden}
-                onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
-                color="warning"
-              />
-            </IonItem>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel>
+                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Versteckt (Geheimes Badge)</h3>
+                  <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
+                </IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={formData.is_hidden}
+                  onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
+                  color="warning"
+                />
+              </IonItem>
+            </IonList>
           </IonCardContent>
         </IonCard>
 
