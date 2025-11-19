@@ -638,25 +638,8 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Punkte-Art</IonLabel>
-                <IonSelect
-                  value={formData.point_type}
-                  onIonChange={(e) => setFormData({ ...formData, point_type: e.detail.value })}
-                  placeholder="Art der Punkte wählen"
-                  disabled={loading}
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Punkte-Art auswählen'
-                  }}
-                >
-                  <IonSelectOption value="gemeinde">Gemeindepunkte</IonSelectOption>
-                  <IonSelectOption value="gottesdienst">Gottesdienstpunkte</IonSelectOption>
-                </IonSelect>
-              </IonItem>
-
               {/* Max. Teilnehmer mit Stepper */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer *</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -697,6 +680,66 @@ const EventModal: React.FC<EventModalProps> = ({
                     <IonIcon icon={addOutline} />
                   </IonButton>
                 </div>
+              </IonItem>
+
+              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
+              </IonItem>
+              <IonItem
+                lines="none"
+                button
+                detail={false}
+                onClick={() => {
+                  if (!loading) {
+                    setFormData({ ...formData, point_type: 'gemeinde' });
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>Gemeinde</IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={formData.point_type === 'gemeinde'}
+                  disabled={loading}
+                />
+              </IonItem>
+              <IonItem
+                lines="none"
+                button
+                detail={false}
+                onClick={() => {
+                  if (!loading) {
+                    setFormData({ ...formData, point_type: 'gottesdienst' });
+                  }
+                }}
+                disabled={loading}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>Gottesdienst</IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={formData.point_type === 'gottesdienst'}
+                  disabled={loading}
+                />
               </IonItem>
             </IonList>
           </IonCardContent>
