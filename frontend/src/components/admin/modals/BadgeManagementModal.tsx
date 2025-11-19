@@ -589,35 +589,39 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       style={{ fontSize: '1.8rem', color: 'white' }}
                     />
                   </div>
-                  <IonSelect
-                    value={formData.icon}
-                    onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
-                    interface="action-sheet"
-                    placeholder="Icon wählen"
-                    style={{ flex: 1 }}
-                    disabled={loading}
-                  >
-                    {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
-                      const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
-                      if (categoryIndex === -1) {
-                        acc.push({ category: data.category, icons: [{ key, data }] });
-                      } else {
-                        acc[categoryIndex].icons.push({ key, data });
-                      }
-                      return acc;
-                    }, [] as any[]).map((group: any) => (
-                      <React.Fragment key={group.category}>
-                        <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
-                          {group.category}
-                        </IonSelectOption>
-                        {group.icons.map(({ key, data }: any) => (
-                          <IonSelectOption key={key} value={key}>
-                            {data.name}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <IonSelect
+                      value={formData.icon}
+                      onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
+                      interface="action-sheet"
+                      placeholder="Icon wählen"
+                      disabled={loading}
+                    >
+                      {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
+                        const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                        if (categoryIndex === -1) {
+                          acc.push({ category: data.category, icons: [{ key, data }] });
+                        } else {
+                          acc[categoryIndex].icons.push({ key, data });
+                        }
+                        return acc;
+                      }, [] as any[]).map((group: any) => (
+                        <React.Fragment key={group.category}>
+                          <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
+                            {group.category}
                           </IonSelectOption>
-                        ))}
-                      </React.Fragment>
-                    ))}
-                  </IonSelect>
+                          {group.icons.map(({ key, data }: any) => (
+                            <IonSelectOption key={key} value={key}>
+                              {data.name}
+                            </IonSelectOption>
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </IonSelect>
+                    <IonText style={{ fontSize: '0.8rem', color: '#666', marginLeft: '4px' }}>
+                      {BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS]?.name || 'Kein Icon gewählt'} ({BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS]?.category || ''})
+                    </IonText>
+                  </div>
                 </div>
               </IonItem>
 

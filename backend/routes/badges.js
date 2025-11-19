@@ -48,10 +48,10 @@ const CRITERIA_TYPES = {
     description: "Aktivitäten aus bestimmter Kategorie",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'Kasualien' = 3 Kasualien besucht."
   },
-  activity_combination: { 
-    label: "🎭 Aktivitäts-Kombination", 
+  activity_combination: {
+    label: "🎭 Aktivitäts-Kombination",
     description: "Spezifische Kombination von Aktivitäten",
-    help: "Badge wird vergeben, wenn alle ausgewählten Aktivitäten mindestens einmal absolviert wurden. Der Wert gibt die Mindestanzahl an benötigten Aktivitäten aus der Liste an."
+    help: "Badge wird vergeben, wenn alle ausgewählten Aktivitäten mindestens einmal absolviert wurden. Der Wert gibt die Mindestanzahl an benötigten Aktivitäten aus der Liste an. Beispiel: 'Adventskalender' - alle 24 Türchen besucht."
   },
   
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
