@@ -62,8 +62,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
   const isValid = name.trim().length > 0 && points > 0;
 
   const bonusTypes = [
-    { value: 'gemeinde', label: 'Gemeinde-Bonuspunkte' },
-    { value: 'gottesdienst', label: 'Gottesdienst-Bonuspunkte' }
+    { value: 'gemeinde', label: 'Gemeinde' },
+    { value: 'gottesdienst', label: 'Gottesdienst' }
   ];
 
   return (

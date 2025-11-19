@@ -108,12 +108,12 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#667eea',
+            backgroundColor: '#5b21b6',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(91, 33, 182, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />

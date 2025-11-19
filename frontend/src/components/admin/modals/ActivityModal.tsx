@@ -18,7 +18,7 @@ import {
   IonSpinner,
   IonCheckbox
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, trophy, calendar } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, trophy, calendar, home, people } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface Activity {
@@ -131,7 +131,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             margin: '0',
             color: '#333'
           }}>
-            Aktivität Details
+            Aktivität
           </h2>
         </div>
 
@@ -143,7 +143,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent', maxHeight: '400px', overflowY: 'auto' }}>
+            <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ paddingBottom: '8px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Aktivität *</IonLabel>
               </IonItem>
@@ -172,6 +172,22 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                       borderRadius: '12px'
                     }}
                   >
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px',
+                      flexShrink: 0
+                    }}>
+                      <IonIcon
+                        icon={activity.type === 'gottesdienst' ? home : people}
+                        style={{ fontSize: '0.9rem', color: 'white' }}
+                      />
+                    </div>
                     <IonLabel>
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h2>
                       <p style={{ fontSize: '0.8rem', color: '#666' }}>

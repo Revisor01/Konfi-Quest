@@ -118,15 +118,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const loadInitialData = async () => {
     try {
       // Load activities
-      const activitiesResponse = await api.get('/activities');
+      const activitiesResponse = await api.get('/admin/activities');
       setActivities(activitiesResponse.data);
 
       // Load categories
-      const categoriesResponse = await api.get('/categories');
+      const categoriesResponse = await api.get('/admin/categories');
       setCategories(categoriesResponse.data);
 
       // Load criteria types
-      const criteriaResponse = await api.get('/badges/criteria-types');
+      const criteriaResponse = await api.get('/admin/badges/criteria-types');
       console.log('📛 Criteria Types geladen:', criteriaResponse.data);
       setCriteriaTypes(criteriaResponse.data);
     } catch (err) {
