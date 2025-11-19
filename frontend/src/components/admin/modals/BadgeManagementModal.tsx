@@ -372,44 +372,77 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     switch (formData.criteria_type) {
       case 'specific_activity':
         return (
-          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-            <IonLabel position="stacked" color="dark">
-              <strong>Aktivität auswählen</strong>
-            </IonLabel>
-            <IonSelect
-              value={extraCriteria.activity_id}
-              onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_id: e.detail.value })}
-              placeholder="Aktivität wählen"
-              interface="action-sheet"
-            >
-              {activities.map(activity => (
-                <IonSelectOption key={activity.id} value={activity.id}>
-                  {activity.name} ({activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
+          <>
+            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Aktivität auswählen</IonLabel>
+            </IonItem>
+            {activities.map(activity => (
+              <IonItem
+                key={activity.id}
+                lines="none"
+                button
+                detail={false}
+                onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>
+                  <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                    {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                  </p>
+                </IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={extraCriteria.activity_id === activity.id}
+                />
+              </IonItem>
+            ))}
+          </>
         );
 
       case 'category_activities':
         return (
-          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-            <IonLabel position="stacked" color="dark">
-              <strong>Kategorie auswählen</strong>
-            </IonLabel>
-            <IonSelect
-              value={extraCriteria.required_category}
-              onIonChange={(e) => setExtraCriteria({ ...extraCriteria, required_category: e.detail.value })}
-              placeholder="Kategorie wählen"
-              interface="action-sheet"
-            >
-              {categories.map(category => (
-                <IonSelectOption key={category.id} value={category.name}>
-                  {category.name}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
+          <>
+            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Kategorie auswählen</IonLabel>
+            </IonItem>
+            {categories.map(category => (
+              <IonItem
+                key={category.id}
+                lines="none"
+                button
+                detail={false}
+                onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <IonLabel>
+                  <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{category.name}</h3>
+                </IonLabel>
+                <IonCheckbox
+                  slot="end"
+                  checked={extraCriteria.required_category === category.name}
+                />
+              </IonItem>
+            ))}
+          </>
         );
 
       case 'time_based':
@@ -431,24 +464,54 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'activity_combination':
         return (
-          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-            <IonLabel position="stacked" color="dark">
-              <strong>Aktivitäten kombinieren</strong>
-            </IonLabel>
-            <IonSelect
-              multiple
-              value={extraCriteria.activity_ids || []}
-              onIonChange={(e) => setExtraCriteria({ ...extraCriteria, activity_ids: e.detail.value })}
-              placeholder="Aktivitäten wählen"
-              interface="action-sheet"
-            >
-              {activities.map(activity => (
-                <IonSelectOption key={activity.id} value={activity.id}>
-                  {activity.name}
-                </IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
+          <>
+            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
+                Aktivitäten kombinieren (mehrere auswählbar)
+              </IonLabel>
+            </IonItem>
+            {activities.map(activity => {
+              const activityIds = extraCriteria.activity_ids || [];
+              const isSelected = activityIds.includes(activity.id);
+
+              return (
+                <IonItem
+                  key={activity.id}
+                  lines="none"
+                  button
+                  detail={false}
+                  onClick={() => {
+                    const currentIds = extraCriteria.activity_ids || [];
+                    const newIds = isSelected
+                      ? currentIds.filter((id: number) => id !== activity.id)
+                      : [...currentIds, activity.id];
+                    setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
+                  }}
+                  style={{
+                    '--min-height': '56px',
+                    '--padding-start': '16px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '6px 0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}
+                >
+                  <IonLabel>
+                    <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
+                    <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                      {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                    </p>
+                  </IonLabel>
+                  <IonCheckbox
+                    slot="end"
+                    checked={isSelected}
+                  />
+                </IonItem>
+              );
+            })}
+          </>
         );
 
       default:
@@ -570,33 +633,38 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Icon *</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
-                  <div style={{
-                    width: '50px',
-                    height: '50px',
-                    backgroundColor: formData.color,
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    flexShrink: 0
-                  }}>
-                    <IonIcon
-                      icon={getIconFromString(formData.icon)}
-                      style={{ fontSize: '1.8rem', color: 'white' }}
-                    />
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <IonSelect
-                      value={formData.icon}
-                      onIonChange={(e) => setFormData({ ...formData, icon: e.detail.value })}
-                      interface="action-sheet"
-                      placeholder="Icon wählen"
-                      disabled={loading}
-                    >
+              <div style={{ marginTop: '16px' }}>
+                <IonAccordionGroup>
+                  <IonAccordion value="icon-picker">
+                    <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                      <div style={{
+                        width: '50px',
+                        height: '50px',
+                        backgroundColor: formData.color,
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        marginRight: '12px'
+                      }}>
+                        <IonIcon
+                          icon={getIconFromString(formData.icon)}
+                          style={{ fontSize: '1.8rem', color: 'white' }}
+                        />
+                      </div>
+                      <IonLabel>
+                        <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                          Icon *
+                        </h3>
+                        {formData.icon && BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS] && (
+                          <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                            {BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS].name} ({BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS].category})
+                          </p>
+                        )}
+                      </IonLabel>
+                    </IonItem>
+                    <div slot="content" style={{ padding: '16px' }}>
                       {Object.entries(BADGE_ICONS).reduce((acc, [key, data]) => {
                         const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
                         if (categoryIndex === -1) {
@@ -606,24 +674,46 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         }
                         return acc;
                       }, [] as any[]).map((group: any) => (
-                        <React.Fragment key={group.category}>
-                          <IonSelectOption disabled style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#666' }}>
+                        <div key={group.category} style={{ marginBottom: '16px' }}>
+                          <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
                             {group.category}
-                          </IonSelectOption>
-                          {group.icons.map(({ key, data }: any) => (
-                            <IonSelectOption key={key} value={key}>
-                              {data.name}
-                            </IonSelectOption>
-                          ))}
-                        </React.Fragment>
+                          </IonText>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
+                            {group.icons.map(({ key, data }: any) => (
+                              <div
+                                key={key}
+                                onClick={() => setFormData({ ...formData, icon: key })}
+                                style={{
+                                  width: '100%',
+                                  aspectRatio: '1',
+                                  backgroundColor: formData.icon === key ? formData.color : '#f8f9fa',
+                                  borderRadius: '12px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  border: formData.icon === key ? '2px solid ' + formData.color : '1px solid #e0e0e0',
+                                  boxShadow: formData.icon === key ? '0 2px 8px rgba(0,0,0,0.15)' : '0 1px 3px rgba(0,0,0,0.1)',
+                                  transition: 'all 0.2s'
+                                }}
+                              >
+                                <IonIcon
+                                  icon={data.icon}
+                                  style={{
+                                    fontSize: '1.5rem',
+                                    color: formData.icon === key ? 'white' : '#666'
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       ))}
-                    </IonSelect>
-                    <IonText style={{ fontSize: '0.8rem', color: '#666', marginLeft: '4px' }}>
-                      {BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS]?.name || 'Kein Icon gewählt'} ({BADGE_ICONS[formData.icon as keyof typeof BADGE_ICONS]?.category || ''})
-                    </IonText>
-                  </div>
-                </div>
-              </IonItem>
+                    </div>
+                  </IonAccordion>
+                </IonAccordionGroup>
+              </div>
 
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
@@ -688,8 +778,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonAccordionGroup>
               <IonAccordion value="criteria-types">
                 <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                    Kriterium-Typ
+                  <IonLabel>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                      Kriterium-Typ
+                    </h3>
+                    {formData.criteria_type && criteriaTypes[formData.criteria_type] && (
+                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                        {criteriaTypes[formData.criteria_type].label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()}
+                      </p>
+                    )}
                   </IonLabel>
                 </IonItem>
                 <div slot="content" style={{ padding: '0' }}>
@@ -857,7 +954,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   slot="end"
                   checked={formData.is_hidden}
                   onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
-                  color="medium"
+                  color="warning"
                 />
               </IonItem>
             </IonList>
