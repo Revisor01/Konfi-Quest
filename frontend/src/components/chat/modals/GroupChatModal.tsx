@@ -164,6 +164,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
               <IonButton
                 onClick={createGroupChat}
                 disabled={!groupName.trim() || selectedParticipants.size === 0 || creating}
+                fill="clear"
               >
                 <IonIcon icon={checkmarkOutline} />
               </IonButton>
