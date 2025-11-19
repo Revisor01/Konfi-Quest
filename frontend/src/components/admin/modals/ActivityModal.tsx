@@ -15,7 +15,8 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
-  IonSpinner
+  IonSpinner,
+  IonCheckbox
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, trophy, calendar } from 'ionicons/icons';
 import api from '../../../services/api';
