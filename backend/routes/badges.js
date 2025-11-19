@@ -55,14 +55,14 @@ const CRITERIA_TYPES = {
   },
   
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
-  time_based: { 
-    label: "⏰ Zeitbasiert", 
+  time_based: {
+    label: "⏰ Zeitbasiert",
     description: "Aktivitäten in einem Zeitraum",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten innerhalb der festgelegten Tage absolviert wurde. Beispiel: Wert 3 + 7 Tage = 3 Aktivitäten in einer Woche."
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten innerhalb der festgelegten Wochen absolviert wurde. Beispiel: Wert 2 Aktivitäten + 4 Wochen = 2 Aktivitäten in 4 Wochen."
   },
-  streak: { 
-    label: "🔥 Serie", 
-    description: "Aufeinanderfolgende Aktivitäten",
+  streak: {
+    label: "🔥 Serie",
+    description: "Aufeinanderfolgende Wochen aktiv",
     help: "Badge wird vergeben, wenn in der angegebenen Anzahl aufeinanderfolgender Wochen mindestens eine Aktivität absolviert wurde. Beispiel: Wert 4 = 4 Wochen in Folge aktiv."
   },
   
@@ -150,10 +150,10 @@ const checkAndAwardBadges = async (db, konfiId) => {
           break;
         
         case 'time_based':
-          if (criteria.days) {
+          if (criteria.weeks) {
             const { rows: results } = await db.query(`SELECT completed_date FROM konfi_activities WHERE konfi_id = $1 ORDER BY completed_date DESC`, [konfiId]);
             const now = new Date();
-            const cutoff = new Date(now.getTime() - (criteria.days * 24 * 60 * 60 * 1000));
+            const cutoff = new Date(now.getTime() - (criteria.weeks * 7 * 24 * 60 * 60 * 1000));
             const recentCount = results.filter(r => new Date(r.completed_date) >= cutoff).length;
             earned = recentCount >= badge.criteria_value;
           }

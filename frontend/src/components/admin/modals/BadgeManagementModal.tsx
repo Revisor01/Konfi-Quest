@@ -371,147 +371,260 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const renderCriteriaSpecificFields = () => {
     switch (formData.criteria_type) {
       case 'specific_activity':
+        const selectedActivity = activities.find(a => a.id === extraCriteria.activity_id);
         return (
-          <>
-            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
-              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Aktivität auswählen</IonLabel>
-            </IonItem>
-            {activities.map(activity => (
-              <IonItem
-                key={activity.id}
-                lines="none"
-                button
-                detail={false}
-                onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
-              >
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                    {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                  </p>
-                </IonLabel>
-                <IonCheckbox
-                  slot="end"
-                  checked={extraCriteria.activity_id === activity.id}
-                />
-              </IonItem>
-            ))}
-          </>
+          <div style={{ marginTop: '16px' }}>
+            <IonAccordionGroup>
+              <IonAccordion value="activity-picker">
+                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                      Aktivität auswählen
+                    </h3>
+                    {selectedActivity && (
+                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                        {selectedActivity.name} ({selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})
+                      </p>
+                    )}
+                  </IonLabel>
+                </IonItem>
+                <div slot="content" style={{ padding: '0' }}>
+                  <IonList style={{ background: 'transparent' }} lines="none">
+                    {activities.map(activity => (
+                      <IonItem
+                        key={activity.id}
+                        lines="none"
+                        button
+                        detail={false}
+                        onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
+                        style={{
+                          '--min-height': '56px',
+                          '--padding-start': '16px',
+                          '--background': '#fbfbfb',
+                          '--border-radius': '12px',
+                          margin: '6px 0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '12px'
+                        }}
+                      >
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: '12px',
+                          flexShrink: 0
+                        }}>
+                          <IonIcon
+                            icon={activity.type === 'gottesdienst' ? home : people}
+                            style={{ fontSize: '0.9rem', color: 'white' }}
+                          />
+                        </div>
+                        <IonLabel>
+                          <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
+                          <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                            {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                          </p>
+                        </IonLabel>
+                        <IonCheckbox
+                          slot="end"
+                          checked={extraCriteria.activity_id === activity.id}
+                        />
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
+              </IonAccordion>
+            </IonAccordionGroup>
+          </div>
         );
 
       case 'category_activities':
+        const selectedCategory = categories.find(c => c.name === extraCriteria.required_category);
         return (
-          <>
-            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
-              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Kategorie auswählen</IonLabel>
-            </IonItem>
-            {categories.map(category => (
-              <IonItem
-                key={category.id}
-                lines="none"
-                button
-                detail={false}
-                onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
-              >
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{category.name}</h3>
-                </IonLabel>
-                <IonCheckbox
-                  slot="end"
-                  checked={extraCriteria.required_category === category.name}
-                />
-              </IonItem>
-            ))}
-          </>
+          <div style={{ marginTop: '16px' }}>
+            <IonAccordionGroup>
+              <IonAccordion value="category-picker">
+                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                      Kategorie auswählen
+                    </h3>
+                    {selectedCategory && (
+                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                        {selectedCategory.name}
+                      </p>
+                    )}
+                  </IonLabel>
+                </IonItem>
+                <div slot="content" style={{ padding: '0' }}>
+                  <IonList style={{ background: 'transparent' }} lines="none">
+                    {categories.map(category => (
+                      <IonItem
+                        key={category.id}
+                        lines="none"
+                        button
+                        detail={false}
+                        onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
+                        style={{
+                          '--min-height': '56px',
+                          '--padding-start': '16px',
+                          '--background': '#fbfbfb',
+                          '--border-radius': '12px',
+                          margin: '6px 0',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '12px'
+                        }}
+                      >
+                        <IonLabel>
+                          <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{category.name}</h3>
+                        </IonLabel>
+                        <IonCheckbox
+                          slot="end"
+                          checked={extraCriteria.required_category === category.name}
+                        />
+                      </IonItem>
+                    ))}
+                  </IonList>
+                </div>
+              </IonAccordion>
+            </IonAccordionGroup>
+          </div>
         );
 
       case 'time_based':
         return (
-          <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0', '--background': 'transparent' }}>
-            <IonLabel position="stacked" color="dark">
-              <strong>Zeitraum (Tage)</strong>
-            </IonLabel>
-            <IonInput
-              type="number"
-              value={extraCriteria.days || 7}
-              onIonInput={(e) => setExtraCriteria({ ...extraCriteria, days: parseInt(e.detail.value!) || 7 })}
-              placeholder="7"
-              min={1}
-              max={365}
-            />
+          <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
+            <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+              <IonButton
+                fill="outline"
+                size="small"
+                disabled={loading || (extraCriteria.weeks || 4) <= 1}
+                onClick={() => setExtraCriteria({ ...extraCriteria, weeks: Math.max(1, (extraCriteria.weeks || 4) - 1) })}
+                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+              >
+                <IonIcon icon={removeOutline} />
+              </IonButton>
+              <IonInput
+                type="text"
+                inputMode="numeric"
+                value={(extraCriteria.weeks || 4).toString()}
+                onIonInput={(e) => {
+                  const value = e.detail.value!;
+                  if (value === '') {
+                    setExtraCriteria({ ...extraCriteria, weeks: 1 });
+                  } else {
+                    const num = parseInt(value);
+                    if (!isNaN(num) && num >= 1 && num <= 52) {
+                      setExtraCriteria({ ...extraCriteria, weeks: num });
+                    }
+                  }
+                }}
+                placeholder="4"
+                disabled={loading}
+                style={{ textAlign: 'center', flex: 1 }}
+              />
+              <IonButton
+                fill="outline"
+                size="small"
+                disabled={loading || (extraCriteria.weeks || 4) >= 52}
+                onClick={() => setExtraCriteria({ ...extraCriteria, weeks: Math.min(52, (extraCriteria.weeks || 4) + 1) })}
+                style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+              >
+                <IonIcon icon={addOutline} />
+              </IonButton>
+            </div>
           </IonItem>
         );
 
       case 'activity_combination':
+        const selectedActivities = activities.filter(a => (extraCriteria.activity_ids || []).includes(a.id));
         return (
-          <>
-            <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
-              <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                Aktivitäten kombinieren (mehrere auswählbar)
-              </IonLabel>
-            </IonItem>
-            {activities.map(activity => {
-              const activityIds = extraCriteria.activity_ids || [];
-              const isSelected = activityIds.includes(activity.id);
-
-              return (
-                <IonItem
-                  key={activity.id}
-                  lines="none"
-                  button
-                  detail={false}
-                  onClick={() => {
-                    const currentIds = extraCriteria.activity_ids || [];
-                    const newIds = isSelected
-                      ? currentIds.filter((id: number) => id !== activity.id)
-                      : [...currentIds, activity.id];
-                    setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
-                  }}
-                  style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
-                  }}
-                >
+          <div style={{ marginTop: '16px' }}>
+            <IonAccordionGroup>
+              <IonAccordion value="activity-combination-picker">
+                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel>
-                    <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                      {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </p>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                      Aktivitäten kombinieren (mehrere auswählbar)
+                    </h3>
+                    {selectedActivities.length > 0 && (
+                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                        {selectedActivities.length} Aktivität{selectedActivities.length > 1 ? 'en' : ''} ausgewählt
+                      </p>
+                    )}
                   </IonLabel>
-                  <IonCheckbox
-                    slot="end"
-                    checked={isSelected}
-                  />
                 </IonItem>
-              );
-            })}
-          </>
+                <div slot="content" style={{ padding: '0' }}>
+                  <IonList style={{ background: 'transparent' }} lines="none">
+                    {activities.map(activity => {
+                      const activityIds = extraCriteria.activity_ids || [];
+                      const isSelected = activityIds.includes(activity.id);
+
+                      return (
+                        <IonItem
+                          key={activity.id}
+                          lines="none"
+                          button
+                          detail={false}
+                          onClick={() => {
+                            const currentIds = extraCriteria.activity_ids || [];
+                            const newIds = isSelected
+                              ? currentIds.filter((id: number) => id !== activity.id)
+                              : [...currentIds, activity.id];
+                            setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
+                          }}
+                          style={{
+                            '--min-height': '56px',
+                            '--padding-start': '16px',
+                            '--background': '#fbfbfb',
+                            '--border-radius': '12px',
+                            margin: '6px 0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '12px'
+                          }}
+                        >
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: '12px',
+                            flexShrink: 0
+                          }}>
+                            <IonIcon
+                              icon={activity.type === 'gottesdienst' ? home : people}
+                              style={{ fontSize: '0.9rem', color: 'white' }}
+                            />
+                          </div>
+                          <IonLabel>
+                            <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
+                            <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                              {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                            </p>
+                          </IonLabel>
+                          <IonCheckbox
+                            slot="end"
+                            checked={isSelected}
+                          />
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
+                </div>
+              </IonAccordion>
+            </IonAccordionGroup>
+          </div>
         );
 
       default:
@@ -536,9 +649,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'unique_activities':
         return 'Anzahl (Verschiedene Aktivitäten)';
       case 'streak':
-        return 'Aufeinanderfolgende Tage';
+        return 'Anzahl (Aufeinanderfolgende Wochen)';
       case 'time_based':
-        return 'Aktivitäten in Zeitraum';
+        return 'Anzahl (Aktivitäten im Zeitraum)';
       default:
         return 'Wert';
     }
@@ -783,9 +896,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       Kriterium-Typ
                     </h3>
                     {formData.criteria_type && criteriaTypes[formData.criteria_type] && (
-                      <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
-                        {criteriaTypes[formData.criteria_type].label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()}
-                      </p>
+                      <>
+                        <p style={{ fontSize: '0.85rem', color: '#333', margin: '0 0 2px 0', fontWeight: '500' }}>
+                          {criteriaTypes[formData.criteria_type].label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()}
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: '#999', margin: '0', whiteSpace: 'normal' }}>
+                          {criteriaTypes[formData.criteria_type].description}
+                        </p>
+                      </>
                     )}
                   </IonLabel>
                 </IonItem>
@@ -809,6 +927,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               if (value === 'activity_count' || value === 'unique_activities' ||
                                   value === 'specific_activity' || value === 'category_activities') {
                                 defaultValue = 5;
+                              } else if (value === 'activity_combination') {
+                                defaultValue = 3;
                               }
                               setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue });
                               setExtraCriteria({});
