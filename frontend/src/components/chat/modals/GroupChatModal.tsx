@@ -267,10 +267,10 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
                             button 
                             onClick={() => handleParticipantToggle(participantId)}
                           >
-                            <IonAvatar slot="start" style={{ 
-                              width: '40px', 
+                            <IonAvatar slot="start" style={{
+                              width: '40px',
                               height: '40px',
-                              backgroundColor: '#7045f6'
+                              backgroundColor: '#17a2b8'
                             }}>
                               <div style={{ 
                                 color: 'white', 

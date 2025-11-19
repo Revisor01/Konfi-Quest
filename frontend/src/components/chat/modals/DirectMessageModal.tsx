@@ -168,10 +168,10 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ isOpen, onClose
                         disabled={creating}
                         style={{ '--min-height': '60px' }}
                       >
-                        <IonAvatar slot="start" style={{ 
-                          width: '40px', 
+                        <IonAvatar slot="start" style={{
+                          width: '40px',
                           height: '40px',
-                          backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#17a2b8',
+                          backgroundColor: '#17a2b8',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center'

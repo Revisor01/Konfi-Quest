@@ -497,10 +497,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           marginBottom: '8px',
                           position: 'relative'
                         }}>
-                          <div style={{ 
-                            width: '32px', 
+                          <div style={{
+                            width: '32px',
                             height: '32px',
-                            backgroundColor: room.type === 'admin' ? '#7045f6' : 
+                            backgroundColor: room.type === 'admin' ? '#17a2b8' :
                                            room.type === 'jahrgang' ? '#17a2b8' :
                                            room.type === 'group' ? '#2dd36f' : '#ff6b35',
                             borderRadius: '50%',

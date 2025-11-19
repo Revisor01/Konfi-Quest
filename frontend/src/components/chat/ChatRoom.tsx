@@ -949,11 +949,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         alignItems: 'flex-end'
       }}>
         {!isOwnMessage && room.type !== 'direct' && (
-          <IonAvatar style={{ 
-            width: '32px', 
-            height: '32px', 
+          <IonAvatar style={{
+            width: '32px',
+            height: '32px',
             marginRight: '8px',
-            backgroundColor: message.sender_type === 'admin' ? '#7045f6' : '#17a2b8'
+            backgroundColor: '#17a2b8'
           }}>
             <div style={{ 
               color: 'white', 
@@ -1001,11 +1001,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           }}
         >
           {!isOwnMessage && room.type !== 'direct' && (
-            <div style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 'bold', 
+            <div style={{
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
               marginBottom: '4px',
-              color: message.sender_type === 'admin' ? '#7045f6' : '#17a2b8'
+              color: '#17a2b8'
             }}>
               {message.sender_name || 'Unbekannter User'}
             </div>

@@ -610,6 +610,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
               </IonLabel>
               <IonToggle
+                slot="end"
                 checked={formData.is_active}
                 onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
                 color="success"
@@ -622,6 +623,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
               </IonLabel>
               <IonToggle
+                slot="end"
                 checked={formData.is_hidden}
                 onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
                 color="warning"

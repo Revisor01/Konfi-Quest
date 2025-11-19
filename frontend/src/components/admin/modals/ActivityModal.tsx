@@ -105,6 +105,67 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         </IonToolbar>
       </IonHeader>
       <IonContent style={{ '--padding-top': '16px' }}>
+        {/* SEKTION: Datum & Kommentar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '16px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#007aff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Datum & Kommentar
+          </h2>
+        </div>
+
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonLabel position="stacked">Datum *</IonLabel>
+                <IonInput
+                  type="date"
+                  value={selectedDate}
+                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonLabel position="stacked">Kommentar (optional)</IonLabel>
+                <IonTextarea
+                  value={comment}
+                  onIonInput={(e) => setComment(e.detail.value!)}
+                  placeholder="Zusätzliche Informationen..."
+                  rows={4}
+                />
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+
         {/* SEKTION: Aktivität */}
         <div style={{
           display: 'flex',
@@ -200,67 +261,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                     />
                   </IonItem>
                 ))}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-
-        {/* SEKTION: Datum & Kommentar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#007aff',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={calendar} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Datum & Kommentar
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
-                <IonLabel position="stacked">Datum *</IonLabel>
-                <IonInput
-                  type="date"
-                  value={selectedDate}
-                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                />
-              </IonItem>
-
-              <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
-                <IonLabel position="stacked">Kommentar (optional)</IonLabel>
-                <IonTextarea
-                  value={comment}
-                  onIonInput={(e) => setComment(e.detail.value!)}
-                  placeholder="Zusätzliche Informationen..."
-                  rows={4}
-                />
-              </IonItem>
             </IonList>
           </IonCardContent>
         </IonCard>

@@ -252,7 +252,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{getGottesdienstActivities().length}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Gottesdienst
+                    GoDi
                   </div>
                 </div>
               </IonCol>
@@ -315,7 +315,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
               <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Gemeinde</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="gottesdienst">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>GoDi</IonLabel>
+              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Gottesdienst</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </IonCardContent>

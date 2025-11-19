@@ -308,10 +308,10 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         button 
                         onClick={() => handleUserToggle(user)}
                       >
-                        <IonAvatar slot="start" style={{ 
-                          width: '40px', 
+                        <IonAvatar slot="start" style={{
+                          width: '40px',
                           height: '40px',
-                          backgroundColor: user.type === 'admin' ? '#7045f6' : '#17a2b8'
+                          backgroundColor: '#17a2b8'
                         }}>
                           <div style={{ 
                             color: 'white', 
@@ -357,7 +357,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         <IonAvatar slot="start" style={{ 
                           width: '40px', 
                           height: '40px',
-                          backgroundColor: participant.user_type === 'admin' ? '#7045f6' : '#17a2b8'
+                          backgroundColor: '#17a2b8'
                         }}>
                           <div style={{ 
                             color: 'white', 

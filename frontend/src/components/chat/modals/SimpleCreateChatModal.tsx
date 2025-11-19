@@ -443,14 +443,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: chatType === 'group' ? '#17a2b8' : '#7045f6',
+            backgroundColor: '#17a2b8',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: chatType === 'group'
-              ? '0 2px 8px rgba(23, 162, 184, 0.3)'
-              : '0 2px 8px rgba(112, 69, 246, 0.3)',
+            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={chatbubbleEllipses} style={{ fontSize: '1rem', color: 'white' }} />
@@ -674,7 +672,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           <div style={{
                             width: '32px',
                             height: '32px',
-                            backgroundColor: targetUser.type === 'admin' ? '#7045f6' : '#17a2b8',
+                            backgroundColor: '#17a2b8',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
