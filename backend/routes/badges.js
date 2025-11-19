@@ -26,13 +26,18 @@ const CRITERIA_TYPES = {
   },
   
   // === AKTIVITÄTS-BASIERTE KRITERIEN (Mittlere Komplexität) ===
-  activity_count: { 
-    label: "📊 Aktivitäten-Anzahl", 
-    description: "Gesamtanzahl aller Aktivitäten",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten absolviert wurde (egal welche). Beispiel: Wert 5 = mindestens 5 Aktivitäten."
+  activity_count: {
+    label: "📊 Aktivitäten & Events",
+    description: "Gesamtanzahl aller Aktivitäten und Events",
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und besuchten Events erreicht wird. Beispiel: Wert 10 = mindestens 10 Aktivitäten/Events."
   },
-  unique_activities: { 
-    label: "🌟 Verschiedene Aktivitäten", 
+  event_count: {
+    label: "🎪 Event-Teilnahmen",
+    description: "Anzahl besuchter Events",
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Events besucht wurde (mit Anwesenheit bestätigt). Beispiel: Wert 6 = mindestens 6 Events besucht."
+  },
+  unique_activities: {
+    label: "🌟 Verschiedene Aktivitäten",
     description: "Anzahl unterschiedlicher Aktivitäten",
     help: "Badge wird vergeben, wenn die angegebene Anzahl verschiedener Aktivitäten absolviert wurde. Mehrfache Teilnahme an derselben Aktivität zählt nur einmal. Beispiel: Wert 3 = 3 verschiedene Aktivitäten."
   },
@@ -45,8 +50,8 @@ const CRITERIA_TYPES = {
   },
   category_activities: {
     label: "🏷️ Kategorie-Aktivitäten",
-    description: "Aktivitäten aus bestimmter Kategorie",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'Kasualien' = 3 Kasualien besucht."
+    description: "Aktivitäten & Events aus Kategorie",
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und Events aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'Kasualien' = 3 Kasualien (Aktivitäten oder Events)."
   },
   activity_combination: {
     label: "🎭 Aktivitäts-Kombination",
@@ -57,13 +62,13 @@ const CRITERIA_TYPES = {
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
   time_based: {
     label: "Zeitbasiert",
-    description: "Aktivitäten in einem Zeitraum",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten innerhalb der festgelegten Wochen absolviert wurde. Beispiel: Wert 2 Aktivitäten + 4 Wochen = 2 Aktivitäten in 4 Wochen."
+    description: "Aktivitäten & Events im Zeitraum",
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und Events innerhalb der festgelegten Wochen absolviert wurde. Beispiel: Wert 2 + 4 Wochen = 2 Aktivitäten/Events in 4 Wochen."
   },
   streak: {
     label: "🔥 Serie",
     description: "Aufeinanderfolgende Wochen aktiv",
-    help: "Badge wird vergeben, wenn in der angegebenen Anzahl aufeinanderfolgender Wochen mindestens eine Aktivität absolviert wurde. Beispiel: Wert 4 = 4 Wochen in Folge aktiv."
+    help: "Badge wird vergeben, wenn in der angegebenen Anzahl aufeinanderfolgender Wochen mindestens eine Aktivität oder ein Event absolviert wurde. Beispiel: Wert 4 = 4 Wochen in Folge aktiv."
   },
   
   // === SPEZIAL-KRITERIEN (Selten verwendet) ===
@@ -138,11 +143,20 @@ const checkAndAwardBadges = async (db, konfiId) => {
         case 'category_activities':
           if (criteria.required_category) {
             const categoryCountQuery = `
-              SELECT COUNT(*) as count FROM konfi_activities ka 
-              JOIN activities a ON ka.activity_id = a.id 
-              JOIN activity_categories ac ON a.id = ac.activity_id
-              JOIN categories c ON ac.category_id = c.id
-              WHERE ka.konfi_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
+              SELECT COUNT(*) as count FROM (
+                SELECT ka.id FROM konfi_activities ka
+                JOIN activities a ON ka.activity_id = a.id
+                JOIN activity_categories ac ON a.id = ac.activity_id
+                JOIN categories c ON ac.category_id = c.id
+                WHERE ka.konfi_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
+
+                UNION ALL
+
+                SELECT eb.id FROM event_bookings eb
+                JOIN event_categories ec ON eb.event_id = ec.event_id
+                JOIN categories c ON ec.category_id = c.id
+                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3
+              ) as combined
             `;
             const { rows: [result] } = await db.query(categoryCountQuery, [konfiId, criteria.required_category, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
@@ -151,17 +165,39 @@ const checkAndAwardBadges = async (db, konfiId) => {
         
         case 'time_based':
           if (criteria.weeks) {
-            const { rows: results } = await db.query(`SELECT completed_date FROM konfi_activities WHERE konfi_id = $1 ORDER BY completed_date DESC`, [konfiId]);
+            const timeBasedQuery = `
+              SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1
+              UNION ALL
+              SELECT e.event_date as date FROM event_bookings eb
+              JOIN events e ON eb.event_id = e.id
+              WHERE eb.user_id = $1 AND eb.attendance_status = 'present'
+              ORDER BY date DESC
+            `;
+            const { rows: results } = await db.query(timeBasedQuery, [konfiId]);
             const now = new Date();
             const cutoff = new Date(now.getTime() - (criteria.weeks * 7 * 24 * 60 * 60 * 1000));
-            const recentCount = results.filter(r => new Date(r.completed_date) >= cutoff).length;
+            const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
             earned = recentCount >= badge.criteria_value;
           }
           break;
         
         case 'activity_count':
-          const { rows: [activityCountResult] } = await db.query("SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1", [konfiId]);
+          const activityCountQuery = `
+            SELECT (
+              (SELECT COUNT(*) FROM konfi_activities WHERE konfi_id = $1) +
+              (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present')
+            ) as count
+          `;
+          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [konfiId]);
           earned = activityCountResult && parseInt(activityCountResult.count) >= badge.criteria_value;
+          break;
+
+        case 'event_count':
+          const { rows: [eventCountResult] } = await db.query(
+            "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present'",
+            [konfiId]
+          );
+          earned = eventCountResult && parseInt(eventCountResult.count) >= badge.criteria_value;
           break;
         
         case 'bonus_points':
@@ -175,8 +211,16 @@ const checkAndAwardBadges = async (db, konfiId) => {
           break;
         
         case 'streak':
-          const { rows: streakResults } = await db.query(`SELECT completed_date FROM konfi_activities WHERE konfi_id = $1 ORDER BY completed_date DESC`, [konfiId]);
-          
+          const streakQuery = `
+            SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1
+            UNION ALL
+            SELECT e.event_date as date FROM event_bookings eb
+            JOIN events e ON eb.event_id = e.id
+            WHERE eb.user_id = $1 AND eb.attendance_status = 'present'
+            ORDER BY date DESC
+          `;
+          const { rows: streakResults } = await db.query(streakQuery, [konfiId]);
+
           function getYearWeek(date) {
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
             const dayNum = d.getUTCDay() || 7;
@@ -185,8 +229,8 @@ const checkAndAwardBadges = async (db, konfiId) => {
             const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
             return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
           }
-          
-          const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.completed_date))).filter(week => week && !week.includes('NaN')));
+
+          const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(week => week && !week.includes('NaN')));
           const sortedWeeks = Array.from(activityWeeks).sort().reverse();
           
           let currentStreak = 0;

@@ -233,6 +233,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     'category_activities': 'Kategorie-Aktivitäten',
     'time_based': 'Zeitbasiert',
     'activity_count': 'Aktivitätsanzahl',
+    'event_count': 'Event-Teilnahmen',
     'bonus_points': 'Bonuspunkte',
     'streak': 'Serie',
     'unique_activities': 'Einzigartige Aktivitäten'
@@ -643,15 +644,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'specific_activity':
         return 'Anzahl (Spezifische Aktivität)';
       case 'activity_count':
-        return 'Anzahl (Aktivitäten)';
+        return 'Anzahl (Aktivitäten & Events)';
+      case 'event_count':
+        return 'Anzahl (Events)';
       case 'category_activities':
-        return 'Anzahl (Kategorie-Aktivitäten)';
+        return 'Anzahl (Kategorie-Aktivitäten & Events)';
       case 'unique_activities':
         return 'Anzahl (Verschiedene Aktivitäten)';
       case 'streak':
         return 'Anzahl (Aufeinanderfolgende Wochen)';
       case 'time_based':
-        return 'Anzahl (Aktivitäten im Zeitraum)';
+        return 'Anzahl (Aktivitäten & Events im Zeitraum)';
       default:
         return 'Wert';
     }
@@ -925,7 +928,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               // Set default criteria_value based on type
                               let defaultValue = 10;
                               if (value === 'activity_count' || value === 'unique_activities' ||
-                                  value === 'specific_activity' || value === 'category_activities') {
+                                  value === 'specific_activity' || value === 'category_activities' ||
+                                  value === 'event_count') {
                                 defaultValue = 5;
                               } else if (value === 'activity_combination') {
                                 defaultValue = 3;
