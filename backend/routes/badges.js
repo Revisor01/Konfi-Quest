@@ -43,10 +43,10 @@ const CRITERIA_TYPES = {
     description: "Bestimmte Aktivität X-mal absolviert",
     help: "Badge wird vergeben, wenn eine bestimmte Aktivität die angegebene Anzahl mal absolviert wurde. Beispiel: Wert 5 + 'Sonntagsgottesdienst' = 5x am Sonntagsgottesdienst teilgenommen."
   },
-  category_activities: { 
-    label: "🏷️ Kategorie-Aktivitäten", 
+  category_activities: {
+    label: "🏷️ Kategorie-Aktivitäten",
     description: "Aktivitäten aus bestimmter Kategorie",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'sonntagsgottesdienst' = 3 Sonntagsgottesdienste."
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'Kasualien' = 3 Kasualien besucht."
   },
   activity_combination: { 
     label: "🎭 Aktivitäts-Kombination", 

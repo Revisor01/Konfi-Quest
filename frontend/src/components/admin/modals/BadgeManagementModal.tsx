@@ -25,7 +25,9 @@ import {
   IonText,
   IonCheckbox,
   IonSpinner,
-  IonList
+  IonList,
+  IonAccordion,
+  IonAccordionGroup
 } from '@ionic/react';
 import {
   checkmarkOutline,
@@ -459,13 +461,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'total_points':
       case 'gottesdienst_points':
       case 'gemeinde_points':
+      case 'both_categories':
       case 'bonus_points':
         return 'Punkte';
       case 'specific_activity':
+        return 'Anzahl (Spezifische Aktivität)';
       case 'activity_count':
+        return 'Anzahl (Aktivitäten)';
       case 'category_activities':
+        return 'Anzahl (Kategorie-Aktivitäten)';
       case 'unique_activities':
-        return 'Anzahl';
+        return 'Anzahl (Verschiedene Aktivitäten)';
       case 'streak':
         return 'Aufeinanderfolgende Tage';
       case 'time_based':
@@ -675,55 +681,71 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
+            <IonAccordionGroup>
+              <IonAccordion value="criteria-types">
+                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
+                    Kriterium-Typ
+                  </IonLabel>
+                </IonItem>
+                <div slot="content" style={{ padding: '0' }}>
+                  <IonList style={{ background: 'transparent' }} lines="none">
+                    {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => {
+                      const isSelected = formData.criteria_type === value;
+                      // Remove emojis from label
+                      const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+
+                      return (
+                        <IonItem
+                          key={value}
+                          lines="none"
+                          button
+                          detail={false}
+                          onClick={() => {
+                            if (!loading) {
+                              // Set default criteria_value based on type
+                              let defaultValue = 10;
+                              if (value === 'activity_count' || value === 'unique_activities' ||
+                                  value === 'specific_activity' || value === 'category_activities') {
+                                defaultValue = 5;
+                              }
+                              setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue });
+                              setExtraCriteria({});
+                            }
+                          }}
+                          disabled={loading}
+                          style={{
+                            '--min-height': '72px',
+                            '--padding-start': '16px',
+                            '--background': '#fbfbfb',
+                            '--border-radius': '12px',
+                            margin: '6px 0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            border: '1px solid #e0e0e0',
+                            borderRadius: '12px'
+                          }}
+                        >
+                          <IonLabel>
+                            <h3 style={{ fontWeight: '500', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{labelWithoutEmoji}</h3>
+                            <p style={{ fontSize: '0.8rem', color: '#666', margin: '0', whiteSpace: 'normal' }}>
+                              {type.help}
+                            </p>
+                          </IonLabel>
+                          <IonCheckbox
+                            slot="end"
+                            checked={isSelected}
+                            disabled={loading}
+                          />
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
+                </div>
+              </IonAccordion>
+            </IonAccordionGroup>
+
             <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ paddingBottom: '8px' }}>
-                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Kriterium-Typ</IonLabel>
-              </IonItem>
-              {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => {
-                const isSelected = formData.criteria_type === value;
-                // Remove emojis from label
-                const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
-
-                return (
-                  <IonItem
-                    key={value}
-                    lines="none"
-                    button
-                    detail={false}
-                    onClick={() => {
-                      if (!loading) {
-                        setFormData({ ...formData, criteria_type: value });
-                        setExtraCriteria({});
-                      }
-                    }}
-                    disabled={loading}
-                    style={{
-                      '--min-height': '72px',
-                      '--padding-start': '16px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '6px 0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <IonLabel>
-                      <h3 style={{ fontWeight: '500', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{labelWithoutEmoji}</h3>
-                      <p style={{ fontSize: '0.8rem', color: '#666', margin: '0', whiteSpace: 'normal' }}>
-                        {type.help}
-                      </p>
-                    </IonLabel>
-                    <IonCheckbox
-                      slot="end"
-                      checked={isSelected}
-                      disabled={loading}
-                    />
-                  </IonItem>
-                );
-              })}
-
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -831,7 +853,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                   slot="end"
                   checked={formData.is_hidden}
                   onIonChange={(e) => setFormData({ ...formData, is_hidden: e.detail.checked })}
-                  color="warning"
+                  color="medium"
                 />
               </IonItem>
             </IonList>
