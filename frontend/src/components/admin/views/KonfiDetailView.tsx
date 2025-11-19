@@ -820,7 +820,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           if (activity.hasPhoto && (activity as any).requestId) {
                             try {
                               console.log('Fetching photo for request:', (activity as any).requestId);
-                              const response = await api.get(`/activity-requests/${(activity as any).requestId}/photo`, {
+                              const response = await api.get(`/admin/activities/requests/${(activity as any).requestId}/photo`, {
                                 responseType: 'blob'
                               });
                               const photoUrl = URL.createObjectURL(response.data);

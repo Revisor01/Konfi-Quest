@@ -310,5 +310,41 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     }
   });
 
+  // Serve activity request photos (protected admin route)
+  router.get('/requests/:id/photo', rbacVerifier, checkPermission('admin.requests.view'), async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.id);
+
+      // Get request with photo filename
+      const { rows: [request] } = await db.query(
+        'SELECT photo_filename FROM activity_requests WHERE id = $1',
+        [requestId]
+      );
+
+      if (!request) {
+        return res.status(404).json({ error: 'Request not found' });
+      }
+
+      if (!request.photo_filename) {
+        return res.status(404).json({ error: 'No photo found' });
+      }
+
+      const fs = require('fs');
+      const path = require('path');
+      const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
+
+      if (!fs.existsSync(photoPath)) {
+        return res.status(404).json({ error: 'Photo file not found' });
+      }
+
+      // Set correct content type for images
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.sendFile(photoPath);
+    } catch (err) {
+      console.error('Error serving activity request photo:', err);
+      res.status(500).json({ error: 'Error loading photo' });
+    }
+  });
+
   return router;
 };

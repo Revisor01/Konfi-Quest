@@ -75,7 +75,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      const response = await api.get('/activities/requests');
+      const response = await api.get('/admin/activities/requests');
       const requests = response.data;
       const foundRequest = requests.find((r: ActivityRequest) => r.id === requestId);
 

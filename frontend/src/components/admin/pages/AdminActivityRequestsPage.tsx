@@ -79,7 +79,7 @@ const AdminActivityRequestsPage: React.FC = () => {
   const loadRequests = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/activity-requests');
+      const response = await api.get('/admin/activities/requests');
       setRequests(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Anträge');
