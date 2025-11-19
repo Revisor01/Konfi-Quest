@@ -24,7 +24,8 @@ import {
   IonIcon,
   IonText,
   IonCheckbox,
-  IonSpinner
+  IonSpinner,
+  IonList
 } from '@ionic/react';
 import {
   checkmarkOutline,
