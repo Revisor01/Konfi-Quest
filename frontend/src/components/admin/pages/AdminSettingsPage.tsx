@@ -10,7 +10,9 @@ import {
   IonItem,
   IonLabel,
   IonIcon,
-  IonList
+  IonList,
+  IonButton,
+  useIonAlert
 } from '@ionic/react';
 import {
   people,
@@ -19,15 +21,44 @@ import {
   pricetag,
   school,
   person,
-  trophy
+  trophy,
+  logOut
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import PushNotificationSettings from '../../common/PushNotificationSettings';
+import { logout } from '../../../services/auth';
 
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
   const { user } = useApp();
+  const [presentAlert] = useIonAlert();
+
+  const handleLogout = () => {
+    presentAlert({
+      header: 'Abmelden',
+      message: 'Möchtest du dich wirklich abmelden?',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Abmelden',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await logout();
+              window.location.href = '/';
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Fallback: direct logout even if token removal fails
+              localStorage.removeItem('konfi_token');
+              localStorage.removeItem('konfi_user');
+              window.location.href = '/';
+            }
+          }
+        }
+      ]
+    });
+  };
 
   return (
     <IonPage ref={pageRef}>
@@ -414,6 +445,18 @@ const AdminSettingsPage: React.FC = () => {
               </IonList>
             </IonCardContent>
           </IonCard>
+        </div>
+
+        <div style={{ margin: '16px', paddingBottom: '16px' }}>
+          <IonButton
+            expand="block"
+            color="danger"
+            fill="outline"
+            onClick={handleLogout}
+          >
+            <IonIcon icon={logOut} slot="start" />
+            Abmelden
+          </IonButton>
         </div>
       </IonContent>
     </IonPage>
