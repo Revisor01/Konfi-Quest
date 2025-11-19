@@ -56,7 +56,7 @@ const CRITERIA_TYPES = {
   
   // === ZEIT-BASIERTE KRITERIEN (Komplex) ===
   time_based: {
-    label: "⏰ Zeitbasiert",
+    label: "Zeitbasiert",
     description: "Aktivitäten in einem Zeitraum",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten innerhalb der festgelegten Wochen absolviert wurde. Beispiel: Wert 2 Aktivitäten + 4 Wochen = 2 Aktivitäten in 4 Wochen."
   },
