@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
@@ -21,16 +21,22 @@ import {
   IonItemOption,
   IonInput,
   IonTextarea,
-  IonSpinner
+  IonSpinner,
+  IonGrid,
+  IonRow,
+  IonCol
 } from '@ionic/react';
-import { 
-  add, 
-  pricetag, 
-  createOutline, 
+import {
+  add,
+  pricetag,
+  createOutline,
   trashOutline,
   checkmarkOutline,
   closeOutline,
-  arrowBack
+  arrowBack,
+  flash,
+  list,
+  trash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -299,41 +305,155 @@ const AdminCategoriesPage: React.FC = () => {
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Header Statistics Card */}
-        <IonCard style={{
+        {/* Header - Dashboard-Style */}
+        <div style={{
+          background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
+          borderRadius: '24px',
+          padding: '0',
           margin: '16px',
-          borderRadius: '16px',
-          background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
-          color: 'white',
-          boxShadow: '0 8px 32px rgba(0, 122, 255, 0.3)'
+          marginBottom: '16px',
+          boxShadow: '0 20px 40px rgba(255, 149, 0, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          <IonCardContent>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-              <div>
-                <IonIcon icon={pricetag} style={{ fontSize: '1.5rem', marginBottom: '8px' }} />
-                <h3 style={{ margin: '0', fontSize: '1.5rem' }}>
-                  {categories.length}
-                </h3>
-                <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                  Kategorien
-                </p>
-              </div>
-            </div>
-          </IonCardContent>
-        </IonCard>
+          {/* Überschrift - groß und überlappend */}
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            left: '12px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '4rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px'
+            }}>
+              KATEGORIEN
+            </h2>
+          </div>
+
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '70px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+              <IonRow>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={pricetag}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{categories.length}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Gesamt
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={list}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>0</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Aktivitäten
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={flash}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>0</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Events
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
+          </div>
+        </div>
 
         {/* Categories List */}
-        <IonCard style={{ margin: '16px', marginTop: '8px' }}>
-          <IonCardContent style={{ padding: '0' }}>
+        <IonCard style={{ margin: '16px' }}>
+          <IonCardContent style={{ padding: '8px 0' }}>
             {categories.length === 0 ? (
-              <IonItem lines="none">
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Noch keine Kategorien angelegt</p>
-                </IonLabel>
-              </IonItem>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={pricetag}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#ff9500',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Kategorien gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Noch keine Kategorien angelegt</p>
+              </div>
             ) : (
               categories.map((category) => (
-                <IonItemSliding 
+                <IonItemSliding
                   key={category.id}
                   ref={(el) => {
                     if (el) {
@@ -343,56 +463,103 @@ const AdminCategoriesPage: React.FC = () => {
                     }
                   }}
                 >
-                  <IonItem 
+                  <IonItem
                     button={canEdit}
                     onClick={canEdit ? () => openEditModal(category) : undefined}
-                    style={{ 
-                      '--min-height': '60px',
+                    detail={false}
+                    style={{
+                      '--min-height': '70px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '4px 8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px',
                       opacity: canEdit ? 1 : 0.6,
                       cursor: canEdit ? 'pointer' : 'default'
                     }}
                   >
-                    <div slot="start" style={{ 
-                      width: '40px', 
-                      height: '40px',
-                      backgroundColor: '#007aff',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px'
-                    }}>
-                      <IonIcon 
-                        icon={pricetag} 
-                        style={{ 
-                          fontSize: '1.2rem', 
-                          color: 'white'
-                        }} 
-                      />
-                    </div>
                     <IonLabel>
-                      <h2 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>
-                        {category.name}
-                      </h2>
-                      {category.description && (
-                        <p style={{ 
-                          margin: '0', 
-                          fontSize: '0.85rem', 
-                          color: '#666' 
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          backgroundColor: '#ff9500',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)',
+                          flexShrink: 0
                         }}>
-                          {category.description}
-                        </p>
-                      )}
+                          <IonIcon
+                            icon={pricetag}
+                            style={{
+                              fontSize: '1.2rem',
+                              color: 'white'
+                            }}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <h2 style={{
+                            fontWeight: '600',
+                            fontSize: '0.95rem',
+                            margin: '0 0 4px 0',
+                            color: '#333'
+                          }}>
+                            {category.name}
+                          </h2>
+                          {category.description && (
+                            <p style={{
+                              margin: '0',
+                              fontSize: '0.8rem',
+                              color: '#666'
+                            }}>
+                              {category.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </IonLabel>
                   </IonItem>
-                  
+
                   {canDelete && (
-                    <IonItemOptions side="end">
-                      <IonItemOption 
-                        color="danger" 
+                    <IonItemOptions side="end" style={{
+                      gap: '4px',
+                      '--ion-item-background': 'transparent'
+                    }}>
+                      <IonItemOption
                         onClick={() => handleDelete(category)}
+                        style={{
+                          '--background': 'transparent',
+                          '--background-activated': 'transparent',
+                          '--background-focused': 'transparent',
+                          '--background-hover': 'transparent',
+                          '--color': 'transparent',
+                          '--ripple-color': 'transparent',
+                          padding: '0 8px',
+                          paddingRight: '20px',
+                          minWidth: '56px',
+                          maxWidth: '56px'
+                        }}
                       >
-                        <IonIcon icon={trashOutline} />
+                        <div style={{
+                          width: '44px',
+                          height: '44px',
+                          backgroundColor: '#dc3545',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                        }}>
+                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                        </div>
                       </IonItemOption>
                     </IonItemOptions>
                   )}
