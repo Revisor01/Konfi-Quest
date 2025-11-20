@@ -48,7 +48,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
     description: '',
     points_required: 0,
     icon: '🏆',
-    color: '#3880ff',
+    color: '#9b59b6',
     is_active: true
   });
   const [loading, setLoading] = useState(false);

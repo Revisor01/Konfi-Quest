@@ -58,10 +58,13 @@ const AdminLevelsPage: React.FC = () => {
   const loadLevels = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Loading levels from API...');
       const response = await api.get('/levels');
+      console.log('✅ Levels loaded:', response.data);
       setLevels(response.data);
     } catch (error: any) {
-      console.error('Fehler beim Laden der Level:', error);
+      console.error('❌ Fehler beim Laden der Level:', error);
+      console.error('❌ Error details:', error.response);
       setError(error.response?.data?.error || 'Fehler beim Laden der Level');
     } finally {
       setLoading(false);
@@ -127,7 +130,7 @@ const AdminLevelsPage: React.FC = () => {
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>Level-System</IonTitle>
+          <IonTitle>Level</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handleAdd}>
               <IonIcon icon={add} />
@@ -139,7 +142,7 @@ const AdminLevelsPage: React.FC = () => {
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Level-System</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>Level</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -153,12 +156,12 @@ const AdminLevelsPage: React.FC = () => {
           <>
             {/* Header - Dashboard-Style */}
             <div style={{
-              background: 'linear-gradient(135deg, #ffd700 0%, #ff8c00 100%)',
+              background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
               borderRadius: '24px',
               padding: '0',
               margin: '16px',
               marginBottom: '16px',
-              boxShadow: '0 20px 40px rgba(255, 215, 0, 0.3)',
+              boxShadow: '0 20px 40px rgba(155, 89, 182, 0.3)',
               position: 'relative',
               overflow: 'hidden',
               minHeight: '220px',
@@ -180,7 +183,7 @@ const AdminLevelsPage: React.FC = () => {
                   lineHeight: '0.8',
                   letterSpacing: '-2px'
                 }}>
-                  LEVELS
+                  LEVEL
                 </h2>
               </div>
 
@@ -236,7 +239,7 @@ const AdminLevelsPage: React.FC = () => {
                       icon={trophy}
                       style={{
                         fontSize: '3rem',
-                        color: '#ffd700',
+                        color: '#9b59b6',
                         marginBottom: '16px',
                         display: 'block',
                         margin: '0 auto 16px auto'
@@ -281,12 +284,12 @@ const AdminLevelsPage: React.FC = () => {
                             <div style={{
                               width: '40px',
                               height: '40px',
-                              backgroundColor: level.color || '#ffd700',
+                              backgroundColor: level.color || '#9b59b6',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3)',
+                              boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
                               flexShrink: 0
                             }}>
                               <span style={{ fontSize: '1.2rem' }}>{level.icon || '🏆'}</span>
