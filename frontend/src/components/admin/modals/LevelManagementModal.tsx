@@ -148,12 +148,12 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#3880ff',
+            backgroundColor: '#ffd700',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(255, 215, 0, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
@@ -164,7 +164,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             margin: '0',
             color: '#333'
           }}>
-            Grunddaten
+            Level Details
           </h2>
         </div>
 
@@ -176,74 +176,114 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Interner Name *</IonLabel>
-                <IonInput
-                  value={formData.name}
-                  onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-                  placeholder="z.B. level_1, beginner"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Interner Name *</IonLabel>
+              <IonInput
+                value={formData.name}
+                onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                placeholder="z.B. level_1, beginner"
+                disabled={loading}
+                clearInput={true}
+              />
+            </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Anzeige-Titel *</IonLabel>
-                <IonInput
-                  value={formData.title}
-                  onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
-                  placeholder="z.B. Anfänger, Bronze, Meister"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Anzeige-Titel *</IonLabel>
+              <IonInput
+                value={formData.title}
+                onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
+                placeholder="z.B. Anfänger, Bronze, Meister"
+                disabled={loading}
+                clearInput={true}
+              />
+            </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Benötigte Punkte *</IonLabel>
-                <IonInput
-                  type="number"
-                  value={formData.points_required}
-                  onIonInput={(e) => setFormData({ ...formData, points_required: parseInt(e.detail.value!) || 0 })}
-                  placeholder="0"
-                  disabled={loading}
-                  min={0}
-                />
-              </IonItem>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Benötigte Punkte *</IonLabel>
+              <IonInput
+                type="number"
+                value={formData.points_required}
+                onIonInput={(e) => setFormData({ ...formData, points_required: parseInt(e.detail.value!) || 0 })}
+                placeholder="0"
+                disabled={loading}
+                min={0}
+              />
+            </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Beschreibung</IonLabel>
-                <IonTextarea
-                  value={formData.description}
-                  onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-                  placeholder="Optionale Beschreibung..."
-                  rows={3}
-                  disabled={loading}
-                />
-              </IonItem>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Beschreibung</IonLabel>
+              <IonTextarea
+                value={formData.description}
+                onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                placeholder="Optionale Beschreibung..."
+                rows={3}
+                disabled={loading}
+              />
+            </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Icon (Emoji)</IonLabel>
-                <IonInput
-                  value={formData.icon}
-                  onIonInput={(e) => setFormData({ ...formData, icon: e.detail.value! })}
-                  placeholder="🏆"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0 0 12px 0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Icon (Emoji)</IonLabel>
+              <IonInput
+                value={formData.icon}
+                onIonInput={(e) => setFormData({ ...formData, icon: e.detail.value! })}
+                placeholder="🏆"
+                disabled={loading}
+                clearInput={true}
+              />
+            </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Farbe (Hex)</IonLabel>
-                <IonInput
-                  value={formData.color}
-                  onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
-                  placeholder="#3880ff"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
-            </IonList>
+            <IonItem lines="none" style={{
+              '--background': '#f5f5f5',
+              '--border-radius': '12px',
+              '--padding-start': '16px',
+              margin: '0',
+              border: '1px solid #e0e0e0',
+              borderRadius: '12px'
+            }}>
+              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Farbe (Hex)</IonLabel>
+              <IonInput
+                value={formData.color}
+                onIonInput={(e) => setFormData({ ...formData, color: e.detail.value! })}
+                placeholder="#ffd700"
+                disabled={loading}
+                clearInput={true}
+              />
+            </IonItem>
           </IonCardContent>
         </IonCard>
       </IonContent>
