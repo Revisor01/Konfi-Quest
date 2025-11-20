@@ -138,88 +138,36 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           flexDirection: 'column',
           justifyContent: 'center'
         }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={document}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{requests.length}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={hourglass}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{getPendingCount()}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Offen
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{getApprovedCount()}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Genehmigt
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '16px 32px',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <IonIcon
+                icon={document}
+                style={{
+                  fontSize: '2rem',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  marginBottom: '8px',
+                  display: 'block',
+                  margin: '0 auto 8px auto'
+                }}
+              />
+              <div style={{ fontSize: '2rem', fontWeight: '800' }}>
+                {getPendingCount()}
+              </div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                Offen
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -279,7 +227,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                         '--padding-start': '16px',
                         '--padding-top': '0px',
                         '--padding-bottom': '0px',
-                        '--background': '#fbfbfb',
+                        '--background': '#f5f5f5',
                         '--border-radius': '12px',
                         margin: '6px 8px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',

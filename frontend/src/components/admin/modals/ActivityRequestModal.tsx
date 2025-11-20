@@ -277,118 +277,167 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonLabel>
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>Konfi</div>
-                  <div style={{ fontWeight: '600', fontSize: '1rem', color: '#333' }}>
-                    {request.konfi_name}
-                    {request.jahrgang_name && (
-                      <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '400', marginLeft: '8px' }}>
-                        ({request.jahrgang_name})
-                      </span>
-                    )}
-                  </div>
-                </IonLabel>
-              </IonItem>
+            <div style={{
+              background: '#f5f5f5',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid #e0e0e0',
+              marginBottom: '12px'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Konfi</div>
+              <div style={{ fontWeight: '600', fontSize: '1rem', color: '#333' }}>
+                {request.konfi_name}
+                {request.jahrgang_name && (
+                  <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '400', marginLeft: '8px' }}>
+                    ({request.jahrgang_name})
+                  </span>
+                )}
+              </div>
+            </div>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonLabel>
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>Aktivität</div>
-                  <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
-                    {request.activity_name}
-                  </div>
-                </IonLabel>
-              </IonItem>
+            <div style={{
+              background: '#f5f5f5',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid #e0e0e0',
+              marginBottom: '12px'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Aktivität</div>
+              <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
+                {request.activity_name}
+              </div>
+            </div>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonLabel>
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>Teilnahmedatum</div>
-                  <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
-                    {formatDate(request.requested_date)}
-                  </div>
-                </IonLabel>
-              </IonItem>
+            <div style={{
+              background: '#f5f5f5',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid #e0e0e0',
+              marginBottom: '12px'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Teilnahmedatum</div>
+              <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
+                {formatDate(request.requested_date)}
+              </div>
+            </div>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: request.comment ? '8px' : '0' }}>
-                <IonLabel>
-                  <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>Eingereicht</div>
-                  <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                    {formatDateTime(request.created_at)}
-                  </div>
-                </IonLabel>
-              </IonItem>
+            <div style={{
+              background: '#f5f5f5',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid #e0e0e0',
+              marginBottom: request.comment ? '12px' : '0'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Eingereicht</div>
+              <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                {formatDateTime(request.created_at)}
+              </div>
+            </div>
 
-              {request.comment && (
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel>
-                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '2px' }}>Kommentar</div>
-                    <div style={{
-                      fontSize: '0.9rem',
-                      color: '#333',
-                      whiteSpace: 'pre-wrap',
-                      lineHeight: '1.4'
-                    }}>
-                      {request.comment}
-                    </div>
-                  </IonLabel>
-                </IonItem>
-              )}
-            </IonList>
+            {request.comment && (
+              <div style={{
+                background: '#f5f5f5',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Kommentar</div>
+                <div style={{
+                  fontSize: '0.9rem',
+                  color: '#333',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.4'
+                }}>
+                  {request.comment}
+                </div>
+              </div>
+            )}
           </IonCardContent>
         </IonCard>
 
         {/* SEKTION: Foto */}
-        {request.photo_filename && (
-          <>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              margin: '24px 16px 12px 16px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#007aff',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
-              </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Nachweis-Foto
-              </h2>
-            </div>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          margin: '24px 16px 12px 16px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#007aff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
+            Nachweis-Foto
+          </h2>
+        </div>
 
-            <IonCard style={{
-              margin: '0 16px 16px 16px',
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0'
-            }}>
-              <IonCardContent style={{ padding: '16px' }}>
-                <IonImg
-                  src={`https://konfi-points.de/api/activity-requests/${request.id}/photo`}
+        <IonCard style={{
+          margin: '0 16px 16px 16px',
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            {request.photo_filename ? (
+              <IonImg
+                src={`https://konfi-points.de/api/activity-requests/${request.id}/photo`}
+                style={{
+                  maxWidth: '100%',
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              />
+            ) : (
+              <div style={{
+                background: '#f5f5f5',
+                borderRadius: '12px',
+                padding: '24px 16px',
+                textAlign: 'center',
+                border: '1px solid #e0e0e0'
+              }}>
+                <IonIcon
+                  icon={imageIcon}
                   style={{
-                    maxWidth: '100%',
-                    borderRadius: '8px'
+                    fontSize: '2.5rem',
+                    color: '#999',
+                    marginBottom: '12px',
+                    display: 'block'
                   }}
                 />
-              </IonCardContent>
-            </IonCard>
-          </>
-        )}
+                <p style={{
+                  margin: '0 0 4px 0',
+                  fontSize: '0.9rem',
+                  color: '#666',
+                  fontWeight: '500'
+                }}>
+                  Foto wurde automatisch gelöscht
+                </p>
+                <p style={{
+                  margin: '0',
+                  fontSize: '0.8rem',
+                  color: '#999'
+                }}>
+                  Nach Genehmigung werden Nachweisfotos aus Datenschutzgründen entfernt
+                </p>
+              </div>
+            )}
+          </IonCardContent>
+        </IonCard>
 
         {/* SEKTION: Admin-Kommentar */}
         <div style={{
@@ -429,20 +478,25 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             {isPending ? (
-              <IonList style={{ background: 'transparent' }} lines="none">
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">
-                    Admin-Kommentar <span style={{ color: '#666', fontSize: '0.85rem' }}>(erforderlich bei Ablehnung)</span>
-                  </IonLabel>
-                  <IonTextarea
-                    value={adminComment}
-                    onIonInput={(e) => setAdminComment(e.detail.value!)}
-                    placeholder="Optional: Kommentar zur Genehmigung/Ablehnung..."
+              <IonItem lines="none" style={{
+                '--background': '#f5f5f5',
+                '--border-radius': '12px',
+                '--padding-start': '16px',
+                margin: '0',
+                border: '1px solid #e0e0e0',
+                borderRadius: '12px'
+              }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>
+                  Admin-Kommentar <span style={{ fontSize: '0.85rem' }}>(erforderlich bei Ablehnung)</span>
+                </IonLabel>
+                <IonTextarea
+                  value={adminComment}
+                  onIonInput={(e) => setAdminComment(e.detail.value!)}
+                  placeholder="Optional: Kommentar zur Genehmigung/Ablehnung..."
                     rows={3}
                     disabled={loading}
                   />
-                </IonItem>
-              </IonList>
+              </IonItem>
             ) : (
               <div>
                 <div style={{
