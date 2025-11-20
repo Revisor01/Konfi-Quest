@@ -86,16 +86,12 @@ const AdminLevelsPage: React.FC = () => {
 
   const handleAdd = () => {
     setEditLevel(undefined);
-    presentLevelModal({
-      presentingElement: presentingElement || undefined
-    });
+    presentLevelModal({ presentingElement });
   };
 
   const handleEdit = (level: Level) => {
     setEditLevel(level);
-    presentLevelModal({
-      presentingElement: presentingElement || undefined
-    });
+    presentLevelModal({ presentingElement });
   };
 
   const handleDelete = async (level: Level) => {
