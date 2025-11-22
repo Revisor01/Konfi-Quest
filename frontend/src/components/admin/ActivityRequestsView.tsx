@@ -39,6 +39,7 @@ interface ActivityRequest {
   status: 'pending' | 'approved' | 'rejected';
   admin_comment?: string;
   approved_by?: number;
+  approved_by_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -279,10 +280,10 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       onClick={() => onSelectRequest(request)}
                       detail={false}
                       style={{
-                        '--min-height': '110px',
+                        '--min-height': '90px',
                         '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
+                        '--padding-top': '12px',
+                        '--padding-bottom': '12px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
                         margin: '4px 8px',
@@ -379,8 +380,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           alignItems: 'center',
                           gap: '8px',
                           fontSize: '0.85rem',
-                          color: (isApproved || isRejected) ? '#999' : '#666',
-                          paddingLeft: '44px'
+                          color: (isApproved || isRejected) ? '#999' : '#666'
                         }}>
                           {/* Punkte */}
                           {request.activity_points && (

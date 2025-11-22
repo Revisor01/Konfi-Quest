@@ -50,6 +50,7 @@ interface ActivityRequest {
   status: 'pending' | 'approved' | 'rejected';
   admin_comment?: string;
   approved_by?: number;
+  approved_by_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -588,13 +589,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <div style={{
                       width: '32px',
                       height: '32px',
-                      backgroundColor: isApproved ? '#34c759' : '#dc3545',
+                      backgroundColor: isApproved ? '#047857' : '#dc3545',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       boxShadow: isApproved
-                        ? '0 2px 8px rgba(52, 199, 89, 0.3)'
+                        ? '0 2px 8px rgba(4, 120, 87, 0.3)'
                         : '0 2px 8px rgba(220, 53, 69, 0.3)',
                       marginRight: '12px'
                     }}>
@@ -615,7 +616,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         {isApproved ? 'Antrag genehmigt' : 'Antrag abgelehnt'}
                       </div>
                       <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '2px' }}>
-                        {formatDateTime(request.updated_at)}
+                        {isApproved ? 'Genehmigt' : 'Abgelehnt'} {request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
                       </div>
                     </IonLabel>
                   </IonItem>
@@ -625,16 +626,21 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       lines="none"
                       style={{
                         '--padding-start': '16px',
-                        '--background': isApproved ? 'transparent' : 'rgba(220, 53, 69, 0.05)',
-                        marginTop: '8px',
-                        borderRadius: '12px'
+                        '--padding-top': '12px',
+                        '--padding-bottom': '12px',
+                        '--background': 'transparent',
+                        marginTop: '8px'
                       }}
                     >
                       <IonLabel style={{ whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: '600', marginBottom: '4px', color: isApproved ? '#666' : '#dc3545' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#666', fontSize: '0.85rem' }}>
                           Begründung:
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: isApproved ? '#666' : '#dc3545' }}>
+                        <div style={{
+                          fontSize: '0.9rem',
+                          color: '#333',
+                          lineHeight: '1.4'
+                        }}>
                           {request.admin_comment}
                         </div>
                       </IonLabel>
