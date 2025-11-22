@@ -26,17 +26,11 @@ module.exports = (db, verifyTokenRBAC, checkPermission) => {
   }
 });
 
-// POST /api/levels - Neues Level erstellen (nur Admins)
+// POST /api/levels - Neues Level erstellen (nur org_admin und admin)
 router.post('/', verifyTokenRBAC, async (req, res) => {
   try {
-    // Permission Check
-    const hasPermission = await db.query(`
-      SELECT 1 FROM user_permissions up
-      JOIN permissions p ON up.permission_id = p.id
-      WHERE up.user_id = $1 AND p.name = 'manage_levels'
-    `, [req.user.id]);
-    
-    if (hasPermission.rows.length === 0) {
+    // Nur org_admin und admin können Level verwalten
+    if (!['org_admin', 'admin'].includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Keine Berechtigung zum Verwalten von Leveln' });
     }
 
@@ -82,14 +76,8 @@ router.post('/', verifyTokenRBAC, async (req, res) => {
 // PUT /api/levels/:id - Level bearbeiten
 router.put('/:id', verifyTokenRBAC, async (req, res) => {
   try {
-    // Permission Check
-    const hasPermission = await db.query(`
-      SELECT 1 FROM user_permissions up
-      JOIN permissions p ON up.permission_id = p.id
-      WHERE up.user_id = $1 AND p.name = 'manage_levels'
-    `, [req.user.id]);
-    
-    if (hasPermission.rows.length === 0) {
+    // Nur org_admin und admin können Level verwalten
+    if (!['org_admin', 'admin'].includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Keine Berechtigung zum Verwalten von Leveln' });
     }
 
@@ -149,14 +137,8 @@ router.put('/:id', verifyTokenRBAC, async (req, res) => {
 // DELETE /api/levels/:id - Level löschen
 router.delete('/:id', verifyTokenRBAC, async (req, res) => {
   try {
-    // Permission Check
-    const hasPermission = await db.query(`
-      SELECT 1 FROM user_permissions up
-      JOIN permissions p ON up.permission_id = p.id
-      WHERE up.user_id = $1 AND p.name = 'manage_levels'
-    `, [req.user.id]);
-    
-    if (hasPermission.rows.length === 0) {
+    // Nur org_admin und admin können Level verwalten
+    if (!['org_admin', 'admin'].includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Keine Berechtigung zum Verwalten von Leveln' });
     }
 
