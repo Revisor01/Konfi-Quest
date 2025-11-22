@@ -101,7 +101,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'gottesdienst' ? '#dc2626' : '#2563eb';
+    return type === 'gottesdienst' ? '#007aff' : '#2dd36f';
   };
 
   const getInitials = (name: string) => {
@@ -168,12 +168,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               <div style={{
                 width: '32px',
                 height: '32px',
-                backgroundColor: '#2dd36f',
+                backgroundColor: '#059669',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
                 flexShrink: 0
               }}>
                 <IonIcon icon={imageOutline} style={{ fontSize: '1rem', color: 'white' }} />
@@ -300,12 +300,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#5b21b6',
+                  backgroundColor: '#059669',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(91, 33, 182, 0.3)',
+                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
                   marginRight: '12px',
                   flexShrink: 0
                 }}>
@@ -336,12 +336,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 <div style={{
                   width: '40px',
                   height: '40px',
-                  backgroundColor: '#3880ff',
+                  backgroundColor: '#059669',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(56, 128, 255, 0.3)',
+                  boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
                   marginRight: '12px',
                   flexShrink: 0
                 }}>
@@ -367,12 +367,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                   <div style={{
                     width: '40px',
                     height: '40px',
-                    backgroundColor: '#ff9500',
+                    backgroundColor: '#059669',
                     borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)',
+                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
                     marginRight: '12px',
                     flexShrink: 0
                   }}>
@@ -530,18 +530,19 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                         disabled={submitting}
                         detail={false}
                         style={{
-                          '--background': '#2dd36f',
-                          '--background-hover': '#28ba62',
-                          '--color': 'white',
+                          '--background': 'white',
+                          '--background-hover': '#f0fdf4',
+                          '--color': '#059669',
                           '--border-radius': '12px',
                           margin: '0 0 8px 0',
                           borderRadius: '12px',
-                          '--min-height': '54px'
+                          '--min-height': '54px',
+                          border: '2px solid #059669'
                         }}
                       >
-                        <IonIcon icon={checkmarkCircle} slot="start" style={{ color: 'white' }} />
-                        <IonLabel style={{ fontWeight: '600', color: 'white' }}>Genehmigen</IonLabel>
-                        {submitting && <IonSpinner name="crescent" slot="end" style={{ color: 'white' }} />}
+                        <IonIcon icon={checkmarkCircle} slot="start" style={{ color: '#059669' }} />
+                        <IonLabel style={{ fontWeight: '600', color: '#059669' }}>Genehmigen</IonLabel>
+                        {submitting && <IonSpinner name="crescent" slot="end" style={{ color: '#059669' }} />}
                       </IonItem>
 
                       <IonItem
@@ -551,17 +552,18 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                         disabled={submitting}
                         detail={false}
                         style={{
-                          '--background': '#dc3545',
-                          '--background-hover': '#c82333',
-                          '--color': 'white',
+                          '--background': 'white',
+                          '--background-hover': '#fef2f2',
+                          '--color': '#dc3545',
                           '--border-radius': '12px',
                           margin: '0',
                           borderRadius: '12px',
-                          '--min-height': '54px'
+                          '--min-height': '54px',
+                          border: '2px solid #dc3545'
                         }}
                       >
-                        <IonIcon icon={closeCircle} slot="start" style={{ color: 'white' }} />
-                        <IonLabel style={{ fontWeight: '600', color: 'white' }}>Ablehnen</IonLabel>
+                        <IonIcon icon={closeCircle} slot="start" style={{ color: '#dc3545' }} />
+                        <IonLabel style={{ fontWeight: '600', color: '#dc3545' }}>Ablehnen</IonLabel>
                       </IonItem>
                     </IonList>
                   </>
@@ -597,19 +599,20 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                         disabled={!rejectComment.trim() || submitting}
                         detail={false}
                         style={{
-                          '--background': '#dc3545',
-                          '--background-hover': '#c82333',
-                          '--color': 'white',
+                          '--background': 'white',
+                          '--background-hover': '#fef2f2',
+                          '--color': '#dc3545',
                           '--border-radius': '12px',
                           margin: '0 0 8px 0',
                           borderRadius: '12px',
                           '--min-height': '54px',
+                          border: '2px solid #dc3545',
                           opacity: (!rejectComment.trim() || submitting) ? 0.5 : 1
                         }}
                       >
-                        <IonIcon icon={closeCircle} slot="start" style={{ color: 'white' }} />
-                        <IonLabel style={{ fontWeight: '600', color: 'white' }}>Ablehnen bestätigen</IonLabel>
-                        {submitting && <IonSpinner name="crescent" slot="end" style={{ color: 'white' }} />}
+                        <IonIcon icon={closeCircle} slot="start" style={{ color: '#dc3545' }} />
+                        <IonLabel style={{ fontWeight: '600', color: '#dc3545' }}>Ablehnen bestätigen</IonLabel>
+                        {submitting && <IonSpinner name="crescent" slot="end" style={{ color: '#dc3545' }} />}
                       </IonItem>
 
                       <IonItem
@@ -622,18 +625,18 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                         disabled={submitting}
                         detail={false}
                         style={{
-                          '--background': '#f5f5f5',
-                          '--background-hover': '#e0e0e0',
-                          '--color': '#333',
+                          '--background': 'white',
+                          '--background-hover': '#f5f5f5',
+                          '--color': '#666',
                           '--border-radius': '12px',
                           margin: '0',
                           borderRadius: '12px',
-                          border: '1px solid #e0e0e0',
+                          border: '2px solid #e0e0e0',
                           '--min-height': '54px'
                         }}
                       >
                         <IonIcon icon={closeOutline} slot="start" style={{ color: '#666' }} />
-                        <IonLabel style={{ fontWeight: '600', color: '#333' }}>Abbrechen</IonLabel>
+                        <IonLabel style={{ fontWeight: '600', color: '#666' }}>Abbrechen</IonLabel>
                       </IonItem>
                     </IonList>
                   </>
@@ -785,12 +788,12 @@ const AdminRequestsPage: React.FC = () => {
           <>
             {/* Header - Dashboard-Style mit 3 Statistik-Items */}
             <div style={{
-              background: 'linear-gradient(135deg, #2dd36f 0%, #28ba62 100%)',
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
               borderRadius: '24px',
               padding: '0',
               margin: '16px',
               marginBottom: '16px',
-              boxShadow: '0 20px 40px rgba(45, 211, 111, 0.3)',
+              boxShadow: '0 20px 40px rgba(5, 150, 105, 0.3)',
               position: 'relative',
               overflow: 'hidden',
               minHeight: '220px',
@@ -926,13 +929,13 @@ const AdminRequestsPage: React.FC = () => {
                   }}
                 >
                   <IonSegmentButton value="pending">
-                    <IonLabel style={{ fontSize: '0.9rem' }}>Offen</IonLabel>
+                    <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Offen</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="approved">
-                    <IonLabel style={{ fontSize: '0.9rem' }}>Genehmigt</IonLabel>
+                    <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Genehmigt</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="rejected">
-                    <IonLabel style={{ fontSize: '0.9rem' }}>Abgelehnt</IonLabel>
+                    <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Abgelehnt</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
               </IonCardContent>
