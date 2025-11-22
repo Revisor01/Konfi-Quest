@@ -1,10 +1,10 @@
 const express = require('express');
-const router = express.Router();
-const db = require('../database');
-const { verifyTokenRBAC } = require('../middleware/rbac');
 
-// GET /api/levels - Alle Level für Organisation laden
-router.get('/', verifyTokenRBAC, async (req, res) => {
+module.exports = (db, verifyTokenRBAC, checkPermission) => {
+  const router = express.Router();
+
+  // GET /api/levels - Alle Level für Organisation laden
+  router.get('/', verifyTokenRBAC, async (req, res) => {
   console.log('📊 GET /api/levels - Request received');
   console.log('👤 User:', req.user);
   try {
@@ -284,4 +284,5 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
   }
 });
 
-module.exports = router;
+  return router;
+};

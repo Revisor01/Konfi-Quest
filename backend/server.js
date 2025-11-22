@@ -252,7 +252,7 @@ app.use('/api/users', usersRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/roles', rolesRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, checkPermission));
 app.use('/api/permissions', permissionsRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/levels', levelsRoutes);
+app.use('/api/levels', levelsRoutes(db, rbacVerifier, checkPermission));
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION
