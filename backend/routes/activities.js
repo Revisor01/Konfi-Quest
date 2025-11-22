@@ -315,14 +315,27 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     try {
       const requestId = parseInt(req.params.id);
 
-      // Get request with photo filename
+      // Nur admin und org_admin dürfen Fotos sehen
+      if (!['admin', 'org_admin'].includes(req.user.role_name)) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
+      }
+
+      // Get request with photo filename and check organization
       const { rows: [request] } = await db.query(
-        'SELECT photo_filename FROM activity_requests WHERE id = $1',
+        `SELECT ar.photo_filename, ar.konfi_id, u.organization_id
+         FROM activity_requests ar
+         JOIN users u ON ar.konfi_id = u.id
+         WHERE ar.id = $1`,
         [requestId]
       );
 
       if (!request) {
         return res.status(404).json({ error: 'Request not found' });
+      }
+
+      // Organization check
+      if (request.organization_id !== req.user.organization_id) {
+        return res.status(403).json({ error: 'Keine Berechtigung für diese Organisation' });
       }
 
       if (!request.photo_filename) {
