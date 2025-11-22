@@ -9,7 +9,6 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonSearchbar,
   IonSegment,
   IonSegmentButton
 } from '@ionic/react';
@@ -24,7 +23,6 @@ import {
   people,
   trophy
 } from 'ionicons/icons';
-import { filterBySearchTerm } from '../../utils/helpers';
 
 interface ActivityRequest {
   id: number;
@@ -58,11 +56,10 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   onSelectRequest,
   onDeleteRequest
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
   const filteredAndSortedRequests = (() => {
-    let result = filterBySearchTerm(requests, searchTerm, ['konfi_name', 'activity_name', 'comment']);
+    let result = [...requests];
 
     // Filter by status
     if (statusFilter !== 'all') {
@@ -222,23 +219,6 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonSearchbar
-            value={searchTerm}
-            onIonInput={(e) => setSearchTerm(e.detail.value!)}
-            placeholder="Antrag suchen..."
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '12px',
-              '--placeholder-color': '#999',
-              padding: '0'
-            }}
-          />
-        </IonCardContent>
-      </IonCard>
-
       {/* Tab-Leiste - 1:1 wie bei Events */}
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '14px 16px' }}>
@@ -282,7 +262,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                 }}
               />
               <p style={{ margin: '0', fontSize: '1rem' }}>
-                {searchTerm ? 'Keine Anträge gefunden' : 'Noch keine Anträge'}
+                Noch keine Anträge
               </p>
             </div>
           ) : (
@@ -313,11 +293,12 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       }}
                     >
                       <IonLabel>
-                        {/* Eine Zeile: Icon + Punkte + Name + Aktivität + Datum + Status */}
+                        {/* Header mit Icon und Status Badge */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '12px'
+                          gap: '12px',
+                          marginBottom: '6px'
                         }}>
                           {/* Status Icon Kreis */}
                           <div style={{
@@ -344,92 +325,101 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             />
                           </div>
 
-                          {/* Content */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              fontSize: '0.9rem',
-                              color: (isApproved || isRejected) ? '#999' : '#333'
-                            }}>
-                              {/* Punkte ganz vorne */}
-                              {request.activity_points && (
-                                <>
-                                  <IonIcon
-                                    icon={trophy}
-                                    style={{ fontSize: '0.85rem', color: (isApproved || isRejected) ? '#999' : '#ff9500', flexShrink: 0 }}
-                                  />
-                                  <span style={{ fontWeight: '600', flexShrink: 0 }}>{request.activity_points}P</span>
-                                  <span style={{ color: '#ccc', flexShrink: 0 }}>|</span>
-                                </>
-                              )}
-
-                              {/* Name */}
-                              <span style={{
-                                fontWeight: '600',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {request.konfi_name}
-                              </span>
-
-                              <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
-
-                              {/* Aktivität */}
-                              <IonIcon
-                                icon={getTypeIcon(request.activity_type || 'gemeinde')}
-                                style={{
-                                  fontSize: '0.8rem',
-                                  color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde'),
-                                  flexShrink: 0
-                                }}
-                              />
-                              <span style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                fontSize: '0.85rem'
-                              }}>
-                                {request.activity_name}
-                              </span>
-
-                              <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
-
-                              {/* Datum */}
-                              <IonIcon
-                                icon={calendar}
-                                style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#059669', flexShrink: 0 }}
-                              />
-                              <span style={{ fontSize: '0.85rem', flexShrink: 0 }}>
-                                {formatDate(request.requested_date)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Status Badge rechts */}
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
+                          {/* Name groß */}
+                          <h2 style={{
                             fontWeight: '600',
-                            backgroundColor: isPending
-                              ? 'rgba(255, 149, 0, 0.15)'
-                              : isApproved
-                              ? 'rgba(52, 199, 89, 0.15)'
-                              : 'rgba(220, 38, 38, 0.15)',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            border: isPending
-                              ? '1px solid rgba(255, 149, 0, 0.3)'
-                              : isApproved
-                              ? '1px solid rgba(52, 199, 89, 0.3)'
-                              : '1px solid rgba(220, 38, 38, 0.3)',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                            margin: '0',
+                            color: (isApproved || isRejected) ? '#999' : '#333',
+                            lineHeight: '1.3',
+                            flex: 1,
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {request.konfi_name}
+                          </h2>
+
+                          {/* Status Badge rechts oben */}
+                          <div style={{
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            gap: '4px',
+                            alignItems: 'center',
                             flexShrink: 0
                           }}>
-                            {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
+                            <span style={{
+                              fontSize: '0.7rem',
+                              color: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
+                              fontWeight: '600',
+                              backgroundColor: isPending
+                                ? 'rgba(255, 149, 0, 0.15)'
+                                : isApproved
+                                ? 'rgba(52, 199, 89, 0.15)'
+                                : 'rgba(220, 38, 38, 0.15)',
+                              padding: '3px 6px',
+                              borderRadius: '6px',
+                              border: isPending
+                                ? '1px solid rgba(255, 149, 0, 0.3)'
+                                : isApproved
+                                ? '1px solid rgba(52, 199, 89, 0.3)'
+                                : '1px solid rgba(220, 38, 38, 0.3)',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
+                            }}>
+                              {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Zweite Zeile: Details */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '0.85rem',
+                          color: (isApproved || isRejected) ? '#999' : '#666',
+                          paddingLeft: '44px'
+                        }}>
+                          {/* Punkte */}
+                          {request.activity_points && (
+                            <>
+                              <IonIcon
+                                icon={trophy}
+                                style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#ff9500', flexShrink: 0 }}
+                              />
+                              <span style={{ fontWeight: '500', flexShrink: 0 }}>{request.activity_points}P</span>
+                              <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
+                            </>
+                          )}
+
+                          {/* Aktivität */}
+                          <IonIcon
+                            icon={getTypeIcon(request.activity_type || 'gemeinde')}
+                            style={{
+                              fontSize: '0.75rem',
+                              color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde'),
+                              flexShrink: 0
+                            }}
+                          />
+                          <span style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {request.activity_name}
+                          </span>
+
+                          <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
+
+                          {/* Datum */}
+                          <IonIcon
+                            icon={calendar}
+                            style={{ fontSize: '0.75rem', color: (isApproved || isRejected) ? '#999' : '#059669', flexShrink: 0 }}
+                          />
+                          <span style={{ flexShrink: 0 }}>
+                            {formatDate(request.requested_date)}
                           </span>
                         </div>
                       </IonLabel>
