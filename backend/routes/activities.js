@@ -150,7 +150,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), async (req, res) => {
     try {
       const query = `
-        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points,
+        SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
                u_approved.display_name as approved_by_name
         FROM activity_requests ar
         JOIN users u_konfi ON ar.konfi_id = u_konfi.id

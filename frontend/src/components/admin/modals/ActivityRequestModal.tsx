@@ -411,11 +411,29 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               borderRadius: '12px',
               padding: '16px',
               border: '1px solid #e0e0e0',
-              marginBottom: request.comment ? '12px' : '0'
+              marginBottom: request.comment ? '12px' : '0',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Eingereicht</div>
-              <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                {formatDateTime(request.created_at)}
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#059669',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={time} style={{ fontSize: '0.95rem', color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Eingereicht</div>
+                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                  {formatDateTime(request.created_at)}
+                </div>
               </div>
             </div>
 

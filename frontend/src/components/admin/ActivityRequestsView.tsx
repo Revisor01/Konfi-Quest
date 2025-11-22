@@ -14,7 +14,9 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonSearchbar
+  IonSearchbar,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/react';
 import {
   checkmarkCircle,
@@ -25,7 +27,9 @@ import {
   time,
   person,
   calendar,
-  chatbubbleEllipses
+  chatbubbleEllipses,
+  home,
+  people
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -36,6 +40,8 @@ interface ActivityRequest {
   jahrgang_name?: string;
   activity_id: number;
   activity_name: string;
+  activity_type?: string;
+  activity_points?: number;
   requested_date: string;
   comment?: string;
   photo_filename?: string;
@@ -60,14 +66,18 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   onDeleteRequest
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
   const filteredAndSortedRequests = (() => {
     let result = filterBySearchTerm(requests, searchTerm, ['konfi_name', 'activity_name', 'comment']);
 
-    // Sort: pending first, then by created_at (newest first)
+    // Filter by status
+    if (statusFilter !== 'all') {
+      result = result.filter(r => r.status === statusFilter);
+    }
+
+    // Sort by created_at (newest first)
     result = result.sort((a, b) => {
-      if (a.status === 'pending' && b.status !== 'pending') return -1;
-      if (a.status !== 'pending' && b.status === 'pending') return 1;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
@@ -93,16 +103,24 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
     });
   };
 
+  const getTypeIcon = (type: string) => {
+    return type === 'gottesdienst' ? home : people;
+  };
+
+  const getTypeColor = (type: string) => {
+    return type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+  };
+
   return (
     <>
       {/* Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #2dd36f 0%, #28ba62 100%)',
+        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(45, 211, 111, 0.3)',
+        boxShadow: '0 20px 40px rgba(5, 150, 105, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         minHeight: '220px',
@@ -128,7 +146,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           </h2>
         </div>
 
-        {/* Content */}
+        {/* Content - 3 Statistiken */}
         <div style={{
           position: 'relative',
           zIndex: 2,
@@ -139,32 +157,79 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           justifyContent: 'center'
         }}>
           <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center'
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '12px'
           }}>
             <div style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '16px 32px',
+              padding: '12px',
               color: 'white',
               textAlign: 'center'
             }}>
               <IonIcon
-                icon={document}
+                icon={hourglass}
                 style={{
-                  fontSize: '2rem',
+                  fontSize: '1.5rem',
                   color: 'rgba(255, 255, 255, 0.9)',
-                  marginBottom: '8px',
                   display: 'block',
                   margin: '0 auto 8px auto'
                 }}
               />
-              <div style={{ fontSize: '2rem', fontWeight: '800' }}>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
                 {getPendingCount()}
               </div>
-              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+              <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
                 Offen
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '12px',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <IonIcon
+                icon={checkmarkCircle}
+                style={{
+                  fontSize: '1.5rem',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  display: 'block',
+                  margin: '0 auto 8px auto'
+                }}
+              />
+              <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                {getApprovedCount()}
+              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                Genehmigt
+              </div>
+            </div>
+
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '12px',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <IonIcon
+                icon={closeCircle}
+                style={{
+                  fontSize: '1.5rem',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  display: 'block',
+                  margin: '0 auto 8px auto'
+                }}
+              />
+              <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                {getRejectedCount()}
+              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                Abgelehnt
               </div>
             </div>
           </div>
@@ -185,6 +250,30 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
               padding: '0'
             }}
           />
+        </IonCardContent>
+      </IonCard>
+
+      {/* Tab-Leiste */}
+      <IonCard style={{ margin: '16px', marginTop: '0' }}>
+        <IonCardContent style={{ padding: '12px' }}>
+          <IonSegment
+            value={statusFilter}
+            onIonChange={(e) => setStatusFilter(e.detail.value as any)}
+            style={{
+              '--background': '#f5f5f5',
+              minHeight: '36px'
+            }}
+          >
+            <IonSegmentButton value="pending">
+              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Offen</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="approved">
+              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Genehmigt</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="rejected">
+              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Abgelehnt</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
         </IonCardContent>
       </IonCard>
 
