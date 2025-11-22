@@ -34,7 +34,7 @@ import AdminEventsPage from '../admin/pages/AdminEventsPage';
 import AdminCategoriesPage from '../admin/pages/AdminCategoriesPage';
 import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
-import AdminRequestsPage from '../admin/pages/AdminRequestsPage';
+import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage';
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
 import AdminRolesPage from '../admin/pages/AdminRolesPage';
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
@@ -126,7 +126,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
-          <Route exact path="/admin/requests" component={AdminRequestsPage} />
+          <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/roles" component={AdminRolesPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
