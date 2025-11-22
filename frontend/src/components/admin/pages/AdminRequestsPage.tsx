@@ -221,12 +221,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#059669',
+            backgroundColor: getTypeColor(request.activity_type),
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+            boxShadow: `0 2px 8px ${request.activity_type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.3)' : 'rgba(45, 211, 111, 0.3)'}`,
             flexShrink: 0
           }}>
             <IonIcon icon={getTypeIcon(request.activity_type)} style={{ fontSize: '1rem', color: 'white' }} />
