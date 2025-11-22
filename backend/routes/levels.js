@@ -5,18 +5,23 @@ const { verifyTokenRBAC } = require('../middleware/rbac');
 
 // GET /api/levels - Alle Level für Organisation laden
 router.get('/', verifyTokenRBAC, async (req, res) => {
+  console.log('📊 GET /api/levels - Request received');
+  console.log('👤 User:', req.user);
   try {
     const organizationId = req.user.organization_id;
-    
+    console.log('🏢 Organization ID:', organizationId);
+
+    console.log('🔍 Executing DB query...');
     const result = await db.query(`
-      SELECT * FROM levels 
-      WHERE organization_id = $1 
+      SELECT * FROM levels
+      WHERE organization_id = $1
       ORDER BY points_required ASC
     `, [organizationId]);
-    
+    console.log('✅ Query result:', result.rows.length, 'levels found');
+
     res.json(result.rows);
   } catch (error) {
-    console.error('Fehler beim Laden der Level:', error);
+    console.error('❌ Fehler beim Laden der Level:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Level' });
   }
 });
