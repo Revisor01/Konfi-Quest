@@ -242,12 +242,6 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             <IonButton
               onClick={onClose}
               disabled={loading}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
             >
               <IonIcon icon={closeOutline} />
             </IonButton>
