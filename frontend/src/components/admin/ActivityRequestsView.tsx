@@ -259,10 +259,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           <IonSegment
             value={statusFilter}
             onIonChange={(e) => setStatusFilter(e.detail.value as any)}
-            style={{
-              '--background': '#f5f5f5',
-              minHeight: '36px'
-            }}
+            mode="md"
           >
             <IonSegmentButton value="pending">
               <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Offen</IonLabel>
@@ -400,6 +397,14 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           marginLeft: '40px'
                         }}>
                           <span>{request.activity_name}</span>
+                          {request.activity_points && (
+                            <>
+                              <span>•</span>
+                              <span style={{ fontWeight: '600', color: '#333' }}>
+                                {request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}
+                              </span>
+                            </>
+                          )}
                           {request.jahrgang_name && (
                             <>
                               <span>•</span>

@@ -68,6 +68,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [request, setRequest] = useState<ActivityRequest | null>(null);
   const [adminComment, setAdminComment] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -87,6 +88,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       if (foundRequest) {
         setRequest(foundRequest);
         setAdminComment(foundRequest.admin_comment || '');
+
+        // Load photo if exists
+        if (foundRequest.photo_filename) {
+          loadPhoto(foundRequest.id);
+        }
       } else {
         setError('Antrag nicht gefunden');
       }
@@ -95,6 +101,19 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       console.error('Error loading request:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPhoto = async (id: number) => {
+    try {
+      const response = await api.get(`/admin/activities/requests/${id}/photo`, {
+        responseType: 'blob'
+      });
+      const url = URL.createObjectURL(response.data);
+      setPhotoUrl(url);
+    } catch (err) {
+      console.error('Error loading photo:', err);
+      // Don't show error to user, photo might be deleted
     }
   };
 
@@ -496,15 +515,34 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            {request.photo_filename ? (
-              <IonImg
-                src={`https://konfi-quest.de/api/admin/activities/requests/${request.id}/photo`}
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt="Antragsfoto"
                 style={{
                   maxWidth: '100%',
                   borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  display: 'block'
                 }}
               />
+            ) : request.photo_filename ? (
+              <div style={{
+                background: '#f5f5f5',
+                borderRadius: '12px',
+                padding: '24px 16px',
+                textAlign: 'center',
+                border: '1px solid #e0e0e0'
+              }}>
+                <IonSpinner name="crescent" />
+                <p style={{
+                  margin: '12px 0 0 0',
+                  fontSize: '0.9rem',
+                  color: '#666'
+                }}>
+                  Lade Foto...
+                </p>
+              </div>
             ) : (
               <div style={{
                 background: '#f5f5f5',
