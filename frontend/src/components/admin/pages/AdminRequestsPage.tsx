@@ -221,12 +221,12 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: getTypeColor(request.activity_type),
+            backgroundColor: '#059669',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
+            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={getTypeIcon(request.activity_type)} style={{ fontSize: '1rem', color: 'white' }} />

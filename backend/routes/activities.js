@@ -311,7 +311,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   });
 
   // Serve activity request photos (protected admin route)
-  router.get('/requests/:id/photo', rbacVerifier, checkPermission('admin.requests.view'), async (req, res) => {
+  router.get('/requests/:id/photo', rbacVerifier, async (req, res) => {
     try {
       const requestId = parseInt(req.params.id);
 
