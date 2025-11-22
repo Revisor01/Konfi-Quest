@@ -197,7 +197,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             }}>
               <IonCardContent style={{ padding: '0' }}>
                 <IonImg
-                  src={`https://konfi-quest.de/api/activity-requests/${request.id}/photo`}
+                  src={`https://konfi-quest.de/api/admin/activities/requests/${request.id}/photo`}
                   alt="Antragsfoto"
                   style={{
                     width: '100%',
