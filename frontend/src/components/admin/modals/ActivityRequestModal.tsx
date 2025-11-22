@@ -276,38 +276,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            {/* Status Badge wie bei Events */}
-            <div style={{
-              marginBottom: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <span style={{
-                fontSize: '0.7rem',
-                color: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
-                fontWeight: '600',
-                backgroundColor: isPending
-                  ? 'rgba(255, 149, 0, 0.15)'
-                  : isApproved
-                  ? 'rgba(52, 199, 89, 0.15)'
-                  : 'rgba(220, 38, 38, 0.15)',
-                padding: '4px 8px',
-                borderRadius: '6px',
-                border: isPending
-                  ? '1px solid rgba(255, 149, 0, 0.3)'
-                  : isApproved
-                  ? '1px solid rgba(52, 199, 89, 0.3)'
-                  : '1px solid rgba(220, 38, 38, 0.3)',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
-              </span>
-            </div>
-
             <div style={{
               background: '#f5f5f5',
               borderRadius: '12px',
@@ -605,32 +573,48 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               border: '1px solid #e0e0e0'
             }}>
               <IonCardContent style={{ padding: '16px' }}>
-                <div>
+                {/* Status Box mit Farbe */}
+                <div style={{
+                  background: isApproved ? '#d4edda' : '#f8d7da',
+                  borderLeft: `4px solid ${isApproved ? '#28a745' : '#dc3545'}`,
+                  borderRadius: '8px',
+                  padding: '16px',
+                  marginBottom: '12px'
+                }}>
                   <div style={{
                     fontSize: '1rem',
                     fontWeight: '600',
-                    color: isApproved ? '#2dd36f' : '#dc3545',
-                    marginBottom: '8px'
+                    color: isApproved ? '#155724' : '#721c24',
+                    marginBottom: '4px'
                   }}>
-                    {isApproved ? 'Genehmigt' : 'Abgelehnt'}
+                    {isApproved ? 'Antrag genehmigt' : 'Antrag abgelehnt'}
                   </div>
-                  <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '0.85rem', color: isApproved ? '#155724' : '#721c24', opacity: 0.8 }}>
                     {formatDateTime(request.updated_at)}
                   </div>
-                  {request.admin_comment && (
+                </div>
+
+                {/* Admin Kommentar */}
+                {request.admin_comment && (
+                  <div style={{
+                    background: '#f5f5f5',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    border: '1px solid #e0e0e0'
+                  }}>
+                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '6px', fontWeight: '600' }}>
+                      Kommentar:
+                    </div>
                     <div style={{
-                      marginTop: '12px',
-                      padding: '12px',
-                      backgroundColor: '#f8f9fa',
-                      borderRadius: '8px',
                       fontSize: '0.9rem',
                       color: '#333',
-                      fontStyle: 'italic'
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: '1.4'
                     }}>
-                      "{request.admin_comment}"
+                      {request.admin_comment}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </IonCardContent>
             </IonCard>
           </>
@@ -672,20 +656,27 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               </IonCard>
             )}
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px' }}>
+            {/* Action Buttons - untereinander, Line-Style */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <IonButton
                 expand="block"
-                color="success"
+                fill="outline"
                 onClick={handleApprove}
                 disabled={loading}
-                style={{ flex: 1 }}
+                style={{
+                  '--border-color': '#047857',
+                  '--color': '#047857',
+                  '--background-hover': 'rgba(4, 120, 87, 0.1)',
+                  '--border-width': '2px',
+                  height: '48px',
+                  fontWeight: '600'
+                }}
               >
                 {loading ? <IonSpinner name="crescent" /> : 'Genehmigen'}
               </IonButton>
               <IonButton
                 expand="block"
-                color="danger"
+                fill="outline"
                 onClick={() => {
                   if (!showRejectField) {
                     setShowRejectField(true);
@@ -694,7 +685,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   }
                 }}
                 disabled={loading || (showRejectField && !adminComment.trim())}
-                style={{ flex: 1 }}
+                style={{
+                  '--border-color': '#991b1b',
+                  '--color': '#991b1b',
+                  '--background-hover': 'rgba(153, 27, 27, 0.1)',
+                  '--border-width': '2px',
+                  height: '48px',
+                  fontWeight: '600'
+                }}
               >
                 {loading ? <IonSpinner name="crescent" /> : showRejectField ? 'Ablehnen bestätigen' : 'Ablehnen'}
               </IonButton>
