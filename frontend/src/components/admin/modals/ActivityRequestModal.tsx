@@ -13,12 +13,10 @@ import {
   IonCard,
   IonCardContent,
   IonIcon,
-  IonImg,
   IonSpinner,
   IonList
 } from '@ionic/react';
 import {
-  checkmarkOutline,
   closeOutline,
   person,
   calendar,
@@ -29,7 +27,10 @@ import {
   create,
   home,
   people,
-  checkmarkCircle
+  checkmarkCircle,
+  closeCircle,
+  hourglass,
+  trophy
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -69,6 +70,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [request, setRequest] = useState<ActivityRequest | null>(null);
   const [adminComment, setAdminComment] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [showRejectField, setShowRejectField] = useState(false);
 
   useEffect(() => {
     if (requestId) {
@@ -89,8 +91,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         setRequest(foundRequest);
         setAdminComment(foundRequest.admin_comment || '');
 
-        // Load photo if exists
-        if (foundRequest.photo_filename) {
+        // Load photo only if request is pending (not approved)
+        if (foundRequest.photo_filename && foundRequest.status === 'pending') {
           loadPhoto(foundRequest.id);
         }
       } else {
@@ -122,7 +124,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      await api.put(`/activities/requests/${request.id}`, {
+      await api.put(`/admin/activities/requests/${request.id}`, {
         status: 'approved',
         admin_comment: adminComment
       });
@@ -146,7 +148,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
     setLoading(true);
     try {
-      await api.put(`/activities/requests/${request.id}`, {
+      await api.put(`/admin/activities/requests/${request.id}`, {
         status: 'rejected',
         admin_comment: adminComment
       });
@@ -198,6 +200,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const isPending = request?.status === 'pending';
   const isApproved = request?.status === 'approved';
+  const isRejected = request?.status === 'rejected';
 
   if (!request) {
     return (
@@ -206,15 +209,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonToolbar>
             <IonTitle>Antrag laden...</IonTitle>
             <IonButtons slot="start">
-              <IonButton
-                onClick={onClose}
-                style={{
-                  '--background': '#f8f9fa',
-                  '--background-hover': '#e9ecef',
-                  '--color': '#6c757d',
-                  '--border-radius': '8px'
-                }}
-              >
+              <IonButton onClick={onClose}>
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -235,48 +230,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Antrag prüfen</IonTitle>
           <IonButtons slot="start">
-            <IonButton
-              onClick={onClose}
-              disabled={loading}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
-            >
+            <IonButton onClick={onClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
-          {isPending && (
-            <IonButtons slot="end">
-              <IonButton
-                onClick={handleApprove}
-                disabled={loading}
-                style={{
-                  '--background': '#2dd36f',
-                  '--background-hover': '#28ba62',
-                  '--color': 'white',
-                  '--border-radius': '8px',
-                  marginRight: '4px'
-                }}
-              >
-                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
-              </IonButton>
-              <IonButton
-                onClick={handleReject}
-                disabled={loading || !adminComment.trim()}
-                style={{
-                  '--background': '#dc3545',
-                  '--background-hover': '#c82333',
-                  '--color': 'white',
-                  '--border-radius': '8px'
-                }}
-              >
-                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={closeOutline} />}
-              </IonButton>
-            </IonButtons>
-          )}
         </IonToolbar>
       </IonHeader>
 
@@ -319,6 +276,38 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
+            {/* Status Badge wie bei Events */}
+            <div style={{
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{
+                fontSize: '0.7rem',
+                color: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
+                fontWeight: '600',
+                backgroundColor: isPending
+                  ? 'rgba(255, 149, 0, 0.15)'
+                  : isApproved
+                  ? 'rgba(52, 199, 89, 0.15)'
+                  : 'rgba(220, 38, 38, 0.15)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                border: isPending
+                  ? '1px solid rgba(255, 149, 0, 0.3)'
+                  : isApproved
+                  ? '1px solid rgba(52, 199, 89, 0.3)'
+                  : '1px solid rgba(220, 38, 38, 0.3)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
+              </span>
+            </div>
+
             <div style={{
               background: '#f5f5f5',
               borderRadius: '12px',
@@ -477,197 +466,241 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* SEKTION: Foto */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#059669',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Nachweis-Foto
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            {photoUrl ? (
-              <img
-                src={photoUrl}
-                alt="Antragsfoto"
-                style={{
-                  maxWidth: '100%',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  display: 'block'
-                }}
-              />
-            ) : request.photo_filename ? (
+        {/* SEKTION: Foto - nur bei pending anzeigen */}
+        {isPending && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              margin: '24px 16px 12px 16px'
+            }}>
               <div style={{
-                background: '#f5f5f5',
-                borderRadius: '12px',
-                padding: '24px 16px',
-                textAlign: 'center',
-                border: '1px solid #e0e0e0'
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#059669',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+                flexShrink: 0
               }}>
-                <IonSpinner name="crescent" />
-                <p style={{
-                  margin: '12px 0 0 0',
-                  fontSize: '0.9rem',
-                  color: '#666'
-                }}>
-                  Lade Foto...
-                </p>
+                <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
-            ) : (
-              <div style={{
-                background: '#f5f5f5',
-                borderRadius: '12px',
-                padding: '24px 16px',
-                textAlign: 'center',
-                border: '1px solid #e0e0e0'
-              }}>
-                <IonIcon
-                  icon={imageIcon}
-                  style={{
-                    fontSize: '2.5rem',
-                    color: '#999',
-                    marginBottom: '12px',
-                    display: 'block'
-                  }}
-                />
-                <p style={{
-                  margin: '0 0 4px 0',
-                  fontSize: '0.9rem',
-                  color: '#666',
-                  fontWeight: '500'
-                }}>
-                  Foto wurde automatisch gelöscht
-                </p>
-                <p style={{
-                  margin: '0',
-                  fontSize: '0.8rem',
-                  color: '#999'
-                }}>
-                  Nach Genehmigung werden Nachweisfotos aus Datenschutzgründen entfernt
-                </p>
-              </div>
-            )}
-          </IonCardContent>
-        </IonCard>
-
-        {/* SEKTION: Admin-Kommentar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#059669',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            {isPending ? 'Kommentar' : 'Bearbeitungsstatus'}
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            {isPending ? (
-              <IonItem lines="none" style={{
-                '--background': '#f5f5f5',
-                '--border-radius': '12px',
-                '--padding-start': '16px',
+              <h2 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
                 margin: '0',
-                border: '1px solid #e0e0e0',
-                borderRadius: '12px'
+                color: '#333'
               }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>
-                  Admin-Kommentar <span style={{ fontSize: '0.85rem' }}>(erforderlich bei Ablehnung)</span>
-                </IonLabel>
-                <IonTextarea
-                  value={adminComment}
-                  onIonInput={(e) => setAdminComment(e.detail.value!)}
-                  placeholder="Optional: Kommentar zur Genehmigung/Ablehnung..."
-                    rows={3}
-                    disabled={loading}
+                Nachweis-Foto
+              </h2>
+            </div>
+
+            <IonCard style={{
+              margin: '0 16px 16px 16px',
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt="Antragsfoto"
+                    style={{
+                      maxWidth: '100%',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      display: 'block'
+                    }}
                   />
-              </IonItem>
-            ) : (
-              <div>
-                <div style={{
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  color: isApproved ? '#2dd36f' : '#dc3545',
-                  marginBottom: '8px'
-                }}>
-                  {isApproved ? 'Genehmigt' : 'Abgelehnt'}
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '8px' }}>
-                  {formatDateTime(request.updated_at)}
-                </div>
-                {request.admin_comment && (
+                ) : request.photo_filename ? (
                   <div style={{
-                    marginTop: '12px',
-                    padding: '12px',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '8px',
-                    fontSize: '0.9rem',
-                    color: '#333',
-                    fontStyle: 'italic'
+                    background: '#f5f5f5',
+                    borderRadius: '12px',
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    border: '1px solid #e0e0e0'
                   }}>
-                    "{request.admin_comment}"
+                    <IonSpinner name="crescent" />
+                    <p style={{
+                      margin: '12px 0 0 0',
+                      fontSize: '0.9rem',
+                      color: '#666'
+                    }}>
+                      Lade Foto...
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: '#f5f5f5',
+                    borderRadius: '12px',
+                    padding: '24px 16px',
+                    textAlign: 'center',
+                    border: '1px solid #e0e0e0'
+                  }}>
+                    <IonIcon
+                      icon={imageIcon}
+                      style={{
+                        fontSize: '2.5rem',
+                        color: '#999',
+                        marginBottom: '12px',
+                        display: 'block'
+                      }}
+                    />
+                    <p style={{
+                      margin: '0',
+                      fontSize: '0.9rem',
+                      color: '#666'
+                    }}>
+                      Kein Foto hochgeladen
+                    </p>
                   </div>
                 )}
+              </IonCardContent>
+            </IonCard>
+          </>
+        )}
+
+        {/* SEKTION: Bearbeitungsstatus für approved/rejected */}
+        {!isPending && (
+          <>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              margin: '24px 16px 12px 16px'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#059669',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
+              <h2 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: '0',
+                color: '#333'
+              }}>
+                Bearbeitungsstatus
+              </h2>
+            </div>
+
+            <IonCard style={{
+              margin: '0 16px 16px 16px',
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
+                <div>
+                  <div style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: isApproved ? '#2dd36f' : '#dc3545',
+                    marginBottom: '8px'
+                  }}>
+                    {isApproved ? 'Genehmigt' : 'Abgelehnt'}
+                  </div>
+                  <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '8px' }}>
+                    {formatDateTime(request.updated_at)}
+                  </div>
+                  {request.admin_comment && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px',
+                      fontSize: '0.9rem',
+                      color: '#333',
+                      fontStyle: 'italic'
+                    }}>
+                      "{request.admin_comment}"
+                    </div>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </>
+        )}
+
+        {/* Buttons unten - nur bei pending */}
+        {isPending && (
+          <div style={{ padding: '0 16px 24px 16px' }}>
+            {/* Ablehn-Kommentar Feld */}
+            {showRejectField && (
+              <IonCard style={{
+                marginBottom: '16px',
+                borderRadius: '12px',
+                background: 'white',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                border: '1px solid #e0e0e0'
+              }}>
+                <IonCardContent style={{ padding: '16px' }}>
+                  <IonItem lines="none" style={{
+                    '--background': '#f5f5f5',
+                    '--border-radius': '12px',
+                    '--padding-start': '16px',
+                    margin: '0',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}>
+                    <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666', fontWeight: '600' }}>
+                      Grund für Ablehnung (erforderlich)
+                    </IonLabel>
+                    <IonTextarea
+                      value={adminComment}
+                      onIonInput={(e) => setAdminComment(e.detail.value!)}
+                      placeholder="Bitte gib einen Grund für die Ablehnung an..."
+                      rows={3}
+                      disabled={loading}
+                    />
+                  </IonItem>
+                </IonCardContent>
+              </IonCard>
             )}
-          </IonCardContent>
-        </IonCard>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <IonButton
+                expand="block"
+                color="success"
+                onClick={handleApprove}
+                disabled={loading}
+                style={{ flex: 1 }}
+              >
+                {loading ? <IonSpinner name="crescent" /> : 'Genehmigen'}
+              </IonButton>
+              <IonButton
+                expand="block"
+                color="danger"
+                onClick={() => {
+                  if (!showRejectField) {
+                    setShowRejectField(true);
+                  } else {
+                    handleReject();
+                  }
+                }}
+                disabled={loading || (showRejectField && !adminComment.trim())}
+                style={{ flex: 1 }}
+              >
+                {loading ? <IonSpinner name="crescent" /> : showRejectField ? 'Ablehnen bestätigen' : 'Ablehnen'}
+              </IonButton>
+            </div>
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );
