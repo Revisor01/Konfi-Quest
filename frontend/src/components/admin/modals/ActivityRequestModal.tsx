@@ -26,7 +26,10 @@ import {
   image as imageIcon,
   chatbubbleEllipses,
   time,
-  create
+  create,
+  home,
+  people,
+  checkmarkCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -38,6 +41,8 @@ interface ActivityRequest {
   jahrgang_name?: string;
   activity_id: number;
   activity_name: string;
+  activity_type?: string;
+  activity_points?: number;
   requested_date: string;
   comment?: string;
   photo_filename?: string;
@@ -154,6 +159,24 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     });
   };
 
+  const getTypeIcon = (type: string) => {
+    return type === 'gottesdienst' ? home : people;
+  };
+
+  const getTypeColor = (type: string) => {
+    return type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+  };
+
+  const getInitials = (name: string) => {
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) {
+      return words[0].substring(0, 2).toUpperCase();
+    }
+    const firstInitial = words[0][0] || '';
+    const lastInitial = words[words.length - 1][0] || '';
+    return (firstInitial + lastInitial).toUpperCase();
+  };
+
   const isPending = request?.status === 'pending';
   const isApproved = request?.status === 'approved';
 
@@ -249,12 +272,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#2dd36f',
+            backgroundColor: '#059669',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
+            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={document} style={{ fontSize: '1rem', color: 'white' }} />
@@ -282,16 +305,40 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               borderRadius: '12px',
               padding: '16px',
               border: '1px solid #e0e0e0',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Konfi</div>
-              <div style={{ fontWeight: '600', fontSize: '1rem', color: '#333' }}>
-                {request.konfi_name}
-                {request.jahrgang_name && (
-                  <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '400', marginLeft: '8px' }}>
-                    ({request.jahrgang_name})
-                  </span>
-                )}
+              <div style={{
+                width: '40px',
+                height: '40px',
+                backgroundColor: '#9b59b6',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  color: 'white',
+                  fontWeight: '600',
+                  fontSize: '0.85rem'
+                }}>
+                  {getInitials(request.konfi_name)}
+                </div>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Konfi</div>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: '#333' }}>
+                  {request.konfi_name}
+                  {request.jahrgang_name && (
+                    <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '400', marginLeft: '8px' }}>
+                      ({request.jahrgang_name})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -300,11 +347,31 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               borderRadius: '12px',
               padding: '16px',
               border: '1px solid #e0e0e0',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Aktivität</div>
-              <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
-                {request.activity_name}
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: getTypeColor(request.activity_type || 'gemeinde'),
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: `0 2px 8px ${request.activity_type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.3)' : 'rgba(45, 211, 111, 0.3)'}`,
+                flexShrink: 0
+              }}>
+                <IonIcon icon={getTypeIcon(request.activity_type || 'gemeinde')} style={{ fontSize: '0.95rem', color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>
+                  {request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                </div>
+                <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
+                  {request.activity_name}
+                </div>
               </div>
             </div>
 
@@ -313,11 +380,29 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               borderRadius: '12px',
               padding: '16px',
               border: '1px solid #e0e0e0',
-              marginBottom: '12px'
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
             }}>
-              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Teilnahmedatum</div>
-              <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
-                {formatDate(request.requested_date)}
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#059669',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={calendar} style={{ fontSize: '0.95rem', color: 'white' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Teilnahmedatum</div>
+                <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
+                  {formatDate(request.requested_date)}
+                </div>
               </div>
             </div>
 
@@ -365,12 +450,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#007aff',
+            backgroundColor: '#059669',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
+            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
@@ -395,7 +480,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonCardContent style={{ padding: '16px' }}>
             {request.photo_filename ? (
               <IonImg
-                src={`https://konfi-points.de/api/activity-requests/${request.id}/photo`}
+                src={`https://konfi-quest.de/api/admin/activities/requests/${request.id}/photo`}
                 style={{
                   maxWidth: '100%',
                   borderRadius: '8px',
@@ -449,12 +534,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#ff6b35',
+            backgroundColor: '#059669',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)',
+            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
             flexShrink: 0
           }}>
             <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
