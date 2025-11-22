@@ -575,6 +575,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             }}>
               <IonCardContent style={{ padding: '0' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
+                  {/* Graue Box mit Icon und Status */}
                   <IonItem
                     lines="none"
                     style={{
@@ -621,13 +622,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     </IonLabel>
                   </IonItem>
 
+                  {/* Rote Box mit Begründung bei Ablehnung */}
                   {request.admin_comment && !isApproved && (
                     <IonItem
                       lines="none"
                       style={{
+                        '--min-height': '56px',
                         '--padding-start': '16px',
-                        '--padding-top': '12px',
-                        '--padding-bottom': '12px',
                         '--background': 'rgba(220, 53, 69, 0.05)',
                         '--border-radius': '12px',
                         marginTop: '8px',
@@ -649,15 +650,18 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       </IonLabel>
                     </IonItem>
                   )}
+
+                  {/* Graue Box mit Kommentar bei Genehmigung */}
                   {request.admin_comment && isApproved && (
                     <IonItem
                       lines="none"
                       style={{
+                        '--min-height': '56px',
                         '--padding-start': '16px',
-                        '--padding-top': '12px',
-                        '--padding-bottom': '12px',
-                        '--background': 'transparent',
-                        marginTop: '8px'
+                        '--background': '#fbfbfb',
+                        '--border-radius': '12px',
+                        marginTop: '8px',
+                        borderRadius: '12px'
                       }}
                     >
                       <IonLabel style={{ whiteSpace: 'normal' }}>

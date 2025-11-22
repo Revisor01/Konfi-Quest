@@ -280,10 +280,10 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       onClick={() => onSelectRequest(request)}
                       detail={false}
                       style={{
-                        '--min-height': '72px',
+                        '--min-height': '90px',
                         '--padding-start': '16px',
-                        '--padding-top': '12px',
-                        '--padding-bottom': '12px',
+                        '--padding-top': '0px',
+                        '--padding-bottom': '0px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
                         margin: '4px 8px',
