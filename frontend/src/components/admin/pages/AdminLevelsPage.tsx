@@ -25,12 +25,85 @@ import {
   IonRow,
   IonCol
 } from '@ionic/react';
-import { add, trophy, trash, arrowBack, star } from 'ionicons/icons';
+import {
+  add,
+  trophy,
+  trash,
+  arrowBack,
+  star,
+  medal,
+  ribbon,
+  checkmarkCircle,
+  diamond,
+  shield,
+  flame,
+  flash,
+  rocket,
+  sparkles,
+  thumbsUp,
+  heart,
+  people,
+  personAdd,
+  chatbubbles,
+  gift,
+  book,
+  school,
+  construct,
+  brush,
+  colorPalette,
+  sunny,
+  moon,
+  leaf,
+  rose,
+  calendar,
+  today,
+  time,
+  timer,
+  stopwatch,
+  restaurant,
+  fitness,
+  bicycle,
+  car,
+  airplane,
+  boat,
+  camera,
+  image,
+  musicalNote,
+  balloon,
+  home,
+  business,
+  location,
+  navigate,
+  compass,
+  pin,
+  flag,
+  informationCircle,
+  helpCircle,
+  alertCircle,
+  hammer
+} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import LevelManagementModal from '../modals/LevelManagementModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
+
+// Icon Mapping (same as in LevelManagementModal)
+const LEVEL_ICONS: Record<string, any> = {
+  trophy, medal, ribbon, star, checkmarkCircle, diamond, shield,
+  flame, flash, rocket, sparkles, thumbsUp,
+  heart, people, personAdd, chatbubbles, gift,
+  book, school, construct, brush, colorPalette,
+  sunny, moon, leaf, rose,
+  calendar, today, time, timer, stopwatch,
+  restaurant, fitness, bicycle, car, airplane, boat, camera, image, musicalNote, balloon,
+  home, business, location, navigate, compass, pin, flag,
+  informationCircle, helpCircle, alertCircle, hammer
+};
+
+const getIconFromString = (iconName: string) => {
+  return LEVEL_ICONS[iconName] || trophy;
+};
 
 interface Level {
   id: number;
@@ -288,7 +361,10 @@ const AdminLevelsPage: React.FC = () => {
                               boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
                               flexShrink: 0
                             }}>
-                              <span style={{ fontSize: '1.2rem' }}>{level.icon || '🏆'}</span>
+                              <IonIcon
+                                icon={getIconFromString(level.icon || 'trophy')}
+                                style={{ fontSize: '1.2rem', color: 'white' }}
+                              />
                             </div>
                             <div style={{ flex: 1 }}>
                               <h2 style={{
