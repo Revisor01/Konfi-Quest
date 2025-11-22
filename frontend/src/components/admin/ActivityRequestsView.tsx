@@ -280,7 +280,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       onClick={() => onSelectRequest(request)}
                       detail={false}
                       style={{
-                        '--min-height': '90px',
+                        '--min-height': '72px',
                         '--padding-start': '16px',
                         '--padding-top': '12px',
                         '--padding-bottom': '12px',
@@ -305,7 +305,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           <div style={{
                             width: '32px',
                             height: '32px',
-                            backgroundColor: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
+                            backgroundColor: isPending ? '#ff9500' : isApproved ? '#047857' : '#dc3545',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -313,7 +313,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             boxShadow: isPending
                               ? '0 2px 8px rgba(255, 149, 0, 0.3)'
                               : isApproved
-                              ? '0 2px 8px rgba(52, 199, 89, 0.3)'
+                              ? '0 2px 8px rgba(4, 120, 87, 0.3)'
                               : '0 2px 8px rgba(220, 53, 69, 0.3)',
                             flexShrink: 0
                           }}>
@@ -352,19 +352,19 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           }}>
                             <span style={{
                               fontSize: '0.7rem',
-                              color: isPending ? '#ff9500' : isApproved ? '#34c759' : '#dc3545',
+                              color: isPending ? '#ff9500' : isApproved ? '#047857' : '#dc3545',
                               fontWeight: '600',
                               backgroundColor: isPending
                                 ? 'rgba(255, 149, 0, 0.15)'
                                 : isApproved
-                                ? 'rgba(52, 199, 89, 0.15)'
+                                ? 'rgba(4, 120, 87, 0.15)'
                                 : 'rgba(220, 38, 38, 0.15)',
                               padding: '3px 6px',
                               borderRadius: '6px',
                               border: isPending
                                 ? '1px solid rgba(255, 149, 0, 0.3)'
                                 : isApproved
-                                ? '1px solid rgba(52, 199, 89, 0.3)'
+                                ? '1px solid rgba(4, 120, 87, 0.3)'
                                 : '1px solid rgba(220, 38, 38, 0.3)',
                               whiteSpace: 'nowrap',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.08)'

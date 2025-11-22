@@ -621,7 +621,35 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     </IonLabel>
                   </IonItem>
 
-                  {request.admin_comment && (
+                  {request.admin_comment && !isApproved && (
+                    <IonItem
+                      lines="none"
+                      style={{
+                        '--padding-start': '16px',
+                        '--padding-top': '12px',
+                        '--padding-bottom': '12px',
+                        '--background': 'rgba(220, 53, 69, 0.05)',
+                        '--border-radius': '12px',
+                        marginTop: '8px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(220, 53, 69, 0.2)'
+                      }}
+                    >
+                      <IonLabel style={{ whiteSpace: 'normal' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#dc3545', fontSize: '0.85rem' }}>
+                          Begründung:
+                        </div>
+                        <div style={{
+                          fontSize: '0.9rem',
+                          color: '#dc3545',
+                          lineHeight: '1.4'
+                        }}>
+                          {request.admin_comment}
+                        </div>
+                      </IonLabel>
+                    </IonItem>
+                  )}
+                  {request.admin_comment && isApproved && (
                     <IonItem
                       lines="none"
                       style={{
@@ -634,7 +662,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     >
                       <IonLabel style={{ whiteSpace: 'normal' }}>
                         <div style={{ fontWeight: '600', marginBottom: '6px', color: '#666', fontSize: '0.85rem' }}>
-                          Begründung:
+                          Kommentar:
                         </div>
                         <div style={{
                           fontSize: '0.9rem',
