@@ -660,11 +660,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </>
         )}
 
-        {/* Buttons unten - nur bei pending */}
-        {isPending && (
-          <div style={{ padding: '0 16px 24px 16px' }}>
-            {/* Ablehn-Kommentar Feld */}
-            {showRejectField && (
+        {/* Buttons unten - bei pending und approved/rejected */}
+        <div style={{ padding: '0 16px 24px 16px' }}>
+          {/* Ablehn-Kommentar Feld - bei pending oder wenn Status geändert wird */}
+          {(isPending || !isPending) && showRejectField && (
               <IonCard style={{
                 marginBottom: '16px',
                 borderRadius: '12px',
@@ -737,8 +736,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {loading ? <IonSpinner name="crescent" /> : showRejectField ? 'Ablehnen bestätigen' : 'Ablehnen'}
               </IonButton>
             </div>
-          </div>
-        )}
+        </div>
       </IonContent>
     </IonPage>
   );
