@@ -62,16 +62,12 @@ import '@ionic/react/css/palettes/dark.system.css';
 import './theme/variables.css';
 
 setupIonicReact({
-  rippleEffect: false,
-  mode: 'ios',
-  swipeBackEnabled: true,
+  rippleEffect: true,
   inputBlurring: true,
   scrollPadding: true,
-  hardwareBackButton: false,
   backButtonText: '',
   backButtonIcon: 'arrow-back-outline',
-  innerHTMLTemplatesEnabled: true,
-  spinner: 'lines'
+  innerHTMLTemplatesEnabled: true
 });
 
 
