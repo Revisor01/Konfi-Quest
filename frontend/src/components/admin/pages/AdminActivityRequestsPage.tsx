@@ -89,6 +89,23 @@ const AdminActivityRequestsPage: React.FC = () => {
     }
   };
 
+  const handleResetRequest = async (request: ActivityRequest) => {
+    const statusText = request.status === 'approved' ? 'genehmigte' : 'abgelehnte';
+    if (!window.confirm(`${statusText} Antrag von "${request.konfi_name}" zurücksetzen und wieder als offen markieren?`)) return;
+
+    try {
+      await api.put(`/admin/activities/requests/${request.id}/reset`);
+      setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
+      await loadRequests();
+    } catch (err: any) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Fehler beim Zurücksetzen des Antrags');
+      }
+    }
+  };
+
   const handleDeleteRequest = async (request: ActivityRequest) => {
     if (!window.confirm(`Antrag von "${request.konfi_name}" für "${request.activity_name}" wirklich löschen?`)) return;
 
@@ -138,11 +155,12 @@ const AdminActivityRequestsPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Anträge werden geladen..." />
         ) : (
-          <ActivityRequestsView 
+          <ActivityRequestsView
             requests={requests}
             onUpdate={loadRequests}
             onSelectRequest={handleSelectRequest}
             onDeleteRequest={handleDeleteRequest}
+            onResetRequest={handleResetRequest}
           />
         )}
       </IonContent>

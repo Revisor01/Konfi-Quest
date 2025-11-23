@@ -24,7 +24,8 @@ import {
   calendar,
   home,
   people,
-  trophy
+  trophy,
+  returnUpBack
 } from 'ionicons/icons';
 
 interface ActivityRequest {
@@ -52,13 +53,15 @@ interface ActivityRequestsViewProps {
   onUpdate: () => void;
   onSelectRequest: (request: ActivityRequest) => void;
   onDeleteRequest: (request: ActivityRequest) => void;
+  onResetRequest: (request: ActivityRequest) => void;
 }
 
 const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   requests,
   onUpdate,
   onSelectRequest,
-  onDeleteRequest
+  onDeleteRequest,
+  onResetRequest
 }) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
 
@@ -437,6 +440,38 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                       gap: '4px',
                       '--ion-item-background': 'transparent'
                     }}>
+                      {/* Reset-Button für approved/rejected */}
+                      {!isPending && (
+                        <IonItemOption
+                          onClick={() => onResetRequest(request)}
+                          style={{
+                            '--background': 'transparent',
+                            '--background-activated': 'transparent',
+                            '--background-focused': 'transparent',
+                            '--background-hover': 'transparent',
+                            '--color': 'transparent',
+                            '--ripple-color': 'transparent',
+                            padding: '0 2px',
+                            minWidth: '48px',
+                            maxWidth: '68px'
+                          }}
+                        >
+                          <div style={{
+                            width: '44px',
+                            height: '44px',
+                            backgroundColor: '#ff9500',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                          }}>
+                            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'white' }} />
+                          </div>
+                        </IonItemOption>
+                      )}
+
+                      {/* Löschen-Button für alle */}
                       <IonItemOption
                         onClick={() => onDeleteRequest(request)}
                         style={{
