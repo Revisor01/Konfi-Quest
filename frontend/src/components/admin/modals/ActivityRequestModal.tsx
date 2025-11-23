@@ -546,15 +546,20 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <div style={{
                 width: '32px',
                 height: '32px',
-                backgroundColor: '#059669',
+                backgroundColor: isApproved ? '#047857' : '#dc3545',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
+                boxShadow: isApproved
+                  ? '0 2px 8px rgba(4, 120, 87, 0.3)'
+                  : '0 2px 8px rgba(220, 53, 69, 0.3)',
                 flexShrink: 0
               }}>
-                <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
+                <IonIcon
+                  icon={isApproved ? checkmarkCircle : closeCircle}
+                  style={{ fontSize: '1rem', color: 'white' }}
+                />
               </div>
               <h2 style={{
                 fontWeight: '600',
@@ -575,7 +580,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             }}>
               <IonCardContent style={{ padding: '0' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
-                  {/* Graue Box mit Icon und Status */}
+                  {/* Status-Zeile */}
                   <IonItem
                     lines="none"
                     style={{
@@ -587,37 +592,24 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       borderRadius: '12px'
                     }}
                   >
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: isApproved ? '#047857' : '#dc3545',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: isApproved
-                        ? '0 2px 8px rgba(4, 120, 87, 0.3)'
-                        : '0 2px 8px rgba(220, 53, 69, 0.3)',
-                      marginRight: '12px'
-                    }}>
-                      <IonIcon
-                        icon={isApproved ? checkmarkCircle : closeCircle}
-                        style={{
-                          fontSize: '1rem',
-                          color: 'white'
-                        }}
-                      />
-                    </div>
                     <IonLabel>
                       <div style={{
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: '#333'
+                        fontSize: '0.75rem',
+                        color: '#666',
+                        marginBottom: '4px',
+                        fontWeight: '600'
                       }}>
-                        {isApproved ? 'Antrag genehmigt' : 'Antrag abgelehnt'}
+                        Status:
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '2px' }}>
-                        {isApproved ? 'Genehmigt' : 'Abgelehnt'} {request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
+                      <div style={{
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: isApproved ? '#047857' : '#dc3545'
+                      }}>
+                        {isApproved ? 'Genehmigt' : 'Abgelehnt'}
+                        <span style={{ fontSize: '0.9rem', fontWeight: '400', color: '#666' }}>
+                          {' '}{request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
+                        </span>
                       </div>
                     </IonLabel>
                   </IonItem>
@@ -637,7 +629,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       }}
                     >
                       <IonLabel style={{ whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#dc3545', fontSize: '0.85rem' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#dc3545', fontSize: '0.75rem' }}>
                           Begründung:
                         </div>
                         <div style={{
@@ -665,7 +657,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       }}
                     >
                       <IonLabel style={{ whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#666', fontSize: '0.85rem' }}>
+                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#666', fontSize: '0.75rem' }}>
                           Kommentar:
                         </div>
                         <div style={{
