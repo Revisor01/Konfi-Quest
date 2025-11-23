@@ -171,6 +171,63 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
     }
   });
 
+  // PUT (update) an activity request status - zurück zu pending
+  // Pfad: PUT /api/activities/requests/:id/reset
+  router.put('/requests/:id/reset', rbacVerifier, checkPermission('admin.requests.approve'), async (req, res) => {
+    const requestId = req.params.id;
+
+    try {
+      const getRequestQuery = `
+        SELECT ar.*, a.points, a.type, a.name as activity_name, u.display_name as konfi_name
+        FROM activity_requests ar
+        JOIN activities a ON ar.activity_id = a.id
+        JOIN users u ON ar.konfi_id = u.id
+        WHERE ar.id = $1 AND a.organization_id = $2
+      `;
+      const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
+      if (!request) return res.status(404).json({ error: 'Request not found' });
+
+      const oldStatus = request.status;
+      if (oldStatus === 'pending') return res.status(400).json({ error: 'Request is already pending' });
+
+      // SCHRITT 1: Alte Entscheidung rückgängig machen
+      if (oldStatus === 'approved') {
+        console.log(`Resetting approved request ${requestId} to pending`);
+
+        // Punkte abziehen
+        const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+        await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} - $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
+
+        // konfi_activity Eintrag löschen
+        await db.query(
+          `DELETE FROM konfi_activities
+           WHERE id = (
+             SELECT id FROM konfi_activities
+             WHERE konfi_id = $1 AND activity_id = $2
+             ORDER BY completed_date DESC, id DESC
+             LIMIT 1
+           )`,
+          [request.konfi_id, request.activity_id]
+        );
+
+        console.log(`Reset approval: removed ${request.points} points and activity entry`);
+      }
+
+      // SCHRITT 2: Status auf pending setzen, Kommentar löschen
+      await db.query(
+        "UPDATE activity_requests SET status = 'pending', admin_comment = NULL, approved_by = NULL, updated_at = NOW() WHERE id = $1",
+        [requestId]
+      );
+
+      console.log(`Request ${requestId} reset to pending from ${oldStatus}`);
+      res.json({ message: 'Request reset to pending', oldStatus });
+
+    } catch (err) {
+      console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // PUT (update) an activity request status
   // Pfad: PUT /api/activities/requests/:id
   router.put('/requests/:id', rbacVerifier, checkPermission('admin.requests.approve'), async (req, res) => {
@@ -189,50 +246,27 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
       if (!request) return res.status(404).json({ error: 'Request not found' });
 
-      const oldStatus = request.status;
-
-      // SCHRITT 1: Alte Entscheidung rückgängig machen (falls vorhanden)
-      if (oldStatus === 'approved' && status !== 'approved') {
-        console.log(`Reversing previous approval for request ${requestId}`);
-
-        // Punkte abziehen
-        const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
-        await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} - $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
-
-        // konfi_activity Eintrag löschen (neuesten für diese Kombination)
-        await db.query(
-          `DELETE FROM konfi_activities
-           WHERE id = (
-             SELECT id FROM konfi_activities
-             WHERE konfi_id = $1 AND activity_id = $2
-             ORDER BY completed_date DESC, id DESC
-             LIMIT 1
-           )`,
-          [request.konfi_id, request.activity_id]
-        );
-
-        console.log(`Reversed approval: removed ${request.points} points and activity entry`);
+      // Nur pending Anträge können bearbeitet werden
+      if (request.status !== 'pending') {
+        return res.status(400).json({ error: 'Only pending requests can be approved or rejected' });
       }
 
-      // SCHRITT 2: Neue Entscheidung ausführen
+      // Status ändern
       const updateRequestQuery = "UPDATE activity_requests SET status = $1, admin_comment = $2, approved_by = $3, updated_at = NOW() WHERE id = $4";
       await db.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
 
       let newBadges = 0;
       if (status === 'approved') {
-        // Nur wenn es vorher nicht approved war, Punkte vergeben
-        if (oldStatus !== 'approved') {
-          await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+        await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
-          const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
-          await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
+        const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+        await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
 
-          newBadges = await checkAndAwardBadges(db, request.konfi_id);
+        newBadges = await checkAndAwardBadges(db, request.konfi_id);
 
-          console.log(`Approved request ${requestId}: added ${request.points} points`);
-        }
+        console.log(`Approved request ${requestId}: added ${request.points} points`);
 
-        // Datenschutz: Foto löschen nach Genehmigung (falls noch vorhanden)
+        // Datenschutz: Foto löschen nach Genehmigung
         if (request.photo_filename) {
           const fs = require('fs');
           const path = require('path');
@@ -246,7 +280,6 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
             }
           });
 
-          // Foto-Referenz in DB entfernen
           await db.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
         }
       }
