@@ -546,20 +546,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <div style={{
                 width: '32px',
                 height: '32px',
-                backgroundColor: isApproved ? '#047857' : '#dc3545',
+                backgroundColor: '#059669',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isApproved
-                  ? '0 2px 8px rgba(4, 120, 87, 0.3)'
-                  : '0 2px 8px rgba(220, 53, 69, 0.3)',
+                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
                 flexShrink: 0
               }}>
-                <IonIcon
-                  icon={isApproved ? checkmarkCircle : closeCircle}
-                  style={{ fontSize: '1rem', color: 'white' }}
-                />
+                <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
               <h2 style={{
                 fontWeight: '600',
@@ -578,99 +573,88 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
               border: '1px solid #e0e0e0'
             }}>
-              <IonCardContent style={{ padding: '0' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  {/* Status-Zeile */}
-                  <IonItem
-                    lines="none"
-                    style={{
-                      '--min-height': '56px',
-                      '--padding-start': '16px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '0',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <IonLabel>
-                      <div style={{
-                        fontSize: '0.75rem',
-                        color: '#666',
-                        marginBottom: '4px',
-                        fontWeight: '600'
-                      }}>
-                        Status:
+              <IonCardContent style={{ padding: '16px' }}>
+                {/* Status Box - wie Teilnahmedatum */}
+                <div style={{
+                  background: '#f5f5f5',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: '1px solid #e0e0e0',
+                  marginBottom: request.admin_comment ? '12px' : '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    backgroundColor: isApproved ? '#047857' : '#dc3545',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: isApproved
+                      ? '0 2px 8px rgba(4, 120, 87, 0.3)'
+                      : '0 2px 8px rgba(220, 53, 69, 0.3)',
+                    flexShrink: 0
+                  }}>
+                    <IonIcon
+                      icon={isApproved ? checkmarkCircle : closeCircle}
+                      style={{ fontSize: '0.95rem', color: 'white' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Status</div>
+                    <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
+                      {isApproved ? 'Genehmigt' : 'Abgelehnt'} {request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Begründung Box - nur bei Ablehnung */}
+                {request.admin_comment && (
+                  <div style={{
+                    background: isApproved ? '#f5f5f5' : 'rgba(220, 53, 69, 0.05)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    border: isApproved ? '1px solid #e0e0e0' : '1px solid rgba(220, 53, 69, 0.2)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px'
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: isApproved ? '#059669' : '#dc3545',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: isApproved
+                        ? '0 2px 8px rgba(5, 150, 105, 0.3)'
+                        : '0 2px 8px rgba(220, 53, 69, 0.3)',
+                      flexShrink: 0
+                    }}>
+                      <IonIcon
+                        icon={chatbubbleEllipses}
+                        style={{ fontSize: '0.95rem', color: 'white' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>
+                        {isApproved ? 'Kommentar' : 'Begründung'}
                       </div>
                       <div style={{
                         fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: isApproved ? '#047857' : '#dc3545'
+                        color: isApproved ? '#333' : '#dc3545',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: '1.4'
                       }}>
-                        {isApproved ? 'Genehmigt' : 'Abgelehnt'}
-                        <span style={{ fontSize: '0.9rem', fontWeight: '400', color: '#666' }}>
-                          {' '}{request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
-                        </span>
+                        {request.admin_comment}
                       </div>
-                    </IonLabel>
-                  </IonItem>
-
-                  {/* Rote Box mit Begründung bei Ablehnung */}
-                  {request.admin_comment && !isApproved && (
-                    <IonItem
-                      lines="none"
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': 'rgba(220, 53, 69, 0.05)',
-                        '--border-radius': '12px',
-                        marginTop: '8px',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(220, 53, 69, 0.2)'
-                      }}
-                    >
-                      <IonLabel style={{ whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#dc3545', fontSize: '0.75rem' }}>
-                          Begründung:
-                        </div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          color: '#dc3545',
-                          lineHeight: '1.4'
-                        }}>
-                          {request.admin_comment}
-                        </div>
-                      </IonLabel>
-                    </IonItem>
-                  )}
-
-                  {/* Graue Box mit Kommentar bei Genehmigung */}
-                  {request.admin_comment && isApproved && (
-                    <IonItem
-                      lines="none"
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        marginTop: '8px',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      <IonLabel style={{ whiteSpace: 'normal' }}>
-                        <div style={{ fontWeight: '600', marginBottom: '6px', color: '#666', fontSize: '0.75rem' }}>
-                          Kommentar:
-                        </div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          color: '#333',
-                          lineHeight: '1.4'
-                        }}>
-                          {request.admin_comment}
-                        </div>
-                      </IonLabel>
-                    </IonItem>
-                  )}
-                </IonList>
+                    </div>
+                  </div>
+                )}
               </IonCardContent>
             </IonCard>
           </>

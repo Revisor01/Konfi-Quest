@@ -114,8 +114,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: '-10px',
-          left: '20px',
+          top: '-5px',
+          left: '12px',
           zIndex: 1
         }}>
           <h2 style={{
@@ -123,8 +123,8 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
             fontWeight: '900',
             color: 'rgba(255, 255, 255, 0.1)',
             margin: '0',
-            lineHeight: '0.9',
-            letterSpacing: '-0.02em'
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
           }}>
             ANTRÄGE
           </h2>
@@ -143,12 +143,13 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '12px'
+            gap: '8px',
+            margin: '0 4px'
           }}>
             <div style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '12px',
+              padding: '16px 12px',
               color: 'white',
               textAlign: 'center'
             }}>
@@ -172,7 +173,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
             <div style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '12px',
+              padding: '16px 12px',
               color: 'white',
               textAlign: 'center'
             }}>
@@ -196,7 +197,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
             <div style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '12px',
+              padding: '16px 12px',
               color: 'white',
               textAlign: 'center'
             }}>
