@@ -408,7 +408,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>Eingereicht</div>
-                <div style={{ fontSize: '0.9rem', color: '#666' }}>
+                <div style={{ fontWeight: '500', fontSize: '0.95rem', color: '#333' }}>
                   {formatDateTime(request.created_at)}
                 </div>
               </div>
