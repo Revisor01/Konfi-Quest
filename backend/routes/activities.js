@@ -205,7 +205,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
         if (request.photo_filename) {
           const fs = require('fs');
           const path = require('path');
-          const photoPath = path.join(__dirname, '../uploads/activity-requests', request.photo_filename);
+          const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
 
           fs.unlink(photoPath, (err) => {
             if (err) {
