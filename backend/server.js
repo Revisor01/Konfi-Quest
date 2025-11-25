@@ -218,11 +218,22 @@ const levelsRoutes = require('./routes/levels');
 // RBAC MIDDLEWARE SETUP
 // ====================================================================
 
-const { verifyTokenRBAC, checkPermission, filterByJahrgangAccess } = require('./middleware/rbac');
+const {
+  verifyTokenRBAC,
+  filterByJahrgangAccess,
+  requireSuperAdmin,
+  requireOrgAdmin,
+  requireAdmin,
+  requireTeamer
+} = require('./middleware/rbac');
+
 const rbacVerifier = verifyTokenRBAC(db);
 
-const badgesRouter = adminBadgesRoutes(db, rbacVerifier, checkPermission);
-const activitiesRouter = adminActivitiesRoutes(db, rbacVerifier, checkPermission, badgesRouter.checkAndAwardBadges, upload);
+// Rollen-Helper Objekt für Routes
+const roleHelpers = { requireSuperAdmin, requireOrgAdmin, requireAdmin, requireTeamer };
+
+const badgesRouter = adminBadgesRoutes(db, rbacVerifier, roleHelpers);
+const activitiesRouter = adminActivitiesRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges, upload);
 
 // ====================================================================
 // ROUTE MOUNTING
@@ -238,21 +249,21 @@ app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDi
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 
-app.use('/api/events', eventsRoutes(db, rbacVerifier, checkPermission, badgesRouter.checkAndAwardBadges));
-app.use('/api/settings', settingsRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/events', eventsRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
+app.use('/api/settings', settingsRoutes(db, rbacVerifier, roleHelpers));
 
 app.use('/api/admin/activities', activitiesRouter);
 app.use('/api/admin/badges', badgesRouter);
-app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, checkPermission, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
-app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/admin/users', usersRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/admin/konfis', adminKonfisRoutes(db, rbacVerifier, roleHelpers, filterByJahrgangAccess, badgesRouter.checkAndAwardBadges));
+app.use('/api/admin/jahrgaenge', adminJahrgaengeRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/admin/categories', adminCategoriesRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers));
 
-app.use('/api/users', usersRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/roles', rolesRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/permissions', permissionsRoutes(db, rbacVerifier, checkPermission));
-app.use('/api/levels', levelsRoutes(db, rbacVerifier, checkPermission));
+app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/permissions', permissionsRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION

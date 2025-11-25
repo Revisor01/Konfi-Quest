@@ -1,6 +1,7 @@
 const express = require('express');
 
-module.exports = (db, verifyTokenRBAC, checkPermission) => {
+// Levels: Verwendet bereits direkte Rollen-Checks
+module.exports = (db, verifyTokenRBAC, roleHelpers) => {
   const router = express.Router();
 
   // GET /api/levels - Alle Level für Organisation laden

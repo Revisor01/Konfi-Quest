@@ -8,7 +8,7 @@ const router = express.Router();
 // Keine Erstellung/Löschung/Permission-Verwaltung mehr nötig
 // ============================================
 
-module.exports = (db, rbacVerifier, checkPermission) => {
+module.exports = (db, rbacVerifier, roleHelpers) => {
 
   // GET /api/roles - Alle Rollen der Organisation anzeigen
   // Nur für org_admin (um User zuzuweisen)

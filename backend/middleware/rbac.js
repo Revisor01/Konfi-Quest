@@ -137,81 +137,7 @@ const requireAdmin = requireRole('super_admin', 'org_admin', 'admin');
 const requireTeamer = requireRole('super_admin', 'org_admin', 'admin', 'teamer');
 
 // ============================================
-// LEGACY: checkPermission (für schrittweise Migration)
-// ============================================
-// Mappt alte Permissions auf neue Rollen-Checks
-const checkPermission = (requiredPermission) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Nicht angemeldet' });
-    }
-
-    // Super-Admin und Org-Admin haben immer Zugriff
-    if (['super_admin', 'org_admin'].includes(req.user.role_name)) {
-      return next();
-    }
-
-    // Permission-zu-Rolle Mapping
-    const teamerPermissions = [
-      'events.view', 'events.create', 'events.edit', 'events.delete', 'events.manage_bookings',
-      'admin.events.view', 'admin.events.create', 'admin.events.edit', 'admin.events.delete', 'admin.events.manage_bookings',
-      'admin.konfis.view', 'admin.konfis.assign_points', 'konfis.view', 'konfis.assign_points',
-      'admin.activities.view', 'activities.view',
-      'admin.categories.view', 'categories.view',
-      'admin.badges.view', 'badges.view',
-      'admin.jahrgaenge.view', 'jahrgaenge.view'
-    ];
-
-    const adminPermissions = [
-      ...teamerPermissions,
-      // Konfis bearbeiten
-      'admin.konfis.create', 'admin.konfis.edit', 'admin.konfis.delete', 'admin.konfis.reset_password',
-      'konfis.create', 'konfis.edit', 'konfis.delete', 'konfis.reset_password',
-      // Aktivitäten bearbeiten
-      'admin.activities.create', 'admin.activities.edit', 'admin.activities.delete',
-      'activities.create', 'activities.edit', 'activities.delete',
-      // Requests (Datenschutz - nur Admin!)
-      'admin.requests.view', 'admin.requests.approve', 'admin.requests.reject', 'admin.requests.delete',
-      'requests.view', 'requests.approve', 'requests.reject', 'requests.delete',
-      // Kategorien
-      'admin.categories.create', 'admin.categories.edit', 'admin.categories.delete',
-      'categories.create', 'categories.edit', 'categories.delete',
-      // Badges
-      'admin.badges.create', 'admin.badges.edit', 'admin.badges.delete', 'admin.badges.award',
-      'badges.create', 'badges.edit', 'badges.delete', 'badges.award',
-      // Jahrgänge
-      'admin.jahrgaenge.create', 'admin.jahrgaenge.edit', 'admin.jahrgaenge.delete', 'admin.jahrgaenge.assign',
-      'jahrgaenge.create', 'jahrgaenge.edit', 'jahrgaenge.delete'
-    ];
-
-    const orgAdminPermissions = [
-      ...adminPermissions,
-      // User-Verwaltung
-      'admin.users.view', 'admin.users.create', 'admin.users.edit', 'admin.users.delete',
-      // Rollen (nur ansehen)
-      'admin.roles.view',
-      // Settings
-      'admin.settings.edit',
-      // Organisation
-      'admin.organization.view', 'admin.organization.edit',
-      'admin.organizations.view'
-    ];
-
-    // Prüfung basierend auf Rolle
-    if (req.user.role_name === 'admin' && adminPermissions.includes(requiredPermission)) {
-      return next();
-    }
-
-    if (req.user.role_name === 'teamer' && teamerPermissions.includes(requiredPermission)) {
-      return next();
-    }
-
-    return res.status(403).json({ error: 'Keine Berechtigung' });
-  };
-};
-
-// ============================================
-// JAHRGANG-ZUGRIFF (unverändert)
+// JAHRGANG-ZUGRIFF
 // ============================================
 
 const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false) => {
@@ -304,14 +230,12 @@ const requireSameOrganization = (req, res, next) => {
 
 module.exports = {
   verifyTokenRBAC,
-  // Neue Rollen-Checks
+  // Rollen-Checks
   requireRole,
   requireSuperAdmin,
   requireOrgAdmin,
   requireAdmin,
   requireTeamer,
-  // Legacy (für schrittweise Migration)
-  checkPermission,
   // Jahrgang-Zugriff
   checkJahrgangAccess,
   filterByJahrgangAccess,
