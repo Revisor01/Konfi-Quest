@@ -332,12 +332,13 @@ const AdminEventsPage: React.FC = () => {
     presentEventModal('single');
   };
 
-  // Permission checks
-  const canCreate = user?.permissions?.includes('admin.events.create') || false;
-  const canEdit = user?.permissions?.includes('admin.events.edit') || false;
-  const canDelete = user?.permissions?.includes('admin.events.delete') || false;
-  const canCopy = canCreate; // Copy requires create permission
-  const canCancel = canEdit; // Cancel requires edit permission
+  // Rollen-basierte Berechtigungen (org_admin, admin UND teamer duerfen Events verwalten)
+  const canManageEvents = ['org_admin', 'admin', 'teamer'].includes(user?.role_name || '');
+  const canCreate = canManageEvents;
+  const canEdit = canManageEvents;
+  const canDelete = canManageEvents;
+  const canCopy = canCreate;
+  const canCancel = canEdit;
 
 
   return (

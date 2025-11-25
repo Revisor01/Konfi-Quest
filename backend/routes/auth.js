@@ -68,37 +68,25 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
       
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
       console.log(`✅ ${userType} login successful: ${username} (${user.display_name})`);
-      
-      const permissionsQuery = `
-        SELECT p.name
-        FROM permissions p
-        JOIN role_permissions rp ON p.id = rp.permission_id
-        WHERE rp.role_id = $1 AND rp.granted = true
-      `;
-      const { rows: permissions } = await db.query(permissionsQuery, [user.role_id]);
-      
-      console.log(`Loading permissions for user ${user.id} (role_id: ${user.role_id}), found ${permissions.length} permissions`);
-      const userPermissions = permissions.map(p => p.name);
-      
-      const token = jwt.sign({ 
-        id: user.id, 
-        type: userType, 
+
+      // JWT Token - Rollen-basiert (keine Permissions mehr)
+      const token = jwt.sign({
+        id: user.id,
+        type: userType,
         display_name: user.display_name,
         email: user.email,
         organization_id: user.organization_id,
-        role_name: user.role_name,
-        permissions: userPermissions
+        role_name: user.role_name
       }, JWT_SECRET, { expiresIn: '24h' });
-      
+
       const responseUser = {
-        id: user.id, 
-        display_name: user.display_name, 
+        id: user.id,
+        display_name: user.display_name,
         username: user.username,
         email: user.email,
         organization: user.organization_name,
         role_name: user.role_name,
-        type: userType,
-        permissions: userPermissions
+        type: userType
       };
     
       if (userType === 'konfi') {

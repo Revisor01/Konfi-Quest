@@ -311,10 +311,11 @@ const AdminCategoriesPage: React.FC = () => {
     presentCategoryModalHook({ presentingElement });
   };
 
-  // Permission checks
-  const canCreate = user?.permissions?.includes('admin.categories.create') || false;
-  const canEdit = user?.permissions?.includes('admin.categories.edit') || false;
-  const canDelete = user?.permissions?.includes('admin.categories.delete') || false;
+  // Rollen-basierte Berechtigungen (org_admin und admin duerfen alles)
+  const isAdmin = ['org_admin', 'admin'].includes(user?.role_name || '');
+  const canCreate = isAdmin;
+  const canEdit = isAdmin;
+  const canDelete = isAdmin;
 
   if (loading) {
     return (

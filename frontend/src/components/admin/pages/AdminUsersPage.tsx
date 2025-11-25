@@ -134,7 +134,7 @@ const AdminUsersPage: React.FC = () => {
         </IonButtons>
           <IonTitle>Benutzer-Verwaltung</IonTitle>
           <IonButtons slot="end">
-            {user?.permissions?.includes('admin.users.create') && (
+            {user?.role_name === 'org_admin' && (
               <IonButton onClick={presentUserModal}>
                 <IonIcon icon={add} />
               </IonButton>

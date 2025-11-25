@@ -418,34 +418,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     }
   });
 
-  // Check user permissions
-  router.get('/:id/permissions', rbacVerifier, async (req, res) => {
-    const { id } = req.params;
-    const organizationId = req.user.organization_id;
-
-    // Users can only check their own permissions unless they have admin.users.view permission
-    if (parseInt(id) !== req.user.id && !req.user.permissions.includes('admin.users.view')) {
-      return res.status(403).json({ error: 'Can only check your own permissions' });
-    }
-
-    const query = `
-      SELECT p.name as permission_name, p.display_name, p.description, p.module
-      FROM users u
-      JOIN roles r ON u.role_id = r.id
-      JOIN role_permissions rp ON r.id = rp.role_id
-      JOIN permissions p ON rp.permission_id = p.id
-      WHERE u.id = $1 AND u.organization_id = $2 AND rp.granted = true
-      ORDER BY p.module, p.name
-    `;
-
-    try {
-      const { rows } = await db.query(query, [id, organizationId]);
-      res.json(rows);
-    } catch (err) {
-      console.error(`Database error in GET /users/${id}/permissions:`, err);
-      res.status(500).json({ error: 'Database error' });
-    }
-  });
+  // ENTFERNT: /users/:id/permissions Route
+  // Permissions sind jetzt rollen-basiert (hardcoded), keine DB-Abfrage mehr noetig
 
   // Get current user's assigned jahrgaenge
   router.get('/me/jahrgaenge', rbacVerifier, async (req, res) => {

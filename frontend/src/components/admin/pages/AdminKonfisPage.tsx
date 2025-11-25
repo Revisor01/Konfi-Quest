@@ -178,7 +178,7 @@ const AdminKonfisPage: React.FC = () => {
         <IonToolbar>
           <IonTitle>Konfirmand:innen</IonTitle>
           <IonButtons slot="end">
-            {user?.permissions?.includes('admin.konfis.create') && (
+            {['org_admin', 'admin'].includes(user?.role_name || '') && (
               <IonButton onClick={presentKonfiModal}>
                 <IonIcon icon={add} />
               </IonButton>

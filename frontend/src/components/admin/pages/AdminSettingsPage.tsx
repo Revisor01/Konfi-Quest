@@ -74,9 +74,8 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {(user?.permissions?.includes('admin.users.view') ||
-          user?.permissions?.includes('admin.roles.view') ||
-          user?.permissions?.includes('admin.organizations.view')) && (
+        {/* System-Verwaltung nur fuer org_admin */}
+        {user?.role_name === 'org_admin' && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{
               display: 'flex',
@@ -115,96 +114,90 @@ const AdminSettingsPage: React.FC = () => {
             }}>
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
-                  {user?.permissions?.includes('admin.users.view') && (
-                    <IonItem
-                      button={user?.permissions?.includes('admin.users.edit')}
-                      routerLink={user?.permissions?.includes('admin.users.edit') ? "/admin/users" : undefined}
-                      lines="none"
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        opacity: user?.permissions?.includes('admin.users.edit') ? 1 : 0.6,
-                        cursor: user?.permissions?.includes('admin.users.edit') ? 'pointer' : 'not-allowed'
-                      }}
-                    >
-                      <div slot="start" style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#007aff',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '12px'
-                      }}>
-                        <IonIcon icon={people} style={{ fontSize: '1.2rem', color: 'white' }} />
-                      </div>
-                      <IonLabel>
-                        <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer</h2>
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Systembenutzer und Zugriffsrechte verwalten</p>
-                      </IonLabel>
-                    </IonItem>
-                  )}
-                  {user?.permissions?.includes('admin.roles.view') && (
-                    <IonItem
-                      button={user?.permissions?.includes('admin.roles.edit')}
-                      routerLink={user?.permissions?.includes('admin.roles.edit') ? "/admin/roles" : undefined}
-                      lines="none"
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        opacity: user?.permissions?.includes('admin.roles.edit') ? 1 : 0.6,
-                        cursor: user?.permissions?.includes('admin.roles.edit') ? 'pointer' : 'not-allowed'
-                      }}
-                    >
-                      <div slot="start" style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#5856d6',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '12px'
-                      }}>
-                        <IonIcon icon={shield} style={{ fontSize: '1.2rem', color: 'white' }} />
-                      </div>
-                      <IonLabel>
-                        <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Rollen</h2>
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Benutzerrollen und Berechtigungen verwalten</p>
-                      </IonLabel>
-                    </IonItem>
-                  )}
-                  {user?.permissions?.includes('admin.organizations.view') && (
-                    <IonItem
-                      button={user?.permissions?.includes('admin.organizations.edit')}
-                      routerLink={user?.permissions?.includes('admin.organizations.edit') ? "/admin/organizations" : undefined}
-                      lines="none"
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        opacity: user?.permissions?.includes('admin.organizations.edit') ? 1 : 0.6,
-                        cursor: user?.permissions?.includes('admin.organizations.edit') ? 'pointer' : 'not-allowed'
-                      }}
-                    >
+                  {/* Benutzer-Verwaltung */}
+                  <IonItem
+                    button
+                    routerLink="/admin/users"
+                    lines="none"
+                    style={{
+                      '--min-height': '56px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    <div slot="start" style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#007aff',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px'
+                    }}>
+                      <IonIcon icon={people} style={{ fontSize: '1.2rem', color: 'white' }} />
+                    </div>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Systembenutzer und Zugriffsrechte verwalten</p>
+                    </IonLabel>
+                  </IonItem>
+
+                  {/* Rollen-Ansicht */}
+                  <IonItem
+                    button
+                    routerLink="/admin/roles"
+                    lines="none"
+                    style={{
+                      '--min-height': '56px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    <div slot="start" style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#5856d6',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '12px'
+                    }}>
+                      <IonIcon icon={shield} style={{ fontSize: '1.2rem', color: 'white' }} />
+                    </div>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>System-Rollen</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Benutzerrollen ansehen</p>
+                    </IonLabel>
+                  </IonItem>
+
+                  {/* Organisationen */}
+                  <IonItem
+                    button
+                    routerLink="/admin/organizations"
+                    lines="none"
+                    style={{
+                      '--min-height': '56px',
+                      '--padding-start': '16px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
+                  >
                       <div slot="start" style={{
                         width: '40px',
                         height: '40px',
@@ -222,7 +215,6 @@ const AdminSettingsPage: React.FC = () => {
                         <p style={{ fontSize: '0.8rem', color: '#666' }}>Gemeinden und Organisationen verwalten</p>
                       </IonLabel>
                     </IonItem>
-                  )}
                 </IonList>
               </IonCardContent>
             </IonCard>

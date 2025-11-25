@@ -69,7 +69,7 @@ interface Role {
   is_system_role: boolean;
   is_active: boolean;
   user_count: number;
-  permission_count: number;
+  // permission_count entfernt - Rollen sind jetzt hardcoded
 }
 
 interface Jahrgang {
