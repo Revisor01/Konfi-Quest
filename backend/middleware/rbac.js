@@ -2,7 +2,17 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
-// Enhanced token verification with RBAC support
+// ============================================
+// ROLLEN-HIERARCHIE (vereinfacht)
+// ============================================
+// super_admin (5) - Organisations-übergreifend, nur Org-Verwaltung
+// org_admin (4)   - Volle Rechte in eigener Organisation
+// admin (3)       - Konfis, Events, Badges, Aktivitäten, Requests
+// teamer (2)      - Events, Konfis ansehen, Punkte vergeben
+// konfi (1)       - Nur eigene Daten
+// ============================================
+
+// Token verification - lädt User-Daten ohne Permissions aus DB
 const verifyTokenRBAC = (db) => {
   return async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -19,7 +29,6 @@ const verifyTokenRBAC = (db) => {
 
     let decoded;
     try {
-      // Decode the token first to get the user ID
       decoded = jwt.verify(token, JWT_SECRET);
     } catch (err) {
       if (err.name === 'TokenExpiredError') {
@@ -29,14 +38,15 @@ const verifyTokenRBAC = (db) => {
     }
 
     try {
-      // Get user with organization and role information
+      // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
         SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active,
+               u.role_title,
                r.name as role_name, r.display_name as role_display_name,
                o.name as organization_name, o.slug as organization_slug,
-               o.is_active as organization_active
+               COALESCE(o.is_active, true) as organization_active
         FROM users u
-        JOIN organizations o ON u.organization_id = o.id
+        LEFT JOIN organizations o ON u.organization_id = o.id
         LEFT JOIN roles r ON u.role_id = r.id
         WHERE u.id = $1
       `;
@@ -50,48 +60,44 @@ const verifyTokenRBAC = (db) => {
         return res.status(401).json({ error: 'User account is inactive' });
       }
 
-      if (!user.organization_active) {
+      // Super-Admin hat keine Organization - Skip org check
+      if (user.role_name !== 'super_admin' && !user.organization_active) {
         return res.status(401).json({ error: 'Organization is inactive' });
       }
 
-      // Get user permissions
-      const permissionsQuery = `
-        SELECT p.name
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        JOIN role_permissions rp ON r.id = rp.role_id
-        JOIN permissions p ON rp.permission_id = p.id
-        WHERE u.id = $1 AND rp.granted = true
-      `;
-      const { rows: permissionRows } = await db.query(permissionsQuery, [decoded.id]);
-      const permissions = permissionRows.map(row => row.name);
+      // Jahrgänge laden (nur für nicht-super_admin)
+      let assignedJahrgaenge = [];
+      if (user.organization_id) {
+        const jahrgaengeQuery = `
+          SELECT j.id, j.name, uja.can_view, uja.can_edit
+          FROM user_jahrgang_assignments uja
+          JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+          WHERE uja.user_id = $1
+        `;
+        const { rows } = await db.query(jahrgaengeQuery, [decoded.id]);
+        assignedJahrgaenge = rows;
+      }
 
-      // Get user's assigned jahrgaenge
-      const jahrgaengeQuery = `
-        SELECT j.id, j.name, uja.can_view, uja.can_edit
-        FROM user_jahrgang_assignments uja
-        JOIN jahrgaenge j ON uja.jahrgang_id = j.id
-        WHERE uja.user_id = $1
-      `;
-      const { rows: assignedJahrgaenge } = await db.query(jahrgaengeQuery, [decoded.id]);
-
-      // Attach user info to request
+      // User-Objekt für Request
       req.user = {
         id: user.id,
         organization_id: user.organization_id,
         username: user.username,
         display_name: user.display_name,
         role_name: user.role_name,
+        role_title: user.role_title,
         role_display_name: user.role_display_name,
         organization_name: user.organization_name,
         organization_slug: user.organization_slug,
-        permissions: permissions,
         assigned_jahrgaenge: assignedJahrgaenge,
-        type: user.role_name === 'konfi' ? 'konfi' : 'admin', // Set correct type for backward compatibility
-        is_super_admin: user.role_name === 'super_admin' || user.role_name === 'org_admin'
+        // Backward compatibility
+        type: user.role_name === 'konfi' ? 'konfi' : 'admin',
+        // Korrigiert: is_super_admin ist NUR super_admin
+        is_super_admin: user.role_name === 'super_admin',
+        is_org_admin: user.role_name === 'org_admin'
       };
 
-      // Update last login
+      // Last login aktualisieren
       await db.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [user.id]);
 
       next();
@@ -102,91 +108,170 @@ const verifyTokenRBAC = (db) => {
   };
 };
 
-// Permission check middleware
-const checkPermission = (requiredPermission) => {
+// ============================================
+// ROLLEN-BASIERTE ZUGRIFFSKONTROLLE (NEU)
+// ============================================
+
+/**
+ * Generische Rollen-Prüfung
+ * @param {...string} allowedRoles - Erlaubte Rollennamen
+ */
+const requireRole = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: 'Nicht angemeldet' });
     }
 
-    // Super admin has all permissions
-    if (req.user.is_super_admin) {
-      return next();
-    }
-
-    // Check if user has the required permission
-    if (!req.user.permissions.includes(requiredPermission)) {
-      return res.status(403).json({
-        error: 'Insufficient permissions',
-        required_permission: requiredPermission,
-        user_permissions: req.user.permissions
-      });
+    if (!allowedRoles.includes(req.user.role_name)) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
     }
 
     next();
   };
 };
 
-// Check if user can access specific jahrgang
+// Vordefinierte Rollen-Checks (von restriktiv zu offen)
+const requireSuperAdmin = requireRole('super_admin');
+const requireOrgAdmin = requireRole('super_admin', 'org_admin');
+const requireAdmin = requireRole('super_admin', 'org_admin', 'admin');
+const requireTeamer = requireRole('super_admin', 'org_admin', 'admin', 'teamer');
+
+// ============================================
+// LEGACY: checkPermission (für schrittweise Migration)
+// ============================================
+// Mappt alte Permissions auf neue Rollen-Checks
+const checkPermission = (requiredPermission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Nicht angemeldet' });
+    }
+
+    // Super-Admin und Org-Admin haben immer Zugriff
+    if (['super_admin', 'org_admin'].includes(req.user.role_name)) {
+      return next();
+    }
+
+    // Permission-zu-Rolle Mapping
+    const teamerPermissions = [
+      'events.view', 'events.create', 'events.edit', 'events.delete', 'events.manage_bookings',
+      'admin.events.view', 'admin.events.create', 'admin.events.edit', 'admin.events.delete', 'admin.events.manage_bookings',
+      'admin.konfis.view', 'admin.konfis.assign_points', 'konfis.view', 'konfis.assign_points',
+      'admin.activities.view', 'activities.view',
+      'admin.categories.view', 'categories.view',
+      'admin.badges.view', 'badges.view',
+      'admin.jahrgaenge.view', 'jahrgaenge.view'
+    ];
+
+    const adminPermissions = [
+      ...teamerPermissions,
+      // Konfis bearbeiten
+      'admin.konfis.create', 'admin.konfis.edit', 'admin.konfis.delete', 'admin.konfis.reset_password',
+      'konfis.create', 'konfis.edit', 'konfis.delete', 'konfis.reset_password',
+      // Aktivitäten bearbeiten
+      'admin.activities.create', 'admin.activities.edit', 'admin.activities.delete',
+      'activities.create', 'activities.edit', 'activities.delete',
+      // Requests (Datenschutz - nur Admin!)
+      'admin.requests.view', 'admin.requests.approve', 'admin.requests.reject', 'admin.requests.delete',
+      'requests.view', 'requests.approve', 'requests.reject', 'requests.delete',
+      // Kategorien
+      'admin.categories.create', 'admin.categories.edit', 'admin.categories.delete',
+      'categories.create', 'categories.edit', 'categories.delete',
+      // Badges
+      'admin.badges.create', 'admin.badges.edit', 'admin.badges.delete', 'admin.badges.award',
+      'badges.create', 'badges.edit', 'badges.delete', 'badges.award',
+      // Jahrgänge
+      'admin.jahrgaenge.create', 'admin.jahrgaenge.edit', 'admin.jahrgaenge.delete', 'admin.jahrgaenge.assign',
+      'jahrgaenge.create', 'jahrgaenge.edit', 'jahrgaenge.delete'
+    ];
+
+    const orgAdminPermissions = [
+      ...adminPermissions,
+      // User-Verwaltung
+      'admin.users.view', 'admin.users.create', 'admin.users.edit', 'admin.users.delete',
+      // Rollen (nur ansehen)
+      'admin.roles.view',
+      // Settings
+      'admin.settings.edit',
+      // Organisation
+      'admin.organization.view', 'admin.organization.edit',
+      'admin.organizations.view'
+    ];
+
+    // Prüfung basierend auf Rolle
+    if (req.user.role_name === 'admin' && adminPermissions.includes(requiredPermission)) {
+      return next();
+    }
+
+    if (req.user.role_name === 'teamer' && teamerPermissions.includes(requiredPermission)) {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  };
+};
+
+// ============================================
+// JAHRGANG-ZUGRIFF (unverändert)
+// ============================================
+
 const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return res.status(401).json({ error: 'Nicht angemeldet' });
     }
 
-    // Only super admin and org-admin have access to all jahrgaenge
-    if (req.user.is_super_admin || req.user.role_name === 'org_admin') {
+    // Super-Admin, Org-Admin und Admin haben Zugriff auf alle Jahrgänge
+    if (['super_admin', 'org_admin', 'admin'].includes(req.user.role_name)) {
       return next();
     }
 
     const jahrgangId = parseInt(req.params[jahrgangIdParam] || req.body[jahrgangIdParam] || req.query[jahrgangIdParam]);
 
     if (!jahrgangId) {
-      return res.status(400).json({ error: 'Jahrgang ID required' });
+      return res.status(400).json({ error: 'Jahrgang ID erforderlich' });
     }
 
     const assignedJahrgang = req.user.assigned_jahrgaenge.find(j => j.id === jahrgangId);
 
     if (!assignedJahrgang) {
-      return res.status(403).json({ error: 'No access to this jahrgang' });
+      return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
     }
 
     if (requireEdit && !assignedJahrgang.can_edit) {
-      return res.status(403).json({ error: 'No edit access to this jahrgang' });
+      return res.status(403).json({ error: 'Keine Bearbeitungsrechte für diesen Jahrgang' });
     }
 
     if (!assignedJahrgang.can_view) {
-      return res.status(403).json({ error: 'No view access to this jahrgang' });
+      return res.status(403).json({ error: 'Keine Leserechte für diesen Jahrgang' });
     }
 
     next();
   };
 };
 
-// Filter query results based on user's jahrgang access
+// Filter für Jahrgang-basierte Queries
 const filterByJahrgangAccess = (req) => {
   if (!req.user) {
-    return { where: 'WHERE 1=0', params: [] }; // No access
+    return { where: 'WHERE 1=0', params: [] };
   }
 
-  // Only super admin and org-admin see everything
-  if (req.user.is_super_admin || req.user.role_name === 'org_admin') {
+  // Super-Admin, Org-Admin und Admin sehen alles in ihrer Organisation
+  if (['super_admin', 'org_admin', 'admin'].includes(req.user.role_name)) {
     return {
       where: 'WHERE organization_id = $1',
       params: [req.user.organization_id]
     };
   }
 
-  // Filter by assigned jahrgaenge
+  // Teamer sehen nur zugewiesene Jahrgänge
   const viewableJahrgaenge = req.user.assigned_jahrgaenge
     .filter(j => j.can_view)
     .map(j => j.id);
 
   if (viewableJahrgaenge.length === 0) {
-    return { where: 'WHERE 1=0', params: [] }; // No access
+    return { where: 'WHERE 1=0', params: [] };
   }
 
-  // Start numbering placeholders from $2, as $1 is for organization_id
   const placeholders = viewableJahrgaenge.map((_, i) => `$${i + 2}`).join(',');
   return {
     where: `WHERE organization_id = $1 AND jahrgang_id IN (${placeholders})`,
@@ -194,35 +279,24 @@ const filterByJahrgangAccess = (req) => {
   };
 };
 
-// Organization isolation middleware
+// ============================================
+// ORGANISATIONS-ISOLATION
+// ============================================
+
 const requireSameOrganization = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ error: 'Nicht angemeldet' });
   }
 
-  // Super admin can access any organization
-  if (req.user.is_super_admin) {
+  // Super-Admin kann auf alle Organisationen zugreifen
+  if (req.user.role_name === 'super_admin') {
     return next();
   }
 
-  // For routes that specify organization_id, ensure it matches user's organization
   const requestedOrgId = parseInt(req.params.organizationId || req.body.organization_id);
 
   if (requestedOrgId && requestedOrgId !== req.user.organization_id) {
-    return res.status(403).json({ error: 'Access denied to other organizations' });
-  }
-
-  next();
-};
-
-// Legacy admin check for backward compatibility
-const requireAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-
-  if (req.user.role_name !== 'admin' && !req.user.is_super_admin) {
-    return res.status(403).json({ error: 'Admin access required' });
+    return res.status(403).json({ error: 'Kein Zugriff auf andere Organisationen' });
   }
 
   next();
@@ -230,9 +304,17 @@ const requireAdmin = (req, res, next) => {
 
 module.exports = {
   verifyTokenRBAC,
+  // Neue Rollen-Checks
+  requireRole,
+  requireSuperAdmin,
+  requireOrgAdmin,
+  requireAdmin,
+  requireTeamer,
+  // Legacy (für schrittweise Migration)
   checkPermission,
+  // Jahrgang-Zugriff
   checkJahrgangAccess,
   filterByJahrgangAccess,
-  requireSameOrganization,
-  requireAdmin
+  // Organisation
+  requireSameOrganization
 };

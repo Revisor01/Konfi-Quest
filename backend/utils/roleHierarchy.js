@@ -1,32 +1,55 @@
-// Role Hierarchy Utility
-// Definiert die Hierarchie und Berechtigungen zwischen den Rollen
+// ============================================
+// ROLLEN-HIERARCHIE
+// ============================================
+// Definiert die Hierarchie zwischen den 5 System-Rollen
 
 const ROLE_HIERARCHY = {
-  'org_admin': 4,
-  'admin': 3,
-  'teamer': 2,
-  'konfi': 1
+  'super_admin': 5,  // Organisations-übergreifend
+  'org_admin': 4,    // Volle Rechte in eigener Organisation
+  'admin': 3,        // Konfis, Events, Badges, Aktivitäten, Requests
+  'teamer': 2,       // Events, Konfis ansehen, Punkte vergeben
+  'konfi': 1         // Nur eigene Daten
 };
 
 /**
- * Überprüft ob userRole eine targetRole verwalten darf
+ * Prüft ob eine Rolle eine andere verwalten darf
+ * Regel: Man kann nur Rollen verwalten, die niedriger in der Hierarchie sind
+ *
  * @param {string} userRole - Die Rolle des ausführenden Users
  * @param {string} targetRole - Die Rolle die verwaltet werden soll
  * @returns {boolean} - true wenn erlaubt
  */
 const canManageRole = (userRole, targetRole) => {
-  // ... (Logik unverändert)
   const userLevel = ROLE_HIERARCHY[userRole] || 0;
   const targetLevel = ROLE_HIERARCHY[targetRole] || 0;
-  if (userRole === 'org_admin') return true;
-  if (userRole === 'admin') return targetRole !== 'org_admin' && targetRole !== 'admin';
-  if (userRole === 'teamer') return targetRole !== 'org_admin' && targetRole !== 'admin' && targetRole !== 'teamer';
-  return userLevel > targetLevel;
+
+  // Super-Admin kann alle außer sich selbst verwalten
+  if (userRole === 'super_admin') {
+    return targetRole !== 'super_admin';
+  }
+
+  // Org-Admin kann admin, teamer, konfi verwalten
+  if (userRole === 'org_admin') {
+    return ['admin', 'teamer', 'konfi'].includes(targetRole);
+  }
+
+  // Admin kann teamer und konfi verwalten
+  if (userRole === 'admin') {
+    return ['teamer', 'konfi'].includes(targetRole);
+  }
+
+  // Teamer kann nur konfi verwalten (eingeschränkt)
+  if (userRole === 'teamer') {
+    return targetRole === 'konfi';
+  }
+
+  // Konfi kann niemanden verwalten
+  return false;
 };
 
 /**
- * Überprüft ob userRole eine andere userRole erstellen darf
- * @param {string} userRole - Die Rolle des ausführenden Users  
+ * Prüft ob eine Rolle eine andere erstellen darf
+ * @param {string} userRole - Die Rolle des ausführenden Users
  * @param {string} targetRole - Die Rolle die erstellt werden soll
  * @returns {boolean} - true wenn erlaubt
  */
@@ -35,8 +58,8 @@ const canCreateRole = (userRole, targetRole) => {
 };
 
 /**
- * Middleware-Funktion für User-Management-Operationen
- * Überprüft ob der aktuelle User die Ziel-User-Rolle verwalten darf
+ * Middleware für User-Management-Operationen
+ * Prüft ob der aktuelle User die Ziel-User-Rolle verwalten darf
  */
 const checkUserHierarchy = (operation = 'manage') => {
   return async (req, res, next) => {
@@ -46,18 +69,18 @@ const checkUserHierarchy = (operation = 'manage') => {
       const targetRoleId = req.body.role_id;
 
       if (!userRole) {
-        return res.status(403).json({ error: 'User role not found' });
+        return res.status(403).json({ error: 'Benutzerrolle nicht gefunden' });
       }
 
       // Bei Create-Operationen haben wir die role_id im Body
       if (operation === 'create' && targetRoleId) {
         const { rows: [role] } = await req.db.query('SELECT name FROM roles WHERE id = $1', [targetRoleId]);
         if (!role) {
-          return res.status(404).json({ error: 'Target role not found' });
+          return res.status(404).json({ error: 'Zielrolle nicht gefunden' });
         }
         if (!canCreateRole(userRole, role.name)) {
           return res.status(403).json({
-            error: `You cannot create users with role '${role.name}'. Insufficient hierarchy level.`
+            error: `Du kannst keine Benutzer mit der Rolle '${role.name}' erstellen.`
           });
         }
         return next();
@@ -68,17 +91,17 @@ const checkUserHierarchy = (operation = 'manage') => {
         const query = `
           SELECT u.id, u.role_id, r.name as role_name
           FROM users u
-          JOIN roles r ON u.role_id = r.id  
+          JOIN roles r ON u.role_id = r.id
           WHERE u.id = $1 AND u.organization_id = $2
         `;
         const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
 
         if (!targetUser) {
-          return res.status(404).json({ error: 'Target user not found in your organization' });
+          return res.status(404).json({ error: 'Zielbenutzer nicht in deiner Organisation gefunden' });
         }
         if (!canManageRole(userRole, targetUser.role_name)) {
           return res.status(403).json({
-            error: `You cannot ${operation} users with role '${targetUser.role_name}'. Insufficient hierarchy level.`
+            error: `Du kannst Benutzer mit der Rolle '${targetUser.role_name}' nicht bearbeiten.`
           });
         }
 
@@ -86,23 +109,22 @@ const checkUserHierarchy = (operation = 'manage') => {
         if (operation === 'update' && targetRoleId && targetRoleId !== targetUser.role_id) {
           const { rows: [newRole] } = await req.db.query('SELECT name FROM roles WHERE id = $1', [targetRoleId]);
           if (!newRole) {
-            return res.status(404).json({ error: 'New role not found' });
+            return res.status(404).json({ error: 'Neue Rolle nicht gefunden' });
           }
           if (!canCreateRole(userRole, newRole.name)) {
             return res.status(403).json({
-              error: `You cannot assign role '${newRole.name}'. Insufficient hierarchy level.`
+              error: `Du kannst die Rolle '${newRole.name}' nicht zuweisen.`
             });
           }
         }
-        
+
         return next();
       }
 
-      // Wenn keine spezifische Überprüfung nötig ist
       next();
     } catch (err) {
       console.error('Database error in checkUserHierarchy middleware:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   };
 };
@@ -117,10 +139,24 @@ const filterUsersByHierarchy = (users, userRole) => {
 
 /**
  * Filtert Rollen basierend auf der Hierarchie
- * Zeigt nur Rollen an, die der aktuelle User verwalten/zuweisen darf
+ * Zeigt nur Rollen an, die der aktuelle User zuweisen darf
  */
 const filterRolesByHierarchy = (roles, userRole) => {
   return roles.filter(role => canManageRole(userRole, role.name));
+};
+
+/**
+ * Gibt die Hierarchie-Stufe einer Rolle zurück
+ */
+const getRoleLevel = (roleName) => {
+  return ROLE_HIERARCHY[roleName] || 0;
+};
+
+/**
+ * Prüft ob eine Rolle mindestens das angegebene Level hat
+ */
+const hasMinimumLevel = (roleName, minLevel) => {
+  return getRoleLevel(roleName) >= minLevel;
 };
 
 module.exports = {
@@ -129,5 +165,7 @@ module.exports = {
   canCreateRole,
   checkUserHierarchy,
   filterUsersByHierarchy,
-  filterRolesByHierarchy
+  filterRolesByHierarchy,
+  getRoleLevel,
+  hasMinimumLevel
 };
