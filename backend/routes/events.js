@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // Events routes
-module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
+// Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
+module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   
   // Get all events (read-only, accessible to all authenticated users)
   router.get('/', rbacVerifier, async (req, res) => {
@@ -104,7 +105,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
 
   // Get cancelled events (Admin only)
-  router.get('/cancelled', rbacVerifier, checkPermission('events.view'), async (req, res) => {
+  router.get('/cancelled', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const query = `
         SELECT e.*, 
@@ -319,7 +320,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Create new event
-  router.post('/', rbacVerifier, checkPermission('events.create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireTeamer, async (req, res) => {
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
@@ -392,7 +393,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Update event
-  router.put('/:id', rbacVerifier, checkPermission('events.edit'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireTeamer, async (req, res) => {
     const { id } = req.params;
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
@@ -462,7 +463,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Delete event
-  router.delete('/:id', rbacVerifier, checkPermission('events.delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireTeamer, async (req, res) => {
     const { id } = req.params;
     
     await db.query('BEGIN');
@@ -696,7 +697,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Add participant to event (Admin only)
-  router.post('/:id/participants', rbacVerifier, checkPermission('events.manage_bookings'), async (req, res) => {
+  router.post('/:id/participants', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
     const { user_id, status = 'auto', timeslot_id = null } = req.body;
     
@@ -782,7 +783,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Delete event booking (Admin only)
-  router.delete('/:id/bookings/:bookingId', rbacVerifier, checkPermission('events.manage_bookings'), async (req, res) => {
+  router.delete('/:id/bookings/:bookingId', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, bookingId } = req.params;
     
     try {
@@ -853,7 +854,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Create series events
-  router.post('/series', rbacVerifier, checkPermission('events.create'), async (req, res) => {
+  router.post('/series', rbacVerifier, requireTeamer, async (req, res) => {
     const { 
       name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
       category_ids, jahrgang_ids, type, max_participants, registration_opens_at, 
@@ -1016,7 +1017,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Promote/Demote participant between confirmed and waitlist
-  router.put('/:id/participants/:participantId/status', rbacVerifier, checkPermission('events.manage_bookings'), async (req, res) => {
+  router.put('/:id/participants/:participantId/status', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { status } = req.body;
     
@@ -1044,7 +1045,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Update participant attendance and award event points
-  router.put('/:id/participants/:participantId/attendance', rbacVerifier, checkPermission('events.manage_bookings'), async (req, res) => {
+  router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { attendance_status } = req.body;
     
@@ -1133,7 +1134,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
   
   // Create group chat for event
-  router.post('/:id/chat', rbacVerifier, checkPermission('events.edit'), async (req, res) => {
+  router.post('/:id/chat', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
     
     await db.query('BEGIN');
@@ -1182,7 +1183,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges) => {
   });
 
   // Cancel event (Admin only)
-  router.put('/:id/cancel', rbacVerifier, checkPermission('events.edit'), async (req, res) => {
+  router.put('/:id/cancel', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
     const { notification_message = 'Das Event wurde abgesagt.' } = req.body;
     

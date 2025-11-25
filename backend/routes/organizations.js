@@ -6,10 +6,11 @@ const bcrypt = require('bcrypt');
 // WICHTIG: users = nur Admin-Rollen (admin, org_admin, super_admin, teamer, custom)
 //          konfi_profiles = alle Konfis (mit direkter organization_id)
 //          Konfis werden NIEMALS als User angezeigt!
-module.exports = (db, rbacVerifier, checkPermission) => {
+// Organizations: super_admin für alle, org_admin für eigene
+module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
   
   // Get all organizations (super admin only)
-  router.get('/', rbacVerifier, checkPermission('admin.organizations.view'), async (req, res) => {
+  router.get('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const query = `
         SELECT o.*, 
@@ -32,7 +33,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get single organization by ID
-  router.get('/:id', rbacVerifier, checkPermission('admin.organizations.view'), async (req, res) => {
+  router.get('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -111,7 +112,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Create new organization (super admin only)
-  router.post('/', rbacVerifier, checkPermission('admin.organizations.create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
       const {
         name, slug, display_name, description, contact_email, 
@@ -221,7 +222,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Update organization
-  router.put('/:id', rbacVerifier, checkPermission('admin.organizations.edit'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const {
@@ -260,7 +261,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Delete organization (super admin only)
-  router.delete('/:id', rbacVerifier, checkPermission('admin.organizations.delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -291,7 +292,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get organization users
-  router.get('/:id/users', rbacVerifier, checkPermission('admin.users.view'), async (req, res) => {
+  router.get('/:id/users', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
     

@@ -3,10 +3,11 @@ const bcrypt = require('bcrypt');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
-module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, checkAndAwardBadges) => {
+// Konfis: Teamer darf ansehen, Admin darf bearbeiten
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJahrgangAccess, checkAndAwardBadges) => {
 
     // GET all konfis for the admin's organization (with jahrgang filtering)
-    router.get('/', rbacVerifier, checkPermission('admin.konfis.view'), async (req, res) => {
+    router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             let jahrgangFilter = '';
             let params = [req.user.organization_id];
@@ -48,7 +49,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // GET a single konfi by ID with full details
-    router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), async (req, res) => {
+    router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             const konfiQuery = `
                 SELECT u.id, u.display_name as name, u.username, kp.password_plain as password,
@@ -102,7 +103,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // POST (create) a new konfi
-    router.post('/', rbacVerifier, checkPermission('admin.konfis.create'), async (req, res) => {
+    router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name and Jahrgang are required' });
@@ -184,7 +185,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // PUT (update) a konfi
-    router.put('/:id', rbacVerifier, checkPermission('admin.konfis.edit'), async (req, res) => {
+    router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name and Jahrgang are required' });
@@ -266,7 +267,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // DELETE a konfi
-    router.delete('/:id', rbacVerifier, checkPermission('admin.konfis.delete'), async (req, res) => {
+    router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
         const userId = req.params.id;
         try {
             await db.query('BEGIN');
@@ -311,7 +312,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // Regenerate password for a konfi
-    router.post('/:id/regenerate-password', rbacVerifier, checkPermission('admin.konfis.reset_password'), async (req, res) => {
+    router.post('/:id/regenerate-password', rbacVerifier, requireAdmin, async (req, res) => {
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
@@ -342,7 +343,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // GET single konfi details with activities, bonusPoints, eventPoints
-    router.get('/:id', rbacVerifier, checkPermission('admin.konfis.view'), async (req, res) => {
+    router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
         console.log('📝 Loading details for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
@@ -399,7 +400,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // GET event points for konfi
-    router.get('/:id/event-points', rbacVerifier, checkPermission('admin.konfis.view'), async (req, res) => {
+    router.get('/:id/event-points', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
         console.log('📝 Loading event points for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
@@ -421,7 +422,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // POST bonus points for a konfi
-    router.post('/:id/bonus-points', rbacVerifier, checkPermission('admin.konfis.edit'), async (req, res) => {
+    router.post('/:id/bonus-points', rbacVerifier, requireAdmin, async (req, res) => {
         const { points, type, description } = req.body;
         if (!points || !type || !description) {
             return res.status(400).json({ error: 'Points, type and description are required' });
@@ -459,7 +460,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // DELETE bonus points
-    router.delete('/:id/bonus-points/:bonusId', rbacVerifier, checkPermission('admin.konfis.edit'), async (req, res) => {
+    router.delete('/:id/bonus-points/:bonusId', rbacVerifier, requireAdmin, async (req, res) => {
         try {
             const { rows: [bonus] } = await db.query('SELECT * FROM bonus_points WHERE id = $1 AND konfi_id = $2', [req.params.bonusId, req.params.id]);
             
@@ -492,7 +493,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // POST activity for a konfi
-    router.post('/:id/activities', rbacVerifier, checkPermission('admin.konfis.edit'), async (req, res) => {
+    router.post('/:id/activities', rbacVerifier, requireAdmin, async (req, res) => {
         const { activity_id, completed_date, comment } = req.body;
         if (!activity_id || !completed_date) {
             return res.status(400).json({ error: 'Activity ID and date are required' });
@@ -536,7 +537,7 @@ module.exports = (db, rbacVerifier, checkPermission, filterByJahrgangAccess, che
     });
 
     // DELETE activity for a konfi
-    router.delete('/:id/activities/:activityId', rbacVerifier, checkPermission('admin.konfis.edit'), async (req, res) => {
+    router.delete('/:id/activities/:activityId', rbacVerifier, requireAdmin, async (req, res) => {
         try {
             const getActivityQuery = `
                 SELECT ka.*, a.points, a.type 

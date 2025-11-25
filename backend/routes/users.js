@@ -6,7 +6,8 @@ const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHie
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
 // Transaktionen werden direkt über db.query('BEGIN'/'COMMIT'/'ROLLBACK') verwaltet.
-module.exports = (db, rbacVerifier, checkPermission) => {
+// Users: Nur org_admin darf verwalten
+module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
   // Hierarchie-Middleware mit DB-Zugriff
   // Diese Middleware erfordert eine Modifikation in der checkUserHierarchy-Funktion,
@@ -24,7 +25,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   };
 
   // Get users in current organization
-  router.get('/', rbacVerifier, checkPermission('admin.users.view'), async (req, res) => {
+  router.get('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
     const organizationId = req.user.organization_id;
 
     const query = `
@@ -57,7 +58,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Get single user with details
-  router.get('/:id', rbacVerifier, checkPermission('admin.users.view'), userHierarchyMiddleware('view'), async (req, res) => {
+  router.get('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('view'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
@@ -101,7 +102,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Create new user
-  router.post('/', rbacVerifier, checkPermission('admin.users.create'), userHierarchyMiddleware('create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), async (req, res) => {
     const organizationId = req.user.organization_id;
     const { username, email, display_name, password, role_id } = req.body;
 
@@ -147,7 +148,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Update user
-  router.put('/:id', rbacVerifier, checkPermission('admin.users.edit'), userHierarchyMiddleware('update'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('update'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const { username, email, display_name, role_id, is_active, password } = req.body;
@@ -217,7 +218,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Delete user
-  router.delete('/:id', rbacVerifier, checkPermission('admin.users.delete'), userHierarchyMiddleware('delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('delete'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
@@ -251,7 +252,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
   });
 
   // Assign jahrgaenge to user
-  router.post('/:id/jahrgaenge', rbacVerifier, checkPermission('admin.jahrgaenge.assign'), async (req, res) => {
+  router.post('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -394,7 +395,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
 
 
   // Get user's jahrgang assignments
-  router.get('/:id/jahrgaenge', rbacVerifier, checkPermission('admin.users.view'), async (req, res) => {
+  router.get('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 

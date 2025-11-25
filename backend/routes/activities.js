@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-// Dieses Modul fasst die Admin-Verwaltung von Aktivitäten, Anträgen und Bonuspunkten zusammen.
-module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload) => {
+// Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
+// Requests: NUR Admin (Datenschutz!)
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges, upload) => {
 
   // ====================================================================
   // ACTIVITIES MANAGEMENT (Masterliste)
@@ -10,7 +11,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // GET all activities
   // Pfad: GET /api/activities/
-  router.get('/', rbacVerifier, checkPermission('admin.activities.view'), async (req, res) => {
+  router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const query = `
         SELECT a.*, 
@@ -56,7 +57,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // POST a new activity
   // Pfad: POST /api/activities/
-  router.post('/', rbacVerifier, checkPermission('admin.activities.create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
     if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Type must be gottesdienst or gemeinde' });
@@ -83,7 +84,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // PUT (update) an activity
   // Pfad: PUT /api/activities/:id
-  router.put('/:id', rbacVerifier, checkPermission('admin.activities.edit'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const activityId = req.params.id;
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
@@ -116,7 +117,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // DELETE an activity
   // Pfad: DELETE /api/activities/:id
-  router.delete('/:id', rbacVerifier, checkPermission('admin.activities.delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const activityId = req.params.id;
     try {
       const checkUsageQuery = `SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.activity_id = $1 AND a.organization_id = $2`;
@@ -147,7 +148,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // GET all activity requests for an organization
   // Pfad: GET /api/activities/requests
-  router.get('/requests', rbacVerifier, checkPermission('admin.requests.view'), async (req, res) => {
+  router.get('/requests', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       const query = `
         SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
@@ -173,7 +174,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // PUT (update) an activity request status - zurück zu pending
   // Pfad: PUT /api/activities/requests/:id/reset
-  router.put('/requests/:id/reset', rbacVerifier, checkPermission('admin.requests.approve'), async (req, res) => {
+  router.put('/requests/:id/reset', rbacVerifier, requireAdmin, async (req, res) => {
     const requestId = req.params.id;
 
     try {
@@ -230,7 +231,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // PUT (update) an activity request status
   // Pfad: PUT /api/activities/requests/:id
-  router.put('/requests/:id', rbacVerifier, checkPermission('admin.requests.approve'), async (req, res) => {
+  router.put('/requests/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const requestId = req.params.id;
     const { status, admin_comment } = req.body;
     if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
@@ -331,7 +332,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
   
   // Assign activity to a konfi
   // Pfad: POST /api/activities/assign-activity
-  router.post('/assign-activity', rbacVerifier, checkPermission('admin.konfis.assign_points'), async (req, res) => {
+  router.post('/assign-activity', rbacVerifier, requireTeamer, async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi ID and Activity ID are required' });
     const date = completed_date || new Date().toISOString().split('T')[0];
@@ -355,7 +356,7 @@ module.exports = (db, rbacVerifier, checkPermission, checkAndAwardBadges, upload
 
   // Assign bonus points to a konfi
   // Pfad: POST /api/activities/assign-bonus
-  router.post('/assign-bonus', rbacVerifier, checkPermission('admin.konfis.assign_points'), async (req, res) => {
+  router.post('/assign-bonus', rbacVerifier, requireTeamer, async (req, res) => {
     const { konfiId, points, type, description, completed_date } = req.body;
     if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'All fields are required' });
     const date = completed_date || new Date().toISOString().split('T')[0];
