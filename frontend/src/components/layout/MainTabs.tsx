@@ -36,7 +36,7 @@ import AdminJahrgaengeePage from '../admin/pages/AdminJahrgaengeePage';
 import AdminBadgesPage from '../admin/pages/AdminBadgesPage';
 import AdminActivityRequestsPage from '../admin/pages/AdminActivityRequestsPage';
 import AdminUsersPage from '../admin/pages/AdminUsersPage';
-import AdminRolesPage from '../admin/pages/AdminRolesPage';
+// AdminRolesPage entfernt - Rollen sind jetzt hardcoded
 import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
 import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
@@ -128,7 +128,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
           <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
-          <Route exact path="/admin/roles" component={AdminRolesPage} />
+          {/* /admin/roles Route entfernt - Rollen sind hardcoded */}
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />

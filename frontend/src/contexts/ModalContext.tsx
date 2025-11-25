@@ -55,7 +55,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/badges')) currentTabId = 'admin-badges';
     else if (currentPath.includes('/admin/requests')) currentTabId = 'admin-requests';
     else if (currentPath.includes('/admin/users')) currentTabId = 'admin-users';
-    else if (currentPath.includes('/admin/roles')) currentTabId = 'admin-roles';
+    // admin-roles entfernt - Rollen sind hardcoded
     else if (currentPath.includes('/admin/organizations')) currentTabId = 'admin-organizations';
     else if (currentPath.includes('/admin/profile')) currentTabId = 'admin-profile';
     else if (currentPath.includes('/admin/settings/categories')) currentTabId = 'admin-categories';

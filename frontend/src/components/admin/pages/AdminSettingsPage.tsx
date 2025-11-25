@@ -148,39 +148,7 @@ const AdminSettingsPage: React.FC = () => {
                     </IonLabel>
                   </IonItem>
 
-                  {/* Rollen-Ansicht */}
-                  <IonItem
-                    button
-                    routerLink="/admin/roles"
-                    lines="none"
-                    style={{
-                      '--min-height': '56px',
-                      '--padding-start': '16px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '6px 0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <div slot="start" style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#5856d6',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px'
-                    }}>
-                      <IonIcon icon={shield} style={{ fontSize: '1.2rem', color: 'white' }} />
-                    </div>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>System-Rollen</h2>
-                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Benutzerrollen ansehen</p>
-                    </IonLabel>
-                  </IonItem>
+                  {/* Rollen-Seite entfernt - Rollen sind hardcoded */}
 
                   {/* Organisationen */}
                   <IonItem
