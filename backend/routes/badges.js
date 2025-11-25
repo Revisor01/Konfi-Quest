@@ -311,13 +311,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
 };
 
 
-module.exports = (db, rbacVerifier, checkPermission) => {
-  
-  router.get('/criteria-types', rbacVerifier, (req, res) => {
+// Badges: Teamer darf ansehen, Admin darf bearbeiten
+module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
+
+  router.get('/criteria-types', rbacVerifier, requireTeamer, (req, res) => {
     res.json(CRITERIA_TYPES);
   });
-  
-  router.get('/', rbacVerifier, checkPermission('admin.badges.view'), async (req, res) => {
+
+  router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const badgeQuery = `
         SELECT cb.*,
@@ -341,7 +342,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
   });
 
-  router.get('/:id', rbacVerifier, checkPermission('admin.badges.view'), async (req, res) => {
+  router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const badgeQuery = `
         SELECT cb.*,
@@ -369,7 +370,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
   });
   
-  router.post('/', rbacVerifier, checkPermission('admin.badges.create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
@@ -395,7 +396,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
   });
   
-  router.put('/:id', rbacVerifier, checkPermission('admin.badges.edit'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden, color } = req.body;
     
     try {
@@ -420,7 +421,7 @@ module.exports = (db, rbacVerifier, checkPermission) => {
     }
   });
   
-  router.delete('/:id', rbacVerifier, checkPermission('admin.badges.delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     try {
       await db.query('BEGIN');
       

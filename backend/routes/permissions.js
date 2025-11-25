@@ -1,53 +1,49 @@
 const express = require('express');
 const router = express.Router();
 
-// Permissions routes
-module.exports = (db, rbacVerifier, checkPermission) => {
-  
-  // Get all available permissions
-  router.get('/', rbacVerifier, checkPermission('admin.roles.view'), async (req, res) => {
-    try {
-      const query = `
-        SELECT id, name, display_name, description, module
-        FROM permissions
-        WHERE is_system_permission = true
-        ORDER BY module, name
-      `;
-      
-      const { rows: permissions } = await db.query(query);
-      res.json(permissions);
-    } catch (err) {
-      console.error('Database error in GET /permissions:', err);
-      res.status(500).json({ error: 'Database error' });
-    }
+// Permissions sind jetzt hardcoded in roleHierarchy.js
+// Diese Route gibt nur noch statische Info zurück
+module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
+
+  // Statische Permissions-Info (für Dokumentation)
+  const STATIC_PERMISSIONS = {
+    org_admin: [
+      'Alle Berechtigungen in der eigenen Organisation',
+      'User-Verwaltung (erstellen, bearbeiten, löschen)',
+      'Rollen zuweisen',
+      'Einstellungen bearbeiten'
+    ],
+    admin: [
+      'Konfis verwalten (erstellen, bearbeiten, löschen)',
+      'Events verwalten',
+      'Badges verwalten',
+      'Aktivitäten verwalten',
+      'Anträge bearbeiten',
+      'Jahrgänge verwalten',
+      'Chat-Zugriff'
+    ],
+    teamer: [
+      'Konfis ansehen',
+      'Punkte vergeben',
+      'Events verwalten',
+      'Aktivitäten ansehen',
+      'Badges ansehen',
+      'Jahrgänge ansehen'
+    ],
+    konfi: [
+      'Eigene Daten ansehen',
+      'Eigene Punkte und Badges ansehen',
+      'An Events teilnehmen',
+      'Anträge einreichen'
+    ]
+  };
+
+  router.get('/', rbacVerifier, requireOrgAdmin, (req, res) => {
+    res.json(STATIC_PERMISSIONS);
   });
 
-  // Get permissions grouped by module
-  router.get('/grouped', rbacVerifier, checkPermission('admin.roles.view'), async (req, res) => {
-    try {
-      const query = `
-        SELECT id, name, display_name, description, module
-        FROM permissions
-        WHERE is_system_permission = true
-        ORDER BY module, name
-      `;
-      
-      const { rows: permissions } = await db.query(query);
-      
-      // Group by module
-      const grouped = {};
-      permissions.forEach(permission => {
-        if (!grouped[permission.module]) {
-          grouped[permission.module] = [];
-        }
-        grouped[permission.module].push(permission);
-      });
-      
-      res.json(grouped);
-    } catch (err) {
-      console.error('Database error in GET /permissions/grouped:', err);
-      res.status(500).json({ error: 'Database error' });
-    }
+  router.get('/grouped', rbacVerifier, requireOrgAdmin, (req, res) => {
+    res.json(STATIC_PERMISSIONS);
   });
 
   return router;
