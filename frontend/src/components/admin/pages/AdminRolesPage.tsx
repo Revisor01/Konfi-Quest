@@ -1,25 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import React, { useState, useEffect } from 'react';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
-  IonIcon,
-  useIonModal
+  IonIcon
 } from '@ionic/react';
-import { add, arrowBack } from 'ionicons/icons';
+import { arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import RolesView from '../RolesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import RoleManagementModal from '../modals/RoleManagementModal';
 
+// Vereinfachte Read-Only Rollen-Seite
+// Rollen sind jetzt hardcoded (5 System-Rollen), keine CRUD-Operationen mehr
 interface Role {
   id: number;
   name: string;
@@ -28,51 +27,18 @@ interface Role {
   is_system_role: boolean;
   is_active: boolean;
   user_count: number;
-  permission_count: number;
   created_at: string;
 }
 
 const AdminRolesPage: React.FC = () => {
-  const { setSuccess, setError, user } = useApp();
-  const { pageRef, presentingElement } = useModalPage('admin-roles');
-  
+  const { setError } = useApp();
+
   // State
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Modal state
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [modalRoleId, setModalRoleId] = useState<number | null>(null);
-
-  // Modal mit useIonModal Hook
-  const [presentRoleModalHook, dismissRoleModalHook] = useIonModal(RoleManagementModal, {
-    roleId: modalRoleId,
-    onClose: () => {
-      dismissRoleModalHook();
-      setSelectedRole(null);
-      setModalRoleId(null);
-    },
-    onSuccess: () => {
-      dismissRoleModalHook();
-      setSelectedRole(null);
-      setModalRoleId(null);
-      loadRoles();
-    }
-  });
 
   useEffect(() => {
     loadRoles();
-    
-    // Event-Listener für Updates
-    const handleRolesUpdated = () => {
-      loadRoles();
-    };
-    
-    window.addEventListener('roles-updated', handleRolesUpdated);
-    
-    return () => {
-      window.removeEventListener('roles-updated', handleRolesUpdated);
-    };
   }, []);
 
   const loadRoles = async () => {
@@ -88,86 +54,38 @@ const AdminRolesPage: React.FC = () => {
     }
   };
 
-  const handleDeleteRole = async (role: Role) => {
-    if (role.is_system_role) {
-      setError('System-Rollen können nicht gelöscht werden');
-      return;
-    }
-
-    if (!window.confirm(`Rolle "${role.display_name}" (${role.name}) wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/roles/${role.id}`);
-      setSuccess(`Rolle "${role.display_name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadRoles();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen der Rolle');
-      }
-    }
-  };
-
-  const handleSelectRole = (role: Role) => {
-    setSelectedRole(role);
-    setModalRoleId(role.id);
-    presentRoleModalHook({
-      presentingElement: presentingElement
-    });
-  };
-
-  const presentRoleModal = () => {
-    setSelectedRole(null);
-    setModalRoleId(null);
-    presentRoleModalHook({
-      presentingElement: presentingElement
-    });
-  };
-
   return (
-    <IonPage ref={pageRef}>
+    <IonPage>
       <IonHeader translucent={true}>
         <IonToolbar>
-        <IonButtons slot="start">
-          <IonButton onClick={() => window.history.back()}>
-            <IonIcon icon={arrowBack} />
-          </IonButton>
-        </IonButtons>
-          <IonTitle>Rollen-Verwaltung</IonTitle>
-          <IonButtons slot="end">
-            {user?.permissions?.includes('admin.roles.create') && (
-              <IonButton onClick={presentRoleModal}>
-                <IonIcon icon={add} />
-              </IonButton>
-            )}
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
           </IonButtons>
+          <IonTitle>System-Rollen</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Rollen-Verwaltung</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>System-Rollen</IonTitle>
           </IonToolbar>
         </IonHeader>
-        
+
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadRoles();
           e.detail.complete();
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
+
         {loading ? (
           <LoadingSpinner message="Rollen werden geladen..." />
         ) : (
-          <RolesView 
+          <RolesView
             roles={roles}
             onUpdate={loadRoles}
-            onAddRoleClick={presentRoleModal}
-            onSelectRole={handleSelectRole}
-            onDeleteRole={handleDeleteRole}
           />
         )}
       </IonContent>
