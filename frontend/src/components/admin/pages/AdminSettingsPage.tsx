@@ -74,7 +74,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* System-Verwaltung nur fuer org_admin */}
+        {/* Benutzer-Verwaltung - NUR fuer org_admin */}
         {user?.role_name === 'org_admin' && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{
@@ -94,7 +94,7 @@ const AdminSettingsPage: React.FC = () => {
                 boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
                 flexShrink: 0
               }}>
-                <IonIcon icon={shield} style={{ fontSize: '1rem', color: 'white' }} />
+                <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
               <h2 style={{
                 fontWeight: '600',
@@ -102,7 +102,7 @@ const AdminSettingsPage: React.FC = () => {
                 margin: '0',
                 color: '#333'
               }}>
-                System-Verwaltung
+                Benutzer-Verwaltung
               </h2>
             </div>
             <IonCard style={{
@@ -114,7 +114,6 @@ const AdminSettingsPage: React.FC = () => {
             }}>
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
-                  {/* Benutzer-Verwaltung */}
                   <IonItem
                     button
                     routerLink="/admin/users"
@@ -144,13 +143,55 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                     <IonLabel>
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer</h2>
-                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Systembenutzer und Zugriffsrechte verwalten</p>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Admins, Teamer und Rollen verwalten</p>
                     </IonLabel>
                   </IonItem>
+                </IonList>
+              </IonCardContent>
+            </IonCard>
+          </div>
+        )}
 
-                  {/* Rollen-Seite entfernt - Rollen sind hardcoded */}
-
-                  {/* Organisationen */}
+        {/* Organisations-Verwaltung - NUR fuer super_admin */}
+        {user?.role_name === 'super_admin' && (
+          <div style={{ margin: '16px 16px 8px 16px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px'
+            }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#2dd36f',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={business} style={{ fontSize: '1rem', color: 'white' }} />
+              </div>
+              <h2 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: '0',
+                color: '#333'
+              }}>
+                System-Administration
+              </h2>
+            </div>
+            <IonCard style={{
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0',
+              margin: '0'
+            }}>
+              <IonCardContent style={{ padding: '16px' }}>
+                <IonList style={{ background: 'transparent' }} lines="none">
                   <IonItem
                     button
                     routerLink="/admin/organizations"

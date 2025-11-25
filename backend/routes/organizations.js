@@ -3,14 +3,14 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 
 // Organizations routes
-// WICHTIG: users = nur Admin-Rollen (admin, org_admin, super_admin, teamer, custom)
-//          konfi_profiles = alle Konfis (mit direkter organization_id)
-//          Konfis werden NIEMALS als User angezeigt!
-// Organizations: super_admin für alle, org_admin für eigene
-module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
-  
-  // Get all organizations (super admin only)
-  router.get('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
+// ============================================
+// super_admin: Kann ALLE Orgs sehen, erstellen, loeschen
+// org_admin: Kann NUR eigene Org sehen und bearbeiten
+// ============================================
+module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
+
+  // Get all organizations - NUR super_admin
+  router.get('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
       const query = `
         SELECT o.*, 
@@ -33,13 +33,17 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
   });
 
   // Get single organization by ID
-  router.get('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // super_admin: alle, org_admin: nur eigene
+  router.get('/:id', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
-      
-      // Check if user can view this organization
-      if (req.user.organization_id !== parseInt(id) && !req.user.is_super_admin) {
-        return res.status(403).json({ error: 'Can only view your own organization' });
+
+      // Zugriffspruefung
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOwnOrg = req.user.organization_id === parseInt(id);
+
+      if (!isSuperAdmin && !isOwnOrg) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
       }
       
       const query = `
@@ -222,17 +226,21 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
   });
 
   // Update organization
-  router.put('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // super_admin: alle, org_admin: nur eigene
+  router.put('/:id', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
       const {
         name, slug, display_name, description, contact_email,
         contact_phone, address, website_url, is_active
       } = req.body;
-      
-      // Check if user can edit this organization
-      if (req.user.organization_id !== parseInt(id) && !req.user.is_super_admin) {
-        return res.status(403).json({ error: 'Can only edit your own organization' });
+
+      // Zugriffspruefung
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
+
+      if (!isSuperAdmin && !isOwnOrg) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
       }
       
       const query = `UPDATE organizations SET 
@@ -291,16 +299,18 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
     }
   });
 
-  // Get organization users
-  router.get('/:id/users', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  // Get organization users - org_admin nur fuer eigene Org
+  router.get('/:id/users', rbacVerifier, async (req, res) => {
+    // Zugriffspruefung: nur eigene Org
+    if (req.user.organization_id !== parseInt(req.params.id)) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+    if (req.user.role_name !== 'org_admin') {
+      return res.status(403).json({ error: 'Nur fuer Organisations-Admins' });
+    }
     try {
       const { id } = req.params;
-    
-      // Check if user can view this organization's users
-      if (req.user.organization_id !== parseInt(id) && !req.user.is_super_admin) {
-        return res.status(403).json({ error: 'Can only view users in your own organization' });
-      }
-      
+
       const query = `
         SELECT u.id, u.username, u.email, u.display_name, u.is_active, 
                u.last_login_at, u.created_at,
@@ -322,14 +332,17 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireOrgAdmin }) => {
     }
   });
 
-  // Get organization statistics
+  // Get organization statistics - nur eigene Org
   router.get('/:id/stats', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
-      
-      // Check if user can view this organization's stats
-      if (req.user.organization_id !== parseInt(id) && !req.user.is_super_admin) {
-        return res.status(403).json({ error: 'Can only view stats for your own organization' });
+
+      // Zugriffspruefung: nur eigene Org (oder super_admin fuer alle)
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOwnOrg = req.user.organization_id === parseInt(id);
+
+      if (!isSuperAdmin && !isOwnOrg) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
       }
       
       const statsQueries = {
