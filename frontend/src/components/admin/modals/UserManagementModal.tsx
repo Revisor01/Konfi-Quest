@@ -29,7 +29,8 @@ import {
   shieldOutline,
   schoolOutline,
   checkmarkCircle,
-  toggleOutline
+  toggleOutline,
+  briefcaseOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -39,6 +40,7 @@ interface User {
   username: string;
   email?: string;
   display_name: string;
+  role_title?: string; // Funktionsbeschreibung z.B. "Pastor", "Diakonin"
   is_active: boolean;
   last_login_at?: string;
   created_at: string;
@@ -94,6 +96,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     username: '',
     email: '',
     display_name: '',
+    role_title: '', // Funktionsbeschreibung z.B. "Pastor", "Diakonin"
     password: '',
     role_id: 0,
     is_active: true
@@ -161,6 +164,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         username: userData.username,
         email: userData.email || '',
         display_name: userData.display_name,
+        role_title: userData.role_title || '',
         password: '',
         role_id: userData.role_id,
         is_active: userData.is_active
@@ -198,6 +202,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         username: formData.username.trim(),
         email: formData.email.trim() || null,
         display_name: formData.display_name.trim(),
+        role_title: formData.role_title.trim() || null,
         role_id: formData.role_id,
         is_active: formData.is_active
       };
@@ -371,6 +376,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   value={formData.username}
                   onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
                   placeholder="max.mustermann"
+                  disabled={saving}
+                />
+              </IonItem>
+
+              <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6', marginRight: '12px' }} />
+                <IonLabel position="stacked">Funktionsbeschreibung (optional)</IonLabel>
+                <IonInput
+                  value={formData.role_title}
+                  onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
+                  placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
                   disabled={saving}
                 />
               </IonItem>

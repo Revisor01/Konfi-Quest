@@ -38,6 +38,7 @@ interface User {
   username: string;
   email?: string;
   display_name: string;
+  role_title?: string; // Funktionsbeschreibung z.B. "Pastor", "Diakonin"
   is_active: boolean;
   last_login_at?: string;
   created_at: string;
@@ -411,7 +412,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         border: '1px solid #e0e0e0'
       }}>
         <IonCardContent style={{ padding: '0' }}>
-          <IonList style={{ background: 'transparent' }}>
+          <IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
             {filteredAndSortedUsers.map((user) => (
               <IonItemSliding
                 key={user.id}
@@ -421,6 +422,7 @@ const UsersView: React.FC<UsersViewProps> = ({
               >
                 <IonItem
                   button={user.can_edit !== false}
+                  detail={false}
                   onClick={() => {
                     if (user.can_edit !== false) {
                       closeAllSlidingItems();
@@ -428,129 +430,205 @@ const UsersView: React.FC<UsersViewProps> = ({
                     }
                   }}
                   style={{
-                    '--min-height': '72px',
+                    '--min-height': '90px',
                     '--padding-start': '16px',
-                    '--padding-end': '16px',
-                    '--background': 'transparent'
+                    '--padding-top': '0px',
+                    '--padding-bottom': '0px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '4px 8px',
+                    boxShadow: !user.is_active
+                      ? '0 2px 8px rgba(239, 68, 68, 0.15)'
+                      : '0 2px 8px rgba(0,0,0,0.06)',
+                    border: !user.is_active
+                      ? '1px solid #fca5a5'
+                      : '1px solid #e0e0e0',
+                    borderRadius: '12px',
+                    opacity: user.is_active ? 1 : 0.8
                   }}
                 >
-                  {/* Avatar */}
-                  <div slot="start" style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
-                    background: `linear-gradient(135deg, ${getRoleColor(user.role_name)} 0%, ${getRoleColor(user.role_name)}dd 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: '600',
-                    fontSize: '0.95rem',
-                    marginRight: '12px',
-                    boxShadow: `0 4px 12px ${getRoleColor(user.role_name)}40`
-                  }}>
-                    {getInitials(user.display_name)}
-                  </div>
-
                   <IonLabel>
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '4px'
+                      gap: '12px',
+                      marginBottom: '6px'
                     }}>
-                      <h2 style={{
+                      {/* Avatar */}
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        background: `linear-gradient(135deg, ${getRoleColor(user.role_name)} 0%, ${getRoleColor(user.role_name)}dd 100%)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
                         fontWeight: '600',
-                        fontSize: '1rem',
-                        margin: '0',
-                        color: '#1a1a1a'
+                        fontSize: '0.9rem',
+                        boxShadow: `0 2px 8px ${getRoleColor(user.role_name)}40`,
+                        flexShrink: 0
                       }}>
-                        {user.display_name}
-                      </h2>
-                      {!user.is_active && (
-                        <IonIcon
-                          icon={closeCircle}
-                          style={{ fontSize: '0.9rem', color: '#ef4444' }}
-                        />
-                      )}
-                    </div>
+                        {getInitials(user.display_name)}
+                      </div>
 
-                    <p style={{
-                      fontSize: '0.8rem',
-                      color: '#666',
-                      margin: '0 0 6px 0'
-                    }}>
-                      @{user.username}
-                      {user.email && ` | ${user.email}`}
-                    </p>
+                      {/* Name und Funktionsbeschreibung */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          <h2 style={{
+                            fontWeight: '600',
+                            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                            margin: '0',
+                            color: user.is_active ? '#1a1a1a' : '#999',
+                            lineHeight: '1.3',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {user.display_name}
+                          </h2>
+                          {!user.is_active && (
+                            <IonIcon
+                              icon={closeCircle}
+                              style={{ fontSize: '0.9rem', color: '#ef4444', flexShrink: 0 }}
+                            />
+                          )}
+                        </div>
+                        {/* Funktionsbeschreibung anzeigen wenn vorhanden */}
+                        {user.role_title && (
+                          <p style={{
+                            fontSize: '0.8rem',
+                            color: '#666',
+                            margin: '2px 0 0 0',
+                            fontStyle: 'italic'
+                          }}>
+                            {user.role_title}
+                          </p>
+                        )}
+                      </div>
 
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      flexWrap: 'wrap'
-                    }}>
+                      {/* Status Badge */}
                       <IonBadge
                         color={getRoleBadgeColor(user.role_name)}
                         style={{
                           fontSize: '0.7rem',
                           padding: '3px 8px',
-                          borderRadius: '6px'
+                          borderRadius: '6px',
+                          flexShrink: 0
                         }}
                       >
                         {user.role_display_name}
                       </IonBadge>
+                    </div>
+
+                    {/* Details Row */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '0.8rem',
+                      color: user.is_active ? '#666' : '#999',
+                      marginLeft: '52px'
+                    }}>
+                      <span>@{user.username}</span>
 
                       {user.assigned_jahrgaenge_count > 0 && (
-                        <IonBadge
-                          color="tertiary"
-                          style={{
-                            fontSize: '0.7rem',
-                            padding: '3px 8px',
-                            borderRadius: '6px'
-                          }}
-                        >
-                          {user.assigned_jahrgaenge_count} Jahrgang{user.assigned_jahrgaenge_count > 1 ? 'e' : ''}
-                        </IonBadge>
+                        <>
+                          <span style={{ color: '#ccc' }}>|</span>
+                          <span style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: '#8b5cf6'
+                          }}>
+                            {user.assigned_jahrgaenge_count} Jg.
+                          </span>
+                        </>
                       )}
 
                       {user.last_login_at && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          color: '#999',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px'
-                        }}>
-                          <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
-                          {formatDate(user.last_login_at)}
-                        </span>
+                        <>
+                          <span style={{ color: '#ccc' }}>|</span>
+                          <span style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}>
+                            <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
+                            {formatDate(user.last_login_at)}
+                          </span>
+                        </>
                       )}
                     </div>
                   </IonLabel>
                 </IonItem>
 
                 {user.can_edit !== false && (
-                  <IonItemOptions side="end">
+                  <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
                     <IonItemOption
-                      color="primary"
                       onClick={() => {
                         closeAllSlidingItems();
                         onSelectUser(user);
                       }}
-                      style={{ borderRadius: '0' }}
+                      style={{
+                        '--background': 'transparent',
+                        '--background-activated': 'transparent',
+                        '--background-focused': 'transparent',
+                        '--background-hover': 'transparent',
+                        '--color': 'transparent',
+                        '--ripple-color': 'transparent',
+                        padding: '0 2px',
+                        minWidth: '48px',
+                        maxWidth: '48px'
+                      }}
                     >
-                      <IonIcon icon={createOutline} slot="icon-only" />
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: '#667eea',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                      }}>
+                        <IonIcon icon={createOutline} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
                     </IonItemOption>
                     <IonItemOption
-                      color="danger"
                       onClick={() => {
                         closeAllSlidingItems();
                         onDeleteUser(user);
                       }}
-                      style={{ borderRadius: '0' }}
+                      style={{
+                        '--background': 'transparent',
+                        '--background-activated': 'transparent',
+                        '--background-focused': 'transparent',
+                        '--background-hover': 'transparent',
+                        '--color': 'transparent',
+                        '--ripple-color': 'transparent',
+                        padding: '0 2px',
+                        paddingRight: '12px',
+                        minWidth: '48px',
+                        maxWidth: '60px'
+                      }}
                     >
-                      <IonIcon icon={trash} slot="icon-only" />
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: '#dc3545',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                      }}>
+                        <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      </div>
                     </IonItemOption>
                   </IonItemOptions>
                 )}

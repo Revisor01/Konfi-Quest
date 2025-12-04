@@ -29,7 +29,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     const organizationId = req.user.organization_id;
 
     const query = `
-      SELECT u.id, u.username, u.email, u.display_name, u.is_active,
+      SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
              r.name as role_name, r.display_name as role_display_name,
              COUNT(DISTINCT uja.jahrgang_id) as assigned_jahrgaenge_count
@@ -63,7 +63,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     const organizationId = req.user.organization_id;
 
     const userQuery = `
-      SELECT u.id, u.username, u.email, u.display_name, u.is_active,
+      SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
              r.id as role_id, r.name as role_name, r.display_name as role_display_name
       FROM users u
@@ -104,7 +104,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   // Create new user
   router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), async (req, res) => {
     const organizationId = req.user.organization_id;
-    const { username, email, display_name, password, role_id } = req.body;
+    const { username, email, display_name, role_title, password, role_id } = req.body;
 
     if (!username || !display_name || !password || !role_id) {
       return res.status(400).json({ error: 'Username, display_name, password, and role_id are required' });
@@ -123,11 +123,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const passwordHash = bcrypt.hashSync(password, 10);
 
       const insertQuery = `
-        INSERT INTO users (organization_id, username, email, display_name, password_hash, role_id)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO users (organization_id, username, email, display_name, role_title, password_hash, role_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id
       `;
-      const insertParams = [organizationId, username, email, display_name, passwordHash, role_id];
+      const insertParams = [organizationId, username, email, display_name, role_title || null, passwordHash, role_id];
       const { rows: [newUser] } = await db.query(insertQuery, insertParams);
 
       res.status(201).json({
@@ -151,7 +151,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   router.put('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('update'), async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
-    const { username, email, display_name, role_id, is_active, password } = req.body;
+    const { username, email, display_name, role_title, role_id, is_active, password } = req.body;
 
     try {
       // Check if user exists in organization
@@ -181,6 +181,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       addUpdate('username', username);
       addUpdate('email', email);
       addUpdate('display_name', display_name);
+      addUpdate('role_title', role_title);
       addUpdate('role_id', role_id);
       addUpdate('is_active', is_active);
 
