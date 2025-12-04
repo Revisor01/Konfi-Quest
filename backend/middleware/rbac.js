@@ -41,7 +41,7 @@ const verifyTokenRBAC = (db) => {
       // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
         SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active,
-               u.role_title,
+               u.role_title, u.is_super_admin,
                r.name as role_name, r.display_name as role_display_name,
                o.name as organization_name, o.slug as organization_slug,
                COALESCE(o.is_active, true) as organization_active
@@ -92,8 +92,8 @@ const verifyTokenRBAC = (db) => {
         assigned_jahrgaenge: assignedJahrgaenge,
         // Backward compatibility
         type: user.role_name === 'konfi' ? 'konfi' : 'admin',
-        // Korrigiert: is_super_admin ist NUR super_admin
-        is_super_admin: user.role_name === 'super_admin',
+        // is_super_admin: Rolle ODER DB-Flag
+        is_super_admin: user.role_name === 'super_admin' || user.is_super_admin === true,
         is_org_admin: user.role_name === 'org_admin'
       };
 

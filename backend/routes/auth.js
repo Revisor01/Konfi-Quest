@@ -41,11 +41,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
     try {
       const userQuery = `
         SELECT u.id, u.username, u.display_name, u.password_hash, u.organization_id, u.email, u.role_id,
+               u.is_super_admin,
                o.name as organization_name, o.slug as organization_slug,
                r.name as role_name, r.display_name as role_display_name,
                kp.jahrgang_id, j.name as jahrgang_name,
                kp.gottesdienst_points, kp.gemeinde_points
-        FROM users u 
+        FROM users u
         LEFT JOIN organizations o ON u.organization_id = o.id
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -76,7 +77,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
         display_name: user.display_name,
         email: user.email,
         organization_id: user.organization_id,
-        role_name: user.role_name
+        role_name: user.role_name,
+        is_super_admin: user.is_super_admin || false
       }, JWT_SECRET, { expiresIn: '24h' });
 
       const responseUser = {
@@ -86,7 +88,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
         email: user.email,
         organization: user.organization_name,
         role_name: user.role_name,
-        type: userType
+        type: userType,
+        is_super_admin: user.is_super_admin || false
       };
     
       if (userType === 'konfi') {
