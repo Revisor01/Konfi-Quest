@@ -124,7 +124,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   onSelectBadge,
   onDeleteBadge
 }) => {
-  const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
