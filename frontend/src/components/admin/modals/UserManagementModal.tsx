@@ -23,14 +23,7 @@ import {
 import {
   closeOutline,
   checkmarkOutline,
-  personOutline,
-  mailOutline,
-  keyOutline,
-  shieldOutline,
-  schoolOutline,
-  checkmarkCircle,
-  toggleOutline,
-  briefcaseOutline
+  checkmarkCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -192,7 +185,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
 
     if (!isEditMode && !formData.password.trim()) {
-      setError('Passwort ist fuer neue Benutzer erforderlich');
+      setError('Passwort ist für neue Benutzer erforderlich');
       return;
     }
 
@@ -271,7 +264,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     });
 
     presentActionSheet({
-      header: 'Rolle auswaehlen',
+      header: 'Rolle auswählen',
       buttons: buttons
     });
   };
@@ -319,36 +312,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       </IonHeader>
 
       <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION: Persoenliche Daten */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Persoenliche Daten
-          </h2>
-        </div>
-
+        {/* Persönliche Daten */}
         <IonCard style={{
           margin: '0 16px 16px 16px',
           borderRadius: '12px',
@@ -359,7 +323,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={personOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
                 <IonLabel position="stacked">Anzeigename *</IonLabel>
                 <IonInput
                   value={formData.display_name}
@@ -370,7 +333,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </IonItem>
 
               <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={personOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
                 <IonLabel position="stacked">Benutzername *</IonLabel>
                 <IonInput
                   value={formData.username}
@@ -381,7 +343,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </IonItem>
 
               <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6', marginRight: '12px' }} />
                 <IonLabel position="stacked">Funktionsbeschreibung (optional)</IonLabel>
                 <IonInput
                   value={formData.role_title}
@@ -392,7 +353,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </IonItem>
 
               <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={mailOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
                 <IonLabel position="stacked">E-Mail (optional)</IonLabel>
                 <IonInput
                   type="email"
@@ -404,7 +364,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </IonItem>
 
               <IonItem style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#f59e0b', marginRight: '12px' }} />
                 <IonLabel position="stacked">
                   Passwort {!isEditMode && <span style={{ color: '#ef4444' }}>*</span>}
                 </IonLabel>
@@ -412,7 +371,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   type="password"
                   value={formData.password}
                   onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
-                  placeholder={isEditMode ? "Leer lassen um nicht zu aendern" : "Passwort eingeben"}
+                  placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
                   disabled={saving}
                 />
               </IonItem>
@@ -420,36 +379,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* SEKTION: Rolle und Status */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#ef4444',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={shieldOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Rolle & Status
-          </h2>
-        </div>
-
+        {/* Rolle und Status */}
         <IonCard style={{
           margin: '0 16px 16px 16px',
           borderRadius: '12px',
@@ -469,11 +399,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   marginBottom: '12px'
                 }}
               >
-                <IonIcon icon={shieldOutline} slot="start" style={{ color: '#ef4444', marginRight: '12px' }} />
                 <IonLabel>
                   <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Rolle *</h3>
                   <p style={{ color: getSelectedRole() ? '#333' : '#999', margin: 0 }}>
-                    {getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswaehlen...'}
+                    {getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswählen...'}
                   </p>
                 </IonLabel>
               </IonItem>
@@ -489,7 +418,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               )}
 
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonIcon icon={toggleOutline} slot="start" style={{ color: formData.is_active ? '#22c55e' : '#6b7280', marginRight: '12px' }} />
                 <IonLabel>
                   <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Konto aktiv</h3>
                   <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
@@ -506,36 +434,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* SEKTION: Jahrgang-Zuweisungen */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#8b5cf6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={schoolOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Jahrgang-Zuweisungen
-          </h2>
-        </div>
-
+        {/* Jahrgang-Zuweisungen */}
         <IonCard style={{
           margin: '0 16px 16px 16px',
           borderRadius: '12px',
@@ -547,7 +446,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             {jahrgaenge.length === 0 ? (
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel style={{ textAlign: 'center' }}>
-                  <p style={{ color: '#999', margin: 0 }}>Keine Jahrgaenge verfuegbar</p>
+                  <p style={{ color: '#999', margin: 0 }}>Keine Jahrgänge verfügbar</p>
                 </IonLabel>
               </IonItem>
             ) : (
@@ -585,13 +484,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   );
                 })}
 
-                <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '8px' }}>
-                  <IonText color="medium">
-                    <p style={{ fontSize: '0.8rem', margin: 0 }}>
-                      Hinweis: Admins haben automatisch Zugriff auf alle Jahrgaenge.
-                    </p>
-                  </IonText>
-                </IonItem>
               </IonList>
             )}
           </IonCardContent>
@@ -600,35 +492,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         {/* Bestehende Zuweisungen im Edit-Modus */}
         {isEditMode && user?.assigned_jahrgaenge && user.assigned_jahrgaenge.length > 0 && (
           <>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              margin: '16px 16px 12px 16px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#22c55e',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={checkmarkCircle} style={{ fontSize: '1rem', color: 'white' }} />
-              </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Aktuelle Zuweisungen
-              </h2>
-            </div>
-
             <IonCard style={{
               margin: '0 16px 24px 16px',
               borderRadius: '12px',

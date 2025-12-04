@@ -140,7 +140,7 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   return (
     <>
-      {/* Header - Dashboard-Style mit Gradient */}
+      {/* Header - Dashboard-Style wie EventsView */}
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         borderRadius: '24px',
@@ -150,165 +150,124 @@ const UsersView: React.FC<UsersViewProps> = ({
         boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '180px',
+        minHeight: '220px',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Background Pattern */}
+        {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.1,
-          background: `radial-gradient(circle at 20% 80%, white 2px, transparent 2px),
-                       radial-gradient(circle at 80% 20%, white 2px, transparent 2px),
-                       radial-gradient(circle at 40% 40%, white 1px, transparent 1px)`,
-          backgroundSize: '60px 60px, 80px 80px, 40px 40px'
-        }} />
-
-        {/* Header Content */}
-        <div style={{ padding: '20px', position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
+          top: '-5px',
+          left: '12px',
+          zIndex: 1
+        }}>
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'white' }} />
-            </div>
-            <div>
-              <h1 style={{
-                margin: 0,
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                color: 'white'
-              }}>
-                Team-Verwaltung
-              </h1>
-              <p style={{
-                margin: '2px 0 0 0',
-                fontSize: '0.85rem',
-                color: 'rgba(255,255,255,0.8)'
-              }}>
-                Admins, Teamer und Rollen verwalten
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '8px'
-          }}>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {users.length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Gesamt
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getActiveUsers().length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Aktiv
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getAdminUsers().length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Admins
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getTeamerUsers().length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Teamer
-              </div>
-            </div>
-          </div>
+            TEAM
+          </h2>
         </div>
-      </div>
 
-      {/* Suche und Filter Section */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        margin: '16px 16px 12px 16px'
-      }}>
+        {/* Content */}
         <div style={{
-          width: '32px',
-          height: '32px',
-          backgroundColor: '#667eea',
-          borderRadius: '50%',
+          position: 'relative',
+          zIndex: 2,
+          padding: '70px 24px 24px 24px',
+          flex: 1,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-          flexShrink: 0
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}>
-          <IonIcon icon={search} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+            <IonRow>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={people}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{users.length}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Gesamt
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={shield}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{getAdminUsers().length}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Admins
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 12px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={person}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '1.5rem' }}>{getTeamerUsers().length}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                    Teamer
+                  </div>
+                </div>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
         </div>
-        <h2 style={{
-          fontWeight: '600',
-          fontSize: '1.1rem',
-          margin: '0',
-          color: '#333'
-        }}>
-          Suche & Filter
-        </h2>
       </div>
 
+      {/* Suchfeld */}
       <IonCard style={{
-        margin: '0 16px 16px 16px',
+        margin: '16px',
         borderRadius: '12px',
         background: 'white',
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
@@ -374,38 +333,9 @@ const UsersView: React.FC<UsersViewProps> = ({
         </IonCardContent>
       </IonCard>
 
-      {/* Benutzer-Liste Section */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        margin: '16px 16px 12px 16px'
-      }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          backgroundColor: '#764ba2',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(118, 75, 162, 0.3)',
-          flexShrink: 0
-        }}>
-          <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
-        </div>
-        <h2 style={{
-          fontWeight: '600',
-          fontSize: '1.1rem',
-          margin: '0',
-          color: '#333'
-        }}>
-          Benutzer ({filteredAndSortedUsers.length})
-        </h2>
-      </div>
-
+      {/* Benutzer-Liste */}
       <IonCard style={{
-        margin: '0 16px 16px 16px',
+        margin: '16px',
         borderRadius: '12px',
         background: 'white',
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',

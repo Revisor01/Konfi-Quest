@@ -163,7 +163,9 @@ const AdminProfilePage: React.FC = () => {
                 {user?.display_name || 'Administrator'}
               </h1>
               <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                Administrator
+                {profileData.role_title
+                  ? `Administrator · ${profileData.role_title}`
+                  : 'Administrator'}
               </p>
             </div>
           </IonCardContent>
