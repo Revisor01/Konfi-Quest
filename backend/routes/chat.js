@@ -525,23 +525,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       }
       
       const messagesQuery = `
-      SELECT m.*, 
+      SELECT m.*,
               m.user_id as sender_id,
               m.user_type as sender_type,
               u.display_name as sender_name,
+              u.role_title as sender_role_title,
+              ro.display_name as sender_role_display_name,
               u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
               p.id as poll_id,
-              CASE 
-                WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde gelöscht'
+              CASE
+                WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde geloescht'
                 ELSE m.content
               END as content,
-              CASE 
+              CASE
                 WHEN m.deleted_at IS NOT NULL THEN true
                 ELSE false
               END as is_deleted
       FROM chat_messages m
       LEFT JOIN users u ON m.user_id = u.id
+      LEFT JOIN roles ro ON u.role_id = ro.id
       LEFT JOIN chat_polls p ON m.id = p.message_id
       WHERE m.room_id = $1
       ORDER BY m.created_at DESC

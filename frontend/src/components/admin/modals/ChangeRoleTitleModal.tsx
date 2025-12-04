@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -20,48 +20,37 @@ import {
 import {
   closeOutline,
   checkmarkOutline,
-  mailOutline,
+  briefcaseOutline,
   informationCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
-interface ChangeEmailModalProps {
+interface ChangeRoleTitleModalProps {
   onClose: () => void;
   onSuccess: () => void;
-  initialEmail?: string;
+  initialRoleTitle?: string;
 }
 
-const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
+const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   onClose,
   onSuccess,
-  initialEmail = ''
+  initialRoleTitle = ''
 }) => {
   const { setSuccess, setError } = useApp();
-  const [email, setEmail] = useState(initialEmail);
+  const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!email.trim()) {
-      setError('E-Mail-Adresse ist erforderlich');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Ungueltige E-Mail-Adresse');
-      return;
-    }
-
     setSaving(true);
     try {
-      await api.post('/auth/update-email', {
-        email: email.trim()
+      await api.post('/auth/update-role-title', {
+        role_title: roleTitle.trim()
       });
-      setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
+      setSuccess('Funktionsbeschreibung erfolgreich aktualisiert');
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+      setError(err.response?.data?.error || 'Fehler beim Aktualisieren der Funktionsbeschreibung');
     } finally {
       setSaving(false);
     }
@@ -71,14 +60,14 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>E-Mail aendern</IonTitle>
+          <IonTitle>Funktionsbeschreibung</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose} disabled={saving}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || !email.trim()}>
+            <IonButton onClick={handleSave} disabled={saving}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -86,7 +75,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
       </IonHeader>
 
       <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION: E-Mail-Adresse */}
+        {/* SEKTION: Funktionsbeschreibung */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -96,15 +85,15 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           <div style={{
             width: '32px',
             height: '32px',
-            backgroundColor: '#667eea',
+            backgroundColor: '#8b5cf6',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
             flexShrink: 0
           }}>
-            <IonIcon icon={mailOutline} style={{ fontSize: '1rem', color: 'white' }} />
+            <IonIcon icon={briefcaseOutline} style={{ fontSize: '1rem', color: 'white' }} />
           </div>
           <h2 style={{
             fontWeight: '600',
@@ -112,7 +101,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             margin: '0',
             color: '#333'
           }}>
-            E-Mail-Adresse
+            Deine Funktion
           </h2>
         </div>
 
@@ -125,14 +114,13 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': 'transparent' }}>
-                <IonIcon icon={mailOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
-                <IonLabel position="stacked">E-Mail-Adresse *</IonLabel>
+              <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
+                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6', marginRight: '12px' }} />
+                <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
                 <IonInput
-                  type="email"
-                  value={email}
-                  onIonInput={(e) => setEmail(e.detail.value!)}
-                  placeholder="deine@email.de"
+                  value={roleTitle}
+                  onIonInput={(e) => setRoleTitle(e.detail.value!)}
+                  placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
                   disabled={saving}
                 />
               </IonItem>
@@ -180,7 +168,11 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           <IonCardContent style={{ padding: '16px' }}>
             <IonText color="primary">
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Diese E-Mail-Adresse wird fuer Passwort-Reset und Benachrichtigungen verwendet.
+                Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
+                Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergaenzt sie.
+              </p>
+              <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
               </p>
             </IonText>
           </IonCardContent>
@@ -190,4 +182,4 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   );
 };
 
-export default ChangeEmailModal;
+export default ChangeRoleTitleModal;

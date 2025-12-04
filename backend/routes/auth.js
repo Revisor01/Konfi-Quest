@@ -148,17 +148,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
   router.post('/update-email', verifyToken, async (req, res) => {
     const { email } = req.body;
     const userId = req.user.id;
-    
+
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+      return res.status(400).json({ error: 'Ungueltige E-Mail-Adresse' });
     }
 
     try {
       await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [email, userId]);
-      
+
       console.log(`✅ Email updated for ${req.user.type} ID ${userId} to ${email}`);
       res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert' });
 
@@ -168,6 +168,59 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
         }
         console.error('Database error in POST /api/auth/update-email:', err);
         res.status(500).json({ error: 'Fehler beim Aktualisieren der E-Mail-Adresse' });
+    }
+  });
+
+  // Update role title / Funktionsbeschreibung (for authenticated users - only admins/teamers)
+  router.post('/update-role-title', verifyToken, async (req, res) => {
+    const { role_title } = req.body;
+    const userId = req.user.id;
+
+    // Nur Admins und Teamer koennen ihren Titel aendern (keine Konfis)
+    if (req.user.type === 'konfi') {
+      return res.status(403).json({ error: 'Konfis koennen keine Funktionsbeschreibung setzen' });
+    }
+
+    try {
+      // Leerer String oder null wird als NULL gespeichert
+      const titleValue = role_title?.trim() || null;
+
+      await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
+
+      console.log(`✅ Role title updated for ${req.user.type} ID ${userId} to "${titleValue}"`);
+      res.json({
+        message: 'Funktionsbeschreibung erfolgreich aktualisiert',
+        role_title: titleValue
+      });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/update-role-title:', err);
+      res.status(500).json({ error: 'Fehler beim Aktualisieren der Funktionsbeschreibung' });
+    }
+  });
+
+  // Get current user profile (for authenticated users)
+  router.get('/me', verifyToken, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+      const { rows: [user] } = await db.query(`
+        SELECT u.id, u.username, u.display_name, u.email, u.role_title,
+               r.name as role_name, r.display_name as role_display_name
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.id = $1
+      `, [userId]);
+
+      if (!user) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      res.json(user);
+
+    } catch (err) {
+      console.error('Database error in GET /api/auth/me:', err);
+      res.status(500).json({ error: 'Fehler beim Laden des Profils' });
     }
   });
 

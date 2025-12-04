@@ -420,6 +420,8 @@ interface Message {
   content: string;
   sender_id: number;
   sender_name: string;
+  sender_role_title?: string; // z.B. "Pastor", "Diakonin"
+  sender_role_display_name?: string; // z.B. "Admin", "Teamer"
   sender_type: 'admin' | 'konfi';
   created_at: string;
   file_path?: string;
@@ -1008,6 +1010,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               color: '#17a2b8'
             }}>
               {message.sender_name || 'Unbekannter User'}
+              {(message.sender_role_title || message.sender_role_display_name) && (
+                <span style={{
+                  fontWeight: 'normal',
+                  color: '#6c757d',
+                  marginLeft: '6px'
+                }}>
+                  ({message.sender_role_title || message.sender_role_display_name})
+                </span>
+              )}
             </div>
           )}
           
