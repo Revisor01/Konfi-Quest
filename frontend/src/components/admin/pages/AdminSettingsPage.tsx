@@ -102,7 +102,7 @@ const AdminSettingsPage: React.FC = () => {
                 margin: '0',
                 color: '#333'
               }}>
-                Benutzer-Verwaltung
+                Benutzer:innen-Verwaltung
               </h2>
             </div>
             <IonCard style={{
@@ -142,7 +142,7 @@ const AdminSettingsPage: React.FC = () => {
                       <IonIcon icon={people} style={{ fontSize: '1.2rem', color: 'white' }} />
                     </div>
                     <IonLabel>
-                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer</h2>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer:innen</h2>
                       <p style={{ fontSize: '0.8rem', color: '#666' }}>Admins, Teamer und Rollen verwalten</p>
                     </IonLabel>
                   </IonItem>

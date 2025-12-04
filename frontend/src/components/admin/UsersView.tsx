@@ -374,13 +374,14 @@ const UsersView: React.FC<UsersViewProps> = ({
                   }}
                 >
                   <IonLabel>
+                    {/* Header mit Icon wie EventsView */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
                       marginBottom: '4px'
                     }}>
-                      {/* Avatar - 32px wie EventsView */}
+                      {/* Role Icon - 32px wie EventsView */}
                       <div style={{
                         width: '32px',
                         height: '32px',
@@ -389,13 +390,13 @@ const UsersView: React.FC<UsersViewProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: '600',
-                        fontSize: '0.75rem',
                         boxShadow: `0 2px 8px ${getRoleColor(user.role_name)}40`,
                         flexShrink: 0
                       }}>
-                        {getInitials(user.display_name)}
+                        <IonIcon
+                          icon={user.role_name === 'org_admin' ? shield : user.role_name === 'admin' ? shield : person}
+                          style={{ fontSize: '0.9rem', color: 'white' }}
+                        />
                       </div>
 
                       {/* Name */}
