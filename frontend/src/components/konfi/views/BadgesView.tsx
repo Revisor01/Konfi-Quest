@@ -266,7 +266,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             <IonGrid style={{ padding: '0', margin: '0 4px' }}>
               <IonRow>
                 {filteredBadges.map((badge) => (
-                  <IonCol size="6" key={badge.id} style={{ padding: '0px 4px 8px 4px' }}>
+                  <IonCol size="6" sizeMd="4" sizeLg="3" sizeXl="2" key={badge.id} style={{ padding: '0px 4px 8px 4px' }}>
                     <IonCard style={{
                       margin: '0',
                       backgroundColor: badge.is_earned ? '#fbfbfb' : '#f8f9fa',
