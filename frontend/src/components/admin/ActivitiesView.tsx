@@ -341,13 +341,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   onClick={canEdit ? () => onSelectActivity(activity) : undefined}
                   detail={false}
                   style={{
-                    '--min-height': '80px',
+                    '--min-height': '90px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
-                    margin: '6px 8px',
+                    margin: '4px 8px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                     border: '1px solid #e0e0e0',
                     borderRadius: '12px',
@@ -361,33 +361,36 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '4px',
+                      marginBottom: '6px',
                       position: 'relative'
                     }}>
                       {/* Activity Icon */}
                       <div style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '40px',
+                        height: '40px',
                         backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        boxShadow: activity.type === 'gottesdienst'
+                          ? '0 2px 8px rgba(0, 122, 255, 0.4)'
+                          : '0 2px 8px rgba(45, 211, 111, 0.4)'
                       }}>
                         <IonIcon
                           icon={getTypeIcon(activity.type)}
                           style={{
-                            fontSize: '0.9rem',
+                            fontSize: '1.1rem',
                             color: 'white'
                           }}
                         />
                       </div>
 
                       {/* Activity Name */}
-                      <h3 style={{
+                      <h2 style={{
                         fontWeight: '600',
-                        fontSize: '1rem',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
                         margin: '0',
                         color: '#333',
                         lineHeight: '1.3',
@@ -399,7 +402,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                         whiteSpace: 'nowrap'
                       }}>
                         {activity.name}
-                      </h3>
+                      </h2>
 
                       {/* Points Badge */}
                       <span style={{

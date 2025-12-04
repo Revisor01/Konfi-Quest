@@ -385,7 +385,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     '--padding-bottom': '0px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
-                    margin: '6px 8px',
+                    margin: '4px 8px',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                     border: '1px solid #e0e0e0',
                     borderRadius: '12px'

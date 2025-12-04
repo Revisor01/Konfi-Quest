@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -28,7 +28,8 @@ import {
   arrowBack,
   logOut,
   checkmark,
-  information
+  information,
+  briefcaseOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -36,12 +37,27 @@ import api from '../../../services/api';
 import { logout } from '../../../services/auth';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
+import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  
+  const [profileData, setProfileData] = useState<{ role_title?: string }>({});
+
+  // Profildaten laden
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setProfileData(response.data);
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      }
+    };
+    loadProfile();
+  }, []);
+
   // Email Modal mit useIonModal Hook
   const [presentEmailModalHook, dismissEmailModalHook] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModalHook(),
@@ -55,6 +71,16 @@ const AdminProfilePage: React.FC = () => {
     onSuccess: () => dismissPasswordModalHook()
   });
 
+  // RoleTitle Modal mit useIonModal Hook
+  const [presentRoleTitleModalHook, dismissRoleTitleModalHook] = useIonModal(ChangeRoleTitleModal, {
+    onClose: () => dismissRoleTitleModalHook(),
+    onSuccess: () => {
+      dismissRoleTitleModalHook();
+      // Profil neu laden
+      api.get('/auth/me').then(res => setProfileData(res.data)).catch(console.error);
+    },
+    initialRoleTitle: profileData.role_title || ''
+  });
 
   const handleOpenEmailModal = () => {
     presentEmailModalHook({
@@ -64,6 +90,12 @@ const AdminProfilePage: React.FC = () => {
 
   const handleOpenPasswordModal = () => {
     presentPasswordModalHook({
+      presentingElement: presentingElement || undefined
+    });
+  };
+
+  const handleOpenRoleTitleModal = () => {
+    presentRoleTitleModalHook({
       presentingElement: presentingElement || undefined
     });
   };
@@ -144,6 +176,14 @@ const AdminProfilePage: React.FC = () => {
               Konto-Einstellungen
             </h3>
             
+            <IonItem button onClick={handleOpenRoleTitleModal}>
+              <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6' }} />
+              <IonLabel>
+                <h3>Funktionsbeschreibung</h3>
+                <p>{profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin, Jugendmitarbeiter'}</p>
+              </IonLabel>
+            </IonItem>
+
             <IonItem button onClick={handleOpenEmailModal}>
               <IonIcon icon={mail} slot="start" color="primary" />
               <IonLabel>

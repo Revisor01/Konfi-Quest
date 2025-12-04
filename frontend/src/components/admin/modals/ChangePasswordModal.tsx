@@ -56,7 +56,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     }
 
     if (passwordData.new_password !== passwordData.confirm_password) {
-      setError('Neue Passwoerter stimmen nicht ueberein');
+      setError('Neue Passwörter stimmen nicht überein');
       return;
     }
 
@@ -71,10 +71,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         currentPassword: passwordData.current_password,
         newPassword: passwordData.new_password
       });
-      setSuccess('Passwort erfolgreich geaendert');
+      setSuccess('Passwort erfolgreich geändert');
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aendern des Passworts');
+      setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
     } finally {
       setSaving(false);
     }
@@ -90,7 +90,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Passwort aendern</IonTitle>
+          <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose} disabled={saving}>
               <IonIcon icon={closeOutline} />
@@ -258,7 +258,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             <IonCardContent style={{ padding: '12px 16px' }}>
               <IonText color="danger">
                 <p style={{ margin: 0, fontSize: '0.85rem' }}>
-                  Die Passwoerter stimmen nicht ueberein.
+                  Die Passwörter stimmen nicht überein.
                 </p>
               </IonText>
             </IonCardContent>

@@ -153,7 +153,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Ungueltige E-Mail-Adresse' });
+      return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
     }
 
     try {
@@ -176,9 +176,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
     const { role_title } = req.body;
     const userId = req.user.id;
 
-    // Nur Admins und Teamer koennen ihren Titel aendern (keine Konfis)
+    // Nur Admins und Teamer können ihren Titel ändern (keine Konfis)
     if (req.user.type === 'konfi') {
-      return res.status(403).json({ error: 'Konfis koennen keine Funktionsbeschreibung setzen' });
+      return res.status(403).json({ error: 'Konfis können keine Funktionsbeschreibung setzen' });
     }
 
     try {

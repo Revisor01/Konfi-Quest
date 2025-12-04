@@ -49,7 +49,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Ungueltige E-Mail-Adresse');
+      setError('Ungültige E-Mail-Adresse');
       return;
     }
 
@@ -71,7 +71,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>E-Mail aendern</IonTitle>
+          <IonTitle>E-Mail ändern</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose} disabled={saving}>
               <IonIcon icon={closeOutline} />
@@ -180,7 +180,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           <IonCardContent style={{ padding: '16px' }}>
             <IonText color="primary">
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Diese E-Mail-Adresse wird fuer Passwort-Reset und Benachrichtigungen verwendet.
+                Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.
               </p>
             </IonText>
           </IonCardContent>
