@@ -360,21 +360,17 @@ const UsersView: React.FC<UsersViewProps> = ({
                     }
                   }}
                   style={{
-                    '--min-height': '90px',
+                    '--min-height': '72px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '4px 8px',
-                    boxShadow: !user.is_active
-                      ? '0 2px 8px rgba(239, 68, 68, 0.15)'
-                      : '0 2px 8px rgba(0,0,0,0.06)',
-                    border: !user.is_active
-                      ? '1px solid #fca5a5'
-                      : '1px solid #e0e0e0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
                     borderRadius: '12px',
-                    opacity: user.is_active ? 1 : 0.8
+                    opacity: user.is_active ? 1 : 0.6
                   }}
                 >
                   <IonLabel>
@@ -382,117 +378,52 @@ const UsersView: React.FC<UsersViewProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '6px'
+                      marginBottom: '4px'
                     }}>
-                      {/* Avatar */}
+                      {/* Avatar - 32px wie EventsView */}
                       <div style={{
-                        width: '40px',
-                        height: '40px',
+                        width: '32px',
+                        height: '32px',
                         borderRadius: '50%',
-                        background: `linear-gradient(135deg, ${getRoleColor(user.role_name)} 0%, ${getRoleColor(user.role_name)}dd 100%)`,
+                        backgroundColor: getRoleColor(user.role_name),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
                         fontWeight: '600',
-                        fontSize: '0.9rem',
+                        fontSize: '0.75rem',
                         boxShadow: `0 2px 8px ${getRoleColor(user.role_name)}40`,
                         flexShrink: 0
                       }}>
                         {getInitials(user.display_name)}
                       </div>
 
-                      {/* Name und Funktionsbeschreibung */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}>
-                          <h2 style={{
-                            fontWeight: '600',
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-                            margin: '0',
-                            color: user.is_active ? '#1a1a1a' : '#999',
-                            lineHeight: '1.3',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {user.display_name}
-                          </h2>
-                          {!user.is_active && (
-                            <IonIcon
-                              icon={closeCircle}
-                              style={{ fontSize: '0.9rem', color: '#ef4444', flexShrink: 0 }}
-                            />
-                          )}
-                        </div>
-                        {/* Funktionsbeschreibung anzeigen wenn vorhanden */}
-                        {user.role_title && (
-                          <p style={{
-                            fontSize: '0.8rem',
-                            color: '#666',
-                            margin: '2px 0 0 0',
-                            fontStyle: 'italic'
-                          }}>
-                            {user.role_title}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Status Badge */}
-                      <IonBadge
-                        color={getRoleBadgeColor(user.role_name)}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          flexShrink: 0
-                        }}
-                      >
-                        {user.role_display_name}
-                      </IonBadge>
+                      {/* Name */}
+                      <h2 style={{
+                        fontWeight: '600',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                        margin: '0',
+                        color: user.is_active ? '#333' : '#999',
+                        lineHeight: '1.3',
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {user.display_name}
+                      </h2>
                     </div>
 
-                    {/* Details Row */}
+                    {/* Details Row - vereinfacht */}
                     <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
                       fontSize: '0.8rem',
                       color: user.is_active ? '#666' : '#999',
-                      marginLeft: '52px'
+                      marginLeft: '44px'
                     }}>
-                      <span>@{user.username}</span>
-
-                      {user.assigned_jahrgaenge_count > 0 && (
-                        <>
-                          <span style={{ color: '#ccc' }}>|</span>
-                          <span style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            color: '#8b5cf6'
-                          }}>
-                            {user.assigned_jahrgaenge_count} Jg.
-                          </span>
-                        </>
-                      )}
-
-                      {user.last_login_at && (
-                        <>
-                          <span style={{ color: '#ccc' }}>|</span>
-                          <span style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px'
-                          }}>
-                            <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
-                            {formatDate(user.last_login_at)}
-                          </span>
-                        </>
-                      )}
+                      {user.role_display_name}
+                      {user.role_title && ` · ${user.role_title}`}
+                      {user.assigned_jahrgaenge_count > 0 && ` · ${user.assigned_jahrgaenge_count} Jg.`}
                     </div>
                   </IonLabel>
                 </IonItem>

@@ -341,7 +341,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                   onClick={canEdit ? () => onSelectActivity(activity) : undefined}
                   detail={false}
                   style={{
-                    '--min-height': '90px',
+                    '--min-height': '72px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
@@ -364,10 +364,10 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       marginBottom: '6px',
                       position: 'relative'
                     }}>
-                      {/* Activity Icon */}
+                      {/* Activity Icon - 32px wie andere Views */}
                       <div style={{
-                        width: '40px',
-                        height: '40px',
+                        width: '32px',
+                        height: '32px',
                         backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                         borderRadius: '50%',
                         display: 'flex',
@@ -381,7 +381,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                         <IonIcon
                           icon={getTypeIcon(activity.type)}
                           style={{
-                            fontSize: '1.1rem',
+                            fontSize: '0.9rem',
                             color: 'white'
                           }}
                         />
@@ -431,7 +431,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      marginLeft: '40px'
+                      marginLeft: '44px'
                     }}>
                       <span>
                         {getTypeText(activity.type)}
