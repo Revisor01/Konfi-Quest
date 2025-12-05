@@ -445,5 +445,54 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     }
   });
 
+  // Reset password for a user (super_admin or org_admin of same org)
+  router.put('/:id/reset-password', rbacVerifier, async (req, res) => {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' });
+    }
+
+    try {
+      // Pruefen ob User existiert
+      const { rows: [targetUser] } = await db.query(`
+        SELECT u.id, u.organization_id, r.name as role_name
+        FROM users u
+        LEFT JOIN roles r ON u.role_id = r.id
+        WHERE u.id = $1
+      `, [id]);
+
+      if (!targetUser) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
+      // Berechtigungspruefung
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOrgAdmin = req.user.role_name === 'org_admin';
+      const isSameOrg = req.user.organization_id === targetUser.organization_id;
+
+      // super_admin darf alle resetten, org_admin nur in eigener Org
+      if (!isSuperAdmin && !(isOrgAdmin && isSameOrg)) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
+      }
+
+      // org_admin darf keine anderen org_admins resetten
+      if (isOrgAdmin && targetUser.role_name === 'org_admin' && targetUser.id !== req.user.id) {
+        return res.status(403).json({ error: 'Sie koennen das Passwort eines anderen Organisations-Admins nicht zuruecksetzen' });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
+
+      console.log(`Password reset by ${req.user.role_name} (ID: ${req.user.id}) for user ID ${id}`);
+      res.json({ message: 'Passwort erfolgreich zurueckgesetzt' });
+
+    } catch (err) {
+      console.error(`Database error in PUT /users/${id}/reset-password:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   return router;
 };

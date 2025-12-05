@@ -148,11 +148,11 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         }}>
           <IonGrid style={{ padding: '0', margin: '0 4px' }}>
             <IonRow>
-              <IonCol size="3" style={{ padding: '0 4px' }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
                   borderRadius: '12px',
-                  padding: '16px 8px',
+                  padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
                 }}>
@@ -173,36 +173,11 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   </div>
                 </div>
               </IonCol>
-              <IonCol size="3" style={{ padding: '0 4px' }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
                   borderRadius: '12px',
-                  padding: '16px 8px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getActiveOrganizations().length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Aktiv
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="3" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 8px',
+                  padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
                 }}>
@@ -223,11 +198,11 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                   </div>
                 </div>
               </IonCol>
-              <IonCol size="3" style={{ padding: '0 4px' }}>
+              <IonCol size="4" style={{ padding: '0 4px' }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.2)',
                   borderRadius: '12px',
-                  padding: '16px 8px',
+                  padding: '16px 12px',
                   color: 'white',
                   textAlign: 'center'
                 }}>

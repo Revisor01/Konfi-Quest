@@ -299,20 +299,21 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
-  // Get organization users - org_admin nur fuer eigene Org
+  // Get organization users - org_admin fuer eigene Org, super_admin fuer alle
   router.get('/:id/users', rbacVerifier, async (req, res) => {
-    // Zugriffspruefung: nur eigene Org
-    if (req.user.organization_id !== parseInt(req.params.id)) {
+    const isSuperAdmin = req.user.role_name === 'super_admin';
+    const isOwnOrg = req.user.organization_id === parseInt(req.params.id);
+    const isOrgAdmin = req.user.role_name === 'org_admin';
+
+    // Zugriffspruefung: super_admin oder org_admin der eigenen Org
+    if (!isSuperAdmin && !(isOwnOrg && isOrgAdmin)) {
       return res.status(403).json({ error: 'Keine Berechtigung' });
-    }
-    if (req.user.role_name !== 'org_admin') {
-      return res.status(403).json({ error: 'Nur fuer Organisations-Admins' });
     }
     try {
       const { id } = req.params;
 
       const query = `
-        SELECT u.id, u.username, u.email, u.display_name, u.is_active, 
+        SELECT u.id, u.username, u.email, u.display_name, u.is_active,
                u.last_login_at, u.created_at,
                r.name as role_name, r.display_name as role_display_name,
                COUNT(DISTINCT uja.jahrgang_id) as assigned_jahrgaenge_count
@@ -323,11 +324,33 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         GROUP BY u.id, r.name, r.display_name
         ORDER BY u.created_at DESC
       `;
-      
+
       const { rows: users } = await db.query(query, [id]);
       res.json(users);
     } catch (err) {
       console.error('Error fetching organization users:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Get organization admins (org_admin role) - nur super_admin
+  router.get('/:id/admins', rbacVerifier, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const query = `
+        SELECT u.id, u.username, u.email, u.display_name, u.is_active,
+               u.last_login_at, u.created_at
+        FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.organization_id = $1 AND r.name = 'org_admin'
+        ORDER BY u.created_at ASC
+      `;
+
+      const { rows: admins } = await db.query(query, [id]);
+      res.json(admins);
+    } catch (err) {
+      console.error('Error fetching organization admins:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });
