@@ -31,7 +31,8 @@ import {
   star,
   home,
   people,
-  flash
+  flash,
+  pricetag
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -431,15 +432,24 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       color: '#666',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      marginLeft: '44px'
+                      gap: '16px'
                     }}>
-                      <span>
-                        {getTypeText(activity.type)}
-                        {activity.categories && activity.categories.length > 0 && (
-                          <> • {activity.categories.map(cat => cat.name).join(', ')}</>
-                        )}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon
+                          icon={getTypeIcon(activity.type)}
+                          style={{
+                            fontSize: '0.8rem',
+                            color: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                          }}
+                        />
+                        <span>{getTypeText(activity.type)}</span>
+                      </div>
+                      {activity.categories && activity.categories.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={pricetag} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
+                          <span>{activity.categories.map(cat => cat.name).join(', ')}</span>
+                        </div>
+                      )}
                     </div>
                   </IonLabel>
                 </IonItem>

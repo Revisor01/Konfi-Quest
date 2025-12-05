@@ -23,7 +23,6 @@ Konsistente Farben für Icons in allen Listen und Views.
 | Gebäude | `business` | Organisation | Grün | `#2dd36f` |
 | At-Zeichen | `at` | Benutzername | Blau | `#007aff` |
 | E-Mail | `mailOutline` | E-Mail | Blau | `#007aff` |
-| Aktentasche | `briefcaseOutline` | Funktionsbeschreibung | Orange | `#f59e0b` |
 
 ## Inhalte
 

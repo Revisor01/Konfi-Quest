@@ -132,7 +132,7 @@ const AdminUsersPage: React.FC = () => {
             <IonIcon icon={arrowBack} />
           </IonButton>
         </IonButtons>
-          <IonTitle>Benutzer-Verwaltung</IonTitle>
+          <IonTitle>Benutzer:innen</IonTitle>
           <IonButtons slot="end">
             {user?.role_name === 'org_admin' && (
               <IonButton onClick={presentUserModal}>
@@ -145,7 +145,7 @@ const AdminUsersPage: React.FC = () => {
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Benutzer-Verwaltung</IonTitle>
+            <IonTitle size="large" style={{ color: 'black' }}>Benutzer:innen</IonTitle>
           </IonToolbar>
         </IonHeader>
         

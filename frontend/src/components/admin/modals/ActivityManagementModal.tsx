@@ -344,22 +344,27 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 }}
                 disabled={loading}
                 style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
+                  '--background': formData.type === 'gottesdienst' ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
+                  '--border-radius': '8px',
+                  marginBottom: '6px'
                 }}
               >
-                <IonLabel>Gottesdienst</IonLabel>
                 <IonCheckbox
-                  slot="end"
                   checked={formData.type === 'gottesdienst'}
+                  slot="start"
                   disabled={loading}
+                  style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
                 />
+                <IonLabel>
+                  <h3 style={{ fontWeight: '500', margin: 0 }}>Gottesdienst</h3>
+                </IonLabel>
+                {formData.type === 'gottesdienst' && (
+                  <IonIcon
+                    icon={checkmarkCircle}
+                    slot="end"
+                    style={{ color: '#16a34a' }}
+                  />
+                )}
               </IonItem>
               <IonItem
                 lines="none"
@@ -372,22 +377,27 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 }}
                 disabled={loading}
                 style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
+                  '--background': formData.type === 'gemeinde' ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
+                  '--border-radius': '8px',
+                  marginBottom: '6px'
                 }}
               >
-                <IonLabel>Gemeinde</IonLabel>
                 <IonCheckbox
-                  slot="end"
                   checked={formData.type === 'gemeinde'}
+                  slot="start"
                   disabled={loading}
+                  style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
                 />
+                <IonLabel>
+                  <h3 style={{ fontWeight: '500', margin: 0 }}>Gemeinde</h3>
+                </IonLabel>
+                {formData.type === 'gemeinde' && (
+                  <IonIcon
+                    icon={checkmarkCircle}
+                    slot="end"
+                    style={{ color: '#16a34a' }}
+                  />
+                )}
               </IonItem>
             </IonList>
           </IonCardContent>

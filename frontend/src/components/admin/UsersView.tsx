@@ -33,8 +33,7 @@ import {
   at,
   school,
   time,
-  mailOutline,
-  briefcaseOutline
+  mailOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -444,15 +443,23 @@ const UsersView: React.FC<UsersViewProps> = ({
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '16px',
+                      gap: '12px',
                       fontSize: '0.8rem',
                       color: user.is_active ? '#666' : '#999'
                     }}>
                       {user.role_title && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={briefcaseOutline} style={{ fontSize: '0.8rem', color: user.is_active ? '#f59e0b' : '#999' }} />
-                          <span>{user.role_title}</span>
-                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          color: user.is_active ? '#f59e0b' : '#999',
+                          fontWeight: '600',
+                          backgroundColor: user.is_active ? 'rgba(245, 158, 11, 0.15)' : 'rgba(153, 153, 153, 0.15)',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          border: user.is_active ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(153, 153, 153, 0.3)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {user.role_title}
+                        </span>
                       )}
                       {user.assigned_jahrgaenge_count > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
