@@ -522,12 +522,12 @@ const AdminJahrgaengeePage: React.FC = () => {
                               alignItems: 'center',
                               gap: '4px'
                             }}>
-                              <IonIcon icon={calendar} style={{ fontSize: '0.8rem', color: '#007aff' }} />
+                              <IonIcon icon={calendar} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
                               <span style={{
                                 fontSize: '0.8rem',
                                 color: '#666'
                               }}>
-                                {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
+                                Konfirmationsdatum: {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
                               </span>
                             </div>
                           )}

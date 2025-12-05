@@ -381,7 +381,7 @@ const AdminLevelsPage: React.FC = () => {
                                   alignItems: 'center',
                                   gap: '4px'
                                 }}>
-                                  <IonIcon icon={informationCircle} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                                  <IonIcon icon={informationCircle} style={{ fontSize: '0.8rem', color: '#007aff' }} />
                                   <span style={{
                                     fontSize: '0.8rem',
                                     color: '#666'

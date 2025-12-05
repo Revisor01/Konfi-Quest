@@ -528,7 +528,7 @@ const AdminCategoriesPage: React.FC = () => {
                               gap: '4px',
                               marginLeft: '0'
                             }}>
-                              <IonIcon icon={informationCircleOutline} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                              <IonIcon icon={informationCircleOutline} style={{ fontSize: '0.8rem', color: '#007aff' }} />
                               <span style={{
                                 fontSize: '0.8rem',
                                 color: '#666'
