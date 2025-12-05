@@ -259,22 +259,19 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '8px 0' }}>
           {filteredAndSortedRequests.length === 0 ? (
-            <div style={{
-              padding: '40px 20px',
-              textAlign: 'center',
-              color: '#666'
-            }}>
+            <div style={{ textAlign: 'center', padding: '32px' }}>
               <IonIcon
                 icon={document}
                 style={{
                   fontSize: '3rem',
-                  opacity: 0.3,
-                  marginBottom: '16px'
+                  color: '#ff9500',
+                  marginBottom: '16px',
+                  display: 'block',
+                  margin: '0 auto 16px auto'
                 }}
               />
-              <p style={{ margin: '0', fontSize: '1rem' }}>
-                Noch keine Anträge
-              </p>
+              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Anträge vorhanden</h3>
+              <p style={{ color: '#999', margin: '0' }}>Konfirmand:innen können Aktivitäten beantragen</p>
             </div>
           ) : (
             <IonList lines="none" style={{ background: 'transparent' }}>
