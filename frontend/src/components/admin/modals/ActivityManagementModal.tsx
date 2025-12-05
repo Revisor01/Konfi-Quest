@@ -17,7 +17,7 @@ import {
   IonCard,
   IonCardContent
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -276,7 +276,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -287,7 +287,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '12px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -457,24 +457,27 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                       }}
                       disabled={loading}
                       style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px'
+                        '--background': isChecked ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
+                        '--border-radius': '8px',
+                        marginBottom: '6px'
                       }}
                     >
-                      <IonLabel>
-                        {category.name}
-                      </IonLabel>
                       <IonCheckbox
-                        slot="end"
                         checked={isChecked}
+                        slot="start"
                         disabled={loading}
+                        style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
                       />
+                      <IonLabel>
+                        <h3 style={{ fontWeight: '500', margin: 0 }}>{category.name}</h3>
+                      </IonLabel>
+                      {isChecked && (
+                        <IonIcon
+                          icon={checkmarkCircle}
+                          slot="end"
+                          style={{ color: '#16a34a' }}
+                        />
+                      )}
                     </IonItem>
                   );
                 })}

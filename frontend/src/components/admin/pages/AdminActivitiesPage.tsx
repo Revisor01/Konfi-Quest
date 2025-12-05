@@ -12,7 +12,7 @@ import {
   IonIcon,
   useIonModal
 } from '@ionic/react';
-import { add } from 'ionicons/icons';
+import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -126,6 +126,11 @@ const AdminActivitiesPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
+          </IonButtons>
           <IonTitle>Aktivitäten</IonTitle>
           {canCreate && (
             <IonButtons slot="end">
