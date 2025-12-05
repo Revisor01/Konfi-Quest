@@ -133,16 +133,16 @@ const requireRole = (...allowedRoles) => {
 // ============================================
 // ROLLEN-CHECKS (KORRIGIERT)
 // ============================================
-// super_admin: Vollzugriff auf alles (System-Administrator)
+// super_admin: NUR Organisations-Verwaltung, sonst KEIN Zugriff
 // org_admin: Alles in eigener Organisation (inkl. User)
 // admin: Alles AUSSER User-Verwaltung
 // teamer: Events, Konfis ansehen, Punkte vergeben
 // ============================================
 
 const requireSuperAdmin = requireRole('super_admin');           // NUR fuer Org Create/Delete
-const requireOrgAdmin = requireRole('super_admin', 'org_admin'); // User-Verwaltung in Org
-const requireAdmin = requireRole('super_admin', 'org_admin', 'admin'); // Konfis, Requests, Badges, etc.
-const requireTeamer = requireRole('super_admin', 'org_admin', 'admin', 'teamer'); // Events, Punkte vergeben
+const requireOrgAdmin = requireRole('org_admin');               // User-Verwaltung in Org
+const requireAdmin = requireRole('org_admin', 'admin');         // Konfis, Requests, Badges, etc.
+const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Punkte vergeben
 
 // ============================================
 // JAHRGANG-ZUGRIFF
@@ -154,8 +154,13 @@ const checkJahrgangAccess = (jahrgangIdParam = 'jahrgangId', requireEdit = false
       return res.status(401).json({ error: 'Nicht angemeldet' });
     }
 
-    // Super-Admin, Org-Admin und Admin haben Zugriff auf alle Jahrgänge
-    if (['super_admin', 'org_admin', 'admin'].includes(req.user.role_name)) {
+    // super_admin hat KEINEN Zugriff auf Jahrgangs-Daten
+    if (req.user.role_name === 'super_admin') {
+      return res.status(403).json({ error: 'Super-Admin hat keinen Zugriff auf Jahrgangs-Daten' });
+    }
+
+    // Org-Admin und Admin haben Zugriff auf alle Jahrgänge ihrer Organisation
+    if (['org_admin', 'admin'].includes(req.user.role_name)) {
       return next();
     }
 
@@ -189,8 +194,13 @@ const filterByJahrgangAccess = (req) => {
     return { where: 'WHERE 1=0', params: [] };
   }
 
-  // Super-Admin, Org-Admin und Admin sehen alles in ihrer Organisation
-  if (['super_admin', 'org_admin', 'admin'].includes(req.user.role_name)) {
+  // super_admin hat KEINEN Zugriff auf Jahrgangs-Daten
+  if (req.user.role_name === 'super_admin') {
+    return { where: 'WHERE 1=0', params: [] };
+  }
+
+  // Org-Admin und Admin sehen alles in ihrer Organisation
+  if (['org_admin', 'admin'].includes(req.user.role_name)) {
     return {
       where: 'WHERE organization_id = $1',
       params: [req.user.organization_id]
