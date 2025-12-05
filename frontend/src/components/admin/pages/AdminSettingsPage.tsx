@@ -22,7 +22,8 @@ import {
   school,
   person,
   trophy,
-  logOut
+  logOut,
+  flash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -74,7 +75,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* Benutzer-Verwaltung - NUR fuer org_admin */}
+        {/* BLOCK 1: Verwaltung - fuer org_admin */}
         {user?.role_name === 'org_admin' && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{
@@ -94,7 +95,7 @@ const AdminSettingsPage: React.FC = () => {
                 boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
                 flexShrink: 0
               }}>
-                <IonIcon icon={people} style={{ fontSize: '1rem', color: 'white' }} />
+                <IonIcon icon={shield} style={{ fontSize: '1rem', color: 'white' }} />
               </div>
               <h2 style={{
                 fontWeight: '600',
@@ -102,7 +103,7 @@ const AdminSettingsPage: React.FC = () => {
                 margin: '0',
                 color: '#333'
               }}>
-                Benutzer:innen-Verwaltung
+                Verwaltung
               </h2>
             </div>
             <IonCard style={{
@@ -143,7 +144,7 @@ const AdminSettingsPage: React.FC = () => {
                     </div>
                     <IonLabel>
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer:innen</h2>
-                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Admins, Teamer und Rollen verwalten</p>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Admins, Teamer:innen und Rollen verwalten</p>
                     </IonLabel>
                   </IonItem>
                 </IonList>
@@ -152,7 +153,7 @@ const AdminSettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Organisations-Verwaltung - NUR fuer super_admin */}
+        {/* System-Administration - NUR fuer super_admin */}
         {user?.role_name === 'super_admin' && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{
@@ -230,6 +231,7 @@ const AdminSettingsPage: React.FC = () => {
           </div>
         )}
 
+        {/* BLOCK 2: Inhalt */}
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <div style={{
             display: 'flex',
@@ -256,7 +258,7 @@ const AdminSettingsPage: React.FC = () => {
               margin: '0',
               color: '#333'
             }}>
-              Inhalts-Verwaltung
+              Inhalt
             </h2>
           </div>
           <IonCard style={{
@@ -268,6 +270,38 @@ const AdminSettingsPage: React.FC = () => {
           }}>
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }} lines="none">
+                <IonItem
+                  button
+                  routerLink="/admin/activities"
+                  lines="none"
+                  style={{
+                    '--min-height': '56px',
+                    '--padding-start': '16px',
+                    '--background': '#fbfbfb',
+                    '--border-radius': '12px',
+                    margin: '6px 0',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '12px'
+                  }}
+                >
+                  <div slot="start" style={{
+                    width: '40px',
+                    height: '40px',
+                    backgroundColor: '#16a34a',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '12px'
+                  }}>
+                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  </div>
+                  <IonLabel>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Aktivitäten</h2>
+                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Aktivitäten und Punkte verwalten</p>
+                  </IonLabel>
+                </IonItem>
                 <IonItem
                   button
                   routerLink="/admin/settings/categories"
@@ -297,7 +331,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Kategorien</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Kategorien für Aktivitäten und Events verwalten</p>
+                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Kategorien für Aktivitäten und Events</p>
                   </IonLabel>
                 </IonItem>
                 <IonItem
@@ -329,7 +363,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Jahrgänge</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Konfirmanden-Jahrgänge verwalten</p>
+                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Konfirmand:innen verwalten</p>
                   </IonLabel>
                 </IonItem>
                 <IonItem
@@ -361,7 +395,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Level-System</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Punkte-Level und Belohnungen verwalten</p>
+                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Punkte-Level und Belohnungen</p>
                   </IonLabel>
                 </IonItem>
               </IonList>
@@ -373,6 +407,7 @@ const AdminSettingsPage: React.FC = () => {
           <PushNotificationSettings />
         </div>
 
+        {/* Konto */}
         <div style={{ margin: '16px 16px 8px 16px' }}>
           <div style={{
             display: 'flex',

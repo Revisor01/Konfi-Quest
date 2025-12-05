@@ -21,8 +21,8 @@ import {
   IonBadge
 } from '@ionic/react';
 import {
-  people, chatbubbles, calendar, star, ellipsisHorizontal,
-  person, home, flash, pricetag, school, document, shield, business
+  people, chatbubbles, star, ellipsisHorizontal,
+  person, home, flash, document, calendar
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -150,10 +150,6 @@ const MainTabs: React.FC = () => {
                   {badgeCount > 99 ? '99+' : badgeCount}
                 </IonBadge>
               )}
-            </IonTabButton>
-            <IonTabButton tab="admin-activities" href="/admin/activities">
-              <IonIcon icon={calendar} />
-              <IonLabel>Aktivitäten</IonLabel>
             </IonTabButton>
             <IonTabButton tab="admin-events" href="/admin/events">
               <IonIcon icon={flash} />

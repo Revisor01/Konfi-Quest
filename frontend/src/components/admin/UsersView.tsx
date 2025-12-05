@@ -256,7 +256,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{getTeamerUsers().length}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Teamer
+                    Teamer:innen
                   </div>
                 </div>
               </IonCol>

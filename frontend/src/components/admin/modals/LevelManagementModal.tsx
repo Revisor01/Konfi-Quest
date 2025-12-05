@@ -262,7 +262,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px', '--background': '#f8f9fa' }}>
+      <IonContent style={{ '--padding-top': '16px' }}>
         {/* SEKTION: Grunddaten */}
         <div style={{
           display: 'flex',
