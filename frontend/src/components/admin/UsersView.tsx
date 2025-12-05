@@ -33,7 +33,8 @@ import {
   at,
   school,
   time,
-  mailOutline
+  mailOutline,
+  briefcaseOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -378,14 +379,15 @@ const UsersView: React.FC<UsersViewProps> = ({
                   }}
                 >
                   <IonLabel>
-                    {/* Header mit Icon wie EventsView */}
+                    {/* Header mit Icon und Rollen-Badge rechts */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '4px'
+                      marginBottom: '4px',
+                      position: 'relative'
                     }}>
-                      {/* Role Icon - 32px wie EventsView */}
+                      {/* Role Icon - 32px */}
                       <div style={{
                         width: '32px',
                         height: '32px',
@@ -412,55 +414,66 @@ const UsersView: React.FC<UsersViewProps> = ({
                         lineHeight: '1.3',
                         flex: 1,
                         minWidth: 0,
+                        maxWidth: 'calc(100% - 120px)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}>
                         {user.display_name}
                       </h2>
+
+                      {/* Rollen-Badge rechts außen */}
+                      <span style={{
+                        fontSize: '0.7rem',
+                        color: user.is_active ? getRoleColor(user.role_name) : '#999',
+                        fontWeight: '600',
+                        backgroundColor: user.is_active ? `${getRoleColor(user.role_name)}15` : 'rgba(153, 153, 153, 0.15)',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        border: user.is_active ? `1px solid ${getRoleColor(user.role_name)}30` : '1px solid rgba(153, 153, 153, 0.3)',
+                        whiteSpace: 'nowrap',
+                        position: 'absolute',
+                        right: '0px',
+                        top: '50%',
+                        transform: 'translateY(-50%)'
+                      }}>
+                        {user.role_name === 'org_admin' ? 'Org Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Teamer:in'}
+                      </span>
                     </div>
 
-                    {/* Username und Rolle - Zeile 1 */}
+                    {/* Username und Titel - Zeile 1 */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
                       fontSize: '0.85rem',
                       color: user.is_active ? '#666' : '#999',
-                      marginBottom: '4px'
+                      marginBottom: '4px',
+                      marginLeft: '44px'
                     }}>
                       <IonIcon icon={at} style={{ fontSize: '0.9rem', color: user.is_active ? '#007aff' : '#999' }} />
                       <span style={{ fontWeight: '500', color: user.is_active ? '#333' : '#999' }}>
                         {user.username}
                       </span>
-                      <IonIcon icon={shieldOutline} style={{ fontSize: '0.9rem', color: user.is_active ? getRoleColor(user.role_name) : '#999', marginLeft: '8px' }} />
-                      <span style={{ color: user.is_active ? '#666' : '#999' }}>
-                        {user.role_display_name}
-                      </span>
+                      {user.role_title && (
+                        <>
+                          <IonIcon icon={briefcaseOutline} style={{ fontSize: '0.85rem', color: user.is_active ? '#f59e0b' : '#999', marginLeft: '8px' }} />
+                          <span style={{ color: user.is_active ? '#666' : '#999' }}>
+                            {user.role_title}
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {/* Details - Zeile 2 */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
+                      gap: '16px',
                       fontSize: '0.8rem',
-                      color: user.is_active ? '#666' : '#999'
+                      color: user.is_active ? '#666' : '#999',
+                      marginLeft: '44px'
                     }}>
-                      {user.role_title && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          color: user.is_active ? '#f59e0b' : '#999',
-                          fontWeight: '600',
-                          backgroundColor: user.is_active ? 'rgba(245, 158, 11, 0.15)' : 'rgba(153, 153, 153, 0.15)',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          border: user.is_active ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(153, 153, 153, 0.3)',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {user.role_title}
-                        </span>
-                      )}
                       {user.assigned_jahrgaenge_count > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <IonIcon icon={school} style={{ fontSize: '0.8rem', color: user.is_active ? '#007aff' : '#999' }} />

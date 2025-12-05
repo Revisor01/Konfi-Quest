@@ -375,13 +375,21 @@ const AdminLevelsPage: React.FC = () => {
                               }}>
                                 {level.title}
                               </h2>
-                              <p style={{
-                                margin: '0',
-                                fontSize: '0.8rem',
-                                color: '#666'
-                              }}>
-                                {level.description || 'Keine Beschreibung'}
-                              </p>
+                              {level.description && (
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <IonIcon icon={informationCircle} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                                  <span style={{
+                                    fontSize: '0.8rem',
+                                    color: '#666'
+                                  }}>
+                                    {level.description}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <IonChip style={{ marginRight: '0' }}>
                               <IonLabel style={{ fontSize: '0.75rem' }}>{level.points_required} P</IonLabel>

@@ -36,7 +36,8 @@ import {
   arrowBack,
   flash,
   list,
-  trash
+  trash,
+  informationCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -521,13 +522,20 @@ const AdminCategoriesPage: React.FC = () => {
                             {category.name}
                           </h2>
                           {category.description && (
-                            <p style={{
-                              margin: '0',
-                              fontSize: '0.8rem',
-                              color: '#666'
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              marginLeft: '0'
                             }}>
-                              {category.description}
-                            </p>
+                              <IonIcon icon={informationCircleOutline} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                              <span style={{
+                                fontSize: '0.8rem',
+                                color: '#666'
+                              }}>
+                                {category.description}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

@@ -432,7 +432,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                       color: '#666',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '16px'
+                      gap: '16px',
+                      marginLeft: '44px'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <IonIcon
