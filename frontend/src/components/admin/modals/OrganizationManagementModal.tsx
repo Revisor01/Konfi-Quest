@@ -28,7 +28,10 @@ import {
   keyOutline,
   alertCircleOutline,
   people,
-  flash
+  flash,
+  callOutline,
+  locationOutline,
+  addOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -40,6 +43,8 @@ interface Organization {
   display_name: string;
   description?: string;
   contact_email?: string;
+  contact_phone?: string;
+  address?: string;
   website_url?: string;
   is_active: boolean;
   created_at: string;
@@ -77,18 +82,24 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     display_name: '',
     description: '',
     contact_email: '',
+    contact_phone: '',
+    address: '',
     website_url: '',
     is_active: true,
-    // Admin-Daten fuer neue Organisation
-    admin_name: '',        // Anzeigename des Admins (z.B. "Pastor Mueller")
+    // Admin-Daten für neue Organisation
+    admin_name: '',        // Anzeigename des Admins (z.B. "Pastor Müller")
     admin_username: '',    // Login-Name (z.B. "pmueller")
     admin_password: ''
   });
 
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [orgAdmin, setOrgAdmin] = useState<OrgAdmin | null>(null);
+  const [orgAdmins, setOrgAdmins] = useState<OrgAdmin[]>([]);
   const [newPassword, setNewPassword] = useState('');
+  const [selectedAdminId, setSelectedAdminId] = useState<number | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [newAdminData, setNewAdminData] = useState({ display_name: '', username: '', password: '' });
+  const [addingAdmin, setAddingAdmin] = useState(false);
 
   const isEditMode = !!organizationId;
 
@@ -131,6 +142,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         display_name: orgData.display_name || '',
         description: orgData.description || '',
         contact_email: orgData.contact_email || '',
+        contact_phone: orgData.contact_phone || '',
+        address: orgData.address || '',
         website_url: orgData.website_url || '',
         is_active: orgData.is_active !== undefined ? orgData.is_active : true,
         admin_name: '',
@@ -138,14 +151,14 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         admin_password: ''
       });
 
-      // Org-Admin laden
+      // Org-Admins laden
       try {
         const usersResponse = await api.get(`/organizations/${organizationId}/admins`);
-        if (usersResponse.data && usersResponse.data.length > 0) {
-          setOrgAdmin(usersResponse.data[0]);
+        if (usersResponse.data) {
+          setOrgAdmins(usersResponse.data);
         }
       } catch (err) {
-        console.log('Could not load org admin:', err);
+        console.log('Could not load org admins:', err);
       }
     } catch (err) {
       setError('Fehler beim Laden der Organisation');
@@ -177,7 +190,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     if (formData.contact_email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.contact_email.trim())) {
-        setError('Ungueltige E-Mail-Adresse');
+        setError('Ungültige E-Mail-Adresse');
         return;
       }
     }
@@ -192,6 +205,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         display_name: formData.display_name.trim(),
         description: formData.description.trim() || null,
         contact_email: formData.contact_email.trim() || null,
+        contact_phone: formData.contact_phone.trim() || null,
+        address: formData.address.trim() || null,
         website_url: formData.website_url.trim() || null,
         is_active: formData.is_active
       };
@@ -218,8 +233,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!orgAdmin || !newPassword.trim()) {
+  const handleResetPassword = async (adminId: number) => {
+    if (!newPassword.trim()) {
       setError('Bitte geben Sie ein neues Passwort ein');
       return;
     }
@@ -230,14 +245,41 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     }
 
     setResettingPassword(true);
+    setSelectedAdminId(adminId);
     try {
-      await api.put(`/users/${orgAdmin.id}/reset-password`, { password: newPassword });
-      setSuccess('Passwort erfolgreich zurueckgesetzt');
+      await api.put(`/users/${adminId}/reset-password`, { password: newPassword });
+      setSuccess('Passwort erfolgreich zurückgesetzt');
       setNewPassword('');
+      setSelectedAdminId(null);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Zuruecksetzen des Passworts');
+      setError(err.response?.data?.error || 'Fehler beim Zurücksetzen des Passworts');
     } finally {
       setResettingPassword(false);
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    if (!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim()) {
+      setError('Alle Felder sind erforderlich');
+      return;
+    }
+
+    if (newAdminData.password.length < 6) {
+      setError('Das Passwort muss mindestens 6 Zeichen lang sein');
+      return;
+    }
+
+    setAddingAdmin(true);
+    try {
+      const response = await api.post(`/organizations/${organizationId}/admins`, newAdminData);
+      setOrgAdmins([...orgAdmins, response.data]);
+      setNewAdminData({ display_name: '', username: '', password: '' });
+      setShowAddAdmin(false);
+      setSuccess('Neuer Administrator erfolgreich hinzugefügt');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler beim Hinzufügen des Administrators');
+    } finally {
+      setAddingAdmin(false);
     }
   };
 
@@ -342,6 +384,21 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonLabel position="stacked">E-Mail</IonLabel>
                 <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={saving} />
               </IonItem>
+              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Telefon</IonLabel>
+                <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={saving} />
+              </IonItem>
+              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+                <IonLabel position="stacked">Adresse</IonLabel>
+                <IonTextarea
+                  value={formData.address}
+                  onIonInput={(e) => setFormData({ ...formData, address: e.detail.value! })}
+                  placeholder="Kirchstraße 1, 25764 Wesselburen"
+                  autoGrow={true}
+                  rows={2}
+                  disabled={saving}
+                />
+              </IonItem>
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
                 <IonLabel position="stacked">Website</IonLabel>
                 <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={saving} />
@@ -368,7 +425,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
                 <IonLabel>
                   <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
-                  <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer koennen sich anmelden</p>
+                  <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
                 </IonLabel>
                 <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={saving} />
               </IonItem>
@@ -428,60 +485,161 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </>
         )}
 
-        {/* SEKTION: Organisations-Administrator verwalten (nur im Edit-Modus) */}
-        {isEditMode && orgAdmin && (
+        {/* SEKTION: Organisations-Administratoren verwalten (nur im Edit-Modus) */}
+        {isEditMode && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-              <div style={{
-                width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-              }}>
-                <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '16px 16px 12px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
+                }}>
+                  <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
+                </div>
+                <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>
+                  Organisations-Administratoren
+                </h2>
               </div>
-              <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>
-                Organisations-Administrator
-              </h2>
+              <IonButton
+                size="small"
+                fill="clear"
+                onClick={() => setShowAddAdmin(!showAddAdmin)}
+                style={{ '--color': '#2dd36f' }}
+              >
+                <IonIcon icon={addOutline} slot="start" />
+                Hinzufügen
+              </IonButton>
             </div>
 
             <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
               <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                    {/* Initialen-Icon */}
-                    <div slot="start" style={{
-                      width: '40px', height: '40px', borderRadius: '50%',
-                      backgroundColor: '#2dd36f', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'white', fontWeight: '700', fontSize: '0.9rem',
-                      boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-                    }}>
-                      {getInitials(orgAdmin.display_name)}
+                {/* Bestehende Admins */}
+                {orgAdmins.length > 0 ? (
+                  <IonList style={{ background: 'transparent' }} lines="none">
+                    {orgAdmins.map((admin) => (
+                      <div key={admin.id} style={{ marginBottom: '16px' }}>
+                        <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+                          <div slot="start" style={{
+                            width: '40px', height: '40px', borderRadius: '50%',
+                            backgroundColor: admin.is_active ? '#2dd36f' : '#6b7280',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontWeight: '700', fontSize: '0.9rem',
+                            boxShadow: admin.is_active ? '0 2px 8px rgba(45, 211, 111, 0.3)' : 'none'
+                          }}>
+                            {getInitials(admin.display_name)}
+                          </div>
+                          <IonLabel>
+                            <h3 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>{admin.display_name}</h3>
+                            <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
+                              Login: {admin.username}
+                              {admin.email && ` · ${admin.email}`}
+                            </p>
+                          </IonLabel>
+                        </IonItem>
+
+                        {/* Passwort zurücksetzen für diesen Admin */}
+                        <div style={{ marginLeft: '48px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <IonIcon icon={keyOutline} style={{ color: '#2dd36f', fontSize: '0.9rem' }} />
+                            <span style={{ fontWeight: '500', fontSize: '0.85rem', color: '#666' }}>Passwort zurücksetzen</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <IonInput
+                              type="password"
+                              value={selectedAdminId === admin.id ? newPassword : ''}
+                              onIonInput={(e) => {
+                                setSelectedAdminId(admin.id);
+                                setNewPassword(e.detail.value!);
+                              }}
+                              placeholder="Neues Passwort"
+                              disabled={resettingPassword}
+                              style={{
+                                '--background': '#f8f9fa',
+                                '--padding-start': '12px',
+                                '--padding-end': '12px',
+                                borderRadius: '8px',
+                                flex: 1
+                              }}
+                            />
+                            <IonButton
+                              size="small"
+                              onClick={() => handleResetPassword(admin.id)}
+                              disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword}
+                              style={{ '--background': '#2dd36f', '--background-activated': '#16a34a' }}
+                            >
+                              {resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
+                            </IonButton>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </IonList>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
+                    <IonIcon icon={alertCircleOutline} style={{ fontSize: '2rem', color: '#f59e0b', marginBottom: '8px', display: 'block' }} />
+                    Kein Administrator vorhanden
+                  </div>
+                )}
+
+                {/* Neuen Admin hinzufügen */}
+                {showAddAdmin && (
+                  <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(45, 211, 111, 0.05)', borderRadius: '12px', border: '1px dashed #2dd36f' }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', fontWeight: '600', color: '#333' }}>Neuen Administrator hinzufügen</h4>
+                    <IonList style={{ background: 'transparent' }} lines="none">
+                      <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '8px' }}>
+                        <IonLabel position="stacked">Name *</IonLabel>
+                        <IonInput
+                          value={newAdminData.display_name}
+                          onIonInput={(e) => setNewAdminData({ ...newAdminData, display_name: e.detail.value! })}
+                          placeholder="z.B. Pastor Müller"
+                          disabled={addingAdmin}
+                        />
+                      </IonItem>
+                      <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '8px' }}>
+                        <IonLabel position="stacked">Login-Benutzername *</IonLabel>
+                        <IonInput
+                          value={newAdminData.username}
+                          onIonInput={(e) => setNewAdminData({ ...newAdminData, username: e.detail.value! })}
+                          placeholder="z.B. pmueller"
+                          disabled={addingAdmin}
+                        />
+                      </IonItem>
+                      <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '8px' }}>
+                        <IonLabel position="stacked">Passwort *</IonLabel>
+                        <IonInput
+                          type="password"
+                          value={newAdminData.password}
+                          onIonInput={(e) => setNewAdminData({ ...newAdminData, password: e.detail.value! })}
+                          placeholder="Mindestens 6 Zeichen"
+                          disabled={addingAdmin}
+                        />
+                      </IonItem>
+                    </IonList>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                      <IonButton
+                        expand="block"
+                        fill="outline"
+                        onClick={() => {
+                          setShowAddAdmin(false);
+                          setNewAdminData({ display_name: '', username: '', password: '' });
+                        }}
+                        disabled={addingAdmin}
+                        style={{ flex: 1, '--border-color': '#666', '--color': '#666' }}
+                      >
+                        Abbrechen
+                      </IonButton>
+                      <IonButton
+                        expand="block"
+                        onClick={handleAddAdmin}
+                        disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin}
+                        style={{ flex: 1, '--background': '#2dd36f', '--background-activated': '#16a34a' }}
+                      >
+                        {addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
+                      </IonButton>
                     </div>
-                    <IonLabel>
-                      <h3 style={{ fontWeight: '600', margin: '0 0 4px 0' }}>{orgAdmin.display_name}</h3>
-                      <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
-                        Login: {orgAdmin.username}
-                        {orgAdmin.email && ` · ${orgAdmin.email}`}
-                      </p>
-                    </IonLabel>
-                  </IonItem>
-                </IonList>
-
-                {/* Passwort zuruecksetzen */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', marginBottom: '8px' }}>
-                  <IonIcon icon={keyOutline} style={{ color: '#2dd36f', fontSize: '1rem' }} />
-                  <span style={{ fontWeight: '500', fontSize: '0.9rem', color: '#333' }}>Passwort zuruecksetzen</span>
-                </div>
-
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                    <IonInput type="password" value={newPassword} onIonInput={(e) => setNewPassword(e.detail.value!)} placeholder="Neues Passwort eingeben" disabled={resettingPassword} />
-                  </IonItem>
-                </IonList>
-
-                <IonButton expand="block" onClick={handleResetPassword} disabled={!newPassword.trim() || resettingPassword} style={{ '--background': '#2dd36f', '--background-activated': '#16a34a', marginTop: '8px' }}>
-                  {resettingPassword ? <IonSpinner name="crescent" /> : 'Passwort zuruecksetzen'}
-                </IonButton>
+                  </div>
+                )}
               </IonCardContent>
             </IonCard>
           </>

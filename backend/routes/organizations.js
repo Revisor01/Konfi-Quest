@@ -13,17 +13,19 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   router.get('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
       const query = `
-        SELECT o.*, 
+        SELECT o.*,
                COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
-               COUNT(DISTINCT kp.user_id) as konfi_count
+               COUNT(DISTINCT kp.user_id) as konfi_count,
+               COUNT(DISTINCT e.id) as event_count
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
         LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
+        LEFT JOIN events e ON o.id = e.organization_id
         GROUP BY o.id
         ORDER BY o.created_at DESC
       `;
-      
+
       const { rows: organizations } = await db.query(query);
       res.json(organizations);
     } catch (err) {
@@ -34,48 +36,56 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Get single organization by ID
   // super_admin: alle, org_admin: nur eigene
+  // OPTIMIERT: Parallele Queries statt JOIN-Monster
   router.get('/:id', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
 
-      // Zugriffspruefung
+      // Zugriffsprüfung
       const isSuperAdmin = req.user.role_name === 'super_admin';
       const isOwnOrg = req.user.organization_id === parseInt(id);
 
       if (!isSuperAdmin && !isOwnOrg) {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
-      
-      const query = `
-        SELECT o.*,
-               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
-               COUNT(DISTINCT kp.user_id) as konfi_count,
-               COUNT(DISTINCT j.id) as jahrgang_count,
-               COUNT(DISTINCT a.id) as activity_count,
-               COUNT(DISTINCT e.id) as event_count,
-               COUNT(DISTINCT cb.id) as badge_count
-        FROM organizations o
-        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
-        LEFT JOIN roles r ON u.role_id = r.id
-        LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
-        LEFT JOIN jahrgaenge j ON o.id = j.organization_id
-        LEFT JOIN activities a ON o.id = a.organization_id
-        LEFT JOIN events e ON o.id = e.organization_id
-        LEFT JOIN custom_badges cb ON o.id = cb.organization_id
-        WHERE o.id = $1
-        GROUP BY o.id
-      `;
-      
-      const { rows: [organization] } = await db.query(query, [id]);
-      
+
+      // Basis-Organisation laden
+      const orgQuery = "SELECT * FROM organizations WHERE id = $1";
+
+      // Statistiken parallel laden (viel schneller als JOINs)
+      const countQueries = {
+        user_count: `SELECT COUNT(*)::int as count FROM users u
+                     JOIN roles r ON u.role_id = r.id
+                     WHERE u.organization_id = $1 AND u.is_active = true AND r.name != 'konfi'`,
+        konfi_count: "SELECT COUNT(*)::int as count FROM konfi_profiles WHERE organization_id = $1",
+        jahrgang_count: "SELECT COUNT(*)::int as count FROM jahrgaenge WHERE organization_id = $1",
+        activity_count: "SELECT COUNT(*)::int as count FROM activities WHERE organization_id = $1",
+        event_count: "SELECT COUNT(*)::int as count FROM events WHERE organization_id = $1",
+        badge_count: "SELECT COUNT(*)::int as count FROM custom_badges WHERE organization_id = $1"
+      };
+
+      // Alle Queries parallel ausführen
+      const [orgResult, ...countResults] = await Promise.all([
+        db.query(orgQuery, [id]),
+        ...Object.values(countQueries).map(q => db.query(q, [id]))
+      ]);
+
+      const organization = orgResult.rows[0];
+
       if (!organization) {
-        return res.status(404).json({ error: 'Organization not found' });
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
-      
+
+      // Statistiken zum Ergebnis hinzufügen
+      const countKeys = Object.keys(countQueries);
+      countResults.forEach((result, index) => {
+        organization[countKeys[index]] = result.rows[0]?.count || 0;
+      });
+
       res.json(organization);
     } catch (err) {
       console.error('Database error in GET /organizations/:id:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -354,6 +364,65 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     } catch (err) {
       console.error('Error fetching organization admins:', err);
       res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Add new org_admin to organization - nur super_admin
+  router.post('/:id/admins', rbacVerifier, requireSuperAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { username, display_name, password, email } = req.body;
+
+      if (!username || !display_name || !password) {
+        return res.status(400).json({ error: 'Benutzername, Name und Passwort sind erforderlich' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+      }
+
+      // Prüfen ob Organisation existiert
+      const { rows: [org] } = await db.query("SELECT id FROM organizations WHERE id = $1", [id]);
+      if (!org) {
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+      }
+
+      // org_admin Rolle für diese Organisation finden
+      const { rows: [role] } = await db.query(
+        "SELECT id FROM roles WHERE organization_id = $1 AND name = 'org_admin'",
+        [id]
+      );
+
+      if (!role) {
+        return res.status(500).json({ error: 'Org-Admin Rolle für Organisation nicht gefunden' });
+      }
+
+      // Prüfen ob Benutzername bereits existiert
+      const { rows: [existingUser] } = await db.query(
+        "SELECT id FROM users WHERE username = $1 AND organization_id = $2",
+        [username, id]
+      );
+
+      if (existingUser) {
+        return res.status(409).json({ error: 'Benutzername existiert bereits in dieser Organisation' });
+      }
+
+      // Neuen Admin erstellen
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const { rows: [newAdmin] } = await db.query(`
+        INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
+        RETURNING id, username, display_name, email, is_active, created_at
+      `, [id, role.id, username, email || null, hashedPassword, display_name]);
+
+      console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id}`);
+      res.status(201).json(newAdmin);
+    } catch (err) {
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
+      }
+      console.error('Error creating org admin:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
