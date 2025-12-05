@@ -36,7 +36,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       FROM users u
       LEFT JOIN roles r ON u.role_id = r.id
       LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-      WHERE u.organization_id = $1 AND r.name != 'konfi'
+      WHERE u.organization_id = $1 AND r.name NOT IN ('konfi', 'super_admin')
       GROUP BY u.id, r.name, r.display_name
       ORDER BY u.created_at DESC
     `;
@@ -487,10 +487,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
 
-      // org_admin darf keine anderen org_admins resetten
-      if (isOrgAdmin && targetUser.role_name === 'org_admin' && targetUser.id !== req.user.id) {
-        return res.status(403).json({ error: 'Sie koennen das Passwort eines anderen Organisations-Admins nicht zuruecksetzen' });
-      }
+      // org_admin darf andere org_admins in seiner Org resetten (neue Regel)
+      // Nur super_admin ist geschützt
 
       const hashedPassword = await bcrypt.hash(password, 10);
       await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
