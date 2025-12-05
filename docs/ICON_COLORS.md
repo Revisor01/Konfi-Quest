@@ -30,6 +30,7 @@ Konsistente Farben für Icons in allen Listen und Views.
 | Preisschild | `pricetag` | Kategorien | Orange | `#ff9500` |
 | Pokal | `trophy` | Level | Lila | `#9b59b6` |
 | Stern | `star` | Badges | Gold | `#ff9500` |
+| Dokument | `document` | Anträge | Antragsgrün | `#059669` |
 
 ## Status-Farben
 
@@ -46,10 +47,12 @@ Konsistente Farben für Icons in allen Listen und Views.
 | View | Gradient | Start | End |
 |------|----------|-------|-----|
 | Events | Rot | `#dc2626` | `#991b1b` |
-| Users | Blau | `#667eea` | `#764ba2` |
+| Users | Lila | `#667eea` | `#764ba2` |
 | Aktivitäten | Grün | `#16a34a` | `#15803d` |
 | Level | Lila | `#9b59b6` | `#8e44ad` |
 | Konfis | Blau | `#3b82f6` | `#1d4ed8` |
+| Anträge | Antragsgrün | `#059669` | `#047857` |
+| Organisationen | Grün | `#2dd36f` | `#16a34a` |
 
 ## Verwendung
 

@@ -264,7 +264,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                 icon={document}
                 style={{
                   fontSize: '3rem',
-                  color: '#ff9500',
+                  color: '#059669',
                   marginBottom: '16px',
                   display: 'block',
                   margin: '0 auto 16px auto'

@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import {
   IonCard,
   IonCardContent,
+  IonGrid,
+  IonRow,
+  IonCol,
   IonIcon,
   IonItem,
   IonLabel,
@@ -20,10 +23,9 @@ import {
   business,
   businessOutline,
   people,
-  checkmark,
-  createOutline,
   personOutline,
-  calendarOutline
+  createOutline,
+  checkmarkCircle
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -86,14 +88,6 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
   const getTotalKonfis = () => organizations.reduce((sum, org) => sum + org.konfi_count, 0);
   const getTotalUsers = () => organizations.reduce((sum, org) => sum + org.user_count, 0);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
   const getInitials = (displayName: string) => {
     return displayName
       .split(' ')
@@ -109,175 +103,159 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
   return (
     <>
-      {/* Header - Dashboard-Style mit Gradient */}
+      {/* Header - Dashboard-Style wie UsersView */}
       <div style={{
-        background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+        background: 'linear-gradient(135deg, #2dd36f 0%, #16a34a 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(17, 153, 142, 0.3)',
+        boxShadow: '0 20px 40px rgba(45, 211, 111, 0.3)',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '180px',
+        minHeight: '220px',
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Background Pattern */}
+        {/* Ueberschrift - gross und ueberlappend */}
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.1,
-          background: `radial-gradient(circle at 20% 80%, white 2px, transparent 2px),
-                       radial-gradient(circle at 80% 20%, white 2px, transparent 2px),
-                       radial-gradient(circle at 40% 40%, white 1px, transparent 1px)`,
-          backgroundSize: '60px 60px, 80px 80px, 40px 40px'
-        }} />
-
-        {/* Header Content */}
-        <div style={{ padding: '20px', position: 'relative', zIndex: 1 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '16px'
+          top: '-5px',
+          left: '12px',
+          zIndex: 1
+        }}>
+          <h2 style={{
+            fontSize: '4rem',
+            fontWeight: '900',
+            color: 'rgba(255, 255, 255, 0.1)',
+            margin: '0',
+            lineHeight: '0.8',
+            letterSpacing: '-2px'
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: 'rgba(255,255,255,0.2)',
-              borderRadius: '14px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <IonIcon icon={business} style={{ fontSize: '1.5rem', color: 'white' }} />
-            </div>
-            <div>
-              <h1 style={{
-                margin: 0,
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                color: 'white'
-              }}>
-                Organisationen
-              </h1>
-              <p style={{
-                margin: '2px 0 0 0',
-                fontSize: '0.85rem',
-                color: 'rgba(255,255,255,0.8)'
-              }}>
-                Gemeinden und Einrichtungen verwalten
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            marginTop: '8px'
-          }}>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {organizations.length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Gesamt
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getActiveOrganizations().length}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Aktiv
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getTotalKonfis()}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Konfis
-              </div>
-            </div>
-            <div style={{
-              flex: 1,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderRadius: '12px',
-              padding: '12px',
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {getTotalUsers()}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
-                Team
-              </div>
-            </div>
-          </div>
+            ORGS
+          </h2>
         </div>
-      </div>
 
-      {/* Suche und Filter Section */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        margin: '16px 16px 12px 16px'
-      }}>
+        {/* Content */}
         <div style={{
-          width: '32px',
-          height: '32px',
-          backgroundColor: '#11998e',
-          borderRadius: '50%',
+          position: 'relative',
+          zIndex: 2,
+          padding: '70px 24px 24px 24px',
+          flex: 1,
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(17, 153, 142, 0.3)',
-          flexShrink: 0
+          flexDirection: 'column',
+          justifyContent: 'center'
         }}>
-          <IonIcon icon={search} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+            <IonRow>
+              <IonCol size="3" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 8px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={business}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                    {organizations.length}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                    Gesamt
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="3" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 8px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={checkmarkCircle}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                    {getActiveOrganizations().length}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                    Aktiv
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="3" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 8px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={people}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                    {getTotalKonfis()}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                    Konfis
+                  </div>
+                </div>
+              </IonCol>
+              <IonCol size="3" style={{ padding: '0 4px' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: '12px',
+                  padding: '16px 8px',
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <IonIcon
+                    icon={personOutline}
+                    style={{
+                      fontSize: '1.5rem',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      display: 'block',
+                      margin: '0 auto 8px auto'
+                    }}
+                  />
+                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                    {getTotalUsers()}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                    Team
+                  </div>
+                </div>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
         </div>
-        <h2 style={{
-          fontWeight: '600',
-          fontSize: '1.1rem',
-          margin: '0',
-          color: '#333'
-        }}>
-          Suche & Filter
-        </h2>
       </div>
 
+      {/* Suchfeld */}
       <IonCard style={{
-        margin: '0 16px 16px 16px',
+        margin: '16px',
         borderRadius: '12px',
         background: 'white',
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
@@ -343,38 +321,9 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         </IonCardContent>
       </IonCard>
 
-      {/* Organisationen-Liste Section */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        margin: '16px 16px 12px 16px'
-      }}>
-        <div style={{
-          width: '32px',
-          height: '32px',
-          backgroundColor: '#38ef7d',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(56, 239, 125, 0.3)',
-          flexShrink: 0
-        }}>
-          <IonIcon icon={businessOutline} style={{ fontSize: '1rem', color: 'white' }} />
-        </div>
-        <h2 style={{
-          fontWeight: '600',
-          fontSize: '1.1rem',
-          margin: '0',
-          color: '#333'
-        }}>
-          Organisationen ({filteredAndSortedOrganizations.length})
-        </h2>
-      </div>
-
+      {/* Organisationen-Liste */}
       <IonCard style={{
-        margin: '0 16px 16px 16px',
+        margin: '16px',
         borderRadius: '12px',
         background: 'white',
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
@@ -397,7 +346,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     onSelectOrganization(organization);
                   }}
                   style={{
-                    '--min-height': '90px',
+                    '--min-height': '72px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
@@ -411,56 +360,52 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       ? '1px solid #fca5a5'
                       : '1px solid #e0e0e0',
                     borderRadius: '12px',
-                    opacity: organization.is_active ? 1 : 0.8
+                    opacity: organization.is_active ? 1 : 0.6
                   }}
                 >
                   <IonLabel>
+                    {/* Header mit Icon wie UsersView */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '6px'
+                      marginBottom: '4px'
                     }}>
-                      {/* Avatar */}
+                      {/* Org Icon - 32px wie UsersView */}
                       <div style={{
-                        width: '40px',
-                        height: '40px',
+                        width: '32px',
+                        height: '32px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+                        backgroundColor: organization.is_active ? '#2dd36f' : '#6b7280',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: '600',
-                        fontSize: '0.9rem',
-                        boxShadow: '0 2px 8px rgba(17, 153, 142, 0.4)',
+                        boxShadow: organization.is_active
+                          ? '0 2px 8px rgba(45, 211, 111, 0.4)'
+                          : '0 2px 8px rgba(107, 114, 128, 0.4)',
                         flexShrink: 0
                       }}>
-                        {getInitials(organization.display_name)}
+                        <IonIcon
+                          icon={business}
+                          style={{ fontSize: '0.9rem', color: 'white' }}
+                        />
                       </div>
 
                       {/* Name */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h2 style={{
-                          fontWeight: '600',
-                          fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-                          margin: '0',
-                          color: organization.is_active ? '#1a1a1a' : '#999',
-                          lineHeight: '1.3',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {organization.display_name}
-                        </h2>
-                        <p style={{
-                          fontSize: '0.8rem',
-                          color: '#666',
-                          margin: '2px 0 0 0'
-                        }}>
-                          {organization.name}
-                        </p>
-                      </div>
+                      <h2 style={{
+                        fontWeight: '600',
+                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                        margin: '0',
+                        color: organization.is_active ? '#333' : '#999',
+                        lineHeight: '1.3',
+                        flex: 1,
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {organization.display_name}
+                      </h2>
 
                       {/* Status Badge */}
                       <IonBadge
@@ -476,63 +421,17 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       </IonBadge>
                     </div>
 
-                    {/* Details Row */}
+                    {/* Details Row - vereinfacht wie UsersView */}
                     <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
                       fontSize: '0.8rem',
                       color: organization.is_active ? '#666' : '#999',
-                      marginLeft: '52px'
+                      marginLeft: '44px'
                     }}>
-                      <span style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        color: '#11998e'
-                      }}>
-                        <IonIcon icon={people} style={{ fontSize: '0.8rem' }} />
-                        {organization.konfi_count} Konfis
-                      </span>
-
-                      <span style={{ color: '#ccc' }}>|</span>
-
-                      <span style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        color: '#667eea'
-                      }}>
-                        <IonIcon icon={personOutline} style={{ fontSize: '0.8rem' }} />
-                        {organization.user_count} Team
-                      </span>
-
-                      {organization.activity_count > 0 && (
-                        <>
-                          <span style={{ color: '#ccc' }}>|</span>
-                          <span style={{ color: '#f59e0b' }}>
-                            {organization.activity_count}A
-                          </span>
-                        </>
-                      )}
-
-                      {organization.contact_email && (
-                        <>
-                          <span style={{ color: '#ccc' }}>|</span>
-                          <span style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            color: '#999',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '120px'
-                          }}>
-                            {organization.contact_email}
-                          </span>
-                        </>
-                      )}
+                      {organization.name}
+                      {' · '}
+                      {organization.konfi_count} Konfis
+                      {' · '}
+                      {organization.user_count} Team
                     </div>
                   </IonLabel>
                 </IonItem>
@@ -558,12 +457,12 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     <div style={{
                       width: '44px',
                       height: '44px',
-                      backgroundColor: '#11998e',
+                      backgroundColor: '#2dd36f',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(17, 153, 142, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                      boxShadow: '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                     }}>
                       <IonIcon icon={createOutline} style={{ fontSize: '1.2rem', color: 'white' }} />
                     </div>
@@ -604,12 +503,20 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
             ))}
 
             {filteredAndSortedOrganizations.length === 0 && (
-              <IonItem lines="none">
-                <IonLabel style={{ textAlign: 'center', color: '#999', padding: '32px 0' }}>
-                  <IonIcon icon={businessOutline} style={{ fontSize: '2rem', marginBottom: '8px', display: 'block' }} />
-                  <p style={{ margin: 0 }}>Keine Organisationen gefunden</p>
-                </IonLabel>
-              </IonItem>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={businessOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#2dd36f',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Organisationen gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Noch keine Gemeinden angelegt</p>
+              </div>
             )}
           </IonList>
         </IonCardContent>

@@ -133,16 +133,16 @@ const requireRole = (...allowedRoles) => {
 // ============================================
 // ROLLEN-CHECKS (KORRIGIERT)
 // ============================================
-// super_admin: NUR Organisations-Verwaltung, sonst KEIN Zugriff
+// super_admin: Vollzugriff auf alles (System-Administrator)
 // org_admin: Alles in eigener Organisation (inkl. User)
 // admin: Alles AUSSER User-Verwaltung
 // teamer: Events, Konfis ansehen, Punkte vergeben
 // ============================================
 
 const requireSuperAdmin = requireRole('super_admin');           // NUR fuer Org Create/Delete
-const requireOrgAdmin = requireRole('org_admin');               // User-Verwaltung in Org
-const requireAdmin = requireRole('org_admin', 'admin');         // Konfis, Requests, Badges, etc.
-const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Punkte vergeben
+const requireOrgAdmin = requireRole('super_admin', 'org_admin'); // User-Verwaltung in Org
+const requireAdmin = requireRole('super_admin', 'org_admin', 'admin'); // Konfis, Requests, Badges, etc.
+const requireTeamer = requireRole('super_admin', 'org_admin', 'admin', 'teamer'); // Events, Punkte vergeben
 
 // ============================================
 // JAHRGANG-ZUGRIFF
