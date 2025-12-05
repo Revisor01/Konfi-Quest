@@ -21,6 +21,8 @@ Konsistente Farben für Icons in allen Listen und Views.
 | Person | `person` | Teamer | Orange | `#f59e0b` |
 | Schule | `school` | Jahrgänge | Blau | `#007aff` |
 | Gebäude | `business` | Organisation | Grün | `#2dd36f` |
+| At-Zeichen | `at` | Benutzername | Blau | `#007aff` |
+| E-Mail | `mailOutline` | E-Mail | Blau | `#007aff` |
 
 ## Inhalte
 

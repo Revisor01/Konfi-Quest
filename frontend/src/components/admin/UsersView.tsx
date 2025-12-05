@@ -29,7 +29,11 @@ import {
   checkmarkCircle,
   closeCircle,
   createOutline,
-  calendarOutline
+  calendarOutline,
+  at,
+  school,
+  time,
+  mailOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -360,7 +364,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     }
                   }}
                   style={{
-                    '--min-height': '72px',
+                    '--min-height': '100px',
                     '--padding-start': '16px',
                     '--padding-top': '0px',
                     '--padding-bottom': '0px',
@@ -416,15 +420,57 @@ const UsersView: React.FC<UsersViewProps> = ({
                       </h2>
                     </div>
 
-                    {/* Details Row - vereinfacht */}
+                    {/* Username und Rolle - Zeile 1 */}
                     <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '0.85rem',
+                      color: user.is_active ? '#666' : '#999',
+                      marginBottom: '4px',
+                      marginLeft: '44px'
+                    }}>
+                      <IonIcon icon={at} style={{ fontSize: '0.9rem', color: user.is_active ? '#007aff' : '#999' }} />
+                      <span style={{ fontWeight: '500', color: user.is_active ? '#333' : '#999' }}>
+                        {user.username}
+                      </span>
+                      <span style={{
+                        fontSize: '0.7rem',
+                        color: getRoleColor(user.role_name),
+                        fontWeight: '600',
+                        backgroundColor: `${getRoleColor(user.role_name)}15`,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        marginLeft: '4px'
+                      }}>
+                        {user.role_display_name}
+                      </span>
+                    </div>
+
+                    {/* Details - Zeile 2 */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
                       fontSize: '0.8rem',
                       color: user.is_active ? '#666' : '#999',
                       marginLeft: '44px'
                     }}>
-                      {user.role_display_name}
-                      {user.role_title && ` · ${user.role_title}`}
-                      {user.assigned_jahrgaenge_count > 0 && ` · ${user.assigned_jahrgaenge_count} Jg.`}
+                      {user.role_title && (
+                        <span>{user.role_title}</span>
+                      )}
+                      {user.assigned_jahrgaenge_count > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={school} style={{ fontSize: '0.8rem', color: user.is_active ? '#007aff' : '#999' }} />
+                          <span>{user.assigned_jahrgaenge_count} Jg.</span>
+                        </div>
+                      )}
+                      {user.last_login_at && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={time} style={{ fontSize: '0.8rem', color: user.is_active ? '#34c759' : '#999' }} />
+                          <span>{formatDate(user.last_login_at)}</span>
+                        </div>
+                      )}
                     </div>
                   </IonLabel>
                 </IonItem>
