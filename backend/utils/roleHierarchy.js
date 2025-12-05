@@ -28,9 +28,9 @@ const canManageRole = (userRole, targetRole) => {
     return targetRole !== 'super_admin';
   }
 
-  // Org-Admin kann admin, teamer, konfi verwalten
+  // Org-Admin kann ALLE Rollen in seiner Organisation verwalten (inkl. andere org_admins)
   if (userRole === 'org_admin') {
-    return ['admin', 'teamer', 'konfi'].includes(targetRole);
+    return ['org_admin', 'admin', 'teamer', 'konfi'].includes(targetRole);
   }
 
   // Admin kann teamer und konfi verwalten

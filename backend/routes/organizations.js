@@ -345,10 +345,18 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
-  // Get organization admins (org_admin role) - nur super_admin
-  router.get('/:id/admins', rbacVerifier, requireSuperAdmin, async (req, res) => {
+  // Get organization admins (org_admin role) - super_admin oder org_admin der eigenen Org
+  router.get('/:id/admins', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
+
+      // Zugriffsprüfung: super_admin oder org_admin der eigenen Org
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
+
+      if (!isSuperAdmin && !isOwnOrg) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
+      }
 
       const query = `
         SELECT u.id, u.username, u.email, u.display_name, u.is_active,
@@ -363,15 +371,23 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(admins);
     } catch (err) {
       console.error('Error fetching organization admins:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
-  // Add new org_admin to organization - nur super_admin
-  router.post('/:id/admins', rbacVerifier, requireSuperAdmin, async (req, res) => {
+  // Add new org_admin to organization - super_admin oder org_admin der eigenen Org
+  router.post('/:id/admins', rbacVerifier, async (req, res) => {
     try {
       const { id } = req.params;
       const { username, display_name, password, email } = req.body;
+
+      // Zugriffsprüfung: super_admin oder org_admin der eigenen Org
+      const isSuperAdmin = req.user.role_name === 'super_admin';
+      const isOwnOrg = req.user.organization_id === parseInt(id) && req.user.role_name === 'org_admin';
+
+      if (!isSuperAdmin && !isOwnOrg) {
+        return res.status(403).json({ error: 'Keine Berechtigung' });
+      }
 
       if (!username || !display_name || !password) {
         return res.status(400).json({ error: 'Benutzername, Name und Passwort sind erforderlich' });
@@ -397,14 +413,14 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         return res.status(500).json({ error: 'Org-Admin Rolle für Organisation nicht gefunden' });
       }
 
-      // Prüfen ob Benutzername bereits existiert
+      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
       const { rows: [existingUser] } = await db.query(
-        "SELECT id FROM users WHERE username = $1 AND organization_id = $2",
-        [username, id]
+        "SELECT id, organization_id FROM users WHERE username = $1",
+        [username]
       );
 
       if (existingUser) {
-        return res.status(409).json({ error: 'Benutzername existiert bereits in dieser Organisation' });
+        return res.status(409).json({ error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' });
       }
 
       // Neuen Admin erstellen
@@ -415,7 +431,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         RETURNING id, username, display_name, email, is_active, created_at
       `, [id, role.id, username, email || null, hashedPassword, display_name]);
 
-      console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id}`);
+      console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id} durch ${req.user.role_name}`);
       res.status(201).json(newAdmin);
     } catch (err) {
       if (err.code === '23505') {

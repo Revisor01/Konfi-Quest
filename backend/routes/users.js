@@ -119,6 +119,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         return res.status(400).json({ error: 'Invalid role for this organization' });
       }
 
+      // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
+      const { rows: [existingUser] } = await db.query(
+        "SELECT id FROM users WHERE username = $1",
+        [username]
+      );
+
+      if (existingUser) {
+        return res.status(409).json({ error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' });
+      }
+
       // Hash password
       const passwordHash = bcrypt.hashSync(password, 10);
 
@@ -140,10 +150,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     } catch (err) {
       // '23505' is the code for unique_violation in PostgreSQL
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Username or email already exists in this organization' });
+        return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
       console.error('Database error in POST /users:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -211,10 +221,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
     } catch (err) {
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Username or email already exists in this organization' });
+        return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
       console.error(`Database error in PUT /users/${id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

@@ -341,7 +341,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         </IonCard>
       )}
 
-      {/* Events Liste */}
+      {/* Events Liste - nur anzeigen wenn es Events gibt */}
+      {filteredAndSortedEvents.length > 0 && (
       <IonCard style={{ margin: '16px' }}>
         <IonCardContent style={{ padding: '8px 0' }}>
           <IonList lines="none" style={{ background: 'transparent' }}>
@@ -626,6 +627,7 @@ const EventsView: React.FC<EventsViewProps> = ({
           </IonList>
         </IonCardContent>
       </IonCard>
+      )}
 
       {/* Keine Events gefunden */}
       {filteredAndSortedEvents.length === 0 && (
