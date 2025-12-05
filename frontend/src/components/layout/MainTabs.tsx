@@ -60,10 +60,11 @@ const MainTabs: React.FC = () => {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
-  // Load pending requests count for admin
+  // Load pending requests count for admin (NOT for super_admin)
   useEffect(() => {
     const loadPendingRequestsCount = async () => {
-      if (user?.type === 'admin') {
+      // super_admin hat keinen Zugriff auf Requests
+      if (user?.type === 'admin' && user?.role_name !== 'super_admin') {
         try {
           const response = await api.get('/admin/activities/requests');
           const pendingCount = response.data.filter((req: any) => req.status === 'pending').length;
@@ -75,10 +76,12 @@ const MainTabs: React.FC = () => {
     };
 
     loadPendingRequestsCount();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(loadPendingRequestsCount, 30000);
-    return () => clearInterval(interval);
+
+    // Refresh every 30 seconds (nur wenn nicht super_admin)
+    if (user?.role_name !== 'super_admin') {
+      const interval = setInterval(loadPendingRequestsCount, 30000);
+      return () => clearInterval(interval);
+    }
   }, [user]);
 
   if (!user) {
@@ -91,18 +94,16 @@ const MainTabs: React.FC = () => {
     return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/');
   };
 
+  // super_admin bekommt eine eigene, reduzierte Navigation
+  const isSuperAdmin = user.role_name === 'super_admin';
+
   return user.type === 'admin' ? (
     // Admin Tabs
     <ModalProvider>
       <IonTabs>
-        {/*
-          Der IonRouterOutlet rendert die Inhalte der Tabs.
-          Der Schlüssel ist, dass die Chat-Routen jetzt tiefer verschachtelt sind,
-          aber immer noch innerhalb dieses Outlets.
-          Ionic behandelt automatisch die Navigation und Transitionen innerhalb desselben Outlets flüssiger.
-        */}
         <IonRouterOutlet>
-          <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
+          {/* super_admin wird zu Organizations weitergeleitet, andere zu Konfis */}
+          <Route exact path="/admin" render={() => <Redirect to={isSuperAdmin ? "/admin/organizations" : "/admin/konfis"} />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
           <Route path="/admin/konfis/:id" render={(props) => {
             const konfiId = parseInt(props.match.params.id);
@@ -128,50 +129,65 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
           <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />
           <Route exact path="/admin/users" component={AdminUsersPage} />
-          {/* /admin/roles Route entfernt - Rollen sind hardcoded */}
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
-          <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
+          <Route exact path="/" render={() => <Redirect to={isSuperAdmin ? "/admin/organizations" : "/admin/konfis"} />} />
         </IonRouterOutlet>
 
         {/* Die IonTabBar wird bedingt gerendert */}
         {!isTabBarHidden(location.pathname) && (
           <IonTabBar slot="bottom">
-            <IonTabButton tab="admin-konfis" href="/admin/konfis">
-              <IonIcon icon={people} />
-              <IonLabel>Konfis</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="admin-chat" href="/admin/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
-              <IonIcon icon={chatbubbles} />
-              <IonLabel>Chat</IonLabel>
-              {badgeCount > 0 && (
-                <IonBadge color="danger">
-                  {badgeCount > 99 ? '99+' : badgeCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="admin-events" href="/admin/events">
-              <IonIcon icon={flash} />
-              <IonLabel>Events</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="admin-badges" href="/admin/badges">
-              <IonIcon icon={star} />
-              <IonLabel>Badges</IonLabel>
-            </IonTabButton>
-            <IonTabButton tab="admin-requests" href="/admin/requests">
-              <IonIcon icon={document} />
-              <IonLabel>Anträge</IonLabel>
-              {pendingRequestsCount > 0 && (
-                <IonBadge color="danger">
-                  {pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}
-                </IonBadge>
-              )}
-            </IonTabButton>
-            <IonTabButton tab="admin-settings" href="/admin/settings">
-              <IonIcon icon={ellipsisHorizontal} />
-              <IonLabel>Mehr</IonLabel>
-            </IonTabButton>
+            {/* super_admin sieht NUR Organisationen und Profil */}
+            {isSuperAdmin ? (
+              <>
+                <IonTabButton tab="admin-organizations" href="/admin/organizations">
+                  <IonIcon icon={people} />
+                  <IonLabel>Organisationen</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="admin-profile" href="/admin/profile">
+                  <IonIcon icon={person} />
+                  <IonLabel>Profil</IonLabel>
+                </IonTabButton>
+              </>
+            ) : (
+              <>
+                <IonTabButton tab="admin-konfis" href="/admin/konfis">
+                  <IonIcon icon={people} />
+                  <IonLabel>Konfis</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="admin-chat" href="/admin/chat">
+                  <IonIcon icon={chatbubbles} />
+                  <IonLabel>Chat</IonLabel>
+                  {badgeCount > 0 && (
+                    <IonBadge color="danger">
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </IonBadge>
+                  )}
+                </IonTabButton>
+                <IonTabButton tab="admin-events" href="/admin/events">
+                  <IonIcon icon={flash} />
+                  <IonLabel>Events</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="admin-badges" href="/admin/badges">
+                  <IonIcon icon={star} />
+                  <IonLabel>Badges</IonLabel>
+                </IonTabButton>
+                <IonTabButton tab="admin-requests" href="/admin/requests">
+                  <IonIcon icon={document} />
+                  <IonLabel>Antraege</IonLabel>
+                  {pendingRequestsCount > 0 && (
+                    <IonBadge color="danger">
+                      {pendingRequestsCount > 99 ? '99+' : pendingRequestsCount}
+                    </IonBadge>
+                  )}
+                </IonTabButton>
+                <IonTabButton tab="admin-settings" href="/admin/settings">
+                  <IonIcon icon={ellipsisHorizontal} />
+                  <IonLabel>Mehr</IonLabel>
+                </IonTabButton>
+              </>
+            )}
           </IonTabBar>
         )}
       </IonTabs>

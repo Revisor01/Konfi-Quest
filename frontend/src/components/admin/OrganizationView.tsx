@@ -25,7 +25,10 @@ import {
   people,
   personOutline,
   createOutline,
-  checkmarkCircle
+  checkmarkCircle,
+  flash,
+  checkmark,
+  closeCircle
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -321,10 +324,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     onSelectOrganization(organization);
                   }}
                   style={{
-                    '--min-height': '72px',
+                    '--min-height': '88px',
                     '--padding-start': '16px',
-                    '--padding-top': '0px',
-                    '--padding-bottom': '0px',
+                    '--padding-top': '12px',
+                    '--padding-bottom': '12px',
                     '--background': '#fbfbfb',
                     '--border-radius': '12px',
                     margin: '4px 8px',
@@ -335,21 +338,21 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       ? '1px solid #fca5a5'
                       : '1px solid #e0e0e0',
                     borderRadius: '12px',
-                    opacity: organization.is_active ? 1 : 0.6
+                    opacity: organization.is_active ? 1 : 0.7
                   }}
                 >
                   <IonLabel>
-                    {/* Header mit Icon wie UsersView */}
+                    {/* Header mit Initialen-Icon */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      marginBottom: '4px'
+                      marginBottom: '8px'
                     }}>
-                      {/* Org Icon - 32px wie UsersView */}
+                      {/* Initialen-Icon - 36px */}
                       <div style={{
-                        width: '32px',
-                        height: '32px',
+                        width: '36px',
+                        height: '36px',
                         borderRadius: '50%',
                         backgroundColor: organization.is_active ? '#2dd36f' : '#6b7280',
                         display: 'flex',
@@ -358,18 +361,18 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                         boxShadow: organization.is_active
                           ? '0 2px 8px rgba(45, 211, 111, 0.4)'
                           : '0 2px 8px rgba(107, 114, 128, 0.4)',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        color: 'white',
+                        fontWeight: '700',
+                        fontSize: '0.85rem'
                       }}>
-                        <IonIcon
-                          icon={business}
-                          style={{ fontSize: '0.9rem', color: 'white' }}
-                        />
+                        {getInitials(organization.display_name)}
                       </div>
 
                       {/* Name */}
                       <h2 style={{
                         fontWeight: '600',
-                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                        fontSize: 'clamp(0.95rem, 2.5vw, 1.05rem)',
                         margin: '0',
                         color: organization.is_active ? '#333' : '#999',
                         lineHeight: '1.3',
@@ -381,33 +384,56 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       }}>
                         {organization.display_name}
                       </h2>
-
-                      {/* Status Badge */}
-                      <IonBadge
-                        color={organization.is_active ? 'success' : 'medium'}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '3px 8px',
-                          borderRadius: '6px',
-                          flexShrink: 0
-                        }}
-                      >
-                        {organization.is_active ? 'Aktiv' : 'Inaktiv'}
-                      </IonBadge>
                     </div>
 
-                    {/* Details Row - vereinfacht wie UsersView */}
+                    {/* Details Row mit Icons */}
                     <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                      marginLeft: '48px',
                       fontSize: '0.8rem',
-                      color: organization.is_active ? '#666' : '#999',
-                      marginLeft: '44px'
+                      color: organization.is_active ? '#666' : '#999'
                     }}>
-                      {organization.name}
-                      {' · '}
-                      {organization.konfi_count} Konfis
-                      {' · '}
-                      {organization.user_count} Team
+                      {/* Konfis */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon icon={people} style={{ fontSize: '0.85rem', color: '#34c759' }} />
+                        {organization.konfi_count} Konfis
+                      </span>
+                      {/* Team */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon icon={personOutline} style={{ fontSize: '0.85rem', color: '#f59e0b' }} />
+                        {organization.user_count} Team
+                      </span>
+                      {/* Events */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon icon={flash} style={{ fontSize: '0.85rem', color: '#dc2626' }} />
+                        {organization.event_count} Events
+                      </span>
+                      {/* Status */}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <IonIcon
+                          icon={organization.is_active ? checkmarkCircle : closeCircle}
+                          style={{ fontSize: '0.85rem', color: organization.is_active ? '#34c759' : '#dc3545' }}
+                        />
+                        {organization.is_active ? 'Aktiv' : 'Inaktiv'}
+                      </span>
                     </div>
+
+                    {/* Beschreibung falls vorhanden */}
+                    {organization.description && (
+                      <div style={{
+                        marginLeft: '48px',
+                        marginTop: '6px',
+                        fontSize: '0.75rem',
+                        color: '#999',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {organization.description}
+                      </div>
+                    )}
                   </IonLabel>
                 </IonItem>
 

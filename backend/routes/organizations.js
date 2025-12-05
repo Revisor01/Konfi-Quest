@@ -47,8 +47,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       }
       
       const query = `
-        SELECT o.*, 
-               COUNT(DISTINCT u.id) as user_count,
+        SELECT o.*,
+               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
                COUNT(DISTINCT kp.user_id) as konfi_count,
                COUNT(DISTINCT j.id) as jahrgang_count,
                COUNT(DISTINCT a.id) as activity_count,
@@ -56,6 +56,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
                COUNT(DISTINCT cb.id) as badge_count
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
+        LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
         LEFT JOIN jahrgaenge j ON o.id = j.organization_id
         LEFT JOIN activities a ON o.id = a.organization_id
@@ -84,8 +85,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const organizationId = req.user.organization_id;
       
       const query = `
-        SELECT o.*, 
-               COUNT(DISTINCT u.id) as user_count,
+        SELECT o.*,
+               COUNT(DISTINCT CASE WHEN r.name != 'konfi' THEN u.id END) as user_count,
                COUNT(DISTINCT kp.user_id) as konfi_count,
                COUNT(DISTINCT j.id) as jahrgang_count,
                COUNT(DISTINCT a.id) as activity_count,
@@ -93,6 +94,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
                COUNT(DISTINCT cb.id) as badge_count
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
+        LEFT JOIN roles r ON u.role_id = r.id
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
         LEFT JOIN jahrgaenge j ON o.id = j.organization_id
         LEFT JOIN activities a ON o.id = a.organization_id
