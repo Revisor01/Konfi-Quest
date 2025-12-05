@@ -33,7 +33,8 @@ import {
   at,
   school,
   time,
-  mailOutline
+  mailOutline,
+  briefcaseOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -166,14 +167,14 @@ const UsersView: React.FC<UsersViewProps> = ({
           zIndex: 1
         }}>
           <h2 style={{
-            fontSize: '4rem',
+            fontSize: '2.8rem',
             fontWeight: '900',
             color: 'rgba(255, 255, 255, 0.1)',
             margin: '0',
             lineHeight: '0.8',
             letterSpacing: '-2px'
           }}>
-            TEAM
+            BENUTZER:INNEN
           </h2>
         </div>
 
@@ -260,7 +261,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     <span style={{ fontSize: '1.5rem' }}>{getTeamerUsers().length}</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Teamer:innen
+                    Team
                   </div>
                 </div>
               </IonCol>
@@ -427,22 +428,14 @@ const UsersView: React.FC<UsersViewProps> = ({
                       gap: '6px',
                       fontSize: '0.85rem',
                       color: user.is_active ? '#666' : '#999',
-                      marginBottom: '4px',
-                      marginLeft: '44px'
+                      marginBottom: '4px'
                     }}>
                       <IonIcon icon={at} style={{ fontSize: '0.9rem', color: user.is_active ? '#007aff' : '#999' }} />
                       <span style={{ fontWeight: '500', color: user.is_active ? '#333' : '#999' }}>
                         {user.username}
                       </span>
-                      <span style={{
-                        fontSize: '0.7rem',
-                        color: getRoleColor(user.role_name),
-                        fontWeight: '600',
-                        backgroundColor: `${getRoleColor(user.role_name)}15`,
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        marginLeft: '4px'
-                      }}>
+                      <IonIcon icon={shieldOutline} style={{ fontSize: '0.9rem', color: user.is_active ? getRoleColor(user.role_name) : '#999', marginLeft: '8px' }} />
+                      <span style={{ color: user.is_active ? '#666' : '#999' }}>
                         {user.role_display_name}
                       </span>
                     </div>
@@ -453,11 +446,13 @@ const UsersView: React.FC<UsersViewProps> = ({
                       alignItems: 'center',
                       gap: '16px',
                       fontSize: '0.8rem',
-                      color: user.is_active ? '#666' : '#999',
-                      marginLeft: '44px'
+                      color: user.is_active ? '#666' : '#999'
                     }}>
                       {user.role_title && (
-                        <span>{user.role_title}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <IonIcon icon={briefcaseOutline} style={{ fontSize: '0.8rem', color: user.is_active ? '#f59e0b' : '#999' }} />
+                          <span>{user.role_title}</span>
+                        </div>
                       )}
                       {user.assigned_jahrgaenge_count > 0 && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
