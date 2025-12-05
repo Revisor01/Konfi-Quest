@@ -22,15 +22,16 @@ import {
   IonSegmentButton,
   useIonActionSheet
 } from '@ionic/react';
-import { 
-  add, 
-  trash, 
-  create, 
+import {
+  add,
+  trash,
+  create,
   search,
   calendar,
   star,
   home,
-  people
+  people,
+  flash
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -479,11 +480,20 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
             ))}
             
             {filteredAndSortedActivities.length === 0 && (
-              <IonItem>
-                <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                  <p>Keine Aktivitäten gefunden</p>
-                </IonLabel>
-              </IonItem>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={flash}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#16a34a',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Aktivitäten gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Noch keine Aktivitäten angelegt</p>
+              </div>
             )}
           </IonList>
         </IonCardContent>

@@ -498,12 +498,20 @@ const UsersView: React.FC<UsersViewProps> = ({
             ))}
 
             {filteredAndSortedUsers.length === 0 && (
-              <IonItem lines="none">
-                <IonLabel style={{ textAlign: 'center', color: '#999', padding: '32px 0' }}>
-                  <IonIcon icon={personOutline} style={{ fontSize: '2rem', marginBottom: '8px', display: 'block' }} />
-                  <p style={{ margin: 0 }}>Keine Benutzer gefunden</p>
-                </IonLabel>
-              </IonItem>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={personOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#667eea',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Benutzer:innen gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Noch keine Teammitglieder angelegt</p>
+              </div>
             )}
           </IonList>
         </IonCardContent>
