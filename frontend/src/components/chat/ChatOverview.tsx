@@ -489,103 +489,76 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                       }}
                     >
                       <IonLabel>
-                        {/* Titel mit Icon und Status Badge in einer Reihe */}
-                        <div style={{ 
-                          display: 'flex', 
+                        {/* Titel mit Icon und Typ-Badge rechts */}
+                        <div style={{
+                          display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
-                          marginBottom: '8px',
+                          marginBottom: '4px',
                           position: 'relative'
                         }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            backgroundColor: room.type === 'admin' ? '#17a2b8' :
-                                           room.type === 'jahrgang' ? '#17a2b8' :
-                                           room.type === 'group' ? '#2dd36f' : '#ff6b35',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
-                            flexShrink: 0
-                          }}>
-                            <IonIcon 
-                              icon={getRoomIcon(room)} 
-                              style={{ 
-                                fontSize: '1rem', 
-                                color: 'white'
-                              }} 
-                            />
+                          {/* Icon mit Unread-Badge */}
+                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <div style={{
+                              width: '32px',
+                              height: '32px',
+                              backgroundColor: room.type === 'admin' ? '#17a2b8' :
+                                             room.type === 'jahrgang' ? '#007aff' :
+                                             room.type === 'group' ? '#2dd36f' : '#ff6b35',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: room.type === 'admin' ? '0 2px 8px rgba(23, 162, 184, 0.3)' :
+                                         room.type === 'jahrgang' ? '0 2px 8px rgba(0, 122, 255, 0.3)' :
+                                         room.type === 'group' ? '0 2px 8px rgba(45, 211, 111, 0.3)' : '0 2px 8px rgba(255, 107, 53, 0.3)'
+                            }}>
+                              <IonIcon
+                                icon={getRoomIcon(room)}
+                                style={{ fontSize: '0.9rem', color: 'white' }}
+                              />
+                            </div>
+                            {/* Unread Badge auf Icon */}
+                            {room.unread_count > 0 && (
+                              <span style={{
+                                position: 'absolute',
+                                top: '-4px',
+                                right: '-4px',
+                                fontSize: '0.6rem',
+                                color: 'white',
+                                fontWeight: '700',
+                                backgroundColor: '#dc3545',
+                                minWidth: '16px',
+                                height: '16px',
+                                padding: '0 4px',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                              }}>
+                                {room.unread_count > 99 ? '99+' : room.unread_count}
+                              </span>
+                            )}
                           </div>
-                          <h2 style={{ 
-                            fontWeight: '600', 
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+
+                          {/* Name */}
+                          <h2 style={{
+                            fontWeight: '600',
+                            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
                             margin: '0',
                             color: '#333',
                             lineHeight: '1.3',
                             flex: 1,
                             minWidth: 0,
-                            marginRight: '110px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
                           }}>
                             {getDisplayRoomName(room)}
                           </h2>
-                          
-                          {/* Unread Badge rechts - Standard rot */}
-                          {room.unread_count > 0 && (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: 'white',
-                              fontWeight: '600',
-                              backgroundColor: '#dc3545',
-                              padding: '3px 6px',
-                              borderRadius: '10px',
-                              whiteSpace: 'nowrap',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                              flexShrink: 0,
-                              position: 'absolute',
-                              right: '16px',
-                              top: '50%',
-                              transform: 'translateY(-50%)'
-                            }}>
-                              {room.unread_count > 99 ? '99+' : room.unread_count}
-                            </span>
-                          )}
-                          
-                          {/* Versteckter Platzhalter um Layout zu halten */}
-                          {room.unread_count === 0 && room.last_message?.created_at && (
-                            <span style={{
-                              fontSize: '0.7rem',
-                              fontWeight: '600',
-                              padding: '3px 6px',
-                              borderRadius: '10px',
-                              whiteSpace: 'nowrap',
-                              flexShrink: 0,
-                              position: 'absolute',
-                              right: '16px',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              opacity: 0,
-                              visibility: 'hidden'
-                            }}>
-                              00
-                            </span>
-                          )}
-                        </div>
 
-                        {/* Chat-Typ */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.8rem',
-                          color: '#666',
-                          marginBottom: '4px',
-                          marginLeft: '44px'
-                        }}>
+                          {/* Chat-Typ Badge rechts außen */}
                           <span style={{
                             fontSize: '0.7rem',
                             color: room.type === 'admin' ? '#17a2b8' :
@@ -599,19 +572,30 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             borderRadius: '6px',
                             border: room.type === 'admin' ? '1px solid rgba(23, 162, 184, 0.3)' :
                                     room.type === 'jahrgang' ? '1px solid rgba(0, 122, 255, 0.3)' :
-                                    room.type === 'group' ? '1px solid rgba(45, 211, 111, 0.3)' : '1px solid rgba(255, 107, 53, 0.3)'
+                                    room.type === 'group' ? '1px solid rgba(45, 211, 111, 0.3)' : '1px solid rgba(255, 107, 53, 0.3)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0
                           }}>
                             {getRoomSubtitle(room)}
                           </span>
-                          {room.last_message?.created_at && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
-                              <span style={{ color: '#8e8e93' }}>
-                                {formatLastMessageTime(room.last_message.created_at)}
-                              </span>
-                            </div>
-                          )}
                         </div>
+
+                        {/* Zeit der letzten Nachricht */}
+                        {room.last_message?.created_at && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.8rem',
+                            marginLeft: '44px',
+                            marginBottom: '4px'
+                          }}>
+                            <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                            <span style={{ color: '#8e8e93' }}>
+                              {formatLastMessageTime(room.last_message.created_at)}
+                            </span>
+                          </div>
+                        )}
 
                         {/* Letzte Nachricht */}
                         {room.last_message && (room.last_message.content || room.last_message.file_name) && (
