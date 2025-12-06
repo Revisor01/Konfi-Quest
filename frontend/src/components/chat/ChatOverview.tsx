@@ -524,20 +524,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                 position: 'absolute',
                                 top: '-4px',
                                 right: '-4px',
-                                fontSize: '0.6rem',
+                                fontSize: '0.55rem',
                                 color: 'white',
                                 fontWeight: '700',
                                 backgroundColor: '#dc3545',
-                                minWidth: '16px',
+                                width: room.unread_count > 9 ? '18px' : '16px',
                                 height: '16px',
-                                padding: '0 4px',
-                                borderRadius: '8px',
+                                borderRadius: '50%',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                               }}>
-                                {room.unread_count > 99 ? '99+' : room.unread_count}
+                                {room.unread_count > 9 ? '9+' : room.unread_count}
                               </span>
                             )}
                           </div>
