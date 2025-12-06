@@ -2,10 +2,7 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  host: 'postgres',
-  database: 'konfi_db',
-  user: 'konfi_user',
-  password: 'konfi_password'
+  connectionString: process.env.DATABASE_URL || 'postgresql://konfi_user:konfi_secure_password_2025@postgres:5432/konfi_db'
 });
 
 async function updatePasswords() {
