@@ -381,53 +381,53 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Zweite Zeile: Details */}
+                        {/* Zweite Zeile: Details - Datum, Punkte, Aktivität */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
-                          fontSize: '0.85rem',
-                          color: (isApproved || isRejected) ? '#999' : '#666'
+                          gap: '12px',
+                          fontSize: '0.8rem',
+                          color: (isApproved || isRejected) ? '#999' : '#666',
+                          marginLeft: '44px'
                         }}>
+                          {/* Datum */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                            <IonIcon
+                              icon={calendar}
+                              style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#dc2626' }}
+                            />
+                            <span>{formatDate(request.requested_date)}</span>
+                          </div>
+
                           {/* Punkte */}
                           {request.activity_points && (
-                            <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                               <IonIcon
                                 icon={trophy}
-                                style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#ff9500', flexShrink: 0 }}
+                                style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#ff9500' }}
                               />
-                              <span style={{ fontWeight: '500', flexShrink: 0 }}>{request.activity_points}P</span>
-                              <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
-                            </>
+                              <span style={{ fontWeight: '500' }}>{request.activity_points}P</span>
+                            </div>
                           )}
 
                           {/* Aktivität */}
-                          <IonIcon
-                            icon={getTypeIcon(request.activity_type || 'gemeinde')}
-                            style={{
-                              fontSize: '0.75rem',
-                              color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde'),
-                              flexShrink: 0
-                            }}
-                          />
-                          <span style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {request.activity_name}
-                          </span>
-
-                          <span style={{ color: '#ccc', flexShrink: 0 }}>•</span>
-
-                          {/* Datum */}
-                          <IonIcon
-                            icon={calendar}
-                            style={{ fontSize: '0.75rem', color: (isApproved || isRejected) ? '#999' : '#059669', flexShrink: 0 }}
-                          />
-                          <span style={{ flexShrink: 0 }}>
-                            {formatDate(request.requested_date)}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1 }}>
+                            <IonIcon
+                              icon={getTypeIcon(request.activity_type || 'gemeinde')}
+                              style={{
+                                fontSize: '0.8rem',
+                                color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde'),
+                                flexShrink: 0
+                              }}
+                            />
+                            <span style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {request.activity_name}
+                            </span>
+                          </div>
                         </div>
                       </IonLabel>
                     </IonItem>

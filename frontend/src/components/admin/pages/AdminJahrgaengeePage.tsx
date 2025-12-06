@@ -489,8 +489,8 @@ const AdminJahrgaengeePage: React.FC = () => {
                         gap: '12px'
                       }}>
                         <div style={{
-                          width: '40px',
-                          height: '40px',
+                          width: '32px',
+                          height: '32px',
                           backgroundColor: '#007aff',
                           borderRadius: '50%',
                           display: 'flex',
@@ -502,7 +502,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                           <IonIcon
                             icon={school}
                             style={{
-                              fontSize: '1.2rem',
+                              fontSize: '0.9rem',
                               color: 'white'
                             }}
                           />

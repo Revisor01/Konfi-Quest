@@ -351,8 +351,8 @@ const AdminLevelsPage: React.FC = () => {
                             gap: '12px'
                           }}>
                             <div style={{
-                              width: '40px',
-                              height: '40px',
+                              width: '32px',
+                              height: '32px',
                               backgroundColor: level.color || '#9b59b6',
                               borderRadius: '50%',
                               display: 'flex',
@@ -363,7 +363,7 @@ const AdminLevelsPage: React.FC = () => {
                             }}>
                               <IonIcon
                                 icon={getIconFromString(level.icon || 'trophy')}
-                                style={{ fontSize: '1.2rem', color: 'white' }}
+                                style={{ fontSize: '0.9rem', color: 'white' }}
                               />
                             </div>
                             <div style={{ flex: 1 }}>

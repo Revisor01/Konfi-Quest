@@ -476,7 +476,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                       onClick={() => onSelectRoom(room)}
                       detail={false}
                       style={{
-                        '--min-height': '110px',
+                        '--min-height': '90px',
                         '--padding-start': '16px',
                         '--padding-top': '0px',
                         '--padding-bottom': '0px',
@@ -576,80 +576,69 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           )}
                         </div>
 
-                        {/* Chat-Typ und Teilnehmer */}
-                        <div style={{ 
+                        {/* Chat-Typ */}
+                        <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '12px',
                           fontSize: '0.8rem',
                           color: '#666',
-                          marginBottom: '6px'
+                          marginBottom: '4px',
+                          marginLeft: '44px'
                         }}>
-                          <span style={{ fontWeight: '400', color: '#666' }}>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            color: room.type === 'admin' ? '#17a2b8' :
+                                   room.type === 'jahrgang' ? '#007aff' :
+                                   room.type === 'group' ? '#2dd36f' : '#ff6b35',
+                            fontWeight: '600',
+                            backgroundColor: room.type === 'admin' ? 'rgba(23, 162, 184, 0.15)' :
+                                            room.type === 'jahrgang' ? 'rgba(0, 122, 255, 0.15)' :
+                                            room.type === 'group' ? 'rgba(45, 211, 111, 0.15)' : 'rgba(255, 107, 53, 0.15)',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            border: room.type === 'admin' ? '1px solid rgba(23, 162, 184, 0.3)' :
+                                    room.type === 'jahrgang' ? '1px solid rgba(0, 122, 255, 0.3)' :
+                                    room.type === 'group' ? '1px solid rgba(45, 211, 111, 0.3)' : '1px solid rgba(255, 107, 53, 0.3)'
+                          }}>
                             {getRoomSubtitle(room)}
                           </span>
+                          {room.last_message?.created_at && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
+                              <span style={{ color: '#8e8e93' }}>
+                                {formatLastMessageTime(room.last_message.created_at)}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        
-                        {/* Letzte Nachricht - mit Zeitstempel unten rechts */}
+
+                        {/* Letzte Nachricht */}
                         {room.last_message && (room.last_message.content || room.last_message.file_name) && (
-                          <div style={{ 
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
                             fontSize: '0.8rem',
                             color: '#666',
-                            marginTop: '6px'
+                            marginLeft: '44px'
                           }}>
-                            <div style={{ 
-                              position: 'relative',
-                              paddingRight: '60px',
-                              minHeight: '44px',
-                              display: 'flex',
-                              alignItems: 'flex-start'
+                            <span style={{
+                              fontWeight: '600',
+                              color: '#333',
+                              flexShrink: 0
                             }}>
-                              {/* Nachricht */}
-                              <div style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                gap: '4px'
-                              }}>
-                                <span style={{ 
-                                  fontWeight: '600',
-                                  color: '#333',
-                                  flexShrink: 0
-                                }}>
-                                  {room.last_message.sender_name}:
-                                </span>
-                                <span style={{
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  color: '#666'
-                                }}>
-                                  {room.last_message.content || 
-                                   (room.last_message.file_name ? 
-                                     room.last_message.file_name 
-                                     : 'Datei')}
-                                </span>
-                              </div>
-                              
-                              {/* Zeit Badge fest positioniert rechts */}
-                              {room.last_message.created_at && (
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  color: '#17a2b8',
-                                  fontWeight: '600',
-                                  backgroundColor: '#e3f2fd',
-                                  padding: '3px 6px',
-                                  borderRadius: '6px',
-                                  border: '1px solid #b3e5fc',
-                                  whiteSpace: 'nowrap',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                                  position: 'absolute',
-                                  right: '0',
-                                  bottom: '0'
-                                }}>
-                                  {formatLastMessageTime(room.last_message.created_at)}
-                                </span>
-                              )}
-                            </div>
+                              {room.last_message.sender_name}:
+                            </span>
+                            <span style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              color: '#666'
+                            }}>
+                              {room.last_message.content ||
+                               (room.last_message.file_name ? room.last_message.file_name : 'Datei')}
+                            </span>
                           </div>
                         )}
                       </IonLabel>

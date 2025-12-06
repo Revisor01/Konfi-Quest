@@ -263,17 +263,26 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
+      {/* Suchfeld und Filter in einer Karte */}
+      <IonCard style={{
+        margin: '16px',
+        borderRadius: '12px',
+        background: 'white',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        border: '1px solid #e0e0e0'
+      }}>
+        <IonCardContent style={{ padding: '16px' }}>
+          {/* Search Bar */}
           <IonItem
             lines="none"
             style={{
               '--background': '#f8f9fa',
-              '--border-radius': '12px',
+              '--border-radius': '10px',
+              marginBottom: '12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
               '--padding-start': '12px',
               '--padding-end': '12px',
-              margin: '0'
+              '--min-height': '44px'
             }}
           >
             <IonIcon
@@ -295,29 +304,25 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
               }}
             />
           </IonItem>
-        </IonCardContent>
-      </IonCard>
 
-      {/* Filter */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
+          {/* Filter Tabs */}
           <IonSegment
             value={selectedType}
             onIonChange={(e) => setSelectedType(e.detail.value as string)}
             style={{
               '--background': '#f8f9fa',
-              borderRadius: '12px',
+              borderRadius: '10px',
               padding: '4px'
             }}
           >
             <IonSegmentButton value="alle">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
+              <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="gemeinde">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Gemeinde</IonLabel>
+              <IonLabel style={{ fontSize: '0.8rem' }}>Gemeinde</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="gottesdienst">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Gottesdienst</IonLabel>
+              <IonLabel style={{ fontSize: '0.8rem' }}>GoDi</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </IonCardContent>

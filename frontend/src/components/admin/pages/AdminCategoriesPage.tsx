@@ -494,8 +494,8 @@ const AdminCategoriesPage: React.FC = () => {
                         gap: '12px'
                       }}>
                         <div style={{
-                          width: '40px',
-                          height: '40px',
+                          width: '32px',
+                          height: '32px',
                           backgroundColor: '#ff9500',
                           borderRadius: '50%',
                           display: 'flex',
@@ -507,7 +507,7 @@ const AdminCategoriesPage: React.FC = () => {
                           <IonIcon
                             icon={pricetag}
                             style={{
-                              fontSize: '1.2rem',
+                              fontSize: '0.9rem',
                               color: 'white'
                             }}
                           />
