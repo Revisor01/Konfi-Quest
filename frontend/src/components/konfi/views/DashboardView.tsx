@@ -4,14 +4,122 @@ import {
   IonAvatar,
   IonIcon
 } from '@ionic/react';
-import { 
+import {
   time,
   location,
   calendar,
   eyeOff,
   star,
-  trophy
+  trophy,
+  medal,
+  ribbon,
+  checkmarkCircle,
+  diamond,
+  shield,
+  flame,
+  flash,
+  rocket,
+  sparkles,
+  thumbsUp,
+  heart,
+  people,
+  personAdd,
+  chatbubbles,
+  gift,
+  book,
+  school,
+  construct,
+  brush,
+  colorPalette,
+  sunny,
+  moon,
+  leaf,
+  rose,
+  today,
+  timer,
+  stopwatch,
+  restaurant,
+  fitness,
+  bicycle,
+  car,
+  airplane,
+  boat,
+  camera,
+  image,
+  musicalNote,
+  balloon,
+  home,
+  business,
+  navigate,
+  compass,
+  pin,
+  flag,
+  informationCircle,
+  helpCircle,
+  alertCircle,
+  hammer
 } from 'ionicons/icons';
+
+// Badge Icon Mapping
+const BADGE_ICONS: Record<string, { icon: string; name: string; category: string }> = {
+  trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
+  medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },
+  ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
+  star: { icon: star, name: 'Stern', category: 'Erfolg' },
+  checkmarkCircle: { icon: checkmarkCircle, name: 'Bestanden', category: 'Erfolg' },
+  diamond: { icon: diamond, name: 'Diamant', category: 'Erfolg' },
+  shield: { icon: shield, name: 'Schild', category: 'Erfolg' },
+  flame: { icon: flame, name: 'Flamme', category: 'Engagement' },
+  flash: { icon: flash, name: 'Blitz', category: 'Engagement' },
+  rocket: { icon: rocket, name: 'Rakete', category: 'Engagement' },
+  sparkles: { icon: sparkles, name: 'Funken', category: 'Engagement' },
+  thumbsUp: { icon: thumbsUp, name: 'Daumen hoch', category: 'Engagement' },
+  heart: { icon: heart, name: 'Herz', category: 'Gemeinschaft' },
+  people: { icon: people, name: 'Gruppe', category: 'Gemeinschaft' },
+  personAdd: { icon: personAdd, name: 'Neue Person', category: 'Gemeinschaft' },
+  chatbubbles: { icon: chatbubbles, name: 'Chat', category: 'Gemeinschaft' },
+  gift: { icon: gift, name: 'Geschenk', category: 'Gemeinschaft' },
+  book: { icon: book, name: 'Buch', category: 'Lernen' },
+  school: { icon: school, name: 'Schule', category: 'Lernen' },
+  construct: { icon: construct, name: 'Werkzeug', category: 'Lernen' },
+  brush: { icon: brush, name: 'Pinsel', category: 'Lernen' },
+  colorPalette: { icon: colorPalette, name: 'Farbpalette', category: 'Lernen' },
+  sunny: { icon: sunny, name: 'Sonne', category: 'Natur' },
+  moon: { icon: moon, name: 'Mond', category: 'Natur' },
+  leaf: { icon: leaf, name: 'Blatt', category: 'Natur' },
+  rose: { icon: rose, name: 'Rose', category: 'Natur' },
+  calendar: { icon: calendar, name: 'Kalender', category: 'Zeit' },
+  today: { icon: today, name: 'Heute', category: 'Zeit' },
+  time: { icon: time, name: 'Uhr', category: 'Zeit' },
+  timer: { icon: timer, name: 'Timer', category: 'Zeit' },
+  stopwatch: { icon: stopwatch, name: 'Stoppuhr', category: 'Zeit' },
+  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitaeten' },
+  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitaeten' },
+  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitaeten' },
+  car: { icon: car, name: 'Auto', category: 'Aktivitaeten' },
+  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitaeten' },
+  boat: { icon: boat, name: 'Boot', category: 'Aktivitaeten' },
+  camera: { icon: camera, name: 'Kamera', category: 'Aktivitaeten' },
+  image: { icon: image, name: 'Bild', category: 'Aktivitaeten' },
+  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitaeten' },
+  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitaeten' },
+  home: { icon: home, name: 'Zuhause', category: 'Orte' },
+  business: { icon: business, name: 'Gebaeude', category: 'Orte' },
+  location: { icon: location, name: 'Standort', category: 'Orte' },
+  navigate: { icon: navigate, name: 'Navigation', category: 'Orte' },
+  compass: { icon: compass, name: 'Kompass', category: 'Orte' },
+  pin: { icon: pin, name: 'Pin', category: 'Orte' },
+  flag: { icon: flag, name: 'Flagge', category: 'Orte' },
+  informationCircle: { icon: informationCircle, name: 'Info', category: 'Sonstiges' },
+  helpCircle: { icon: helpCircle, name: 'Hilfe', category: 'Sonstiges' },
+  alertCircle: { icon: alertCircle, name: 'Warnung', category: 'Sonstiges' },
+  hammer: { icon: hammer, name: 'Hammer', category: 'Sonstiges' }
+};
+
+// Helper function to get icon from string
+const getIconFromString = (iconName: string): string => {
+  return BADGE_ICONS[iconName]?.icon || trophy;
+};
 import api from '../../../services/api';
 
 interface DashboardData {
@@ -888,12 +996,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                               ●
                             </div>
                           )}
-                          <div style={{ 
-                            color: 'white',
-                            textShadow: '0 1px 3px rgba(0,0,0,0.3)'
-                          }}>
-                            {badge.icon}
-                          </div>
+                          <IonIcon
+                            icon={getIconFromString(badge.icon)}
+                            style={{
+                              fontSize: '1.5rem',
+                              color: 'white',
+                              filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))'
+                            }}
+                          />
                         </div>
 
                         {/* Earned Date oben rechts */}
