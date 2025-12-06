@@ -490,13 +490,14 @@ const AdminCategoriesPage: React.FC = () => {
                     <IonLabel>
                       <div style={{
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: 'flex-start',
                         gap: '12px'
                       }}>
                         <div style={{
                           width: '32px',
                           height: '32px',
                           backgroundColor: '#ff9500',
+                          marginTop: '2px',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
