@@ -13,14 +13,18 @@ export const initializeWebSocket = (token: string): Socket => {
 
   socket = io(WS_URL, {
     auth: { token },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'], // Polling zuerst, dann Upgrade zu WebSocket
+    upgrade: true,
     reconnection: true,
-    reconnectionAttempts: 5,
+    reconnectionAttempts: 10,
     reconnectionDelay: 1000,
+    timeout: 20000,
   });
 
+  console.log('🔌 Initializing WebSocket connection to', WS_URL);
+
   socket.on('connect', () => {
-    console.log('🔌 WebSocket connected');
+    console.log('🔌 WebSocket connected! Socket ID:', socket?.id);
   });
 
   socket.on('disconnect', (reason) => {
@@ -29,6 +33,10 @@ export const initializeWebSocket = (token: string): Socket => {
 
   socket.on('connect_error', (error) => {
     console.error('🔌 WebSocket connection error:', error.message);
+  });
+
+  socket.on('reconnect_attempt', (attempt) => {
+    console.log('🔌 WebSocket reconnect attempt:', attempt);
   });
 
   return socket;
