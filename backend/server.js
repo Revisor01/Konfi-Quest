@@ -132,10 +132,8 @@ transporter.verify(function(error, success) {
 
 console.log('🔧 Setting up middleware...');
 
-app.use(cors({
-  origin: true,  // Alle Origins erlauben
-  credentials: true
-}));
+// CORS wird von Apache gehandelt, nicht vom Backend
+app.use(cors());
 
 app.use(express.json());
 
