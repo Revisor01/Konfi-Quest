@@ -133,17 +133,7 @@ transporter.verify(function(error, success) {
 console.log('🔧 Setting up middleware...');
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',  // Vite dev server
-    'http://localhost:8624',
-    'https://konfi-quest.de',
-    'https://konfi-points.de',
-    'https://konfipoints.godsapp.de',
-    'http://127.0.0.1:8624',
-    'capacitor://localhost',  // Native iOS/Android Apps
-    'ionic://localhost'       // Ionic Apps
-  ],
+  origin: true,  // Alle Origins erlauben
   credentials: true
 }));
 
