@@ -8,14 +8,93 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // ====================================================================
 // SERVER CONFIGURATION
 // ====================================================================
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
+
+// ====================================================================
+// SOCKET.IO SETUP
+// ====================================================================
+
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:8624',
+      'https://konfi-quest.de',
+      'https://konfi-points.de',
+      'https://konfipoints.godsapp.de',
+      'http://127.0.0.1:8624',
+      'capacitor://localhost',
+      'ionic://localhost'
+    ],
+    credentials: true
+  }
+});
+
+// Socket.io JWT Authentication Middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication required'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    return next(new Error('Invalid token'));
+  }
+});
+
+// Socket.io Connection Handler
+io.on('connection', (socket) => {
+  console.log(`🔌 User connected: ${socket.user.display_name} (${socket.user.id})`);
+
+  // User tritt seinen Chat-Rooms bei
+  socket.on('joinRoom', (roomId) => {
+    socket.join(`room_${roomId}`);
+    console.log(`📥 ${socket.user.display_name} joined room ${roomId}`);
+  });
+
+  socket.on('leaveRoom', (roomId) => {
+    socket.leave(`room_${roomId}`);
+    console.log(`📤 ${socket.user.display_name} left room ${roomId}`);
+  });
+
+  // Typing Indicator
+  socket.on('typing', (roomId) => {
+    socket.to(`room_${roomId}`).emit('userTyping', {
+      roomId,
+      userId: socket.user.id,
+      userName: socket.user.display_name
+    });
+  });
+
+  socket.on('stopTyping', (roomId) => {
+    socket.to(`room_${roomId}`).emit('userStoppedTyping', {
+      roomId,
+      userId: socket.user.id
+    });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`🔌 User disconnected: ${socket.user.display_name}`);
+  });
+});
+
+// Export io for use in routes
+global.io = io;
 
 // ====================================================================
 // DATABASE INITIALIZATION
@@ -286,8 +365,9 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ====================================================================
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Konfi Points API running on port ${PORT}`);
+  console.log(`🔌 WebSocket server ready`);
   console.log(`📁 Uploads directory: ${uploadsDir}`);
 });
 

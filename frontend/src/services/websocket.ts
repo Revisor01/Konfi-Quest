@@ -1,0 +1,71 @@
+import { io, Socket } from 'socket.io-client';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://konfi-quest.de';
+const WS_URL = API_URL.replace('/api', '');
+
+let socket: Socket | null = null;
+
+export const initializeWebSocket = (token: string): Socket => {
+  if (socket?.connected) {
+    console.log('🔌 WebSocket already connected');
+    return socket;
+  }
+
+  socket = io(WS_URL, {
+    auth: { token },
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  });
+
+  socket.on('connect', () => {
+    console.log('🔌 WebSocket connected');
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('🔌 WebSocket disconnected:', reason);
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error('🔌 WebSocket connection error:', error.message);
+  });
+
+  return socket;
+};
+
+export const getSocket = (): Socket | null => socket;
+
+export const disconnectWebSocket = () => {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+    console.log('🔌 WebSocket disconnected manually');
+  }
+};
+
+export const joinRoom = (roomId: number) => {
+  if (socket?.connected) {
+    socket.emit('joinRoom', roomId);
+    console.log(`📥 Joining room ${roomId}`);
+  }
+};
+
+export const leaveRoom = (roomId: number) => {
+  if (socket?.connected) {
+    socket.emit('leaveRoom', roomId);
+    console.log(`📤 Leaving room ${roomId}`);
+  }
+};
+
+export const emitTyping = (roomId: number) => {
+  if (socket?.connected) {
+    socket.emit('typing', roomId);
+  }
+};
+
+export const emitStopTyping = (roomId: number) => {
+  if (socket?.connected) {
+    socket.emit('stopTyping', roomId);
+  }
+};

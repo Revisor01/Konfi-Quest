@@ -44,6 +44,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
+import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket } from '../../services/websocket';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -577,20 +578,66 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     });
   };
 
-  // Load messages on mount and setup polling for real-time updates
+  // Load messages on mount and setup WebSocket for real-time updates
   useEffect(() => {
     if (!room?.id) return;
     loadMessages();
     markRoomAsRead();
-    
-    // 5-second polling für Real-time Updates - aber OHNE Auto-Scroll
+
+    // WebSocket: Join room and listen for new messages
+    const token = localStorage.getItem('token');
+    if (token) {
+      const socket = initializeWebSocket(token);
+      joinRoom(room.id);
+
+      // Listen for new messages
+      socket.on('newMessage', (data: { roomId: number; message: any }) => {
+        if (data.roomId === room.id) {
+          console.log('📡 WebSocket: New message received');
+          setMessages(prev => {
+            // Avoid duplicates
+            if (prev.some(m => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
+        }
+      });
+
+      // Listen for deleted messages
+      socket.on('messageDeleted', (data: { roomId: number; messageId: number }) => {
+        if (data.roomId === room.id) {
+          console.log('📡 WebSocket: Message deleted');
+          setMessages(prev => prev.map(m =>
+            m.id === data.messageId ? { ...m, deleted_at: new Date().toISOString() } : m
+          ));
+        }
+      });
+
+      // Listen for typing indicators
+      socket.on('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
+        if (data.roomId === room.id && data.userId !== user?.id) {
+          // Could show typing indicator here
+          console.log(`${data.userName} is typing...`);
+        }
+      });
+    }
+
+    // Fallback: 30-second polling als Backup (falls WebSocket ausfällt)
     const interval = setInterval(async () => {
-      // Load messages without auto-scrolling
       await loadMessages();
-      // prevMessageCountRef wird vom useEffect für Scroll-Logic verwendet
-    }, 5000);
-    
-    return () => clearInterval(interval);
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      if (room?.id) {
+        leaveRoom(room.id);
+      }
+      const socket = getSocket();
+      if (socket) {
+        socket.off('newMessage');
+        socket.off('messageDeleted');
+        socket.off('userTyping');
+      }
+    };
   }, [room?.id]);
 
   // Mark as read only when new messages arrive (not every 5 seconds)

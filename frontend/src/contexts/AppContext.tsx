@@ -427,12 +427,27 @@ useEffect(() => {
     let lastRefresh = 0;
     const minRefreshInterval = 5000; // Minimum 5s between refreshes
 
-    const handleAppActive = () => {
+    const handleAppActive = async () => {
       const now = Date.now();
       if (now - lastRefresh > minRefreshInterval) {
         console.log('App became active - refreshing chat notifications');
         // refreshChatNotifications disabled - Badge Context handles updates
         lastRefresh = now;
+
+        // Token bei App-Resume erneuern (max alle 12 Stunden)
+        if (Capacitor.isNativePlatform()) {
+          const lastTokenRefresh = parseInt(localStorage.getItem('lastTokenRefresh') || '0');
+          const twelveHours = 12 * 60 * 60 * 1000;
+          if (now - lastTokenRefresh > twelveHours) {
+            console.log('🔄 Refreshing push token (12h interval)');
+            try {
+              await PushNotifications.register();
+              localStorage.setItem('lastTokenRefresh', now.toString());
+            } catch (err) {
+              console.warn('Token refresh failed:', err);
+            }
+          }
+        }
       }
     };
 

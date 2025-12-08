@@ -657,7 +657,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [message] } = await db.query(messageQuery, [messageId]);
       
       res.json(message); // Respond immediately
-      
+
+      // WebSocket: Broadcast new message to room
+      if (global.io) {
+        global.io.to(`room_${roomId}`).emit('newMessage', {
+          roomId: parseInt(roomId),
+          message: message
+        });
+        console.log(`📡 WebSocket: Broadcasted message to room_${roomId}`);
+      }
+
       // Asynchronously send push notifications
       (async () => {
         try {
@@ -1233,7 +1242,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Soft delete the message
       await db.query("UPDATE chat_messages SET deleted_at = NOW() WHERE id = $1", [messageId]);
-      
+
+      // WebSocket: Broadcast message deletion to room
+      if (global.io) {
+        global.io.to(`room_${message.room_id}`).emit('messageDeleted', {
+          roomId: message.room_id,
+          messageId: parseInt(messageId)
+        });
+        console.log(`📡 WebSocket: Broadcasted message deletion to room_${message.room_id}`);
+      }
+
       res.json({ message: 'Message deleted successfully' });
       
     } catch (err) {
