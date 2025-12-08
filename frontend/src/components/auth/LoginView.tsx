@@ -109,7 +109,7 @@ const LoginView: React.FC = () => {
               margin: '0',
               textShadow: '0 1px 2px rgba(0,0,0,0.3)'
             }}>
-              Dein Abenteuer in der Gemeinde
+              Level up, in Kontakt sein, Konfirmand:innenzeit erleben
             </p>
             
           </div>

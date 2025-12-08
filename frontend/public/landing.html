@@ -211,28 +211,48 @@
         .phone-screen {
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a2e;
             border-radius: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 600;
+            overflow: hidden;
+            position: relative;
         }
 
-        .phone-screen .app-icon {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 20px;
-            margin-bottom: 1rem;
+        .phone-screen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .phone-screen img.active {
+            opacity: 1;
+        }
+
+        .carousel-dots {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: var(--primary);
+            gap: 8px;
+        }
+
+        .carousel-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .carousel-dot.active {
+            background: white;
         }
 
         /* Features Section */
@@ -470,9 +490,16 @@
                 text-align: center;
             }
 
+            .hero-text {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
             .hero-text p {
                 margin-left: auto;
                 margin-right: auto;
+                text-align: center;
             }
 
             .hero-buttons {
@@ -481,12 +508,16 @@
 
             .hero-image {
                 order: -1;
+                display: flex;
+                justify-content: center;
+                width: 100%;
             }
 
             .phone-mockup {
                 width: 220px;
                 height: 460px;
                 transform: none;
+                margin: 0 auto;
             }
 
             .nav-links {
@@ -495,8 +526,16 @@
         }
 
         @media (max-width: 600px) {
+            .hero {
+                padding: 100px 1rem 3rem;
+            }
+
             .hero-text h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            .hero-text p {
+                font-size: 1rem;
             }
 
             .btn {
@@ -505,7 +544,12 @@
             }
 
             .section-header h2 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+            }
+
+            .phone-mockup {
+                width: 200px;
+                height: 420px;
             }
         }
     </style>
@@ -527,7 +571,7 @@
         <div class="hero-content">
             <div class="hero-text">
                 <h1>
-                    Konfirmand:innenarbeit
+                    Konfirmand:innenzeit
                     <span>auf einem neuen Level</span>
                 </h1>
                 <p>
@@ -547,8 +591,14 @@
             <div class="hero-image">
                 <div class="phone-mockup">
                     <div class="phone-screen">
-                        <div class="app-icon">KQ</div>
-                        <span>Konfi Quest</span>
+                        <img src="/screen1.png" alt="Konfi Dashboard" class="active">
+                        <img src="/screen2.png" alt="Chat">
+                        <img src="/screen3.png" alt="Events">
+                    </div>
+                    <div class="carousel-dots">
+                        <div class="carousel-dot active" data-index="0"></div>
+                        <div class="carousel-dot" data-index="1"></div>
+                        <div class="carousel-dot" data-index="2"></div>
                     </div>
                 </div>
             </div>
@@ -743,5 +793,33 @@
             <p>&copy; 2025 Konfi Quest. Entwickelt mit Liebe für die Kirchengemeinden.</p>
         </div>
     </footer>
+
+    <script>
+        // Screenshot Carousel
+        const images = document.querySelectorAll('.phone-screen img');
+        const dots = document.querySelectorAll('.carousel-dot');
+        let currentIndex = 0;
+
+        function showSlide(index) {
+            images.forEach(img => img.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
+            images[index].classList.add('active');
+            dots[index].classList.add('active');
+            currentIndex = index;
+        }
+
+        // Auto-advance every 3 seconds
+        setInterval(() => {
+            const nextIndex = (currentIndex + 1) % images.length;
+            showSlide(nextIndex);
+        }, 3000);
+
+        // Click on dots
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                showSlide(parseInt(dot.dataset.index));
+            });
+        });
+    </script>
 </body>
 </html>
