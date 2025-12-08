@@ -26,18 +26,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:8624',
-      'https://konfi-quest.de',
-      'https://konfi-points.de',
-      'https://konfipoints.godsapp.de',
-      'http://127.0.0.1:8624',
-      'capacitor://localhost',
-      'ionic://localhost'
-    ],
-    credentials: true
+    origin: '*',  // Alle Origins - Apache handelt CORS
+    methods: ['GET', 'POST']
   }
 });
 
@@ -132,8 +122,8 @@ transporter.verify(function(error, success) {
 
 console.log('🔧 Setting up middleware...');
 
-// CORS wird von Apache gehandelt, nicht vom Backend
-app.use(cors());
+// CORS wird komplett von Apache gehandelt
+// app.use(cors()); // DEAKTIVIERT - Apache macht das
 
 app.use(express.json());
 
