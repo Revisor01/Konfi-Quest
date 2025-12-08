@@ -588,7 +588,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     const token = localStorage.getItem('konfi_token');
     if (token) {
       const socket = initializeWebSocket(token);
-      joinRoom(room.id);
+
+      // Join room when connected (or immediately if already connected)
+      // WICHTIG: socket.on statt socket.once - damit bei JEDEM Reconnect joinRoom aufgerufen wird!
+      const handleConnect = () => {
+        joinRoom(room.id);
+      };
+
+      if (socket.connected) {
+        joinRoom(room.id);
+      }
+      socket.on('connect', handleConnect);
 
       // Listen for new messages
       socket.on('newMessage', (data: { roomId: number; message: any }) => {
@@ -633,6 +643,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
       const socket = getSocket();
       if (socket) {
+        socket.off('connect');
         socket.off('newMessage');
         socket.off('messageDeleted');
         socket.off('userTyping');

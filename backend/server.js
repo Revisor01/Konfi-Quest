@@ -68,6 +68,11 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   console.log(`🔌 User connected: ${socket.user.display_name} (${socket.user.id})`);
 
+  // User tritt automatisch seinem persönlichen Room bei (für globale Benachrichtigungen)
+  const userRoom = `user_${socket.user.type}_${socket.user.id}`;
+  socket.join(userRoom);
+  console.log(`📥 ${socket.user.display_name} auto-joined personal room: ${userRoom}`);
+
   // User tritt seinen Chat-Rooms bei
   socket.on('joinRoom', (roomId) => {
     socket.join(`room_${roomId}`);

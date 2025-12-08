@@ -31,7 +31,8 @@
       "Bash(java:*)",
       "Bash(/usr/libexec/java_home -V)",
       "Bash(ls:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

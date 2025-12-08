@@ -44,6 +44,7 @@ import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useModalPage } from '../../contexts/ModalContext';
 import api from '../../services/api';
+import { initializeWebSocket, getSocket } from '../../services/websocket';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 
@@ -79,7 +80,7 @@ interface ChatOverviewRef {
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
   const { user, setError, setSuccess } = useApp();
-  const { refreshFromAPI, badgeCount } = useBadge();
+  const { refreshFromAPI, badgeCount, setBadgeCount } = useBadge();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -102,15 +103,42 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     }
   }, [badgeCount]);
 
+  // WebSocket: Live-Update wenn neue Nachrichten ankommen
+  useEffect(() => {
+    const token = localStorage.getItem('konfi_token');
+    if (!token) return;
+
+    const socket = initializeWebSocket(token);
+
+    const handleNewMessage = () => {
+      console.log('📡 ChatOverview: New message via WebSocket, refreshing rooms');
+      loadChatRooms(true); // Silent reload
+    };
+
+    const handleReconnect = () => {
+      console.log('📡 ChatOverview: WebSocket reconnected, refreshing rooms');
+      loadChatRooms(true); // Silent reload
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    socket.on('connect', handleReconnect); // Bei jedem (Re-)Connect Rooms aktualisieren
+
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+      socket.off('connect', handleReconnect);
+    };
+  }, []);
+
   const loadChatRooms = async (silent: boolean = false) => {
     if (!silent) setLoading(true);
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
-      // Update badge context with fresh data nur beim ersten Load
-      if (!silent && rooms.length === 0) {
-        await refreshFromAPI();
-      }
+
+      // Badge Context immer aktualisieren wenn Räume geladen werden
+      // Berechne Total aus geladenen Daten (schneller als erneuter API Call)
+      const totalUnread = response.data.reduce((sum: number, room: any) => sum + (room.unread_count || 0), 0);
+      setBadgeCount(totalUnread);
     } catch (err) {
       if (!silent) setError('Fehler beim Laden der Chaträume');
       console.error('Error loading chat rooms:', err);

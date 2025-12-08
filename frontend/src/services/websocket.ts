@@ -19,7 +19,7 @@ export const initializeWebSocket = (token: string): Socket => {
   console.log('🔌 Creating NEW WebSocket connection to', WS_URL);
   socket = io(WS_URL, {
     auth: { token },
-    transports: ['polling', 'websocket'], // Polling zuerst, dann Upgrade zu WebSocket
+    transports: ['websocket', 'polling'], // WebSocket zuerst, dann Polling als Fallback
     upgrade: true,
     reconnection: true,
     reconnectionAttempts: 10,

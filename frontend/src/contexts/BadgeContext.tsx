@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { Badge } from '@capawesome/capacitor-badge';
 import api from '../services/api';
+import { initializeWebSocket, getSocket } from '../services/websocket';
 
 // Badge Context Interface
 interface BadgeContextType {
@@ -52,6 +53,26 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
       console.log('📱 BadgeContext: Badge not available:', error);
     }
   }, [badgeCount]);
+
+  // WebSocket: Live-Update wenn neue Nachrichten ankommen
+  // WICHTIG: Muss hier bleiben für Updates wenn User NICHT auf Chat-Tab ist
+  useEffect(() => {
+    const token = localStorage.getItem('konfi_token');
+    if (!token) return;
+
+    const socket = initializeWebSocket(token);
+
+    const handleNewMessage = () => {
+      console.log('📱 BadgeContext: New message via WebSocket, refreshing badge');
+      refreshFromAPI();
+    };
+
+    socket.on('newMessage', handleNewMessage);
+
+    return () => {
+      socket.off('newMessage', handleNewMessage);
+    };
+  }, [refreshFromAPI]);
 
   const incrementBadge = () => {
     setBadgeCount(prev => prev + 1);

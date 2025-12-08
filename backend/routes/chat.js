@@ -658,13 +658,29 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       res.json(message); // Respond immediately
 
-      // WebSocket: Broadcast new message to room
+      // WebSocket: Broadcast new message to room (für User die den Chat offen haben)
       if (global.io) {
         global.io.to(`room_${roomId}`).emit('newMessage', {
           roomId: parseInt(roomId),
           message: message
         });
         console.log(`📡 WebSocket: Broadcasted message to room_${roomId}`);
+
+        // ZUSÄTZLICH: Benachrichtige alle Teilnehmer über ihren persönlichen Room
+        // (für Badge-Updates in ChatOverview und TabBar, auch wenn sie nicht im Chat sind)
+        const participantsQuery = `
+          SELECT user_id, user_type FROM chat_participants
+          WHERE room_id = $1
+        `;
+        const { rows: allParticipants } = await db.query(participantsQuery, [roomId]);
+        for (const p of allParticipants) {
+          const userRoom = `user_${p.user_type}_${p.user_id}`;
+          global.io.to(userRoom).emit('newMessage', {
+            roomId: parseInt(roomId),
+            message: message
+          });
+        }
+        console.log(`📡 WebSocket: Notified ${allParticipants.length} participants via personal rooms`);
       }
 
       // Asynchronously send push notifications
