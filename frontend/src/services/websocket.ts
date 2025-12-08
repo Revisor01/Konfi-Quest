@@ -6,11 +6,17 @@ const WS_URL = 'https://konfi-quest.de';
 let socket: Socket | null = null;
 
 export const initializeWebSocket = (token: string): Socket => {
-  if (socket?.connected) {
-    console.log('🔌 WebSocket already connected');
+  // Pruefen ob Socket bereits existiert (auch wenn noch nicht connected)
+  if (socket) {
+    if (socket.connected) {
+      console.log('🔌 WebSocket already connected');
+    } else {
+      console.log('🔌 WebSocket exists, waiting for connection...');
+    }
     return socket;
   }
 
+  console.log('🔌 Creating NEW WebSocket connection to', WS_URL);
   socket = io(WS_URL, {
     auth: { token },
     transports: ['polling', 'websocket'], // Polling zuerst, dann Upgrade zu WebSocket
