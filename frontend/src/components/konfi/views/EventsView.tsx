@@ -493,13 +493,14 @@ border: `1px solid ${(() => {
 
                   
                   {/* Datum und Zeit */}
-                  <div style={{ 
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '0.85rem',
                     color: isPastEvent ? '#999' : '#666',
-                    marginBottom: '6px'
+                    marginBottom: '6px',
+                    marginLeft: '44px'
                   }}>
                     <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#dc2626' }} />
                     <span style={{ fontWeight: '500', color: isPastEvent ? '#999' : '#333' }}>
@@ -512,12 +513,13 @@ border: `1px solid ${(() => {
                   </div>
                   
                   {/* Location und Teilnehmer */}
-                  <div style={{ 
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
                     fontSize: '0.8rem',
-                    color: isPastEvent ? '#999' : '#666'
+                    color: isPastEvent ? '#999' : '#666',
+                    marginLeft: '44px'
                   }}>
                     {event.location && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

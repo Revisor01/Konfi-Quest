@@ -381,14 +381,15 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Zweite Zeile: Details - Datum, Punkte, Aktivität */}
+                        {/* Zweite Zeile: Datum, Punkte, Typ */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '12px',
                           fontSize: '0.8rem',
                           color: (isApproved || isRejected) ? '#999' : '#666',
-                          marginLeft: '44px'
+                          marginLeft: '44px',
+                          marginBottom: '4px'
                         }}>
                           {/* Datum */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
@@ -410,24 +411,29 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                             </div>
                           )}
 
-                          {/* Aktivität */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flex: 1 }}>
+                          {/* Typ */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
                             <IonIcon
                               icon={getTypeIcon(request.activity_type || 'gemeinde')}
                               style={{
                                 fontSize: '0.8rem',
-                                color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde'),
-                                flexShrink: 0
+                                color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde')
                               }}
                             />
-                            <span style={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {request.activity_name}
-                            </span>
+                            <span>{request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</span>
                           </div>
+                        </div>
+
+                        {/* Dritte Zeile: Aktivitaetsname */}
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: (isApproved || isRejected) ? '#999' : '#666',
+                          marginLeft: '44px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {request.activity_name}
                         </div>
                       </IonLabel>
                     </IonItem>
