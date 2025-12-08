@@ -8,20 +8,33 @@ class PushService {
     try {
       console.log('📨 Sending chat notification to user:', userId);
 
+      // Hole zuerst die Tokens des Senders um sie auszuschliessen
+      const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
+      const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
+      const senderTokenList = senderTokens.map(t => t.token);
+
       // NUR das neueste echte Device Token verwenden, Fallback-IDs ignorieren
-      const query = `
-        SELECT * FROM push_tokens 
-        WHERE user_id = $1 
-          AND device_id NOT LIKE '%\\_\\_%' 
+      // UND Sender-Tokens ausschliessen (fuer den Fall dass gleicher Token bei verschiedenen Accounts)
+      let query = `
+        SELECT * FROM push_tokens
+        WHERE user_id = $1
+          AND device_id NOT LIKE '%\\_\\_%'
           AND id IN (
-            SELECT MAX(id) 
-            FROM push_tokens 
+            SELECT MAX(id)
+            FROM push_tokens
             WHERE user_id = $2
               AND device_id NOT LIKE '%\\_\\_%'
             GROUP BY device_id, platform
           )
       `;
-      const { rows: tokens } = await db.query(query, [userId, userId]);
+
+      // Sender-Tokens ausschliessen wenn vorhanden
+      if (senderTokenList.length > 0) {
+        query += ` AND token NOT IN (${senderTokenList.map((_, i) => `$${i + 3}`).join(', ')})`;
+      }
+
+      const queryParams = [userId, userId, ...senderTokenList];
+      const { rows: tokens } = await db.query(query, queryParams);
 
       if (!tokens || tokens.length === 0) {
         console.log('⚠️ No push tokens found for user:', userId);

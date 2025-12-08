@@ -585,7 +585,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     markRoomAsRead();
 
     // WebSocket: Join room and listen for new messages
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('konfi_token');
     if (token) {
       const socket = initializeWebSocket(token);
       joinRoom(room.id);
