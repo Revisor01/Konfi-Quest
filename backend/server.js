@@ -28,7 +28,19 @@ const io = new Server(server, {
   cors: {
     origin: '*',  // Alle Origins - Apache handelt CORS
     methods: ['GET', 'POST']
-  }
+  },
+  // Debug: Mehr Logging
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// Debug: Log alle Engine-Level Events
+io.engine.on('connection_error', (err) => {
+  console.log('❌ Socket.io Engine connection_error:', err.req?.url, err.code, err.message, err.context);
+});
+
+io.engine.on('initial_headers', (headers, req) => {
+  console.log('🔌 Socket.io initial_headers for:', req.url?.substring(0, 50));
 });
 
 // Socket.io JWT Authentication Middleware
