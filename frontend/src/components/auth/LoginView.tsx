@@ -109,7 +109,7 @@ const LoginView: React.FC = () => {
               margin: '0',
               textShadow: '0 1px 2px rgba(0,0,0,0.3)'
             }}>
-              Level up, in Kontakt sein, Konfirmand:innenzeit erleben
+              Dein Abenteuer in der Gemeinde
             </p>
             
           </div>
@@ -207,11 +207,11 @@ const LoginView: React.FC = () => {
               <div style={{
                 textAlign: 'center',
                 marginTop: '24px',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 color: '#95a5a6'
               }}>
                 <p style={{ margin: '0' }}>
-                  Sammle Punkte • Erreiche Badges • Erlebe Abenteuer
+                  Sammle Punkte • Steig Level auf • Erreiche Badges • Bleib in Kontakt
                 </p>
               </div>
             </IonCardContent>
