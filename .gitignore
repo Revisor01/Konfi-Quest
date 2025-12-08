@@ -109,4 +109,6 @@ ios/App/public/
 ios/App/Podfile.lock
 
 # Claude settings
-.claude/
+.claude/backend/push/firebase-service-account.json
+backend/push/firebase-service-account.json
+.claude/settings.local.json

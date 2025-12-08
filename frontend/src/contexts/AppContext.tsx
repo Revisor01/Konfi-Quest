@@ -463,6 +463,17 @@ useEffect(() => {
     
     const setupPushNotifications = async () => {
       try {
+        // ✅ WICHTIG: Registration Listener für Android (und iOS Fallback)
+        PushNotifications.addListener('registration', (token) => {
+          console.log('📱 Push registration token received:', token.value.substring(0, 20) + '...');
+          // Token an Server senden
+          sendTokenToServer(token.value);
+        });
+
+        PushNotifications.addListener('registrationError', (error) => {
+          console.error('❌ Push registration error:', error);
+        });
+
         // ✅ Registriere Listener
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           console.log('📥 Push empfangen:', notification);
