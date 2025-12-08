@@ -34,15 +34,20 @@ const io = new Server(server, {
 // Socket.io JWT Authentication Middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
+  console.log('🔌 Socket.io Auth attempt - Token present:', !!token, token ? `(${token.substring(0, 20)}...)` : '');
+
   if (!token) {
+    console.log('❌ Socket.io Auth failed: No token provided');
     return next(new Error('Authentication required'));
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
+    console.log('✅ Socket.io Auth success for user:', decoded.display_name, '(ID:', decoded.id, ')');
     next();
   } catch (err) {
+    console.log('❌ Socket.io Auth failed: Invalid token -', err.message);
     return next(new Error('Invalid token'));
   }
 });

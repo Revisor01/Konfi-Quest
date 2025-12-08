@@ -42,6 +42,17 @@ module.exports = (db, verifyTokenRBAC) => {
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      // WICHTIG: FCM Token kann nur EINEM User gehoeren!
+      // Wenn sich ein neuer User auf demselben Geraet anmeldet, muss der Token
+      // von allen anderen Usern entfernt werden, um doppelte Benachrichtigungen zu verhindern.
+      const { rowCount: deletedOtherUsers } = await db.query(
+        'DELETE FROM push_tokens WHERE token = $1 AND user_id != $2',
+        [token, userId]
+      );
+      if (deletedOtherUsers > 0) {
+        console.log(`🧹 Removed token from ${deletedOtherUsers} other user(s) - same device, different account`);
+      }
+
       // Regel 5: Die Logik wird linearisiert, keine verschachtelten Callbacks mehr.
       // Regel 2 & 4: `INSERT OR REPLACE` (SQLite) wird durch `INSERT ... ON CONFLICT ... DO UPDATE` (PostgreSQL) ersetzt.
       // `CURRENT_TIMESTAMP` wird durch `NOW()` ersetzt. Platzhalter sind nun `$1`, `$2`, etc.
