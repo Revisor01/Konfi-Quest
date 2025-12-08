@@ -42,7 +42,12 @@ import {
   closeCircle,
   checkmark,
   trash,
-  list
+  list,
+  listOutline,
+  home,
+  pricetag,
+  returnUpBack,
+  trophy
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -177,8 +182,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
+      weekday: 'long',
       day: '2-digit',
-      month: '2-digit',
+      month: 'long',
       year: 'numeric'
     });
   };
@@ -574,6 +580,49 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
+                  {/* Warteliste */}
+                  {(eventData as any)?.waitlist_enabled && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={listOutline} style={{ marginRight: '12px', color: '#fd7e14', fontSize: '1.2rem' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {(eventData as any)?.waitlist_count || 0} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Punkte */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon icon={trophy} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData?.points || 0} Punkte
+                    </div>
+                  </div>
+
+                  {/* Typ */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                    <IonIcon
+                      icon={home}
+                      style={{
+                        marginRight: '12px',
+                        color: eventData?.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                        fontSize: '1.2rem'
+                      }}
+                    />
+                    <div style={{ fontSize: '1rem', color: '#333' }}>
+                      {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                    </div>
+                  </div>
+
+                  {/* Kategorien */}
+                  {eventData?.categories && eventData.categories.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={pricetag} style={{ marginRight: '12px', color: '#8b5cf6', fontSize: '1.2rem' }} />
+                      <div style={{ fontSize: '1rem', color: '#333' }}>
+                        {eventData.categories.map(c => c.name).join(', ')}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Ort */}
                   {eventData?.location && (
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
@@ -957,6 +1006,36 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       gap: '4px',
                       '--ion-item-background': 'transparent'
                     }}>
+                      {/* Auf Warteliste setzen - nur fuer bestaetigte Teilnehmer */}
+                      {participant.status === 'confirmed' && (
+                        <IonItemOption
+                          onClick={() => handleDemoteParticipant(participant)}
+                          style={{
+                            '--background': 'transparent',
+                            '--background-activated': 'transparent',
+                            '--background-focused': 'transparent',
+                            '--background-hover': 'transparent',
+                            '--color': 'transparent',
+                            '--ripple-color': 'transparent',
+                            padding: '0 2px',
+                            minWidth: '48px',
+                            maxWidth: '68px'
+                          }}
+                        >
+                          <div style={{
+                            width: '44px',
+                            height: '44px',
+                            backgroundColor: '#fd7e14',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 8px rgba(253, 126, 20, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                          }}>
+                            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'white' }} />
+                          </div>
+                        </IonItemOption>
+                      )}
                       <IonItemOption
                         onClick={() => handleRemoveParticipant(participant)}
                         style={{
