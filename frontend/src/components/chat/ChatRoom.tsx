@@ -431,7 +431,7 @@ interface Message {
   file_path?: string;
   file_name?: string;
   file_size?: number;
-  message_type: 'text' | 'file' | 'poll';
+  message_type: 'text' | 'file' | 'poll' | 'image' | 'video';
   is_deleted?: number; // 1 if deleted, 0 if not
   // Poll-Daten direkt in der Message
   question?: string;
@@ -1190,7 +1190,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             <div
               onClick={() => {
                 // Scroll zur zitierten Nachricht
-                const replyElement = document.getElementById(`msg-${message.reply_to_id}`);
+                const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
                 if (replyElement) {
                   replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   // Kurz hervorheben
