@@ -351,13 +351,19 @@ class PushService {
   /**
    * Von Warteliste aufgerueckt - Push an Konfi
    */
-  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName) {
+  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null) {
     try {
       console.log(`🎉 Sending waitlist promotion notification to konfi ${konfiId}`);
 
+      let dateInfo = '';
+      if (eventDate) {
+        const date = new Date(eventDate);
+        dateInfo = ` am ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+      }
+
       const notification = {
         title: 'Platz frei geworden!',
-        body: `Gute Nachricht! Du bist für "${eventName}" nachgerückt und jetzt angemeldet.`,
+        body: `Gute Nachricht! Du bist für "${eventName}"${dateInfo} nachgerückt und jetzt angemeldet.`,
         data: {
           type: 'waitlist_promotion',
           event_name: eventName
@@ -378,9 +384,15 @@ class PushService {
     try {
       console.log(`❌ Sending event cancellation to ${userIds.length} users`);
 
+      let dateInfo = eventDate;
+      if (eventDate) {
+        const date = new Date(eventDate);
+        dateInfo = `${date.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} um ${date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr`;
+      }
+
       const notification = {
         title: 'Event abgesagt',
-        body: `Leider abgesagt: "${eventName}" am ${eventDate}`,
+        body: `Leider abgesagt: "${eventName}" am ${dateInfo}`,
         data: {
           type: 'event_cancelled',
           event_name: eventName
@@ -448,7 +460,7 @@ class PushService {
       const notification = {
         title: isPresent ? 'Teilnahme bestätigt!' : 'Nicht erschienen',
         body: isPresent
-          ? `Deine Teilnahme an "${eventName}" wurde bestätigt.${points > 0 ? ` +${points} Punkte!` : ''}`
+          ? `Deine Teilnahme an "${eventName}" wurde bestätigt.${points > 0 ? ` Du erhältst +${points} Punkte!` : ''}`
           : `Du wurdest als "nicht erschienen" für "${eventName}" markiert.`,
         data: {
           type: 'event_attendance',
