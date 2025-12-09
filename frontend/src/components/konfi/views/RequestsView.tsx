@@ -442,6 +442,53 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                             "{request.comment}"
                           </div>
                         )}
+
+                        {/* Ablehnungsgrund bei rejected */}
+                        {isRejected && request.admin_comment && (
+                          <div style={{
+                            marginLeft: '44px',
+                            marginTop: '6px',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(220, 53, 69, 0.2)'
+                          }}>
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: '8px'
+                            }}>
+                              <IonIcon
+                                icon={closeCircle}
+                                style={{
+                                  fontSize: '1rem',
+                                  color: '#dc3545',
+                                  flexShrink: 0,
+                                  marginTop: '2px'
+                                }}
+                              />
+                              <div>
+                                <span style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: '600',
+                                  color: '#dc3545',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.5px'
+                                }}>
+                                  Grund der Ablehnung
+                                </span>
+                                <p style={{
+                                  margin: '2px 0 0 0',
+                                  fontSize: '0.8rem',
+                                  color: '#666',
+                                  lineHeight: '1.4'
+                                }}>
+                                  {request.admin_comment}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </IonLabel>
                     </IonItem>
 
