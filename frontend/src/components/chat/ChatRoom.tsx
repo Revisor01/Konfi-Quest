@@ -39,7 +39,8 @@ import {
   people,
   images,
   folder,
-  chevronForward
+  chevronForward,
+  time
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
