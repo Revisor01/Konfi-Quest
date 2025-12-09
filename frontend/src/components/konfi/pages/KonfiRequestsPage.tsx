@@ -20,6 +20,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import RequestsView from '../views/RequestsView';
 import ActivityRequestModal from '../modals/ActivityRequestModal';
+import RequestDetailModal from '../modals/RequestDetailModal';
 
 interface ActivityRequest {
   id: number;
@@ -40,10 +41,11 @@ const KonfiRequestsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-requests');
   const [presentAlert] = useIonAlert();
-  
+
   const [requests, setRequests] = useState<ActivityRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
 
   const [presentRequestModal, dismissRequestModal] = useIonModal(
     ActivityRequestModal,
@@ -52,6 +54,22 @@ const KonfiRequestsPage: React.FC = () => {
       onSuccess: () => {
         dismissRequestModal();
         loadRequests();
+      }
+    }
+  );
+
+  const [presentDetailModal, dismissDetailModal] = useIonModal(
+    RequestDetailModal,
+    {
+      request: selectedRequest,
+      onClose: () => {
+        dismissDetailModal();
+        setSelectedRequest(null);
+      },
+      onDelete: (request: ActivityRequest) => {
+        dismissDetailModal();
+        setSelectedRequest(null);
+        handleDeleteRequest(request);
       }
     }
   );
@@ -74,8 +92,15 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleAddRequest = () => {
-    console.log('🎯 Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
+    console.log('Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
     presentRequestModal({
+      presentingElement: pageRef.current || presentingElement || undefined
+    });
+  };
+
+  const handleSelectRequest = (request: ActivityRequest) => {
+    setSelectedRequest(request);
+    presentDetailModal({
       presentingElement: pageRef.current || presentingElement || undefined
     });
   };
@@ -191,9 +216,10 @@ const KonfiRequestsPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (
-          <RequestsView 
+          <RequestsView
             requests={getFilteredRequests()}
             onDeleteRequest={handleDeleteRequest}
+            onSelectRequest={handleSelectRequest}
             activeTab={activeTab}
             onTabChange={setActiveTab}
             formatDate={formatDate}
