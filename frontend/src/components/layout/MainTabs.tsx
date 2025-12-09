@@ -114,7 +114,17 @@ const MainTabs: React.FC = () => {
 
     // Refresh every 60 seconds
     const interval = setInterval(loadPendingEventsCount, 60000);
-    return () => clearInterval(interval);
+
+    // Event Listener fuer sofortige Aktualisierung bei Attendance-Aenderung
+    const handleEventsUpdated = () => {
+      loadPendingEventsCount();
+    };
+    window.addEventListener('events-updated', handleEventsUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('events-updated', handleEventsUpdated);
+    };
   }, [user]);
 
   // Load new badges count for konfi (badges not yet seen)
