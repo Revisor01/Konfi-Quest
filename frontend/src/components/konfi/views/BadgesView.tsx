@@ -634,7 +634,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
 
                       return (
-                        <IonCol size="6" key={badge.id} style={{ padding: '6px' }}>
+                        <IonCol size="6" sizeMd="3" key={badge.id} style={{ padding: '6px' }}>
                           <div style={{
                             background: '#ffffff',
                             borderRadius: '16px',
@@ -802,20 +802,31 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
                             {/* Status Badge */}
                             {isEarned ? (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                background: `linear-gradient(135deg, ${badgeColor} 0%, ${badgeColor}dd 100%)`,
-                                color: 'white',
-                                fontSize: '0.65rem',
-                                fontWeight: '700',
-                                padding: '5px 10px',
-                                borderRadius: '16px',
-                                boxShadow: `0 3px 10px ${badgeColor}35`
-                              }}>
-                                <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.8rem' }} />
-                                ERREICHT
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  background: `linear-gradient(135deg, ${badgeColor} 0%, ${badgeColor}dd 100%)`,
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '700',
+                                  padding: '5px 10px',
+                                  borderRadius: '16px',
+                                  boxShadow: `0 3px 10px ${badgeColor}35`
+                                }}>
+                                  <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.8rem' }} />
+                                  ERREICHT
+                                </div>
+                                {badge.earned_at && (
+                                  <div style={{
+                                    marginTop: '6px',
+                                    fontSize: '0.7rem',
+                                    color: '#888'
+                                  }}>
+                                    am {new Date(badge.earned_at).toLocaleDateString('de-DE')}
+                                  </div>
+                                )}
                               </div>
                             ) : hasProgress ? (
                               <div style={{ width: '100%' }}>
