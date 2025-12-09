@@ -316,6 +316,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   const badgeCategories = getBadgeCategories();
 
+  // Check if there are undiscovered secret badges
+  const earnedSecretCount = badges.filter(b => b.is_earned && b.is_hidden).length;
+  const hasUndiscoveredSecrets = badgeStats.totalSecret > earnedSecretCount;
+
   const getBadgeColor = (badge: Badge) => {
     if (badge.color) {
       return badge.color;
@@ -440,11 +444,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                     }}
                   />
                   <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{Math.round((badges.filter(b => b.is_earned).length / badges.length) * 100) || 0}</span>
+                    <span style={{ fontSize: '1.5rem' }}>{Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}</span>
                     <span style={{ fontSize: '0.9rem', fontWeight: '500', opacity: 0.8 }}>%</span>
                   </div>
                   <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Erreicht
+                    Gesamt
                   </div>
                 </div>
               </IonCol>
@@ -607,11 +611,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       top: '50%',
                       left: '50%',
                       transform: 'translate(-50%, -50%)',
-                      fontSize: '0.7rem',
+                      fontSize: progressPercent === 100 && hasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
                       fontWeight: '700',
                       color: category.color
                     }}>
-                      {progressPercent}%
+                      {progressPercent === 100 && hasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
                     </span>
                   </div>
                 </div>

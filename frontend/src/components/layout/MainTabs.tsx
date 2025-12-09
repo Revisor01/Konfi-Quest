@@ -200,7 +200,7 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={flash} />
               <IonLabel>Events</IonLabel>
               {pendingEventsCount > 0 && (
-                <IonBadge color="warning">
+                <IonBadge color="danger">
                   {pendingEventsCount > 9 ? '9+' : pendingEventsCount}
                 </IonBadge>
               )}
@@ -273,7 +273,7 @@ const MainTabs: React.FC = () => {
               <IonIcon icon={star} />
               <IonLabel>Badges</IonLabel>
               {newBadgesCount > 0 && (
-                <IonBadge color="success">
+                <IonBadge color="danger">
                   {newBadgesCount > 9 ? '9+' : newBadgesCount}
                 </IonBadge>
               )}
