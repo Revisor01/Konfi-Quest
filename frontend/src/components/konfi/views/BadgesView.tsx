@@ -181,7 +181,36 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         filtered = badges;
     }
 
-    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    // Motivierende Sortierung:
+    // 1. Erreichte Badges zuerst (Erfolgserlebnis!)
+    // 2. Fast geschafft (>70% Fortschritt) - motiviert zum Weitermachen
+    // 3. In Arbeit (1-70%)
+    // 4. Gesperrt (0% oder kein Fortschritt)
+    return filtered.sort((a, b) => {
+      // Erreichte zuerst
+      if (a.is_earned && !b.is_earned) return -1;
+      if (!a.is_earned && b.is_earned) return 1;
+
+      // Bei beiden erreicht: nach Datum (neueste zuerst)
+      if (a.is_earned && b.is_earned) {
+        if (a.earned_at && b.earned_at) {
+          return new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime();
+        }
+        return a.name.localeCompare(b.name);
+      }
+
+      // Bei nicht erreichten: nach Fortschritt sortieren
+      const progressA = a.progress_percentage || 0;
+      const progressB = b.progress_percentage || 0;
+
+      // Höherer Fortschritt zuerst
+      if (progressA !== progressB) {
+        return progressB - progressA;
+      }
+
+      // Bei gleichem Fortschritt: alphabetisch
+      return a.name.localeCompare(b.name);
+    });
   };
 
   const getBadgeColor = (badge: Badge) => {
@@ -407,36 +436,20 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                 return (
                   <IonCol size="6" sizeMd="4" sizeLg="3" key={badge.id} style={{ padding: '6px' }}>
                     <div style={{
-                      background: isEarned
-                        ? `linear-gradient(145deg, ${badgeColor}15 0%, ${badgeColor}08 50%, #ffffff 100%)`
-                        : 'linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%)',
+                      background: '#ffffff',
                       borderRadius: '20px',
                       padding: '20px 16px',
                       textAlign: 'center',
                       position: 'relative',
                       border: isEarned
-                        ? `2px solid ${badgeColor}40`
-                        : '2px solid #e8e8e8',
+                        ? `2px solid ${badgeColor}50`
+                        : '2px solid #eeeeee',
                       boxShadow: isEarned
-                        ? `0 8px 24px ${badgeColor}25, 0 4px 12px rgba(0,0,0,0.08)`
-                        : '0 4px 12px rgba(0,0,0,0.06)',
+                        ? `0 8px 24px ${badgeColor}20`
+                        : '0 2px 8px rgba(0,0,0,0.04)',
                       transition: 'all 0.3s ease',
                       overflow: 'hidden'
                     }}>
-                      {/* Shimmer-Effekt für erreichte Badges */}
-                      {isEarned && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: `linear-gradient(90deg, transparent 0%, ${badgeColor}10 50%, transparent 100%)`,
-                          backgroundSize: '200% 100%',
-                          animation: 'shimmer 3s ease-in-out infinite',
-                          pointerEvents: 'none'
-                        }} />
-                      )}
 
                       {/* Geheim-Badge Indikator */}
                       {badge.is_hidden && (
