@@ -185,6 +185,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
 
     // ALLE Kategorien aus der Datenbank
+    // WICHTIG: Geheime Badges (!b.is_hidden) werden aus normalen Kategorien ausgeschlossen
     const categories: { key: string; title: string; icon: string; color: string; badges: Badge[] }[] = [
       // Punkte-basierte Badges
       {
@@ -193,7 +194,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: trophy,
         color: '#ffd700',
         badges: filtered
-          .filter(b => b.criteria_type === 'total_points')
+          .filter(b => b.criteria_type === 'total_points' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -202,7 +203,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: sunny,
         color: '#ff9500',
         badges: filtered
-          .filter(b => b.criteria_type === 'gottesdienst_points')
+          .filter(b => b.criteria_type === 'gottesdienst_points' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -211,7 +212,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: people,
         color: '#2dd36f',
         badges: filtered
-          .filter(b => b.criteria_type === 'gemeinde_points')
+          .filter(b => b.criteria_type === 'gemeinde_points' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -220,7 +221,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: gift,
         color: '#ff6b9d',
         badges: filtered
-          .filter(b => b.criteria_type === 'bonus_points')
+          .filter(b => b.criteria_type === 'bonus_points' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -229,7 +230,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: layersOutline,
         color: '#5856d6',
         badges: filtered
-          .filter(b => b.criteria_type === 'both_categories')
+          .filter(b => b.criteria_type === 'both_categories' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       // Aktivitaeten-basierte Badges
@@ -239,7 +240,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: checkmarkCircle,
         color: '#3880ff',
         badges: filtered
-          .filter(b => b.criteria_type === 'activity_count')
+          .filter(b => b.criteria_type === 'activity_count' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -248,7 +249,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: gridOutline,
         color: '#10dc60',
         badges: filtered
-          .filter(b => b.criteria_type === 'unique_activities')
+          .filter(b => b.criteria_type === 'unique_activities' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -257,7 +258,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: prismOutline,
         color: '#7044ff',
         badges: filtered
-          .filter(b => b.criteria_type === 'activity_combination')
+          .filter(b => b.criteria_type === 'activity_combination' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -266,7 +267,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: cubeOutline,
         color: '#0cd1e8',
         badges: filtered
-          .filter(b => b.criteria_type === 'category_activities')
+          .filter(b => b.criteria_type === 'category_activities' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -275,7 +276,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: handLeft,
         color: '#ffce00',
         badges: filtered
-          .filter(b => b.criteria_type === 'specific_activity')
+          .filter(b => b.criteria_type === 'specific_activity' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       // Zeit-basierte Badges
@@ -285,7 +286,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: flame,
         color: '#eb445a',
         badges: filtered
-          .filter(b => b.criteria_type === 'streak')
+          .filter(b => b.criteria_type === 'streak' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       {
@@ -294,7 +295,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: time,
         color: '#8e8e93',
         badges: filtered
-          .filter(b => b.criteria_type === 'time_based')
+          .filter(b => b.criteria_type === 'time_based' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
       // Event-basierte Badges
@@ -304,10 +305,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         icon: calendar,
         color: '#e63946',
         badges: filtered
-          .filter(b => b.criteria_type === 'event_count')
+          .filter(b => b.criteria_type === 'event_count' && !b.is_hidden)
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
-      // Geheime Badges
+      // Geheime Badges - NUR hier erscheinen is_hidden Badges
       {
         key: 'secret',
         title: 'Geheime Badges',
