@@ -1097,7 +1097,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonCard style={{ margin: '16px' }}>
             <IonCardHeader>
               <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IonIcon icon={closeCircle} style={{ color: '#ff9500', fontSize: '1.2rem' }} />
+                <IonIcon icon={closeCircle} style={{ color: '#dc3545', fontSize: '1.2rem' }} />
                 Abmeldungen ({unregistrations.length})
               </IonCardTitle>
             </IonCardHeader>
@@ -1132,13 +1132,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <div style={{
                           width: '28px',
                           height: '28px',
-                          backgroundColor: '#ff9500',
+                          backgroundColor: '#dc3545',
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
-                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
                         }}>
                           <IonIcon
                             icon={closeCircle}
@@ -1182,8 +1182,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           })}
                         </div>
                         {unreg.reason && (
-                          <div style={{ marginTop: '4px', fontStyle: 'italic', color: '#888' }}>
-                            Grund: {unreg.reason}
+                          <div style={{
+                            marginTop: '8px',
+                            padding: '8px 12px',
+                            backgroundColor: 'rgba(220, 53, 69, 0.08)',
+                            borderRadius: '8px',
+                            borderLeft: '3px solid #dc3545',
+                            color: '#666',
+                            fontSize: '0.85rem',
+                            lineHeight: '1.4'
+                          }}>
+                            <span style={{ fontWeight: '600', color: '#dc3545' }}>Grund:</span> {unreg.reason}
                           </div>
                         )}
                       </div>
