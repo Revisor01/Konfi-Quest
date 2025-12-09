@@ -541,11 +541,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
               CASE
                 WHEN m.deleted_at IS NOT NULL THEN true
                 ELSE false
-              END as is_deleted
+              END as is_deleted,
+              -- Reply data
+              reply_msg.id as reply_to_id,
+              reply_msg.content as reply_to_content,
+              reply_msg.file_name as reply_to_file_name,
+              reply_msg.message_type as reply_to_message_type,
+              reply_user.display_name as reply_to_sender_name
       FROM chat_messages m
       LEFT JOIN users u ON m.user_id = u.id
       LEFT JOIN roles ro ON u.role_id = ro.id
       LEFT JOIN chat_polls p ON m.id = p.message_id
+      LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
+      LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id
       WHERE m.room_id = $1
       ORDER BY m.created_at DESC
       LIMIT $2 OFFSET $3
@@ -645,13 +653,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Fetch the complete message object to send back and for push notifications
       const messageQuery = `
-      SELECT m.*, 
+      SELECT m.*,
               m.user_id as sender_id,
               m.user_type as sender_type,
               u.display_name as sender_name,
-              u.username as sender_username
+              u.username as sender_username,
+              -- Reply data
+              reply_msg.id as reply_to_id,
+              reply_msg.content as reply_to_content,
+              reply_msg.file_name as reply_to_file_name,
+              reply_msg.message_type as reply_to_message_type,
+              reply_user.display_name as reply_to_sender_name
       FROM chat_messages m
       JOIN users u ON m.user_id = u.id
+      LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
+      LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id
       WHERE m.id = $1
     `;
       const { rows: [message] } = await db.query(messageQuery, [messageId]);

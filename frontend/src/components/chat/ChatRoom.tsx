@@ -24,12 +24,12 @@ import {
   IonActionSheet,
   useIonModal
 } from '@ionic/react';
-import { 
-  arrowBack, 
-  send, 
-  attach, 
-  camera, 
-  document, 
+import {
+  arrowBack,
+  send,
+  attach,
+  camera,
+  document,
   image,
   barChart,
   download,
@@ -40,7 +40,9 @@ import {
   images,
   folder,
   chevronForward,
-  time
+  time,
+  returnUpBack,
+  closeCircle
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -439,6 +441,13 @@ interface Message {
   expires_at?: string;
   poll_id?: number;
   deleted?: boolean;
+  // Reply-Daten
+  reply_to?: number;
+  reply_to_id?: number;
+  reply_to_content?: string;
+  reply_to_file_name?: string;
+  reply_to_message_type?: string;
+  reply_to_sender_name?: string;
 }
 
 interface ChatRoom {
@@ -480,6 +489,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -729,15 +739,20 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
       if (selectedFile) {
         formData.append('file', selectedFile);
-        console.log('📎 Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
+        console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       }
-      
+      // Reply-Referenz hinzufuegen wenn vorhanden
+      if (replyToMessage) {
+        formData.append('reply_to', replyToMessage.id.toString());
+      }
+
       // Debug: Check what we're sending
-      console.log('📤 FormData contents:', {
+      console.log('FormData contents:', {
         hasContent: !!messageText.trim(),
         hasFile: !!selectedFile,
         fileName: selectedFile?.name,
-        fileSize: selectedFile?.size
+        fileSize: selectedFile?.size,
+        replyTo: replyToMessage?.id
       });
 
       await api.post(`/chat/rooms/${room.id}/messages`, formData, {
@@ -748,6 +763,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Force multipart/form-data content type for file uploads
 
       setMessageText('');
+      setReplyToMessage(null); // Reset reply after sending
       clearSelectedFile();
 
       // Mark as read BEFORE loading messages to prevent badge increment
@@ -1090,11 +1106,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
 
     return (
-      <div key={message.id} style={{
+      <div key={message.id} id={`msg-${message.id}`} style={{
         display: 'flex',
         flexDirection: isOwnMessage ? 'row-reverse' : 'row',
         margin: '8px 16px',
-        alignItems: 'flex-end'
+        alignItems: 'flex-end',
+        transition: 'background-color 0.3s ease'
       }}>
         {!isOwnMessage && room.type !== 'direct' && (
           <IonAvatar style={{
@@ -1167,7 +1184,57 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               )}
             </div>
           )}
-          
+
+          {/* Reply Anzeige */}
+          {message.reply_to_id && (
+            <div
+              onClick={() => {
+                // Scroll zur zitierten Nachricht
+                const replyElement = document.getElementById(`msg-${message.reply_to_id}`);
+                if (replyElement) {
+                  replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  // Kurz hervorheben
+                  replyElement.style.backgroundColor = 'rgba(23, 162, 184, 0.2)';
+                  setTimeout(() => {
+                    replyElement.style.backgroundColor = '';
+                  }, 1500);
+                }
+              }}
+              style={{
+                padding: '6px 10px',
+                marginBottom: '6px',
+                backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)',
+                borderRadius: '8px',
+                borderLeft: `3px solid ${isOwnMessage ? 'rgba(255,255,255,0.5)' : '#17a2b8'}`,
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                color: isOwnMessage ? 'rgba(255,255,255,0.9)' : '#17a2b8',
+                marginBottom: '2px'
+              }}>
+                {message.reply_to_sender_name}
+              </div>
+              <div style={{
+                fontSize: '0.8rem',
+                color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#666',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {message.reply_to_message_type === 'image' || message.reply_to_message_type === 'video'
+                  ? (message.reply_to_file_name || 'Medieninhalt')
+                  : message.reply_to_message_type === 'file'
+                    ? (message.reply_to_file_name || 'Datei')
+                    : message.reply_to_message_type === 'poll'
+                      ? 'Umfrage'
+                      : (message.reply_to_content || '')}
+              </div>
+            </div>
+          )}
+
           {message.is_deleted ? (
             <div style={{
               fontStyle: 'italic',
@@ -1732,6 +1799,48 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       )}
 
       <IonFooter>
+        {/* Reply Preview */}
+        {replyToMessage && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px 16px',
+            backgroundColor: 'var(--ion-color-light)',
+            borderTop: '1px solid var(--ion-color-light-shade)',
+            borderLeft: '3px solid var(--ion-color-primary)',
+            gap: '8px'
+          }}>
+            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'var(--ion-color-primary)' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: '600', fontSize: '0.8rem', color: 'var(--ion-color-primary)' }}>
+                {replyToMessage.sender_name}
+              </div>
+              <div style={{
+                fontSize: '0.85rem',
+                color: '#666',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {replyToMessage.message_type === 'image' || replyToMessage.message_type === 'video'
+                  ? (replyToMessage.file_name || 'Medieninhalt')
+                  : replyToMessage.message_type === 'file'
+                    ? (replyToMessage.file_name || 'Datei')
+                    : replyToMessage.message_type === 'poll'
+                      ? 'Umfrage'
+                      : (replyToMessage.content || '')}
+              </div>
+            </div>
+            <IonButton
+              fill="clear"
+              size="small"
+              onClick={() => setReplyToMessage(null)}
+              style={{ '--padding-start': '4px', '--padding-end': '4px' }}
+            >
+              <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#999' }} />
+            </IonButton>
+          </div>
+        )}
         <IonToolbar style={{
           '--min-height': 'auto', // Damit es sich an den Inhalt anpasst
           '--padding-start': '16px',
@@ -1829,6 +1938,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         }}
         buttons={[
           {
+            text: 'Antworten',
+            icon: 'arrow-undo-outline',
+            handler: () => {
+              if (selectedMessage) {
+                setReplyToMessage(selectedMessage);
+                // Focus textarea after setting reply
+                setTimeout(() => {
+                  textareaRef.current?.setFocus();
+                }, 100);
+              }
+            }
+          },
+          {
             text: 'Teilen',
             icon: 'share-outline',
             handler: () => {
@@ -1836,7 +1958,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             }
           },
           ...((user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name)) ? [{
-            text: 'Löschen',
+            text: 'Loeschen',
             icon: 'trash-outline',
             role: 'destructive' as const,
             handler: () => {
