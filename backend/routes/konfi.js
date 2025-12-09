@@ -1497,27 +1497,39 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         });
       }
       
-      // Delete registration (with reason for audit trail)
+      // Delete registration
       await db.query(
         'DELETE FROM event_bookings WHERE user_id = $1 AND event_id = $2',
         [konfiId, eventId]
       );
-      
-      // Optional: Log unregistration with reason for admin visibility
-      if (reason) {
-        await db.query(
-          'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
-          [konfiId, eventId, reason, req.user.organization_id]
-        );
-      }
-      
-      res.json({ message: 'Successfully unregistered from event' });
+
+      // IMMER Abmeldung protokollieren (mit oder ohne Grund)
+      await db.query(
+        'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
+        [konfiId, eventId, reason || null, req.user.organization_id]
+      );
+
+      // Hole Konfi-Name für Admin-Push
+      const { rows: [konfiData] } = await db.query(
+        'SELECT display_name FROM users WHERE id = $1',
+        [konfiId]
+      );
+      const konfiName = konfiData?.display_name || 'Ein Konfi';
+
+      res.json({ message: 'Abmeldung erfolgreich' });
 
       // Push-Notification an Konfi senden
       try {
         await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name);
       } catch (pushErr) {
-        console.error('Error sending event unregistration push:', pushErr);
+        console.error('Error sending event unregistration push to konfi:', pushErr);
+      }
+
+      // Push-Notification an ALLE Admins senden
+      try {
+        await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason);
+      } catch (pushErr) {
+        console.error('Error sending event unregistration push to admins:', pushErr);
       }
 
       // Live-Update an Konfi und Admins senden

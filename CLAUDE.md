@@ -9,6 +9,10 @@
    - ERLAUBT: IonIcon mit Icons aus ionicons/icons (auch outline Varianten)
    - ERLAUBT: Line Icons und Icon Fonts
    - Das gilt für ALLE Dateien: .tsx, .ts, .js, .jsx, Kommentare, Strings, ÜBERALL!
+4. **ECHTE UMLAUTE VERWENDEN** - Immer ü, ö, ä, ß statt ue, oe, ae, ss!
+   - RICHTIG: für, Glückwunsch, bestätigt, Größe
+   - FALSCH: fuer, Glueckwunsch, bestaetigt, Groesse
+   - Das gilt besonders für Push-Nachrichten, UI-Texte und Meldungen!
 
 ---
 

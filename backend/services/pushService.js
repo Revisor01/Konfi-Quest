@@ -350,7 +350,7 @@ class PushService {
   // ====================================================================
 
   /**
-   * Event-Anmeldung bestaetigt - Push an Konfi
+   * Event-Anmeldung bestätigt - Push an Konfi
    */
   static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null) {
     try {
@@ -364,10 +364,10 @@ class PushService {
 
       const isConfirmed = status === 'confirmed';
       const notification = {
-        title: isConfirmed ? 'Anmeldung bestaetigt!' : 'Auf Warteliste',
+        title: isConfirmed ? 'Anmeldung bestätigt!' : 'Auf Warteliste',
         body: isConfirmed
-          ? `Du bist fuer "${eventName}" am ${dateFormatted} angemeldet.`
-          : `Du stehst auf der Warteliste fuer "${eventName}" am ${dateFormatted}.`,
+          ? `Du bist für "${eventName}" am ${dateFormatted} angemeldet.`
+          : `Du stehst auf der Warteliste für "${eventName}" am ${dateFormatted}.`,
         data: {
           type: 'event_registered',
           event_name: eventName,
@@ -384,14 +384,14 @@ class PushService {
   }
 
   /**
-   * Event-Abmeldung bestaetigt - Push an Konfi
+   * Event-Abmeldung bestätigt - Push an Konfi
    */
   static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
     try {
       console.log(`📤 Sending event unregistration confirmation to konfi ${konfiId}`);
 
       const notification = {
-        title: 'Abmeldung bestaetigt',
+        title: 'Abmeldung bestätigt',
         body: `Du hast dich von "${eventName}" abgemeldet.`,
         data: {
           type: 'event_unregistered',
@@ -407,6 +407,46 @@ class PushService {
   }
 
   /**
+   * Konfi hat sich von Event abgemeldet - Push an alle Admins der Organisation
+   */
+  static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null) {
+    try {
+      console.log(`📤 Sending event unregistration notification to admins of org ${organizationId}`);
+
+      // Hole alle Admins der Organisation
+      const { rows: admins } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+        [organizationId]
+      );
+
+      if (admins.length === 0) {
+        console.log('⚠️ No admins found for organization');
+        return { success: false, message: 'No admins found' };
+      }
+
+      const adminIds = admins.map(a => a.id);
+      const notification = {
+        title: 'Event-Abmeldung',
+        body: reason
+          ? `${konfiName} hat sich von "${eventName}" abgemeldet. Grund: ${reason}`
+          : `${konfiName} hat sich von "${eventName}" abgemeldet.`,
+        data: {
+          type: 'event_unregistration',
+          event_name: eventName,
+          konfi_name: konfiName
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('❌ sendEventUnregistrationToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Level-Up - Push an Konfi
    */
   static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null) {
@@ -415,7 +455,7 @@ class PushService {
 
       const notification = {
         title: `Level Up! ${levelIcon || ''}`,
-        body: `Herzlichen Glueckwunsch! Du hast Level "${levelTitle || levelName}" erreicht!`,
+        body: `Herzlichen Glückwunsch! Du hast Level "${levelTitle || levelName}" erreicht!`,
         data: {
           type: 'level_up',
           level_name: levelName,
@@ -459,7 +499,7 @@ class PushService {
   }
 
   /**
-   * Von Warteliste aufgerueckt - Push an Konfi
+   * Von Warteliste aufgerückt - Push an Konfi
    */
   static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null) {
     try {
@@ -473,7 +513,7 @@ class PushService {
 
       const notification = {
         title: 'Platz frei geworden!',
-        body: `Gute Nachricht! Du bist für "${eventName}"${dateInfo} nachgerückt und jetzt angemeldet.`,
+        body: `Du bist für "${eventName}"${dateInfo} nachgerückt und jetzt angemeldet.`,
         data: {
           type: 'waitlist_promotion',
           event_name: eventName,
