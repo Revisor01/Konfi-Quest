@@ -95,6 +95,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
+  const [timeslots, setTimeslots] = useState<any[]>([]);
+  const [selectedTimeslotId, setSelectedTimeslotId] = useState<number | null>(null);
 
   const handleUnregister = async (reason: string) => {
     if (!eventData || !reason.trim()) {
@@ -141,19 +143,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       // Get event details from konfi API with konfi-specific data
       const eventsResponse = await api.get('/konfi/events');
       const event = eventsResponse.data.find((e: Event) => e.id === eventId);
-      
+
       if (!event) {
         setError('Event nicht gefunden');
         return;
       }
-      
+
       // Event already has all konfi-specific data from /konfi/events
       setEventData(event);
-      
+
+      // Load timeslots if event has them
+      if ((event as any).has_timeslots) {
+        try {
+          const timeslotsResponse = await api.get(`/konfi/events/${eventId}/timeslots`);
+          setTimeslots(timeslotsResponse.data || []);
+        } catch (err) {
+          console.error('Error loading timeslots:', err);
+          setTimeslots([]);
+        }
+      } else {
+        setTimeslots([]);
+      }
+
       // Check if user already has a konfirmation booked
       const hasKonfirmation = await checkExistingKonfirmation();
       setHasExistingKonfirmation(hasKonfirmation);
-      
+
     } catch (err) {
       setError('Fehler beim Laden der Event-Details');
       console.error('Error loading event details:', err);
@@ -229,7 +244,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const handleRegister = async () => {
     if (!eventData) return;
-    
+
+    // Check if event has timeslots and user hasn't selected one
+    const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
+    if (hasTimeslots && !selectedTimeslotId) {
+      setError('Bitte waehle zuerst einen Zeitslot aus');
+      return;
+    }
+
     // Check if this is a Konfirmation event and if user already has one
     if (isKonfirmationEvent(eventData)) {
       const hasExistingKonfirmation = await checkExistingKonfirmation();
@@ -242,12 +264,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         return;
       }
     }
-    
+
     try {
-      await api.post(`/konfi/events/${eventData.id}/register`);
+      const payload: any = {};
+      if (selectedTimeslotId) {
+        payload.timeslot_id = selectedTimeslotId;
+      }
+      await api.post(`/konfi/events/${eventData.id}/register`, payload);
       setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
+      setSelectedTimeslotId(null); // Reset selection
       await loadEventData();
-      
+
       // Trigger events update for parent page
       window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (err: any) {
@@ -595,20 +622,88 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
-                  {/* Timeslots direkt unter Datum */}
-                  {(eventData as any).has_timeslots && (eventData as any).timeslots && (eventData as any).timeslots.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {(eventData as any).timeslots.map((slot: any, index: number) => (
-                          <div key={slot.id} style={{ marginBottom: index < (eventData as any).timeslots.length - 1 ? '4px' : '0' }}>
-                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
-                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                            <span style={{ color: '#666', marginLeft: '8px' }}>
-                              ({slot.registered_count || 0}/{slot.max_participants})
-                            </span>
-                          </div>
-                        ))}
+                  {/* Timeslots direkt unter Datum - klickbar wenn nicht angemeldet */}
+                  {(eventData as any).has_timeslots && timeslots.length > 0 && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                        <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
+                        <span style={{ fontWeight: '600', color: '#333' }}>
+                          {eventData.is_registered ? 'Zeitslots' : 'Zeitslot auswaehlen:'}
+                        </span>
+                      </div>
+                      <div style={{ marginLeft: '32px' }}>
+                        {timeslots.map((slot: any) => {
+                          const isFull = parseInt(slot.registered_count || 0) >= slot.max_participants;
+                          const isSelected = selectedTimeslotId === slot.id;
+                          const canSelect = !eventData.is_registered && eventData.can_register && !isFull;
+
+                          return (
+                            <div
+                              key={slot.id}
+                              onClick={() => canSelect && setSelectedTimeslotId(slot.id)}
+                              style={{
+                                padding: '12px 16px',
+                                marginBottom: '8px',
+                                borderRadius: '12px',
+                                border: isSelected
+                                  ? '2px solid #28a745'
+                                  : isFull
+                                    ? '1px solid #dc3545'
+                                    : '1px solid #e0e0e0',
+                                backgroundColor: isSelected
+                                  ? '#d4edda'
+                                  : isFull
+                                    ? '#f8d7da'
+                                    : '#f8f9fa',
+                                cursor: canSelect ? 'pointer' : 'default',
+                                opacity: isFull && !eventData.is_registered ? 0.6 : 1,
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <div>
+                                <div style={{
+                                  fontWeight: '600',
+                                  color: isFull ? '#dc3545' : isSelected ? '#155724' : '#333'
+                                }}>
+                                  {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
+                                </div>
+                              </div>
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                              }}>
+                                <span style={{
+                                  fontSize: '0.85rem',
+                                  color: isFull ? '#dc3545' : '#666',
+                                  fontWeight: isFull ? '600' : '400'
+                                }}>
+                                  {slot.registered_count || 0}/{slot.max_participants}
+                                </span>
+                                {isSelected && (
+                                  <IonIcon
+                                    icon={checkmarkCircle}
+                                    style={{ color: '#28a745', fontSize: '1.2rem' }}
+                                  />
+                                )}
+                                {isFull && !eventData.is_registered && (
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    backgroundColor: '#dc3545',
+                                    color: 'white',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px'
+                                  }}>
+                                    VOLL
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

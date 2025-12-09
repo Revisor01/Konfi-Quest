@@ -1263,27 +1263,69 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     }
   });
 
+  // Get timeslots for a specific event (Konfi access)
+  router.get('/events/:id/timeslots', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+
+    try {
+      const eventId = req.params.id;
+
+      // Verify event exists and belongs to organization
+      const { rows: [event] } = await db.query(
+        'SELECT id, has_timeslots FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, req.user.organization_id]
+      );
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      if (!event.has_timeslots) {
+        return res.json([]);
+      }
+
+      // Get timeslots with registration counts
+      const timeslotsQuery = `
+        SELECT et.*, COUNT(eb.id) as registered_count
+        FROM event_timeslots et
+        LEFT JOIN event_bookings eb ON et.id = eb.timeslot_id AND eb.status = 'confirmed'
+        WHERE et.event_id = $1 AND et.organization_id = $2
+        GROUP BY et.id
+        ORDER BY et.start_time ASC
+      `;
+      const { rows: timeslots } = await db.query(timeslotsQuery, [eventId, req.user.organization_id]);
+
+      res.json(timeslots);
+    } catch (err) {
+      console.error('Database error in GET /events/:id/timeslots:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Register for event
   router.post('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi access required' });
     }
-    
+
     try {
       const konfiId = req.user.id;
       const eventId = req.params.id;
-      
+      const { timeslot_id } = req.body; // Optional timeslot for timeslot events
+
       // Check if already registered
       const checkQuery = 'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2';
       const { rows: [existing] } = await db.query(checkQuery, [konfiId, eventId]);
-      
+
       if (existing) {
         return res.status(409).json({ error: 'Already registered for this event' });
       }
 
       // Check if this is a Konfirmation event and if user already has one
       const isKonfirmationQuery = `
-        SELECT e.id 
+        SELECT e.id
         FROM events e
         JOIN event_categories ec ON e.id = ec.event_id
         JOIN categories c ON ec.category_id = c.id
@@ -1299,7 +1341,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           JOIN events e ON eb.event_id = e.id
           JOIN event_categories ec ON e.id = ec.event_id
           JOIN categories c ON ec.category_id = c.id
-          WHERE eb.user_id = $1 
+          WHERE eb.user_id = $1
             AND eb.status = 'confirmed'
             AND LOWER(c.name) LIKE '%konfirmation%'
             AND e.organization_id = $2
@@ -1307,15 +1349,15 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         const { rows: [existingKonfirmation] } = await db.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
 
         if (existingKonfirmation) {
-          return res.status(409).json({ 
-            error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.' 
+          return res.status(409).json({
+            error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.'
           });
         }
       }
-      
+
       // Get event details and current registration count
       const eventQuery = `
-        SELECT e.*, 
+        SELECT e.*,
                COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
                COUNT(eb.id) FILTER (WHERE eb.status = 'waitlist') as waitlist_count
         FROM events e
@@ -1324,42 +1366,77 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         GROUP BY e.id
       `;
       const { rows: [event] } = await db.query(eventQuery, [eventId, req.user.organization_id]);
-      
+
       if (!event) {
         return res.status(404).json({ error: 'Event not found' });
       }
-      
-      const confirmedCount = parseInt(event.confirmed_count) || 0;
-      const waitlistCount = parseInt(event.waitlist_count) || 0;
-      
+
+      // Check if event has timeslots and validate timeslot selection
+      let selectedTimeslot = null;
+      let maxCapacity = event.max_participants;
+      let confirmedCount = parseInt(event.confirmed_count) || 0;
+      let waitlistCount = parseInt(event.waitlist_count) || 0;
+
+      if (event.has_timeslots) {
+        if (!timeslot_id) {
+          return res.status(400).json({ error: 'Bitte waehle einen Zeitslot aus' });
+        }
+
+        // Validate timeslot exists and belongs to this event
+        const { rows: [timeslot] } = await db.query(
+          'SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2',
+          [timeslot_id, eventId]
+        );
+
+        if (!timeslot) {
+          return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
+        }
+
+        selectedTimeslot = timeslot;
+
+        // Get timeslot-specific counts
+        const timeslotCountQuery = `
+          SELECT
+            COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count,
+            COUNT(*) FILTER (WHERE status = 'waitlist') as waitlist_count
+          FROM event_bookings
+          WHERE timeslot_id = $1
+        `;
+        const { rows: [timeslotCounts] } = await db.query(timeslotCountQuery, [timeslot_id]);
+        confirmedCount = parseInt(timeslotCounts.confirmed_count) || 0;
+        waitlistCount = parseInt(timeslotCounts.waitlist_count) || 0;
+        maxCapacity = timeslot.max_participants;
+      }
+
       // Determine registration status
       let status;
-      if (confirmedCount < event.max_participants) {
+      if (confirmedCount < maxCapacity) {
         status = 'confirmed';
       } else if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
         status = 'waitlist';
       } else {
-        return res.status(400).json({ 
-          error: 'Event ist voll und Warteliste ist auch voll' 
+        return res.status(400).json({
+          error: 'Event ist voll und Warteliste ist auch voll'
         });
       }
-      
-      // Register for event
+
+      // Register for event (with optional timeslot_id)
       const insertQuery = `
-        INSERT INTO event_bookings (user_id, event_id, status, booking_date) 
-        VALUES ($1, $2, $3, NOW())
+        INSERT INTO event_bookings (user_id, event_id, timeslot_id, status, booking_date)
+        VALUES ($1, $2, $3, $4, NOW())
         RETURNING id
       `;
-      const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId, status]);
-      
-      const message = status === 'confirmed' 
-        ? 'Successfully registered for event'
+      const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId, timeslot_id || null, status]);
+
+      const message = status === 'confirmed'
+        ? 'Erfolgreich angemeldet'
         : `Auf Warteliste gesetzt (Platz ${waitlistCount + 1})`;
-      
+
       res.json({
         message,
         registration_id: newBooking.id,
-        status
+        status,
+        timeslot_id: timeslot_id || null
       });
 
       // Push-Notification an Konfi senden

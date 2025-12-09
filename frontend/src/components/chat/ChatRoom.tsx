@@ -474,10 +474,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -661,14 +663,23 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
   // Track previous message count to only scroll on NEW messages
   const prevMessageCountRef = useRef(0);
-  
+
   useEffect(() => {
-    // Only scroll if we actually have new messages (not just reloads)
-    if (contentRef.current && shouldAutoScroll && messages.length > prevMessageCountRef.current) {
-      contentRef.current.scrollToBottom(300);
+    // Always scroll to bottom on initial load or new messages
+    if (contentRef.current && messages.length > 0) {
+      if (isInitialLoad) {
+        // Initial load - scroll immediately without animation
+        setTimeout(() => {
+          contentRef.current?.scrollToBottom(0);
+        }, 50);
+        setIsInitialLoad(false);
+      } else if (shouldAutoScroll && messages.length > prevMessageCountRef.current) {
+        // New message - smooth scroll
+        contentRef.current.scrollToBottom(300);
+      }
     }
     prevMessageCountRef.current = messages.length;
-  }, [messages, shouldAutoScroll]);
+  }, [messages, shouldAutoScroll, isInitialLoad]);
 
   const loadMessages = async () => {
     // Kein eigener Loading State - ChatRoomView handled das Loading
@@ -734,8 +745,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Force multipart/form-data content type for file uploads
 
       setMessageText('');
-      setSelectedFile(null);
-      
+      clearSelectedFile();
+
       // Mark as read BEFORE loading messages to prevent badge increment
       if (room) markRoomAsRead();
       
@@ -789,15 +800,58 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('📁 File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
+    console.log('File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         setError('Datei ist zu groß (max. 10MB)');
         return;
       }
       setSelectedFile(file);
-      console.log('✅ File set as selectedFile');
+
+      // Create preview URL for images
+      if (file.type.startsWith('image/')) {
+        const previewUrl = URL.createObjectURL(file);
+        setSelectedFilePreview(previewUrl);
+      } else {
+        setSelectedFilePreview(null);
+      }
+      console.log('File set as selectedFile');
     }
+  };
+
+  // Cleanup preview URL on unmount or file change
+  useEffect(() => {
+    return () => {
+      if (selectedFilePreview) {
+        URL.revokeObjectURL(selectedFilePreview);
+      }
+    };
+  }, [selectedFilePreview]);
+
+  // Auto-capitalize function for text input
+  const handleTextInputChange = (value: string) => {
+    if (!value) {
+      setMessageText('');
+      return;
+    }
+
+    // Auto-capitalize first letter of new message
+    if (value.length === 1) {
+      setMessageText(value.toUpperCase());
+      return;
+    }
+
+    // Auto-capitalize after period, question mark, exclamation mark followed by space
+    const lastTwoChars = messageText.slice(-2);
+    if ((lastTwoChars.endsWith('. ') || lastTwoChars.endsWith('? ') || lastTwoChars.endsWith('! ')) && value.length > messageText.length) {
+      const newChar = value.slice(-1);
+      if (newChar !== newChar.toUpperCase() && /[a-zäöü]/.test(newChar)) {
+        setMessageText(value.slice(0, -1) + newChar.toUpperCase());
+        return;
+      }
+    }
+
+    setMessageText(value);
   };
 
   const takePicture = async () => {
@@ -813,13 +867,14 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         const response = await fetch(photo.dataUrl);
         const blob = await response.blob();
         const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
-        
+
         if (file.size > 10 * 1024 * 1024) { // 10MB limit
           setError('Foto ist zu groß (max. 10MB)');
           return;
         }
-        
+
         setSelectedFile(file);
+        setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
       }
     } catch (error) {
       console.error('Camera error:', error);
@@ -840,18 +895,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         const response = await fetch(photo.dataUrl);
         const blob = await response.blob();
         const file = new File([blob], 'gallery-photo.jpg', { type: 'image/jpeg' });
-        
+
         if (file.size > 10 * 1024 * 1024) { // 10MB limit
           setError('Foto ist zu groß (max. 10MB)');
           return;
         }
-        
+
         setSelectedFile(file);
+        setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
       }
     } catch (error) {
       console.error('Gallery error:', error);
       setError('Galerie-Zugriff fehlgeschlagen');
     }
+  };
+
+  const clearSelectedFile = () => {
+    if (selectedFilePreview) {
+      URL.revokeObjectURL(selectedFilePreview);
+    }
+    setSelectedFile(null);
+    setSelectedFilePreview(null);
   };
 
 
@@ -1115,27 +1179,59 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 {message.question}
               </div>
               
-              {message.expires_at && (
-                <div style={{
-                  fontSize: '0.85rem',
-                  opacity: 0.8,
-                  marginBottom: '16px',
-                  padding: '8px 12px',
-                  background: isOwnMessage 
-                    ? 'rgba(255,255,255,0.1)' 
-                    : 'rgba(0,0,0,0.05)',
-                  borderRadius: '8px',
-                  border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
-                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)'
-                }}>
-                  ⏰ Läuft ab: {new Date(message.expires_at).toLocaleDateString('de-DE', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
-              )}
+              {message.expires_at && (() => {
+                const expiresDate = new Date(message.expires_at);
+                const now = new Date();
+                const isExpired = expiresDate < now;
+                const timeRemaining = expiresDate.getTime() - now.getTime();
+                const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+                const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+                return (
+                  <div style={{
+                    fontSize: '0.85rem',
+                    marginBottom: '16px',
+                    padding: '10px 14px',
+                    background: isExpired
+                      ? 'rgba(220,53,69,0.15)'
+                      : isOwnMessage
+                        ? 'rgba(255,255,255,0.12)'
+                        : 'rgba(0,0,0,0.06)',
+                    borderRadius: '10px',
+                    border: `1px solid ${isExpired ? 'rgba(220,53,69,0.3)' : isOwnMessage ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)'}`,
+                    color: isExpired
+                      ? '#dc3545'
+                      : isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <IonIcon icon={time} style={{ fontSize: '1.1rem' }} />
+                    <div>
+                      {isExpired ? (
+                        <span style={{ fontWeight: '600' }}>Abgestimmt - Beendet</span>
+                      ) : (
+                        <>
+                          <span style={{ fontWeight: '500' }}>
+                            Endet: {expiresDate.toLocaleString('de-DE', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              timeZone: 'Europe/Berlin'
+                            })}
+                          </span>
+                          {hoursRemaining < 24 && (
+                            <span style={{ marginLeft: '8px', opacity: 0.85 }}>
+                              (noch {hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}{minutesRemaining}min)
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               
               {message.options.map((option, index) => {
                 // Stimmen für diese Option zählen
@@ -1543,20 +1639,69 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           right: '16px',
           backgroundColor: 'var(--ion-color-light-shade, #f8f9fa)',
           border: '1px solid var(--ion-color-step-150, #e0e0e0)',
-          borderRadius: '8px',
-          padding: '8px 16px',
+          borderRadius: '12px',
+          padding: '12px',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '12px',
           zIndex: 1000,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
         }}>
-          <IonIcon icon={attach} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>{selectedFile.name}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--ion-color-medium)' }}>{formatFileSize(selectedFile.size)}</div>
+          {/* Image Preview or File Icon */}
+          {selectedFilePreview ? (
+            <div style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              flexShrink: 0
+            }}>
+              <img
+                src={selectedFilePreview}
+                alt="Preview"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '8px',
+              backgroundColor: '#e0e0e0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <IonIcon icon={attach} style={{ fontSize: '1.5rem', color: '#666' }} />
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              color: '#333',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {selectedFile.name}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#666' }}>
+              {formatFileSize(selectedFile.size)}
+            </div>
           </div>
-          <IonButton fill="clear" size="small" onClick={() => setSelectedFile(null)}>
+          <IonButton
+            fill="clear"
+            size="small"
+            color="danger"
+            onClick={clearSelectedFile}
+            style={{ '--padding-start': '8px', '--padding-end': '8px' }}
+          >
             <IonIcon icon={trash} />
           </IonButton>
         </div>
@@ -1592,10 +1737,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
             <IonTextarea
               value={messageText}
-              onIonInput={(e) => setMessageText(e.detail.value!)}
+              onIonInput={(e) => handleTextInputChange(e.detail.value || '')}
               placeholder="Nachricht schreiben..."
               autoGrow
               rows={1}
+              autocapitalize="sentences"
               style={{
                 flex: 1, // Nimmt den restlichen Platz ein
                 // '--background': 'var(--ion-color-light-shade, #f8f9fa)',
