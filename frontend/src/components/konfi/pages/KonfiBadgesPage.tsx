@@ -196,7 +196,17 @@ const KonfiBadgesPage: React.FC = () => {
         });
 
       setBadges(processedBadges);
-      
+
+      // Mark all badges as seen (removes TabBar badge)
+      const hasUnseenBadges = badgeData.earned.some((badge: any) => !badge.seen);
+      if (hasUnseenBadges) {
+        try {
+          await api.post('/konfi/badges/mark-seen');
+        } catch (markError) {
+          console.log('Could not mark badges as seen:', markError);
+        }
+      }
+
     } catch (err) {
       setError('Fehler beim Laden der Badges');
       console.error('Error loading badges:', err);

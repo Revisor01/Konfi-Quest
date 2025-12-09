@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const PushService = require('../services/pushService');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -314,11 +315,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         );
 
         console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
+
+        // Send push notification to konfi
+        await PushService.sendActivityRequestStatusToKonfi(
+          db,
+          request.konfi_id,
+          request.activity_name,
+          request.points,
+          status,
+          admin_comment
+        );
       } catch (notifErr) {
         console.error('Error sending notification:', notifErr);
         // Don't fail the request if notification fails
       }
-      
+
       res.json({ message: 'Request status updated', newBadges });
     } catch (err) {
       console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
@@ -368,6 +379,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
       
       const newBadges = await checkAndAwardBadges(db, konfiId);
+
+      // Send push notification for bonus points
+      try {
+        await PushService.sendBonusPointsToKonfi(db, konfiId, points, description, type);
+      } catch (pushErr) {
+        console.error('Error sending bonus points push:', pushErr);
+      }
+
       res.json({ message: 'Bonus points assigned successfully', newBadges });
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-bonus:', err);

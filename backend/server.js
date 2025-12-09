@@ -356,6 +356,12 @@ const { initializeChatRooms } = require('./utils/chatUtils');
 setImmediate(initializeChatRooms(db));
 
 // ====================================================================
+// BACKGROUND SERVICES INITIALIZATION
+// ====================================================================
+
+BackgroundService.startAllServices(db);
+
+// ====================================================================
 // ERROR HANDLING
 // ====================================================================
 

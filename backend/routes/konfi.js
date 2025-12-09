@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const PushService = require('../services/pushService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
@@ -498,6 +499,15 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         }
 
         console.log(`Notified ${admins.length} admins about new request from ${konfiData.display_name}`);
+
+        // Send push notifications to admins
+        await PushService.sendNewActivityRequestToAdmins(
+          db,
+          req.user.organization_id,
+          konfiData.display_name,
+          activity.name,
+          activity.points
+        );
       } catch (notifErr) {
         console.error('Error sending admin notifications:', notifErr);
         // Don't fail the request if notification fails
@@ -659,9 +669,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
 
       const query = `
-        SELECT cb.*, 
+        SELECT cb.*,
                CASE WHEN kb.konfi_id IS NOT NULL THEN TRUE ELSE FALSE END as earned,
-               kb.earned_at
+               kb.earned_at,
+               COALESCE(kb.seen, false) as seen
         FROM custom_badges cb
         LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1 AND kb.organization_id = $2
         WHERE cb.is_active = TRUE AND cb.organization_id = $2
@@ -887,6 +898,25 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
     } catch (err) {
       console.error('Database error in GET /badges/stats:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Mark all badges as seen for konfi
+  router.post('/badges/mark-seen', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+
+    try {
+      const konfiId = req.user.id;
+      await db.query(
+        'UPDATE konfi_badges SET seen = true WHERE konfi_id = $1 AND organization_id = $2 AND seen = false',
+        [konfiId, req.user.organization_id]
+      );
+      res.json({ success: true, message: 'All badges marked as seen' });
+    } catch (err) {
+      console.error('Database error in POST /badges/mark-seen:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });

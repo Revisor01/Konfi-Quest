@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const PushService = require('../services/pushService');
 
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
@@ -678,9 +679,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
         if (nextInLine) {
           try {
+            // Get promoted user's ID and event name for push notification
+            const { rows: [promotedBooking] } = await db.query(
+              "SELECT eb.user_id, e.name as event_name FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1",
+              [nextInLine.id]
+            );
+
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
             console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
-            // TODO: Send push notification
+
+            // Send push notification to promoted user
+            if (promotedBooking) {
+              await PushService.sendWaitlistPromotionToKonfi(db, promotedBooking.user_id, promotedBooking.event_name);
+            }
           } catch (promotionError) {
             // Log the error but don't fail the main cancellation request
             console.error('Error promoting from waitlist:', promotionError);
@@ -813,15 +824,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const { rows: [nextInLine] } = await db.query(query, params);
         if (nextInLine) {
           try {
+            // Get promoted user's ID and event name for push notification
+            const { rows: [promotedBooking] } = await db.query(
+              "SELECT eb.user_id, e.name as event_name FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1",
+              [nextInLine.id]
+            );
+
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
             console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
-            // TODO: Send push notification
+
+            // Send push notification to promoted user
+            if (promotedBooking) {
+              await PushService.sendWaitlistPromotionToKonfi(db, promotedBooking.user_id, promotedBooking.event_name);
+            }
           } catch (promotionError) {
             console.error('Error promoting from waitlist:', promotionError);
           }
         }
       }
-      
+
       res.json({ message: 'Participant removed successfully' });
       
     } catch (err) {
@@ -1103,9 +1124,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           }
           
           await db.query('COMMIT');
+
+          // Push-Notification: Teilnahme bestaetigt mit Punkten
+          try {
+            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points);
+          } catch (pushErr) {
+            console.error('Push notification failed:', pushErr);
+          }
+
           return res.json({ message: `Attendance updated and ${eventData.points} ${pointType} points awarded`, points_awarded: true });
         } else {
           await db.query('COMMIT');
+
+          // Push-Notification: Teilnahme bestaetigt (Punkte bereits vergeben)
+          try {
+            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0);
+          } catch (pushErr) {
+            console.error('Push notification failed:', pushErr);
+          }
+
           return res.json({ message: 'Attendance updated (points already awarded)', points_awarded: false });
         }
         
@@ -1119,10 +1156,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
           await db.query(updateProfileQuery, [existingPoints.points, eventData.user_id]);
           await db.query('COMMIT');
+
+          // Push-Notification: Nicht erschienen (Punkte entfernt)
+          try {
+            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
+          } catch (pushErr) {
+            console.error('Push notification failed:', pushErr);
+          }
+
           return res.json({ message: `Attendance updated and ${existingPoints.points} points removed`, points_removed: true });
         }
+
+        // Push-Notification: Nicht erschienen (keine Punkte vergeben gewesen)
+        try {
+          await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
+        } catch (pushErr) {
+          console.error('Push notification failed:', pushErr);
+        }
       }
-      
+
       await db.query('COMMIT');
       res.json({ message: 'Attendance updated', points_awarded: false, points_removed: false });
       
@@ -1219,11 +1271,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'pending')
       `, [eventId]);
       
-      // TODO: Send push notifications to all participants
-      // For now, we'll just log who would be notified
-      console.log(`Event "${event.name}" cancelled. Would notify ${participants.length} participants:`, 
-        participants.map(p => p.display_name || p.username).join(', '));
-      
+      // Send push notifications to all participants
+      const userIds = participants.map(p => p.user_id);
+      const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
+      if (userIds.length > 0) {
+        await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted);
+      }
+      console.log(`Event "${event.name}" cancelled. Notified ${participants.length} participants.`);
+
       await db.query('COMMIT');
       res.json({ 
         message: `Event "${event.name}" wurde abgesagt`,

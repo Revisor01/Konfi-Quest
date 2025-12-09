@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const PushService = require('../services/pushService');
 
 // Badge criteria types
 const CRITERIA_TYPES = {
@@ -297,6 +298,11 @@ const checkAndAwardBadges = async (db, konfiId) => {
           );
         }
         console.log(`🎉 ${earnedBadgeDetails.length} Badge-Notification(s) für Konfi ${konfi.name} gesendet`);
+
+        // Send push notifications for each badge
+        for (const badge of earnedBadgeDetails) {
+          await PushService.sendBadgeEarnedToKonfi(db, konfiId, badge.name, badge.icon, badge.description);
+        }
       } catch (notifErr) {
         console.error('Error sending badge notifications:', notifErr);
         // Don't fail the badge award if notification fails
