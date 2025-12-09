@@ -130,7 +130,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         admin_comment: adminComment
       });
       setSuccess(`Antrag von "${request.konfi_name}" genehmigt`);
-      // Custom Event dispatchen fuer sofortige Badge-Aktualisierung
+      // Custom Event dispatchen für sofortige Badge-Aktualisierung
       window.dispatchEvent(new CustomEvent('requestStatusChanged'));
       onSuccess();
       onClose();
@@ -156,7 +156,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         admin_comment: adminComment
       });
       setSuccess(`Antrag von "${request.konfi_name}" abgelehnt`);
-      // Custom Event dispatchen fuer sofortige Badge-Aktualisierung
+      // Custom Event dispatchen für sofortige Badge-Aktualisierung
       window.dispatchEvent(new CustomEvent('requestStatusChanged'));
       onSuccess();
       onClose();

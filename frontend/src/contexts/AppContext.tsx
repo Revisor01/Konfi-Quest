@@ -97,7 +97,7 @@ interface AppContextType {
   markChatRoomAsRead: (roomId: number) => void;
   addUnreadChatMessage: (roomId: number, count?: number) => void;
   requestPushPermissions: () => Promise<void>;
-  // hasPermission entfernt - jetzt rollen-basiert (user.role_name pruefen)
+  // hasPermission entfernt - jetzt rollen-basiert (user.role_name prüfen)
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -550,7 +550,7 @@ useEffect(() => {
     setupPushNotifications();
   }, [user]); // Abhängigkeit ist korrekt
 
-  // hasPermission entfernt - Berechtigung jetzt ueber user.role_name pruefen
+  // hasPermission entfernt - Berechtigung jetzt über user.role_name prüfen
 
   const value: AppContextType = {
     user,

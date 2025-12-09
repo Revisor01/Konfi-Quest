@@ -75,7 +75,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* BLOCK 1: Verwaltung - fuer org_admin UND super_admin */}
+        {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{
@@ -153,7 +153,7 @@ const AdminSettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* System-Administration - NUR fuer super_admin */}
+        {/* System-Administration - NUR für super_admin */}
         {user?.role_name === 'super_admin' && (
           <div style={{ margin: '16px 16px 8px 16px' }}>
             <div style={{

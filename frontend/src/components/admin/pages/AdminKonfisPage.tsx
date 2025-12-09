@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { 
   IonPage, 
@@ -16,6 +16,7 @@ import {
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import KonfisView from '../KonfisView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -71,6 +72,15 @@ const AdminKonfisPage: React.FC = () => {
     },
     dismiss: () => dismissKonfiModalHook()
   });
+
+  // Memoized refresh function for live updates
+  const refreshData = useCallback(() => {
+    console.log('Live Update: Refreshing konfis...');
+    loadData();
+  }, []);
+
+  // Subscribe to live updates for konfis
+  useLiveRefresh('konfis', refreshData);
 
   useEffect(() => {
     loadData();

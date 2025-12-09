@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -41,6 +41,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -259,6 +260,14 @@ const AdminCategoriesPage: React.FC = () => {
     }
   });
 
+  // Memoized refresh function for live updates
+  const refreshCategories = useCallback(() => {
+    console.log('Live Update: Refreshing categories...');
+    loadCategories();
+  }, []);
+
+  // Subscribe to live updates for categories
+  useLiveRefresh('categories', refreshCategories);
 
   const loadCategories = async () => {
     try {

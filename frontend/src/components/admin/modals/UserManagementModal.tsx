@@ -112,7 +112,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const canAssignRole = (roleName: string) => {
     const userRole = currentUser?.role_name;
 
-    // Konfis werden ueber separate KonfiModal erstellt
+    // Konfis werden über separate KonfiModal erstellt
     if (roleName === 'konfi') return false;
 
     if (userRole === 'org_admin') {

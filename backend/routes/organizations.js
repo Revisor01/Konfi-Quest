@@ -311,13 +311,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
-  // Get organization users - org_admin fuer eigene Org, super_admin fuer alle
+  // Get organization users - org_admin für eigene Org, super_admin für alle
   router.get('/:id/users', rbacVerifier, async (req, res) => {
     const isSuperAdmin = req.user.role_name === 'super_admin';
     const isOwnOrg = req.user.organization_id === parseInt(req.params.id);
     const isOrgAdmin = req.user.role_name === 'org_admin';
 
-    // Zugriffspruefung: super_admin oder org_admin der eigenen Org
+    // Zugriffsprüfung: super_admin oder org_admin der eigenen Org
     if (!isSuperAdmin && !(isOwnOrg && isOrgAdmin)) {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
@@ -447,7 +447,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     try {
       const { id } = req.params;
 
-      // Zugriffspruefung: nur eigene Org (oder super_admin fuer alle)
+      // Zugriffsprüfung: nur eigene Org (oder super_admin für alle)
       const isSuperAdmin = req.user.role_name === 'super_admin';
       const isOwnOrg = req.user.organization_id === parseInt(id);
 

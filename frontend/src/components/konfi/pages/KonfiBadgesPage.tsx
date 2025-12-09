@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -10,6 +10,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import BadgesView from '../views/BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -48,6 +49,15 @@ const KonfiBadgesPage: React.FC = () => {
   const [badgeStats, setBadgeStats] = useState<{totalVisible: number, totalSecret: number}>({totalVisible: 0, totalSecret: 0});
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('alle');
+
+  // Memoized refresh function for live updates
+  const refreshBadges = useCallback(() => {
+    console.log('Live Update: Refreshing badges...');
+    loadBadges();
+  }, []);
+
+  // Subscribe to live updates for badges
+  useLiveRefresh('badges', refreshBadges);
 
   useEffect(() => {
     loadBadges();

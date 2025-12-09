@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PushService = require('../services/pushService');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -77,6 +78,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       res.status(201).json({ id: activityId, message: 'Activity created successfully' });
 
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'create');
+
     } catch (err) {
       console.error('Database error in POST /api/activities/:', err);
       res.status(500).json({ error: 'Database error' });
@@ -110,6 +114,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       res.json({ message: 'Activity updated successfully' });
 
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'update');
+
     } catch (err) {
       console.error(`Database error in PUT /api/activities/${activityId}:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -136,6 +143,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       res.json({ message: 'Aktivität erfolgreich gelöscht' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'delete');
 
     } catch (err) {
       console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
@@ -331,6 +341,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       res.json({ message: 'Request status updated', newBadges });
+
+      // Live-Update für Anträge und Konfi-Punkte senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
+      liveUpdate.sendToKonfi(request.konfi_id, 'points', 'update');
+      liveUpdate.sendToKonfi(request.konfi_id, 'requests', 'update');
     } catch (err) {
       console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -359,6 +374,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       
       const badgeResult = await checkAndAwardBadges(db, konfiId);
       res.json({ message: 'Activity assigned successfully', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
+
+      // Push-Notification an Konfi senden
+      try {
+        await PushService.sendActivityAssignedToKonfi(db, konfiId, activity.name, activity.points, activity.type);
+      } catch (pushErr) {
+        console.error('Error sending activity assigned push:', pushErr);
+      }
+
+      // Live-Update an Konfi senden
+      liveUpdate.sendToKonfi(konfiId, 'points', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-activity:', err);
       res.status(500).json({ error: 'Database error' });
@@ -388,6 +414,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       res.json({ message: 'Bonus points assigned successfully', newBadges });
+
+      // Live-Update an Konfi senden
+      liveUpdate.sendToKonfi(konfiId, 'points', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-bonus:', err);
       res.status(500).json({ error: 'Database error' });

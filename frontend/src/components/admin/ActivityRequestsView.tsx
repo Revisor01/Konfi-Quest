@@ -424,7 +424,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Dritte Zeile: Aktivitaetsname */}
+                        {/* Dritte Zeile: Aktivitätsname */}
                         <div style={{
                           fontSize: '0.8rem',
                           color: (isApproved || isRejected) ? '#999' : '#666',

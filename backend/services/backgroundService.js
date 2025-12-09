@@ -241,7 +241,7 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Service fuer Admin-Erinnerungen (alle 4 Stunden)
+   * Startet den Service für Admin-Erinnerungen (alle 4 Stunden)
    */
   static startPendingEventsService(db) {
     if (this.pendingEventsInterval) {

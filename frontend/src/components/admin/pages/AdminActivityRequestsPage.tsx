@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   IonPage, 
   IonHeader, 
@@ -11,6 +11,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import ActivityRequestsView from '../ActivityRequestsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -61,16 +62,25 @@ const AdminActivityRequestsPage: React.FC = () => {
     }
   });
 
+  // Memoized refresh function for live updates
+  const refreshRequests = useCallback(() => {
+    console.log('Live Update: Refreshing requests...');
+    loadRequests();
+  }, []);
+
+  // Subscribe to live updates for requests
+  useLiveRefresh('requests', refreshRequests);
+
   useEffect(() => {
     loadRequests();
-    
+
     // Event-Listener für Updates
     const handleRequestsUpdated = () => {
       loadRequests();
     };
-    
+
     window.addEventListener('activity-requests-updated', handleRequestsUpdated);
-    
+
     return () => {
       window.removeEventListener('activity-requests-updated', handleRequestsUpdated);
     };

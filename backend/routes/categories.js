@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const liveUpdate = require('../utils/liveUpdate');
 
 // Kategorien: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
@@ -29,6 +30,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rows: [newCategory] } = await db.query(query, params);
 
       res.status(201).json({ id: newCategory.id, message: 'Category created successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'create');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Category name already exists' });
@@ -54,6 +58,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Category not found' });
       }
       res.json({ message: 'Category updated successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'update');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Category name already exists' });
@@ -92,6 +99,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       }
 
       res.json({ message: 'Category deleted successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'delete');
     } catch (err) {
       console.error(`Database error in DELETE /api/categories/${categoryId}:`, err);
       res.status(500).json({ error: 'Database error' });

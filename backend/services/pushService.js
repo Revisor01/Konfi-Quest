@@ -85,7 +85,7 @@ class PushService {
       const senderTokenList = senderTokens.map(t => t.token);
 
       // NUR das neueste echte Device Token verwenden, Fallback-IDs ignorieren
-      // UND Sender-Tokens ausschliessen (fuer den Fall dass gleicher Token bei verschiedenen Accounts)
+      // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
       let query = `
         SELECT * FROM push_tokens
         WHERE user_id = $1
@@ -293,6 +293,32 @@ class PushService {
   // ====================================================================
 
   /**
+   * Aktivität direkt zugewiesen - Push an Konfi
+   */
+  static async sendActivityAssignedToKonfi(db, konfiId, activityName, points, type) {
+    try {
+      console.log(`📋 Sending activity assigned notification to konfi ${konfiId}`);
+
+      const typeText = type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+      const notification = {
+        title: `+${points} Punkte!`,
+        body: `Du hast ${points} ${typeText}-Punkte für "${activityName}" erhalten.`,
+        data: {
+          type: 'activity_assigned',
+          activity_name: activityName,
+          points: points.toString(),
+          category: type
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('❌ sendActivityAssignedToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Bonuspunkte erhalten - Push an Konfi
    */
   static async sendBonusPointsToKonfi(db, konfiId, points, description, type) {
@@ -320,6 +346,86 @@ class PushService {
   // ====================================================================
   // EVENT NOTIFICATIONS
   // ====================================================================
+
+  /**
+   * Event-Anmeldung bestaetigt - Push an Konfi
+   */
+  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status) {
+    try {
+      console.log(`✅ Sending event registration confirmation to konfi ${konfiId}`);
+
+      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+
+      const isConfirmed = status === 'confirmed';
+      const notification = {
+        title: isConfirmed ? 'Anmeldung bestaetigt!' : 'Auf Warteliste',
+        body: isConfirmed
+          ? `Du bist fuer "${eventName}" am ${dateFormatted} angemeldet.`
+          : `Du stehst auf der Warteliste fuer "${eventName}" am ${dateFormatted}.`,
+        data: {
+          type: 'event_registered',
+          event_name: eventName,
+          status: status
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('❌ sendEventRegisteredToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Event-Abmeldung bestaetigt - Push an Konfi
+   */
+  static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
+    try {
+      console.log(`📤 Sending event unregistration confirmation to konfi ${konfiId}`);
+
+      const notification = {
+        title: 'Abmeldung bestaetigt',
+        body: `Du hast dich von "${eventName}" abgemeldet.`,
+        data: {
+          type: 'event_unregistered',
+          event_name: eventName
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('❌ sendEventUnregisteredToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Level-Up - Push an Konfi
+   */
+  static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon) {
+    try {
+      console.log(`🎉 Sending level up notification to konfi ${konfiId}`);
+
+      const notification = {
+        title: `Level Up! ${levelIcon || '🎉'}`,
+        body: `Herzlichen Glueckwunsch! Du hast Level "${levelTitle || levelName}" erreicht!`,
+        data: {
+          type: 'level_up',
+          level_name: levelName,
+          level_title: levelTitle || levelName
+        }
+      };
+
+      return await this.sendToUser(db, konfiId, notification);
+    } catch (error) {
+      console.error('❌ sendLevelUpToKonfi error:', error);
+      return { success: false, error: error.message };
+    }
+  }
 
   /**
    * Event-Erinnerung - Push an Konfi (1 Tag oder 1 Stunde vorher)
@@ -478,7 +584,7 @@ class PushService {
   }
 
   /**
-   * Events muessen verbucht werden - Push an Admins (fuer Cron-Job)
+   * Events müssen verbucht werden - Push an Admins (für Cron-Job)
    */
   static async sendEventsPendingApprovalToAdmins(db, organizationId, eventCount) {
     try {

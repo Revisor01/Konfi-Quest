@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import { 
   IonPage, 
   IonHeader, 
@@ -15,6 +15,7 @@ import {
 import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -52,16 +53,25 @@ const AdminActivitiesPage: React.FC = () => {
     }
   });
 
+  // Memoized refresh function for live updates
+  const refreshActivities = useCallback(() => {
+    console.log('Live Update: Refreshing activities...');
+    loadActivities();
+  }, []);
+
+  // Subscribe to live updates for activities
+  useLiveRefresh('activities', refreshActivities);
+
   useEffect(() => {
     loadActivities();
-    
+
     // Event-Listener für Updates
     const handleActivitiesUpdated = () => {
       loadActivities();
     };
-    
+
     window.addEventListener('activities-updated', handleActivitiesUpdated);
-    
+
     return () => {
       window.removeEventListener('activities-updated', handleActivitiesUpdated);
     };

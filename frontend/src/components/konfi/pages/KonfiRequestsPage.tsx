@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -16,6 +16,7 @@ import {
 import { add, home, people } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import RequestsView from '../views/RequestsView';
@@ -73,6 +74,15 @@ const KonfiRequestsPage: React.FC = () => {
       }
     }
   );
+
+  // Memoized refresh function for live updates
+  const refreshRequests = useCallback(() => {
+    console.log('Live Update: Refreshing requests...');
+    loadRequests();
+  }, []);
+
+  // Subscribe to live updates for requests
+  useLiveRefresh('requests', refreshRequests);
 
   useEffect(() => {
     loadRequests();

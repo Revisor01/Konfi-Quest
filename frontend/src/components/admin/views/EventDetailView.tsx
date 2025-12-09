@@ -1006,7 +1006,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       gap: '4px',
                       '--ion-item-background': 'transparent'
                     }}>
-                      {/* Auf Warteliste setzen - nur fuer bestaetigte Teilnehmer */}
+                      {/* Auf Warteliste setzen - nur für bestätigte Teilnehmer */}
                       {participant.status === 'confirmed' && (
                         <IonItemOption
                           onClick={() => handleDemoteParticipant(participant)}

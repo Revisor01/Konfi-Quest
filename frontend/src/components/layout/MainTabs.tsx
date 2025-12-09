@@ -82,7 +82,7 @@ const MainTabs: React.FC = () => {
     // Refresh every 30 seconds
     const interval = setInterval(loadPendingRequestsCount, 30000);
 
-    // Event Listener fuer sofortige Aktualisierung bei Statusaenderung
+    // Event Listener für sofortige Aktualisierung bei Statusänderung
     const handleRequestStatusChanged = () => {
       loadPendingRequestsCount();
     };
@@ -115,7 +115,7 @@ const MainTabs: React.FC = () => {
     // Refresh every 60 seconds
     const interval = setInterval(loadPendingEventsCount, 60000);
 
-    // Event Listener fuer sofortige Aktualisierung bei Attendance-Aenderung
+    // Event Listener für sofortige Aktualisierung bei Attendance-Änderung
     const handleEventsUpdated = () => {
       loadPendingEventsCount();
     };

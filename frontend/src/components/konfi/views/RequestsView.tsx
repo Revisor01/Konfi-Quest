@@ -263,9 +263,9 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                   margin: '0 auto 16px auto'
                 }}
               />
-              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Antraege gefunden</h3>
+              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Anträge gefunden</h3>
               <p style={{ color: '#999', margin: '0' }}>
-                Noch keine Antraege gestellt
+                Noch keine Anträge gestellt
               </p>
             </div>
           ) : (
@@ -497,7 +497,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                       gap: '4px',
                       '--ion-item-background': 'transparent'
                     }}>
-                      {/* Loeschen-Button fuer pending */}
+                      {/* Löschen-Button für pending */}
                       {isPending && onDeleteRequest && (
                         <IonItemOption
                           onClick={() => onDeleteRequest(request)}

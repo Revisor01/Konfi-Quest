@@ -139,7 +139,7 @@ const requireRole = (...allowedRoles) => {
 // teamer: Events, Konfis ansehen, Punkte vergeben
 // ============================================
 
-const requireSuperAdmin = requireRole('super_admin');           // NUR fuer Org Create/Delete
+const requireSuperAdmin = requireRole('super_admin');           // NUR für Org Create/Delete
 const requireOrgAdmin = requireRole('org_admin');               // User-Verwaltung in Org
 const requireAdmin = requireRole('org_admin', 'admin');         // Konfis, Requests, Badges, etc.
 const requireTeamer = requireRole('org_admin', 'admin', 'teamer'); // Events, Punkte vergeben

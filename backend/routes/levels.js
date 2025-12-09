@@ -1,4 +1,5 @@
 const express = require('express');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Levels: Verwendet bereits direkte Rollen-Checks
 module.exports = (db, verifyTokenRBAC, roleHelpers) => {
@@ -64,6 +65,9 @@ router.post('/', verifyTokenRBAC, async (req, res) => {
     `, [organizationId, name, title, description, points_required, icon || '🏆', color || '#3880ff', reward_type, reward_value, req.user.id]);
 
     res.status(201).json(result.rows[0]);
+
+    // Live-Update an alle Admins senden
+    liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'create');
   } catch (error) {
     console.error('Fehler beim Erstellen des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
@@ -125,6 +129,9 @@ router.put('/:id', verifyTokenRBAC, async (req, res) => {
     `, [name, title, description, points_required, icon, color, reward_type, reward_value, is_active, levelId, organizationId]);
 
     res.json(result.rows[0]);
+
+    // Live-Update an alle Admins senden
+    liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'update');
   } catch (error) {
     console.error('Fehler beim Bearbeiten des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
@@ -176,6 +183,9 @@ router.delete('/:id', verifyTokenRBAC, async (req, res) => {
     `, [levelId, organizationId]);
 
     res.json({ message: 'Level erfolgreich gelöscht' });
+
+    // Live-Update an alle Admins senden
+    liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'delete');
   } catch (error) {
     console.error('Fehler beim Löschen des Levels:', error);
     res.status(500).json({ error: 'Fehler beim Löschen des Levels' });

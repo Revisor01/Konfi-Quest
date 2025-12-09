@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -40,6 +40,7 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -256,6 +257,15 @@ const AdminJahrgaengeePage: React.FC = () => {
       loadJahrgaenge();
     }
   });
+
+  // Memoized refresh function for live updates
+  const refreshJahrgaenge = useCallback(() => {
+    console.log('Live Update: Refreshing jahrgaenge...');
+    loadJahrgaenge();
+  }, []);
+
+  // Subscribe to live updates for jahrgaenge
+  useLiveRefresh('jahrgaenge', refreshJahrgaenge);
 
   const loadJahrgaenge = async () => {
     try {

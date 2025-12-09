@@ -1,5 +1,5 @@
 // Live Update Helper
-// Sendet WebSocket-Events an User fuer Echtzeit-Aktualisierungen
+// Sendet WebSocket-Events an User für Echtzeit-Aktualisierungen
 
 /**
  * Sendet ein Live-Update an einen spezifischen User
@@ -7,7 +7,7 @@
  * @param {number} userId - User ID
  * @param {string} updateType - z.B. 'dashboard', 'events', 'badges', 'requests'
  * @param {string} action - 'refresh', 'update', 'delete', 'create'
- * @param {object} data - Optionale zusaetzliche Daten
+ * @param {object} data - Optionale zusätzliche Daten
  */
 function sendToUser(userType, userId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
@@ -34,7 +34,7 @@ function sendToUser(userType, userId, updateType, action = 'refresh', data = nul
  * @param {number} organizationId - Organisation ID
  * @param {string} updateType - z.B. 'konfis', 'events', 'requests'
  * @param {string} action - 'refresh', 'update', 'delete', 'create'
- * @param {object} data - Optionale zusaetzliche Daten
+ * @param {object} data - Optionale zusätzliche Daten
  */
 async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
@@ -75,7 +75,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
  * @param {number} organizationId - Organisation ID
  * @param {string} updateType - z.B. 'events', 'badges'
  * @param {string} action - 'refresh', 'update', 'delete', 'create'
- * @param {object} data - Optionale zusaetzliche Daten
+ * @param {object} data - Optionale zusätzliche Daten
  */
 async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', data = null) {
   if (!global.io) {

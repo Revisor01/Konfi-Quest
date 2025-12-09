@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   IonPage, 
   IonHeader, 
@@ -15,6 +15,7 @@ import {
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import BadgesView from '../BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -62,16 +63,25 @@ const AdminBadgesPage: React.FC = () => {
     }
   });
 
+  // Memoized refresh function for live updates
+  const refreshBadges = useCallback(() => {
+    console.log('Live Update: Refreshing badges...');
+    loadBadges();
+  }, []);
+
+  // Subscribe to live updates for badges
+  useLiveRefresh('badges', refreshBadges);
+
   useEffect(() => {
     loadBadges();
-    
+
     // Event-Listener für Updates
     const handleBadgesUpdated = () => {
       loadBadges();
     };
-    
+
     window.addEventListener('badges-updated', handleBadgesUpdated);
-    
+
     return () => {
       window.removeEventListener('badges-updated', handleBadgesUpdated);
     };

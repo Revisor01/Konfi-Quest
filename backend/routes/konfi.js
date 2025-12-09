@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const PushService = require('../services/pushService');
+const liveUpdate = require('../utils/liveUpdate');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
@@ -513,10 +514,13 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         // Don't fail the request if notification fails
       }
 
-      res.status(201).json({ 
-        id: newRequest.id, 
-        message: 'Antrag erfolgreich eingereicht' 
+      res.status(201).json({
+        id: newRequest.id,
+        message: 'Antrag erfolgreich eingereicht'
       });
+
+      // Live-Update an alle Admins über neuen Antrag senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
       console.error('Database error in POST /requests:', err);
       res.status(500).json({ error: 'Database error' });
@@ -619,6 +623,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       
       res.json({ message: 'Antrag erfolgreich gelöscht' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'delete');
     } catch (err) {
       console.error('Database error in DELETE /requests/:id:', err);
       res.status(500).json({ error: 'Database error' });
@@ -1349,11 +1356,22 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         ? 'Successfully registered for event'
         : `Auf Warteliste gesetzt (Platz ${waitlistCount + 1})`;
       
-      res.json({ 
+      res.json({
         message,
         registration_id: newBooking.id,
-        status 
+        status
       });
+
+      // Push-Notification an Konfi senden
+      try {
+        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status);
+      } catch (pushErr) {
+        console.error('Error sending event registration push:', pushErr);
+      }
+
+      // Live-Update an Konfi und Admins senden
+      liveUpdate.sendToKonfi(konfiId, 'events', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
       console.error('Database error in POST /events/:id/register:', err);
       res.status(500).json({ error: 'Database error' });
@@ -1381,9 +1399,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet' });
       }
       
-      // Check if event exists and get event date
+      // Check if event exists and get event details
       const { rows: [event] } = await db.query(
-        'SELECT event_date FROM events WHERE id = $1 AND organization_id = $2',
+        'SELECT name, event_date FROM events WHERE id = $1 AND organization_id = $2',
         [eventId, req.user.organization_id]
       );
       
@@ -1417,6 +1435,17 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
       
       res.json({ message: 'Successfully unregistered from event' });
+
+      // Push-Notification an Konfi senden
+      try {
+        await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name);
+      } catch (pushErr) {
+        console.error('Error sending event unregistration push:', pushErr);
+      }
+
+      // Live-Update an Konfi und Admins senden
+      liveUpdate.sendToKonfi(konfiId, 'events', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
       console.error('Database error in DELETE /events/:id/register:', err);
       res.status(500).json({ error: 'Database error' });

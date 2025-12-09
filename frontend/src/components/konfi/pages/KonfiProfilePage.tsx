@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -10,6 +10,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ProfileView from '../views/ProfileView';
@@ -70,6 +71,15 @@ const KonfiProfilePage: React.FC = () => {
   
   const [profile, setProfile] = useState<KonfiProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Memoized refresh function for live updates
+  const refreshProfile = useCallback(() => {
+    console.log('Live Update: Refreshing profile...');
+    loadProfile();
+  }, []);
+
+  // Subscribe to live updates for points and badges
+  useLiveRefresh(['points', 'badges'], refreshProfile);
 
   useEffect(() => {
     loadProfile();

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const liveUpdate = require('../utils/liveUpdate');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
@@ -35,6 +36,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         name,
         confirmation_date
       });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'create');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
@@ -60,6 +64,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Jahrgang not found' });
       }
       res.json({ message: 'Jahrgang updated successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'update');
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits' });
@@ -154,6 +161,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       }
 
       res.json({ message: 'Jahrgang deleted successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'delete');
     } catch (err) {
       console.error(`Database error in DELETE /api/jahrgaenge/${jahrgangId}:`, err);
       res.status(500).json({ error: 'Database error' });

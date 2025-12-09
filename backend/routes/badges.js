@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PushService = require('../services/pushService');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Badge criteria types
 const CRITERIA_TYPES = {
@@ -396,6 +397,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rows: [newBadge] } = await db.query(query, params);
       
       res.status(201).json({ id: newBadge.id, message: 'Badge created successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'create');
     } catch (err) {
       console.error('Database error in POST /api/badges:', err);
       res.status(500).json({ error: 'Database error' });
@@ -421,6 +425,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         return res.status(404).json({ error: 'Badge not found or you do not have permission to edit it.' });
       }
       res.json({ message: 'Badge updated successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'update');
     } catch (err) {
       console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -442,6 +449,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       
       await db.query('COMMIT');
       res.json({ message: 'Badge deleted successfully' });
+
+      // Live-Update an alle Admins senden
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'delete');
     } catch (err) {
       // Attempt to rollback transaction on error
       try {

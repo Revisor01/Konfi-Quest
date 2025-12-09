@@ -191,7 +191,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            {/* Aktivitaet */}
+            {/* Aktivität */}
             <div style={{
               background: '#f5f5f5',
               borderRadius: '12px',
@@ -574,7 +574,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* Loeschen Button - nur bei pending */}
+        {/* Löschen Button - nur bei pending */}
         {isPending && onDelete && (
           <div style={{ padding: '0 16px 24px 16px' }}>
             <IonButton
@@ -591,7 +591,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               }}
             >
               <IonIcon icon={trash} slot="start" />
-              Antrag loeschen
+              Antrag löschen
             </IonButton>
           </div>
         )}

@@ -120,7 +120,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Ueberschrift - gross und ueberlappend */}
+        {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
           top: '-5px',

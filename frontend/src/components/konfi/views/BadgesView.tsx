@@ -107,18 +107,18 @@ const BADGE_ICONS: Record<string, { icon: string; name: string; category: string
   time: { icon: time, name: 'Uhr', category: 'Zeit' },
   timer: { icon: timer, name: 'Timer', category: 'Zeit' },
   stopwatch: { icon: stopwatch, name: 'Stoppuhr', category: 'Zeit' },
-  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitaeten' },
-  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitaeten' },
-  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitaeten' },
-  car: { icon: car, name: 'Auto', category: 'Aktivitaeten' },
-  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitaeten' },
-  boat: { icon: boat, name: 'Boot', category: 'Aktivitaeten' },
-  camera: { icon: camera, name: 'Kamera', category: 'Aktivitaeten' },
-  image: { icon: image, name: 'Bild', category: 'Aktivitaeten' },
-  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitaeten' },
-  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitaeten' },
+  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitäten' },
+  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitäten' },
+  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitäten' },
+  car: { icon: car, name: 'Auto', category: 'Aktivitäten' },
+  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitäten' },
+  boat: { icon: boat, name: 'Boot', category: 'Aktivitäten' },
+  camera: { icon: camera, name: 'Kamera', category: 'Aktivitäten' },
+  image: { icon: image, name: 'Bild', category: 'Aktivitäten' },
+  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitäten' },
+  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitäten' },
   home: { icon: home, name: 'Zuhause', category: 'Orte' },
-  business: { icon: business, name: 'Gebaeude', category: 'Orte' },
+  business: { icon: business, name: 'Gebäude', category: 'Orte' },
   location: { icon: location, name: 'Standort', category: 'Orte' },
   navigate: { icon: navigate, name: 'Navigation', category: 'Orte' },
   compass: { icon: compass, name: 'Kompass', category: 'Orte' },
@@ -233,7 +233,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           .filter(b => b.criteria_type === 'both_categories')
           .sort((a, b) => a.criteria_value - b.criteria_value)
       },
-      // Aktivitaeten-basierte Badges
+      // Aktivitäten-basierte Badges
       {
         key: 'activity_count',
         title: 'Aktiv dabei',
@@ -333,7 +333,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return '#667eea';
   };
 
-  // CSS fuer Animationen
+  // CSS für Animationen
   const shimmerKeyframes = `
     @keyframes shimmer {
       0% { background-position: -200% center; }
@@ -367,7 +367,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Ueberschrift - gross und ueberlappend */}
+        {/* Überschrift - groß und überlappend */}
         <div style={{
           position: 'absolute',
           top: '-5px',
@@ -526,7 +526,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                   }}
                 />
                 <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Sammle Punkte fuer deine ersten Badges!</p>
+                <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Badges!</p>
               </div>
             </IonCardContent>
           </IonCard>
@@ -684,7 +684,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 : '0 3px 10px rgba(0,0,0,0.12)',
                               animation: isEarned ? 'float 3s ease-in-out infinite' : 'none'
                             }}>
-                              {/* Aeusserer Ring fuer erreichte Badges */}
+                              {/* Äußerer Ring für erreichte Badges */}
                               {isEarned && (
                                 <div style={{
                                   position: 'absolute',
@@ -698,7 +698,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 }} />
                               )}
 
-                              {/* Progress Ring fuer Badges in Arbeit */}
+                              {/* Progress Ring für Badges in Arbeit */}
                               {hasProgress && (
                                 <svg
                                   style={{
@@ -731,7 +731,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 </svg>
                               )}
 
-                              {/* Lock Icon fuer nicht erreichte Badges */}
+                              {/* Lock Icon für nicht erreichte Badges */}
                               {!isEarned && !hasProgress && (
                                 <div style={{
                                   position: 'absolute',

@@ -7,10 +7,14 @@ export type LiveUpdateType =
   | 'events'         // Events Liste
   | 'event_booking'  // Einzelne Buchung
   | 'badges'         // Badges
-  | 'requests'       // Aktivitaets-Antraege
+  | 'requests'       // Aktivitäts-Anträge
   | 'konfis'         // Admin Konfi-Liste
-  | 'points'         // Punkte-Aenderungen
-  | 'chat';          // Chat (bereits via BadgeContext)
+  | 'points'         // Punkte-Änderungen
+  | 'chat'           // Chat (bereits via BadgeContext)
+  | 'activities'     // Aktivitäten-Verwaltung
+  | 'categories'     // Kategorien-Verwaltung
+  | 'jahrgaenge'     // Jahrgänge-Verwaltung
+  | 'levels';        // Level-Verwaltung
 
 export interface LiveUpdateEvent {
   type: LiveUpdateType;
@@ -72,6 +76,10 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     socket.on('konfisUpdate', (data: any) => handleLiveUpdate({ type: 'konfis', action: 'refresh', data }));
     socket.on('pointsUpdate', (data: any) => handleLiveUpdate({ type: 'points', action: 'refresh', data }));
     socket.on('bookingUpdate', (data: any) => handleLiveUpdate({ type: 'event_booking', action: 'update', data }));
+    socket.on('activitiesUpdate', (data: any) => handleLiveUpdate({ type: 'activities', action: 'refresh', data }));
+    socket.on('categoriesUpdate', (data: any) => handleLiveUpdate({ type: 'categories', action: 'refresh', data }));
+    socket.on('jahrgaengeUpdate', (data: any) => handleLiveUpdate({ type: 'jahrgaenge', action: 'refresh', data }));
+    socket.on('levelsUpdate', (data: any) => handleLiveUpdate({ type: 'levels', action: 'refresh', data }));
 
     console.log('LiveUpdateContext: WebSocket listeners registered');
 
@@ -84,6 +92,10 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
       socket.off('konfisUpdate');
       socket.off('pointsUpdate');
       socket.off('bookingUpdate');
+      socket.off('activitiesUpdate');
+      socket.off('categoriesUpdate');
+      socket.off('jahrgaengeUpdate');
+      socket.off('levelsUpdate');
     };
   }, []);
 
