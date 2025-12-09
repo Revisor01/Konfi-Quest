@@ -161,6 +161,16 @@ interface DashboardData {
     };
     progress_percentage: number;
     points_to_next_level: number;
+    level_index: number;
+    total_levels: number;
+    all_levels?: Array<{
+      id: number;
+      name: string;
+      title: string;
+      icon: string;
+      color: string;
+      points_required: number;
+    }>;
   };
 }
 
@@ -389,6 +399,55 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   fontWeight: '600'
                 }}>
                   {dashboardData.level_info.current_level.title}
+                </div>
+              )}
+
+              {/* Level Icons Row - erreichte farbig, nicht erreichte ausgegraut */}
+              {dashboardData.level_info?.all_levels && dashboardData.level_info.all_levels.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  marginTop: '12px',
+                  justifyContent: 'flex-start',
+                  flexWrap: 'wrap'
+                }}>
+                  {dashboardData.level_info.all_levels.map((level, index) => {
+                    const isReached = index < dashboardData.level_info!.level_index;
+                    return (
+                      <div
+                        key={level.id}
+                        title={`${level.title} (${level.points_required} Punkte)`}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '50%',
+                          background: isReached
+                            ? `linear-gradient(135deg, ${level.color || '#667eea'} 0%, ${level.color || '#667eea'}dd 100%)`
+                            : 'rgba(255, 255, 255, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: isReached
+                            ? `0 4px 12px ${level.color || '#667eea'}50`
+                            : 'none',
+                          border: isReached
+                            ? '2px solid rgba(255, 255, 255, 0.3)'
+                            : '2px dashed rgba(255, 255, 255, 0.2)',
+                          transition: 'all 0.3s ease',
+                          opacity: isReached ? 1 : 0.5
+                        }}
+                      >
+                        <IonIcon
+                          icon={getIconFromString(level.icon)}
+                          style={{
+                            fontSize: '1.2rem',
+                            color: isReached ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                            filter: isReached ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none'
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -145,26 +145,55 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         daysToConfirmation = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       }
 
-      // Get level information for this konfi
-      
-      // Get next level
-      const nextLevelQuery = `
-        SELECT * FROM levels 
-        WHERE organization_id = $1 AND points_required > $2 AND is_active = true
+      // Get ALL levels for this organization to calculate correct level dynamically
+      const allLevelsQuery = `
+        SELECT * FROM levels
+        WHERE organization_id = $1 AND is_active = true
         ORDER BY points_required ASC
-        LIMIT 1
       `;
-      const { rows: [nextLevel] } = await db.query(nextLevelQuery, [req.user.organization_id, totalPoints]);
-      
+      const { rows: allLevels } = await db.query(allLevelsQuery, [req.user.organization_id]);
+
+      // Calculate correct current level based on total points (NOT from DB!)
+      let currentLevel = null;
+      let nextLevel = null;
+      let levelIndex = 0;
+
+      for (let i = 0; i < allLevels.length; i++) {
+        if (totalPoints >= allLevels[i].points_required) {
+          currentLevel = allLevels[i];
+          levelIndex = i + 1; // 1-based index for stars
+        } else {
+          nextLevel = allLevels[i];
+          break;
+        }
+      }
+
+      // If user reached max level, no next level
+      if (!nextLevel && currentLevel) {
+        // User is at max level
+        nextLevel = null;
+      }
+
+      // Update current_level_id in DB if it's wrong
+      if (currentLevel && konfi.current_level_id !== currentLevel.id) {
+        await db.query(
+          'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+          [currentLevel.id, konfiId]
+        );
+      }
+
       // Calculate progress to next level
       let levelProgress = 100;
       let pointsToNextLevel = 0;
-      
-      if (nextLevel) {
-        const currentLevelPoints = konfi.current_level_points || 0;
-        const pointsNeeded = nextLevel.points_required - currentLevelPoints;
-        const pointsAchieved = totalPoints - currentLevelPoints;
+
+      if (nextLevel && currentLevel) {
+        const pointsNeeded = nextLevel.points_required - currentLevel.points_required;
+        const pointsAchieved = totalPoints - currentLevel.points_required;
         levelProgress = Math.max(0, Math.min(100, (pointsAchieved / pointsNeeded) * 100));
+        pointsToNextLevel = nextLevel.points_required - totalPoints;
+      } else if (nextLevel && !currentLevel) {
+        // User hasn't reached first level yet
+        levelProgress = (totalPoints / nextLevel.points_required) * 100;
         pointsToNextLevel = nextLevel.points_required - totalPoints;
       }
 
@@ -185,17 +214,27 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         days_to_confirmation: daysToConfirmation > 0 ? daysToConfirmation : null,
         confirmation_date: konfi.confirmation_date,
         level_info: {
-          current_level: konfi.current_level_id ? {
-            id: konfi.current_level_id,
-            name: konfi.current_level_name,
-            title: konfi.current_level_title,
-            icon: konfi.current_level_icon,
-            color: konfi.current_level_color,
-            points_required: konfi.current_level_points
+          current_level: currentLevel ? {
+            id: currentLevel.id,
+            name: currentLevel.name,
+            title: currentLevel.title,
+            icon: currentLevel.icon,
+            color: currentLevel.color,
+            points_required: currentLevel.points_required
           } : null,
           next_level: nextLevel || null,
           progress_percentage: Math.round(levelProgress),
-          points_to_next_level: pointsToNextLevel
+          points_to_next_level: pointsToNextLevel,
+          level_index: levelIndex, // 1-6 for stars display
+          total_levels: allLevels.length,
+          all_levels: allLevels.map(l => ({
+            id: l.id,
+            name: l.name,
+            title: l.title,
+            icon: l.icon,
+            color: l.color,
+            points_required: l.points_required
+          }))
         }
       });
       
