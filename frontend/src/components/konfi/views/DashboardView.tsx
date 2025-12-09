@@ -774,7 +774,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           color: 'rgba(255, 255, 255, 0.8)'
                         }}>
                           <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
-                          {formatEventTime(event.event_date || event.date)}
+                          {event.booked_timeslot_start
+                            ? `${formatEventTime(event.booked_timeslot_start)}${event.booked_timeslot_end ? ` - ${formatEventTime(event.booked_timeslot_end)}` : ''}`
+                            : formatEventTime(event.event_date || event.date)
+                          }
                         </div>
                         {event.location && (
                           <div style={{

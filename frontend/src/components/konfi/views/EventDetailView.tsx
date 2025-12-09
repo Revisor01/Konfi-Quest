@@ -24,7 +24,8 @@ import {
   IonRow,
   IonCol,
   useIonAlert,
-  useIonModal
+  useIonModal,
+  useIonActionSheet
 } from '@ionic/react';
 import {
   arrowBack,
@@ -80,6 +81,10 @@ interface Event {
   waitlist_position?: number;
   registration_status_detail?: string;
   booking_status?: 'confirmed' | 'waitlist' | null;
+  has_timeslots?: boolean;
+  booked_timeslot_id?: number;
+  booked_timeslot_start?: string;
+  booked_timeslot_end?: string;
 }
 
 interface EventDetailViewProps {
@@ -87,16 +92,24 @@ interface EventDetailViewProps {
   onBack: () => void;
 }
 
+interface Timeslot {
+  id: number;
+  start_time: string;
+  end_time: string;
+  max_participants: number;
+  registered_count: number;
+}
+
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
   const { setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  
+  const [presentActionSheet] = useIonActionSheet();
+
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
-  const [timeslots, setTimeslots] = useState<any[]>([]);
-  const [selectedTimeslotId, setSelectedTimeslotId] = useState<number | null>(null);
+  const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
 
   const handleUnregister = async (reason: string) => {
     if (!eventData || !reason.trim()) {
@@ -242,15 +255,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
-  const handleRegister = async () => {
+  const doRegister = async (timeslotId?: number) => {
     if (!eventData) return;
 
-    // Check if event has timeslots and user hasn't selected one
-    const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
-    if (hasTimeslots && !selectedTimeslotId) {
-      setError('Bitte waehle zuerst einen Zeitslot aus');
-      return;
+    try {
+      const payload: any = {};
+      if (timeslotId) {
+        payload.timeslot_id = timeslotId;
+      }
+      await api.post(`/konfi/events/${eventData.id}/register`, payload);
+      setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
+      await loadEventData();
+
+      // Trigger events update for parent page
+      window.dispatchEvent(new CustomEvent('events-updated'));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
     }
+  };
+
+  const handleRegister = async () => {
+    if (!eventData) return;
 
     // Check if this is a Konfirmation event and if user already has one
     if (isKonfirmationEvent(eventData)) {
@@ -265,21 +290,45 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
     }
 
-    try {
-      const payload: any = {};
-      if (selectedTimeslotId) {
-        payload.timeslot_id = selectedTimeslotId;
-      }
-      await api.post(`/konfi/events/${eventData.id}/register`, payload);
-      setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
-      setSelectedTimeslotId(null); // Reset selection
-      await loadEventData();
+    // Check if event has timeslots - show ActionSheet to select
+    const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
+    if (hasTimeslots) {
+      // Build ActionSheet buttons from timeslots
+      const timeslotButtons = timeslots.map((slot) => {
+        const isFull = parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
+        const startTime = formatTime(slot.start_time);
+        const endTime = formatTime(slot.end_time);
+        const spotsLeft = slot.max_participants - (slot.registered_count || 0);
 
-      // Trigger events update for parent page
-      window.dispatchEvent(new CustomEvent('events-updated'));
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
+        return {
+          text: `${startTime} - ${endTime} (${spotsLeft} frei)`,
+          handler: () => {
+            if (isFull) {
+              setError('Dieser Zeitslot ist leider voll');
+              return false;
+            }
+            doRegister(slot.id);
+          },
+          cssClass: isFull ? 'action-sheet-disabled' : ''
+        };
+      });
+
+      // Add cancel button
+      timeslotButtons.push({
+        text: 'Abbrechen',
+        role: 'cancel' as any,
+        handler: () => {}
+      } as any);
+
+      presentActionSheet({
+        header: 'Zeitslot auswaehlen',
+        buttons: timeslotButtons
+      });
+      return;
     }
+
+    // No timeslots - register directly
+    doRegister();
   };
 
   if (loading) {
@@ -622,88 +671,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
 
-                  {/* Timeslots direkt unter Datum - klickbar wenn nicht angemeldet */}
-                  {(eventData as any).has_timeslots && timeslots.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                        <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
-                        <span style={{ fontWeight: '600', color: '#333' }}>
-                          {eventData.is_registered ? 'Zeitslots' : 'Zeitslot auswaehlen:'}
-                        </span>
-                      </div>
-                      <div style={{ marginLeft: '32px' }}>
-                        {timeslots.map((slot: any) => {
-                          const isFull = parseInt(slot.registered_count || 0) >= slot.max_participants;
-                          const isSelected = selectedTimeslotId === slot.id;
-                          const canSelect = !eventData.is_registered && eventData.can_register && !isFull;
-
-                          return (
-                            <div
-                              key={slot.id}
-                              onClick={() => canSelect && setSelectedTimeslotId(slot.id)}
-                              style={{
-                                padding: '12px 16px',
-                                marginBottom: '8px',
-                                borderRadius: '12px',
-                                border: isSelected
-                                  ? '2px solid #28a745'
-                                  : isFull
-                                    ? '1px solid #dc3545'
-                                    : '1px solid #e0e0e0',
-                                backgroundColor: isSelected
-                                  ? '#d4edda'
-                                  : isFull
-                                    ? '#f8d7da'
-                                    : '#f8f9fa',
-                                cursor: canSelect ? 'pointer' : 'default',
-                                opacity: isFull && !eventData.is_registered ? 0.6 : 1,
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center'
-                              }}
-                            >
-                              <div>
-                                <div style={{
-                                  fontWeight: '600',
-                                  color: isFull ? '#dc3545' : isSelected ? '#155724' : '#333'
-                                }}>
-                                  {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                                </div>
-                              </div>
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                              }}>
-                                <span style={{
-                                  fontSize: '0.85rem',
-                                  color: isFull ? '#dc3545' : '#666',
-                                  fontWeight: isFull ? '600' : '400'
-                                }}>
-                                  {slot.registered_count || 0}/{slot.max_participants}
-                                </span>
-                                {isSelected && (
-                                  <IonIcon
-                                    icon={checkmarkCircle}
-                                    style={{ color: '#28a745', fontSize: '1.2rem' }}
-                                  />
-                                )}
-                                {isFull && !eventData.is_registered && (
-                                  <span style={{
-                                    fontSize: '0.75rem',
-                                    backgroundColor: '#dc3545',
-                                    color: 'white',
-                                    padding: '2px 6px',
-                                    borderRadius: '4px'
-                                  }}>
-                                    VOLL
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                  {/* Gebuchter Timeslot anzeigen wenn angemeldet */}
+                  {eventData.has_timeslots && eventData.is_registered && eventData.booked_timeslot_start && (
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#28a745', fontSize: '1.2rem' }} />
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#666' }}>Dein Zeitslot:</div>
+                        <div style={{ fontSize: '1rem', fontWeight: '600', color: '#28a745' }}>
+                          {formatTime(eventData.booked_timeslot_start)}
+                          {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
+                        </div>
                       </div>
                     </div>
                   )}

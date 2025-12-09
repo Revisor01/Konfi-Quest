@@ -180,6 +180,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'category_activities': return 'Kategorie-Aktivitäten';
       case 'time_based': return 'Zeitbasiert';
       case 'activity_count': return 'Aktivitätsanzahl';
+      case 'event_count': return 'Event-Teilnahmen';
       case 'bonus_points': return 'Bonuspunkte';
       case 'streak': return 'Serie';
       case 'unique_activities': return 'Einzigartige Aktivitäten';

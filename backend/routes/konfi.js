@@ -963,6 +963,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                -- Konfi-specific data
                eb_konfi.status as booking_status,
                eb_konfi.attendance_status,
+               eb_konfi.timeslot_id as booked_timeslot_id,
+               et_booked.start_time as booked_timeslot_start,
+               et_booked.end_time as booked_timeslot_end,
                CASE WHEN eb_konfi.id IS NOT NULL THEN true ELSE false END as is_registered,
                CASE 
                  WHEN e.cancelled = true THEN false
@@ -982,6 +985,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         FROM events e
         LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
         LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
+        LEFT JOIN event_timeslots et_booked ON eb_konfi.timeslot_id = et_booked.id
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
         LEFT JOIN (
@@ -990,7 +994,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
         WHERE e.organization_id = $1
-        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status, eb_konfi.created_at
+        GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status, eb_konfi.created_at, eb_konfi.timeslot_id, et_booked.start_time, et_booked.end_time
         ORDER BY e.event_date ASC
       `;
       
@@ -1441,7 +1445,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       // Push-Notification an Konfi senden
       try {
-        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status);
+        await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot);
       } catch (pushErr) {
         console.error('Error sending event registration push:', pushErr);
       }

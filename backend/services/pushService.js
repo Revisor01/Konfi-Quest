@@ -351,8 +351,9 @@ class PushService {
 
   /**
    * Event-Anmeldung bestätigt - Push an Konfi
+   * @param {Object} timeslot - Optional: {start_time, end_time} des gebuchten Timeslots
    */
-  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null) {
+  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null) {
     try {
       console.log(`✅ Sending event registration confirmation to konfi ${konfiId}`);
 
@@ -362,11 +363,24 @@ class PushService {
         month: 'long'
       });
 
+      // Build time string - use timeslot time if available, otherwise event time
+      let timeString = '';
+      if (timeslot && timeslot.start_time) {
+        const startTime = new Date(timeslot.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const endTime = timeslot.end_time
+          ? new Date(timeslot.end_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+          : null;
+        timeString = endTime ? ` von ${startTime} - ${endTime} Uhr` : ` um ${startTime} Uhr`;
+      } else {
+        const eventTime = new Date(eventDate).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        timeString = ` um ${eventTime} Uhr`;
+      }
+
       const isConfirmed = status === 'confirmed';
       const notification = {
         title: isConfirmed ? 'Anmeldung bestätigt!' : 'Auf Warteliste',
         body: isConfirmed
-          ? `Du bist für "${eventName}" am ${dateFormatted} angemeldet.`
+          ? `Du bist für "${eventName}" am ${dateFormatted}${timeString} angemeldet.`
           : `Du stehst auf der Warteliste für "${eventName}" am ${dateFormatted}.`,
         data: {
           type: 'event_registered',
