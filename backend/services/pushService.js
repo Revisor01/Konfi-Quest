@@ -218,7 +218,7 @@ class PushService {
       const adminIds = admins.map(a => a.id);
       const notification = {
         title: 'Neuer Antrag',
-        body: `${konfiName} hat einen Antrag fuer "${activityName}" (${points}P) eingereicht`,
+        body: `${konfiName} hat einen Antrag für "${activityName}" (${points}P) eingereicht`,
         data: {
           type: 'new_activity_request',
           organization_id: organizationId.toString()
@@ -243,8 +243,8 @@ class PushService {
       const notification = {
         title: isApproved ? 'Antrag genehmigt!' : 'Antrag abgelehnt',
         body: isApproved
-          ? `Dein Antrag fuer "${activityName}" wurde genehmigt. +${points} Punkte!`
-          : `Dein Antrag fuer "${activityName}" wurde leider abgelehnt.${adminComment ? ` Grund: ${adminComment}` : ''}`,
+          ? `Dein Antrag für "${activityName}" wurde genehmigt. +${points} Punkte!`
+          : `Dein Antrag für "${activityName}" wurde leider abgelehnt.${adminComment ? ` Grund: ${adminComment}` : ''}`,
         data: {
           type: 'activity_request_status',
           status: status,
@@ -273,7 +273,7 @@ class PushService {
 
       const notification = {
         title: `Neues Badge erhalten! ${badgeIcon}`,
-        body: `Herzlichen Glueckwunsch! Du hast das Badge "${badgeName}" erhalten.`,
+        body: `Herzlichen Glückwunsch! Du hast das Badge "${badgeName}" erhalten.`,
         data: {
           type: 'badge_earned',
           badge_name: badgeName,
@@ -357,7 +357,7 @@ class PushService {
 
       const notification = {
         title: 'Platz frei geworden!',
-        body: `Gute Nachricht! Du bist fuer "${eventName}" nachgerueckt und jetzt angemeldet.`,
+        body: `Gute Nachricht! Du bist für "${eventName}" nachgerückt und jetzt angemeldet.`,
         data: {
           type: 'waitlist_promotion',
           event_name: eventName
@@ -446,10 +446,10 @@ class PushService {
 
       const isPresent = status === 'present';
       const notification = {
-        title: isPresent ? 'Teilnahme bestaetigt!' : 'Nicht erschienen',
+        title: isPresent ? 'Teilnahme bestätigt!' : 'Nicht erschienen',
         body: isPresent
-          ? `Deine Teilnahme an "${eventName}" wurde bestaetigt.${points > 0 ? ` +${points} Punkte!` : ''}`
-          : `Du wurdest als "nicht erschienen" fuer "${eventName}" markiert.`,
+          ? `Deine Teilnahme an "${eventName}" wurde bestätigt.${points > 0 ? ` +${points} Punkte!` : ''}`
+          : `Du wurdest als "nicht erschienen" für "${eventName}" markiert.`,
         data: {
           type: 'event_attendance',
           status: status,
