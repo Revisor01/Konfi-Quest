@@ -165,12 +165,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   onFilterChange
 }) => {
 
-  const getFilteredBadges = () => {
-    let filtered;
+  // Badges nach Kategorien gruppieren
+  const getBadgeCategories = () => {
+    // Erst filtern
+    let filtered = badges;
     switch (selectedFilter) {
-      case 'alle':
-        filtered = badges;
-        break;
       case 'nicht_erhalten':
         filtered = badges.filter(badge => !badge.is_earned);
         break;
@@ -181,37 +180,69 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         filtered = badges;
     }
 
-    // Motivierende Sortierung:
-    // 1. Erreichte Badges zuerst (Erfolgserlebnis!)
-    // 2. Fast geschafft (>70% Fortschritt) - motiviert zum Weitermachen
-    // 3. In Arbeit (1-70%)
-    // 4. Gesperrt (0% oder kein Fortschritt)
-    return filtered.sort((a, b) => {
-      // Erreichte zuerst
-      if (a.is_earned && !b.is_earned) return -1;
-      if (!a.is_earned && b.is_earned) return 1;
-
-      // Bei beiden erreicht: nach Datum (neueste zuerst)
-      if (a.is_earned && b.is_earned) {
-        if (a.earned_at && b.earned_at) {
-          return new Date(b.earned_at).getTime() - new Date(a.earned_at).getTime();
-        }
-        return a.name.localeCompare(b.name);
+    // Kategorien definieren
+    const categories: { key: string; title: string; icon: string; color: string; badges: Badge[] }[] = [
+      {
+        key: 'total_points',
+        title: 'Punkte-Sammler',
+        icon: 'trophy',
+        color: '#ffd700',
+        badges: filtered
+          .filter(b => b.criteria_type === 'total_points')
+          .sort((a, b) => a.criteria_value - b.criteria_value) // 5, 10, 20, 30...
+      },
+      {
+        key: 'gottesdienst_points',
+        title: 'Gottesdienst-Held',
+        icon: 'sunny',
+        color: '#ff9500',
+        badges: filtered
+          .filter(b => b.criteria_type === 'gottesdienst_points')
+          .sort((a, b) => a.criteria_value - b.criteria_value)
+      },
+      {
+        key: 'gemeinde_points',
+        title: 'Gemeinde-Star',
+        icon: 'people',
+        color: '#2dd36f',
+        badges: filtered
+          .filter(b => b.criteria_type === 'gemeinde_points')
+          .sort((a, b) => a.criteria_value - b.criteria_value)
+      },
+      {
+        key: 'event_attendance',
+        title: 'Event-Champion',
+        icon: 'calendar',
+        color: '#3880ff',
+        badges: filtered
+          .filter(b => b.criteria_type === 'event_attendance')
+          .sort((a, b) => a.criteria_value - b.criteria_value)
+      },
+      {
+        key: 'activity_count',
+        title: 'Fleissig dabei',
+        icon: 'checkmarkCircle',
+        color: '#5856d6',
+        badges: filtered
+          .filter(b => b.criteria_type === 'activity_count')
+          .sort((a, b) => a.criteria_value - b.criteria_value)
+      },
+      {
+        key: 'secret',
+        title: 'Geheime Badges',
+        icon: 'eyeOff',
+        color: '#ff6b35',
+        badges: filtered
+          .filter(b => b.is_hidden)
+          .sort((a, b) => (a.is_earned === b.is_earned) ? 0 : a.is_earned ? -1 : 1)
       }
+    ];
 
-      // Bei nicht erreichten: nach Fortschritt sortieren
-      const progressA = a.progress_percentage || 0;
-      const progressB = b.progress_percentage || 0;
-
-      // Höherer Fortschritt zuerst
-      if (progressA !== progressB) {
-        return progressB - progressA;
-      }
-
-      // Bei gleichem Fortschritt: alphabetisch
-      return a.name.localeCompare(b.name);
-    });
+    // Nur Kategorien mit Badges anzeigen
+    return categories.filter(cat => cat.badges.length > 0);
   };
+
+  const badgeCategories = getBadgeCategories();
 
   const getBadgeColor = (badge: Badge) => {
     if (badge.color) {
@@ -225,8 +256,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
     return '#667eea'; // Default
   };
-
-  const filteredBadges = getFilteredBadges();
 
   // CSS für Animationen
   const shimmerKeyframes = `
@@ -404,10 +433,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </IonCardContent>
       </IonCard>
 
-      {/* Badges Grid - Neues ansprechendes Design */}
-      <div style={{ padding: '0 16px 16px 16px' }}>
-        {filteredBadges.length === 0 ? (
-          <IonCard>
+      {/* Badges nach Kategorien */}
+      <div style={{ paddingBottom: '16px' }}>
+        {badgeCategories.length === 0 ? (
+          <IonCard style={{ margin: '16px' }}>
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
                 <IonIcon
@@ -426,16 +455,120 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             </IonCardContent>
           </IonCard>
         ) : (
-          <IonGrid style={{ padding: '0' }}>
-            <IonRow>
-              {filteredBadges.map((badge) => {
-                const badgeColor = getBadgeColor(badge);
-                const isEarned = badge.is_earned;
-                const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
+          badgeCategories.map((category) => {
+            const earnedCount = category.badges.filter(b => b.is_earned).length;
+            const totalCount = category.badges.length;
+            const progressPercent = Math.round((earnedCount / totalCount) * 100);
 
-                return (
-                  <IonCol size="6" sizeMd="4" sizeLg="3" key={badge.id} style={{ padding: '6px' }}>
+            return (
+              <div key={category.key} style={{ marginBottom: '24px' }}>
+                {/* Kategorie Header */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0 16px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}cc 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: `0 4px 12px ${category.color}40`
+                    }}>
+                      <IonIcon
+                        icon={getIconFromString(category.icon)}
+                        style={{ fontSize: '1.2rem', color: 'white' }}
+                      />
+                    </div>
+                    <div>
+                      <h3 style={{
+                        margin: '0',
+                        fontSize: '1rem',
+                        fontWeight: '700',
+                        color: '#333'
+                      }}>
+                        {category.title}
+                      </h3>
+                      <span style={{
+                        fontSize: '0.75rem',
+                        color: '#888'
+                      }}>
+                        {earnedCount} von {totalCount} erreicht
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Circle */}
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    position: 'relative'
+                  }}>
+                    <svg width="44" height="44" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle
+                        cx="22"
+                        cy="22"
+                        r="18"
+                        fill="none"
+                        stroke="#e8e8e8"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="22"
+                        cy="22"
+                        r="18"
+                        fill="none"
+                        stroke={category.color}
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeDasharray={`${progressPercent * 1.13} 113`}
+                      />
+                    </svg>
+                    <span style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      color: category.color
+                    }}>
+                      {progressPercent}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Horizontaler Scroll Container */}
+                <div style={{
+                  display: 'flex',
+                  overflowX: 'auto',
+                  gap: '12px',
+                  padding: '4px 16px 8px 16px',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                  WebkitOverflowScrolling: 'touch'
+                }}>
+                  {category.badges.map((badge) => {
+                    const badgeColor = getBadgeColor(badge);
+                    const isEarned = badge.is_earned;
+                    const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
+
+                    return (
+                      <div
+                        key={badge.id}
+                        style={{
+                          minWidth: '140px',
+                          maxWidth: '140px',
+                          flexShrink: 0
+                        }}
+                      >
+                        <div style={{
                       background: '#ffffff',
                       borderRadius: '20px',
                       padding: '20px 16px',
@@ -680,28 +813,30 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         </div>
                       )}
 
-                      {/* Punkte-Anzeige */}
-                      {badge.criteria_value > 0 && badge.criteria_type === 'total_points' && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '10px',
-                          left: '10px',
-                          fontSize: '0.6rem',
-                          fontWeight: '700',
-                          color: isEarned ? badgeColor : '#bbb',
-                          background: isEarned ? `${badgeColor}15` : '#f5f5f5',
-                          padding: '3px 8px',
-                          borderRadius: '8px'
-                        }}>
-                          {badge.criteria_value} Pkt
+                          {/* Punkte-Anzeige */}
+                          {badge.criteria_value > 0 && badge.criteria_type === 'total_points' && (
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '10px',
+                              left: '10px',
+                              fontSize: '0.6rem',
+                              fontWeight: '700',
+                              color: isEarned ? badgeColor : '#bbb',
+                              background: isEarned ? `${badgeColor}15` : '#f5f5f5',
+                              padding: '3px 8px',
+                              borderRadius: '8px'
+                            }}>
+                              {badge.criteria_value} Pkt
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </IonCol>
-                );
-              })}
-            </IonRow>
-          </IonGrid>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>
