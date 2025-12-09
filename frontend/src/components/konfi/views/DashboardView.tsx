@@ -4,6 +4,7 @@ import {
   IonAvatar,
   IonIcon
 } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
 import {
   time,
   location,
@@ -209,6 +210,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   targetGottesdienst,
   targetGemeinde
 }) => {
+  const history = useHistory();
   const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [showLosung, setShowLosung] = useState(true); // Wechselt bei jedem Reload
@@ -659,6 +661,162 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       ) : null}
 
+      {/* Events Section - direkt nach Konfirmation */}
+      {regularEvents && regularEvents.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+          borderRadius: '20px',
+          padding: '0',
+          marginBottom: '16px',
+          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '180px'
+        }}>
+          {/* Background Text */}
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            left: '10px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '2.8rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.08)',
+              margin: '0',
+              lineHeight: '0.9',
+              letterSpacing: '-2px'
+            }}>
+              DEINE
+            </h2>
+            <h2 style={{
+              fontSize: '2.8rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.08)',
+              margin: '0',
+              lineHeight: '0.9',
+              letterSpacing: '-2px'
+            }}>
+              EVENTS
+            </h2>
+          </div>
+
+          {/* Zusätzlicher Indikator */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            background: 'rgba(255, 255, 255, 0.2)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            fontSize: '0.7rem',
+            color: 'white',
+            fontWeight: '700',
+            zIndex: 3
+          }}>
+            {regularEvents.length === 1 ? 'DEIN EVENT' : `DEINE ${regularEvents.length} EVENTS`}
+          </div>
+
+          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {regularEvents.map((event) => {
+                const isWaitlist = (event as any).booking_status === 'waitlist';
+                return (
+                  <div
+                    key={event.id}
+                    onClick={() => history.push(`/konfi/events/${event.id}`)}
+                    style={{
+                      background: isWaitlist
+                        ? 'rgba(251, 191, 36, 0.25)'
+                        : 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(10px)',
+                      borderRadius: '12px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: event.cancelled
+                        ? '2px dashed rgba(255,255,255,0.3)'
+                        : isWaitlist
+                          ? '2px solid rgba(251, 191, 36, 0.5)'
+                          : 'none',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease, background 0.2s ease'
+                    }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '1rem',
+                        fontWeight: '700',
+                        color: 'white',
+                        marginBottom: '4px',
+                        textDecoration: event.cancelled ? 'line-through' : 'none'
+                      }}>
+                        {event.title || event.name}
+                      </div>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.8rem',
+                          color: 'rgba(255, 255, 255, 0.8)'
+                        }}>
+                          <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
+                          {formatEventDate(event.event_date || event.date)}
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '0.8rem',
+                          color: 'rgba(255, 255, 255, 0.8)'
+                        }}>
+                          <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                          {formatEventTime(event.event_date || event.date)}
+                        </div>
+                        {event.location && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.8rem',
+                            color: 'rgba(255, 255, 255, 0.8)'
+                          }}>
+                            <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
+                            {event.location}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{
+                      background: event.cancelled
+                        ? 'rgba(255,255,255,0.2)'
+                        : isWaitlist
+                          ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                          : 'rgba(255,255,255,0.25)',
+                      borderRadius: '8px',
+                      padding: '6px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      color: 'white',
+                      whiteSpace: 'nowrap',
+                      boxShadow: isWaitlist ? '0 2px 8px rgba(245, 158, 11, 0.4)' : 'none'
+                    }}>
+                      {event.cancelled ? 'ABGESAGT' :
+                       isWaitlist ?
+                         `WARTELISTE #${(event as any).waitlist_position || '?'}` :
+                         `In ${formatTimeUntil(event.event_date || event.date)}`}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Tageslosung - nur wenn echte API-Daten verfügbar */}
       {!loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
         <div style={{
@@ -751,154 +909,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Events Section - jetzt vor Badges */}
-      {regularEvents && regularEvents.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '180px'
-        }}>
-          {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
-              DEINE
-            </h2>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
-              EVENTS
-            </h2>
-          </div>
-
-          {/* Zusätzlicher Indikator */}
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '8px',
-            padding: '6px 10px',
-            fontSize: '0.7rem',
-            color: 'white',
-            fontWeight: '700',
-            zIndex: 3
-          }}>
-{regularEvents.length === 0 ? 'DEINE EVENTS' : `DEINE ${regularEvents.length} EVENTS`}
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
-            {regularEvents.length === 0 ? (
-              <div style={{ 
-                textAlign: 'center', 
-                color: 'rgba(255, 255, 255, 0.8)',
-                fontSize: '0.9rem'
-              }}>
-                Keine Events gebucht
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {regularEvents.map((event) => (
-                <div key={event.id} style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '12px',
-                  padding: '12px 16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  border: event.cancelled ? '2px dashed rgba(255,255,255,0.3)' : 'none'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ 
-                      fontSize: '1rem', 
-                      fontWeight: '700', 
-                      color: 'white',
-                      marginBottom: '4px',
-                      textDecoration: event.cancelled ? 'line-through' : 'none'
-                    }}>
-                      {event.title || event.name}
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        fontSize: '0.8rem', 
-                        color: 'rgba(255, 255, 255, 0.8)' 
-                      }}>
-                        <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
-                        {formatEventDate(event.event_date || event.date)}
-                      </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '4px', 
-                        fontSize: '0.8rem', 
-                        color: 'rgba(255, 255, 255, 0.8)' 
-                      }}>
-                        <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
-                        {formatEventTime(event.event_date || event.date)}
-                      </div>
-                      {event.location && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '4px', 
-                          fontSize: '0.8rem', 
-                          color: 'rgba(255, 255, 255, 0.8)' 
-                        }}>
-                          <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
-                          {event.location}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{
-                    background: event.cancelled ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.25)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: 'white',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {event.cancelled ? 'ABGESAGT' : 
-                     (event as any).booking_status === 'waitlist' ? 
-                       `WARTELISTE (${(event as any).waitlist_position || 1})` :
-                       `In ${formatTimeUntil(event.event_date || event.date)}`}
-                  </div>
-                </div>
-              ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Badges Section - jetzt nach Events */}
+      {/* Badges Section */}
       {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 && (
         <div style={{
           background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
