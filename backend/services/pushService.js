@@ -235,7 +235,7 @@ class PushService {
   /**
    * Antrag genehmigt/abgelehnt - Push an Konfi
    */
-  static async sendActivityRequestStatusToKonfi(db, konfiId, activityName, points, status, adminComment = null) {
+  static async sendActivityRequestStatusToKonfi(db, konfiId, activityName, points, status, adminComment = null, requestId = null) {
     try {
       console.log(`📋 Sending request ${status} notification to konfi ${konfiId}`);
 
@@ -249,7 +249,8 @@ class PushService {
           type: 'activity_request_status',
           status: status,
           activity_name: activityName,
-          points: points.toString()
+          points: points.toString(),
+          request_id: requestId?.toString() || ''
         }
       };
 
@@ -267,7 +268,7 @@ class PushService {
   /**
    * Badge erhalten - Push an Konfi
    */
-  static async sendBadgeEarnedToKonfi(db, konfiId, badgeName, badgeIcon, badgeDescription) {
+  static async sendBadgeEarnedToKonfi(db, konfiId, badgeName, badgeIcon, badgeDescription, badgeId = null) {
     try {
       console.log(`🏆 Sending badge earned notification to konfi ${konfiId}`);
 
@@ -277,7 +278,8 @@ class PushService {
         data: {
           type: 'badge_earned',
           badge_name: badgeName,
-          badge_icon: badgeIcon
+          badge_icon: badgeIcon,
+          badge_id: badgeId?.toString() || ''
         }
       };
 
@@ -350,7 +352,7 @@ class PushService {
   /**
    * Event-Anmeldung bestaetigt - Push an Konfi
    */
-  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status) {
+  static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null) {
     try {
       console.log(`✅ Sending event registration confirmation to konfi ${konfiId}`);
 
@@ -369,7 +371,8 @@ class PushService {
         data: {
           type: 'event_registered',
           event_name: eventName,
-          status: status
+          status: status,
+          event_id: eventId?.toString() || ''
         }
       };
 
@@ -406,17 +409,18 @@ class PushService {
   /**
    * Level-Up - Push an Konfi
    */
-  static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon) {
+  static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null) {
     try {
       console.log(`🎉 Sending level up notification to konfi ${konfiId}`);
 
       const notification = {
-        title: `Level Up! ${levelIcon || '🎉'}`,
+        title: `Level Up! ${levelIcon || ''}`,
         body: `Herzlichen Glueckwunsch! Du hast Level "${levelTitle || levelName}" erreicht!`,
         data: {
           type: 'level_up',
           level_name: levelName,
-          level_title: levelTitle || levelName
+          level_title: levelTitle || levelName,
+          level_id: levelId?.toString() || ''
         }
       };
 
@@ -457,7 +461,7 @@ class PushService {
   /**
    * Von Warteliste aufgerueckt - Push an Konfi
    */
-  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null) {
+  static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null) {
     try {
       console.log(`🎉 Sending waitlist promotion notification to konfi ${konfiId}`);
 
@@ -472,7 +476,8 @@ class PushService {
         body: `Gute Nachricht! Du bist für "${eventName}"${dateInfo} nachgerückt und jetzt angemeldet.`,
         data: {
           type: 'waitlist_promotion',
-          event_name: eventName
+          event_name: eventName,
+          event_id: eventId?.toString() || ''
         }
       };
 
@@ -515,7 +520,7 @@ class PushService {
   /**
    * Neues Event erstellt - Push an alle Konfis der Organisation
    */
-  static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate) {
+  static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate, eventId = null) {
     try {
       console.log(`📣 Sending new event notification to org ${organizationId}`);
 
@@ -544,7 +549,8 @@ class PushService {
         body: `"${eventName}" am ${dateFormatted} - Melde dich jetzt an!`,
         data: {
           type: 'new_event',
-          event_name: eventName
+          event_name: eventName,
+          event_id: eventId?.toString() || ''
         }
       };
 
@@ -558,7 +564,7 @@ class PushService {
   /**
    * Event-Anwesenheit verbucht - Push an Konfi
    */
-  static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0) {
+  static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0, eventId = null) {
     try {
       console.log(`✅ Sending attendance notification to konfi ${konfiId}`);
 
@@ -572,7 +578,8 @@ class PushService {
           type: 'event_attendance',
           status: status,
           event_name: eventName,
-          points: points.toString()
+          points: points.toString(),
+          event_id: eventId?.toString() || ''
         }
       };
 

@@ -512,19 +512,62 @@ useEffect(() => {
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
           console.log('📲 Push angeklickt:', action.notification);
           // Chat notifications refresh removed - handled by BadgeContext
-          
-          // Navigate to chat if roomId is provided
-          if (action.notification.data?.type === 'chat' && action.notification.data?.roomId) {
-            const roomId = action.notification.data.roomId;
-            const userType = user?.type || 'konfi';
-            const chatUrl = userType === 'admin' ? '/admin/chat' : '/konfi/chat';
-            
-            // Use timeout to ensure navigation happens after app is fully loaded
-            setTimeout(() => {
-              console.log('📲 Navigating to chat room:', roomId);
-              window.location.href = `${chatUrl}?room=${roomId}`;
-            }, 100);
-          }
+
+          const notificationType = action.notification.data?.type;
+          const userType = user?.type || 'konfi';
+
+          // Use timeout to ensure navigation happens after app is fully loaded
+          setTimeout(() => {
+            let targetUrl = '';
+
+            switch (notificationType) {
+              case 'chat':
+                // Navigate to specific chat room
+                if (action.notification.data?.roomId) {
+                  const chatUrl = userType === 'admin' ? '/admin/chat' : '/konfi/chat';
+                  targetUrl = `${chatUrl}?room=${action.notification.data.roomId}`;
+                }
+                break;
+
+              case 'activity_request_status':
+              case 'new_activity_request':
+                // Navigate to requests page
+                targetUrl = userType === 'admin' ? '/admin/requests' : '/konfi/requests';
+                break;
+
+              case 'badge_earned':
+                // Navigate to badges page
+                targetUrl = userType === 'admin' ? '/admin/badges' : '/konfi/badges';
+                break;
+
+              case 'event_registered':
+              case 'event_unregistered':
+              case 'waitlist_promotion':
+              case 'new_event':
+              case 'event_attendance':
+              case 'event_reminder':
+              case 'event_cancelled':
+                // Navigate to events page
+                targetUrl = userType === 'admin' ? '/admin/events' : '/konfi/events';
+                break;
+
+              case 'level_up':
+              case 'activity_assigned':
+              case 'bonus_points':
+                // Navigate to dashboard (points/level related)
+                targetUrl = userType === 'admin' ? '/admin/konfis' : '/konfi/dashboard';
+                break;
+
+              default:
+                console.log('📲 Unknown notification type:', notificationType);
+                break;
+            }
+
+            if (targetUrl) {
+              console.log('📲 Navigating to:', targetUrl);
+              window.location.href = targetUrl;
+            }
+          }, 100);
         });
         
         // ✅ Jetzt: Registrierung

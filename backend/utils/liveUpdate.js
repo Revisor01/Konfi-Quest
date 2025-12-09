@@ -154,8 +154,32 @@ async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data =
   }
 }
 
+/**
+ * Convenience-Funktion: Sendet ein Live-Update an einen spezifischen Konfi
+ * @param {number} konfiId - Konfi User ID
+ * @param {string} updateType - z.B. 'dashboard', 'events', 'badges', 'requests', 'points'
+ * @param {string} action - 'refresh', 'update', 'delete', 'create'
+ * @param {object} data - Optionale zusätzliche Daten
+ */
+function sendToKonfi(konfiId, updateType, action = 'refresh', data = null) {
+  sendToUser('konfi', konfiId, updateType, action, data);
+}
+
+/**
+ * Convenience-Funktion: Sendet ein Live-Update an einen spezifischen Admin
+ * @param {number} adminId - Admin User ID
+ * @param {string} updateType - z.B. 'konfis', 'events', 'requests'
+ * @param {string} action - 'refresh', 'update', 'delete', 'create'
+ * @param {object} data - Optionale zusätzliche Daten
+ */
+function sendToAdmin(adminId, updateType, action = 'refresh', data = null) {
+  sendToUser('admin', adminId, updateType, action, data);
+}
+
 module.exports = {
   sendToUser,
+  sendToKonfi,
+  sendToAdmin,
   sendToOrgAdmins,
   sendToOrgKonfis,
   sendToOrg,

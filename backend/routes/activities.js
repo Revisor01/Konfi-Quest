@@ -326,14 +326,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
 
-        // Send push notification to konfi
+        // Send push notification to konfi (mit Request ID für Navigation)
         await PushService.sendActivityRequestStatusToKonfi(
           db,
           request.konfi_id,
           request.activity_name,
           request.points,
           status,
-          admin_comment
+          admin_comment,
+          requestId
         );
       } catch (notifErr) {
         console.error('Error sending notification:', notifErr);
