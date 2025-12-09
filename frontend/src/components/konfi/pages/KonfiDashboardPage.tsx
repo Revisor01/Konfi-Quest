@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -9,6 +9,7 @@ import {
   IonRefresherContent
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
@@ -77,6 +78,17 @@ const KonfiDashboardPage: React.FC = () => {
   const [badgeStats, setBadgeStats] = useState<BadgeStats>({ totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 });
   const [loading, setLoading] = useState(true);
 
+
+  // Memoized refresh function for live updates
+  const refreshAllData = useCallback(() => {
+    console.log('Live Update: Refreshing dashboard data...');
+    loadDashboardData();
+    loadUpcomingEvents();
+    loadBadgeStats();
+  }, []);
+
+  // Subscribe to live updates for dashboard and events
+  useLiveRefresh(['dashboard', 'events', 'badges'], refreshAllData);
 
   useEffect(() => {
     loadDashboardData();
@@ -160,11 +172,13 @@ const KonfiDashboardPage: React.FC = () => {
   const loadUpcomingEvents = async () => {
     try {
       const response = await api.get('/konfi/events');
-      // Show next 3 upcoming events (both registered and available)
-      const upcomingEvents = response.data
-        .filter((event: any) => new Date(event.event_date || event.date) >= new Date())
-        .slice(0, 3);
-      setUpcomingEvents(upcomingEvents);
+      // Show ALL upcoming events where konfi is registered or on waitlist (no limit!)
+      const registeredEvents = response.data
+        .filter((event: any) =>
+          new Date(event.event_date || event.date) >= new Date() &&
+          (event.is_registered || event.booking_status === 'confirmed' || event.booking_status === 'waitlist')
+        );
+      setUpcomingEvents(registeredEvents);
     } catch (err) {
       console.error('Error loading events:', err);
       // Events nicht kritisch für Dashboard

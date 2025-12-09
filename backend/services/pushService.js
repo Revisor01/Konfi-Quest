@@ -395,6 +395,49 @@ class PushService {
   }
 
   /**
+   * Neues Event erstellt - Push an alle Konfis der Organisation
+   */
+  static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate) {
+    try {
+      console.log(`📣 Sending new event notification to org ${organizationId}`);
+
+      // Hole alle Konfi-IDs der Organisation
+      const konfisQuery = `
+        SELECT u.id FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.organization_id = $1 AND r.name = 'konfi'
+      `;
+      const { rows: konfis } = await db.query(konfisQuery, [organizationId]);
+      const konfiIds = konfis.map(k => k.id);
+
+      if (konfiIds.length === 0) {
+        console.log('No konfis found for org', organizationId);
+        return { success: true, sent: 0 };
+      }
+
+      const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+
+      const notification = {
+        title: 'Neues Event!',
+        body: `"${eventName}" am ${dateFormatted} - Melde dich jetzt an!`,
+        data: {
+          type: 'new_event',
+          event_name: eventName
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, konfiIds, notification);
+    } catch (error) {
+      console.error('❌ sendNewEventToOrgKonfis error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Event-Anwesenheit verbucht - Push an Konfi
    */
   static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0) {

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const PushService = require('../services/pushService');
+const liveUpdate = require('../utils/liveUpdate');
 
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
@@ -380,9 +381,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       await Promise.all(promises);
-      
+
       res.status(201).json({ id: eventId, message: 'Event created successfully' });
-      
+
+      // Live Update: Notify all konfis and admins about the new event
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { eventId });
+
+      // Push Notification: Notify all konfis about the new event
+      try {
+        await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date);
+      } catch (pushErr) {
+        console.error('Push notification failed for new event:', pushErr);
+      }
+
     } catch (err) {
       console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
@@ -455,7 +466,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       await db.query('COMMIT');
       res.json({ message: 'Event updated successfully' });
-      
+
+      // Live Update: Notify all konfis and admins about the event update
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
+
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in PUT /events/${id}:`, err);
@@ -569,7 +583,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await db.query('COMMIT');
       res.json({ message: 'Event erfolgreich gelöscht' });
-      
+
+      // Live Update: Notify all konfis and admins about the event deletion
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
+
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in DELETE /events/${id}:`, err);
@@ -635,7 +652,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [newBooking] } = await db.query(insertBookingQuery, [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id]);
       
       res.status(201).json({ id: newBooking.id, message, status: bookingStatus });
-      
+
+      // Live Update: Notify the konfi and admins about the booking
+      liveUpdate.sendToUser('konfi', konfiId, 'events', 'update', { eventId, status: bookingStatus });
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking' });
+
     } catch (err) {
       console.error(`Database error in POST /events/${eventId}/book:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -700,6 +721,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       res.json({ message: 'Booking canceled successfully' });
+
+      // Live Update: Notify the konfi and admins about the cancellation
+      liveUpdate.sendToUser('konfi', konfiId, 'events', 'update', { eventId, action: 'canceled' });
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
 
     } catch (err) {
       console.error(`Database error in DELETE /events/${eventId}/book:`, err);
@@ -783,7 +808,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         timeslot_id: timeslot_id,
         message: responseMessage
       });
-      
+
+      // Live Update: Notify the konfi and admins about the admin-booking
+      liveUpdate.sendToUser('konfi', user_id, 'events', 'update', { eventId, status: finalStatus });
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
+
     } catch (err) {
       console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
       if (err.code === '23505') { // unique_violation
@@ -836,6 +865,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             // Send push notification to promoted user
             if (promotedBooking) {
               await PushService.sendWaitlistPromotionToKonfi(db, promotedBooking.user_id, promotedBooking.event_name);
+              // Live Update: Notify promoted user about their status change
+              liveUpdate.sendToUser('konfi', promotedBooking.user_id, 'events', 'update', { eventId, action: 'promoted' });
             }
           } catch (promotionError) {
             console.error('Error promoting from waitlist:', promotionError);
@@ -844,7 +875,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       res.json({ message: 'Participant removed successfully' });
-      
+
+      // Live Update: Notify the removed konfi and admins
+      liveUpdate.sendToUser('konfi', booking.user_id, 'events', 'update', { eventId, action: 'removed' });
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking_removed' });
+
     } catch (err) {
       console.error(`Database error in DELETE /events/${eventId}/bookings/${bookingId}:`, err);
       res.status(500).json({ error: 'Database error' });
@@ -1132,6 +1167,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             console.error('Push notification failed:', pushErr);
           }
 
+          // Live Update: Notify konfi about dashboard (points) and admins about event
+          liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+
           return res.json({ message: `Attendance updated and ${eventData.points} ${pointType} points awarded`, points_awarded: true });
         } else {
           await db.query('COMMIT');
@@ -1142,6 +1181,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           } catch (pushErr) {
             console.error('Push notification failed:', pushErr);
           }
+
+          // Live Update: Notify admins about event attendance change
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
 
           return res.json({ message: 'Attendance updated (points already awarded)', points_awarded: false });
         }
@@ -1164,6 +1206,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             console.error('Push notification failed:', pushErr);
           }
 
+          // Live Update: Notify konfi about dashboard (points removed) and admins about event
+          liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -existingPoints.points });
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+
           return res.json({ message: `Attendance updated and ${existingPoints.points} points removed`, points_removed: true });
         }
 
@@ -1173,6 +1219,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         } catch (pushErr) {
           console.error('Push notification failed:', pushErr);
         }
+
+        // Live Update: Notify admins about event attendance change
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
       }
 
       await db.query('COMMIT');
@@ -1280,12 +1329,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       console.log(`Event "${event.name}" cancelled. Notified ${participants.length} participants.`);
 
       await db.query('COMMIT');
-      res.json({ 
+      res.json({
         message: `Event "${event.name}" wurde abgesagt`,
         participants_notified: participants.length,
         notification_message
       });
-      
+
+      // Live Update: Notify all konfis and admins about the event cancellation
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
+
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in PUT /events/${eventId}/cancel:`, err);

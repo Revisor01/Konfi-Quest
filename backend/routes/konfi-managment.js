@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
+const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -453,6 +454,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             res.status(201).json({ message: 'Bonus points added successfully' });
+
+            // Live Update: Notify konfi about dashboard (points) and admins about konfi change
+            liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points });
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
+
         } catch (err) {
             console.error('Database error in POST /konfis/:id/bonus-points:', err);
             res.status(500).json({ error: 'Database error' });
@@ -486,6 +492,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             res.json({ message: 'Bonus points deleted successfully' });
+
+            // Live Update: Notify konfi about dashboard (points) and admins about konfi change
+            liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -bonus.points });
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
+
         } catch (err) {
             console.error('Database error in DELETE /konfis/:id/bonus-points/:bonusId:', err);
             res.status(500).json({ error: 'Database error' });
@@ -530,6 +541,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             res.status(201).json({ message: 'Activity added successfully' });
+
+            // Live Update: Notify konfi about dashboard (points) and admins about konfi change
+            liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: activity.points });
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
+
         } catch (err) {
             console.error('Database error in POST /konfis/:id/activities:', err);
             res.status(500).json({ error: 'Database error' });
@@ -568,6 +584,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             res.json({ message: 'Activity deleted successfully' });
+
+            // Live Update: Notify konfi about dashboard (points) and admins about konfi change
+            liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -activity.points });
+            liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
+
         } catch (err) {
             console.error('Database error in DELETE /konfis/:id/activities/:activityId:', err);
             res.status(500).json({ error: 'Database error' });

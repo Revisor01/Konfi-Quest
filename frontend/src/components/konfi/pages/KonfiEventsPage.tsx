@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import {
   IonPage,
@@ -11,6 +11,7 @@ import {
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import EventsView from '../views/EventsView';
 import EventDetailView from '../views/EventDetailView';
@@ -63,16 +64,25 @@ const KonfiEventsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'registered' | 'konfirmation'>('upcoming');
 
+  // Memoized refresh function for live updates
+  const refreshEvents = useCallback(() => {
+    console.log('Live Update: Refreshing konfi events...');
+    loadEvents();
+  }, []);
+
+  // Subscribe to live updates for events
+  useLiveRefresh('events', refreshEvents);
+
   useEffect(() => {
     loadEvents();
-    
-    // Event-Listener für Updates aus EventDetailView
+
+    // Event-Listener für Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
       loadEvents();
     };
-    
+
     window.addEventListener('events-updated', handleEventsUpdated);
-    
+
     return () => {
       window.removeEventListener('events-updated', handleEventsUpdated);
     };

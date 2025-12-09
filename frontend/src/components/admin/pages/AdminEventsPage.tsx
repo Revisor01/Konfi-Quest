@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
@@ -17,6 +17,7 @@ import {
 import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
+import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import EventsView from '../EventsView';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -82,20 +83,31 @@ const AdminEventsPage: React.FC = () => {
     }
   });
 
+  // Memoized refresh function for live updates
+  const refreshAllEvents = useCallback(() => {
+    console.log('Live Update: Refreshing events data...');
+    loadEvents();
+    loadCancelledEvents();
+    loadPastEvents();
+  }, []);
+
+  // Subscribe to live updates for events
+  useLiveRefresh('events', refreshAllEvents);
+
   useEffect(() => {
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
     console.log('Page ref:', pageRef.current);
-    // Event-Listener für Updates aus EventDetailView
+    // Event-Listener für Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
       loadEvents();
       loadCancelledEvents();
       loadPastEvents();
     };
-    
+
     window.addEventListener('events-updated', handleEventsUpdated);
-    
+
     return () => {
       window.removeEventListener('events-updated', handleEventsUpdated);
     };

@@ -26,6 +26,7 @@ import { IonReactRouter } from '@ionic/react-router';
 // Icons sind jetzt in MainTabs.tsx
 import { AppProvider, useApp } from './contexts/AppContext';
 import { BadgeProvider, useBadge } from './contexts/BadgeContext';
+import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
 import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -179,7 +180,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => (
   <AppProvider>
     <BadgeProvider>
-      <AppContent />
+      <LiveUpdateProvider>
+        <AppContent />
+      </LiveUpdateProvider>
     </BadgeProvider>
   </AppProvider>
 );
