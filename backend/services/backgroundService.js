@@ -145,11 +145,11 @@ class BackgroundService {
       const oneDayWindowEnd = new Date(oneDayFromNow.getTime() + 15 * 60 * 1000);
 
       const oneDayQuery = `
-        SELECT DISTINCT e.id, e.name, e.event_date, e.event_time, eb.user_id
+        SELECT DISTINCT e.id, e.name, e.event_date, eb.user_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
-          AND e.event_date = $1::date
+          AND e.event_date::date = $1::date
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
             WHERE er.event_id = e.id
@@ -163,12 +163,14 @@ class BackgroundService {
 
       for (const event of oneDayEvents) {
         try {
+          // Extrahiere Zeit aus event_date
+          const eventTime = event.event_date ? new Date(event.event_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
           await PushService.sendEventReminderToKonfi(
             db,
             event.user_id,
             event.name,
             event.event_date,
-            event.event_time,
+            eventTime,
             '1_day'
           );
 
@@ -184,14 +186,15 @@ class BackgroundService {
 
       // 2. Events die in ca. 1 Stunde stattfinden
       const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+      const oneHourWindowStart = new Date(oneHourFromNow.getTime() - 15 * 60 * 1000);
+      const oneHourWindowEnd = new Date(oneHourFromNow.getTime() + 15 * 60 * 1000);
+
       const oneHourQuery = `
-        SELECT DISTINCT e.id, e.name, e.event_date, e.event_time, eb.user_id
+        SELECT DISTINCT e.id, e.name, e.event_date, eb.user_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE eb.status = 'confirmed'
-          AND e.event_date = $1::date
-          AND e.event_time IS NOT NULL
-          AND e.event_time BETWEEN $2::time AND $3::time
+          AND e.event_date BETWEEN $1 AND $2
           AND NOT EXISTS (
             SELECT 1 FROM event_reminders er
             WHERE er.event_id = e.id
@@ -200,20 +203,17 @@ class BackgroundService {
           )
       `;
 
-      const todayDate = now.toISOString().split('T')[0];
-      const timeWindowStart = new Date(oneHourFromNow.getTime() - 15 * 60 * 1000).toTimeString().slice(0, 8);
-      const timeWindowEnd = new Date(oneHourFromNow.getTime() + 15 * 60 * 1000).toTimeString().slice(0, 8);
-
-      const { rows: oneHourEvents } = await db.query(oneHourQuery, [todayDate, timeWindowStart, timeWindowEnd]);
+      const { rows: oneHourEvents } = await db.query(oneHourQuery, [oneHourWindowStart, oneHourWindowEnd]);
 
       for (const event of oneHourEvents) {
         try {
+          const eventTime = event.event_date ? new Date(event.event_date).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null;
           await PushService.sendEventReminderToKonfi(
             db,
             event.user_id,
             event.name,
             event.event_date,
-            event.event_time,
+            eventTime,
             '1_hour'
           );
 
