@@ -143,8 +143,12 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       result = result.filter(badge => !badge.is_active);
     }
     
-    // Sort by name
-    result = result.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort by criteria_type first, then by name
+    result = result.sort((a, b) => {
+      const typeCompare = a.criteria_type.localeCompare(b.criteria_type);
+      if (typeCompare !== 0) return typeCompare;
+      return a.name.localeCompare(b.name);
+    });
     
     return result;
   })();
@@ -419,17 +423,17 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       onClick={() => onSelectBadge(badge)}
                       detail={false}
                       style={{
-                        '--min-height': '90px',
+                        '--min-height': '72px',
                         '--padding-start': '16px',
                         '--padding-top': '0px',
                         '--padding-bottom': '0px',
                         '--background': '#fbfbfb',
                         '--border-radius': '12px',
                         margin: '4px 8px',
-                        boxShadow: isInactive ? '0 2px 8px rgba(0,0,0,0.04)' : `0 2px 8px ${badgeColor}15`,
-                        border: isInactive ? '1px solid #e0e0e0' : `1px solid ${badgeColor}30`,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                        border: '1px solid #e0e0e0',
                         borderRadius: '12px',
-                        opacity: isInactive ? 0.7 : 1
+                        opacity: isInactive ? 0.6 : 1
                       }}
                     >
                       <IonLabel>
@@ -442,8 +446,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         }}>
                           {/* Badge Icon */}
                           <div style={{
-                            width: '32px',
-                            height: '32px',
+                            width: '36px',
+                            height: '36px',
                             backgroundColor: isInactive ? '#999' : badgeColor,
                             borderRadius: '50%',
                             display: 'flex',
@@ -455,7 +459,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             <IonIcon
                               icon={getIconFromString(badge.icon)}
                               style={{
-                                fontSize: '1rem',
+                                fontSize: '1.1rem',
                                 color: 'white'
                               }}
                             />
@@ -464,7 +468,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           {/* Badge Name */}
                           <h2 style={{
                             fontWeight: '600',
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+                            fontSize: '1rem',
                             margin: '0',
                             color: isInactive ? '#999' : '#333',
                             lineHeight: '1.3',
@@ -503,7 +507,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           }}>
                             {(() => {
                               if (!badge.is_active) return 'INAKTIV';
-                              if (badge.is_hidden) return 'VERSTECKT';
+                              if (badge.is_hidden) return 'GEHEIM';
                               return 'AKTIV';
                             })()}
                           </span>
@@ -514,8 +518,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           <div style={{
                             fontSize: '0.85rem',
                             color: isInactive ? '#999' : '#666',
-                            marginBottom: '4px',
-                            marginLeft: '44px',
+                            marginBottom: '2px',
+                            marginLeft: '48px',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap'
@@ -524,29 +528,17 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                           </div>
                         )}
 
-                        {/* Details: Kriterium, Verleihungen, Punkte */}
+                        {/* Art des Badges */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '16px',
+                          gap: '4px',
                           fontSize: '0.8rem',
-                          color: isInactive ? '#999' : '#666',
-                          marginLeft: '44px'
+                          color: isInactive ? '#999' : '#888',
+                          marginLeft: '48px'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={flash} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : badgeColor }} />
-                            <span>{getCriteriaTypeText(badge.criteria_type)}</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : '#34c759' }} />
-                            <span>{badge.earned_count || 0}x verliehen</span>
-                          </div>
-                          {badge.criteria_type.includes('points') && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={star} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : '#ff9500' }} />
-                              <span>{badge.criteria_value} Pkt</span>
-                            </div>
-                          )}
+                          <IonIcon icon={flash} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : badgeColor }} />
+                          <span>{getCriteriaTypeText(badge.criteria_type)}</span>
                         </div>
                       </IonLabel>
                     </IonItem>

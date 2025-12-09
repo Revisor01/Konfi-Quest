@@ -500,7 +500,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'time_based':
         return (
-          <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
+          <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginTop: '16px' }}>
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
               <IonButton
@@ -726,7 +726,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -738,7 +738,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
@@ -831,7 +831,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonAccordionGroup>
               </div>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
                 <div style={{ marginTop: '8px', width: '100%' }}>
                   <input
@@ -972,7 +972,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonAccordionGroup>
 
             <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -1058,7 +1058,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel>
                   <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
@@ -1071,9 +1071,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
                 <IonLabel>
-                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Versteckt (Geheimes Badge)</h3>
+                  <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Geheim</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
                 </IonLabel>
                 <IonToggle

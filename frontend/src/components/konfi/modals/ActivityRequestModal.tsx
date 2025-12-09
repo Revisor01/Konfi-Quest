@@ -278,18 +278,18 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </h2>
         </div>
         
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonItem button onClick={handleActivitySelect} disabled={loading || submitting}>
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem button onClick={handleActivitySelect} disabled={loading || submitting} lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
               <IonLabel>
                 {selectedActivity ? (
                   <>
-                    <h3>{selectedActivity.name}</h3>
-                    <p>{selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'} • {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</p>
+                    <h3 style={{ fontWeight: '600' }}>{selectedActivity.name}</h3>
+                    <p>{selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'} - {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</p>
                   </>
                 ) : (
                   <>
-                    <h3>Aktivität auswählen</h3>
+                    <h3 style={{ fontWeight: '600' }}>Aktivität auswählen</h3>
                     <p>Tippe hier um eine Aktivität zu wählen</p>
                   </>
                 )}
@@ -364,9 +364,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </h2>
         </div>
         
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonItem lines="none">
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
               <IonDatetimeButton datetime="date-picker" />
               <IonModal keepContentsMounted={true}>
                 <IonDatetime
@@ -412,15 +412,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </h2>
         </div>
         
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonItem lines="none">
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
               <IonTextarea
                 value={formData.description}
                 onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
                 placeholder="Anmerkungen... (optional)"
                 autoGrow={true}
-                rows={1}
+                rows={2}
               />
             </IonItem>
           </IonCardContent>
@@ -456,15 +456,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </h2>
         </div>
         
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <div 
+        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <div
               onClick={handlePhotoSelect}
               style={{
-                margin: '12px 16px 0 16px',
-                padding: '12px',
+                padding: '16px',
                 backgroundColor: photoPreview ? '#e8f5e8' : '#f8f9fa',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 border: photoPreview ? '1px solid #c3e6cb' : '1px solid #e9ecef',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
