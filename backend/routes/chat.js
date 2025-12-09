@@ -1503,17 +1503,19 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       }
 
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
-      // Admins die dem Jahrgang des Konfis zugewiesen sind
+      // Admins die dem Jahrgang des Konfis zugewiesen sind ODER org_admins (haben Zugriff auf alle)
       const adminQuery = `
         SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
         FROM users u
         JOIN roles r ON u.role_id = r.id
-        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-        WHERE r.name = 'admin'
+        LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id AND uja.jahrgang_id = $2
+        WHERE r.name IN ('admin', 'org_admin', 'teamer')
         AND u.organization_id = $1
-        AND uja.jahrgang_id = $2
-        AND uja.can_view = true
         AND u.id != $3
+        AND (
+          r.name = 'org_admin'
+          OR (uja.jahrgang_id = $2 AND uja.can_view = true)
+        )
         ORDER BY u.display_name
       `;
       const { rows: admins } = await db.query(adminQuery, [organizationId, konfiProfile.jahrgang_id, userId]);
