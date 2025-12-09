@@ -483,6 +483,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLIonTextareaElement>(null);
+  const scrollPositionRef = useRef<number>(0);
 
 
   // Open image with FileOpener (like Activity Requests)
@@ -828,6 +830,27 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
     };
   }, [selectedFilePreview]);
+
+  // Handle textarea focus to preserve scroll position on Android
+  const handleTextareaFocus = async () => {
+    // Save current scroll position before keyboard opens
+    if (contentRef.current) {
+      const scrollElement = await contentRef.current.getScrollElement();
+      scrollPositionRef.current = scrollElement.scrollTop;
+
+      // After keyboard animation completes, restore scroll position
+      // Android keyboard animation takes ~300ms
+      setTimeout(async () => {
+        if (contentRef.current && scrollPositionRef.current > 0) {
+          const scrollEl = await contentRef.current.getScrollElement();
+          // Only restore if we were scrolled down and now we're at top
+          if (scrollEl.scrollTop < scrollPositionRef.current * 0.5) {
+            scrollEl.scrollTop = scrollPositionRef.current;
+          }
+        }
+      }, 350);
+    }
+  };
 
   // Auto-capitalize function for text input
   const handleTextInputChange = (value: string) => {
@@ -1737,8 +1760,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
 
             <IonTextarea
+              ref={textareaRef}
               value={messageText}
               onIonInput={(e) => handleTextInputChange(e.detail.value || '')}
+              onIonFocus={handleTextareaFocus}
               placeholder="Nachricht schreiben..."
               autoGrow
               rows={1}
