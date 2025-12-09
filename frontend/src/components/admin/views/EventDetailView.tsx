@@ -585,7 +585,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                       <IonIcon icon={listOutline} style={{ marginRight: '12px', color: '#fd7e14', fontSize: '1.2rem' }} />
                       <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {(eventData as any)?.waitlist_count || 0} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
+                        {participants.filter(p => p.status === 'pending').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
                       </div>
                     </div>
                   )}
@@ -654,9 +654,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <div style={{ fontSize: '1rem', color: '#333' }}>
                       {eventData?.registration_opens_at ? (
                         <>
-                          <div>Ab {formatDate(eventData.registration_opens_at)} - {formatTime(eventData.registration_opens_at)}</div>
+                          <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
                           {eventData?.registration_closes_at && (
-                            <div>bis {formatDate(eventData.registration_closes_at)} - {formatTime(eventData.registration_closes_at)}</div>
+                            <div>bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
                           )}
                         </>
                       ) : (

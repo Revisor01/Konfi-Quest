@@ -667,9 +667,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <div style={{ fontSize: '1rem', color: '#333' }}>
                         {eventData.registration_opens_at ? (
                           <>
-                            <div>Ab {formatDate(eventData.registration_opens_at)} - {formatTime(eventData.registration_opens_at)}</div>
+                            <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
                             {eventData.registration_closes_at && (
-                              <div>bis {formatDate(eventData.registration_closes_at)} - {formatTime(eventData.registration_closes_at)}</div>
+                              <div>bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
                             )}
                           </>
                         ) : (
