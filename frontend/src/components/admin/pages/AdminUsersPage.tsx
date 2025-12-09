@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -45,6 +46,9 @@ const AdminUsersPage: React.FC = () => {
   // Modal state
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [modalUserId, setModalUserId] = useState<number | null>(null);
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentUserModalHook, dismissUserModalHook] = useIonModal(UserManagementModal, {
@@ -90,21 +94,31 @@ const AdminUsersPage: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (user: User) => {
-    if (!window.confirm(`Benutzer "${user.display_name}" (@${user.username}) wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/users/${user.id}`);
-      setSuccess(`Benutzer "${user.display_name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadUsers();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen des Benutzers');
-      }
-    }
+  const handleDeleteUser = async (userToDelete: User) => {
+    presentAlert({
+      header: 'Benutzer löschen',
+      message: `Benutzer "${userToDelete.display_name}" (@${userToDelete.username}) wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/users/${userToDelete.id}`);
+              setSuccess(`Benutzer "${userToDelete.display_name}" gelöscht`);
+              await loadUsers();
+            } catch (err: any) {
+              if (err.response?.data?.error) {
+                setError(err.response.data.error);
+              } else {
+                setError('Fehler beim Löschen des Benutzers');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectUser = (user: User) => {

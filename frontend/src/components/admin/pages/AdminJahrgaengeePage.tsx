@@ -11,6 +11,7 @@ import {
   IonButton,
   IonIcon,
   useIonModal,
+  useIonAlert,
   IonCard,
   IonCardHeader,
   IonCardContent,
@@ -242,11 +243,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-jahrgaenge');
   const { user, setSuccess, setError } = useApp();
-  
+
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [loading, setLoading] = useState(true);
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentJahrgangModalHook, dismissJahrgangModalHook] = useIonModal(JahrgangModal, {
@@ -288,32 +292,54 @@ const AdminJahrgaengeePage: React.FC = () => {
   };
 
   const handleDeleteWithSlideClose = async (jahrgang: Jahrgang, forceDelete = false) => {
-    if (!forceDelete && !window.confirm(`Jahrgang "${jahrgang.name}" wirklich löschen?`)) return;
-    
-    const slidingElement = slidingRefs.current.get(jahrgang.id);
-    try {
-      const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
-      await api.delete(url);
-      setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
-      loadJahrgaenge();
-    } catch (error: any) {
-      if (slidingElement) {
-        await slidingElement.close();
-      }
-      
-      if (error.response?.data?.canForceDelete) {
-        // Org Admin kann trotzdem löschen
-        const forceConfirm = window.confirm(
-          `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!\n\nDennoch löschen?`
-        );
-        if (forceConfirm) {
-          await handleDeleteWithSlideClose(jahrgang, true);
+    const performDelete = async () => {
+      const slidingElement = slidingRefs.current.get(jahrgang.id);
+      try {
+        const url = forceDelete ? `/admin/jahrgaenge/${jahrgang.id}?force=true` : `/admin/jahrgaenge/${jahrgang.id}`;
+        await api.delete(url);
+        setSuccess(`Jahrgang "${jahrgang.name}" gelöscht`);
+        loadJahrgaenge();
+      } catch (error: any) {
+        if (slidingElement) {
+          await slidingElement.close();
         }
-      } else if (error.response?.data?.error) {
-        alert(error.response.data.error);
-      } else {
-        alert('Fehler beim Löschen des Jahrgangs');
+
+        if (error.response?.data?.canForceDelete) {
+          // Org Admin kann trotzdem löschen
+          presentAlert({
+            header: 'Chat-Nachrichten vorhanden',
+            message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            buttons: [
+              { text: 'Abbrechen', role: 'cancel' },
+              {
+                text: 'Dennoch löschen',
+                role: 'destructive',
+                handler: () => handleDeleteWithSlideClose(jahrgang, true)
+              }
+            ]
+          });
+        } else {
+          const errorMessage = error.response?.data?.error || 'Fehler beim Löschen des Jahrgangs';
+          setError(errorMessage);
+        }
       }
+    };
+
+    if (forceDelete) {
+      await performDelete();
+    } else {
+      presentAlert({
+        header: 'Jahrgang löschen',
+        message: `Jahrgang "${jahrgang.name}" wirklich löschen?`,
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          {
+            text: 'Löschen',
+            role: 'destructive',
+            handler: performDelete
+          }
+        ]
+      });
     }
   };
 

@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { add, arrowBack } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -41,6 +42,9 @@ const AdminActivitiesPage: React.FC = () => {
   
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook 
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityManagementModal, {
@@ -92,19 +96,27 @@ const AdminActivitiesPage: React.FC = () => {
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
-    if (!window.confirm(`Aktivität "${activity.name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/admin/activities/${activity.id}`);
-      setSuccess(`Aktivität "${activity.name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadActivities();
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
-      alert(errorMessage);
-      // Re-throw error damit ActivitiesView weiß, dass es einen Fehler gab
-      throw err;
-    }
+    presentAlert({
+      header: 'Aktivität löschen',
+      message: `Aktivität "${activity.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/admin/activities/${activity.id}`);
+              setSuccess(`Aktivität "${activity.name}" gelöscht`);
+              await loadActivities();
+            } catch (err: any) {
+              const errorMessage = err.response?.data?.error || 'Fehler beim Löschen der Aktivität';
+              setError(errorMessage);
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectActivity = (activity: Activity) => {

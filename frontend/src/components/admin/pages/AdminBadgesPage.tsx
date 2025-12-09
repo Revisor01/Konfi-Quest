@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -46,6 +47,9 @@ const AdminBadgesPage: React.FC = () => {
   // Modal state
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentBadgeModalHook, dismissBadgeModalHook] = useIonModal(BadgeManagementModal, {
@@ -101,20 +105,30 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const handleDeleteBadge = async (badge: Badge) => {
-    if (!window.confirm(`Badge "${badge.name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/badges/${badge.id}`);
-      setSuccess(`Badge "${badge.name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadBadges();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen des Badges');
-      }
-    }
+    presentAlert({
+      header: 'Badge löschen',
+      message: `Badge "${badge.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/badges/${badge.id}`);
+              setSuccess(`Badge "${badge.name}" gelöscht`);
+              await loadBadges();
+            } catch (err: any) {
+              if (err.response?.data?.error) {
+                setError(err.response.data.error);
+              } else {
+                setError('Fehler beim Löschen des Badges');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectBadge = (badge: Badge) => {

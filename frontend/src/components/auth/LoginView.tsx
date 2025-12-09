@@ -16,7 +16,7 @@ import {
   IonText,
   IonImg
 } from '@ionic/react';
-import { key, person, trophy, star, sparkles } from 'ionicons/icons';
+import { key, person, trophy, star, sparkles, alertCircle, closeCircle } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
@@ -26,10 +26,20 @@ const LoginView: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [shakeError, setShakeError] = useState(false);
+
+  const triggerShake = () => {
+    setShakeError(true);
+    setTimeout(() => setShakeError(false), 600);
+  };
 
   const handleLogin = async () => {
+    setLoginError(null);
+
     if (!username || !password) {
-      setError('Bitte Benutzername und Passwort eingeben');
+      setLoginError('Bitte Benutzername und Passwort eingeben');
+      triggerShake();
       return;
     }
 
@@ -38,7 +48,7 @@ const LoginView: React.FC = () => {
       const user = await loginWithAutoDetection(username, password);
       setSuccess('Erfolgreich angemeldet');
       setUser(user);
-      
+
       // Explicit navigation based on user type
       if (user.type === 'admin') {
         history.replace('/admin/konfis');
@@ -47,13 +57,20 @@ const LoginView: React.FC = () => {
       }
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message;
-      if (errorMessage.includes('password') || errorMessage.includes('Passwort')) {
-        setError('Das Passwort ist falsch');
-      } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden')) {
-        setError('Der Nutzername wurde nicht gefunden');
+      let displayError: string;
+
+      if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials')) {
+        displayError = 'Falsches Passwort. Bitte versuche es erneut.';
+      } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {
+        displayError = 'Nutzername nicht gefunden. Bitte überprüfe deine Eingabe.';
+      } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+        displayError = 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
       } else {
-        setError(errorMessage);
+        displayError = 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.';
       }
+
+      setLoginError(displayError);
+      triggerShake();
     } finally {
       setLoading(false);
     }
@@ -115,12 +132,15 @@ const LoginView: React.FC = () => {
           </div>
 
           {/* Login Card */}
-          <IonCard style={{ 
-            width: '100%', 
+          <IonCard style={{
+            width: '100%',
             maxWidth: '400px',
             borderRadius: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
+            boxShadow: loginError ? '0 20px 40px rgba(220,53,69,0.2)' : '0 20px 40px rgba(0,0,0,0.1)',
+            overflow: 'hidden',
+            animation: shakeError ? 'shake 0.6s ease-in-out' : 'none',
+            border: loginError ? '2px solid rgba(220,53,69,0.3)' : 'none',
+            transition: 'box-shadow 0.3s ease, border 0.3s ease'
           }}>
             <IonCardContent style={{ padding: '32px' }}>
               
@@ -183,7 +203,7 @@ const LoginView: React.FC = () => {
               <IonButton
                 expand="full"
                 onClick={handleLogin}
-                disabled={loading || !username || !password}
+                disabled={loading}
                 style={{
                   '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   '--color': 'white',
@@ -204,6 +224,60 @@ const LoginView: React.FC = () => {
                 )}
               </IonButton>
 
+              {/* Fehlermeldung direkt im Formular */}
+              {loginError && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+                  border: '1px solid #f87171',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)'
+                  }}>
+                    <IonIcon icon={alertCircle} style={{ fontSize: '1.3rem', color: 'white' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      color: '#991b1b',
+                      marginBottom: '2px'
+                    }}>
+                      Anmeldung fehlgeschlagen
+                    </div>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: '#b91c1c'
+                    }}>
+                      {loginError}
+                    </div>
+                  </div>
+                  <IonIcon
+                    icon={closeCircle}
+                    onClick={() => setLoginError(null)}
+                    style={{
+                      fontSize: '1.2rem',
+                      color: '#b91c1c',
+                      cursor: 'pointer',
+                      opacity: 0.7
+                    }}
+                  />
+                </div>
+              )}
+
               <div style={{
                 textAlign: 'center',
                 marginTop: '24px',
@@ -218,6 +292,15 @@ const LoginView: React.FC = () => {
           </IonCard>
 
         </div>
+
+        {/* CSS Animation für Shake */}
+        <style>{`
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+          }
+        `}</style>
       </IonContent>
     </IonPage>
   );

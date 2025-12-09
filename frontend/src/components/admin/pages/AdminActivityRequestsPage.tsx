@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -45,6 +46,9 @@ const AdminActivityRequestsPage: React.FC = () => {
   // Modal state
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentRequestModalHook, dismissRequestModalHook] = useIonModal(ActivityRequestModal, {
@@ -100,37 +104,57 @@ const AdminActivityRequestsPage: React.FC = () => {
   };
 
   const handleResetRequest = async (request: ActivityRequest) => {
-    const statusText = request.status === 'approved' ? 'genehmigte' : 'abgelehnte';
-    if (!window.confirm(`${statusText} Antrag von "${request.konfi_name}" zurücksetzen und wieder als offen markieren?`)) return;
-
-    try {
-      await api.put(`/admin/activities/requests/${request.id}/reset`);
-      setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
-      await loadRequests();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Zurücksetzen des Antrags');
-      }
-    }
+    const statusText = request.status === 'approved' ? 'genehmigten' : 'abgelehnten';
+    presentAlert({
+      header: 'Antrag zurücksetzen',
+      message: `${statusText} Antrag von "${request.konfi_name}" zurücksetzen und wieder als offen markieren?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Zurücksetzen',
+          handler: async () => {
+            try {
+              await api.put(`/admin/activities/requests/${request.id}/reset`);
+              setSuccess(`Antrag wurde auf "Offen" zurückgesetzt`);
+              await loadRequests();
+            } catch (err: any) {
+              if (err.response?.data?.error) {
+                setError(err.response.data.error);
+              } else {
+                setError('Fehler beim Zurücksetzen des Antrags');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleDeleteRequest = async (request: ActivityRequest) => {
-    if (!window.confirm(`Antrag von "${request.konfi_name}" für "${request.activity_name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/activity-requests/${request.id}`);
-      setSuccess(`Antrag von "${request.konfi_name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadRequests();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen des Antrags');
-      }
-    }
+    presentAlert({
+      header: 'Antrag löschen',
+      message: `Antrag von "${request.konfi_name}" für "${request.activity_name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/activity-requests/${request.id}`);
+              setSuccess(`Antrag von "${request.konfi_name}" gelöscht`);
+              await loadRequests();
+            } catch (err: any) {
+              if (err.response?.data?.error) {
+                setError(err.response.data.error);
+              } else {
+                setError('Fehler beim Löschen des Antrags');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectRequest = (request: ActivityRequest) => {

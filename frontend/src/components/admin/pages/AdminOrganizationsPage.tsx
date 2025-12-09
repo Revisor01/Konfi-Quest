@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { 
   arrowBack
@@ -51,6 +52,9 @@ const AdminOrganizationsPage: React.FC = () => {
   // Modal state
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
   const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentOrganizationModalHook, dismissOrganizationModalHook] = useIonModal(OrganizationManagementModal, {
@@ -97,20 +101,30 @@ const AdminOrganizationsPage: React.FC = () => {
   };
 
   const handleDeleteOrganization = async (organization: Organization) => {
-    if (!window.confirm(`Organisation "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`)) return;
-
-    try {
-      await api.delete(`/admin/organizations/${organization.id}`);
-      setSuccess(`Organisation "${organization.display_name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadOrganizations();
-    } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Fehler beim Löschen der Organisation');
-      }
-    }
+    presentAlert({
+      header: 'Organisation löschen',
+      message: `Organisation "${organization.display_name}" (${organization.name}) wirklich löschen?\n\nWarnung: Alle zugehörigen Daten (Benutzer, Konfis, Aktivitäten) werden ebenfalls gelöscht!`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/admin/organizations/${organization.id}`);
+              setSuccess(`Organisation "${organization.display_name}" gelöscht`);
+              await loadOrganizations();
+            } catch (err: any) {
+              if (err.response?.data?.error) {
+                setError(err.response.data.error);
+              } else {
+                setError('Fehler beim Löschen der Organisation');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectOrganization = (organization: Organization) => {

@@ -27,7 +27,8 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { 
   chatbubbles, 
@@ -80,6 +81,7 @@ interface ChatOverviewRef {
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
   const { user, setError, setSuccess } = useApp();
+  const [presentAlert] = useIonAlert();
   const { refreshFromAPI, badgeCount, setBadgeCount } = useBadge();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,35 +171,71 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   }));
 
   const deleteRoom = async (room: ChatRoom, forceDelete = false) => {
-    if (!forceDelete) {
-      // Erste Bestätigung
-      if (!window.confirm(`Chat "${room.name}" wirklich löschen?`)) return;
-      
-      // Zweite Bestätigung mit Warnung
-      const confirmText = `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`;
-      if (!window.confirm(confirmText)) return;
+    const executeDelete = async (force: boolean) => {
+      try {
+        const url = force ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
+        await api.delete(url);
+        setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
+        await loadChatRooms();
+      } catch (error: any) {
+        if (error.response?.data?.canForceDelete) {
+          // Org Admin kann trotzdem löschen
+          presentAlert({
+            header: 'Als Admin löschen?',
+            message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+            buttons: [
+              { text: 'Abbrechen', role: 'cancel' },
+              {
+                text: 'Dennoch löschen',
+                role: 'destructive',
+                handler: async () => {
+                  await executeDelete(true);
+                }
+              }
+            ]
+          });
+        } else if (error.response?.data?.error) {
+          setError(error.response.data.error);
+        } else {
+          setError('Fehler beim Löschen des Chats');
+        }
+      }
+    };
+
+    if (forceDelete) {
+      await executeDelete(true);
+      return;
     }
 
-    try {
-      const url = forceDelete ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
-      await api.delete(url);
-      setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
-      await loadChatRooms();
-    } catch (error: any) {
-      if (error.response?.data?.canForceDelete) {
-        // Org Admin kann trotzdem löschen
-        const forceConfirm = window.confirm(
-          `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!\n\nDennoch löschen?`
-        );
-        if (forceConfirm) {
-          await deleteRoom(room, true);
+    // Erste Bestätigung
+    presentAlert({
+      header: 'Chat löschen',
+      message: `Chat "${room.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: () => {
+            // Zweite Bestätigung mit Warnung
+            presentAlert({
+              header: 'Endgültig löschen?',
+              message: `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`,
+              buttons: [
+                { text: 'Abbrechen', role: 'cancel' },
+                {
+                  text: 'Endgültig löschen',
+                  role: 'destructive',
+                  handler: async () => {
+                    await executeDelete(false);
+                  }
+                }
+              ]
+            });
+          }
         }
-      } else if (error.response?.data?.error) {
-        alert(error.response.data.error);
-      } else {
-        alert('Fehler beim Löschen des Chats');
-      }
-    }
+      ]
+    });
   };
 
   const filteredRooms = rooms

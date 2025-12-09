@@ -29,7 +29,8 @@ import {
   useIonModal,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  useIonAlert
 } from '@ionic/react';
 import { 
   arrowBack,
@@ -100,6 +101,7 @@ interface KonfiDetailViewProps {
 const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) => {
   const { setSuccess, setError } = useApp();
   const [presentActionSheet] = useIonActionSheet();
+  const [presentAlert] = useIonAlert();
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
   
@@ -317,37 +319,59 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handleDeleteActivity = async (activity: Activity) => {
-    if (!window.confirm(`Aktivität "${activity.name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
-      setSuccess(`Aktivität "${activity.name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadKonfiData();
-      // Auch die Eltern-Komponente aktualisieren (falls vorhanden)
-      if (window.location.pathname.includes('/konfis')) {
-        window.dispatchEvent(new CustomEvent('konfis-updated'));
-      }
-    } catch (err) {
-      setError('Fehler beim Löschen der Aktivität');
-    }
+    presentAlert({
+      header: 'Aktivität löschen',
+      message: `Aktivität "${activity.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/admin/konfis/${konfiId}/activities/${activity.id}`);
+              setSuccess(`Aktivität "${activity.name}" gelöscht`);
+              // Sofortige Aktualisierung
+              await loadKonfiData();
+              // Auch die Eltern-Komponente aktualisieren (falls vorhanden)
+              if (window.location.pathname.includes('/konfis')) {
+                window.dispatchEvent(new CustomEvent('konfis-updated'));
+              }
+            } catch (err) {
+              setError('Fehler beim Löschen der Aktivität');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleDeleteBonus = async (bonus: any) => {
-    if (!window.confirm(`Bonuspunkte "${bonus.description}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
-      setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadKonfiData();
-      // Auch die Eltern-Komponente aktualisieren (falls vorhanden)
-      if (window.location.pathname.includes('/konfis')) {
-        window.dispatchEvent(new CustomEvent('konfis-updated'));
-      }
-    } catch (err) {
-      setError('Fehler beim Löschen der Bonuspunkte');
-    }
+    presentAlert({
+      header: 'Bonuspunkte löschen',
+      message: `Bonuspunkte "${bonus.description}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/admin/konfis/${konfiId}/bonus-points/${bonus.id}`);
+              setSuccess(`Bonuspunkte "${bonus.description}" gelöscht`);
+              // Sofortige Aktualisierung
+              await loadKonfiData();
+              // Auch die Eltern-Komponente aktualisieren (falls vorhanden)
+              if (window.location.pathname.includes('/konfis')) {
+                window.dispatchEvent(new CustomEvent('konfis-updated'));
+              }
+            } catch (err) {
+              setError('Fehler beim Löschen der Bonuspunkte');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handlePasswordReset = async () => {

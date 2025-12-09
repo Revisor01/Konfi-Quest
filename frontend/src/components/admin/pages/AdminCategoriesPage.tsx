@@ -11,6 +11,7 @@ import {
   IonButton,
   IonIcon,
   useIonModal,
+  useIonAlert,
   IonCard,
   IonCardHeader,
   IonCardContent,
@@ -244,11 +245,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 const AdminCategoriesPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-categories');
   const { user, setSuccess, setError } = useApp();
-  
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editCategory, setEditCategory] = useState<Category | null>(null);
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
+
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
 
   // Modal mit useIonModal Hook
   const [presentCategoryModalHook, dismissCategoryModalHook] = useIonModal(CategoryModal, {
@@ -291,24 +295,31 @@ const AdminCategoriesPage: React.FC = () => {
   };
 
   const handleDelete = async (category: Category) => {
-    if (!window.confirm(`Kategorie "${category.name}" wirklich löschen?`)) return;
-    
-    const slidingElement = slidingRefs.current.get(category.id);
-    
-    try {
-      await api.delete(`/admin/categories/${category.id}`);
-      setSuccess(`Kategorie "${category.name}" gelöscht`);
-      loadCategories();
-      // Bei erfolgreichem Löschen schließt sich das Sliding automatisch durch den Re-render
-    } catch (error: any) {
-      // Bei Fehler: Sliding automatisch schließen für bessere UX
-      if (slidingElement) {
-        await slidingElement.close();
-      }
-      
-      const errorMessage = error.response?.data?.error || 'Fehler beim Löschen der Kategorie';
-      alert(errorMessage);
-    }
+    presentAlert({
+      header: 'Kategorie löschen',
+      message: `Kategorie "${category.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            const slidingElement = slidingRefs.current.get(category.id);
+            try {
+              await api.delete(`/admin/categories/${category.id}`);
+              setSuccess(`Kategorie "${category.name}" gelöscht`);
+              loadCategories();
+            } catch (error: any) {
+              if (slidingElement) {
+                await slidingElement.close();
+              }
+              const errorMessage = error.response?.data?.error || 'Fehler beim Löschen der Kategorie';
+              setError(errorMessage);
+            }
+          }
+        }
+      ]
+    });
   };
 
   const openCreateModal = () => {

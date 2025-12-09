@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
-import { 
-  IonPage, 
-  IonHeader, 
-  IonToolbar, 
-  IonTitle, 
-  IonContent, 
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
   IonRefresher,
   IonRefresherContent,
   IonButtons,
   IonButton,
   IonIcon,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -62,6 +63,9 @@ const AdminKonfisPage: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   
+  // Alert Hook für Bestätigungsdialoge
+  const [presentAlert] = useIonAlert();
+
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
   const [presentKonfiModalHook, dismissKonfiModalHook] = useIonModal(KonfiModal, {
     jahrgaenge: jahrgaenge,
@@ -119,16 +123,26 @@ const AdminKonfisPage: React.FC = () => {
   };
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
-    if (!window.confirm(`Konfi "${konfi.name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/admin/konfis/${konfi.id}`);
-      setSuccess(`Konfi "${konfi.name}" gelöscht`);
-      // Sofortige Aktualisierung
-      await loadData();
-    } catch (err) {
-      setError('Fehler beim Löschen');
-    }
+    presentAlert({
+      header: 'Konfi löschen',
+      message: `Konfi "${konfi.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/admin/konfis/${konfi.id}`);
+              setSuccess(`Konfi "${konfi.name}" gelöscht`);
+              await loadData();
+            } catch (err) {
+              setError('Fehler beim Löschen');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleSelectKonfi = (konfi: Konfi) => {

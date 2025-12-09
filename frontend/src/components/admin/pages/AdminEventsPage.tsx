@@ -12,7 +12,8 @@ import {
   IonButton,
   IonIcon,
   useIonModal,
-  useIonActionSheet
+  useIonActionSheet,
+  useIonAlert
 } from '@ionic/react';
 import { add, ban, list, archive, calendar, time, checkmarkCircle, close } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -59,6 +60,7 @@ const AdminEventsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-events');
   const history = useHistory();
   const [presentActionSheet] = useIonActionSheet();
+  const [presentAlert] = useIonAlert();
   
   // State
   const [events, setEvents] = useState<Event[]>([]);
@@ -227,42 +229,62 @@ const AdminEventsPage: React.FC = () => {
   };
   
   const deleteSingleEvent = async (event: Event) => {
-    if (!window.confirm(`Event "${event.name}" wirklich löschen?`)) return;
-
-    try {
-      await api.delete(`/events/${event.id}`);
-      setSuccess(`Event "${event.name}" gelöscht`);
-      await loadEvents();
-      await loadCancelledEvents(); 
-      await loadPastEvents();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Löschen des Events');
-      }
-    }
+    presentAlert({
+      header: 'Event löschen',
+      message: `Event "${event.name}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/events/${event.id}`);
+              setSuccess(`Event "${event.name}" gelöscht`);
+              await loadEvents();
+              await loadCancelledEvents();
+              await loadPastEvents();
+            } catch (error: any) {
+              if (error.response?.data?.error) {
+                setError(error.response.data.error);
+              } else {
+                setError('Fehler beim Löschen des Events');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
   
   const deleteWholeSeries = async (seriesId: number, seriesEvents: Event[]) => {
-    if (!window.confirm(`Wirklich die ganze Serie mit ${seriesEvents.length} Terminen löschen?`)) return;
-
-    try {
-      // Delete all events in the series
-      const deletePromises = seriesEvents.map(event => api.delete(`/events/${event.id}`));
-      await Promise.all(deletePromises);
-      
-      setSuccess(`Serie mit ${seriesEvents.length} Terminen gelöscht`);
-      await loadEvents();
-      await loadCancelledEvents();
-      await loadPastEvents();
-    } catch (error: any) {
-      if (error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Fehler beim Löschen der Serie');
-      }
-    }
+    presentAlert({
+      header: 'Serie löschen',
+      message: `Wirklich die ganze Serie mit ${seriesEvents.length} Terminen löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              const deletePromises = seriesEvents.map(event => api.delete(`/events/${event.id}`));
+              await Promise.all(deletePromises);
+              setSuccess(`Serie mit ${seriesEvents.length} Terminen gelöscht`);
+              await loadEvents();
+              await loadCancelledEvents();
+              await loadPastEvents();
+            } catch (error: any) {
+              if (error.response?.data?.error) {
+                setError(error.response.data.error);
+              } else {
+                setError('Fehler beim Löschen der Serie');
+              }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleCopyEvent = (event: Event) => {
