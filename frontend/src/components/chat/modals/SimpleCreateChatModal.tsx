@@ -46,6 +46,8 @@ interface User {
   type: 'admin' | 'konfi';
   jahrgang?: string;
   jahrgang_name?: string;
+  role_name?: string;
+  role_description?: string;
 }
 
 interface SimpleCreateChatModalProps {
@@ -697,8 +699,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                               {getUserDisplayName(targetUser)}
                             </div>
                             <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                              {targetUser.type === 'admin' ? 'Admin' :
-                               (targetUser.jahrgang_name || targetUser.jahrgang ? `Jahrgang ${targetUser.jahrgang_name || targetUser.jahrgang}` : 'Konfi')}
+                              {targetUser.type === 'admin'
+                                ? (targetUser.role_description || 'Admin')
+                                : (targetUser.jahrgang_name || targetUser.jahrgang ? `Jahrgang ${targetUser.jahrgang_name || targetUser.jahrgang}` : 'Konfi')}
                             </div>
                           </IonLabel>
 

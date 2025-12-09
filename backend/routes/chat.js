@@ -1505,7 +1505,17 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
       // Alle Admins, Org-Admins und Teamer der Organisation
       const adminQuery = `
-        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type, null as jahrgang_name
+        SELECT DISTINCT u.id, u.display_name as name, 'admin' as type,
+          r.name as role_name,
+          COALESCE(NULLIF(r.description, ''),
+            CASE
+              WHEN r.name = 'teamer' THEN 'Teamer:in'
+              WHEN r.name = 'org_admin' THEN 'Admin'
+              WHEN r.name = 'admin' THEN 'Admin'
+              ELSE 'Admin'
+            END
+          ) as role_description,
+          null as jahrgang_name
         FROM users u
         JOIN roles r ON u.role_id = r.id
         WHERE r.name IN ('admin', 'org_admin', 'teamer')
