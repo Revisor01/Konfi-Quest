@@ -95,6 +95,18 @@ const KonfiDashboardPage: React.FC = () => {
     loadDailyVerse();
     loadUpcomingEvents();
     loadBadgeStats();
+
+    // Event-Listener für Updates aus EventDetailView (Fallback für Live-Updates)
+    const handleEventsUpdated = () => {
+      console.log('Dashboard: events-updated event received');
+      loadUpcomingEvents();
+    };
+
+    window.addEventListener('events-updated', handleEventsUpdated);
+
+    return () => {
+      window.removeEventListener('events-updated', handleEventsUpdated);
+    };
   }, []);
 
   const loadDashboardData = async () => {

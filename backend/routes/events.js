@@ -283,7 +283,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       `;
       const { rows: jahrgaenge } = await db.query(jahrgaengeQuery, [eventId]);
       
-      // Get categories for this event  
+      // Get categories for this event
       const categoriesQuery = `
         SELECT c.id, c.name
         FROM categories c
@@ -291,7 +291,17 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         WHERE ec.event_id = $1
       `;
       const { rows: categories } = await db.query(categoriesQuery, [eventId]);
-      
+
+      // Get unregistrations (Abmeldungen) for this event
+      const unregistrationsQuery = `
+        SELECT eu.*, u.display_name as konfi_name
+        FROM event_unregistrations eu
+        JOIN users u ON eu.user_id = u.id
+        WHERE eu.event_id = $1 AND eu.organization_id = $2
+        ORDER BY eu.unregistered_at DESC
+      `;
+      const { rows: unregistrations } = await db.query(unregistrationsQuery, [eventId, req.user.organization_id]);
+
       // Calculate correct registered_count for timeslot events
       const registeredCount = participants.filter(p => p.status === 'confirmed').length;
       const pendingCount = participants.filter(p => p.status === 'pending').length;
@@ -309,6 +319,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         series_events: seriesEvents,
         jahrgaenge,
         categories,
+        unregistrations,
         registered_count: registeredCount,
         pending_count: pendingCount,
         max_participants: totalCapacity,

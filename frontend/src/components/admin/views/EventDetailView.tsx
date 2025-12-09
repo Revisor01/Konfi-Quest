@@ -114,6 +114,14 @@ interface Timeslot {
   registered_count: number;
 }
 
+interface Unregistration {
+  id: number;
+  user_id: number;
+  konfi_name: string;
+  reason?: string;
+  unregistered_at: string;
+}
+
 interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
@@ -126,6 +134,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [presentActionSheet] = useIonActionSheet();
 
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -168,6 +177,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       const eventRes = await api.get(`/events/${eventId}`);
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
+      setUnregistrations(eventRes.data.unregistrations || []);
     } catch (error) {
       setError('Fehler beim Laden der Event-Daten');
     } finally {
@@ -1081,6 +1091,109 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </IonButton>
           </IonCardContent>
         </IonCard>
+
+        {/* Abmeldungen (Unregistrations) */}
+        {unregistrations.length > 0 && (
+          <IonCard style={{ margin: '16px' }}>
+            <IonCardHeader>
+              <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <IonIcon icon={closeCircle} style={{ color: '#ff9500', fontSize: '1.2rem' }} />
+                Abmeldungen ({unregistrations.length})
+              </IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent style={{ padding: '8px 0' }}>
+              <IonList lines="none" style={{ background: 'transparent' }}>
+                {unregistrations.map((unreg) => (
+                  <IonItem
+                    key={unreg.id}
+                    detail={false}
+                    style={{
+                      '--min-height': '70px',
+                      '--padding-start': '16px',
+                      '--padding-top': '0px',
+                      '--padding-bottom': '0px',
+                      '--background': '#fbfbfb',
+                      '--border-radius': '12px',
+                      margin: '6px 8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px'
+                    }}
+                  >
+                    <IonLabel>
+                      {/* Header mit Icon */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '4px'
+                      }}>
+                        {/* Status Icon */}
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          backgroundColor: '#ff9500',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
+                        }}>
+                          <IonIcon
+                            icon={closeCircle}
+                            style={{
+                              fontSize: '0.9rem',
+                              color: 'white'
+                            }}
+                          />
+                        </div>
+
+                        {/* Name */}
+                        <h3 style={{
+                          fontWeight: '600',
+                          fontSize: '1rem',
+                          margin: '0',
+                          color: '#333',
+                          lineHeight: '1.3',
+                          flex: 1,
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {unreg.konfi_name}
+                        </h3>
+                      </div>
+
+                      {/* Details */}
+                      <div style={{
+                        fontSize: '0.8rem',
+                        color: '#666',
+                        marginLeft: '40px'
+                      }}>
+                        <div>
+                          Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        {unreg.reason && (
+                          <div style={{ marginTop: '4px', fontStyle: 'italic', color: '#888' }}>
+                            Grund: {unreg.reason}
+                          </div>
+                        )}
+                      </div>
+                    </IonLabel>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        )}
 
       </IonContent>
     </IonPage>
