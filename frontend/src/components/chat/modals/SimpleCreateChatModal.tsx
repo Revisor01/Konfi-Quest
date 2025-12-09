@@ -498,23 +498,26 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                   );
                 }
 
-                // Mehrere Optionen: Zeige Select
+                // Mehrere Optionen: Zeige Buttons statt Select
                 return (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked">Art des Chats</IonLabel>
-                    <IonSelect
-                      value={chatType}
-                      onIonChange={(e) => setChatType(e.detail.value)}
-                      placeholder="Chat-Art wählen"
-                      interface="action-sheet"
-                    >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: '4px' }}>
+                      Art des Chats
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
                       {availableTypes.map(type => (
-                        <IonSelectOption key={type.value} value={type.value}>
+                        <IonButton
+                          key={type.value}
+                          fill={chatType === type.value ? 'solid' : 'outline'}
+                          color={chatType === type.value ? 'primary' : 'medium'}
+                          onClick={() => setChatType(type.value as 'direct' | 'group')}
+                          style={{ flex: 1 }}
+                        >
                           {type.label}
-                        </IonSelectOption>
+                        </IonButton>
                       ))}
-                    </IonSelect>
-                  </IonItem>
+                    </div>
+                  </div>
                 );
               })()}
 
