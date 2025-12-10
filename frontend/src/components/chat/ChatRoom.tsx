@@ -42,7 +42,20 @@ import {
   chevronForward,
   time,
   returnUpBack,
-  closeCircle
+  closeCircle,
+  thumbsUpOutline,
+  thumbsUp,
+  heartOutline,
+  heart,
+  happyOutline,
+  happy,
+  alertCircleOutline,
+  alertCircle,
+  sadOutline,
+  sad,
+  handLeftOutline,
+  handLeft,
+  addOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -419,6 +432,14 @@ const LazyImage: React.FC<{
 };
 
 
+interface Reaction {
+  id: number;
+  emoji: string;
+  user_id: number;
+  user_type: 'admin' | 'konfi';
+  user_name: string;
+}
+
 interface Message {
   id: number;
   content: string;
@@ -448,7 +469,19 @@ interface Message {
   reply_to_file_name?: string;
   reply_to_message_type?: string;
   reply_to_sender_name?: string;
+  // Reaktionen
+  reactions?: Reaction[];
 }
+
+// Emoji-Mapping: Interne IDs zu Ionicons
+const REACTION_EMOJIS: { [key: string]: { outline: string; filled: string; label: string; color: string } } = {
+  like: { outline: thumbsUpOutline, filled: thumbsUp, label: 'Gefaellt mir', color: '#3b82f6' },
+  heart: { outline: heartOutline, filled: heart, label: 'Liebe', color: '#ef4444' },
+  laugh: { outline: happyOutline, filled: happy, label: 'Lustig', color: '#f59e0b' },
+  wow: { outline: alertCircleOutline, filled: alertCircle, label: 'Wow', color: '#8b5cf6' },
+  sad: { outline: sadOutline, filled: sad, label: 'Traurig', color: '#6b7280' },
+  pray: { outline: handLeftOutline, filled: handLeft, label: 'Beten', color: '#10b981' }
+};
 
 interface ChatRoom {
   id: number;
@@ -491,6 +524,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
@@ -644,9 +679,37 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           console.log(`${data.userName} is typing...`);
         }
       });
+
+      // Listen for reaction added
+      socket.on('reactionAdded', (data: { roomId: number; messageId: number; reaction: Reaction }) => {
+        if (data.roomId === room.id) {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== data.messageId) return m;
+            const reactions = m.reactions || [];
+            // Avoid duplicates
+            if (reactions.some(r => r.id === data.reaction.id)) return m;
+            return { ...m, reactions: [...reactions, data.reaction] };
+          }));
+        }
+      });
+
+      // Listen for reaction removed
+      socket.on('reactionRemoved', (data: { roomId: number; messageId: number; userId: number; userType: string; emoji: string }) => {
+        if (data.roomId === room.id) {
+          setMessages(prev => prev.map(m => {
+            if (m.id !== data.messageId) return m;
+            return {
+              ...m,
+              reactions: (m.reactions || []).filter(r =>
+                !(r.user_id === data.userId && r.user_type === data.userType && r.emoji === data.emoji)
+              )
+            };
+          }));
+        }
+      });
     }
 
-    // Fallback: 30-second polling als Backup (falls WebSocket ausfällt)
+    // Fallback: 30-second polling als Backup (falls WebSocket ausfaellt)
     const interval = setInterval(async () => {
       await loadMessages();
     }, 30000);
@@ -662,6 +725,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         socket.off('newMessage');
         socket.off('messageDeleted');
         socket.off('userTyping');
+        socket.off('reactionAdded');
+        socket.off('reactionRemoved');
       }
     };
   }, [room?.id]);
@@ -810,11 +875,63 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     try {
       await api.delete(`/chat/messages/${messageId}`);
       await loadMessages();
-      setSuccess('Nachricht gelöscht');
+      setSuccess('Nachricht geloescht');
     } catch (err) {
-      setError('Fehler beim Löschen der Nachricht');
+      setError('Fehler beim Loeschen der Nachricht');
       console.error('Error deleting message:', err);
     }
+  };
+
+  // Reaktion hinzufuegen/entfernen
+  const toggleReaction = async (messageId: number, emoji: string) => {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      setShouldAutoScroll(false);
+
+      const response = await api.post(`/chat/messages/${messageId}/reactions`, { emoji });
+
+      // Optimistic update - direkt im State aktualisieren
+      setMessages(prev => prev.map(msg => {
+        if (msg.id !== messageId) return msg;
+
+        const reactions = msg.reactions || [];
+        if (response.data.action === 'added') {
+          // Reaktion hinzufuegen
+          return {
+            ...msg,
+            reactions: [...reactions, {
+              id: response.data.id,
+              emoji,
+              user_id: user!.id,
+              user_type: user!.type as 'admin' | 'konfi',
+              user_name: user!.display_name || ''
+            }]
+          };
+        } else {
+          // Reaktion entfernen
+          return {
+            ...msg,
+            reactions: reactions.filter(r =>
+              !(r.user_id === user!.id && r.user_type === user!.type && r.emoji === emoji)
+            )
+          };
+        }
+      }));
+
+      setShowReactionPicker(false);
+      setReactionTargetMessage(null);
+      setTimeout(() => setShouldAutoScroll(true), 500);
+    } catch (err) {
+      setError('Fehler beim Reagieren');
+      console.error('Error toggling reaction:', err);
+      setShouldAutoScroll(true);
+    }
+  };
+
+  // Reaktion-Picker oeffnen
+  const openReactionPicker = (message: Message) => {
+    setReactionTargetMessage(message);
+    setShowReactionPicker(true);
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1672,14 +1789,77 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             <div>{message.content}</div>
           )}
           
-          <div style={{ 
-            fontSize: '0.7rem', 
-            opacity: 0.7, 
+          <div style={{
+            fontSize: '0.7rem',
+            opacity: 0.7,
             marginTop: '4px',
             textAlign: 'right'
           }}>
             {formatMessageTime(message.created_at)}
           </div>
+
+          {/* Reaktionen Anzeige */}
+          {message.reactions && message.reactions.length > 0 && (
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '4px',
+              marginTop: '6px'
+            }}>
+              {/* Reaktionen nach Emoji gruppieren */}
+              {Object.entries(
+                message.reactions.reduce((acc, r) => {
+                  if (!acc[r.emoji]) acc[r.emoji] = [];
+                  acc[r.emoji].push(r);
+                  return acc;
+                }, {} as { [key: string]: Reaction[] })
+              ).map(([emoji, reactions]) => {
+                const emojiData = REACTION_EMOJIS[emoji];
+                const userHasReacted = reactions.some(
+                  r => r.user_id === user?.id && r.user_type === user?.type
+                );
+                return (
+                  <div
+                    key={emoji}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleReaction(message.id, emoji);
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px',
+                      padding: '2px 6px',
+                      borderRadius: '12px',
+                      backgroundColor: userHasReacted
+                        ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(23, 162, 184, 0.15)')
+                        : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'),
+                      border: userHasReacted
+                        ? `1px solid ${emojiData?.color || '#17a2b8'}`
+                        : '1px solid transparent',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem'
+                    }}
+                    title={reactions.map(r => r.user_name).join(', ')}
+                  >
+                    <IonIcon
+                      icon={userHasReacted ? emojiData?.filled : emojiData?.outline}
+                      style={{
+                        fontSize: '0.85rem',
+                        color: emojiData?.color || '#666'
+                      }}
+                    />
+                    <span style={{
+                      fontWeight: userHasReacted ? '600' : '400',
+                      color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                    }}>
+                      {reactions.length}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1938,6 +2118,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         }}
         buttons={[
           {
+            text: 'Reagieren',
+            icon: 'heart-outline',
+            handler: () => {
+              if (selectedMessage) {
+                openReactionPicker(selectedMessage);
+              }
+            }
+          },
+          {
             text: 'Antworten',
             icon: 'arrow-undo-outline',
             handler: () => {
@@ -1974,6 +2163,72 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           }
         ]}
       />
+
+      {/* Reaction Picker Modal */}
+      {showReactionPicker && reactionTargetMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={() => {
+            setShowReactionPicker(false);
+            setReactionTargetMessage(null);
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '16px 24px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+              display: 'flex',
+              gap: '8px'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {Object.entries(REACTION_EMOJIS).map(([emoji, data]) => {
+              const userHasThisReaction = reactionTargetMessage.reactions?.some(
+                r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
+              );
+              return (
+                <div
+                  key={emoji}
+                  onClick={() => toggleReaction(reactionTargetMessage.id, emoji)}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    backgroundColor: userHasThisReaction ? `${data.color}15` : 'transparent',
+                    border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title={data.label}
+                >
+                  <IonIcon
+                    icon={userHasThisReaction ? data.filled : data.outline}
+                    style={{
+                      fontSize: '1.8rem',
+                      color: data.color
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
     </>
   );

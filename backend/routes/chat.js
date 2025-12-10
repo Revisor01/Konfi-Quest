@@ -559,9 +559,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       LIMIT $2 OFFSET $3
     `;
       const { rows: messages } = await db.query(messagesQuery, [roomId, limit, offset]);
-      
-      // Load votes for poll messages
+
+      // Load votes for poll messages AND reactions for all messages
       const processedMessages = await Promise.all(messages.map(async (msg) => {
+        // Load reactions for all messages
+        const reactionsQuery = `
+          SELECT r.id, r.emoji, r.user_id, r.user_type, u.display_name as user_name
+          FROM chat_message_reactions r
+          JOIN users u ON r.user_id = u.id
+          WHERE r.message_id = $1
+          ORDER BY r.created_at ASC
+        `;
+        const { rows: reactions } = await db.query(reactionsQuery, [msg.id]);
+        msg.reactions = reactions || [];
+
         if (msg.message_type === 'poll' && msg.options) {
           // Parse options from JSON string (since stored as TEXT in chat_polls table)
           try {
@@ -1493,6 +1504,132 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     }
   });
   
+  // === REACTIONS API ===
+
+  // Add reaction to a message
+  router.post('/messages/:messageId/reactions', verifyTokenRBAC, async (req, res) => {
+    const messageId = req.params.messageId;
+    const { emoji } = req.body;
+    const userId = req.user.id;
+    const userType = req.user.type;
+
+    if (!emoji) {
+      return res.status(400).json({ error: 'Emoji is required' });
+    }
+
+    // Nur bestimmte Emojis erlauben (Sicherheit)
+    const allowedEmojis = ['like', 'heart', 'laugh', 'wow', 'sad', 'pray'];
+    if (!allowedEmojis.includes(emoji)) {
+      return res.status(400).json({ error: 'Invalid emoji type' });
+    }
+
+    try {
+      // Get message and check access
+      const messageQuery = `
+        SELECT m.room_id, cr.organization_id
+        FROM chat_messages m
+        JOIN chat_rooms cr ON m.room_id = cr.id
+        WHERE m.id = $1
+      `;
+      const { rows: [message] } = await db.query(messageQuery, [messageId]);
+
+      if (!message) {
+        return res.status(404).json({ error: 'Nachricht nicht gefunden' });
+      }
+
+      if (message.organization_id !== req.user.organization_id) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
+      // Check if user is participant in the room
+      const participantQuery = `
+        SELECT 1 FROM chat_participants
+        WHERE room_id = $1 AND user_id = $2 AND user_type = $3
+      `;
+      const { rows: [isParticipant] } = await db.query(participantQuery, [message.room_id, userId, userType]);
+
+      if (!isParticipant) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
+
+      // Check if user already has this reaction (toggle off)
+      const existingQuery = `
+        SELECT id FROM chat_message_reactions
+        WHERE message_id = $1 AND user_id = $2 AND user_type = $3 AND emoji = $4
+      `;
+      const { rows: [existing] } = await db.query(existingQuery, [messageId, userId, userType, emoji]);
+
+      if (existing) {
+        // Remove reaction
+        await db.query('DELETE FROM chat_message_reactions WHERE id = $1', [existing.id]);
+
+        // Broadcast via WebSocket
+        if (global.io) {
+          global.io.to(`room_${message.room_id}`).emit('reactionRemoved', {
+            roomId: message.room_id,
+            messageId: parseInt(messageId),
+            userId,
+            userType,
+            emoji
+          });
+        }
+
+        return res.json({ action: 'removed', emoji });
+      }
+
+      // Add reaction
+      const insertQuery = `
+        INSERT INTO chat_message_reactions (message_id, user_id, user_type, emoji)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+      `;
+      const { rows: [newReaction] } = await db.query(insertQuery, [messageId, userId, userType, emoji]);
+
+      // Broadcast via WebSocket
+      if (global.io) {
+        global.io.to(`room_${message.room_id}`).emit('reactionAdded', {
+          roomId: message.room_id,
+          messageId: parseInt(messageId),
+          reaction: {
+            id: newReaction.id,
+            user_id: userId,
+            user_type: userType,
+            emoji,
+            user_name: req.user.display_name
+          }
+        });
+      }
+
+      res.json({ action: 'added', emoji, id: newReaction.id });
+
+    } catch (err) {
+      console.error('Database error in POST /messages/:messageId/reactions:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Get reactions for a message
+  router.get('/messages/:messageId/reactions', verifyTokenRBAC, async (req, res) => {
+    const messageId = req.params.messageId;
+
+    try {
+      const query = `
+        SELECT r.*, u.display_name as user_name
+        FROM chat_message_reactions r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.message_id = $1
+        ORDER BY r.created_at ASC
+      `;
+      const { rows: reactions } = await db.query(query, [messageId]);
+
+      res.json(reactions);
+
+    } catch (err) {
+      console.error('Database error in GET /messages/:messageId/reactions:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Get available chat partners for Konfis
   router.get('/available-users', verifyTokenRBAC, async (req, res) => {
     try {
