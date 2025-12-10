@@ -5,28 +5,18 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonList,
   IonItem,
   IonInput,
-  IonLabel,
-  IonBadge,
   IonIcon,
-  IonAvatar,
-  IonSearchbar,
   IonRefresher,
   IonRefresherContent,
   IonCard,
   IonCardContent,
-  IonChip,
   IonButton,
   IonButtons,
-  IonText,
   IonGrid,
   IonRow,
   IonCol,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -516,223 +506,182 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           </IonCardContent>
         </IonCard>
 
-        {/* Chat Rooms Liste - Events Design */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '8px 0' }}>
-            <IonList lines="none" style={{ background: 'transparent' }}>
-              {filteredRooms.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px' }}>
-                  <IonIcon 
-                  icon={chatbubbles} 
-                  style={{ 
-                    fontSize: '3rem', 
-                    color: '#17a2b8', 
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }} 
-                />
+        {/* Chat Rooms Liste - Neues Karten-Design mit farbigem Rand */}
+        <div style={{ padding: '0 16px 16px 16px' }}>
+          {filteredRooms.length === 0 ? (
+            <IonCard style={{
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0',
+              margin: '0'
+            }}>
+              <IonCardContent>
+                <div style={{ textAlign: 'center', padding: '24px' }}>
+                  <IonIcon
+                    icon={chatbubbles}
+                    style={{
+                      fontSize: '3rem',
+                      color: '#17a2b8',
+                      marginBottom: '16px',
+                      display: 'block',
+                      margin: '0 auto 16px auto'
+                    }}
+                  />
                   <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Chaträume gefunden</h3>
                   <p style={{ color: '#999', margin: '0' }}>Erstelle deinen ersten Chat!</p>
                 </div>
-              ) : (
-                filteredRooms.map((room) => (
-                  <IonItemSliding key={room.id}>
-                    <IonItem
-                      onClick={() => onSelectRoom(room)}
-                      detail={false}
-                      style={{
-                        '--min-height': '90px',
-                        '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      <IonLabel>
-                        {/* Titel mit Icon und Typ-Badge rechts */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '4px',
-                          position: 'relative'
-                        }}>
-                          {/* Icon mit Unread-Badge */}
-                          <div style={{ position: 'relative', flexShrink: 0 }}>
-                            <div style={{
-                              width: '32px',
-                              height: '32px',
-                              backgroundColor: room.type === 'admin' ? '#17a2b8' :
-                                             room.type === 'jahrgang' ? '#007aff' :
-                                             room.type === 'group' ? '#2dd36f' : '#ff6b35',
+              </IonCardContent>
+            </IonCard>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {filteredRooms.map((room) => {
+                const color = room.type === 'admin' ? '#17a2b8' :
+                              room.type === 'jahrgang' ? '#007aff' :
+                              room.type === 'group' ? '#2dd36f' : '#ff6b35';
+                return (
+                  <IonCard
+                    key={room.id}
+                    onClick={() => onSelectRoom(room)}
+                    style={{
+                      borderRadius: '12px',
+                      background: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                      border: '1px solid #e0e0e0',
+                      borderLeft: `4px solid ${color}`,
+                      margin: '0',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <IonCardContent style={{ padding: '12px 16px' }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        {/* Icon mit Unread-Badge */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: color,
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <IonIcon
+                              icon={getRoomIcon(room)}
+                              style={{ fontSize: '1.2rem', color: 'white' }}
+                            />
+                          </div>
+                          {room.unread_count > 0 && (
+                            <span style={{
+                              position: 'absolute',
+                              top: '-4px',
+                              right: '-4px',
+                              fontSize: '0.55rem',
+                              color: 'white',
+                              fontWeight: '700',
+                              backgroundColor: '#dc3545',
+                              width: room.unread_count > 9 ? '18px' : '16px',
+                              height: '16px',
                               borderRadius: '50%',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              boxShadow: room.type === 'admin' ? '0 2px 8px rgba(23, 162, 184, 0.3)' :
-                                         room.type === 'jahrgang' ? '0 2px 8px rgba(0, 122, 255, 0.3)' :
-                                         room.type === 'group' ? '0 2px 8px rgba(45, 211, 111, 0.3)' : '0 2px 8px rgba(255, 107, 53, 0.3)'
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                             }}>
-                              <IonIcon
-                                icon={getRoomIcon(room)}
-                                style={{ fontSize: '0.9rem', color: 'white' }}
-                              />
-                            </div>
-                            {/* Unread Badge auf Icon */}
-                            {room.unread_count > 0 && (
+                              {room.unread_count > 9 ? '9+' : room.unread_count}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontWeight: '600',
+                            fontSize: '0.95rem',
+                            color: '#333',
+                            marginBottom: '4px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {getDisplayRoomName(room)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{
+                              fontSize: '0.7rem',
+                              fontWeight: '600',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              backgroundColor: `${color}20`,
+                              color: color
+                            }}>
+                              {getRoomSubtitle(room)}
+                            </span>
+                            {room.last_message?.created_at && (
                               <span style={{
-                                position: 'absolute',
-                                top: '-4px',
-                                right: '-4px',
-                                fontSize: '0.55rem',
-                                color: 'white',
-                                fontWeight: '700',
-                                backgroundColor: '#dc3545',
-                                width: room.unread_count > 9 ? '18px' : '16px',
-                                height: '16px',
-                                borderRadius: '50%',
+                                fontSize: '0.75rem',
+                                color: '#666',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                gap: '4px'
                               }}>
-                                {room.unread_count > 9 ? '9+' : room.unread_count}
+                                <IonIcon icon={time} style={{ fontSize: '0.75rem' }} />
+                                {formatLastMessageTime(room.last_message.created_at)}
                               </span>
                             )}
                           </div>
-
-                          {/* Name */}
-                          <h2 style={{
-                            fontWeight: '600',
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-                            margin: '0',
-                            color: '#333',
-                            lineHeight: '1.3',
-                            flex: 1,
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {getDisplayRoomName(room)}
-                          </h2>
-
-                          {/* Chat-Typ Badge rechts außen */}
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: room.type === 'admin' ? '#17a2b8' :
-                                   room.type === 'jahrgang' ? '#007aff' :
-                                   room.type === 'group' ? '#2dd36f' : '#ff6b35',
-                            fontWeight: '600',
-                            backgroundColor: room.type === 'admin' ? 'rgba(23, 162, 184, 0.15)' :
-                                            room.type === 'jahrgang' ? 'rgba(0, 122, 255, 0.15)' :
-                                            room.type === 'group' ? 'rgba(45, 211, 111, 0.15)' : 'rgba(255, 107, 53, 0.15)',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            border: room.type === 'admin' ? '1px solid rgba(23, 162, 184, 0.3)' :
-                                    room.type === 'jahrgang' ? '1px solid rgba(0, 122, 255, 0.3)' :
-                                    room.type === 'group' ? '1px solid rgba(45, 211, 111, 0.3)' : '1px solid rgba(255, 107, 53, 0.3)',
-                            whiteSpace: 'nowrap',
-                            flexShrink: 0
-                          }}>
-                            {getRoomSubtitle(room)}
-                          </span>
+                          {/* Letzte Nachricht */}
+                          {room.last_message && (room.last_message.content || room.last_message.file_name) && (
+                            <div style={{
+                              marginTop: '4px',
+                              fontSize: '0.8rem',
+                              color: '#666',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              <span style={{ fontWeight: '600', color: '#333' }}>
+                                {room.last_message.sender_name}:
+                              </span>{' '}
+                              {room.last_message.content || room.last_message.file_name || 'Datei'}
+                            </div>
+                          )}
                         </div>
 
-                        {/* Zeit der letzten Nachricht */}
-                        {room.last_message?.created_at && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.8rem',
-                            marginLeft: '44px',
-                            marginBottom: '4px'
-                          }}>
-                            <IonIcon icon={time} style={{ fontSize: '0.8rem', color: '#8e8e93' }} />
-                            <span style={{ color: '#8e8e93' }}>
-                              {formatLastMessageTime(room.last_message.created_at)}
-                            </span>
+                        {/* Delete Button für direct/group chats */}
+                        {(room.type === 'direct' || room.type === 'group') && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteRoom(room);
+                            }}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              backgroundColor: '#dc354520',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <IonIcon icon={trash} style={{ fontSize: '1rem', color: '#dc3545' }} />
                           </div>
                         )}
-
-                        {/* Letzte Nachricht */}
-                        {room.last_message && (room.last_message.content || room.last_message.file_name) && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.8rem',
-                            color: '#666',
-                            marginLeft: '44px'
-                          }}>
-                            <span style={{
-                              fontWeight: '600',
-                              color: '#333',
-                              flexShrink: 0
-                            }}>
-                              {room.last_message.sender_name}:
-                            </span>
-                            <span style={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              color: '#666'
-                            }}>
-                              {room.last_message.content ||
-                               (room.last_message.file_name ? room.last_message.file_name : 'Datei')}
-                            </span>
-                          </div>
-                        )}
-                      </IonLabel>
-                    </IonItem>
-
-                    {(room.type === 'direct' || room.type === 'group') && (
-                      <IonItemOptions side="end" style={{
-                        gap: '4px',
-                        '--ion-item-background': 'transparent'
-                      }}>
-                        <IonItemOption
-                          onClick={() => deleteRoom(room)}
-                          style={{
-                            '--background': 'transparent',
-                            '--border-radius': '50%',
-                            minWidth: '44px',
-                            maxWidth: '44px',
-                            height: '44px',
-                            padding: '0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <div style={{
-                            width: '44px',
-                            height: '44px',
-                            backgroundColor: '#dc3545',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
-                          </div>
-                        </IonItemOption>
-                      </IonItemOptions>
-                    )}
-                  </IonItemSliding>
-                ))
-              )}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+                      </div>
+                    </IonCardContent>
+                  </IonCard>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </IonContent>
     </IonPage>
   );

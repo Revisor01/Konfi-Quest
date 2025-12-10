@@ -102,15 +102,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       const bonusPointsTotal = parseInt(bonusPointsResult.bonus_total, 10) || 0;
 
-      // Get event points total for this konfi
-      const { rows: [eventPointsResult] } = await db.query(
-        'SELECT COALESCE(SUM(points), 0) as event_total FROM event_points WHERE konfi_id = $1 AND organization_id = $2',
-        [konfiId, req.user.organization_id]
-      );
-      const eventPointsTotal = parseInt(eventPointsResult.event_total, 10) || 0;
-
-      // Get user's ranking position (like in profile route)
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0) + bonusPointsTotal + eventPointsTotal;
+      // Total points: konfi_profiles already contains gottesdienst + gemeinde (incl. event_points)
+      // Only add bonus_points separately (event_points are already added to gottesdienst/gemeinde when awarded)
+      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0) + bonusPointsTotal;
       const userRankingQuery = `
         WITH MyRank AS (
           SELECT 
