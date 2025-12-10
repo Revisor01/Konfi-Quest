@@ -425,7 +425,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                         onClick={() => {
                           presentAlert({
                             header: level.title,
-                            message: `${level.name}${isReached ? ' - Erreicht!' : ''}\n\nBenoetigte Punkte: ${level.points_required}`,
+                            message: `${level.name}${isReached ? ' - Erreicht!' : ''}\n\nBenötigte Punkte: ${level.points_required}`,
                             buttons: ['OK']
                           });
                         }}

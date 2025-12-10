@@ -425,119 +425,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCardContent>
       </IonCard>
 
-      {/* Punkte-Übersicht Card */}
-      <IonCard
-        button
-        onClick={() => presentPointsHistoryModal({ presentingElement: presentingElement || undefined })}
-        style={{ margin: '16px', borderRadius: '12px', cursor: 'pointer' }}
-      >
-        <IonCardContent>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <IonIcon icon={star} style={{ fontSize: '1.2rem', color: '#ffd700', marginRight: '8px' }} />
-              <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-                Punkte-Übersicht
-              </h3>
-            </div>
-            <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', color: '#999' }} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            {/* Gottesdienst-Punkte */}
-            <div style={{
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              textAlign: 'center',
-              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
-                Gottesdienst
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {profile.gottesdienst_points || 0}
-              </div>
-            </div>
-
-            {/* Gemeinde-Punkte */}
-            <div style={{
-              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              textAlign: 'center',
-              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
-                Gemeinde
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {profile.gemeinde_points || 0}
-              </div>
-            </div>
-
-            {/* Bonus-Punkte */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              textAlign: 'center',
-              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
-                Bonus
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {profile.bonus_points || 0}
-              </div>
-            </div>
-
-            {/* Gesamt-Punkte */}
-            <div style={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              borderRadius: '12px',
-              padding: '16px',
-              textAlign: 'center',
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
-            }}>
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
-                Gesamt
-              </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
-                {profile.total_points || 0}
-              </div>
-            </div>
-          </div>
-
-          {/* Ranking im Jahrgang */}
-          {profile.rank_in_jahrgang && profile.total_in_jahrgang && (
-            <div style={{
-              marginTop: '16px',
-              padding: '12px',
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
-              borderRadius: '10px',
-              textAlign: 'center',
-              border: '1px solid rgba(139, 92, 246, 0.2)'
-            }}>
-              <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                Platz{' '}
-              </span>
-              <span style={{ color: '#8b5cf6', fontWeight: '700', fontSize: '1.1rem' }}>
-                {profile.rank_in_jahrgang}
-              </span>
-              <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                {' '}von{' '}
-              </span>
-              <span style={{ color: '#8b5cf6', fontWeight: '700', fontSize: '1.1rem' }}>
-                {profile.total_in_jahrgang}
-              </span>
-              <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                {' '}in deinem Jahrgang
-              </span>
-            </div>
-          )}
-        </IonCardContent>
-      </IonCard>
-
       {/* Konfirmationstermin Card - Dashboard Blau Style mit Background Header */}
       <div style={{ 
         margin: '16px', 
@@ -763,7 +650,48 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         }}>
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }} lines="none">
-              {/* E-Mail aendern */}
+              {/* Punkte-Übersicht */}
+              <IonItem
+                button
+                onClick={() => {
+                  presentPointsHistoryModal({
+                    presentingElement: presentingElement || undefined
+                  });
+                }}
+                lines="none"
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <div slot="start" style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#ffd700',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}>
+                  <IonIcon icon={star} style={{ fontSize: '1.2rem', color: 'white' }} />
+                </div>
+                <IonLabel>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Punkte-Übersicht</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                    {profile.total_points || 0} Punkte gesamt
+                  </p>
+                </IonLabel>
+                <IonIcon icon={chevronForward} slot="end" style={{ color: '#999' }} />
+              </IonItem>
+
+              {/* E-Mail ändern */}
               <IonItem
                 button
                 onClick={() => {
@@ -798,12 +726,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 <IonLabel>
                   <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>E-Mail-Adresse</h2>
                   <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                    {user?.email ? `${user.email}` : 'Fuer Benachrichtigungen'}
+                    {user?.email ? `${user.email}` : 'Für Benachrichtigungen'}
                   </p>
                 </IonLabel>
               </IonItem>
 
-              {/* Passwort aendern */}
+              {/* Passwort ändern */}
               <IonItem
                 button
                 onClick={() => {
@@ -836,18 +764,18 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   <IonIcon icon={key} style={{ fontSize: '1.2rem', color: 'white' }} />
                 </div>
                 <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Passwort aendern</h2>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Passwort ändern</h2>
                   <p style={{ fontSize: '0.8rem', color: '#666' }}>Sicherheitseinstellungen</p>
                 </IonLabel>
               </IonItem>
 
-              {/* Bibeluebersetzung */}
+              {/* Bibelübersetzung */}
               <IonItem
                 button
                 onClick={() => {
                   presentActionSheet({
-                    header: 'Bibeluebersetzung waehlen',
-                    subHeader: 'Fuer die Tageslosung',
+                    header: 'Bibelübersetzung wählen',
+                    subHeader: 'Für die Tageslosung',
                     buttons: [
                       {
                         text: 'Lutherbibel 2017',
@@ -916,7 +844,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                   <IonIcon icon={book} style={{ fontSize: '1.2rem', color: 'white' }} />
                 </div>
                 <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Bibeluebersetzung</h2>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Bibelübersetzung</h2>
                   <p style={{ fontSize: '0.8rem', color: '#666' }}>{getTranslationName(selectedTranslation)}</p>
                 </IonLabel>
               </IonItem>

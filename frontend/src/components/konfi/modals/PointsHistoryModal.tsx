@@ -11,7 +11,9 @@ import {
   IonSpinner,
   IonSegment,
   IonSegmentButton,
-  IonLabel
+  IonLabel,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   closeOutline,
@@ -22,7 +24,8 @@ import {
   star,
   flash,
   gift,
-  calendar
+  calendar,
+  chevronForward
 } from 'ionicons/icons';
 import api from '../../../services/api';
 
@@ -73,7 +76,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Unbekannt';
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Ungueltig';
+    if (isNaN(date.getTime())) return 'Ungültig';
     return date.toLocaleDateString('de-DE', {
       day: 'numeric',
       month: 'short',
@@ -210,8 +213,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                   </div>
                 </div>
 
-                {/* Kategorie-Aufschluesselung */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                {/* Kategorie-Aufschlüsselung */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div style={{
                     background: 'rgba(59, 130, 246, 0.3)',
                     borderRadius: '12px',
@@ -231,6 +234,16 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.gemeinde}</div>
                     <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Gemeinde</div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(220, 38, 38, 0.3)',
+                    borderRadius: '12px',
+                    padding: '12px 8px',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={calendar} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
+                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.event}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Event</div>
                   </div>
                   <div style={{
                     background: 'rgba(245, 158, 11, 0.3)',
@@ -267,72 +280,65 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
               </IonSegment>
             </div>
 
-            {/* History List - im Dashboard Card Style */}
-            <div style={{
-              background: 'linear-gradient(135deg, #1f2937 0%, #111827 100%)',
-              borderRadius: '20px',
-              padding: '0',
-              boxShadow: '0 8px 32px rgba(31, 41, 55, 0.25)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              {/* Background Text */}
+            {/* History List - Karten-Stil mit farbigen Rändern */}
+            <div style={{ marginBottom: '8px' }}>
               <div style={{
-                position: 'absolute',
-                top: '-5px',
-                left: '10px',
-                zIndex: 1
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '12px'
               }}>
-                <h2 style={{
-                  fontSize: '2.8rem',
-                  fontWeight: '900',
-                  color: 'rgba(255, 255, 255, 0.05)',
-                  margin: '0',
-                  lineHeight: '0.9',
-                  letterSpacing: '-2px'
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: '#667eea',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                  flexShrink: 0
                 }}>
-                  VERLAUF
+                  <IonIcon icon={calendarOutline} style={{ fontSize: '1rem', color: 'white' }} />
+                </div>
+                <h2 style={{
+                  fontWeight: '600',
+                  fontSize: '1.1rem',
+                  margin: '0',
+                  color: '#333'
+                }}>
+                  Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})
                 </h2>
               </div>
+            </div>
 
-              {/* Counter Badge oben rechts */}
-              <div style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '8px',
-                padding: '6px 10px',
-                fontSize: '0.7rem',
-                color: 'white',
-                fontWeight: '700',
-                zIndex: 3
-              }}>
-                {filteredHistory.length} {filteredHistory.length === 1 ? 'EINTRAG' : 'EINTRAEGE'}
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, padding: '50px 16px 16px 16px' }}>
+            <IonCard style={{
+              borderRadius: '12px',
+              background: 'white',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #e0e0e0',
+              margin: '0'
+            }}>
+              <IonCardContent style={{ padding: '0' }}>
                 {filteredHistory.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(255, 255, 255, 0.6)' }}>
-                    Noch keine Eintraege vorhanden
+                  <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                    Noch keine Einträge vorhanden
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filteredHistory.map((entry) => {
+                  <div>
+                    {filteredHistory.map((entry, index) => {
                       const color = getCategoryColor(entry.category, entry.source_type);
                       return (
                         <div
                           key={`${entry.source_type}-${entry.id}`}
                           style={{
-                            background: 'rgba(255, 255, 255, 0.08)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '12px',
-                            padding: '12px 16px',
                             display: 'flex',
                             alignItems: 'center',
+                            padding: '14px 16px',
                             gap: '12px',
-                            borderLeft: `4px solid ${color}`
+                            borderLeft: `4px solid ${color}`,
+                            borderBottom: index < filteredHistory.length - 1 ? '1px solid #e0e0e0' : 'none',
+                            background: '#fbfbfb'
                           }}
                         >
                           {/* Icon */}
@@ -357,7 +363,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                             <div style={{
                               fontWeight: '600',
                               fontSize: '0.95rem',
-                              color: 'white',
+                              color: '#333',
                               marginBottom: '4px',
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -371,14 +377,14 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                                 fontWeight: '600',
                                 padding: '2px 8px',
                                 borderRadius: '10px',
-                                backgroundColor: `${color}30`,
+                                backgroundColor: `${color}20`,
                                 color: color
                               }}>
                                 {getCategoryLabel(entry.category, entry.source_type)}
                               </span>
                               <span style={{
                                 fontSize: '0.75rem',
-                                color: 'rgba(255, 255, 255, 0.6)',
+                                color: '#666',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '4px'
@@ -391,7 +397,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               <div style={{
                                 marginTop: '4px',
                                 fontSize: '0.75rem',
-                                color: 'rgba(255, 255, 255, 0.5)',
+                                color: '#888',
                                 fontStyle: 'italic'
                               }}>
                                 {entry.comment}
@@ -413,8 +419,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     })}
                   </div>
                 )}
-              </div>
-            </div>
+              </IonCardContent>
+            </IonCard>
           </div>
         )}
       </IonContent>

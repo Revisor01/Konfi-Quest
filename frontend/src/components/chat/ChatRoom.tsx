@@ -34,6 +34,7 @@ import {
   barChart,
   download,
   trash,
+  trashOutline,
   checkmark,
   chatbubbles,
   people,
@@ -55,7 +56,9 @@ import {
   sad,
   handLeftOutline,
   handLeft,
-  addOutline
+  addOutline,
+  arrowUndoOutline,
+  shareOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';

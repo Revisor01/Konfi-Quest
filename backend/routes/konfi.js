@@ -95,8 +95,22 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         initials: r.display_name ? r.display_name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().substring(0, 2) : '??'
       }));
 
-      // Get user's ranking position (like in profile route)  
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
+      // Get bonus points total for this konfi
+      const { rows: [bonusPointsResult] } = await db.query(
+        'SELECT COALESCE(SUM(points), 0) as bonus_total FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2',
+        [konfiId, req.user.organization_id]
+      );
+      const bonusPointsTotal = parseInt(bonusPointsResult.bonus_total, 10) || 0;
+
+      // Get event points total for this konfi
+      const { rows: [eventPointsResult] } = await db.query(
+        'SELECT COALESCE(SUM(points), 0) as event_total FROM event_points WHERE konfi_id = $1 AND organization_id = $2',
+        [konfiId, req.user.organization_id]
+      );
+      const eventPointsTotal = parseInt(eventPointsResult.event_total, 10) || 0;
+
+      // Get user's ranking position (like in profile route)
+      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0) + bonusPointsTotal + eventPointsTotal;
       const userRankingQuery = `
         WITH MyRank AS (
           SELECT 
@@ -467,20 +481,19 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         return dateB - dateA;
       });
 
-      // Calculate totals (activities + event points per category)
+      // Calculate totals - nur Aktivitäten für Gottesdienst/Gemeinde, Events separat
       const actGottesdienst = activities.filter(a => a.category === 'gottesdienst').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
       const actGemeinde = activities.filter(a => a.category === 'gemeinde').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
-      const evtGottesdienst = eventPoints.filter(e => e.category === 'gottesdienst').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
-      const evtGemeinde = eventPoints.filter(e => e.category === 'gemeinde').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
       const bonusTotal = bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0);
+      const eventTotal = eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0);
 
       const totals = {
-        gottesdienst: actGottesdienst + evtGottesdienst,
-        gemeinde: actGemeinde + evtGemeinde,
+        gottesdienst: actGottesdienst,
+        gemeinde: actGemeinde,
         bonus: bonusTotal,
-        event: eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0) // Separat fuer Anzeige
+        event: eventTotal
       };
-      totals.total = totals.gottesdienst + totals.gemeinde + totals.bonus;
+      totals.total = totals.gottesdienst + totals.gemeinde + totals.bonus + totals.event;
 
       res.json({
         history: allPoints,
