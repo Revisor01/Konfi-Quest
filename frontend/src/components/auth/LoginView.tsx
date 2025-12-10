@@ -16,7 +16,7 @@ import {
   IonText,
   IonImg
 } from '@ionic/react';
-import { key, person, trophy, star, sparkles, alertCircle, closeCircle } from 'ionicons/icons';
+import { key, person, trophy, star, sparkles, alertCircle, closeCircle, eye, eyeOff } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { loginWithAutoDetection } from '../../services/auth';
 
@@ -28,6 +28,7 @@ const LoginView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [shakeError, setShakeError] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const triggerShake = () => {
     setShakeError(true);
@@ -192,11 +193,23 @@ const LoginView: React.FC = () => {
                   Passwort
                 </IonLabel>
                 <IonInput
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onIonInput={(e) => setPassword(e.detail.value!)}
                   placeholder="Dein Passwort"
                   style={{ '--color': '#2c3e50' }}
+                />
+                <IonIcon
+                  icon={showPassword ? eyeOff : eye}
+                  slot="end"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    cursor: 'pointer',
+                    fontSize: '1.3rem',
+                    color: '#667eea',
+                    padding: '8px',
+                    marginTop: '20px'
+                  }}
                 />
               </IonItem>
               
