@@ -14,37 +14,18 @@ import {
   IonProgressBar,
   useIonModal,
   useIonAlert,
-  useIonActionSheet,
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonContent,
-  IonInput
+  useIonActionSheet
 } from '@ionic/react';
 import {
   person,
-  school,
   calendar,
   star,
   trophy,
   flash,
-  statsChart,
   logOut,
   create,
-  save,
-  close,
   checkmark,
-  time,
-  heart,
-  sparkles,
-  ribbon,
-  gift,
-  flame,
   rocket,
-  eye,
-  eyeOff,
   key,
   book,
   location
@@ -53,6 +34,8 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
+import ChangePasswordModal from '../modals/ChangePasswordModal';
+import ChangeEmailModal from '../modals/ChangeEmailModal';
 
 interface KonfiProfile {
   id: number;
@@ -134,67 +117,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
     loadBadges();
   }, []);
   
-  // Edit form state (only email now)
-  const [editData, setEditData] = useState({
-    email: ''
-  });
-
-  // Password form state
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
-
-  const handleEditProfile = async () => {
-    try {
-      // Update email if changed
-      if (editData.email.trim() !== (profile?.email || '')) {
-        await api.post('/auth/update-email', {
-          email: editData.email.trim() || null
-        });
-      }
-      
-      setSuccess('E-Mail erfolgreich aktualisiert');
-      await onReload();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren des Profils');
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
-      setError('Alle Passwort-Felder sind erforderlich');
-      return;
-    }
-
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setError('Neue Passwörter stimmen nicht überein');
-      return;
-    }
-
-    if (passwordData.new_password.length < 6) {
-      setError('Neues Passwort muss mindestens 6 Zeichen lang sein');
-      return;
-    }
-
-    try {
-      await api.post('/auth/change-password', {
-        currentPassword: passwordData.current_password,
-        newPassword: passwordData.new_password
-      });
-      setSuccess('Passwort erfolgreich geändert');
-      setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ändern des Passworts');
-    }
-  };
-
   const handleTranslationChange = async (translation: string) => {
     try {
       await api.put('/konfi/bible-translation', { translation });
@@ -247,211 +169,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
   };
 
   // Modal with useIonModal Hook for Email Edit
-  const [presentEmailModal, dismissEmailModal] = useIonModal(() => (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => dismissEmailModal()}>
-              <IonIcon icon={close} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>E-Mail ändern</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={async () => {
-              await handleEditProfile();
-              dismissEmailModal();
-            }}>
-              <IonIcon icon={checkmark} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        {/* Überschrift außerhalb der Card gemäß MODAL_STYLING_GUIDE */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px',
-          margin: '16px 16px 8px 16px'
-        }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px',
-            backgroundColor: '#007aff',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 123, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={person} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{ 
-            fontWeight: '600', 
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            E-Mail-Adresse
-          </h2>
-        </div>
-        
-        {/* Card ohne Header */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none">
-                <IonLabel position="stacked">E-Mail (optional)</IonLabel>
-                <IonInput
-                  type="email"
-                  value={editData.email}
-                  onIonInput={(e) => setEditData(prev => ({ ...prev, email: e.detail.value! }))}
-                  placeholder="deine@email.de"
-                />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-
-      </IonContent>
-    </IonPage>
-  ), {
-    onDismiss: () => dismissEmailModal(),
-    presentingElement: presentingElement
+  const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
+    onClose: () => dismissEmailModal(),
+    onSuccess: () => {
+      dismissEmailModal();
+      onReload();
+    },
+    initialEmail: profile?.email || ''
   });
 
   // Modal with useIonModal Hook for Password Change
-  const [presentPasswordModal, dismissPasswordModal] = useIonModal(() => (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={() => dismissPasswordModal()}>
-              <IonIcon icon={close} />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Passwort ändern</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={async () => {
-              await handleChangePassword();
-              dismissPasswordModal();
-            }} disabled={!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password}>
-              <IonIcon icon={checkmark} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent>
-        {/* Passwort-Sektion */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px',
-          margin: '16px 16px 8px 16px'
-        }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px',
-            backgroundColor: '#e74c3c',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(231, 76, 60, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={key} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{ 
-            fontWeight: '600', 
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Sicherheitseinstellungen
-          </h2>
-        </div>
-        
-        {/* Passwort-Felder */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px' }}>
-          <IonCardContent style={{ padding: '12px 0' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none">
-                <IonLabel position="stacked">Aktuelles Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.current ? 'text' : 'password'}
-                  value={passwordData.current_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
-                  placeholder="Aktuelles Passwort eingeben"
-                />
-                <IonButton 
-                  slot="end" 
-                  fill="clear" 
-                  size="small"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                >
-                  <IonIcon icon={showPasswords.current ? eyeOff : eye} />
-                </IonButton>
-              </IonItem>
-
-              <IonItem lines="none">
-                <IonLabel position="stacked">Neues Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.new ? 'text' : 'password'}
-                  value={passwordData.new_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
-                  placeholder="Neues Passwort eingeben"
-                />
-                <IonButton 
-                  slot="end" 
-                  fill="clear" 
-                  size="small"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                >
-                  <IonIcon icon={showPasswords.new ? eyeOff : eye} />
-                </IonButton>
-              </IonItem>
-
-              <IonItem lines="none">
-                <IonLabel position="stacked">Neues Passwort bestätigen *</IonLabel>
-                <IonInput
-                  type={showPasswords.confirm ? 'text' : 'password'}
-                  value={passwordData.confirm_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
-                  placeholder="Neues Passwort bestätigen"
-                />
-                <IonButton 
-                  slot="end" 
-                  fill="clear" 
-                  size="small"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                >
-                  <IonIcon icon={showPasswords.confirm ? eyeOff : eye} />
-                </IonButton>
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-
-        {/* Hinweis-Card */}
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '8px', background: 'rgba(56, 128, 255, 0.1)' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IonIcon icon={checkmark} color="primary" />
-              <p style={{ margin: '0', fontSize: '0.9rem', color: '#3880ff' }}>
-                Das Passwort muss mindestens 6 Zeichen lang sein.
-              </p>
-            </div>
-          </IonCardContent>
-        </IonCard>
-
-      </IonContent>
-    </IonPage>
-  ), {
-    onDismiss: () => dismissPasswordModal(),
-    presentingElement: presentingElement
+  const [presentPasswordModal, dismissPasswordModal] = useIonModal(ChangePasswordModal, {
+    onClose: () => dismissPasswordModal(),
+    onSuccess: () => {
+      dismissPasswordModal();
+    }
   });
 
   const getInitials = (name: string | undefined) => {
@@ -879,9 +611,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
           </h3>
           
           <IonItem button onClick={() => {
-            setEditData({
-              email: profile?.email || user?.email || ''
-            });
             presentEmailModal({
               presentingElement: presentingElement
             });
@@ -895,7 +624,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
           </IonItem>
 
           <IonItem button onClick={() => {
-            setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
             presentPasswordModal({
               presentingElement: presentingElement
             });
