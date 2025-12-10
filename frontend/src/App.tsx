@@ -20,9 +20,12 @@ import {
   IonCardContent,
   IonItem,
   IonBadge,
-  setupIonicReact
+  setupIonicReact,
+  isPlatform
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+// iOS26 Theme Animationen
+import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios26';
 // Icons sind jetzt in MainTabs.tsx
 import { AppProvider, useApp } from './contexts/AppContext';
 import { BadgeProvider, useBadge } from './contexts/BadgeContext';
@@ -67,7 +70,11 @@ setupIonicReact({
   scrollPadding: true,
   backButtonText: '',
   backButtonIcon: 'arrow-back-outline',
-  innerHTMLTemplatesEnabled: true
+  innerHTMLTemplatesEnabled: true,
+  // iOS26 Theme Animationen - nur auf iOS aktivieren
+  navAnimation: isPlatform('ios') ? iosTransitionAnimation : undefined,
+  popoverEnter: isPlatform('ios') ? popoverEnterAnimation : undefined,
+  popoverLeave: isPlatform('ios') ? popoverLeaveAnimation : undefined
 });
 
 

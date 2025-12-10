@@ -1,6 +1,11 @@
 /* For information on how to create your own theme, please see:
 http://ionicframework.com/docs/theming/ */
 
+/* iOS26 Theme - kann durch Entfernen dieser Imports deaktiviert werden */
+@import '@rdlabo/ionic-theme-ios26/dist/css/default-variables.css';
+@import '@rdlabo/ionic-theme-ios26/dist/css/ionic-theme-ios26.css';
+@import '@rdlabo/ionic-theme-ios26/dist/css/md-remove-ios-class-effect.css';
+
 /* Custom App Styles */
 .app-gradient-background {
   --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
