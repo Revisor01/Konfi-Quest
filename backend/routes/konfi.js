@@ -269,7 +269,16 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       if (!konfi) {
         return res.status(404).json({ error: 'Konfi not found' });
       }
-      
+
+      // Get bonus points
+      const bonusQuery = `
+        SELECT COALESCE(SUM(points), 0) as bonus_points
+        FROM bonus_points
+        WHERE konfi_id = $1 AND organization_id = $2
+      `;
+      const { rows: [bonus] } = await db.query(bonusQuery, [konfiId, req.user.organization_id]);
+      const bonusPoints = parseInt(bonus?.bonus_points || 0);
+
       // Get additional profile stats
       const statsQuery = `
         SELECT 
@@ -331,7 +340,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
 
       // Get ranking position
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
+      const gottesdienstPoints = parseInt(konfi.gottesdienst_points || 0);
+      const gemeindePoints = parseInt(konfi.gemeinde_points || 0);
+      const totalPoints = gottesdienstPoints + gemeindePoints + bonusPoints;
       const rankingQuery = `
         WITH MyRank AS (
           SELECT 
@@ -367,6 +378,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json({
         ...konfi,
         total_points: totalPoints,
+        gottesdienst_points: gottesdienstPoints,
+        gemeinde_points: gemeindePoints,
+        bonus_points: bonusPoints,
         badge_count: stats.badge_count || 0,
         activity_count: stats.activity_count || 0,
         event_count: stats.event_count || 0,
@@ -1110,6 +1124,53 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
     } catch (err) {
       console.error('Database error in GET /events/:id/status:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
+  // Get event participants for konfi view (anonymized: Vorname N.)
+  router.get('/events/:id/participants', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+
+    try {
+      const eventId = req.params.id;
+
+      // Get confirmed participants with anonymized names
+      const participantsQuery = `
+        SELECT
+          u.id,
+          u.display_name
+        FROM event_bookings eb
+        JOIN users u ON eb.user_id = u.id
+        WHERE eb.event_id = $1
+          AND eb.status = 'confirmed'
+        ORDER BY u.display_name ASC
+      `;
+      const { rows: participants } = await db.query(participantsQuery, [eventId]);
+
+      // Anonymize names: "Vorname N." (first name + first letter of last name with period)
+      const anonymizedParticipants = participants.map(p => {
+        const nameParts = (p.display_name || '').trim().split(' ');
+        if (nameParts.length >= 2) {
+          const firstName = nameParts[0];
+          const lastName = nameParts[nameParts.length - 1];
+          return {
+            id: p.id,
+            display_name: `${firstName} ${lastName.charAt(0).toUpperCase()}.`
+          };
+        }
+        // If only one name part, just use it as is
+        return {
+          id: p.id,
+          display_name: nameParts[0] || 'Unbekannt'
+        };
+      });
+
+      res.json(anonymizedParticipants);
+    } catch (err) {
+      console.error('Database error in GET /events/:id/participants:', err);
       res.status(500).json({ error: 'Database error' });
     }
   });

@@ -50,6 +50,9 @@ interface KonfiProfile {
   bible_translation?: string;
   // Statistics
   total_points: number;
+  gottesdienst_points?: number;
+  gemeinde_points?: number;
+  bonus_points?: number;
   badge_count: number;
   activity_count: number;
   event_count: number;
@@ -413,6 +416,112 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               </p>
             </div>
           </div>
+        </IonCardContent>
+      </IonCard>
+
+      {/* Punkte-Übersicht Card */}
+      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+        <IonCardContent>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+            <IonIcon icon={star} style={{ fontSize: '1.2rem', color: '#ffd700', marginRight: '8px' }} />
+            <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
+              Punkte-Übersicht
+            </h3>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            {/* Gottesdienst-Punkte */}
+            <div style={{
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              borderRadius: '12px',
+              padding: '16px',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
+                Gottesdienst
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
+                {profile.gottesdienst_points || 0}
+              </div>
+            </div>
+
+            {/* Gemeinde-Punkte */}
+            <div style={{
+              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              borderRadius: '12px',
+              padding: '16px',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
+                Gemeinde
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
+                {profile.gemeinde_points || 0}
+              </div>
+            </div>
+
+            {/* Bonus-Punkte */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              borderRadius: '12px',
+              padding: '16px',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
+                Bonus
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
+                {profile.bonus_points || 0}
+              </div>
+            </div>
+
+            {/* Gesamt-Punkte */}
+            <div style={{
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              borderRadius: '12px',
+              padding: '16px',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+            }}>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.8)', marginBottom: '4px' }}>
+                Gesamt
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
+                {profile.total_points || 0}
+              </div>
+            </div>
+          </div>
+
+          {/* Ranking im Jahrgang */}
+          {profile.rank_in_jahrgang && profile.total_in_jahrgang && (
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+              borderRadius: '10px',
+              textAlign: 'center',
+              border: '1px solid rgba(139, 92, 246, 0.2)'
+            }}>
+              <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                Platz{' '}
+              </span>
+              <span style={{ color: '#8b5cf6', fontWeight: '700', fontSize: '1.1rem' }}>
+                {profile.rank_in_jahrgang}
+              </span>
+              <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                {' '}von{' '}
+              </span>
+              <span style={{ color: '#8b5cf6', fontWeight: '700', fontSize: '1.1rem' }}>
+                {profile.total_in_jahrgang}
+              </span>
+              <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                {' '}in deinem Jahrgang
+              </span>
+            </div>
+          )}
         </IonCardContent>
       </IonCard>
 

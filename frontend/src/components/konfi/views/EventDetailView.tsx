@@ -100,6 +100,11 @@ interface Timeslot {
   registered_count: number;
 }
 
+interface Participant {
+  id: number;
+  display_name: string;
+}
+
 const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) => {
   const pageRef = useRef<HTMLElement>(null);
   const { setSuccess, setError } = useApp();
@@ -110,6 +115,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [eventData, setEventData] = useState<Event | null>(null);
   const [hasExistingKonfirmation, setHasExistingKonfirmation] = useState(false);
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const handleUnregister = async (reason: string) => {
     if (!eventData || !reason.trim()) {
@@ -181,6 +187,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       // Check if user already has a konfirmation booked
       const hasKonfirmation = await checkExistingKonfirmation();
       setHasExistingKonfirmation(hasKonfirmation);
+
+      // Load participants (anonymized)
+      try {
+        const participantsResponse = await api.get(`/konfi/events/${eventId}/participants`);
+        setParticipants(participantsResponse.data || []);
+      } catch (err) {
+        console.error('Error loading participants:', err);
+        setParticipants([]);
+      }
 
     } catch (err) {
       setError('Fehler beim Laden der Event-Details');
@@ -797,6 +812,39 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonCard>
         )}
 
+        {/* Teilnehmer-Liste */}
+        {participants.length > 0 && (
+          <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
+            <IonCardContent>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                <IonIcon icon={people} style={{ fontSize: '1.2rem', color: '#34c759', marginRight: '8px' }} />
+                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600', color: '#333' }}>
+                  Angemeldete Teilnehmer:innen ({participants.length})
+                </h3>
+              </div>
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                {participants.map((participant) => (
+                  <IonChip
+                    key={participant.id}
+                    style={{
+                      margin: 0,
+                      backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                      border: '1px solid rgba(52, 199, 89, 0.3)'
+                    }}
+                  >
+                    <IonLabel style={{ color: '#2d7d46', fontWeight: '500' }}>
+                      {participant.display_name}
+                    </IonLabel>
+                  </IonChip>
+                ))}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        )}
 
         {/* Action Buttons - same width as admin cards */}
         <div style={{ padding: '16px', paddingBottom: '32px' }}>
