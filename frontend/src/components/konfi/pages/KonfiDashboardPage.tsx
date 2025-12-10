@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -6,13 +6,15 @@ import {
   IonTitle,
   IonContent,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  useIonModal
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
+import PointsHistoryModal from '../modals/PointsHistoryModal';
 
 interface DashboardData {
   konfi: {
@@ -77,6 +79,18 @@ const KonfiDashboardPage: React.FC = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [badgeStats, setBadgeStats] = useState<BadgeStats>({ totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 });
   const [loading, setLoading] = useState(true);
+  const pageRef = useRef<HTMLElement>(null);
+
+  // Points History Modal
+  const [presentPointsHistoryModal, dismissPointsHistoryModal] = useIonModal(PointsHistoryModal, {
+    onClose: () => dismissPointsHistoryModal()
+  });
+
+  const openPointsHistory = () => {
+    presentPointsHistoryModal({
+      presentingElement: pageRef.current || undefined
+    });
+  };
 
 
   // Memoized refresh function for live updates
@@ -240,16 +254,16 @@ const KonfiDashboardPage: React.FC = () => {
   const targetGemeinde = settings.target_gemeinde || 10;
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Konfi Quest</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent 
+      <IonContent
         fullscreen
-        style={{ 
+        style={{
           '--background': '#f8f9fa'
         }}
       >
@@ -260,7 +274,7 @@ const KonfiDashboardPage: React.FC = () => {
             </IonTitle>
           </IonToolbar>
         </IonHeader>
-        
+
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
@@ -272,6 +286,7 @@ const KonfiDashboardPage: React.FC = () => {
           upcomingEvents={upcomingEvents}
           targetGottesdienst={targetGottesdienst}
           targetGemeinde={targetGemeinde}
+          onOpenPointsHistory={openPointsHistory}
         />
       </IonContent>
     </IonPage>

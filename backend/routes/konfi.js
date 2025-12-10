@@ -443,18 +443,42 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       `;
       const { rows: bonusPoints } = await db.query(bonusQuery, [konfiId, orgId]);
 
+      // Get event points
+      const eventPointsQuery = `
+        SELECT
+          ep.id,
+          e.name as title,
+          ep.points,
+          ep.point_type as category,
+          ep.awarded_date as date,
+          ep.description as comment,
+          'event' as source_type
+        FROM event_points ep
+        JOIN events e ON ep.event_id = e.id
+        WHERE ep.konfi_id = $1 AND ep.organization_id = $2
+        ORDER BY ep.awarded_date DESC
+      `;
+      const { rows: eventPoints } = await db.query(eventPointsQuery, [konfiId, orgId]);
+
       // Combine and sort by date (newest first)
-      const allPoints = [...activities, ...bonusPoints].sort((a, b) => {
+      const allPoints = [...activities, ...bonusPoints, ...eventPoints].sort((a, b) => {
         const dateA = new Date(a.date || 0);
         const dateB = new Date(b.date || 0);
         return dateB - dateA;
       });
 
-      // Calculate totals
+      // Calculate totals (activities + event points per category)
+      const actGottesdienst = activities.filter(a => a.category === 'gottesdienst').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
+      const actGemeinde = activities.filter(a => a.category === 'gemeinde').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
+      const evtGottesdienst = eventPoints.filter(e => e.category === 'gottesdienst').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
+      const evtGemeinde = eventPoints.filter(e => e.category === 'gemeinde').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
+      const bonusTotal = bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0);
+
       const totals = {
-        gottesdienst: activities.filter(a => a.category === 'gottesdienst').reduce((sum, a) => sum + parseInt(a.points || 0), 0),
-        gemeinde: activities.filter(a => a.category === 'gemeinde').reduce((sum, a) => sum + parseInt(a.points || 0), 0),
-        bonus: bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0)
+        gottesdienst: actGottesdienst + evtGottesdienst,
+        gemeinde: actGemeinde + evtGemeinde,
+        bonus: bonusTotal,
+        event: eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0) // Separat fuer Anzeige
       };
       totals.total = totals.gottesdienst + totals.gemeinde + totals.bonus;
 

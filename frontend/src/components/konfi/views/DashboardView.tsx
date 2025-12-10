@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   IonProgressBar,
   IonAvatar,
-  IonIcon
+  IonIcon,
+  useIonAlert
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -200,6 +201,7 @@ interface DashboardViewProps {
   upcomingEvents: any[];
   targetGottesdienst: number;
   targetGemeinde: number;
+  onOpenPointsHistory?: () => void;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({
@@ -208,9 +210,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   badgeStats: _badgeStats,
   upcomingEvents,
   targetGottesdienst,
-  targetGemeinde
+  targetGemeinde,
+  onOpenPointsHistory
 }) => {
   const history = useHistory();
+  const [presentAlert] = useIonAlert();
   const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [showLosung, setShowLosung] = useState(true); // Wechselt bei jedem Reload
@@ -418,7 +422,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     return (
                       <div
                         key={level.id}
-                        title={`${level.title} (${level.points_required} Punkte)`}
+                        onClick={() => {
+                          presentAlert({
+                            header: level.title,
+                            message: `${level.name}${isReached ? ' - Erreicht!' : ''}\n\nBenoetigte Punkte: ${level.points_required}`,
+                            buttons: ['OK']
+                          });
+                        }}
                         style={{
                           width: '36px',
                           height: '36px',
@@ -436,7 +446,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             ? '2px solid rgba(255, 255, 255, 0.3)'
                             : '2px dashed rgba(255, 255, 255, 0.2)',
                           transition: 'all 0.3s ease',
-                          opacity: isReached ? 1 : 0.5
+                          opacity: isReached ? 1 : 0.5,
+                          cursor: 'pointer'
                         }}
                       >
                         <IonIcon
@@ -455,31 +466,36 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* Kombinierter Gesamtprogress */}
+          {/* Kombinierter Gesamtprogress - klickbar fuer Punkte-Historie */}
           {(targetGottesdienst > 0 || targetGemeinde > 0) && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
-              borderRadius: '16px',
-              padding: '16px'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'baseline', 
-                gap: '8px', 
+            <div
+              onClick={onOpenPointsHistory}
+              style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '16px',
+                padding: '16px',
+                cursor: onOpenPointsHistory ? 'pointer' : 'default',
+                transition: 'background 0.2s ease'
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '8px',
                 marginBottom: '12px',
                 justifyContent: 'center'
               }}>
-                <span style={{ 
-                  fontSize: '2.5rem', 
-                  fontWeight: '900', 
-                  color: 'white' 
+                <span style={{
+                  fontSize: '2.5rem',
+                  fontWeight: '900',
+                  color: 'white'
                 }}>
                   {totalCurrentPoints}
                 </span>
-                <span style={{ 
-                  fontSize: '1.5rem', 
-                  color: 'rgba(255, 255, 255, 0.7)' 
+                <span style={{
+                  fontSize: '1.5rem',
+                  color: 'rgba(255, 255, 255, 0.7)'
                 }}>
                   / {totalTarget}
                 </span>
