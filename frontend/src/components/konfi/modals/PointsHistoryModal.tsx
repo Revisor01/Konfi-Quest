@@ -312,35 +312,42 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
               </div>
             </div>
 
-            <IonCard style={{
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0',
-              margin: '0'
-            }}>
-              <IonCardContent style={{ padding: '0' }}>
-                {filteredHistory.length === 0 ? (
+            {filteredHistory.length === 0 ? (
+              <IonCard style={{
+                borderRadius: '12px',
+                background: 'white',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+                border: '1px solid #e0e0e0',
+                margin: '0'
+              }}>
+                <IonCardContent>
                   <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
                     Noch keine Einträge vorhanden
                   </div>
-                ) : (
-                  <div>
-                    {filteredHistory.map((entry, index) => {
-                      const color = getCategoryColor(entry.category, entry.source_type);
-                      return (
-                        <div
-                          key={`${entry.source_type}-${entry.id}`}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '14px 16px',
-                            gap: '12px',
-                            borderLeft: `4px solid ${color}`,
-                            borderBottom: index < filteredHistory.length - 1 ? '1px solid #e0e0e0' : 'none',
-                            background: '#fbfbfb'
-                          }}
-                        >
+                </IonCardContent>
+              </IonCard>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {filteredHistory.map((entry) => {
+                  const color = getCategoryColor(entry.category, entry.source_type);
+                  return (
+                    <IonCard
+                      key={`${entry.source_type}-${entry.id}`}
+                      style={{
+                        borderRadius: '12px',
+                        background: 'white',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                        border: '1px solid #e0e0e0',
+                        borderLeft: `4px solid ${color}`,
+                        margin: '0'
+                      }}
+                    >
+                      <IonCardContent style={{ padding: '12px 16px' }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}>
                           {/* Icon */}
                           <div style={{
                             width: '40px',
@@ -415,12 +422,12 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                             +{entry.points}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </IonCardContent>
-            </IonCard>
+                      </IonCardContent>
+                    </IonCard>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </IonContent>

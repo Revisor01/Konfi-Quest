@@ -481,19 +481,28 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         return dateB - dateA;
       });
 
-      // Calculate totals - nur Aktivitäten für Gottesdienst/Gemeinde, Events separat
-      const actGottesdienst = activities.filter(a => a.category === 'gottesdienst').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
-      const actGemeinde = activities.filter(a => a.category === 'gemeinde').reduce((sum, a) => sum + parseInt(a.points || 0), 0);
+      // Get konfi_profiles for accurate accumulated points (same as dashboard)
+      const { rows: [konfiProfile] } = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1 AND organization_id = $2',
+        [konfiId, orgId]
+      );
+
+      // Calculate bonus and event totals from individual entries
       const bonusTotal = bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0);
       const eventTotal = eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0);
 
+      // Use konfi_profiles as source of truth for GD/Gemeinde (includes event_points already)
+      // But event_points are ALSO in konfi_profiles, so we need to subtract them to show separately
+      const eventGD = eventPoints.filter(e => e.category === 'gottesdienst').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
+      const eventGemeinde = eventPoints.filter(e => e.category === 'gemeinde').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
+
       const totals = {
-        gottesdienst: actGottesdienst,
-        gemeinde: actGemeinde,
+        gottesdienst: (konfiProfile?.gottesdienst_points || 0) - eventGD,
+        gemeinde: (konfiProfile?.gemeinde_points || 0) - eventGemeinde,
         bonus: bonusTotal,
         event: eventTotal
       };
-      totals.total = totals.gottesdienst + totals.gemeinde + totals.bonus + totals.event;
+      totals.total = (konfiProfile?.gottesdienst_points || 0) + (konfiProfile?.gemeinde_points || 0) + bonusTotal;
 
       res.json({
         history: allPoints,
