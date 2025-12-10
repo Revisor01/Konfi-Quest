@@ -33,7 +33,12 @@
       "Bash(ls:*)",
       "Bash(scp:*)",
       "Bash(git restore:*)",
-      "Bash(npm run build:ios:*)"
+      "Bash(npm run build:ios:*)",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:designfornative.com)",
+      "WebFetch(domain:fatbobman.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []
