@@ -400,6 +400,75 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     }
   });
 
+  // Get konfi's points history (all activities, bonus points, events with dates)
+  router.get('/points-history', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi access required' });
+    }
+
+    try {
+      const konfiId = req.user.id;
+      const orgId = req.user.organization_id;
+
+      // Get activities (Gottesdienst & Gemeinde points)
+      const activitiesQuery = `
+        SELECT
+          ka.id,
+          a.name as title,
+          a.points,
+          a.type as category,
+          ka.completed_date as date,
+          ka.comment,
+          'activity' as source_type
+        FROM konfi_activities ka
+        JOIN activities a ON ka.activity_id = a.id
+        WHERE ka.konfi_id = $1 AND ka.organization_id = $2
+        ORDER BY ka.completed_date DESC
+      `;
+      const { rows: activities } = await db.query(activitiesQuery, [konfiId, orgId]);
+
+      // Get bonus points
+      const bonusQuery = `
+        SELECT
+          id,
+          description as title,
+          points,
+          type as category,
+          completed_date as date,
+          NULL as comment,
+          'bonus' as source_type
+        FROM bonus_points
+        WHERE konfi_id = $1 AND organization_id = $2
+        ORDER BY completed_date DESC
+      `;
+      const { rows: bonusPoints } = await db.query(bonusQuery, [konfiId, orgId]);
+
+      // Combine and sort by date (newest first)
+      const allPoints = [...activities, ...bonusPoints].sort((a, b) => {
+        const dateA = new Date(a.date || 0);
+        const dateB = new Date(b.date || 0);
+        return dateB - dateA;
+      });
+
+      // Calculate totals
+      const totals = {
+        gottesdienst: activities.filter(a => a.category === 'gottesdienst').reduce((sum, a) => sum + parseInt(a.points || 0), 0),
+        gemeinde: activities.filter(a => a.category === 'gemeinde').reduce((sum, a) => sum + parseInt(a.points || 0), 0),
+        bonus: bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0)
+      };
+      totals.total = totals.gottesdienst + totals.gemeinde + totals.bonus;
+
+      res.json({
+        history: allPoints,
+        totals
+      });
+
+    } catch (err) {
+      console.error('Database error in GET /points-history:', err);
+      res.status(500).json({ error: 'Database error' });
+    }
+  });
+
   // Get konfi's activity requests
   router.get('/requests', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {

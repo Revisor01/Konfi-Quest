@@ -23,18 +23,19 @@ import {
   trophy,
   flash,
   logOut,
-  create,
   checkmark,
   rocket,
   key,
   book,
-  location
+  location,
+  chevronForward
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
+import PointsHistoryModal from '../modals/PointsHistoryModal';
 
 interface KonfiProfile {
   id: number;
@@ -186,6 +187,11 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onSuccess: () => {
       dismissPasswordModal();
     }
+  });
+
+  // Modal with useIonModal Hook for Points History
+  const [presentPointsHistoryModal, dismissPointsHistoryModal] = useIonModal(PointsHistoryModal, {
+    onClose: () => dismissPointsHistoryModal()
   });
 
   const getInitials = (name: string | undefined) => {
@@ -420,13 +426,20 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       </IonCard>
 
       {/* Punkte-Übersicht Card */}
-      <IonCard style={{ margin: '16px', borderRadius: '12px' }}>
+      <IonCard
+        button
+        onClick={() => presentPointsHistoryModal({ presentingElement: presentingElement || undefined })}
+        style={{ margin: '16px', borderRadius: '12px', cursor: 'pointer' }}
+      >
         <IonCardContent>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-            <IonIcon icon={star} style={{ fontSize: '1.2rem', color: '#ffd700', marginRight: '8px' }} />
-            <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
-              Punkte-Übersicht
-            </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <IonIcon icon={star} style={{ fontSize: '1.2rem', color: '#ffd700', marginRight: '8px' }} />
+              <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600' }}>
+                Punkte-Übersicht
+              </h3>
+            </div>
+            <IonIcon icon={chevronForward} style={{ fontSize: '1.2rem', color: '#999' }} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -711,95 +724,206 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       )}
 
-      {/* Account Settings */}
-      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
-        <IonCardContent>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
+      {/* Account Settings - Styled like AdminSettingsPage */}
+      <div style={{ margin: '16px 16px 8px 16px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '12px'
+        }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            backgroundColor: '#667eea',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+            flexShrink: 0
+          }}>
+            <IonIcon icon={person} style={{ fontSize: '1rem', color: 'white' }} />
+          </div>
+          <h2 style={{
+            fontWeight: '600',
+            fontSize: '1.1rem',
+            margin: '0',
+            color: '#333'
+          }}>
             Konto-Einstellungen
-          </h3>
-          
-          <IonItem button onClick={() => {
-            presentEmailModal({
-              presentingElement: presentingElement || undefined
-            });
-          }}>
-            <IonIcon icon={person} slot="start" color="primary" />
-            <IonLabel>
-              <h3>E-Mail-Adresse ändern</h3>
-              <p>{user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen'}</p>
-            </IonLabel>
-            <IonIcon icon={create} slot="end" style={{ color: '#ccc' }} />
-          </IonItem>
+          </h2>
+        </div>
+        <IonCard style={{
+          borderRadius: '12px',
+          background: 'white',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0',
+          margin: '0'
+        }}>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }} lines="none">
+              {/* E-Mail aendern */}
+              <IonItem
+                button
+                onClick={() => {
+                  presentEmailModal({
+                    presentingElement: presentingElement || undefined
+                  });
+                }}
+                lines="none"
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <div slot="start" style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#3b82f6',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}>
+                  <IonIcon icon={person} style={{ fontSize: '1.2rem', color: 'white' }} />
+                </div>
+                <IonLabel>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>E-Mail-Adresse</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                    {user?.email ? `${user.email}` : 'Fuer Benachrichtigungen'}
+                  </p>
+                </IonLabel>
+              </IonItem>
 
-          <IonItem button onClick={() => {
-            presentPasswordModal({
-              presentingElement: presentingElement || undefined
-            });
-          }}>
-            <IonIcon icon={key} slot="start" color="warning" />
-            <IonLabel>
-              <h3>Passwort ändern</h3>
-              <p>Sicherheitseinstellungen</p>
-            </IonLabel>
-            <IonIcon icon={create} slot="end" style={{ color: '#ccc' }} />
-          </IonItem>
+              {/* Passwort aendern */}
+              <IonItem
+                button
+                onClick={() => {
+                  presentPasswordModal({
+                    presentingElement: presentingElement || undefined
+                  });
+                }}
+                lines="none"
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <div slot="start" style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#f59e0b',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}>
+                  <IonIcon icon={key} style={{ fontSize: '1.2rem', color: 'white' }} />
+                </div>
+                <IonLabel>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Passwort aendern</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>Sicherheitseinstellungen</p>
+                </IonLabel>
+              </IonItem>
 
-          <IonItem button onClick={() => {
-            presentActionSheet({
-              header: 'Bibelübersetzung wählen',
-              subHeader: 'Für die Tageslosung',
-              buttons: [
-                {
-                  text: 'Lutherbibel 2017',
-                  role: selectedTranslation === 'LUT' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('LUT')
-                },
-                {
-                  text: 'Elberfelder Bibel',
-                  role: selectedTranslation === 'ELB' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('ELB')
-                },
-                {
-                  text: 'Gute Nachricht Bibel',
-                  role: selectedTranslation === 'GNB' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('GNB')
-                },
-                {
-                  text: 'Bibel in gerechter Sprache',
-                  role: selectedTranslation === 'BIGS' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('BIGS')
-                },
-                {
-                  text: 'New International Version',
-                  role: selectedTranslation === 'NIV' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('NIV')
-                },
-                {
-                  text: 'Louis Segond 1910',
-                  role: selectedTranslation === 'LSG' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('LSG')
-                },
-                {
-                  text: 'Reina-Valera 1960',
-                  role: selectedTranslation === 'RVR60' ? 'selected' : undefined,
-                  handler: () => handleTranslationChange('RVR60')
-                },
-                {
-                  text: 'Abbrechen',
-                  role: 'cancel'
-                }
-              ]
-            });
-          }}>
-            <IonIcon icon={book} slot="start" color="tertiary" />
-            <IonLabel>
-              <h3>Bibelübersetzung</h3>
-              <p>{getTranslationName(selectedTranslation)}</p>
-            </IonLabel>
-            <IonIcon icon={create} slot="end" style={{ color: '#ccc' }} />
-          </IonItem>
-        </IonCardContent>
-      </IonCard>
+              {/* Bibeluebersetzung */}
+              <IonItem
+                button
+                onClick={() => {
+                  presentActionSheet({
+                    header: 'Bibeluebersetzung waehlen',
+                    subHeader: 'Fuer die Tageslosung',
+                    buttons: [
+                      {
+                        text: 'Lutherbibel 2017',
+                        role: selectedTranslation === 'LUT' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('LUT')
+                      },
+                      {
+                        text: 'Elberfelder Bibel',
+                        role: selectedTranslation === 'ELB' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('ELB')
+                      },
+                      {
+                        text: 'Gute Nachricht Bibel',
+                        role: selectedTranslation === 'GNB' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('GNB')
+                      },
+                      {
+                        text: 'Bibel in gerechter Sprache',
+                        role: selectedTranslation === 'BIGS' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('BIGS')
+                      },
+                      {
+                        text: 'New International Version',
+                        role: selectedTranslation === 'NIV' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('NIV')
+                      },
+                      {
+                        text: 'Louis Segond 1910',
+                        role: selectedTranslation === 'LSG' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('LSG')
+                      },
+                      {
+                        text: 'Reina-Valera 1960',
+                        role: selectedTranslation === 'RVR60' ? 'selected' : undefined,
+                        handler: () => handleTranslationChange('RVR60')
+                      },
+                      {
+                        text: 'Abbrechen',
+                        role: 'cancel'
+                      }
+                    ]
+                  });
+                }}
+                lines="none"
+                style={{
+                  '--min-height': '56px',
+                  '--padding-start': '16px',
+                  '--background': '#fbfbfb',
+                  '--border-radius': '12px',
+                  margin: '6px 0',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '12px'
+                }}
+              >
+                <div slot="start" style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: '#8b5cf6',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '12px'
+                }}>
+                  <IonIcon icon={book} style={{ fontSize: '1.2rem', color: 'white' }} />
+                </div>
+                <IonLabel>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Bibeluebersetzung</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666' }}>{getTranslationName(selectedTranslation)}</p>
+                </IonLabel>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </div>
 
       {/* Logout */}
       <IonCard style={{ margin: '16px 16px 32px 16px', borderRadius: '8px' }}>
