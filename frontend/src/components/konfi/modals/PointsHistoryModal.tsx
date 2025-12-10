@@ -400,16 +400,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                                 {formatDate(entry.date)}
                               </span>
                             </div>
-                            {entry.comment && (
-                              <div style={{
-                                marginTop: '4px',
-                                fontSize: '0.75rem',
-                                color: '#888',
-                                fontStyle: 'italic'
-                              }}>
-                                {entry.comment}
-                              </div>
-                            )}
                           </div>
 
                           {/* Points */}
