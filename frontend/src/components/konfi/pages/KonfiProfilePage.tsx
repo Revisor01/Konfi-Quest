@@ -67,8 +67,8 @@ interface ProgressOverview {
 
 const KonfiProfilePage: React.FC = () => {
   const { setError } = useApp();
-  const { pageRef } = useModalPage('profile');
-  
+  const { pageRef, presentingElement } = useModalPage('profile');
+
   const [profile, setProfile] = useState<KonfiProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -136,7 +136,7 @@ const KonfiProfilePage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        <ProfileView profile={profile} onReload={loadProfile} />
+        <ProfileView profile={profile} onReload={loadProfile} presentingElement={presentingElement || null} />
       </IonContent>
     </IonPage>
   );

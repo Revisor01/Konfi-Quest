@@ -31,7 +31,6 @@ import {
   location
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
@@ -91,14 +90,14 @@ interface ProgressOverview {
 interface ProfileViewProps {
   profile: KonfiProfile;
   onReload: () => void;
+  presentingElement: HTMLElement | null;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement }) => {
   const { user, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
-  const { pageRef, presentingElement } = useModalPage('profile');
-  
+
   const [selectedTranslation, setSelectedTranslation] = useState<string>(profile.bible_translation || 'LUT');
   const [earnedBadgesCount, setEarnedBadgesCount] = useState<number>(0);
   
@@ -612,7 +611,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
           
           <IonItem button onClick={() => {
             presentEmailModal({
-              presentingElement: presentingElement
+              presentingElement: presentingElement || undefined
             });
           }}>
             <IonIcon icon={person} slot="start" color="primary" />
@@ -625,7 +624,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload }) => {
 
           <IonItem button onClick={() => {
             presentPasswordModal({
-              presentingElement: presentingElement
+              presentingElement: presentingElement || undefined
             });
           }}>
             <IonIcon icon={key} slot="start" color="warning" />

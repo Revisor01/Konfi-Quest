@@ -7,13 +7,10 @@ import {
   IonContent,
   IonCard,
   IonCardContent,
-  IonItem,
-  IonLabel,
   IonIcon,
   IonButton,
   IonButtons,
   IonInput,
-  IonList,
   IonSpinner,
   IonText
 } from '@ionic/react';
@@ -143,26 +140,52 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#f59e0b', marginRight: '12px' }} />
-                <IonLabel position="stacked">Aktuelles Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.current ? 'text' : 'password'}
-                  value={passwordData.current_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
-                  placeholder="Aktuelles Passwort eingeben"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                >
-                  <IonIcon icon={showPasswords.current ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
-            </IonList>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <IonIcon icon={keyOutline} style={{ color: '#f59e0b', fontSize: '1.3rem', marginTop: '12px' }} />
+              <div style={{ flex: 1 }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: '#666',
+                  marginBottom: '8px',
+                  fontWeight: '500'
+                }}>
+                  Aktuelles Passwort *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <IonInput
+                    type={showPasswords.current ? 'text' : 'password'}
+                    value={passwordData.current_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
+                    placeholder="Aktuelles Passwort eingeben"
+                    disabled={saving}
+                    fill="outline"
+                    style={{
+                      '--background': 'white',
+                      '--padding-start': '12px',
+                      '--padding-end': '48px',
+                      '--border-radius': '8px'
+                    }}
+                  />
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                    style={{
+                      position: 'absolute',
+                      right: '4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      '--padding-start': '8px',
+                      '--padding-end': '8px',
+                      margin: 0
+                    }}
+                  >
+                    <IonIcon icon={showPasswords.current ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </div>
+              </div>
+            </div>
           </IonCardContent>
         </IonCard>
 
@@ -204,45 +227,101 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#22c55e', marginRight: '12px' }} />
-                <IonLabel position="stacked">Neues Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.new ? 'text' : 'password'}
-                  value={passwordData.new_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
-                  placeholder="Neues Passwort eingeben"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                >
-                  <IonIcon icon={showPasswords.new ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
+            {/* Neues Passwort */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+              <IonIcon icon={keyOutline} style={{ color: '#22c55e', fontSize: '1.3rem', marginTop: '12px' }} />
+              <div style={{ flex: 1 }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: '#666',
+                  marginBottom: '8px',
+                  fontWeight: '500'
+                }}>
+                  Neues Passwort *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <IonInput
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={passwordData.new_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
+                    placeholder="Neues Passwort eingeben"
+                    disabled={saving}
+                    fill="outline"
+                    style={{
+                      '--background': 'white',
+                      '--padding-start': '12px',
+                      '--padding-end': '48px',
+                      '--border-radius': '8px'
+                    }}
+                  />
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                    style={{
+                      position: 'absolute',
+                      right: '4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      '--padding-start': '8px',
+                      '--padding-end': '8px',
+                      margin: 0
+                    }}
+                  >
+                    <IonIcon icon={showPasswords.new ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </div>
+              </div>
+            </div>
 
-              <IonItem style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#22c55e', marginRight: '12px' }} />
-                <IonLabel position="stacked">Neues Passwort bestätigen *</IonLabel>
-                <IonInput
-                  type={showPasswords.confirm ? 'text' : 'password'}
-                  value={passwordData.confirm_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
-                  placeholder="Neues Passwort bestätigen"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                >
-                  <IonIcon icon={showPasswords.confirm ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
-            </IonList>
+            {/* Passwort bestätigen */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <IonIcon icon={keyOutline} style={{ color: '#22c55e', fontSize: '1.3rem', marginTop: '12px' }} />
+              <div style={{ flex: 1 }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: '#666',
+                  marginBottom: '8px',
+                  fontWeight: '500'
+                }}>
+                  Neues Passwort bestätigen *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <IonInput
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={passwordData.confirm_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
+                    placeholder="Neues Passwort bestätigen"
+                    disabled={saving}
+                    fill="outline"
+                    style={{
+                      '--background': 'white',
+                      '--padding-start': '12px',
+                      '--padding-end': '48px',
+                      '--border-radius': '8px'
+                    }}
+                  />
+                  <IonButton
+                    fill="clear"
+                    size="small"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                    style={{
+                      position: 'absolute',
+                      right: '4px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      '--padding-start': '8px',
+                      '--padding-end': '8px',
+                      margin: 0
+                    }}
+                  >
+                    <IonIcon icon={showPasswords.confirm ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </div>
+              </div>
+            </div>
           </IonCardContent>
         </IonCard>
 

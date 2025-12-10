@@ -7,13 +7,10 @@ import {
   IonContent,
   IonCard,
   IonCardContent,
-  IonItem,
-  IonLabel,
   IonIcon,
   IonButton,
   IonButtons,
   IonInput,
-  IonList,
   IonSpinner,
   IonText
 } from '@ionic/react';
@@ -122,19 +119,34 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           border: '1px solid #e0e0e0'
         }}>
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': 'transparent' }}>
-                <IonIcon icon={mailOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
-                <IonLabel position="stacked">E-Mail-Adresse (optional)</IonLabel>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <IonIcon icon={mailOutline} style={{ color: '#667eea', fontSize: '1.3rem', marginTop: '12px' }} />
+              <div style={{ flex: 1 }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: '#666',
+                  marginBottom: '8px',
+                  fontWeight: '500'
+                }}>
+                  E-Mail-Adresse (optional)
+                </label>
                 <IonInput
                   type="email"
                   value={email}
                   onIonInput={(e) => setEmail(e.detail.value!)}
                   placeholder="deine@email.de"
                   disabled={saving}
+                  fill="outline"
+                  style={{
+                    '--background': 'white',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    '--border-radius': '8px'
+                  }}
                 />
-              </IonItem>
-            </IonList>
+              </div>
+            </div>
           </IonCardContent>
         </IonCard>
 
