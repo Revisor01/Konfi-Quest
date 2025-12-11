@@ -23,7 +23,10 @@ import {
   closeOutline,
   checkmarkOutline,
   person,
-  search
+  search,
+  chatbubbles,
+  peopleOutline,
+  filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
@@ -408,25 +411,37 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             )}
           </div>
 
-          {/* Segment für Admin */}
+          {/* Segment für Admin - in IonList für gleiche Breite */}
           {isAdmin && (
-            <IonSegment
-              value={chatType}
-              onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
-            >
-              <IonSegmentButton value="direct">
-                <IonLabel>Direktnachricht</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="group">
-                <IonLabel>Gruppenchat</IonLabel>
-              </IonSegmentButton>
-            </IonSegment>
+            <IonList inset={true}>
+              <IonListHeader>
+                <IonIcon icon={chatbubbles} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
+                <IonLabel>Chat-Typ</IonLabel>
+              </IonListHeader>
+              <IonItemGroup>
+                <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                  <IonSegment
+                    value={chatType}
+                    onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
+                    style={{ width: '100%' }}
+                  >
+                    <IonSegmentButton value="direct">
+                      <IonLabel>Direktnachricht</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="group">
+                      <IonLabel>Gruppenchat</IonLabel>
+                    </IonSegmentButton>
+                  </IonSegment>
+                </IonItem>
+              </IonItemGroup>
+            </IonList>
           )}
 
           {/* Gruppenname Input für Group Chat - iOS26 Pattern */}
           {chatType === 'group' && (
             <IonList inset={true}>
               <IonListHeader>
+                <IonIcon icon={peopleOutline} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
                 <IonLabel>Gruppenname</IonLabel>
               </IonListHeader>
               <IonItemGroup>
@@ -446,6 +461,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {/* Filter mit Suche - iOS26 Pattern */}
           <IonList inset={true}>
             <IonListHeader>
+              <IonIcon icon={filterOutline} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
             <IonItemGroup>

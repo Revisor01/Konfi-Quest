@@ -248,7 +248,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       // Typ-Filter
       if (filterType === 'alle') return true;
       if (filterType === 'direkt') return room.type === 'direct';
-      if (filterType === 'gruppe') return room.type === 'group' || room.type === 'jahrgang' || room.type === 'admin';
+      if (filterType === 'gruppe') return room.type === 'group' || room.type === 'admin';
+      if (filterType === 'jahrgang') return room.type === 'jahrgang';
       return true;
     })
     .sort((a, b) => {
@@ -493,6 +494,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         {/* Suche & Filter - iOS26 Pattern wie im Modal */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
+            <IonIcon icon={search} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
           <IonItemGroup>
@@ -513,19 +515,27 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               />
             </IonItem>
             {/* Filter */}
-            <IonItem>
-              <IonSelect
-                value={filterType}
-                onIonChange={(e) => setFilterType(e.detail.value!)}
-                placeholder="Alle Chats"
-                interface="popover"
-                fill="solid"
-                style={{ width: '100%' }}
-              >
-                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                <IonSelectOption value="direkt">Direktnachrichten</IonSelectOption>
-                <IonSelectOption value="gruppe">Gruppenchats</IonSelectOption>
-              </IonSelect>
+            <IonItem lines="none">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                <IonSelect
+                  value={filterType}
+                  onIonChange={(e) => setFilterType(e.detail.value!)}
+                  placeholder="Alle Chats"
+                  interface="popover"
+                  style={{
+                    '--background': '#f2f2f7',
+                    '--border-radius': '8px',
+                    '--padding-start': '12px',
+                    '--padding-end': '12px',
+                    minWidth: '160px'
+                  }}
+                >
+                  <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                  <IonSelectOption value="direkt">Direktnachrichten</IonSelectOption>
+                  <IonSelectOption value="gruppe">Gruppenchats</IonSelectOption>
+                  <IonSelectOption value="jahrgang">Jahrgangschats</IonSelectOption>
+                </IonSelect>
+              </div>
             </IonItem>
           </IonItemGroup>
         </IonList>
@@ -550,8 +560,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                   <p style={{ color: '#999', margin: '0' }}>Erstelle deinen ersten Chat!</p>
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {filteredRooms.map((room) => {
+                <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
+                  {filteredRooms.map((room, index) => {
                     const color = room.type === 'admin' ? '#17a2b8' :
                                   room.type === 'jahrgang' ? '#06b6d4' :
                                   room.type === 'group' ? '#2dd36f' : '#ff6b35';
@@ -559,7 +569,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 
                     return (
-                      <IonItemSliding key={room.id} disabled={!canDelete}>
+                      <IonItemSliding key={room.id} disabled={!canDelete} style={{ marginBottom: index < filteredRooms.length - 1 ? '8px' : '0' }}>
                         <IonItem
                           onClick={() => onSelectRoom(room)}
                           lines="none"
@@ -575,8 +585,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                             border: '1px solid #e0e0e0',
                             borderLeft: `4px solid ${color}`,
-                            borderRadius: '12px',
-                            overflow: 'hidden'
+                            borderRadius: '12px'
                           }}
                         >
                           <div style={{ padding: '12px 16px', width: '100%' }}>
@@ -677,30 +686,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   </div>
                                 )}
                               </div>
-
-                              {/* Löschen-Button für Admins */}
-                              {canDelete && (
-                                <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteRoom(room);
-                                  }}
-                                  style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    backgroundColor: '#dc354520',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
-                                    marginLeft: '8px'
-                                  }}
-                                >
-                                  <IonIcon icon={trash} style={{ fontSize: '0.9rem', color: '#dc3545' }} />
-                                </div>
-                              )}
                             </div>
                           </div>
                         </IonItem>
