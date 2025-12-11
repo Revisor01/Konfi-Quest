@@ -677,6 +677,30 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   </div>
                                 )}
                               </div>
+
+                              {/* Löschen-Button für Admins */}
+                              {canDelete && (
+                                <div
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteRoom(room);
+                                  }}
+                                  style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    backgroundColor: '#dc354520',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    flexShrink: 0,
+                                    marginLeft: '8px'
+                                  }}
+                                >
+                                  <IonIcon icon={trash} style={{ fontSize: '0.9rem', color: '#dc3545' }} />
+                                </div>
+                              )}
                             </div>
                           </div>
                         </IonItem>

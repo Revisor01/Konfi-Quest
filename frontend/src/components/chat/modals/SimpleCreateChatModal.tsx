@@ -192,8 +192,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               name: admin.display_name || admin.name,
               display_name: admin.display_name || admin.name,
               type: 'admin' as const,
-              role_name: admin.role_display_name || admin.role_name,
-              role_description: admin.role_description
+              // Funktionsbeschreibung (role_title) hat Priorität, dann Rollenname
+              role_description: admin.role_title || admin.role_display_name || admin.role_name
             }));
         } catch (err) {
           console.log('Could not load admins for chat:', err);
@@ -589,7 +589,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                   color: color
                                 }}>
                                   {targetUser.type === 'admin'
-                                    ? (targetUser.role_description || targetUser.role_name || 'Admin')
+                                    ? (targetUser.role_description || 'Admin')
                                     : 'Konfi'}
                                 </span>
                                 {targetUser.type === 'konfi' && (targetUser.jahrgang_name || targetUser.jahrgang) && (
