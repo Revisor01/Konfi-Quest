@@ -411,18 +411,35 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             )}
           </div>
 
-          {/* Segment für Admin - zentriert */}
+          {/* Segment für Admin - kompakt und zentriert */}
           {isAdmin && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <IonSegment
                 value={chatType}
                 onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
+                style={{
+                  '--background': 'rgba(6, 182, 212, 0.1)',
+                  maxWidth: '280px',
+                  borderRadius: '8px'
+                }}
               >
-                <IonSegmentButton value="direct">
-                  <IonLabel>Direktnachricht</IonLabel>
+                <IonSegmentButton value="direct" style={{
+                  '--indicator-color': '#06b6d4',
+                  '--color-checked': 'white',
+                  '--color': '#06b6d4',
+                  fontSize: '0.85rem',
+                  minHeight: '36px'
+                }}>
+                  <IonLabel>Direkt</IonLabel>
                 </IonSegmentButton>
-                <IonSegmentButton value="group">
-                  <IonLabel>Gruppenchat</IonLabel>
+                <IonSegmentButton value="group" style={{
+                  '--indicator-color': '#06b6d4',
+                  '--color-checked': 'white',
+                  '--color': '#06b6d4',
+                  fontSize: '0.85rem',
+                  minHeight: '36px'
+                }}>
+                  <IonLabel>Gruppe</IonLabel>
                 </IonSegmentButton>
               </IonSegment>
             </div>
@@ -547,7 +564,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
-                      const color = targetUser.type === 'admin' ? '#17a2b8' : '#ff6b35';
+                      const color = targetUser.type === 'admin' ? '#0891b2' : '#06b6d4';
 
                       return (
                         <div

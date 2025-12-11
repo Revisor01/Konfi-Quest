@@ -1238,11 +1238,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             width: '32px',
             height: '32px',
             marginRight: '8px',
-            backgroundColor: '#17a2b8'
+            backgroundColor: '#06b6d4'
           }}>
-            <div style={{ 
-              color: 'white', 
-              fontSize: '0.8rem', 
+            <div style={{
+              color: 'white',
+              fontSize: '0.8rem',
               fontWeight: 'bold',
               display: 'flex',
               alignItems: 'center',
@@ -1254,15 +1254,18 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           </IonAvatar>
         )}
         
-        <div 
+        <div
           style={{
             maxWidth: '70%',
-            backgroundColor: isOwnMessage ? '#17a2b8' : '#e9ecef',
-            color: isOwnMessage ? 'white' : 'black',
-            borderRadius: '16px',
-            padding: '12px',
+            backgroundColor: isOwnMessage ? '#06b6d4' : '#f8f9fa',
+            color: isOwnMessage ? 'white' : '#1a1a1a',
+            borderRadius: '18px',
+            padding: '10px 14px',
             position: 'relative',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            boxShadow: isOwnMessage
+              ? '0 2px 8px rgba(6, 182, 212, 0.25)'
+              : '0 1px 4px rgba(0,0,0,0.08)'
           }}
           onContextMenu={(e) => {
             e.preventDefault();
@@ -1288,16 +1291,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           {!isOwnMessage && room.type !== 'direct' && (
             <div style={{
               fontSize: '0.75rem',
-              fontWeight: 'bold',
+              fontWeight: '600',
               marginBottom: '4px',
-              color: '#17a2b8'
+              color: '#06b6d4'
             }}>
               {message.sender_name || 'Unbekannter User'}
               {(message.sender_role_title || message.sender_role_display_name) && (
                 <span style={{
                   fontWeight: 'normal',
-                  color: '#6c757d',
-                  marginLeft: '6px'
+                  color: '#8e8e93',
+                  marginLeft: '6px',
+                  fontSize: '0.7rem'
                 }}>
                   ({message.sender_role_title || message.sender_role_display_name})
                 </span>
@@ -1314,7 +1318,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 if (replyElement) {
                   replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   // Kurz hervorheben
-                  replyElement.style.backgroundColor = 'rgba(23, 162, 184, 0.2)';
+                  replyElement.style.backgroundColor = 'rgba(6, 182, 212, 0.15)';
                   setTimeout(() => {
                     replyElement.style.backgroundColor = '';
                   }, 1500);
@@ -1323,16 +1327,16 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               style={{
                 padding: '6px 10px',
                 marginBottom: '6px',
-                backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)',
+                backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(6, 182, 212, 0.08)',
                 borderRadius: '8px',
-                borderLeft: `3px solid ${isOwnMessage ? 'rgba(255,255,255,0.5)' : '#17a2b8'}`,
+                borderLeft: `3px solid ${isOwnMessage ? 'rgba(255,255,255,0.5)' : '#06b6d4'}`,
                 cursor: 'pointer'
               }}
             >
               <div style={{
                 fontSize: '0.7rem',
                 fontWeight: '600',
-                color: isOwnMessage ? 'rgba(255,255,255,0.9)' : '#17a2b8',
+                color: isOwnMessage ? 'rgba(255,255,255,0.9)' : '#06b6d4',
                 marginBottom: '2px'
               }}>
                 {message.reply_to_sender_name}
@@ -1832,29 +1836,30 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       display: 'flex',
                       alignItems: 'center',
                       gap: '3px',
-                      padding: '2px 6px',
+                      padding: '3px 8px',
                       borderRadius: '12px',
                       backgroundColor: userHasReacted
-                        ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(23, 162, 184, 0.15)')
-                        : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'),
+                        ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.12)')
+                        : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)'),
                       border: userHasReacted
-                        ? `1px solid ${emojiData?.color || '#17a2b8'}`
+                        ? `1.5px solid ${emojiData?.color || '#06b6d4'}`
                         : '1px solid transparent',
                       cursor: 'pointer',
-                      fontSize: '0.75rem'
+                      fontSize: '0.75rem',
+                      transition: 'all 0.2s ease'
                     }}
                     title={reactions.map(r => r.user_name).join(', ')}
                   >
                     <IonIcon
                       icon={userHasReacted ? emojiData?.filled : emojiData?.outline}
                       style={{
-                        fontSize: '0.85rem',
-                        color: emojiData?.color || '#666'
+                        fontSize: '0.9rem',
+                        color: emojiData?.color || '#06b6d4'
                       }}
                     />
                     <span style={{
-                      fontWeight: userHasReacted ? '600' : '400',
-                      color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                      fontWeight: userHasReacted ? '600' : '500',
+                      color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)'
                     }}>
                       {reactions.length}
                     </span>
@@ -1904,98 +1909,22 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         </div>
       </IonContent>
 
-      {/* File Preview außerhalb des Footers für bessere Sichtbarkeit */}
-      {selectedFile && (
-        <div style={{
-          position: 'fixed',
-          bottom: '80px', // Oberhalb des Footers
-          left: '16px',
-          right: '16px',
-          backgroundColor: 'var(--ion-color-light-shade, #f8f9fa)',
-          border: '1px solid var(--ion-color-step-150, #e0e0e0)',
-          borderRadius: '12px',
-          padding: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          zIndex: 1000,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.15)'
-        }}>
-          {/* Image Preview or File Icon */}
-          {selectedFilePreview ? (
-            <div style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              flexShrink: 0
-            }}>
-              <img
-                src={selectedFilePreview}
-                alt="Preview"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '8px',
-              backgroundColor: '#e0e0e0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <IonIcon icon={attach} style={{ fontSize: '1.5rem', color: '#666' }} />
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              color: '#333',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {selectedFile.name}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#666' }}>
-              {formatFileSize(selectedFile.size)}
-            </div>
-          </div>
-          <IonButton
-            fill="clear"
-            size="small"
-            color="danger"
-            onClick={clearSelectedFile}
-            style={{ '--padding-start': '8px', '--padding-end': '8px' }}
-          >
-            <IonIcon icon={trash} />
-          </IonButton>
-        </div>
-      )}
 
-      <IonFooter>
+      <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
         {/* Reply Preview */}
         {replyToMessage && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
             padding: '8px 16px',
-            backgroundColor: 'var(--ion-color-light)',
-            borderTop: '1px solid var(--ion-color-light-shade)',
-            borderLeft: '3px solid var(--ion-color-primary)',
+            backgroundColor: 'rgba(6, 182, 212, 0.08)',
+            borderTop: '1px solid rgba(6, 182, 212, 0.15)',
+            borderLeft: '3px solid #06b6d4',
             gap: '8px'
           }}>
-            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'var(--ion-color-primary)' }} />
+            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: '#06b6d4' }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: '600', fontSize: '0.8rem', color: 'var(--ion-color-primary)' }}>
+              <div style={{ fontWeight: '600', fontSize: '0.8rem', color: '#06b6d4' }}>
                 {replyToMessage.sender_name}
               </div>
               <div style={{
@@ -2020,65 +1949,149 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               onClick={() => setReplyToMessage(null)}
               style={{ '--padding-start': '4px', '--padding-end': '4px' }}
             >
-              <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#999' }} />
+              <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#8e8e93' }} />
             </IonButton>
           </div>
         )}
-        <IonToolbar style={{
-          '--min-height': 'auto', // Damit es sich an den Inhalt anpasst
-          '--padding-start': '16px',
-          '--padding-end': '16px'
-        }}>
-          {/* Dieses DIV ist der Flex-Container für Input und Buttons */}
+
+        {/* File Preview - direkt an Input angehängt wie Reply */}
+        {selectedFile && (
           <div style={{
             display: 'flex',
-            alignItems: 'flex-end', // Aligns items to the bottom, useful for autoGrow textarea
-            gap: '8px',
-            width: '100%' // Wichtig, damit es die volle Breite einnimmt
+            alignItems: 'center',
+            padding: '10px 16px',
+            backgroundColor: 'rgba(6, 182, 212, 0.06)',
+            borderTop: '1px solid rgba(6, 182, 212, 0.12)',
+            borderLeft: '3px solid #06b6d4',
+            gap: '10px'
           }}>
+            {/* Image Preview or File Icon */}
+            {selectedFilePreview ? (
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                flexShrink: 0,
+                border: '2px solid #06b6d4'
+              }}>
+                <img
+                  src={selectedFilePreview}
+                  alt="Preview"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <IonIcon icon={attach} style={{ fontSize: '1.4rem', color: '#06b6d4' }} />
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontWeight: '600',
+                fontSize: '0.9rem',
+                color: '#1a1a1a',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {selectedFile.name}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#06b6d4', fontWeight: '500' }}>
+                {formatFileSize(selectedFile.size)}
+              </div>
+            </div>
+            <IonButton
+              fill="clear"
+              size="small"
+              onClick={clearSelectedFile}
+              style={{ '--padding-start': '6px', '--padding-end': '6px' }}
+            >
+              <IonIcon icon={closeCircle} style={{ fontSize: '1.4rem', color: '#8e8e93' }} />
+            </IonButton>
+          </div>
+        )}
 
+        <IonToolbar style={{
+          '--background': 'transparent',
+          '--min-height': 'auto',
+          '--padding-start': '12px',
+          '--padding-end': '12px',
+          '--padding-top': '8px',
+          '--padding-bottom': '8px'
+        }}>
+          {/* Flex-Container für Input und Buttons */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: '8px',
+            width: '100%'
+          }}>
             <IonButton
               fill="clear"
               size="small"
               onClick={() => fileInputRef.current?.click()}
               style={{
-                '--padding-start': '0',
-                '--padding-end': '0',
-                fontSize: '20px' // Attach Icon größer machen
+                '--padding-start': '4px',
+                '--padding-end': '4px',
+                '--color': '#06b6d4',
+                fontSize: '22px',
+                marginBottom: '4px'
               }}
             >
               <IonIcon icon={attach} />
             </IonButton>
 
-
-            <IonTextarea
-              ref={textareaRef}
-              value={messageText}
-              onIonInput={(e) => handleTextInputChange(e.detail.value || '')}
-              onIonFocus={handleTextareaFocus}
-              placeholder="Nachricht schreiben..."
-              autoGrow
-              rows={1}
-              autocapitalize="sentences"
-              style={{
-                flex: 1, // Nimmt den restlichen Platz ein
-                // '--background': 'var(--ion-color-light-shade, #f8f9fa)',
-                '--border-radius': '20px',
-                '--padding-start': '12px',
-                '--padding-end': '12px',
-                '--box-shadow': 'none',
-                // Adjust margin-bottom slightly if it conflicts with align-items: flex-end
-                marginBottom: '0',
-                // Ensure text color is readable on the background
-                '--color': 'var(--ion-text-color)'
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-            />
+            <div style={{
+              flex: 1,
+              backgroundColor: 'white',
+              borderRadius: '20px',
+              border: '1.5px solid rgba(6, 182, 212, 0.3)',
+              overflow: 'hidden',
+              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)'
+            }}>
+              <IonTextarea
+                ref={textareaRef}
+                value={messageText}
+                onIonInput={(e) => handleTextInputChange(e.detail.value || '')}
+                onIonFocus={handleTextareaFocus}
+                placeholder="Nachricht schreiben..."
+                autoGrow
+                rows={1}
+                autocapitalize="sentences"
+                style={{
+                  '--background': 'transparent',
+                  '--border-radius': '0',
+                  '--padding-start': '14px',
+                  '--padding-end': '14px',
+                  '--padding-top': '8px',
+                  '--padding-bottom': '8px',
+                  '--box-shadow': 'none',
+                  marginBottom: '0',
+                  '--color': '#1a1a1a',
+                  '--placeholder-color': '#8e8e93'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+            </div>
 
             <IonButton
               fill="solid"
@@ -2087,15 +2100,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               disabled={(!messageText.trim() && !selectedFile) || uploading}
               onClick={sendMessage}
               style={{
-                '--height': '36px',
-                '--min-height': '36px',
-                '--border-radius': '18px',
+                '--background': '#06b6d4',
+                '--background-activated': '#0891b2',
+                '--background-hover': '#0891b2',
+                '--height': '38px',
+                '--min-height': '38px',
+                '--border-radius': '19px',
                 '--padding-start': '0',
                 '--padding-end': '0',
-                minWidth: '36px',
-                maxWidth: '36px',
-                fontSize: '14px', // Send Icon kleiner machen
-                // Adjust margin-bottom to align with the text area
+                '--box-shadow': '0 2px 8px rgba(6, 182, 212, 0.35)',
+                minWidth: '38px',
+                maxWidth: '38px',
+                fontSize: '15px',
+                marginBottom: '4px'
               }}
             >
               {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}
@@ -2108,7 +2125,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               onChange={handleFileSelect}
               accept="image/*,video/*,.pdf,.doc,.docx,.txt"
             />
-          </div> {/* Ende des Flex-Containers */}
+          </div>
         </IonToolbar>
       </IonFooter>
 
@@ -2167,7 +2184,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         ]}
       />
 
-      {/* Reaction Picker Modal */}
+      {/* Reaction Picker - modernes Popover-Design */}
       {showReactionPicker && reactionTargetMessage && (
         <div
           style={{
@@ -2176,11 +2193,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0,0,0,0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10000
+            zIndex: 10000,
+            animation: 'fadeIn 0.15s ease-out'
           }}
           onClick={() => {
             setShowReactionPicker(false);
@@ -2190,11 +2208,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           <div
             style={{
               backgroundColor: 'white',
-              borderRadius: '16px',
-              padding: '16px 24px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+              borderRadius: '24px',
+              padding: '12px 16px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.2), 0 4px 12px rgba(6, 182, 212, 0.15)',
               display: 'flex',
-              gap: '8px'
+              gap: '6px',
+              animation: 'scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2207,12 +2226,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                   key={emoji}
                   onClick={() => toggleReaction(reactionTargetMessage.id, emoji)}
                   style={{
-                    padding: '10px',
-                    borderRadius: '12px',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
                     cursor: 'pointer',
-                    backgroundColor: userHasThisReaction ? `${data.color}15` : 'transparent',
+                    backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
                     border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
-                    transition: 'all 0.2s ease',
+                    transition: 'all 0.15s ease',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -2222,8 +2242,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                   <IonIcon
                     icon={userHasThisReaction ? data.filled : data.outline}
                     style={{
-                      fontSize: '1.8rem',
-                      color: data.color
+                      fontSize: '1.5rem',
+                      color: data.color,
+                      transition: 'transform 0.15s ease'
                     }}
                   />
                 </div>
@@ -2232,6 +2253,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
 
     </>
   );
