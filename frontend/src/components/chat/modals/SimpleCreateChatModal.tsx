@@ -415,11 +415,22 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {isAdmin && (
             <IonList inset={true}>
               <IonListHeader>
-                <IonIcon icon={chatbubbles} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  backgroundColor: '#06b6d4',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '8px'
+                }}>
+                  <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.8rem' }} />
+                </div>
                 <IonLabel>Chat-Typ</IonLabel>
               </IonListHeader>
               <IonItemGroup>
-                <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
                   <IonSegment
                     value={chatType}
                     onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
@@ -441,7 +452,18 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {chatType === 'group' && (
             <IonList inset={true}>
               <IonListHeader>
-                <IonIcon icon={peopleOutline} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  backgroundColor: '#06b6d4',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: '8px'
+                }}>
+                  <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                </div>
                 <IonLabel>Gruppenname</IonLabel>
               </IonListHeader>
               <IonItemGroup>
@@ -461,7 +483,18 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {/* Filter mit Suche - iOS26 Pattern */}
           <IonList inset={true}>
             <IonListHeader>
-              <IonIcon icon={filterOutline} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
             <IonItemGroup>
@@ -550,12 +583,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           }}
                           style={{
                             borderLeft: `4px solid ${color}`,
-                            border: '1px solid #e0e0e0',
+                            border: isSelected ? '1px solid #06b6d4' : '1px solid #e0e0e0',
                             borderLeftWidth: '4px',
                             borderLeftColor: color,
                             borderRadius: '12px',
                             padding: '10px 10px',
-                            background: 'white',
+                            background: isSelected ? '#06b6d410' : 'white',
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1
                           }}
@@ -623,8 +656,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             {chatType === 'group' && (
                               <IonCheckbox
                                 checked={isSelected}
-                                color={targetUser.type === 'admin' ? 'tertiary' : 'primary'}
-                                style={{ flexShrink: 0 }}
+                                style={{
+                                  flexShrink: 0,
+                                  '--checkbox-background-checked': '#06b6d4',
+                                  '--border-color-checked': '#06b6d4',
+                                  '--checkmark-color': 'white'
+                                }}
                               />
                             )}
                           </div>

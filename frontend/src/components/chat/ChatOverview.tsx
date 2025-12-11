@@ -171,42 +171,38 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     loadChatRooms
   }));
 
-  const deleteRoom = async (room: ChatRoom, forceDelete = false) => {
-    const executeDelete = async (force: boolean) => {
-      try {
-        const url = force ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
-        await api.delete(url);
-        setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
-        await loadChatRooms();
-      } catch (error: any) {
-        if (error.response?.data?.canForceDelete) {
-          // Org Admin kann trotzdem löschen
-          presentAlert({
-            header: 'Als Admin löschen?',
-            message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
-            buttons: [
-              { text: 'Abbrechen', role: 'cancel' },
-              {
-                text: 'Dennoch löschen',
-                role: 'destructive',
-                handler: async () => {
-                  await executeDelete(true);
+  const deleteRoom = (room: ChatRoom) => {
+    const executeDelete = (force: boolean) => {
+      const url = force ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
+      api.delete(url)
+        .then(() => {
+          setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
+          loadChatRooms();
+        })
+        .catch((error: any) => {
+          if (error.response?.data?.canForceDelete) {
+            // Org Admin kann trotzdem löschen
+            presentAlert({
+              header: 'Als Admin löschen?',
+              message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
+              buttons: [
+                { text: 'Abbrechen', role: 'cancel' },
+                {
+                  text: 'Dennoch löschen',
+                  role: 'destructive',
+                  handler: () => {
+                    executeDelete(true);
+                  }
                 }
-              }
-            ]
-          });
-        } else if (error.response?.data?.error) {
-          setError(error.response.data.error);
-        } else {
-          setError('Fehler beim Löschen des Chats');
-        }
-      }
+              ]
+            });
+          } else if (error.response?.data?.error) {
+            setError(error.response.data.error);
+          } else {
+            setError('Fehler beim Löschen des Chats');
+          }
+        });
     };
-
-    if (forceDelete) {
-      await executeDelete(true);
-      return;
-    }
 
     // Erste Bestätigung
     presentAlert({
@@ -227,8 +223,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 {
                   text: 'Endgültig löschen',
                   role: 'destructive',
-                  handler: async () => {
-                    await executeDelete(false);
+                  handler: () => {
+                    executeDelete(false);
                   }
                 }
               ]
@@ -494,7 +490,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         {/* Suche & Filter - iOS26 Pattern wie im Modal */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <IonIcon icon={search} style={{ color: '#06b6d4', marginRight: '8px', fontSize: '1.1rem' }} />
+            <div style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: '#06b6d4',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}>
+              <IonIcon icon={search} style={{ color: 'white', fontSize: '0.8rem' }} />
+            </div>
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
           <IonItemGroup>
