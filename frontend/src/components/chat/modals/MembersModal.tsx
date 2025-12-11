@@ -27,7 +27,8 @@ import {
   checkmarkOutline,
   search,
   peopleOutline,
-  trashOutline
+  trashOutline,
+  filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -138,11 +139,31 @@ const MembersModal: React.FC<MembersModalProps> = ({
     );
   };
 
-  const filteredAvailableUsers = getAvailableUsers().filter(user => {
+  // Sortierung: Admins zuerst, dann alphabetisch nach Name
+  const sortUsers = <T extends { name?: string; display_name?: string; type?: string; user_type?: string }>(users: T[]): T[] => {
+    return [...users].sort((a, b) => {
+      const aIsAdmin = ('user_type' in a ? a.user_type : a.type) === 'admin';
+      const bIsAdmin = ('user_type' in b ? b.user_type : b.type) === 'admin';
+
+      // Admins zuerst
+      if (aIsAdmin && !bIsAdmin) return -1;
+      if (!aIsAdmin && bIsAdmin) return 1;
+
+      // Dann alphabetisch nach Name
+      const aName = (a.name || a.display_name || '').toLowerCase();
+      const bName = (b.name || b.display_name || '').toLowerCase();
+      return aName.localeCompare(bName, 'de');
+    });
+  };
+
+  const filteredAvailableUsers = sortUsers(getAvailableUsers().filter(user => {
     const name = user.name || user.display_name || '';
     return name.toLowerCase().includes(searchText.toLowerCase()) ||
       (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
-  });
+  }));
+
+  // Sortierte Teilnehmer
+  const sortedParticipants = sortUsers(participants);
 
   const handleUserToggle = (user: User) => {
     const userId = `${user.type}-${user.id}`;
@@ -172,13 +193,13 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
       await Promise.all(promises);
 
-      setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefügt`);
+      setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefuegt`);
       setSelectedUsers(new Set());
       setShowAddMode(false);
       await loadParticipants();
       onSuccess();
     } catch (err) {
-      setError('Fehler beim Hinzufügen der Mitglieder');
+      setError('Fehler beim Hinzufuegen der Mitglieder');
       console.error('Error adding participants:', err);
     } finally {
       setAdding(false);
@@ -224,6 +245,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const isGroupChat = roomType === 'group';
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
+  // Render User Item - identisch zu SimpleCreateChatModal
   const renderUserItem = (
     targetUser: User | Participant,
     isSelectable: boolean,
@@ -236,6 +258,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       : targetUser.type === 'admin';
     const color = isAdmin ? '#06b6d4' : '#f97316';
     const name = getUserDisplayName(targetUser);
+    const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
 
     // Rolle/Funktion ermitteln
     let roleText = '';
@@ -250,15 +273,19 @@ const MembersModal: React.FC<MembersModalProps> = ({
         roleText = 'Admin';
       }
     } else {
-      const jahrgang = 'jahrgang_name' in targetUser
-        ? targetUser.jahrgang_name
-        : ('jahrgang' in targetUser ? targetUser.jahrgang : null);
-      roleText = jahrgang ? `Jahrgang ${jahrgang}` : 'Konfi';
+      roleText = 'Konfi';
     }
+
+    // Jahrgang ermitteln (nur fuer Konfis)
+    const jahrgang = !isAdmin ? (
+      'jahrgang_name' in targetUser
+        ? targetUser.jahrgang_name
+        : ('jahrgang' in targetUser ? targetUser.jahrgang : null)
+    ) : null;
 
     return (
       <div
-        key={`${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`}
+        key={participantId}
         onClick={isSelectable ? onToggle : undefined}
         style={{
           borderTop: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
@@ -270,76 +297,94 @@ const MembersModal: React.FC<MembersModalProps> = ({
           marginBottom: '8px',
           background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'white',
           boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-          cursor: isSelectable ? 'pointer' : 'default',
+          cursor: isSelectable ? 'pointer' : 'default'
+        }}
+      >
+        <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '12px'
-        }}
-      >
-        {/* Avatar */}
-        <div style={{
-          width: '40px',
-          height: '40px',
-          backgroundColor: color,
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
         }}>
-          <IonIcon icon={person} style={{ fontSize: '1.2rem', color: 'white' }} />
-        </div>
-
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Avatar */}
           <div style={{
-            fontWeight: '600',
-            fontSize: '0.95rem',
-            color: '#333',
-            marginBottom: '4px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            width: '40px',
+            height: '40px',
+            backgroundColor: color,
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
           }}>
-            {name}
+            <IonIcon
+              icon={person}
+              style={{ fontSize: '1.2rem', color: 'white' }}
+            />
           </div>
-          <span style={{
-            fontSize: '0.7rem',
-            fontWeight: '600',
-            padding: '2px 8px',
-            borderRadius: '10px',
-            backgroundColor: `${color}20`,
-            color: color
-          }}>
-            {roleText}
-          </span>
-        </div>
 
-        {/* Checkbox oder Löschen */}
-        {isSelectable && (
-          <IonCheckbox
-            checked={isSelected}
-            style={{
-              flexShrink: 0,
-              '--checkbox-background-checked': '#06b6d4',
-              '--border-color-checked': '#06b6d4',
-              '--checkmark-color': 'white'
-            }}
-          />
-        )}
-        {onRemove && canManageMembers && (
-          <IonButton
-            fill="clear"
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            style={{ '--color': '#dc3545' }}
-          >
-            <IonIcon icon={trashOutline} />
-          </IonButton>
-        )}
+          {/* Content */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontWeight: '600',
+              fontSize: '0.95rem',
+              color: '#333',
+              marginBottom: '4px',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {name}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: '0.7rem',
+                fontWeight: '600',
+                padding: '2px 8px',
+                borderRadius: '10px',
+                backgroundColor: `${color}20`,
+                color: color
+              }}>
+                {roleText}
+              </span>
+              {jahrgang && (
+                <span style={{
+                  fontSize: '0.75rem',
+                  color: '#666'
+                }}>
+                  {jahrgang}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Checkbox fuer Add-Modus */}
+          {isSelectable && (
+            <IonCheckbox
+              checked={isSelected}
+              style={{
+                flexShrink: 0,
+                '--checkbox-background-checked': '#06b6d4',
+                '--border-color-checked': '#06b6d4',
+                '--checkmark-color': 'white'
+              }}
+            />
+          )}
+
+          {/* Loeschen-Button fuer Mitglieder-Ansicht */}
+          {onRemove && canManageMembers && (
+            <IonButton
+              fill="clear"
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              style={{ '--color': '#dc3545' }}
+            >
+              <IonIcon icon={trashOutline} />
+            </IonButton>
+          )}
+        </div>
       </div>
     );
   };
@@ -355,7 +400,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
           </IonButtons>
 
           <IonTitle>
-            {showAddMode ? 'Mitglied hinzufügen' : 'Mitglieder'}
+            {showAddMode ? 'Mitglied hinzufuegen' : 'Mitglieder'}
           </IonTitle>
 
           {canManageMembers && (
@@ -386,10 +431,10 @@ const MembersModal: React.FC<MembersModalProps> = ({
           <IonRefresherContent />
         </IonRefresher>
 
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {showAddMode ? (
             <>
-              {/* Suche */}
+              {/* Suche - iOS26 Pattern */}
               <IonList inset={true}>
                 <IonListHeader>
                   <div style={{
@@ -402,12 +447,20 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     justifyContent: 'center',
                     marginRight: '8px'
                   }}>
-                    <IonIcon icon={search} style={{ color: 'white', fontSize: '0.8rem' }} />
+                    <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
                   </div>
                   <IonLabel>Suche</IonLabel>
                 </IonListHeader>
                 <IonItemGroup>
                   <IonItem>
+                    <IonIcon
+                      icon={search}
+                      slot="start"
+                      style={{
+                        color: '#8e8e93',
+                        fontSize: '1rem'
+                      }}
+                    />
                     <IonInput
                       value={searchText}
                       onIonInput={(e) => setSearchText(e.detail.value!)}
@@ -417,68 +470,50 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 </IonItemGroup>
               </IonList>
 
-              {/* Verfügbare Personen */}
-              <IonList inset={true}>
-                <IonListHeader>
+              {/* Verfuegbare Personen */}
+              <div style={{ padding: '0 16px' }}>
+                {filteredAvailableUsers.length === 0 ? (
                   <div style={{
-                    width: '24px',
-                    height: '24px',
-                    backgroundColor: '#06b6d4',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '8px'
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#666'
                   }}>
-                    <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfuegbaren Personen gefunden</p>
                   </div>
-                  <IonLabel>Verfügbare Personen ({filteredAvailableUsers.length})</IonLabel>
-                </IonListHeader>
-                <IonItemGroup>
-                  <div style={{ padding: '8px' }}>
-                    {filteredAvailableUsers.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '16px', color: '#8e8e93' }}>
-                        Keine verfügbaren Personen gefunden
-                      </div>
-                    ) : (
-                      filteredAvailableUsers.map((u) => {
-                        const userId = `${u.type}-${u.id}`;
-                        return renderUserItem(
-                          u,
-                          true,
-                          selectedUsers.has(userId),
-                          () => handleUserToggle(u)
-                        );
-                      })
-                    )}
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {filteredAvailableUsers.map((u) => {
+                      const userId = `${u.type}-${u.id}`;
+                      return renderUserItem(
+                        u,
+                        true,
+                        selectedUsers.has(userId),
+                        () => handleUserToggle(u)
+                      );
+                    })}
                   </div>
-                </IonItemGroup>
-              </IonList>
+                )}
+              </div>
             </>
           ) : (
             <>
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <IonList inset={true}>
-                  <IonListHeader>
+                <div style={{ padding: '0 16px' }}>
+                  {sortedParticipants.length === 0 ? (
                     <div style={{
-                      width: '24px',
-                      height: '24px',
-                      backgroundColor: '#06b6d4',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '8px'
+                      padding: '40px 20px',
+                      textAlign: 'center',
+                      color: '#666'
                     }}>
-                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                      <IonIcon icon={peopleOutline} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                      <p style={{ margin: '0', fontSize: '1rem' }}>Keine Mitglieder</p>
                     </div>
-                    <IonLabel>Mitglieder ({participants.length})</IonLabel>
-                  </IonListHeader>
-                  <IonItemGroup>
-                    <div style={{ padding: '8px' }}>
-                      {participants.map((p) =>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {sortedParticipants.map((p) =>
                         renderUserItem(
                           p,
                           false,
@@ -488,8 +523,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         )
                       )}
                     </div>
-                  </IonItemGroup>
-                </IonList>
+                  )}
+                </div>
               )}
             </>
           )}

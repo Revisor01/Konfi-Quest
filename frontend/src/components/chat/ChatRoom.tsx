@@ -58,7 +58,8 @@ import {
   handLeft,
   addOutline,
   arrowUndoOutline,
-  shareOutline
+  shareOutline,
+  arrowDownOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -528,6 +529,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
@@ -761,6 +763,33 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
     prevMessageCountRef.current = messages.length;
   }, [messages, shouldAutoScroll, isInitialLoad]);
+
+  // Scroll listener fuer Scroll-to-Bottom Button
+  useEffect(() => {
+    const checkScrollPosition = async () => {
+      if (!contentRef.current) return;
+      const scrollElement = await contentRef.current.getScrollElement();
+      const scrollTop = scrollElement.scrollTop;
+      const scrollHeight = scrollElement.scrollHeight;
+      const clientHeight = scrollElement.clientHeight;
+
+      // Zeige Button wenn mehr als 300px vom Ende entfernt
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      setShowScrollToBottom(distanceFromBottom > 300);
+    };
+
+    const setupScrollListener = async () => {
+      if (!contentRef.current) return;
+      const scrollElement = await contentRef.current.getScrollElement();
+      scrollElement.addEventListener('scroll', checkScrollPosition);
+      return () => scrollElement.removeEventListener('scroll', checkScrollPosition);
+    };
+
+    const cleanup = setupScrollListener();
+    return () => {
+      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
+    };
+  }, []);
 
   const loadMessages = async () => {
     // Kein eigener Loading State - ChatRoomView handled das Loading
@@ -1337,7 +1366,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           {/* Reply Anzeige */}
           {message.reply_to_id && (
             <div
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation(); // Verhindere dass der Content-Click ausgelöst wird
                 // Scroll zur zitierten Nachricht
                 const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
                 if (replyElement) {
@@ -1994,6 +2024,35 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         <div style={{ paddingBottom: '120px' }}>
           {messages.map(renderMessage)}
         </div>
+
+        {/* Floating Scroll-to-Bottom Button */}
+        {showScrollToBottom && (
+          <div
+            onClick={() => {
+              contentRef.current?.scrollToBottom(300);
+              setShowScrollToBottom(false);
+            }}
+            style={{
+              position: 'fixed',
+              bottom: '100px',
+              right: '20px',
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              backgroundColor: '#06b6d4',
+              boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 1000,
+              transition: 'transform 0.2s ease, opacity 0.2s ease',
+              animation: 'fadeIn 0.2s ease'
+            }}
+          >
+            <IonIcon icon={arrowDownOutline} style={{ color: 'white', fontSize: '1.4rem' }} />
+          </div>
+        )}
       </IonContent>
 
 
@@ -2120,10 +2179,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           '--padding-top': '8px',
           '--padding-bottom': '8px'
         }}>
-          {/* Flex-Container für Input und Buttons */}
+          {/* Flex-Container fuer Input und Buttons - vertikal zentriert */}
           <div style={{
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             gap: '8px',
             width: '100%'
           }}>
@@ -2135,8 +2194,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 '--padding-start': '4px',
                 '--padding-end': '4px',
                 '--color': '#06b6d4',
-                fontSize: '22px',
-                marginBottom: '4px'
+                '--height': '38px',
+                '--min-height': '38px',
+                fontSize: '22px'
               }}
             >
               <IonIcon icon={attach} />
@@ -2148,7 +2208,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               borderRadius: '20px',
               border: '1.5px solid rgba(6, 182, 212, 0.3)',
               overflow: 'hidden',
-              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)'
+              boxShadow: '0 1px 4px rgba(6, 182, 212, 0.1)',
+              display: 'flex',
+              alignItems: 'center'
             }}>
               <IonTextarea
                 ref={textareaRef}
@@ -2164,12 +2226,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                   '--border-radius': '0',
                   '--padding-start': '14px',
                   '--padding-end': '14px',
-                  '--padding-top': '8px',
-                  '--padding-bottom': '8px',
+                  '--padding-top': '10px',
+                  '--padding-bottom': '10px',
                   '--box-shadow': 'none',
-                  marginBottom: '0',
+                  margin: '0',
                   '--color': '#1a1a1a',
-                  '--placeholder-color': '#8e8e93'
+                  '--placeholder-color': '#8e8e93',
+                  minHeight: '38px'
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -2198,8 +2261,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 '--box-shadow': '0 2px 8px rgba(6, 182, 212, 0.35)',
                 minWidth: '38px',
                 maxWidth: '38px',
-                fontSize: '15px',
-                marginBottom: '4px'
+                fontSize: '15px'
               }}
             >
               {uploading ? <IonSpinner name="dots" /> : <IonIcon icon={send} />}

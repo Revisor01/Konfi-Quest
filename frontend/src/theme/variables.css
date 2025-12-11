@@ -36,12 +36,19 @@ http://ionicframework.com/docs/theming/ */
 /* Solideres Popover Styling für IonSelect */
 ion-popover {
   --background: #ffffff;
-  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --backdrop-opacity: 0.3;
+  --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+ion-popover::part(backdrop) {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 ion-popover::part(content) {
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 ion-popover ion-list {
@@ -50,6 +57,12 @@ ion-popover ion-list {
 
 ion-popover ion-item {
   --background: #ffffff;
+}
+
+ion-popover ion-select-popover ion-item {
+  --background: #ffffff;
+  --background-hover: rgba(6, 182, 212, 0.08);
+  --background-activated: rgba(6, 182, 212, 0.12);
 }
 
 /* Dark Mode Support - DISABLED
