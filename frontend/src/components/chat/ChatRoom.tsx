@@ -21,8 +21,8 @@ import {
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
-  IonActionSheet,
-  useIonModal
+  useIonModal,
+  useIonAlert
 } from '@ionic/react';
 import {
   arrowBack,
@@ -594,6 +594,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   };
 
   // Hooks müssen vor conditional returns stehen!
+  const [presentAlert] = useIonAlert();
 
   // Poll Modal mit useIonModal Hook (iOS Card Design)
   const [presentPollModalHook, dismissPollModalHook] = useIonModal(PollModal, {
@@ -873,15 +874,29 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
   };
 
-  const deleteMessage = async (messageId: number) => {
-    try {
-      await api.delete(`/chat/messages/${messageId}`);
-      await loadMessages();
-      setSuccess('Nachricht geloescht');
-    } catch (err) {
-      setError('Fehler beim Loeschen der Nachricht');
-      console.error('Error deleting message:', err);
-    }
+  const deleteMessage = (messageId: number) => {
+    presentAlert({
+      header: 'Nachricht löschen?',
+      message: 'Diese Nachricht unwiderruflich löschen?',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: () => {
+            api.delete(`/chat/messages/${messageId}`)
+              .then(() => {
+                loadMessages();
+                setSuccess('Nachricht gelöscht');
+              })
+              .catch((err) => {
+                setError('Fehler beim Löschen der Nachricht');
+                console.error('Error deleting message:', err);
+              });
+          }
+        }
+      ]
+    });
   };
 
   // Reaktion hinzufuegen/entfernen
@@ -898,7 +913,13 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
         const reactions = msg.reactions || [];
         if (response.data.action === 'added') {
-          // Reaktion hinzufuegen
+          // Prüfe ob Reaktion schon existiert (verhindert Duplikate durch WebSocket)
+          const alreadyExists = reactions.some(r =>
+            r.user_id === user!.id && r.user_type === user!.type && r.emoji === emoji
+          );
+          if (alreadyExists) return msg;
+
+          // Reaktion hinzufügen
           return {
             ...msg,
             reactions: [...reactions, {
@@ -1373,11 +1394,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             </div>
           ) : message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
-              background: isOwnMessage ? 'rgba(255,255,255,0.1)' : 'rgba(6, 182, 212, 0.06)',
+              background: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(6, 182, 212, 0.06)',
               borderRadius: '14px',
               padding: '16px',
               marginTop: '4px',
-              border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(6, 182, 212, 0.2)'}`,
+              border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.15)'}`,
             }}>
               {/* Frage mit Icon */}
               <div style={{
@@ -1453,9 +1474,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                     onClick={() => voteInPoll(message.id, index)}
                     style={{
                       background: userVoted
-                        ? 'rgba(6, 182, 212, 0.15)'
-                        : isOwnMessage ? 'rgba(255,255,255,0.1)' : 'white',
-                      border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.1)',
+                        ? (isOwnMessage ? 'rgba(255,255,255,0.3)' : 'rgba(6, 182, 212, 0.12)')
+                        : (isOwnMessage ? 'rgba(255,255,255,0.2)' : 'white'),
+                      border: userVoted
+                        ? (isOwnMessage ? '2px solid rgba(255,255,255,0.6)' : '2px solid #06b6d4')
+                        : (isOwnMessage ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(0,0,0,0.08)'),
                       borderRadius: '10px',
                       padding: '12px',
                       marginBottom: '8px',
@@ -1472,9 +1495,9 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       top: 0,
                       height: '100%',
                       width: `${percentage}%`,
-                      background: userVoted
-                        ? 'rgba(6, 182, 212, 0.15)'
-                        : 'rgba(6, 182, 212, 0.08)',
+                      background: isOwnMessage
+                        ? 'rgba(255,255,255,0.15)'
+                        : (userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)'),
                       transition: 'width 0.4s ease',
                       borderRadius: '8px'
                     }} />
@@ -1492,12 +1515,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                             width: '18px',
                             height: '18px',
                             borderRadius: '50%',
-                            backgroundColor: '#06b6d4',
+                            backgroundColor: isOwnMessage ? 'white' : '#06b6d4',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}>
-                            <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
+                            <IonIcon icon={checkmark} style={{ color: isOwnMessage ? '#06b6d4' : 'white', fontSize: '0.75rem' }} />
                           </div>
                         )}
                         <span style={{
@@ -1512,7 +1535,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       <div style={{
                         fontSize: '0.8rem',
                         fontWeight: '600',
-                        color: '#06b6d4',
+                        color: isOwnMessage ? 'white' : '#06b6d4',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px'
@@ -1948,7 +1971,19 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         </IonToolbar>
       </IonHeader>
       
-      <IonContent ref={contentRef} className="app-gradient-background" fullscreen>
+      <IonContent
+        ref={contentRef}
+        className="app-gradient-background"
+        fullscreen
+        onClick={() => {
+          // Schließe Aktionsleiste und Reaktions-Picker bei Klick außerhalb
+          if (selectedMessage || showReactionPicker) {
+            setSelectedMessage(null);
+            setShowReactionPicker(false);
+            setReactionTargetMessage(null);
+          }
+        }}
+      >
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadMessages();
           e.detail.complete();

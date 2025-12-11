@@ -33,6 +33,25 @@ http://ionicframework.com/docs/theming/ */
   --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
+/* Solideres Popover Styling für IonSelect */
+ion-popover {
+  --background: #ffffff;
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+ion-popover::part(content) {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+ion-popover ion-list {
+  background: #ffffff;
+}
+
+ion-popover ion-item {
+  --background: #ffffff;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {

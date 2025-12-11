@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  IonModal,
   IonPage,
   IonHeader,
   IonToolbar,
@@ -9,31 +8,26 @@ import {
   IonButton,
   IonButtons,
   IonIcon,
-  IonItem,
   IonLabel,
   IonList,
-  IonAvatar,
-  IonText,
-  IonSearchbar,
+  IonItemGroup,
+  IonListHeader,
   IonCheckbox,
   IonAlert,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonCard,
-  IonCardContent
+  IonInput,
+  IonItem
 } from '@ionic/react';
-import { 
-  close, 
-  person, 
-  people, 
-  add, 
-  trash, 
-  personAdd,
-  checkmark
+import {
+  closeOutline,
+  person,
+  personAddOutline,
+  checkmarkOutline,
+  search,
+  peopleOutline,
+  trashOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -43,6 +37,8 @@ interface Participant {
   user_id: number;
   user_type: 'admin' | 'konfi';
   name: string;
+  role_title?: string;
+  role_display_name?: string;
   jahrgang_id?: number;
   jahrgang_name?: string;
   joined_at: string;
@@ -54,6 +50,9 @@ interface User {
   display_name?: string;
   type: 'admin' | 'konfi';
   jahrgang?: string;
+  jahrgang_name?: string;
+  role_title?: string;
+  role_description?: string;
 }
 
 interface MembersModalProps {
@@ -64,21 +63,19 @@ interface MembersModalProps {
   presentingElement?: HTMLElement | null;
 }
 
-const MembersModal: React.FC<MembersModalProps> = ({ 
-  onClose, 
-  onSuccess, 
-  roomId, 
-  roomType,
-  presentingElement 
+const MembersModal: React.FC<MembersModalProps> = ({
+  onClose,
+  onSuccess,
+  roomId,
+  roomType
 }) => {
   const { user, setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
-  
+
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [removing, setRemoving] = useState(false);
   const [showAddMode, setShowAddMode] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -86,7 +83,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const [userToRemove, setUserToRemove] = useState<Participant | null>(null);
 
   useEffect(() => {
-    console.log('MembersModal effect:', { roomId, roomType });
     if (roomId) {
       loadParticipants();
       loadAllUsers();
@@ -95,16 +91,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
   const loadParticipants = async () => {
     try {
-      console.log('Loading participants for room:', roomId);
       setLoading(true);
       const response = await api.get(`/chat/rooms/${roomId}/participants`);
-      console.log('Participants loaded:', response.data);
-      // Debug: Check for participants without names
-      response.data.forEach((p: any, i: number) => {
-        if (!p.name) {
-          console.warn(`Participant ${i} has no name:`, p);
-        }
-      });
       setParticipants(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Mitglieder');
@@ -120,12 +108,20 @@ const MembersModal: React.FC<MembersModalProps> = ({
         api.get('/admin/konfis'),
         api.get('/users').catch(() => ({ data: [] }))
       ]);
-      
+
       const allUsers: User[] = [
-        ...konfisRes.data.map((konfi: any) => ({ ...konfi, type: 'konfi' as const })),
-        ...adminsRes.data.map((admin: any) => ({ ...admin, type: 'admin' as const }))
+        ...konfisRes.data.map((konfi: any) => ({
+          ...konfi,
+          type: 'konfi' as const,
+          jahrgang_name: konfi.jahrgang_name || konfi.jahrgang
+        })),
+        ...adminsRes.data.map((admin: any) => ({
+          ...admin,
+          type: 'admin' as const,
+          role_description: admin.role_title || admin.role_display_name
+        }))
       ];
-      
+
       setAllUsers(allUsers);
     } catch (err) {
       console.error('Error loading users:', err);
@@ -136,8 +132,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantIds = new Set(
       participants.map(p => `${p.user_type}-${p.user_id}`)
     );
-    
-    return allUsers.filter(user => 
+
+    return allUsers.filter(user =>
       !participantIds.has(`${user.type}-${user.id}`)
     );
   };
@@ -145,25 +141,25 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const filteredAvailableUsers = getAvailableUsers().filter(user => {
     const name = user.name || user.display_name || '';
     return name.toLowerCase().includes(searchText.toLowerCase()) ||
-           (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
+      (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
   });
 
   const handleUserToggle = (user: User) => {
     const userId = `${user.type}-${user.id}`;
     const newSelected = new Set(selectedUsers);
-    
+
     if (newSelected.has(userId)) {
       newSelected.delete(userId);
     } else {
       newSelected.add(userId);
     }
-    
+
     setSelectedUsers(newSelected);
   };
 
   const addSelectedUsers = async () => {
     if (selectedUsers.size === 0) return;
-    
+
     setAdding(true);
     try {
       const promises = Array.from(selectedUsers).map(userId => {
@@ -173,9 +169,9 @@ const MembersModal: React.FC<MembersModalProps> = ({
           user_type: type
         });
       });
-      
+
       await Promise.all(promises);
-      
+
       setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefügt`);
       setSelectedUsers(new Set());
       setShowAddMode(false);
@@ -196,11 +192,10 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
   const removeUser = async () => {
     if (!userToRemove) return;
-    
-    setRemoving(true);
+
     try {
       await api.delete(`/chat/rooms/${roomId}/participants/${userToRemove.user_id}/${userToRemove.user_type}`);
-      
+
       setSuccess(`${userToRemove.name} wurde entfernt`);
       setUserToRemove(null);
       await loadParticipants();
@@ -208,8 +203,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
     } catch (err) {
       setError('Fehler beim Entfernen des Mitglieds');
       console.error('Error removing participant:', err);
-    } finally {
-      setRemoving(false);
     }
   };
 
@@ -231,269 +224,290 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const isGroupChat = roomType === 'group';
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
+  const renderUserItem = (
+    targetUser: User | Participant,
+    isSelectable: boolean,
+    isSelected: boolean,
+    onToggle?: () => void,
+    onRemove?: () => void
+  ) => {
+    const isAdmin = 'user_type' in targetUser
+      ? targetUser.user_type === 'admin'
+      : targetUser.type === 'admin';
+    const color = isAdmin ? '#06b6d4' : '#f97316';
+    const name = getUserDisplayName(targetUser);
+
+    // Rolle/Funktion ermitteln
+    let roleText = '';
+    if (isAdmin) {
+      if ('role_title' in targetUser && targetUser.role_title) {
+        roleText = targetUser.role_title;
+      } else if ('role_display_name' in targetUser && targetUser.role_display_name) {
+        roleText = targetUser.role_display_name;
+      } else if ('role_description' in targetUser && targetUser.role_description) {
+        roleText = targetUser.role_description;
+      } else {
+        roleText = 'Admin';
+      }
+    } else {
+      const jahrgang = 'jahrgang_name' in targetUser
+        ? targetUser.jahrgang_name
+        : ('jahrgang' in targetUser ? targetUser.jahrgang : null);
+      roleText = jahrgang ? `Jahrgang ${jahrgang}` : 'Konfi';
+    }
+
+    return (
+      <div
+        key={`${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`}
+        onClick={isSelectable ? onToggle : undefined}
+        style={{
+          borderTop: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
+          borderRight: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
+          borderBottom: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
+          borderLeft: `3px solid ${color}`,
+          borderRadius: '10px',
+          padding: '10px 12px',
+          marginBottom: '8px',
+          background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'white',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+          cursor: isSelectable ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}
+      >
+        {/* Avatar */}
+        <div style={{
+          width: '40px',
+          height: '40px',
+          backgroundColor: color,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <IonIcon icon={person} style={{ fontSize: '1.2rem', color: 'white' }} />
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontWeight: '600',
+            fontSize: '0.95rem',
+            color: '#333',
+            marginBottom: '4px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {name}
+          </div>
+          <span style={{
+            fontSize: '0.7rem',
+            fontWeight: '600',
+            padding: '2px 8px',
+            borderRadius: '10px',
+            backgroundColor: `${color}20`,
+            color: color
+          }}>
+            {roleText}
+          </span>
+        </div>
+
+        {/* Checkbox oder Löschen */}
+        {isSelectable && (
+          <IonCheckbox
+            checked={isSelected}
+            style={{
+              flexShrink: 0,
+              '--checkbox-background-checked': '#06b6d4',
+              '--border-color-checked': '#06b6d4',
+              '--checkmark-color': 'white'
+            }}
+          />
+        )}
+        {onRemove && canManageMembers && (
+          <IonButton
+            fill="clear"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            style={{ '--color': '#dc3545' }}
+          >
+            <IonIcon icon={trashOutline} />
+          </IonButton>
+        )}
+      </div>
+    );
+  };
+
   return (
     <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonButtons slot="start">
-              <IonButton onClick={handleClose}>
-                <IonIcon icon={close} />
-              </IonButton>
-            </IonButtons>
-            
-            <IonTitle>
-              {showAddMode ? 'Mitglied hinzufügen' : 'Mitglieder'}
-            </IonTitle>
-            
-            {canManageMembers && (
-              <IonButtons slot="end">
-                {showAddMode ? (
-                  <>
-                    <IonButton 
-                      onClick={() => setShowAddMode(false)}
-                      color="medium"
-                    >
-                      Abbrechen
-                    </IonButton>
-                    <IonButton 
-                      onClick={addSelectedUsers}
-                      disabled={selectedUsers.size === 0 || adding}
-                      color="primary"
-                    >
-                      {adding ? <IonSpinner /> : <IonIcon icon={checkmark} />}
-                    </IonButton>
-                  </>
-                ) : (
-                  <IonButton onClick={() => setShowAddMode(true)}>
-                    <IonIcon icon={personAdd} />
-                  </IonButton>
-                )}
-              </IonButtons>
-            )}
-          </IonToolbar>
-        </IonHeader>
-        
-        <IonContent>
-          <IonRefresher slot="fixed" onIonRefresh={(e) => {
-            Promise.all([loadParticipants(), loadAllUsers()]).finally(() => {
-              e.detail.complete();
-            });
-          }}>
-            <IonRefresherContent />
-          </IonRefresher>
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={handleClose}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
 
+          <IonTitle>
+            {showAddMode ? 'Mitglied hinzufügen' : 'Mitglieder'}
+          </IonTitle>
+
+          {canManageMembers && (
+            <IonButtons slot="end">
+              {showAddMode ? (
+                <IonButton
+                  onClick={addSelectedUsers}
+                  disabled={selectedUsers.size === 0 || adding}
+                >
+                  {adding ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+                </IonButton>
+              ) : (
+                <IonButton onClick={() => setShowAddMode(true)}>
+                  <IonIcon icon={personAddOutline} slot="icon-only" />
+                </IonButton>
+              )}
+            </IonButtons>
+          )}
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent className="app-gradient-background">
+        <IonRefresher slot="fixed" onIonRefresh={(e) => {
+          Promise.all([loadParticipants(), loadAllUsers()]).finally(() => {
+            e.detail.complete();
+          });
+        }}>
+          <IonRefresherContent />
+        </IonRefresher>
+
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {showAddMode ? (
             <>
-              <div style={{ padding: '0 16px', marginTop: '16px' }}>
-                <IonSearchbar
-                  value={searchText}
-                  onIonInput={(e) => setSearchText(e.detail.value!)}
-                  placeholder="Person suchen..."
-                  style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px'
-                  }}
-                />
-              </div>
+              {/* Suche */}
+              <IonList inset={true}>
+                <IonListHeader>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    backgroundColor: '#06b6d4',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '8px'
+                  }}>
+                    <IonIcon icon={search} style={{ color: 'white', fontSize: '0.8rem' }} />
+                  </div>
+                  <IonLabel>Suche</IonLabel>
+                </IonListHeader>
+                <IonItemGroup>
+                  <IonItem>
+                    <IonInput
+                      value={searchText}
+                      onIonInput={(e) => setSearchText(e.detail.value!)}
+                      placeholder="Person suchen..."
+                    />
+                  </IonItem>
+                </IonItemGroup>
+              </IonList>
 
-              {filteredAvailableUsers.length === 0 ? (
-                <IonText color="medium" style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  padding: '32px 16px'
-                }}>
-                  <p>Keine verfügbaren Personen gefunden</p>
-                </IonText>
-              ) : (
-                <IonCard style={{
-                  margin: '16px',
-                  borderRadius: '12px',
-                  background: 'white',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <IonCardContent style={{ padding: '16px' }}>
-                    <IonList style={{ background: 'transparent' }}>
-                      {filteredAvailableUsers.map((user) => {
-                        const userId = `${user.type}-${user.id}`;
-                        const isSelected = selectedUsers.has(userId);
-
-                        return (
-                          <IonItem
-                            key={userId}
-                            lines="none"
-                            button
-                            detail={false}
-                            onClick={() => handleUserToggle(user)}
-                            style={{
-                              '--min-height': '56px',
-                              '--padding-start': '16px',
-                              '--background': '#fbfbfb',
-                              '--border-radius': '12px',
-                              margin: '6px 0',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                              border: '1px solid #e0e0e0',
-                              borderRadius: '12px'
-                            }}
-                          >
-                            <IonAvatar slot="start" style={{
-                              width: '40px',
-                              height: '40px',
-                              backgroundColor: '#17a2b8'
-                            }}>
-                              <div style={{
-                                color: 'white',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%'
-                              }}>
-                                {getUserDisplayName(user).charAt(0).toUpperCase()}
-                              </div>
-                            </IonAvatar>
-
-                            <IonLabel>
-                              <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{getUserDisplayName(user)}</h3>
-                              <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                                {user.type === 'admin' ? 'Admin' :
-                                 (user.jahrgang ? `Jahrgang ${user.jahrgang}` : 'Konfi')}
-                              </p>
-                            </IonLabel>
-
-                            <IonCheckbox
-                              slot="end"
-                              checked={isSelected}
-                              color={user.type === 'admin' ? 'tertiary' : 'primary'}
-                            />
-                          </IonItem>
+              {/* Verfügbare Personen */}
+              <IonList inset={true}>
+                <IonListHeader>
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    backgroundColor: '#06b6d4',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: '8px'
+                  }}>
+                    <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                  </div>
+                  <IonLabel>Verfügbare Personen ({filteredAvailableUsers.length})</IonLabel>
+                </IonListHeader>
+                <IonItemGroup>
+                  <div style={{ padding: '8px' }}>
+                    {filteredAvailableUsers.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '16px', color: '#8e8e93' }}>
+                        Keine verfügbaren Personen gefunden
+                      </div>
+                    ) : (
+                      filteredAvailableUsers.map((u) => {
+                        const userId = `${u.type}-${u.id}`;
+                        return renderUserItem(
+                          u,
+                          true,
+                          selectedUsers.has(userId),
+                          () => handleUserToggle(u)
                         );
-                      })}
-                    </IonList>
-                  </IonCardContent>
-                </IonCard>
-              )}
+                      })
+                    )}
+                  </div>
+                </IonItemGroup>
+              </IonList>
             </>
           ) : (
             <>
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <IonCard style={{
-                  margin: '16px',
-                  borderRadius: '12px',
-                  background: 'white',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                  border: '1px solid #e0e0e0'
-                }}>
-                  <IonCardContent style={{ padding: '16px' }}>
-                    <IonList style={{ background: 'transparent' }}>
-                      {participants.map((participant) => (
-                        <IonItemSliding key={`${participant.user_type}-${participant.user_id}`}>
-                          <IonItem
-                            lines="none"
-                            style={{
-                              '--min-height': '56px',
-                              '--padding-start': '16px',
-                              '--background': '#fbfbfb',
-                              '--border-radius': '12px',
-                              margin: '6px 0',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                              border: '1px solid #e0e0e0',
-                              borderRadius: '12px'
-                            }}
-                          >
-                            <IonAvatar slot="start" style={{
-                              width: '40px',
-                              height: '40px',
-                              backgroundColor: '#17a2b8'
-                            }}>
-                              <div style={{
-                                color: 'white',
-                                fontSize: '0.8rem',
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%'
-                              }}>
-                                {(participant.name || 'U').charAt(0).toUpperCase()}
-                              </div>
-                            </IonAvatar>
-
-                            <IonLabel>
-                              <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{participant.name || 'Unbekannter User'}</h3>
-                              <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                                {participant.user_type === 'admin' ? 'Admin' :
-                                 (participant.jahrgang_name ? `Jahrgang ${participant.jahrgang_name}` : 'Konfi')}
-                              </p>
-                            </IonLabel>
-                          </IonItem>
-
-                          {canManageMembers && (
-                            <IonItemOptions side="end" style={{
-                              gap: '4px',
-                              '--ion-item-background': 'transparent'
-                            }}>
-                              <IonItemOption
-                                onClick={() => confirmRemoveUser(participant)}
-                                style={{
-                                  '--background': 'transparent',
-                                  '--border-radius': '50%',
-                                  minWidth: '44px',
-                                  maxWidth: '44px',
-                                  height: '44px',
-                                  padding: '0',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                <div style={{
-                                  width: '44px',
-                                  height: '44px',
-                                  backgroundColor: '#dc3545',
-                                  borderRadius: '50%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                                }}>
-                                  <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
-                                </div>
-                              </IonItemOption>
-                            </IonItemOptions>
-                          )}
-                        </IonItemSliding>
-                      ))}
-                    </IonList>
-                  </IonCardContent>
-                </IonCard>
+                <IonList inset={true}>
+                  <IonListHeader>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      backgroundColor: '#06b6d4',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: '8px'
+                    }}>
+                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                    </div>
+                    <IonLabel>Mitglieder ({participants.length})</IonLabel>
+                  </IonListHeader>
+                  <IonItemGroup>
+                    <div style={{ padding: '8px' }}>
+                      {participants.map((p) =>
+                        renderUserItem(
+                          p,
+                          false,
+                          false,
+                          undefined,
+                          canManageMembers ? () => confirmRemoveUser(p) : undefined
+                        )
+                      )}
+                    </div>
+                  </IonItemGroup>
+                </IonList>
               )}
             </>
           )}
-        </IonContent>
-        
-        {/* Remove Confirmation Alert */}
-        <IonAlert
-          isOpen={showRemoveAlert}
-          onDidDismiss={() => setShowRemoveAlert(false)}
-          header="Mitglied entfernen"
-          message={`Möchten Sie ${userToRemove?.name} wirklich aus dem Chat entfernen?`}
-          buttons={[
-            {
-              text: 'Abbrechen',
-              role: 'cancel'
-            },
-            {
-              text: 'Entfernen',
-              role: 'destructive',
-              handler: removeUser
-            }
-          ]}
-        />
-      </IonPage>
+        </div>
+      </IonContent>
+
+      {/* Remove Confirmation Alert */}
+      <IonAlert
+        isOpen={showRemoveAlert}
+        onDidDismiss={() => setShowRemoveAlert(false)}
+        header="Mitglied entfernen"
+        message={`${userToRemove?.name} wirklich aus dem Chat entfernen?`}
+        buttons={[
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Entfernen', role: 'destructive', handler: removeUser }
+        ]}
+      />
+    </IonPage>
   );
 };
 

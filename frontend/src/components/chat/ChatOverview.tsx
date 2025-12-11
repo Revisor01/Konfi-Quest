@@ -569,8 +569,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             '--inner-border-width': '0',
                             '--border-style': 'none',
                             '--min-height': 'auto',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                            border: '1px solid #d1d1d6',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                            border: '1px solid rgba(0,0,0,0.06)',
                             borderLeft: `3px solid ${color}`,
                             borderRadius: '10px'
                           }}

@@ -402,7 +402,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
-          <IonTitle>{chatType === 'direct' ? 'Neue Nachricht' : 'Neuer Gruppenchat'}</IonTitle>
+          <IonTitle>{chatType === 'direct' ? 'Neue Direktnachricht' : 'Neuer Gruppenchat'}</IonTitle>
           {chatType === 'group' && (
             <IonButtons slot="end">
               <IonButton onClick={createGroupChat} disabled={!isFormValid || creating}>
@@ -567,12 +567,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             }
                           }}
                           style={{
-                            border: isSelected ? '1px solid #06b6d4' : '1px solid #d1d1d6',
+                            borderTop: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
+                            borderRight: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
+                            borderBottom: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
                             borderLeft: `3px solid ${color}`,
                             borderRadius: '10px',
                             padding: '10px 12px',
-                            background: isSelected ? '#06b6d410' : 'white',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                            background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'white',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1
                           }}
