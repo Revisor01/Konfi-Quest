@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
   IonContent,
   IonButton,
   IonButtons,
@@ -391,59 +394,43 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
   return (
     <IonPage ref={pageRef}>
-      <IonContent className="app-gradient-background">
-        <div style={{ padding: '8px 16px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {/* Header Icons */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <IonButtons>
-              <IonButton onClick={handleClose} disabled={creating}>
-                <IonIcon icon={closeOutline} slot="icon-only" />
+      {/* Fixierter Header */}
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={handleClose} disabled={creating}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
+          <IonTitle>{chatType === 'direct' ? 'Neue Nachricht' : 'Neuer Gruppenchat'}</IonTitle>
+          {chatType === 'group' && (
+            <IonButtons slot="end">
+              <IonButton onClick={createGroupChat} disabled={!isFormValid || creating}>
+                {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             </IonButtons>
-            {chatType === 'group' ? (
-              <IonButtons>
-                <IonButton onClick={createGroupChat} disabled={!isFormValid || creating}>
-                  {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
-                </IonButton>
-              </IonButtons>
-            ) : (
-              <div style={{ width: '44px' }} />
-            )}
-          </div>
-
-          {/* Segment für Admin - kompakt und zentriert */}
-          {isAdmin && (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <IonSegment
-                value={chatType}
-                onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
-                style={{
-                  '--background': 'rgba(6, 182, 212, 0.1)',
-                  maxWidth: '280px',
-                  borderRadius: '8px'
-                }}
-              >
-                <IonSegmentButton value="direct" style={{
-                  '--indicator-color': '#06b6d4',
-                  '--color-checked': 'white',
-                  '--color': '#06b6d4',
-                  fontSize: '0.85rem',
-                  minHeight: '36px'
-                }}>
-                  <IonLabel>Direkt</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="group" style={{
-                  '--indicator-color': '#06b6d4',
-                  '--color-checked': 'white',
-                  '--color': '#06b6d4',
-                  fontSize: '0.85rem',
-                  minHeight: '36px'
-                }}>
-                  <IonLabel>Gruppe</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-            </div>
           )}
+        </IonToolbar>
+        {/* Segment im Header für Admin */}
+        {isAdmin && (
+          <IonToolbar>
+            <IonSegment
+              value={chatType}
+              onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
+            >
+              <IonSegmentButton value="direct">
+                <IonLabel>Direktnachricht</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="group">
+                <IonLabel>Gruppenchat</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </IonToolbar>
+        )}
+      </IonHeader>
+
+      <IonContent className="app-gradient-background">
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
           {/* Gruppenname Input für Group Chat - iOS26 Pattern */}
           {chatType === 'group' && (
@@ -564,7 +551,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
-                      const color = targetUser.type === 'admin' ? '#0891b2' : '#06b6d4';
+                      // Admins türkis, Konfis orange
+                      const color = targetUser.type === 'admin' ? '#06b6d4' : '#f97316';
 
                       return (
                         <div

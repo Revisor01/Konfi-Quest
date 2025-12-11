@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  IonModal,
   IonPage,
   IonHeader,
   IonToolbar,
@@ -17,11 +16,20 @@ import {
   IonSelect,
   IonSelectOption,
   IonList,
-  IonCheckbox,
-  IonText,
-  IonNote
+  IonItemGroup,
+  IonListHeader,
+  IonSpinner
 } from '@ionic/react';
-import { close, checkmark, add, remove } from 'ionicons/icons';
+import {
+  closeOutline,
+  checkmarkOutline,
+  addOutline,
+  removeCircleOutline,
+  helpCircleOutline,
+  listOutline,
+  settingsOutline,
+  timeOutline
+} from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -42,7 +50,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
   };
   const { setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
-  
+
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [multipleChoice, setMultipleChoice] = useState(false);
@@ -79,14 +87,14 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
   const createPoll = async () => {
     const trimmedQuestion = question.trim();
     const validOptions = options.filter(opt => opt.trim());
-    
+
     if (!trimmedQuestion) {
-      setError('Bitte geben Sie eine Frage ein');
+      setError('Bitte gib eine Frage ein');
       return;
     }
 
     if (validOptions.length < 2) {
-      setError('Bitte geben Sie mindestens 2 Antwortmöglichkeiten ein');
+      setError('Bitte gib mindestens 2 Antwortmöglichkeiten ein');
       return;
     }
 
@@ -100,7 +108,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       };
 
       await api.post(`/chat/rooms/${roomId}/polls`, pollData);
-      
+
       setSuccess('Umfrage erstellt');
       resetForm();
       onSuccess();
@@ -119,129 +127,169 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
 
   return (
     <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Umfrage erstellen</IonTitle>
-            <IonButtons slot="start">
-              <IonButton onClick={handleClose}>
-                <IonIcon icon={close} />
-              </IonButton>
-            </IonButtons>
-            <IonButtons slot="end">
-              <IonButton 
-                onClick={createPoll} 
-                disabled={!canCreate() || creating}
-                color="primary"
-              >
-                <IonIcon icon={checkmark} />
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        
-        <IonContent>
-          <div style={{ padding: '16px' }}>
-            {/* Question Input */}
-            <div style={{ marginBottom: '24px' }}>
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonButton onClick={handleClose} disabled={creating}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
+            </IonButton>
+          </IonButtons>
+          <IonTitle>Neue Umfrage</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={createPoll} disabled={!canCreate() || creating}>
+              {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent className="app-gradient-background">
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Frage */}
+          <IonList inset={true}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={helpCircleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
+              <IonLabel>Frage</IonLabel>
+            </IonListHeader>
+            <IonItemGroup>
               <IonItem>
-                <IonLabel position="stacked">Frage</IonLabel>
                 <IonTextarea
                   value={question}
                   onIonInput={(e) => setQuestion(e.detail.value!)}
-                  placeholder="Ihre Frage eingeben..."
+                  placeholder="Deine Frage eingeben..."
                   rows={2}
                   maxlength={500}
+                  label="Frage"
+                  labelPlacement="stacked"
                 />
               </IonItem>
-            </div>
-            
-            {/* Options Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <IonText>
-                <h3 style={{ margin: '0 0 8px 0' }}>Antwortmöglichkeiten</h3>
-                <IonNote color="medium">Mindestens 2 Optionen erforderlich</IonNote>
-              </IonText>
-              
-              <div style={{ marginTop: '16px' }}>
-                {options.map((option, index) => (
-                  <IonItem key={index} style={{ marginBottom: '8px' }}>
-                    <IonLabel position="stacked">Option {index + 1}</IonLabel>
-                    <IonInput
-                      value={option}
-                      onIonInput={(e) => updateOption(index, e.detail.value!)}
-                      placeholder={`Option ${index + 1} eingeben...`}
-                      maxlength={200}
-                    />
-                    {options.length > 2 && (
-                      <IonButton
-                        fill="clear"
-                        slot="end"
-                        onClick={() => removeOption(index)}
-                        color="danger"
-                      >
-                        <IonIcon icon={remove} />
-                      </IonButton>
-                    )}
-                  </IonItem>
-                ))}
-                
-                {/* Add Option Button */}
-                {options.length < 10 && (
-                  <IonItem 
-                    button 
-                    onClick={addOption}
-                    style={{ marginTop: '8px' }}
-                  >
-                    <IonIcon icon={add} slot="start" />
-                    <IonLabel>Weitere Option hinzufügen</IonLabel>
-                  </IonItem>
-                )}
+            </IonItemGroup>
+          </IonList>
+
+          {/* Antwortmöglichkeiten */}
+          <IonList inset={true}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={listOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
               </div>
-            </div>
-            
-            {/* Settings Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <IonText>
-                <h3 style={{ margin: '0 0 16px 0' }}>Einstellungen</h3>
-              </IonText>
-              
-              {/* Multiple Choice Toggle */}
-              <IonItem style={{ marginBottom: '12px' }}>
-                <IonLabel>
-                  <h3>Mehrfachauswahl</h3>
-                  <IonNote color="medium">
-                    Erlaubt es Nutzern, mehrere Antworten zu wählen
-                  </IonNote>
-                </IonLabel>
+              <IonLabel>Antwortmöglichkeiten</IonLabel>
+            </IonListHeader>
+            <IonItemGroup>
+              {options.map((option, index) => (
+                <IonItem key={index}>
+                  <IonInput
+                    value={option}
+                    onIonInput={(e) => updateOption(index, e.detail.value!)}
+                    placeholder={`Option ${index + 1}`}
+                    maxlength={200}
+                    label={`Option ${index + 1}`}
+                    labelPlacement="stacked"
+                  />
+                  {options.length > 2 && (
+                    <IonButton
+                      fill="clear"
+                      slot="end"
+                      onClick={() => removeOption(index)}
+                      style={{ '--color': '#dc3545' }}
+                    >
+                      <IonIcon icon={removeCircleOutline} />
+                    </IonButton>
+                  )}
+                </IonItem>
+              ))}
+
+              {/* Option hinzufügen */}
+              {options.length < 10 && (
+                <IonItem button onClick={addOption} detail={false}>
+                  <IonIcon icon={addOutline} slot="start" style={{ color: '#06b6d4' }} />
+                  <IonLabel style={{ color: '#06b6d4' }}>Option hinzufügen</IonLabel>
+                </IonItem>
+              )}
+            </IonItemGroup>
+          </IonList>
+
+          {/* Einstellungen */}
+          <IonList inset={true}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={settingsOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
+              <IonLabel>Einstellungen</IonLabel>
+            </IonListHeader>
+            <IonItemGroup>
+              <IonItem>
                 <IonToggle
                   checked={multipleChoice}
                   onIonChange={(e) => setMultipleChoice(e.detail.checked)}
-                />
+                  style={{
+                    '--track-background-checked': '#06b6d4'
+                  }}
+                >
+                  <IonLabel>
+                    <h3>Mehrfachauswahl</h3>
+                    <p style={{ fontSize: '0.8rem', color: '#8e8e93' }}>
+                      Mehrere Antworten erlauben
+                    </p>
+                  </IonLabel>
+                </IonToggle>
               </IonItem>
-              
-              {/* Expiration Toggle */}
-              <IonItem style={{ marginBottom: '12px' }}>
-                <IonLabel>
-                  <h3>Ablaufdatum</h3>
-                  <IonNote color="medium">
-                    Umfrage automatisch nach bestimmtem Datum schließen
-                  </IonNote>
-                </IonLabel>
+
+              <IonItem>
                 <IonToggle
                   checked={hasExpiration}
                   onIonChange={(e) => setHasExpiration(e.detail.checked)}
-                />
+                  style={{
+                    '--track-background-checked': '#06b6d4'
+                  }}
+                >
+                  <IonLabel>
+                    <h3>Ablaufdatum</h3>
+                    <p style={{ fontSize: '0.8rem', color: '#8e8e93' }}>
+                      Umfrage automatisch schließen
+                    </p>
+                  </IonLabel>
+                </IonToggle>
               </IonItem>
-              
-              {/* Expiration Duration Picker */}
+
               {hasExpiration && (
-                <IonItem style={{ marginTop: '12px' }}>
-                  <IonLabel position="stacked">Ablaufzeit</IonLabel>
+                <IonItem>
+                  <IonIcon icon={timeOutline} slot="start" style={{ color: '#06b6d4' }} />
                   <IonSelect
                     value={expirationHours}
                     onIonChange={(e) => setExpirationHours(e.detail.value)}
                     interface="popover"
-                    placeholder="Wählen Sie eine Dauer"
+                    label="Ablaufzeit"
+                    labelPlacement="start"
                   >
                     <IonSelectOption value={1}>1 Stunde</IonSelectOption>
                     <IonSelectOption value={8}>8 Stunden</IonSelectOption>
@@ -250,9 +298,11 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                   </IonSelect>
                 </IonItem>
               )}
-            </div>
-          </div>
-        </IonContent>
+            </IonItemGroup>
+          </IonList>
+
+        </div>
+      </IonContent>
     </IonPage>
   );
 };

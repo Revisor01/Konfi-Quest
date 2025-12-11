@@ -523,7 +523,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -1091,10 +1090,15 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     try {
       // Native haptic feedback
       await Haptics.impact({ style: ImpactStyle.Medium });
-      
-      // Show action sheet with options
-      setSelectedMessage(message);
-      setShowActionSheet(true);
+
+      // Toggle selection - zeige Inline-Aktionsleiste
+      if (selectedMessage?.id === message.id) {
+        setSelectedMessage(null);
+        setShowReactionPicker(false);
+      } else {
+        setSelectedMessage(message);
+        setShowReactionPicker(false);
+      }
     } catch (error) {
       console.error('Error with long press:', error);
     }
@@ -1365,35 +1369,42 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               opacity: 0.6,
               color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
             }}>
-              🗑️ {message.content}
+              {message.content}
             </div>
           ) : message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
-              background: 'rgba(128, 128, 128, 0.1)',
-              borderRadius: '16px',
-              padding: '20px',
-              marginTop: '8px',
-              border: '1px solid rgba(128, 128, 128, 0.2)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              background: isOwnMessage ? 'rgba(255,255,255,0.1)' : 'rgba(6, 182, 212, 0.06)',
+              borderRadius: '14px',
+              padding: '16px',
+              marginTop: '4px',
+              border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(6, 182, 212, 0.2)'}`,
             }}>
-              <div style={{ 
-                fontWeight: '600', 
-                marginBottom: '16px',
-                fontSize: '1.1rem',
+              {/* Frage mit Icon */}
+              <div style={{
+                fontWeight: '600',
+                marginBottom: '12px',
+                fontSize: '1rem',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.9)'
+                alignItems: 'flex-start',
+                gap: '8px',
+                color: isOwnMessage ? 'white' : '#1a1a1a'
               }}>
-                <span style={{
-                  fontSize: '1.3rem',
-                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  backgroundColor: '#06b6d4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}>
-                  📊
-                </span>
-                {message.question}
+                  <IonIcon icon={barChart} style={{ color: 'white', fontSize: '0.8rem' }} />
+                </div>
+                <span>{message.question}</span>
               </div>
-              
+
+              {/* Ablaufdatum */}
               {message.expires_at && (() => {
                 const expiresDate = new Date(message.expires_at);
                 const now = new Date();
@@ -1404,222 +1415,132 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
                 return (
                   <div style={{
-                    fontSize: '0.85rem',
-                    marginBottom: '16px',
-                    padding: '10px 14px',
-                    background: isExpired
-                      ? 'rgba(220,53,69,0.15)'
-                      : isOwnMessage
-                        ? 'rgba(255,255,255,0.12)'
-                        : 'rgba(0,0,0,0.06)',
-                    borderRadius: '10px',
-                    border: `1px solid ${isExpired ? 'rgba(220,53,69,0.3)' : isOwnMessage ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.1)'}`,
-                    color: isExpired
-                      ? '#dc3545'
-                      : isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.8)',
+                    fontSize: '0.8rem',
+                    marginBottom: '12px',
+                    padding: '8px 12px',
+                    background: isExpired ? 'rgba(220,53,69,0.12)' : 'rgba(6, 182, 212, 0.1)',
+                    borderRadius: '8px',
+                    color: isExpired ? '#dc3545' : (isOwnMessage ? 'rgba(255,255,255,0.9)' : '#06b6d4'),
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '6px'
                   }}>
-                    <IonIcon icon={time} style={{ fontSize: '1.1rem' }} />
-                    <div>
-                      {isExpired ? (
-                        <span style={{ fontWeight: '600' }}>Abgestimmt - Beendet</span>
-                      ) : (
-                        <>
-                          <span style={{ fontWeight: '500' }}>
-                            Endet: {expiresDate.toLocaleString('de-DE', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              timeZone: 'Europe/Berlin'
-                            })}
-                          </span>
-                          {hoursRemaining < 24 && (
-                            <span style={{ marginLeft: '8px', opacity: 0.85 }}>
-                              (noch {hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}{minutesRemaining}min)
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
+                    <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                    {isExpired ? (
+                      <span style={{ fontWeight: '500' }}>Beendet</span>
+                    ) : (
+                      <span>
+                        Endet: {expiresDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        {hoursRemaining < 24 && ` (${hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}${minutesRemaining}min)`}
+                      </span>
+                    )}
                   </div>
                 );
               })()}
-              
+
+              {/* Optionen */}
               {message.options.map((option, index) => {
-                // Stimmen für diese Option zählen
                 const optionVotes = message.votes?.filter(vote => vote.option_index === index) || [];
                 const totalVotes = message.votes?.length || 0;
                 const percentage = totalVotes > 0 ? (optionVotes.length / totalVotes) * 100 : 0;
-                
-                // Prüfen ob aktueller User abgestimmt hat
-                const userVoted = message.votes?.some(vote => 
-                  vote.user_id === user?.id && 
-                  vote.user_type === user?.type && 
-                  vote.option_index === index
+                const userVoted = message.votes?.some(vote =>
+                  vote.user_id === user?.id && vote.user_type === user?.type && vote.option_index === index
                 );
-                
+
                 return (
-                  <div key={index} style={{ marginBottom: '10px' }}>
-                    <div
-                      onClick={() => voteInPoll(message.id, index)}
-                      style={{
-                        background: userVoted 
-                          ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%)' 
-                          : isOwnMessage 
-                            ? 'rgba(255,255,255,0.12)' 
-                            : 'rgba(0,0,0,0.06)',
-                        border: userVoted 
-                          ? '2px solid #4caf50' 
-                          : `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.15)'}`,
-                        borderRadius: '12px',
-                        padding: '14px 16px',
-                        cursor: 'pointer',
-                        position: 'relative',
-                        overflow: 'hidden',
-                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                        boxShadow: userVoted 
-                          ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
-                          : '0 2px 8px rgba(0,0,0,0.08)',
-                        transform: 'translateZ(0)',
-                      }}
-                      onMouseEnter={(e) => {
-                        const target = e.target as HTMLElement;
-                        target.style.transform = 'translateY(-1px)';
-                        target.style.boxShadow = userVoted 
-                          ? '0 6px 20px rgba(76, 175, 80, 0.3)' 
-                          : '0 4px 12px rgba(0,0,0,0.12)';
-                      }}
-                      onMouseLeave={(e) => {
-                        const target = e.target as HTMLElement;
-                        target.style.transform = 'translateZ(0)';
-                        target.style.boxShadow = userVoted 
-                          ? '0 4px 16px rgba(76, 175, 80, 0.25)' 
-                          : '0 2px 8px rgba(0,0,0,0.08)';
-                      }}
-                    >
-                      {/* Progress Bar Background */}
-                      <div style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        height: '100%',
-                        width: `${percentage}%`,
-                        background: userVoted 
-                          ? 'linear-gradient(90deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.08) 100%)' 
-                          : isOwnMessage 
-                            ? 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)'
-                            : 'linear-gradient(90deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.03) 100%)',
-                        transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
-                        borderRadius: '10px'
-                      }} />
-                      
-                      {/* Content */}
-                      <div style={{ 
-                        position: 'relative', 
-                        zIndex: 1,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          {userVoted && (
-                            <div style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              background: 'linear-gradient(45deg, #4caf50, #66bb6a)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: '0 2px 6px rgba(76, 175, 80, 0.4)'
-                            }}>
-                              <IonIcon 
-                                icon={checkmark} 
-                                style={{ 
-                                  color: 'white',
-                                  fontSize: '0.9rem',
-                                  fontWeight: 'bold'
-                                }} 
-                              />
-                            </div>
-                          )}
-                          <span style={{ 
-                            fontWeight: userVoted ? '600' : '500',
-                            color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.9)',
-                            fontSize: '0.95rem'
+                  <div
+                    key={index}
+                    onClick={() => voteInPoll(message.id, index)}
+                    style={{
+                      background: userVoted
+                        ? 'rgba(6, 182, 212, 0.15)'
+                        : isOwnMessage ? 'rgba(255,255,255,0.1)' : 'white',
+                      border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.1)',
+                      borderRadius: '10px',
+                      padding: '12px',
+                      marginBottom: '8px',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {/* Fortschrittsbalken */}
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      height: '100%',
+                      width: `${percentage}%`,
+                      background: userVoted
+                        ? 'rgba(6, 182, 212, 0.15)'
+                        : 'rgba(6, 182, 212, 0.08)',
+                      transition: 'width 0.4s ease',
+                      borderRadius: '8px'
+                    }} />
+
+                    <div style={{
+                      position: 'relative',
+                      zIndex: 1,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {userVoted && (
+                          <div style={{
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            backgroundColor: '#06b6d4',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}>
-                            {option}
-                          </span>
-                        </div>
-                        
-                        <div style={{ 
-                          fontSize: '0.85rem',
-                          opacity: 0.85,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: isOwnMessage 
-                            ? 'rgba(255,255,255,0.12)' 
-                            : 'rgba(0,0,0,0.08)',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
+                            <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
+                          </div>
+                        )}
+                        <span style={{
+                          fontWeight: userVoted ? '600' : '500',
+                          color: isOwnMessage ? 'white' : '#1a1a1a',
+                          fontSize: '0.9rem'
                         }}>
-                          <span style={{ fontWeight: '600' }}>{optionVotes.length}</span>
-                          <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                            ({percentage.toFixed(0)}%)
-                          </span>
-                        </div>
+                          {option}
+                        </span>
+                      </div>
+
+                      <div style={{
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                        color: '#06b6d4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span>{optionVotes.length}</span>
+                        <span style={{ opacity: 0.7 }}>({percentage.toFixed(0)}%)</span>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              
-              {/* Poll Info */}
+
+              {/* Info Footer */}
               <div style={{
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: isOwnMessage 
-                  ? 'rgba(255,255,255,0.08)' 
-                  : 'rgba(0,0,0,0.04)',
-                borderRadius: '10px',
-                border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
+                marginTop: '8px',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '8px'
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.75rem',
+                color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#8e8e93'
               }}>
-                <div style={{
-                  fontSize: '0.85rem',
-                  opacity: 0.8,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
-                }}>
-                  <span style={{ fontSize: '0.9rem' }}>
-                    {message.multiple_choice ? '☑️' : '🔘'}
-                  </span>
-                  <span>
-                    {message.multiple_choice ? 'Mehrfachauswahl möglich' : 'Nur eine Antwort'}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <IonIcon icon={message.multiple_choice ? checkmark : chatbubbles} style={{ fontSize: '0.8rem' }} />
+                  <span>{message.multiple_choice ? 'Mehrfachauswahl' : 'Einzelauswahl'}</span>
                 </div>
-                <div style={{
-                  fontSize: '0.85rem',
-                  fontWeight: '600',
-                  opacity: 0.9,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: isOwnMessage ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.8)'
-                }}>
-                  <span>👥</span>
-                  <span>
-                    {message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''} insgesamt
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <IonIcon icon={people} style={{ fontSize: '0.8rem' }} />
+                  <span>{message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}</span>
                 </div>
               </div>
             </div>
@@ -1813,7 +1734,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               gap: '4px',
               marginTop: '6px'
             }}>
-              {/* Reaktionen nach Emoji gruppieren */}
               {Object.entries(
                 message.reactions.reduce((acc, r) => {
                   if (!acc[r.emoji]) acc[r.emoji] = [];
@@ -1863,6 +1783,138 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                     }}>
                       {reactions.length}
                     </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Inline Aktionsleiste unter ausgewählter Nachricht */}
+          {selectedMessage?.id === message.id && !showReactionPicker && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '4px',
+                marginTop: '8px',
+                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                onClick={() => openReactionPicker(message)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <IonIcon icon={addOutline} style={{ fontSize: '1.1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              </div>
+              <div
+                onClick={() => {
+                  setReplyToMessage(message);
+                  setSelectedMessage(null);
+                  setTimeout(() => textareaRef.current?.setFocus(), 100);
+                }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <IonIcon icon={arrowUndoOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              </div>
+              <div
+                onClick={() => {
+                  setSelectedMessage(message);
+                  handleShare();
+                }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <IonIcon icon={shareOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
+              </div>
+              {user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name) && (
+                <div
+                  onClick={() => {
+                    deleteMessage(message.id);
+                    setSelectedMessage(null);
+                  }}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(220, 53, 69, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <IonIcon icon={trashOutline} style={{ fontSize: '1rem', color: '#dc3545' }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Inline Reaktions-Picker */}
+          {showReactionPicker && reactionTargetMessage?.id === message.id && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '2px',
+                marginTop: '8px',
+                padding: '6px 10px',
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {Object.entries(REACTION_EMOJIS).map(([emoji, data]) => {
+                const userHasThisReaction = message.reactions?.some(
+                  r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
+                );
+                return (
+                  <div
+                    key={emoji}
+                    onClick={() => toggleReaction(message.id, emoji)}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
+                      border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <IonIcon
+                      icon={userHasThisReaction ? data.filled : data.outline}
+                      style={{ fontSize: '1.2rem', color: data.color }}
+                    />
                   </div>
                 );
               })}
@@ -2129,141 +2181,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         </IonToolbar>
       </IonFooter>
 
-      {/* Action Sheet für Longpress */}
-      <IonActionSheet
-        isOpen={showActionSheet}
-        onDidDismiss={() => {
-          setShowActionSheet(false);
-          setSelectedMessage(null);
-        }}
-        buttons={[
-          {
-            text: 'Reagieren',
-            icon: 'heart-outline',
-            handler: () => {
-              if (selectedMessage) {
-                openReactionPicker(selectedMessage);
-              }
-            }
-          },
-          {
-            text: 'Antworten',
-            icon: 'arrow-undo-outline',
-            handler: () => {
-              if (selectedMessage) {
-                setReplyToMessage(selectedMessage);
-                // Focus textarea after setting reply
-                setTimeout(() => {
-                  textareaRef.current?.setFocus();
-                }, 100);
-              }
-            }
-          },
-          {
-            text: 'Teilen',
-            icon: 'share-outline',
-            handler: () => {
-              handleShare();
-            }
-          },
-          ...((user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name)) ? [{
-            text: 'Loeschen',
-            icon: 'trash-outline',
-            role: 'destructive' as const,
-            handler: () => {
-              if (selectedMessage) {
-                deleteMessage(selectedMessage.id);
-              }
-            }
-          }] : []),
-          {
-            text: 'Abbrechen',
-            icon: 'close-outline',
-            role: 'cancel' as const
-          }
-        ]}
-      />
-
-      {/* Reaction Picker - modernes Popover-Design */}
-      {showReactionPicker && reactionTargetMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            animation: 'fadeIn 0.15s ease-out'
-          }}
-          onClick={() => {
-            setShowReactionPicker(false);
-            setReactionTargetMessage(null);
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '24px',
-              padding: '12px 16px',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.2), 0 4px 12px rgba(6, 182, 212, 0.15)',
-              display: 'flex',
-              gap: '6px',
-              animation: 'scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {Object.entries(REACTION_EMOJIS).map(([emoji, data]) => {
-              const userHasThisReaction = reactionTargetMessage.reactions?.some(
-                r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
-              );
-              return (
-                <div
-                  key={emoji}
-                  onClick={() => toggleReaction(reactionTargetMessage.id, emoji)}
-                  style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
-                    border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
-                    transition: 'all 0.15s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  title={data.label}
-                >
-                  <IonIcon
-                    icon={userHasThisReaction ? data.filled : data.outline}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: data.color,
-                      transition: 'transform 0.15s ease'
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleIn {
-          from { transform: scale(0.8); opacity: 0; }
-          to { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
 
     </>
   );
