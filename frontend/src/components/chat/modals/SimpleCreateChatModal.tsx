@@ -562,13 +562,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             }
                           }}
                           style={{
-                            borderLeft: `4px solid ${color}`,
-                            border: isSelected ? '1px solid #06b6d4' : '1px solid #e0e0e0',
-                            borderLeftWidth: '4px',
-                            borderLeftColor: color,
-                            borderRadius: '12px',
-                            padding: '10px 10px',
+                            border: isSelected ? '1px solid #06b6d4' : '1px solid #d1d1d6',
+                            borderLeft: `3px solid ${color}`,
+                            borderRadius: '10px',
+                            padding: '10px 12px',
                             background: isSelected ? '#06b6d410' : 'white',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1
                           }}

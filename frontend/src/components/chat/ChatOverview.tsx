@@ -582,10 +582,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                             '--inner-border-width': '0',
                             '--border-style': 'none',
                             '--min-height': 'auto',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                            border: '1px solid #e0e0e0',
-                            borderLeft: `4px solid ${color}`,
-                            borderRadius: '12px'
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                            border: '1px solid #d1d1d6',
+                            borderLeft: `3px solid ${color}`,
+                            borderRadius: '10px'
                           }}
                         >
                           <div style={{ padding: '12px 16px', width: '100%' }}>
