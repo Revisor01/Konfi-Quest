@@ -524,24 +524,27 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             {/* Filter */}
             <IonItem lines="none">
               <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-                <IonSelect
-                  value={filterType}
-                  onIonChange={(e) => setFilterType(e.detail.value!)}
-                  placeholder="Alle Chats"
-                  interface="popover"
-                  style={{
-                    '--background': '#f2f2f7',
-                    '--border-radius': '8px',
-                    '--padding-start': '12px',
-                    '--padding-end': '12px',
-                    minWidth: '160px'
-                  }}
-                >
-                  <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                  <IonSelectOption value="direkt">Direktnachrichten</IonSelectOption>
-                  <IonSelectOption value="gruppe">Gruppenchats</IonSelectOption>
-                  <IonSelectOption value="jahrgang">Jahrgangschats</IonSelectOption>
-                </IonSelect>
+                <div style={{
+                  backgroundColor: '#f2f2f7',
+                  borderRadius: '8px',
+                  padding: '0 4px'
+                }}>
+                  <IonSelect
+                    value={filterType}
+                    onIonChange={(e) => setFilterType(e.detail.value!)}
+                    placeholder="Alle Chats"
+                    interface="popover"
+                    style={{
+                      '--padding-start': '8px',
+                      '--padding-end': '8px'
+                    }}
+                  >
+                    <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                    <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
+                    <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
+                    <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
+                  </IonSelect>
+                </div>
               </div>
             </IonItem>
           </IonItemGroup>
