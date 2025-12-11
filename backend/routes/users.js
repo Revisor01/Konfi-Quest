@@ -32,12 +32,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
              r.name as role_name, r.display_name as role_display_name,
+             r.description as role_description,
              COUNT(DISTINCT uja.jahrgang_id) as assigned_jahrgaenge_count
       FROM users u
       LEFT JOIN roles r ON u.role_id = r.id
       LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
       WHERE u.organization_id = $1 AND r.name NOT IN ('konfi', 'super_admin')
-      GROUP BY u.id, r.name, r.display_name
+      GROUP BY u.id, r.name, r.display_name, r.description
       ORDER BY u.created_at DESC
     `;
 

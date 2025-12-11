@@ -21,6 +21,11 @@ import {
   IonItemOptions,
   IonItemOption,
   IonList,
+  IonListHeader,
+  IonItemGroup,
+  IonLabel,
+  IonSelect,
+  IonSelectOption,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -80,6 +85,9 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
+  const [filterType, setFilterType] = useState<string>('alle');
+
+  const isAdmin = user?.type === 'admin';
 
   // Nutze den useModalPage Hook, um die Seite zu registrieren
   const location = useLocation();
@@ -153,7 +161,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   });
 
   const handleCreateNewChat = () => {
-    console.log('🎯 ChatOverview: Opening modal with presentingElement:', pageRef.current);
     presentChatModalHook({
       presentingElement: pageRef.current || undefined
     });
@@ -233,9 +240,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   };
 
   const filteredRooms = rooms
-    .filter(room =>
-      room.name.toLowerCase().includes(searchText.toLowerCase())
-    )
+    .filter(room => {
+      // Suchfilter
+      const matchesSearch = room.name.toLowerCase().includes(searchText.toLowerCase());
+      if (!matchesSearch) return false;
+
+      // Typ-Filter
+      if (filterType === 'alle') return true;
+      if (filterType === 'direkt') return room.type === 'direct';
+      if (filterType === 'gruppe') return room.type === 'group' || room.type === 'jahrgang' || room.type === 'admin';
+      return true;
+    })
     .sort((a, b) => {
       // Sort by last message timestamp (newest first)
       const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
@@ -475,40 +490,45 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           </div>
         </div>
 
-        {/* Suchfeld Navigation */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '14px 16px' }}>
-            <IonItem 
-              lines="none" 
-              style={{ 
-                '--background': '#f8f9fa',
-                '--border-radius': '12px',
-                '--padding-start': '12px',
-                '--padding-end': '12px',
-                margin: '0'
-              }}
-            >
-              <IonIcon 
-                icon={search} 
-                slot="start" 
-                style={{ 
+        {/* Suche & Filter - iOS26 Pattern wie im Modal */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <IonLabel>Suche & Filter</IonLabel>
+          </IonListHeader>
+          <IonItemGroup>
+            {/* Suchfeld */}
+            <IonItem>
+              <IonIcon
+                icon={search}
+                slot="start"
+                style={{
                   color: '#8e8e93',
-                  marginRight: '8px',
                   fontSize: '1rem'
-                }} 
+                }}
               />
               <IonInput
                 value={searchText}
                 onIonInput={(e) => setSearchText(e.detail.value!)}
                 placeholder="Chaträume durchsuchen..."
-                style={{ 
-                  '--color': '#000',
-                  '--placeholder-color': '#8e8e93'
-                }}
               />
             </IonItem>
-          </IonCardContent>
-        </IonCard>
+            {/* Filter */}
+            <IonItem>
+              <IonSelect
+                value={filterType}
+                onIonChange={(e) => setFilterType(e.detail.value!)}
+                placeholder="Alle Chats"
+                interface="popover"
+                fill="solid"
+                style={{ width: '100%' }}
+              >
+                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                <IonSelectOption value="direkt">Direktnachrichten</IonSelectOption>
+                <IonSelectOption value="gruppe">Gruppenchats</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+          </IonItemGroup>
+        </IonList>
 
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
         <div style={{ padding: '0 16px 16px 16px' }}>
@@ -535,7 +555,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     const color = room.type === 'admin' ? '#17a2b8' :
                                   room.type === 'jahrgang' ? '#06b6d4' :
                                   room.type === 'group' ? '#2dd36f' : '#ff6b35';
-                    const canDelete = room.type === 'direct' || room.type === 'group';
+                    // Nur Admins dürfen direct/group Chats löschen
+                    const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 
                     return (
                       <IonItemSliding key={room.id} disabled={!canDelete}>

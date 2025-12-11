@@ -6,6 +6,28 @@ http://ionicframework.com/docs/theming/ */
 @import '@rdlabo/ionic-theme-ios26/dist/css/ionic-theme-ios26.css';
 @import '@rdlabo/ionic-theme-ios26/dist/css/md-remove-ios-class-effect.css';
 
+/* iOS26 Required Color Brightness Variables */
+:root {
+  --ion-color-primary-brightness: #96FEFF;
+  --ion-color-primary-brightness-rgb: 150, 254, 255;
+  --ion-color-secondary-brightness: #a0e7ff;
+  --ion-color-secondary-brightness-rgb: 160, 231, 255;
+  --ion-color-tertiary-brightness: #96FEFF;
+  --ion-color-tertiary-brightness-rgb: 150, 254, 255;
+  --ion-color-success-brightness: #7aff90;
+  --ion-color-success-brightness-rgb: 122, 255, 144;
+  --ion-color-warning-brightness: #ffe066;
+  --ion-color-warning-brightness-rgb: 255, 224, 102;
+  --ion-color-danger-brightness: #ff7a7a;
+  --ion-color-danger-brightness-rgb: 255, 122, 122;
+  --ion-color-light-brightness: #ffffff;
+  --ion-color-light-brightness-rgb: 255, 255, 255;
+  --ion-color-medium-brightness: #b0b0b0;
+  --ion-color-medium-brightness-rgb: 176, 176, 176;
+  --ion-color-dark-brightness: #666666;
+  --ion-color-dark-brightness-rgb: 102, 102, 102;
+}
+
 /* Custom App Styles */
 .app-gradient-background {
   --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
