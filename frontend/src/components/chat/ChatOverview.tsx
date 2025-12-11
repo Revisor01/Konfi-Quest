@@ -172,63 +172,49 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   }));
 
   const deleteRoom = (room: ChatRoom) => {
-    const executeDelete = (force: boolean) => {
-      const url = force ? `/chat/rooms/${room.id}?force=true` : `/chat/rooms/${room.id}`;
-      api.delete(url)
-        .then(() => {
-          setSuccess(`Chat "${room.name}" und alle Daten gelöscht`);
-          loadChatRooms();
-        })
-        .catch((error: any) => {
-          if (error.response?.data?.canForceDelete) {
-            // Org Admin kann trotzdem löschen
-            presentAlert({
-              header: 'Als Admin löschen?',
-              message: `${error.response.data.error}\n\nAls Organisation-Admin können Sie dennoch löschen. Dadurch werden ALLE Chat-Nachrichten unwiderruflich gelöscht!`,
-              buttons: [
-                { text: 'Abbrechen', role: 'cancel' },
-                {
-                  text: 'Dennoch löschen',
-                  role: 'destructive',
-                  handler: () => {
-                    executeDelete(true);
-                  }
-                }
-              ]
-            });
-          } else if (error.response?.data?.error) {
-            setError(error.response.data.error);
-          } else {
-            setError('Fehler beim Löschen des Chats');
-          }
-        });
-    };
-
-    // Erste Bestätigung
     presentAlert({
-      header: 'Chat löschen',
-      message: `Chat "${room.name}" wirklich löschen?`,
+      header: 'Chat löschen?',
+      message: `"${room.name}" und alle Nachrichten unwiderruflich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Löschen',
           role: 'destructive',
           handler: () => {
-            // Zweite Bestätigung mit Warnung
-            presentAlert({
-              header: 'Endgültig löschen?',
-              message: `ACHTUNG: Diese Aktion kann nicht rückgängig gemacht werden!\n\nAlle Nachrichten, Dateien und Daten werden PERMANENT gelöscht.\n\nChat "${room.name}" wirklich endgültig löschen?`,
-              buttons: [
-                { text: 'Abbrechen', role: 'cancel' },
-                {
-                  text: 'Endgültig löschen',
-                  role: 'destructive',
-                  handler: () => {
-                    executeDelete(false);
-                  }
+            // Direkt löschen
+            api.delete(`/chat/rooms/${room.id}`)
+              .then(() => {
+                setSuccess(`Chat "${room.name}" gelöscht`);
+                loadChatRooms();
+              })
+              .catch((error: any) => {
+                if (error.response?.data?.canForceDelete) {
+                  // Hat Nachrichten - Force Delete nötig
+                  setTimeout(() => {
+                    presentAlert({
+                      header: 'Chat hat Nachrichten',
+                      message: `${error.response.data.error}\n\nTrotzdem löschen?`,
+                      buttons: [
+                        { text: 'Abbrechen', role: 'cancel' },
+                        {
+                          text: 'Trotzdem löschen',
+                          role: 'destructive',
+                          handler: () => {
+                            api.delete(`/chat/rooms/${room.id}?force=true`)
+                              .then(() => {
+                                setSuccess(`Chat "${room.name}" gelöscht`);
+                                loadChatRooms();
+                              })
+                              .catch(() => setError('Fehler beim Löschen'));
+                          }
+                        }
+                      ]
+                    });
+                  }, 300);
+                } else {
+                  setError(error.response?.data?.error || 'Fehler beim Löschen');
                 }
-              ]
-            });
+              });
           }
         }
       ]
