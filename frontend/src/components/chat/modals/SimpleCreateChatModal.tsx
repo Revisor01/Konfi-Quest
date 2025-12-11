@@ -392,7 +392,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   return (
     <IonPage ref={pageRef}>
       <IonContent className="app-gradient-background">
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '8px 16px 16px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Header Icons */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <IonButtons>
@@ -411,41 +411,21 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             )}
           </div>
 
-          {/* Segment für Admin - in IonList für gleiche Breite */}
+          {/* Segment für Admin - zentriert */}
           {isAdmin && (
-            <IonList inset={true}>
-              <IonListHeader>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  backgroundColor: '#06b6d4',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '8px'
-                }}>
-                  <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.8rem' }} />
-                </div>
-                <IonLabel>Chat-Typ</IonLabel>
-              </IonListHeader>
-              <IonItemGroup>
-                <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', '--inner-padding-end': '0' }}>
-                  <IonSegment
-                    value={chatType}
-                    onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
-                    style={{ width: '100%' }}
-                  >
-                    <IonSegmentButton value="direct">
-                      <IonLabel>Direktnachricht</IonLabel>
-                    </IonSegmentButton>
-                    <IonSegmentButton value="group">
-                      <IonLabel>Gruppenchat</IonLabel>
-                    </IonSegmentButton>
-                  </IonSegment>
-                </IonItem>
-              </IonItemGroup>
-            </IonList>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <IonSegment
+                value={chatType}
+                onIonChange={(e) => setChatType(e.detail.value as 'direct' | 'group')}
+              >
+                <IonSegmentButton value="direct">
+                  <IonLabel>Direktnachricht</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="group">
+                  <IonLabel>Gruppenchat</IonLabel>
+                </IonSegmentButton>
+              </IonSegment>
+            </div>
           )}
 
           {/* Gruppenname Input für Group Chat - iOS26 Pattern */}

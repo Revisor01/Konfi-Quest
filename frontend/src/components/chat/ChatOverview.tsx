@@ -522,30 +522,20 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               />
             </IonItem>
             {/* Filter */}
-            <IonItem lines="none">
-              <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-                <div style={{
-                  backgroundColor: '#f2f2f7',
-                  borderRadius: '8px',
-                  padding: '0 4px'
-                }}>
-                  <IonSelect
-                    value={filterType}
-                    onIonChange={(e) => setFilterType(e.detail.value!)}
-                    placeholder="Alle Chats"
-                    interface="popover"
-                    style={{
-                      '--padding-start': '8px',
-                      '--padding-end': '8px'
-                    }}
-                  >
-                    <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                    <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
-                    <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
-                    <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
-                  </IonSelect>
-                </div>
-              </div>
+            <IonItem>
+              <IonSelect
+                value={filterType}
+                onIonChange={(e) => setFilterType(e.detail.value!)}
+                placeholder="Alle Chats"
+                interface="popover"
+                label="Typ"
+                labelPlacement="start"
+              >
+                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
+                <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
+                <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
+              </IonSelect>
             </IonItem>
           </IonItemGroup>
         </IonList>
