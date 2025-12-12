@@ -58,8 +58,7 @@ import {
   handLeft,
   addOutline,
   arrowUndoOutline,
-  shareOutline,
-  arrowDownOutline
+  shareOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -529,7 +528,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const contentRef = useRef<HTMLIonContentElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
@@ -763,33 +761,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
     prevMessageCountRef.current = messages.length;
   }, [messages, shouldAutoScroll, isInitialLoad]);
-
-  // Scroll listener fuer Scroll-to-Bottom Button
-  useEffect(() => {
-    const checkScrollPosition = async () => {
-      if (!contentRef.current) return;
-      const scrollElement = await contentRef.current.getScrollElement();
-      const scrollTop = scrollElement.scrollTop;
-      const scrollHeight = scrollElement.scrollHeight;
-      const clientHeight = scrollElement.clientHeight;
-
-      // Zeige Button wenn mehr als 300px vom Ende entfernt
-      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      setShowScrollToBottom(distanceFromBottom > 300);
-    };
-
-    const setupScrollListener = async () => {
-      if (!contentRef.current) return;
-      const scrollElement = await contentRef.current.getScrollElement();
-      scrollElement.addEventListener('scroll', checkScrollPosition);
-      return () => scrollElement.removeEventListener('scroll', checkScrollPosition);
-    };
-
-    const cleanup = setupScrollListener();
-    return () => {
-      cleanup.then(cleanupFn => cleanupFn && cleanupFn());
-    };
-  }, []);
 
   const loadMessages = async () => {
     // Kein eigener Loading State - ChatRoomView handled das Loading
@@ -1382,23 +1353,23 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               style={{
                 padding: '6px 10px',
                 marginBottom: '6px',
-                backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(6, 182, 212, 0.08)',
+                backgroundColor: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.08)',
                 borderRadius: '8px',
-                borderLeft: `3px solid ${isOwnMessage ? 'rgba(255,255,255,0.5)' : '#06b6d4'}`,
+                borderLeft: '3px solid #06b6d4',
                 cursor: 'pointer'
               }}
             >
               <div style={{
                 fontSize: '0.7rem',
                 fontWeight: '600',
-                color: isOwnMessage ? 'rgba(255,255,255,0.9)' : '#06b6d4',
+                color: '#06b6d4',
                 marginBottom: '2px'
               }}>
                 {message.reply_to_sender_name}
               </div>
               <div style={{
                 fontSize: '0.8rem',
-                color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#666',
+                color: '#666',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -1424,11 +1395,11 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
             </div>
           ) : message.message_type === 'poll' && message.question && message.options ? (
             <div style={{
-              background: isOwnMessage ? 'rgba(255,255,255,0.15)' : 'rgba(6, 182, 212, 0.06)',
+              background: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.06)',
               borderRadius: '14px',
               padding: '16px',
               marginTop: '4px',
-              border: `1px solid ${isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.15)'}`,
+              border: isOwnMessage ? '1px solid rgba(6, 182, 212, 0.15)' : '1px solid rgba(6, 182, 212, 0.15)',
             }}>
               {/* Frage mit Icon */}
               <div style={{
@@ -1438,7 +1409,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '8px',
-                color: isOwnMessage ? 'white' : '#1a1a1a'
+                color: '#1a1a1a'
               }}>
                 <div style={{
                   width: '24px',
@@ -1471,7 +1442,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                     padding: '8px 12px',
                     background: isExpired ? 'rgba(220,53,69,0.12)' : 'rgba(6, 182, 212, 0.1)',
                     borderRadius: '8px',
-                    color: isExpired ? '#dc3545' : (isOwnMessage ? 'rgba(255,255,255,0.9)' : '#06b6d4'),
+                    color: isExpired ? '#dc3545' : '#06b6d4',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px'
@@ -1503,12 +1474,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                     key={index}
                     onClick={() => voteInPoll(message.id, index)}
                     style={{
-                      background: userVoted
-                        ? (isOwnMessage ? 'rgba(255,255,255,0.3)' : 'rgba(6, 182, 212, 0.12)')
-                        : (isOwnMessage ? 'rgba(255,255,255,0.2)' : 'white'),
-                      border: userVoted
-                        ? (isOwnMessage ? '2px solid rgba(255,255,255,0.6)' : '2px solid #06b6d4')
-                        : (isOwnMessage ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(0,0,0,0.08)'),
+                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'white',
+                      border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.08)',
                       borderRadius: '10px',
                       padding: '12px',
                       marginBottom: '8px',
@@ -1525,9 +1492,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       top: 0,
                       height: '100%',
                       width: `${percentage}%`,
-                      background: isOwnMessage
-                        ? 'rgba(255,255,255,0.15)'
-                        : (userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)'),
+                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
                       transition: 'width 0.4s ease',
                       borderRadius: '8px'
                     }} />
@@ -1545,17 +1510,17 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                             width: '18px',
                             height: '18px',
                             borderRadius: '50%',
-                            backgroundColor: isOwnMessage ? 'white' : '#06b6d4',
+                            backgroundColor: '#06b6d4',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
                           }}>
-                            <IonIcon icon={checkmark} style={{ color: isOwnMessage ? '#06b6d4' : 'white', fontSize: '0.75rem' }} />
+                            <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
                           </div>
                         )}
                         <span style={{
                           fontWeight: userVoted ? '600' : '500',
-                          color: isOwnMessage ? 'white' : '#1a1a1a',
+                          color: '#1a1a1a',
                           fontSize: '0.9rem'
                         }}>
                           {option}
@@ -1565,7 +1530,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                       <div style={{
                         fontSize: '0.8rem',
                         fontWeight: '600',
-                        color: isOwnMessage ? 'white' : '#06b6d4',
+                        color: '#06b6d4',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px'
@@ -1585,7 +1550,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontSize: '0.75rem',
-                color: isOwnMessage ? 'rgba(255,255,255,0.7)' : '#8e8e93'
+                color: '#8e8e93'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <IonIcon icon={message.multiple_choice ? checkmark : chatbubbles} style={{ fontSize: '0.8rem' }} />
@@ -2024,35 +1989,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         <div style={{ paddingBottom: '120px' }}>
           {messages.map(renderMessage)}
         </div>
-
-        {/* Floating Scroll-to-Bottom Button */}
-        {showScrollToBottom && (
-          <div
-            onClick={() => {
-              contentRef.current?.scrollToBottom(300);
-              setShowScrollToBottom(false);
-            }}
-            style={{
-              position: 'fixed',
-              bottom: '100px',
-              right: '20px',
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              backgroundColor: '#06b6d4',
-              boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              zIndex: 1000,
-              transition: 'transform 0.2s ease, opacity 0.2s ease',
-              animation: 'fadeIn 0.2s ease'
-            }}
-          >
-            <IonIcon icon={arrowDownOutline} style={{ color: 'white', fontSize: '1.4rem' }} />
-          </div>
-        )}
       </IonContent>
 
 
