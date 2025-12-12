@@ -18,7 +18,9 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonInput,
-  IonItem
+  IonItem,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   closeOutline,
@@ -470,30 +472,60 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 </IonItemGroup>
               </IonList>
 
-              {/* Verfuegbare Personen */}
+              {/* Verfuegbare Personen - in IonCard mit Header */}
               <div style={{ padding: '0 16px' }}>
-                {filteredAvailableUsers.length === 0 ? (
+                <IonCard style={{ margin: '0' }}>
+                  {/* Card Header mit Icon */}
                   <div style={{
-                    padding: '40px 20px',
-                    textAlign: 'center',
-                    color: '#666'
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '16px 16px 0 16px',
+                    gap: '10px'
                   }}>
-                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfuegbaren Personen gefunden</p>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      backgroundColor: '#06b6d4',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
+                    </div>
+                    <span style={{
+                      fontWeight: '600',
+                      fontSize: '1rem',
+                      color: '#333'
+                    }}>
+                      Verfuegbare Personen ({filteredAvailableUsers.length})
+                    </span>
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {filteredAvailableUsers.map((u) => {
-                      const userId = `${u.type}-${u.id}`;
-                      return renderUserItem(
-                        u,
-                        true,
-                        selectedUsers.has(userId),
-                        () => handleUserToggle(u)
-                      );
-                    })}
-                  </div>
-                )}
+                  <IonCardContent style={{ padding: '16px' }}>
+                    {filteredAvailableUsers.length === 0 ? (
+                      <div style={{
+                        padding: '40px 20px',
+                        textAlign: 'center',
+                        color: '#666'
+                      }}>
+                        <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                        <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfuegbaren Personen gefunden</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {filteredAvailableUsers.map((u) => {
+                          const userId = `${u.type}-${u.id}`;
+                          return renderUserItem(
+                            u,
+                            true,
+                            selectedUsers.has(userId),
+                            () => handleUserToggle(u)
+                          );
+                        })}
+                      </div>
+                    )}
+                  </IonCardContent>
+                </IonCard>
               </div>
             </>
           ) : (
@@ -502,28 +534,58 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
                 <div style={{ padding: '0 16px' }}>
-                  {sortedParticipants.length === 0 ? (
+                  <IonCard style={{ margin: '0' }}>
+                    {/* Card Header mit Icon */}
                     <div style={{
-                      padding: '40px 20px',
-                      textAlign: 'center',
-                      color: '#666'
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '16px 16px 0 16px',
+                      gap: '10px'
                     }}>
-                      <IonIcon icon={peopleOutline} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                      <p style={{ margin: '0', fontSize: '1rem' }}>Keine Mitglieder</p>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        backgroundColor: '#06b6d4',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
+                      </div>
+                      <span style={{
+                        fontWeight: '600',
+                        fontSize: '1rem',
+                        color: '#333'
+                      }}>
+                        Mitglieder ({sortedParticipants.length})
+                      </span>
                     </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {sortedParticipants.map((p) =>
-                        renderUserItem(
-                          p,
-                          false,
-                          false,
-                          undefined,
-                          canManageMembers ? () => confirmRemoveUser(p) : undefined
-                        )
+                    <IonCardContent style={{ padding: '16px' }}>
+                      {sortedParticipants.length === 0 ? (
+                        <div style={{
+                          padding: '40px 20px',
+                          textAlign: 'center',
+                          color: '#666'
+                        }}>
+                          <IonIcon icon={peopleOutline} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                          <p style={{ margin: '0', fontSize: '1rem' }}>Keine Mitglieder</p>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {sortedParticipants.map((p) =>
+                            renderUserItem(
+                              p,
+                              false,
+                              false,
+                              undefined,
+                              canManageMembers ? () => confirmRemoveUser(p) : undefined
+                            )
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
+                    </IonCardContent>
+                  </IonCard>
                 </div>
               )}
             </>

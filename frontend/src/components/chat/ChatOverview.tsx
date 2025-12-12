@@ -507,21 +507,23 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 placeholder="Chaträume durchsuchen..."
               />
             </IonItem>
-            {/* Filter */}
+            {/* Filter - wie im Modal mit fill="solid" */}
             <IonItem>
-              <IonSelect
-                value={filterType}
-                onIonChange={(e) => setFilterType(e.detail.value!)}
-                placeholder="Alle Chats"
-                interface="popover"
-                label="Typ"
-                labelPlacement="start"
-              >
-                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
-                <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
-                <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
-              </IonSelect>
+              <div style={{ display: 'flex', gap: '8px', width: '100%', padding: '8px 0' }}>
+                <IonSelect
+                  value={filterType}
+                  onIonChange={(e) => setFilterType(e.detail.value!)}
+                  placeholder="Alle Chats"
+                  interface="popover"
+                  fill="solid"
+                  style={{ flex: 1 }}
+                >
+                  <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                  <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
+                  <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
+                  <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
+                </IonSelect>
+              </div>
             </IonItem>
           </IonItemGroup>
         </IonList>
@@ -529,6 +531,32 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
         <div style={{ padding: '0 16px 16px 16px' }}>
           <IonCard style={{ margin: '0' }}>
+            {/* Card Header mit Icon */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '16px 16px 0 16px',
+              gap: '10px'
+            }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.9rem' }} />
+              </div>
+              <span style={{
+                fontWeight: '600',
+                fontSize: '1rem',
+                color: '#333'
+              }}>
+                Chats ({filteredRooms.length})
+              </span>
+            </div>
             <IonCardContent style={{ padding: '16px' }}>
               {filteredRooms.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px' }}>

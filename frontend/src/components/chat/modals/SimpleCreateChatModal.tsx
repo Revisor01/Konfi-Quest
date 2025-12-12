@@ -20,7 +20,9 @@ import {
   IonList,
   IonItem,
   IonItemGroup,
-  IonListHeader
+  IonListHeader,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   closeOutline,
@@ -531,24 +533,52 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             </IonItemGroup>
           </IonList>
 
-          {/* Users List - gleiche Breite wie inset Lists */}
+          {/* Users List - in IonCard mit Header */}
           <div style={{ padding: '0 16px' }}>
-            {loading ? (
-              <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-                <IonSpinner name="crescent" />
-              </div>
-            ) : filteredUsers.length === 0 ? (
+            <IonCard style={{ margin: '0' }}>
+              {/* Card Header mit Icon */}
               <div style={{
-                padding: '40px 20px',
-                textAlign: 'center',
-                color: '#666'
+                display: 'flex',
+                alignItems: 'center',
+                padding: '16px 16px 0 16px',
+                gap: '10px'
               }}>
-                <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  backgroundColor: '#06b6d4',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
+                </div>
+                <span style={{
+                  fontWeight: '600',
+                  fontSize: '1rem',
+                  color: '#333'
+                }}>
+                  {chatType === 'direct' ? 'Personen' : 'Teilnehmer'} ({filteredUsers.length})
+                </span>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {filteredUsers.map((targetUser) => {
+              <IonCardContent style={{ padding: '16px' }}>
+                {loading ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                    <IonSpinner name="crescent" />
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#666'
+                  }}>
+                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
                       // Admins türkis, Konfis orange
@@ -653,9 +683,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           </div>
                         </div>
                       );
-                })}
-              </div>
-            )}
+                    })}
+                  </div>
+                )}
+              </IonCardContent>
+            </IonCard>
           </div>
         </div>
       </IonContent>
