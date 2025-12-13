@@ -507,56 +507,52 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 placeholder="Chaträume durchsuchen..."
               />
             </IonItem>
-            {/* Filter - wie im Modal mit fill="solid" */}
-            <IonItem>
-              <div style={{ display: 'flex', gap: '8px', width: '100%', padding: '8px 0' }}>
-                <IonSelect
-                  value={filterType}
-                  onIonChange={(e) => setFilterType(e.detail.value!)}
-                  placeholder="Alle Chats"
-                  interface="popover"
-                  fill="solid"
-                  style={{ flex: 1 }}
-                >
-                  <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                  <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
-                  <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
-                  <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
-                </IonSelect>
-              </div>
+            {/* Filter - Typ Label links, Select rechts */}
+            <IonItem
+              button={false}
+              style={{
+                '--background-activated': 'transparent',
+                '--background-focused': 'transparent',
+                '--background-hover': 'transparent',
+                '--ripple-color': 'transparent'
+              }}
+            >
+              <IonLabel>Typ</IonLabel>
+              <IonSelect
+                slot="end"
+                value={filterType}
+                onIonChange={(e) => setFilterType(e.detail.value!)}
+                placeholder="Alle Chats"
+                interface="popover"
+                fill="solid"
+              >
+                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
+                <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
+                <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
+                <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
+              </IonSelect>
             </IonItem>
           </IonItemGroup>
         </IonList>
 
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
-        <div style={{ padding: '0 16px 16px 16px' }}>
-          <IonCard style={{ margin: '0' }}>
-            {/* Card Header mit Icon */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
             <div style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: '#06b6d4',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
-              padding: '16px 16px 0 16px',
-              gap: '10px'
+              justifyContent: 'center',
+              marginRight: '8px'
             }}>
-              <div style={{
-                width: '28px',
-                height: '28px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.9rem' }} />
-              </div>
-              <span style={{
-                fontWeight: '600',
-                fontSize: '1rem',
-                color: '#333'
-              }}>
-                Chats ({filteredRooms.length})
-              </span>
+              <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.8rem' }} />
             </div>
+            <IonLabel>Chats ({filteredRooms.length})</IonLabel>
+          </IonListHeader>
+          <IonCard style={{ margin: '0' }}>
             <IonCardContent style={{ padding: '16px' }}>
               {filteredRooms.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px' }}>
@@ -748,7 +744,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               )}
             </IonCardContent>
           </IonCard>
-        </div>
+        </IonList>
       </IonContent>
     </IonPage>
   );

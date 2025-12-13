@@ -472,35 +472,24 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 </IonItemGroup>
               </IonList>
 
-              {/* Verfuegbare Personen - in IonCard mit Header */}
-              <div style={{ padding: '0 16px' }}>
-                <IonCard style={{ margin: '0' }}>
-                  {/* Card Header mit Icon */}
+              {/* Verfuegbare Personen - IonListHeader ueber der Card */}
+              <IonList inset={true}>
+                <IonListHeader>
                   <div style={{
+                    width: '24px',
+                    height: '24px',
+                    backgroundColor: '#06b6d4',
+                    borderRadius: '50%',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: '16px 16px 0 16px',
-                    gap: '10px'
+                    justifyContent: 'center',
+                    marginRight: '8px'
                   }}>
-                    <div style={{
-                      width: '28px',
-                      height: '28px',
-                      backgroundColor: '#06b6d4',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
-                    </div>
-                    <span style={{
-                      fontWeight: '600',
-                      fontSize: '1rem',
-                      color: '#333'
-                    }}>
-                      Verfuegbare Personen ({filteredAvailableUsers.length})
-                    </span>
+                    <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
                   </div>
+                  <IonLabel>Verfuegbare Personen ({filteredAvailableUsers.length})</IonLabel>
+                </IonListHeader>
+                <IonCard style={{ margin: '0' }}>
                   <IonCardContent style={{ padding: '16px' }}>
                     {filteredAvailableUsers.length === 0 ? (
                       <div style={{
@@ -526,41 +515,30 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     )}
                   </IonCardContent>
                 </IonCard>
-              </div>
+              </IonList>
             </>
           ) : (
             <>
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <div style={{ padding: '0 16px' }}>
-                  <IonCard style={{ margin: '0' }}>
-                    {/* Card Header mit Icon */}
+                <IonList inset={true}>
+                  <IonListHeader>
                     <div style={{
+                      width: '24px',
+                      height: '24px',
+                      backgroundColor: '#06b6d4',
+                      borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
-                      padding: '16px 16px 0 16px',
-                      gap: '10px'
+                      justifyContent: 'center',
+                      marginRight: '8px'
                     }}>
-                      <div style={{
-                        width: '28px',
-                        height: '28px',
-                        backgroundColor: '#06b6d4',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}>
-                        <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
-                      </div>
-                      <span style={{
-                        fontWeight: '600',
-                        fontSize: '1rem',
-                        color: '#333'
-                      }}>
-                        Mitglieder ({sortedParticipants.length})
-                      </span>
+                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
                     </div>
+                    <IonLabel>Mitglieder ({sortedParticipants.length})</IonLabel>
+                  </IonListHeader>
+                  <IonCard style={{ margin: '0' }}>
                     <IonCardContent style={{ padding: '16px' }}>
                       {sortedParticipants.length === 0 ? (
                         <div style={{
@@ -586,7 +564,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                       )}
                     </IonCardContent>
                   </IonCard>
-                </div>
+                </IonList>
               )}
             </>
           )}

@@ -3,7 +3,8 @@ import {
   IonProgressBar,
   IonAvatar,
   IonIcon,
-  useIonAlert
+  useIonAlert,
+  IonPopover
 } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import {
@@ -219,6 +220,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [showLosung, setShowLosung] = useState(true); // Wechselt bei jedem Reload
 
+  // Level Popover State
+  const [levelPopover, setLevelPopover] = useState<{
+    isOpen: boolean;
+    event: Event | undefined;
+    level: any | null;
+    isReached: boolean;
+  }>({ isOpen: false, event: undefined, level: null, isReached: false });
+
   // Load Tageslosung directly from backend
   useEffect(() => {
     // Wechsle bei jedem Reload zwischen AT und NT
@@ -422,11 +431,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     return (
                       <div
                         key={level.id}
-                        onClick={() => {
-                          presentAlert({
-                            header: level.title,
-                            message: `${level.name}${isReached ? ' - Erreicht!' : ''}\n\nBenötigte Punkte: ${level.points_required}`,
-                            buttons: ['OK']
+                        onClick={(e) => {
+                          setLevelPopover({
+                            isOpen: true,
+                            event: e.nativeEvent,
+                            level: level,
+                            isReached: isReached
                           });
                         }}
                         style={{
@@ -1403,6 +1413,89 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Level Popover */}
+      <IonPopover
+        isOpen={levelPopover.isOpen}
+        event={levelPopover.event}
+        onDidDismiss={() => setLevelPopover({ isOpen: false, event: undefined, level: null, isReached: false })}
+        side="top"
+        alignment="center"
+      >
+        {levelPopover.level && (
+          <div style={{
+            padding: '16px',
+            textAlign: 'center',
+            minWidth: '180px'
+          }}>
+            {/* Level Icon */}
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              background: levelPopover.isReached
+                ? `linear-gradient(135deg, ${levelPopover.level.color || '#667eea'} 0%, ${levelPopover.level.color || '#667eea'}dd 100%)`
+                : 'rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 12px auto',
+              boxShadow: levelPopover.isReached
+                ? `0 4px 12px ${levelPopover.level.color || '#667eea'}50`
+                : 'none'
+            }}>
+              <IonIcon
+                icon={getIconFromString(levelPopover.level.icon)}
+                style={{
+                  fontSize: '1.5rem',
+                  color: levelPopover.isReached ? 'white' : 'rgba(0, 0, 0, 0.3)'
+                }}
+              />
+            </div>
+
+            {/* Level Title */}
+            <div style={{
+              fontWeight: '700',
+              fontSize: '1.1rem',
+              color: levelPopover.level.color || '#667eea',
+              marginBottom: '4px'
+            }}>
+              {levelPopover.level.title}
+            </div>
+
+            {/* Level Name / Description */}
+            <div style={{
+              fontSize: '0.9rem',
+              color: '#666',
+              marginBottom: '8px'
+            }}>
+              {levelPopover.level.name}
+            </div>
+
+            {/* Points Required */}
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#999',
+              marginBottom: '8px'
+            }}>
+              {levelPopover.level.points_required} Punkte erforderlich
+            </div>
+
+            {/* Status Badge */}
+            <div style={{
+              display: 'inline-block',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              fontSize: '0.8rem',
+              fontWeight: '600',
+              background: levelPopover.isReached ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 0, 0, 0.05)',
+              color: levelPopover.isReached ? '#10b981' : '#999'
+            }}>
+              {levelPopover.isReached ? 'Erreicht!' : 'Noch nicht erreicht'}
+            </div>
+          </div>
+        )}
+      </IonPopover>
 
     </div>
   );

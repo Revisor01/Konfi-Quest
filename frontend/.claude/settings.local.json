@@ -38,7 +38,9 @@
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:designfornative.com)",
       "WebFetch(domain:fatbobman.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gem install:*)",
+      "Bash(gem update:*)"
     ],
     "deny": [],
     "ask": []

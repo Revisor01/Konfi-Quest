@@ -136,7 +136,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           name: u.name,
           display_name: u.name,
           type: u.type as 'admin' | 'konfi',
-          jahrgang_name: u.jahrgang_name
+          jahrgang_name: u.jahrgang_name,
+          // Funktionsbeschreibung fuer Admins
+          role_description: u.role_title || u.role_display_name || u.role_name
         }));
 
         console.log('Loaded users for konfi chat:', {
@@ -497,7 +499,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 <IonInput
                   value={searchText}
                   onIonInput={(e) => setSearchText(e.detail.value!)}
-                  placeholder={chatType === 'direct' ? 'Person suchen...' : 'Teilnehmer suchen...'}
+                  placeholder="Person suchen..."
                 />
               </IonItem>
               {/* Filter in einer Zeile */}
@@ -533,35 +535,24 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             </IonItemGroup>
           </IonList>
 
-          {/* Users List - in IonCard mit Header */}
-          <div style={{ padding: '0 16px' }}>
-            <IonCard style={{ margin: '0' }}>
-              {/* Card Header mit Icon */}
+          {/* Users List - IonListHeader ueber der Card */}
+          <IonList inset={true}>
+            <IonListHeader>
               <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#06b6d4',
+                borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
-                padding: '16px 16px 0 16px',
-                gap: '10px'
+                justifyContent: 'center',
+                marginRight: '8px'
               }}>
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  backgroundColor: '#06b6d4',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.9rem' }} />
-                </div>
-                <span style={{
-                  fontWeight: '600',
-                  fontSize: '1rem',
-                  color: '#333'
-                }}>
-                  {chatType === 'direct' ? 'Personen' : 'Teilnehmer'} ({filteredUsers.length})
-                </span>
+                <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
               </div>
+              <IonLabel>Personen ({filteredUsers.length})</IonLabel>
+            </IonListHeader>
+            <IonCard style={{ margin: '0' }}>
               <IonCardContent style={{ padding: '16px' }}>
                 {loading ? (
                   <div style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -688,7 +679,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                 )}
               </IonCardContent>
             </IonCard>
-          </div>
+          </IonList>
         </div>
       </IonContent>
 
