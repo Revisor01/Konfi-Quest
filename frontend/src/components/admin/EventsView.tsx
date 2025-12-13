@@ -43,7 +43,8 @@ import {
   trophy,
   listOutline,
   calendarOutline,
-  filterOutline
+  filterOutline,
+  lockOpenOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -315,58 +316,24 @@ const EventsView: React.FC<EventsViewProps> = ({
       </div>
 
 
-      {/* Tab Navigation - IonList Pattern */}
+      {/* Tab Navigation - einfaches IonSegment */}
       {onTabChange && (
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
-            </div>
-            <IonLabel>Filter</IonLabel>
-          </IonListHeader>
-          <IonItemGroup>
-            <IonItem
-              button={false}
-              style={{
-                '--background-activated': 'transparent',
-                '--background-focused': 'transparent',
-                '--background-hover': 'transparent',
-                '--ripple-color': 'transparent'
-              }}
-            >
-              <IonSegment
-                value={activeTab}
-                onIonChange={(e) => onTabChange(e.detail.value as any)}
-                style={{
-                  '--background': 'transparent',
-                  borderRadius: '12px',
-                  padding: '0',
-                  width: '100%',
-                  boxShadow: 'none'
-                }}
-              >
-                <IonSegmentButton value="upcoming">
-                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktuell</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="all">
-                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="konfirmation">
-                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfi</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-            </IonItem>
-          </IonItemGroup>
-        </IonList>
+        <div style={{ margin: '16px' }}>
+          <IonSegment
+            value={activeTab}
+            onIonChange={(e) => onTabChange(e.detail.value as any)}
+          >
+            <IonSegmentButton value="upcoming">
+              <IonLabel>Aktuell</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="all">
+              <IonLabel>Alle</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="konfirmation">
+              <IonLabel>Konfi</IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
       )}
 
       {/* Events Liste - IonListHeader Pattern */}
@@ -388,9 +355,9 @@ const EventsView: React.FC<EventsViewProps> = ({
           <IonLabel>Events ({filteredAndSortedEvents.length})</IonLabel>
         </IonListHeader>
         <IonCard style={{ margin: '0' }}>
-        <IonCardContent style={{ padding: '8px 0' }}>
-          <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
-            {filteredAndSortedEvents.map((event) => {
+        <IonCardContent style={{ padding: '16px' }}>
+          <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+            {filteredAndSortedEvents.map((event, index) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
               const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
@@ -398,206 +365,158 @@ const EventsView: React.FC<EventsViewProps> = ({
               const isFullyProcessed = isPastEvent && event.registered_count > 0 && (!event.pending_bookings_count || event.pending_bookings_count === 0);
               const shouldGrayOut = isPastEvent && !hasUnprocessedBookings;
 
+              // Farbe basierend auf Status - Konfirmation in Lila!
+              const statusColor = (() => {
+                if (isCancelled) return '#dc3545';
+                if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6'; // Lila fuer Konfirmation
+                if (isFullyProcessed) return '#6c757d';
+                if (hasUnprocessedBookings) return '#ff6b35';
+                if (isPastEvent) return '#6c757d';
+                if (calculateRegistrationStatus(event) === 'open') return '#34c759';
+                if (calculateRegistrationStatus(event) === 'upcoming') return '#fd7e14';
+                return '#dc3545';
+              })();
+
+              // Status-Text
+              const statusText = (() => {
+                if (isCancelled) return 'Abgesagt';
+                if (hasUnprocessedBookings) return 'Verbuchen';
+                if (isFullyProcessed) return 'Verbucht';
+                if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
+                const status = calculateRegistrationStatus(event);
+                if (status === 'open') return 'Offen';
+                if (status === 'upcoming') return 'Bald';
+                return 'Geschlossen';
+              })();
+
+              // Icon basierend auf Status
+              const statusIcon = (() => {
+                if (isCancelled) return close;
+                if (isFullyProcessed) return checkmarkCircle;
+                if (hasUnprocessedBookings) return hourglass;
+                if (isPastEvent) return checkmarkCircle;
+                if (calculateRegistrationStatus(event) === 'open') return lockOpenOutline; // Offen = Schloss offen
+                return hourglass;
+              })();
+
               return (
-              <IonItemSliding key={event.id}>
+              <IonItemSliding key={event.id} style={{ marginBottom: index < filteredAndSortedEvents.length - 1 ? '8px' : '0' }}>
                 <IonItem
                   button
                   onClick={() => onSelectEvent(event)}
                   detail={false}
+                  lines="none"
                   style={{
-                    '--min-height': '110px',
-                    '--padding-start': '16px',
-                    '--padding-top': '0px',
-                    '--padding-bottom': '0px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '4px 8px',
-                    boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
-                    border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #e0e0e0',
-                    borderRadius: '12px',
+                    '--background': 'white',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    borderLeft: `3px solid ${statusColor}`,
+                    borderRadius: '10px',
                     opacity: shouldGrayOut ? 0.6 : 1
                   }}
                 >
-                  <IonLabel>
-                    {/* Header mit Icon und Status Badge */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '6px'
-                    }}>
+                  <div style={{ padding: '12px 16px', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {/* Icon */}
                       <div style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: (() => {
-                          if (isCancelled) return '#dc3545'; // Rot für abgesagt
-                          if (isFullyProcessed) return '#6c757d'; // Grau für vollständig verbucht
-                          if (hasUnprocessedBookings) return '#ff6b35'; // Orange für zu verbuchen
-                          if (isPastEvent) return '#6c757d'; // Grau für vergangen ohne Teilnehmer
-                          if (calculateRegistrationStatus(event) === 'open') return '#007aff'; // Blau für offen
-                          return '#fd7e14'; // Orange für bald/geschlossen
-                        })(),
+                        width: '40px',
+                        height: '40px',
+                        backgroundColor: statusColor,
                         borderRadius: '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
                         flexShrink: 0
                       }}>
-                        <IonIcon
-                          icon={(() => {
-                            if (isCancelled) return close; // X für abgesagt
-                            if (isFullyProcessed) return checkmarkCircle; // Häkchen für vollständig verbucht
-                            if (hasUnprocessedBookings) return hourglass; // Sanduhr für zu verbuchen
-                            if (isPastEvent) return checkmarkCircle; // Häkchen für vergangen ohne Teilnehmer
-                            if (calculateRegistrationStatus(event) === 'open') return checkmarkCircle; // Häkchen für offen
-                            return hourglass; // Sanduhr für bald/geschlossen
-                          })()}
-                          style={{
-                            fontSize: '1rem',
-                            color: 'white'
-                          }}
-                        />
+                        <IonIcon icon={statusIcon} style={{ fontSize: '1.2rem', color: 'white' }} />
                       </div>
-                      <h2 style={{
-                        fontWeight: '600',
-                        fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                        margin: '0',
-                        color: isCancelled ? '#999' : shouldGrayOut ? '#999' : '#333',
-                        textDecoration: isCancelled ? 'line-through' : 'none',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {event.name}
-                        {event.is_series && (
-                          <IonIcon
-                            icon={copy}
-                            style={{
-                              fontSize: '0.8rem',
-                              color: '#007aff',
-                              marginLeft: '6px',
-                              opacity: 0.7
-                            }}
-                          />
-                        )}
-                      </h2>
 
-                      {/* Status Badge - vereinfacht, nur ein Badge */}
-                      <div style={{
-                        marginLeft: 'auto',
-                        display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
-                        flexShrink: 0
-                      }}>
-                        <span style={{
-                          fontSize: '0.7rem',
-                          color: (() => {
-                            if (isCancelled) return '#dc3545';
-                            if (hasUnprocessedBookings) return '#ff6b35'; // Orange für zu verbuchen
-                            if (isFullyProcessed) return '#34c759'; // Grün für verbucht
-                            const status = calculateRegistrationStatus(event);
-                            if (status === 'open') return '#007aff';
-                            if (status === 'upcoming') return '#fd7e14';
-                            return '#dc3545'; // Geschlossen
-                          })(),
-                          fontWeight: '600',
-                          backgroundColor: (() => {
-                            if (isCancelled) return 'rgba(220, 38, 38, 0.15)';
-                            if (hasUnprocessedBookings) return 'rgba(255, 107, 53, 0.15)';
-                            if (isFullyProcessed) return 'rgba(52, 199, 89, 0.15)';
-                            const status = calculateRegistrationStatus(event);
-                            if (status === 'open') return 'rgba(0, 122, 255, 0.15)';
-                            if (status === 'upcoming') return 'rgba(253, 126, 20, 0.15)';
-                            return 'rgba(220, 38, 38, 0.15)';
-                          })(),
-                          padding: '3px 6px',
-                          borderRadius: '6px',
-                          border: (() => {
-                            if (isCancelled) return '1px solid rgba(220, 38, 38, 0.3)';
-                            if (hasUnprocessedBookings) return '1px solid rgba(255, 107, 53, 0.3)';
-                            if (isFullyProcessed) return '1px solid rgba(52, 199, 89, 0.3)';
-                            const status = calculateRegistrationStatus(event);
-                            if (status === 'open') return '1px solid rgba(0, 122, 255, 0.3)';
-                            if (status === 'upcoming') return '1px solid rgba(253, 126, 20, 0.3)';
-                            return '1px solid rgba(220, 38, 38, 0.3)';
-                          })(),
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* Zeile 1: Titel + offene Plaetze + Warteliste */}
+                        <div style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '8px',
+                          marginBottom: '4px'
                         }}>
-                          {(() => {
-                            if (isCancelled) return 'ABGESAGT';
-                            if (hasUnprocessedBookings) return 'VERBUCHEN';
-                            if (isFullyProcessed) return 'VERBUCHT';
-                            const status = calculateRegistrationStatus(event);
-                            if (status === 'open') return 'OFFEN';
-                            if (status === 'upcoming') return 'BALD';
-                            return 'GESCHLOSSEN';
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Datum und Zeit - Zeile 1 */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.85rem',
-                      color: shouldGrayOut ? '#999' : '#666',
-                      marginBottom: '4px',
-                      marginLeft: '44px'
-                    }}>
-                      <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : '#dc2626' }} />
-                      <span style={{ fontWeight: '500', color: shouldGrayOut ? '#999' : '#333' }}>
-                        {formatDate(event.event_date)}
-                      </span>
-                      <IonIcon icon={time} style={{ fontSize: '0.9rem', color: shouldGrayOut ? '#999' : '#ff6b35', marginLeft: '8px' }} />
-                      <span style={{ color: shouldGrayOut ? '#999' : '#666' }}>
-                        {formatTime(event.event_date)}
-                      </span>
-                    </div>
-
-                    {/* Location, Teilnehmer, Warteliste, Punkte - Zeile 2 */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      fontSize: '0.8rem',
-                      color: shouldGrayOut ? '#999' : '#666',
-                      marginLeft: '44px'
-                    }}>
-                      {event.location && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={location} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#007aff' }} />
-                          <span>{event.location}</span>
+                          <div style={{
+                            fontWeight: '600',
+                            fontSize: '0.95rem',
+                            color: isCancelled || shouldGrayOut ? '#999' : '#333',
+                            textDecoration: isCancelled ? 'line-through' : 'none',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            flex: 1,
+                            minWidth: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            {event.name}
+                            {event.is_series && (
+                              <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                            <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <IonIcon icon={people} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#34c759' }} />
+                              {event.registered_count}/{event.max_participants}
+                            </span>
+                            {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
+                              <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                                {event.waitlist_count}/{event.max_waitlist_size || 10}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={people} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#34c759' }} />
-                        <span>{event.registered_count}/{event.max_participants}</span>
-                        {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
-                            <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
-                            <span style={{ color: shouldGrayOut ? '#999' : '#666' }}>{event.waitlist_count}/{event.max_waitlist_size || 10}</span>
+
+                        {/* Zeile 2: Status, Datum, Zeit, Punkte */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                          <span style={{
+                            fontSize: '0.7rem',
+                            fontWeight: '600',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            backgroundColor: `${statusColor}20`,
+                            color: statusColor
+                          }}>
+                            {statusText}
                           </span>
+                          <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <IonIcon icon={calendar} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                            {formatDate(event.event_date)}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <IonIcon icon={time} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                            {formatTime(event.event_date)}
+                          </span>
+                          {event.points > 0 && (
+                            <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <IonIcon icon={trophy} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                              {event.points}P
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Zeile 3: Ort */}
+                        {event.location && (
+                          <div style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <IonIcon icon={location} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#007aff' }} />
+                            {event.location}
+                          </div>
                         )}
                       </div>
-                      {event.points > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: shouldGrayOut ? '#999' : '#ff9500' }} />
-                          <span>{event.points}P</span>
-                        </div>
-                      )}
                     </div>
-                  </IonLabel>
+                  </div>
                 </IonItem>
 
                 {(onDeleteEvent || onCancelEvent) && (
@@ -616,8 +535,9 @@ const EventsView: React.FC<EventsViewProps> = ({
                           '--color': 'transparent',
                           '--ripple-color': 'transparent',
                           padding: '0 2px',
+                          paddingLeft: '12px',
                           minWidth: '48px',
-                          maxWidth: '48px'
+                          maxWidth: '60px'
                         }}
                       >
                         <div style={{
