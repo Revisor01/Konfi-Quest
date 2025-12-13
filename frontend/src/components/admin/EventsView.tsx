@@ -1,8 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
   IonGrid,
   IonRow,
@@ -13,6 +11,8 @@ import {
   IonLabel,
   IonBadge,
   IonList,
+  IonListHeader,
+  IonItemGroup,
   IonChip,
   IonItemSliding,
   IonItemOptions,
@@ -42,7 +42,8 @@ import {
   close,
   trophy,
   listOutline,
-  calendarOutline
+  calendarOutline,
+  filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -314,38 +315,81 @@ const EventsView: React.FC<EventsViewProps> = ({
       </div>
 
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - IonList Pattern */}
       {onTabChange && (
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '14px 16px' }}>
-            <IonSegment
-              value={activeTab}
-              onIonChange={(e) => onTabChange(e.detail.value as any)}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: '#dc2626',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}>
+              <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+            </div>
+            <IonLabel>Filter</IonLabel>
+          </IonListHeader>
+          <IonItemGroup>
+            <IonItem
+              button={false}
               style={{
-                '--background': '#f8f9fa',
-                borderRadius: '12px',
-                padding: '4px'
+                '--background-activated': 'transparent',
+                '--background-focused': 'transparent',
+                '--background-hover': 'transparent',
+                '--ripple-color': 'transparent'
               }}
             >
-              <IonSegmentButton value="upcoming">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktuell</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="all">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="konfirmation">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfi</IonLabel>
-              </IonSegmentButton>
-            </IonSegment>
-          </IonCardContent>
-        </IonCard>
+              <IonSegment
+                value={activeTab}
+                onIonChange={(e) => onTabChange(e.detail.value as any)}
+                style={{
+                  '--background': 'transparent',
+                  borderRadius: '12px',
+                  padding: '0',
+                  width: '100%',
+                  boxShadow: 'none'
+                }}
+              >
+                <IonSegmentButton value="upcoming">
+                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktuell</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="all">
+                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
+                </IonSegmentButton>
+                <IonSegmentButton value="konfirmation">
+                  <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Konfi</IonLabel>
+                </IonSegmentButton>
+              </IonSegment>
+            </IonItem>
+          </IonItemGroup>
+        </IonList>
       )}
 
-      {/* Events Liste - nur anzeigen wenn es Events gibt */}
+      {/* Events Liste - IonListHeader Pattern */}
       {filteredAndSortedEvents.length > 0 && (
-      <IonCard style={{ margin: '16px' }}>
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div style={{
+            width: '24px',
+            height: '24px',
+            backgroundColor: '#dc2626',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '8px'
+          }}>
+            <IonIcon icon={calendarOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+          </div>
+          <IonLabel>Events ({filteredAndSortedEvents.length})</IonLabel>
+        </IonListHeader>
+        <IonCard style={{ margin: '0' }}>
         <IonCardContent style={{ padding: '8px 0' }}>
-          <IonList lines="none" style={{ background: 'transparent' }}>
+          <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
             {filteredAndSortedEvents.map((event) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
@@ -625,39 +669,56 @@ const EventsView: React.FC<EventsViewProps> = ({
               </IonItemSliding>
               );
             })}
-
           </IonList>
         </IonCardContent>
-      </IonCard>
+        </IonCard>
+      </IonList>
       )}
 
       {/* Keine Events gefunden */}
       {filteredAndSortedEvents.length === 0 && (
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent>
-            <div style={{ textAlign: 'center', padding: '32px' }}>
-              <IonIcon
-                icon={calendarOutline}
-                style={{
-                  fontSize: '3rem',
-                  color: '#dc2626',
-                  marginBottom: '16px',
-                  display: 'block',
-                  margin: '0 auto 16px auto'
-                }}
-              />
-              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
-              <p style={{ color: '#999', margin: '0' }}>
-                {activeTab === 'konfirmation'
-                  ? 'Keine Konfirmationstermine verfügbar'
-                  : activeTab === 'all'
-                  ? 'Noch keine Events erstellt'
-                  : 'Keine anstehenden Events'
-                }
-              </p>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: '#dc2626',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}>
+              <IonIcon icon={calendarOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
             </div>
-          </IonCardContent>
-        </IonCard>
+            <IonLabel>Events (0)</IonLabel>
+          </IonListHeader>
+          <IonCard style={{ margin: '0' }}>
+            <IonCardContent>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={calendarOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#dc2626',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>
+                  {activeTab === 'konfirmation'
+                    ? 'Keine Konfirmationstermine verfuegbar'
+                    : activeTab === 'all'
+                    ? 'Noch keine Events erstellt'
+                    : 'Keine anstehenden Events'
+                  }
+                </p>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       )}
     </>
   );
