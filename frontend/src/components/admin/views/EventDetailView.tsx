@@ -814,10 +814,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                     </div>
                                   </div>
                                 </IonItem>
-                                <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent', border: 'none' } as any}>
+                                <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' } as any}>
                                   <IonItemOption
                                     onClick={() => handleDemoteParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px', '--border-width': '0' }}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                                       <IonIcon icon={returnUpBack} />
@@ -825,7 +825,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                   </IonItemOption>
                                   <IonItemOption
                                     onClick={() => handleRemoveParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px', '--border-width': '0' }}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                                       <IonIcon icon={trash} />
@@ -1027,11 +1027,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           </div>
                         </div>
                       </IonItem>
-                      <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent', border: 'none' } as any}>
+                      <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' } as any}>
                         {participant.status === 'confirmed' && (
                           <IonItemOption
                             onClick={() => handleDemoteParticipant(participant)}
-                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px', '--border-width': '0' }}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
@@ -1040,7 +1040,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         )}
                         <IonItemOption
                           onClick={() => handleRemoveParticipant(participant)}
-                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px', '--border-width': '0' }}
+                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />

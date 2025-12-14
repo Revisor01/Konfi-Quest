@@ -12,20 +12,22 @@ import {
   IonList,
   IonListHeader,
   IonIcon,
-  IonSearchbar,
+  IonInput,
   IonCheckbox,
   IonCard,
   IonCardContent,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  IonItemGroup
 } from '@ionic/react';
-import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd } from 'ionicons/icons';
+import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
 interface Konfi {
   id: number;
   name: string;
+  jahrgang_id?: number;
   jahrgang_name?: string;
 }
 
@@ -49,6 +51,8 @@ interface Timeslot {
 interface Event {
   has_timeslots?: boolean;
   timeslots?: Timeslot[];
+  jahrgang_id?: number;
+  jahrgang_name?: string;
 }
 
 interface ParticipantManagementModalProps {
@@ -59,12 +63,12 @@ interface ParticipantManagementModalProps {
   dismiss?: () => void;
 }
 
-const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({ 
-  eventId, 
-  participants, 
-  onClose, 
-  onSuccess, 
-  dismiss 
+const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
+  eventId,
+  participants,
+  onClose,
+  onSuccess,
+  dismiss
 }) => {
   const { setSuccess, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,6 +77,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [eventData, setEventData] = useState<Event | null>(null);
   const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
+  const [availableJahrgaenge, setAvailableJahrgaenge] = useState<string[]>([]);
+  const [selectedJahrgang, setSelectedJahrgang] = useState<string>('event');
 
   const handleClose = () => {
     if (dismiss) {
@@ -110,21 +116,44 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     try {
       const response = await api.get('/admin/konfis');
       const allKonfis = response.data;
-      
+
       // Filter out already registered participants based on user_id (not booking id)
       const participantUserIds = participants.map(p => p.user_id || p.id);
       const available = allKonfis.filter((konfi: Konfi) => !participantUserIds.includes(konfi.id));
-      
+
+      // Extract available Jahrgaenge
+      const jahrgaenge = [...new Set(
+        available
+          .filter((k: Konfi) => k.jahrgang_name)
+          .map((k: Konfi) => k.jahrgang_name!)
+      )].sort() as string[];
+      setAvailableJahrgaenge(jahrgaenge);
+
       setAvailableKonfis(available);
     } catch (error) {
       setError('Fehler beim Laden der Konfis');
     }
   };
 
-  const filteredKonfis = availableKonfis.filter(konfi =>
-    konfi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredKonfis = availableKonfis.filter(konfi => {
+    // Search filter
+    const matchesSearch = konfi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (!matchesSearch) return false;
+
+    // Jahrgang filter
+    if (selectedJahrgang === 'event') {
+      // Only show Konfis from event's Jahrgang
+      if (eventData?.jahrgang_name) {
+        return konfi.jahrgang_name === eventData.jahrgang_name;
+      }
+    } else if (selectedJahrgang !== 'alle') {
+      return konfi.jahrgang_name === selectedJahrgang;
+    }
+
+    return true;
+  });
 
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
@@ -232,115 +261,162 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Teilnehmer hinzufügen */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={personAdd} />
-            </div>
-            <IonLabel>Teilnehmer hinzufügen</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonSearchbar
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Konfi suchen..."
-              style={{
-                '--background': '#f8f9fa',
-                '--border-radius': '12px',
-                '--placeholder-color': '#999',
-                marginBottom: '16px',
-                padding: '0'
-              }}
-            />
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* Timeslot Selection for events with timeslots */}
-            {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked">Zeitslot auswählen *</IonLabel>
+          {/* Suche & Filter - iOS26 Pattern */}
+          <IonList inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={filterOutline} />
+              </div>
+              <IonLabel>Suche & Filter</IonLabel>
+            </IonListHeader>
+            <IonItemGroup>
+              {/* Suchfeld */}
+              <IonItem>
+                <IonIcon
+                  icon={search}
+                  slot="start"
+                  style={{ color: '#8e8e93', fontSize: '1rem' }}
+                />
+                <IonInput
+                  value={searchTerm}
+                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                  placeholder="Konfi suchen..."
+                />
+              </IonItem>
+              {/* Jahrgang Filter */}
+              <IonItem>
                 <IonSelect
-                  value={selectedTimeslot}
-                  onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
-                  placeholder="Zeitslot wählen"
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Zeitslot auswählen'
-                  }}
+                  value={selectedJahrgang}
+                  onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                  placeholder="Jahrgang"
+                  interface="popover"
+                  fill="solid"
+                  style={{ width: '100%' }}
                 >
-                  {eventData.timeslots.map((timeslot) => {
-                    const available = (timeslot.registered_count || 0) < timeslot.max_participants;
-                    return (
-                      <IonSelectOption
-                        key={timeslot.id}
-                        value={timeslot.id}
-                        disabled={!available}
-                      >
-                        {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
-                        ({timeslot.registered_count || 0}/{timeslot.max_participants})
-                        {!available && ' - Voll'}
-                      </IonSelectOption>
-                    );
-                  })}
+                  {eventData?.jahrgang_name && (
+                    <IonSelectOption value="event">
+                      Nur {eventData.jahrgang_name}
+                    </IonSelectOption>
+                  )}
+                  <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                  {availableJahrgaenge.map(jg => (
+                    <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                  ))}
                 </IonSelect>
               </IonItem>
-            )}
-
-            {filteredKonfis.length === 0 ? (
-              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
-                Keine verfügbaren Konfis gefunden
-              </p>
-            ) : (
-              filteredKonfis.map((konfi, index) => (
-                <IonItem
-                  key={konfi.id}
-                  button
-                  onClick={() => handleKonfiSelection(konfi.id)}
-                  detail={false}
-                  lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    marginBottom: index < filteredKonfis.length - 1 ? '8px' : '0'
-                  }}
-                >
-                  <div
-                    className={`app-list-item app-list-item--events ${selectedKonfis.includes(konfi.id) ? 'app-list-item--selected' : ''}`}
-                    style={{ width: '100%', marginBottom: '0' }}
+              {/* Timeslot Selection for events with timeslots */}
+              {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
+                <IonItem>
+                  <IonSelect
+                    value={selectedTimeslot}
+                    onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
+                    placeholder="Zeitslot wählen *"
+                    interface="popover"
+                    fill="solid"
+                    style={{ width: '100%' }}
                   >
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--events">
-                          <IonIcon icon={person} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">{konfi.name}</div>
-                          {konfi.jahrgang_name && (
-                            <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
-                          )}
-                        </div>
-                      </div>
-                      <IonCheckbox
-                        checked={selectedKonfis.includes(konfi.id)}
-                        style={{
-                          '--checkbox-background-checked': '#dc2626',
-                          '--border-color-checked': '#dc2626',
-                          '--checkmark-color': 'white',
-                          marginLeft: 'auto',
-                          flexShrink: 0
-                        }}
-                      />
-                    </div>
-                  </div>
+                    {eventData.timeslots.map((timeslot) => {
+                      const available = (timeslot.registered_count || 0) < timeslot.max_participants;
+                      return (
+                        <IonSelectOption
+                          key={timeslot.id}
+                          value={timeslot.id}
+                          disabled={!available}
+                        >
+                          {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
+                          ({timeslot.registered_count || 0}/{timeslot.max_participants})
+                          {!available && ' - Voll'}
+                        </IonSelectOption>
+                      );
+                    })}
+                  </IonSelect>
                 </IonItem>
-              ))
-            )}
-          </IonCardContent>
-          </IonCard>
-        </IonList>
+              )}
+            </IonItemGroup>
+          </IonList>
+
+          {/* Konfis Liste - iOS26 Pattern */}
+          <IonList inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={personAdd} />
+              </div>
+              <IonLabel>Konfis ({filteredKonfis.length})</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                {filteredKonfis.length === 0 ? (
+                  <div style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    color: '#666'
+                  }}>
+                    <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
+                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Konfis gefunden</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {filteredKonfis.map((konfi) => {
+                      const isSelected = selectedKonfis.includes(konfi.id);
+
+                      return (
+                        <IonItem
+                          key={konfi.id}
+                          button
+                          onClick={() => handleKonfiSelection(konfi.id)}
+                          detail={false}
+                          lines="none"
+                          style={{
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0'
+                          }}
+                        >
+                          <div
+                            className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                            style={{ width: '100%', marginBottom: '0', position: 'relative' }}
+                          >
+                            {/* Corner Badge "Konfi" */}
+                            <div
+                              className="app-corner-badge app-corner-badge--events"
+                            >
+                              Konfi
+                            </div>
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className="app-icon-circle app-icon-circle--events">
+                                  <IonIcon icon={person} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{konfi.name}</div>
+                                  {konfi.jahrgang_name && (
+                                    <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <IonCheckbox
+                                checked={isSelected}
+                                style={{
+                                  '--checkbox-background-checked': '#dc2626',
+                                  '--border-color-checked': '#dc2626',
+                                  '--checkmark-color': 'white'
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </IonItem>
+                      );
+                    })}
+                  </div>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        </div>
       </IonContent>
     </IonPage>
   );
