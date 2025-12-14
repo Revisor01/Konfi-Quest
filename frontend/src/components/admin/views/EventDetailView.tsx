@@ -9,12 +9,11 @@ import {
   IonButton,
   IonIcon,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonRefresher,
   IonRefresherContent,
   IonText,
@@ -703,13 +702,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Timeslots */}
         {eventData?.has_timeslots && (
-          <IonCard style={{ margin: '16px' }}>
-            <IonCardHeader>
-              <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IonIcon icon={time} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
-                Zeitslots ({eventData?.timeslots?.length || 0})
-              </IonCardTitle>
-            </IonCardHeader>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#dc2626',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={time} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
+              <IonLabel>Zeitslots ({eventData?.timeslots?.length || 0})</IonLabel>
+            </IonListHeader>
+            <IonCard style={{ margin: '0' }}>
             {!eventData.timeslots || eventData.timeslots.length === 0 ? (
               <IonCardContent style={{ padding: '16px' }}>
                 <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
@@ -749,7 +758,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           <div style={{
                             width: '28px',
                             height: '28px',
-                            backgroundColor: '#eb445a',
+                            backgroundColor: '#dc2626',
                             borderRadius: '50%',
                             display: 'flex',
                             alignItems: 'center',
@@ -789,7 +798,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           {/* Status Badge */}
                           <span style={{
                             fontSize: '0.7rem',
-                            color: (timeslot.registered_count || 0) >= timeslot.max_participants ? '#eb445a' : '#2dd36f',
+                            color: (timeslot.registered_count || 0) >= timeslot.max_participants ? '#dc2626' : '#2dd36f',
                             fontWeight: '600',
                             backgroundColor: (timeslot.registered_count || 0) >= timeslot.max_participants ? 'rgba(235, 68, 90, 0.15)' : 'rgba(45, 211, 111, 0.15)',
                             padding: '3px 6px',
@@ -826,18 +835,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </IonList>
               </IonCardContent>
             )}
-          </IonCard>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Series Events */}
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
-          <IonCard style={{ margin: '16px' }}>
-            <IonCardHeader>
-              <IonCardTitle>
-                <IonIcon icon={calendar} style={{ marginRight: '8px', color: '#eb445a' }} />
-                Weitere Termine dieser Serie
-              </IonCardTitle>
-            </IonCardHeader>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#dc2626',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={calendar} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
+              <IonLabel>Weitere Termine dieser Serie</IonLabel>
+            </IonListHeader>
+            <IonCard style={{ margin: '0' }}>
             <IonCardContent style={{ padding: '0' }}>
               <IonList>
                 {eventData.series_events.map((seriesEvent) => (
@@ -868,20 +888,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 ))}
               </IonList>
             </IonCardContent>
-          </IonCard>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Participants List */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <IonIcon icon={people} style={{ color: '#eb445a', fontSize: '1.2rem' }} />
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div style={{
+              width: '24px',
+              height: '24px',
+              backgroundColor: '#dc2626',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '8px'
+            }}>
+              <IonIcon icon={people} style={{ color: 'white', fontSize: '0.8rem' }} />
+            </div>
+            <IonLabel>
               Teilnehmer:innen ({participants.filter(p => p.status === 'confirmed').length}
               {participants.filter(p => p.status === 'pending').length > 0 &&
                 ` + ${participants.filter(p => p.status === 'pending').length}`
               })
-            </IonCardTitle>
-          </IonCardHeader>
+            </IonLabel>
+          </IonListHeader>
+          <IonCard style={{ margin: '0' }}>
           {participants.length === 0 ? (
             <IonCardContent style={{ padding: '16px' }}>
               <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
@@ -939,7 +972,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             width: '28px',
                             height: '28px',
                             backgroundColor: participant.attendance_status === 'present' ? '#2dd36f' :
-                                            participant.attendance_status === 'absent' ? '#eb445a' :
+                                            participant.attendance_status === 'absent' ? '#dc2626' :
                                             participant.status === 'pending' ? '#ff9500' : '#007aff',
                             borderRadius: '50%',
                             display: 'flex',
@@ -1090,17 +1123,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               Teilnehmer:in hinzufügen
             </IonButton>
           </IonCardContent>
-        </IonCard>
+          </IonCard>
+        </IonList>
 
         {/* Abmeldungen (Unregistrations) */}
         {unregistrations.length > 0 && (
-          <IonCard style={{ margin: '16px' }}>
-            <IonCardHeader>
-              <IonCardTitle style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <IonIcon icon={closeCircle} style={{ color: '#dc3545', fontSize: '1.2rem' }} />
-                Abmeldungen ({unregistrations.length})
-              </IonCardTitle>
-            </IonCardHeader>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                backgroundColor: '#dc3545',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '8px'
+              }}>
+                <IonIcon icon={closeCircle} style={{ color: 'white', fontSize: '0.8rem' }} />
+              </div>
+              <IonLabel>Abmeldungen ({unregistrations.length})</IonLabel>
+            </IonListHeader>
+            <IonCard style={{ margin: '0' }}>
             <IonCardContent style={{ padding: '8px 0' }}>
               <IonList lines="none" style={{ background: 'transparent' }}>
                 {unregistrations.map((unreg) => (
@@ -1201,7 +1245,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 ))}
               </IonList>
             </IonCardContent>
-          </IonCard>
+            </IonCard>
+          </IonList>
         )}
 
       </IonContent>
