@@ -247,7 +247,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const isGroupChat = roomType === 'group';
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
-  // Render User Item - identisch zu SimpleCreateChatModal
+  // Render User Item - mit CSS-Klassen
   const renderUserItem = (
     targetUser: User | Participant,
     isSelectable: boolean,
@@ -258,7 +258,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const isAdmin = 'user_type' in targetUser
       ? targetUser.user_type === 'admin'
       : targetUser.type === 'admin';
-    const color = isAdmin ? '#06b6d4' : '#f97316';
     const name = getUserDisplayName(targetUser);
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
 
@@ -288,74 +287,23 @@ const MembersModal: React.FC<MembersModalProps> = ({
     return (
       <div
         key={participantId}
+        className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
-        style={{
-          borderTop: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-          borderRight: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-          borderBottom: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-          borderLeft: `3px solid ${color}`,
-          borderRadius: '10px',
-          padding: '10px 12px',
-          marginBottom: '8px',
-          background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'white',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-          cursor: isSelectable ? 'pointer' : 'default'
-        }}
+        style={{ cursor: isSelectable ? 'pointer' : 'default' }}
       >
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          {/* Avatar */}
-          <div style={{
-            width: '40px',
-            height: '40px',
-            backgroundColor: color,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <IonIcon
-              icon={person}
-              style={{ fontSize: '1.2rem', color: 'white' }}
-            />
-          </div>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              color: '#333',
-              marginBottom: '4px',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {name}
+        <div className="app-list-item__row">
+          <div className="app-list-item__main">
+            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
+              <IonIcon icon={person} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: '0.7rem',
-                fontWeight: '600',
-                padding: '2px 8px',
-                borderRadius: '10px',
-                backgroundColor: `${color}20`,
-                color: color
-              }}>
-                {roleText}
-              </span>
-              {jahrgang && (
-                <span style={{
-                  fontSize: '0.75rem',
-                  color: '#666'
-                }}>
-                  {jahrgang}
+            <div className="app-list-item__content">
+              <div className="app-list-item__title">{name}</div>
+              <div className="app-list-item__subtitle">
+                <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`} style={{ marginRight: '8px' }}>
+                  {roleText}
                 </span>
-              )}
+                {jahrgang && <span style={{ color: '#666' }}>{jahrgang}</span>}
+              </div>
             </div>
           </div>
 
@@ -364,7 +312,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
             <IonCheckbox
               checked={isSelected}
               style={{
-                flexShrink: 0,
                 '--checkbox-background-checked': '#06b6d4',
                 '--border-color-checked': '#06b6d4',
                 '--checkmark-color': 'white'
@@ -439,17 +386,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {/* Suche - iOS26 Pattern */}
               <IonList inset={true}>
                 <IonListHeader>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    backgroundColor: '#06b6d4',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '8px'
-                  }}>
-                    <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                  <div className="app-section-icon app-section-icon--chat">
+                    <IonIcon icon={filterOutline} />
                   </div>
                   <IonLabel>Suche</IonLabel>
                 </IonListHeader>
@@ -475,17 +413,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {/* Verfuegbare Personen - IonListHeader ueber der Card */}
               <IonList inset={true}>
                 <IonListHeader>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    backgroundColor: '#06b6d4',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '8px'
-                  }}>
-                    <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                  <div className="app-section-icon app-section-icon--chat">
+                    <IonIcon icon={peopleOutline} />
                   </div>
                   <IonLabel>Verfuegbare Personen ({filteredAvailableUsers.length})</IonLabel>
                 </IonListHeader>
@@ -524,17 +453,8 @@ const MembersModal: React.FC<MembersModalProps> = ({
               ) : (
                 <IonList inset={true}>
                   <IonListHeader>
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      backgroundColor: '#06b6d4',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '8px'
-                    }}>
-                      <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                    <div className="app-section-icon app-section-icon--chat">
+                      <IonIcon icon={peopleOutline} />
                     </div>
                     <IonLabel>Mitglieder ({sortedParticipants.length})</IonLabel>
                   </IonListHeader>
