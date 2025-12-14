@@ -419,21 +419,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* EVENT GRUNDDATEN */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={create} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={create} />
             </div>
             <IonLabel>Event Grunddaten</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
@@ -476,21 +467,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* DATUM & ZEIT */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={calendar} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendar} />
             </div>
             <IonLabel>Datum & Zeit</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
@@ -520,21 +502,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* PUNKTE & TEILNEHMER */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={people} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={people} />
             </div>
             <IonLabel>Punkte & Teilnehmer</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               {/* Max. Teilnehmer mit Stepper */}
@@ -625,65 +598,57 @@ const EventModal: React.FC<EventModalProps> = ({
                 </div>
               </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
               </IonItem>
-              <IonItem
-                lines="none"
-                button
-                detail={false}
-                onClick={() => {
-                  if (!loading) {
-                    setFormData({ ...formData, point_type: 'gemeinde' });
-                  }
-                }}
-                disabled={loading}
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
-              >
-                <IonLabel>Gemeinde</IonLabel>
-                <IonCheckbox
-                  slot="end"
-                  checked={formData.point_type === 'gemeinde'}
-                  disabled={loading}
-                />
-              </IonItem>
-              <IonItem
-                lines="none"
-                button
-                detail={false}
-                onClick={() => {
-                  if (!loading) {
-                    setFormData({ ...formData, point_type: 'gottesdienst' });
-                  }
-                }}
-                disabled={loading}
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
-              >
-                <IonLabel>Gottesdienst</IonLabel>
-                <IonCheckbox
-                  slot="end"
-                  checked={formData.point_type === 'gottesdienst'}
-                  disabled={loading}
-                />
-              </IonItem>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div
+                  className={`app-list-item app-list-item--events ${formData.point_type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
+                  onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0'
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+                  <IonCheckbox
+                    checked={formData.point_type === 'gemeinde'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#dc2626',
+                      '--border-color-checked': '#dc2626',
+                      '--checkmark-color': 'white'
+                    }}
+                  />
+                </div>
+                <div
+                  className={`app-list-item app-list-item--events ${formData.point_type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
+                  onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0'
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+                  <IonCheckbox
+                    checked={formData.point_type === 'gottesdienst'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#dc2626',
+                      '--border-color-checked': '#dc2626',
+                      '--checkmark-color': 'white'
+                    }}
+                  />
+                </div>
+              </div>
             </IonList>
           </IonCardContent>
           </IonCard>
@@ -692,140 +657,135 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* KATEGORIEN & ZIELGRUPPE */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={people} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={people} />
             </div>
             <IonLabel>Kategorien & Zielgruppe</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               {categories.length > 0 ? (
                 <>
-                  <IonItem lines="none" style={{ paddingBottom: '8px' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
                     <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
                       Kategorien (mehrere möglich)
                       {formData.category_ids.length > 0 && (
-                        <span style={{ 
-                          marginLeft: '8px', 
-                          fontSize: '0.8rem', 
-                          color: '#007aff',
-                          fontWeight: 'normal' 
+                        <span style={{
+                          marginLeft: '8px',
+                          fontSize: '0.8rem',
+                          color: '#dc2626',
+                          fontWeight: 'normal'
                         }}>
                           ({formData.category_ids.length} ausgewählt)
                         </span>
                       )}
                     </IonLabel>
                   </IonItem>
-                  {categories.map((category) => (
-                    <IonItem
-                      key={category.id}
-                      lines="none"
-                      button
-                      detail={false}
-                      onClick={() => {
-                        if (!loading) {
-                          setFormData(prev => ({
-                            ...prev,
-                            category_ids: prev.category_ids.includes(category.id)
-                              ? prev.category_ids.filter(id => id !== category.id)
-                              : [...prev.category_ids, category.id]
-                          }));
-                        }
-                      }}
-                      disabled={loading}
-                      style={{
-                        '--min-height': '56px',
-                        '--padding-start': '16px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 0',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      <IonLabel>
-                        {category.name}
-                      </IonLabel>
-                      <IonCheckbox
-                        slot="end"
-                        checked={formData.category_ids.includes(category.id)}
-                        disabled={loading}
-                      />
-                    </IonItem>
-                  ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {categories.map((category) => {
+                      const isSelected = formData.category_ids.includes(category.id);
+                      return (
+                        <div
+                          key={category.id}
+                          className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                          onClick={() => {
+                            if (!loading) {
+                              setFormData(prev => ({
+                                ...prev,
+                                category_ids: prev.category_ids.includes(category.id)
+                                  ? prev.category_ids.filter(id => id !== category.id)
+                                  : [...prev.category_ids, category.id]
+                              }));
+                            }
+                          }}
+                          style={{
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0'
+                          }}
+                        >
+                          <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
+                          <IonCheckbox
+                            checked={isSelected}
+                            disabled={loading}
+                            style={{
+                              '--checkbox-background-checked': '#dc2626',
+                              '--border-color-checked': '#dc2626',
+                              '--checkmark-color': 'white'
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </>
               ) : (
-                <IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel color="medium">
                     <p>Keine Kategorien verfügbar</p>
                   </IonLabel>
                 </IonItem>
               )}
 
-              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
                   Jahrgänge (mehrere möglich) *
                   {formData.jahrgang_ids.length > 0 && (
-                    <span style={{ 
-                      marginLeft: '8px', 
-                      fontSize: '0.8rem', 
-                      color: '#007aff',
-                      fontWeight: 'normal' 
+                    <span style={{
+                      marginLeft: '8px',
+                      fontSize: '0.8rem',
+                      color: '#dc2626',
+                      fontWeight: 'normal'
                     }}>
                       ({formData.jahrgang_ids.length} ausgewählt)
                     </span>
                   )}
                 </IonLabel>
               </IonItem>
-              {jahrgaenge.map((jahrgang) => (
-                <IonItem
-                  key={jahrgang.id}
-                  lines="none"
-                  button
-                  detail={false}
-                  onClick={() => {
-                    if (!loading) {
-                      setFormData(prev => ({
-                        ...prev,
-                        jahrgang_ids: prev.jahrgang_ids.includes(jahrgang.id)
-                          ? prev.jahrgang_ids.filter(id => id !== jahrgang.id)
-                          : [...prev.jahrgang_ids, jahrgang.id]
-                      }));
-                    }
-                  }}
-                  disabled={loading}
-                  style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
-                  }}
-                >
-                  <IonLabel>
-                    {jahrgang.name}
-                  </IonLabel>
-                  <IonCheckbox
-                    slot="end"
-                    checked={formData.jahrgang_ids.includes(jahrgang.id)}
-                    disabled={loading}
-                  />
-                </IonItem>
-              ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {jahrgaenge.map((jahrgang) => {
+                  const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
+                  return (
+                    <div
+                      key={jahrgang.id}
+                      className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                      onClick={() => {
+                        if (!loading) {
+                          setFormData(prev => ({
+                            ...prev,
+                            jahrgang_ids: prev.jahrgang_ids.includes(jahrgang.id)
+                              ? prev.jahrgang_ids.filter(id => id !== jahrgang.id)
+                              : [...prev.jahrgang_ids, jahrgang.id]
+                          }));
+                        }
+                      }}
+                      style={{
+                        cursor: loading ? 'default' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '0'
+                      }}
+                    >
+                      <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
+                      <IonCheckbox
+                        checked={isSelected}
+                        disabled={loading}
+                        style={{
+                          '--checkbox-background-checked': '#dc2626',
+                          '--border-color-checked': '#dc2626',
+                          '--checkmark-color': 'white'
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </IonList>
           </IonCardContent>
           </IonCard>
@@ -834,21 +794,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* ANMELDUNGEN & WARTELISTE */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={people} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={people} />
             </div>
             <IonLabel>Anmeldungen & Warteliste</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
@@ -924,21 +875,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {!event && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#dc2626',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={copy} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={copy} />
               </div>
               <IonLabel>Event-Serie (optional)</IonLabel>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
@@ -1033,21 +975,12 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* ZEITFENSTER */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={time} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={time} />
             </div>
             <IonLabel>Zeitfenster (optional)</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
@@ -1096,17 +1029,8 @@ const EventModal: React.FC<EventModalProps> = ({
         {formData.has_timeslots && timeslots.map((timeslot, index) => (
           <IonList key={index} inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#dc2626',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <span style={{ fontSize: '0.7rem', color: 'white', fontWeight: 'bold' }}>
+              <div className="app-section-icon app-section-icon--events">
+                <span style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
                   {index + 1}
                 </span>
               </div>
@@ -1121,7 +1045,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 <IonIcon icon={trash} />
               </IonButton>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>

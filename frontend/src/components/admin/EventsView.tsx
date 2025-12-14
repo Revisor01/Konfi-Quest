@@ -340,21 +340,12 @@ const EventsView: React.FC<EventsViewProps> = ({
       {filteredAndSortedEvents.length > 0 && (
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
-          <div style={{
-            width: '24px',
-            height: '24px',
-            backgroundColor: '#dc2626',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: '8px'
-          }}>
-            <IonIcon icon={calendarOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+          <div className="app-section-icon app-section-icon--events">
+            <IonIcon icon={calendarOutline} />
           </div>
           <IonLabel>Events ({filteredAndSortedEvents.length})</IonLabel>
         </IonListHeader>
-        <IonCard style={{ margin: '0' }}>
+        <IonCard className="app-card">
         <IonCardContent style={{ padding: '16px' }}>
           <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
             {filteredAndSortedEvents.map((event, index) => {
@@ -407,114 +398,102 @@ const EventsView: React.FC<EventsViewProps> = ({
                   detail={false}
                   lines="none"
                   style={{
-                    '--background': 'white',
+                    '--background': 'transparent',
                     '--padding-start': '0',
                     '--padding-end': '0',
                     '--inner-padding-end': '0',
                     '--inner-border-width': '0',
                     '--border-style': 'none',
-                    '--min-height': 'auto',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    borderLeft: `3px solid ${statusColor}`,
-                    borderRadius: '10px',
-                    opacity: shouldGrayOut ? 0.6 : 1
+                    '--min-height': 'auto'
                   }}
                 >
-                  <div style={{ padding: '12px 16px', width: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      {/* Icon */}
-                      <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: statusColor,
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <IonIcon icon={statusIcon} style={{ fontSize: '1.2rem', color: 'white' }} />
-                      </div>
+                  <div
+                    className="app-list-item app-list-item--events"
+                    style={{
+                      width: '100%',
+                      borderLeftColor: statusColor,
+                      opacity: shouldGrayOut ? 0.6 : 1
+                    }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        {/* Icon */}
+                        <div
+                          className="app-icon-circle app-icon-circle--lg"
+                          style={{ backgroundColor: statusColor }}
+                        >
+                          <IonIcon icon={statusIcon} />
+                        </div>
 
-                      {/* Content */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Zeile 1: Titel + offene Plaetze + Warteliste */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          marginBottom: '4px'
-                        }}>
-                          <div style={{
-                            fontWeight: '600',
-                            fontSize: '0.95rem',
-                            color: isCancelled || shouldGrayOut ? '#999' : '#333',
-                            textDecoration: isCancelled ? 'line-through' : 'none',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            flex: 1,
-                            minWidth: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}>
+                        {/* Content */}
+                        <div className="app-list-item__content">
+                          {/* Zeile 1: Titel */}
+                          <div
+                            className="app-list-item__title"
+                            style={{
+                              color: isCancelled || shouldGrayOut ? '#999' : undefined,
+                              textDecoration: isCancelled ? 'line-through' : 'none',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                          >
                             {event.name}
                             {event.is_series && (
                               <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
                             )}
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                            <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={people} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#34c759' }} />
+
+                          {/* Zeile 2: Buchungen + Warteliste + Punkte */}
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
                               {event.registered_count}/{event.max_participants}
                             </span>
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
-                              <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
                                 {event.waitlist_count}/{event.max_waitlist_size || 10}
+                              </span>
+                            )}
+                            {event.points > 0 && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                                {event.points}P
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Zeile 3: Datum + Uhrzeit + Ort */}
+                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                              {formatDate(event.event_date)}
+                            </span>
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                              {formatTime(event.event_date)}
+                            </span>
+                            {event.location && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                                {event.location}
                               </span>
                             )}
                           </div>
                         </div>
-
-                        {/* Zeile 2: Status, Datum, Zeit, Punkte */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                          <span style={{
-                            fontSize: '0.7rem',
-                            fontWeight: '600',
-                            padding: '2px 8px',
-                            borderRadius: '10px',
-                            backgroundColor: `${statusColor}20`,
-                            color: statusColor
-                          }}>
-                            {statusText}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={calendar} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#dc2626' }} />
-                            {formatDate(event.event_date)}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={time} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#ff6b35' }} />
-                            {formatTime(event.event_date)}
-                          </span>
-                          {event.points > 0 && (
-                            <span style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={trophy} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#ff9500' }} />
-                              {event.points}P
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Zeile 3: Ort */}
-                        {event.location && (
-                          <div style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#666', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <IonIcon icon={location} style={{ fontSize: '0.75rem', color: shouldGrayOut ? '#999' : '#007aff' }} />
-                            {event.location}
-                          </div>
-                        )}
                       </div>
+
+                      {/* Status-Chip rechts außen */}
+                      <span
+                        className="app-chip"
+                        style={{
+                          backgroundColor: `${statusColor}20`,
+                          color: statusColor
+                        }}
+                      >
+                        {statusText}
+                      </span>
                     </div>
                   </div>
                 </IonItem>
@@ -599,21 +578,12 @@ const EventsView: React.FC<EventsViewProps> = ({
       {filteredAndSortedEvents.length === 0 && (
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={calendarOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendarOutline} />
             </div>
             <IonLabel>Events (0)</IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
+          <IonCard className="app-card">
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
                 <IonIcon

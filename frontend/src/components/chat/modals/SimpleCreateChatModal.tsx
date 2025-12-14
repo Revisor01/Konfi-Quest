@@ -440,17 +440,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {chatType === 'group' && (
             <IonList inset={true}>
               <IonListHeader>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  backgroundColor: '#06b6d4',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '8px'
-                }}>
-                  <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={peopleOutline} />
                 </div>
                 <IonLabel>Gruppenname</IonLabel>
               </IonListHeader>
@@ -471,17 +462,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {/* Filter mit Suche - iOS26 Pattern */}
           <IonList inset={true}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={filterOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={filterOutline} />
               </div>
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
@@ -538,21 +520,12 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           {/* Users List - IonListHeader ueber der Card */}
           <IonList inset={true}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={peopleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={peopleOutline} />
               </div>
               <IonLabel>Personen ({filteredUsers.length})</IonLabel>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {loading ? (
                   <div style={{ padding: '40px 20px', textAlign: 'center' }}>
@@ -572,12 +545,15 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                     {filteredUsers.map((targetUser) => {
                       const participantId = `${targetUser.type}-${targetUser.id}`;
                       const isSelected = selectedParticipants.has(participantId);
-                      // Admins türkis, Konfis orange
-                      const color = targetUser.type === 'admin' ? '#06b6d4' : '#f97316';
+                      const isAdmin = targetUser.type === 'admin';
 
                       return (
-                        <div
+                        <IonItem
                           key={participantId}
+                          button
+                          detail={false}
+                          lines="none"
+                          disabled={creating}
                           onClick={() => {
                             if (!creating) {
                               if (chatType === 'direct') {
@@ -588,91 +564,51 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             }
                           }}
                           style={{
-                            borderTop: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-                            borderRight: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-                            borderBottom: isSelected ? '1px solid #06b6d4' : '1px solid rgba(0,0,0,0.06)',
-                            borderLeft: `3px solid ${color}`,
-                            borderRadius: '10px',
-                            padding: '10px 12px',
-                            background: isSelected ? 'rgba(6, 182, 212, 0.08)' : 'white',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                            cursor: creating ? 'default' : 'pointer',
-                            opacity: creating ? 0.6 : 1
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0'
                           }}
                         >
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px'
-                          }}>
-                            {/* Icon */}
-                            <div style={{
-                              width: '40px',
-                              height: '40px',
-                              backgroundColor: color,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0
-                            }}>
-                              <IonIcon
-                                icon={person}
-                                style={{ fontSize: '1.2rem', color: 'white' }}
-                              />
-                            </div>
-
-                            {/* Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{
-                                fontWeight: '600',
-                                fontSize: '0.95rem',
-                                color: '#333',
-                                marginBottom: '4px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}>
-                                {getUserDisplayName(targetUser)}
+                          <div
+                            className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
+                            style={{ width: '100%', marginBottom: '0' }}
+                          >
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
+                                  <IonIcon icon={person} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">
+                                    {getUserDisplayName(targetUser)}
+                                  </div>
+                                  <div className="app-list-item__subtitle">
+                                    <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`} style={{ marginRight: '8px' }}>
+                                      {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                                    </span>
+                                    {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
+                                      <span style={{ color: '#666' }}>
+                                        {targetUser.jahrgang_name || targetUser.jahrgang}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  fontWeight: '600',
-                                  padding: '2px 8px',
-                                  borderRadius: '10px',
-                                  backgroundColor: `${color}20`,
-                                  color: color
-                                }}>
-                                  {targetUser.type === 'admin'
-                                    ? (targetUser.role_description || 'Admin')
-                                    : 'Konfi'}
-                                </span>
-                                {targetUser.type === 'konfi' && (targetUser.jahrgang_name || targetUser.jahrgang) && (
-                                  <span style={{
-                                    fontSize: '0.75rem',
-                                    color: '#666'
-                                  }}>
-                                    {targetUser.jahrgang_name || targetUser.jahrgang}
-                                  </span>
-                                )}
-                              </div>
+                              {chatType === 'group' && (
+                                <IonCheckbox
+                                  checked={isSelected}
+                                  style={{
+                                    '--checkbox-background-checked': '#06b6d4',
+                                    '--border-color-checked': '#06b6d4',
+                                    '--checkmark-color': 'white'
+                                  }}
+                                />
+                              )}
                             </div>
-
-                            {/* Checkbox für Gruppenchat */}
-                            {chatType === 'group' && (
-                              <IonCheckbox
-                                checked={isSelected}
-                                style={{
-                                  flexShrink: 0,
-                                  '--checkbox-background-checked': '#06b6d4',
-                                  '--border-color-checked': '#06b6d4',
-                                  '--checkmark-color': 'white'
-                                }}
-                              />
-                            )}
                           </div>
-                        </div>
+                        </IonItem>
                       );
                     })}
                   </div>

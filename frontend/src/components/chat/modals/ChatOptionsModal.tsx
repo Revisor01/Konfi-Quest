@@ -106,13 +106,7 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
           </h2>
         </div>
 
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonCard className="app-card" style={{ margin: '0 16px 16px 16px' }}>
           <IonCardContent style={{ padding: '8px 0' }}>
             <IonList lines="none" style={{ background: 'transparent' }}>
               {chatOptions.map((option) => (
@@ -204,13 +198,7 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
           </h2>
         </div>
 
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonCard className="app-card" style={{ margin: '0 16px 16px 16px' }}>
           <IonCardContent style={{ padding: '16px' }}>
             <p style={{
               margin: '0',

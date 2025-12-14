@@ -10,18 +10,12 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonIcon,
   IonSearchbar,
   IonCheckbox,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
-  IonAvatar,
-  IonChip,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   IonSelect,
   IonSelectOption
 } from '@ionic/react';
@@ -237,45 +231,16 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION HEADER */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#eb445a',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={personAdd} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Teilnehmer hinzufügen
-          </h2>
-        </div>
-
-        {/* SEKTION CARD */}
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+      <IonContent className="app-gradient-background">
+        {/* Teilnehmer hinzufügen */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={personAdd} />
+            </div>
+            <IonLabel>Teilnehmer hinzufügen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonSearchbar
               value={searchTerm}
@@ -321,75 +286,59 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               </IonItem>
             )}
 
-            <IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
-              {filteredKonfis.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center' }}>
-                  <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
-                    Keine verfügbaren Konfis gefunden
-                  </p>
-                </div>
-              ) : (
-                filteredKonfis.map((konfi) => (
-                  <IonItem
-                    key={konfi.id}
-                    button
-                    onClick={() => handleKonfiSelection(konfi.id)}
-                    detail={false}
-                    style={{
-                      '--min-height': '60px',
-                      '--padding-start': '12px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '4px 0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
-                    }}
+            {filteredKonfis.length === 0 ? (
+              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
+                Keine verfügbaren Konfis gefunden
+              </p>
+            ) : (
+              filteredKonfis.map((konfi, index) => (
+                <IonItem
+                  key={konfi.id}
+                  button
+                  onClick={() => handleKonfiSelection(konfi.id)}
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    marginBottom: index < filteredKonfis.length - 1 ? '8px' : '0'
+                  }}
+                >
+                  <div
+                    className={`app-list-item app-list-item--events ${selectedKonfis.includes(konfi.id) ? 'app-list-item--selected' : ''}`}
+                    style={{ width: '100%', marginBottom: '0' }}
                   >
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#eb445a',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(235, 68, 90, 0.4)'
-                    }}>
-                      <IonIcon
-                        icon={person}
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--events">
+                          <IonIcon icon={person} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">{konfi.name}</div>
+                          {konfi.jahrgang_name && (
+                            <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
+                          )}
+                        </div>
+                      </div>
+                      <IonCheckbox
+                        checked={selectedKonfis.includes(konfi.id)}
                         style={{
-                          fontSize: '1rem',
-                          color: 'white'
+                          '--checkbox-background-checked': '#dc2626',
+                          '--border-color-checked': '#dc2626',
+                          '--checkmark-color': 'white'
                         }}
                       />
                     </div>
-
-                    <IonLabel>
-                      <div style={{ fontWeight: '600', fontSize: '0.95rem', marginBottom: '2px' }}>
-                        {konfi.name}
-                      </div>
-                      {konfi.jahrgang_name && (
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          {konfi.jahrgang_name}
-                        </div>
-                      )}
-                    </IonLabel>
-
-                    <IonCheckbox
-                      slot="end"
-                      checked={selectedKonfis.includes(konfi.id)}
-                      onIonChange={() => handleKonfiSelection(konfi.id)}
-                      color="danger"
-                    />
-                  </IonItem>
-                ))
-              )}
-            </IonList>
+                  </div>
+                </IonItem>
+              ))
+            )}
           </IonCardContent>
-        </IonCard>
+          </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );

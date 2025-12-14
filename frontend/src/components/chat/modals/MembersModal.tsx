@@ -489,7 +489,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   </div>
                   <IonLabel>Verfuegbare Personen ({filteredAvailableUsers.length})</IonLabel>
                 </IonListHeader>
-                <IonCard style={{ margin: '0' }}>
+                <IonCard className="app-card">
                   <IonCardContent style={{ padding: '16px' }}>
                     {filteredAvailableUsers.length === 0 ? (
                       <div style={{
@@ -538,7 +538,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     </div>
                     <IonLabel>Mitglieder ({sortedParticipants.length})</IonLabel>
                   </IonListHeader>
-                  <IonCard style={{ margin: '0' }}>
+                  <IonCard className="app-card">
                     <IonCardContent style={{ padding: '16px' }}>
                       {sortedParticipants.length === 0 ? (
                         <div style={{

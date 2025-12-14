@@ -214,7 +214,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
         
         <IonContent>
           {/* Chat Type Selection */}
-          <IonCard style={{ margin: '16px' }}>
+          <IonCard className="app-card" style={{ margin: '16px' }}>
             <IonCardHeader>
               <IonCardTitle style={{ fontSize: '1.1rem' }}>Chat-Art wählen</IonCardTitle>
             </IonCardHeader>
@@ -239,7 +239,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
 
           {/* Group Name Input (only for group chats) */}
           {chatType === 'group' && (
-            <IonCard style={{ margin: '16px' }}>
+            <IonCard className="app-card" style={{ margin: '16px' }}>
               <IonCardHeader>
                 <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
               </IonCardHeader>
@@ -259,7 +259,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
 
           {/* Selected Participants Display (only for group chats) */}
           {chatType === 'group' && selectedParticipants.size > 0 && (
-            <IonCard style={{ margin: '16px' }}>
+            <IonCard className="app-card" style={{ margin: '16px' }}>
               <IonCardHeader>
                 <IonCardTitle style={{ fontSize: '1rem' }}>
                   Ausgewählte Teilnehmer ({selectedParticipants.size})

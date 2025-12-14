@@ -188,7 +188,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
           ) : (
             <>
               {/* Group Name Input */}
-              <IonCard style={{ margin: '16px' }}>
+              <IonCard className="app-card" style={{ margin: '16px' }}>
                 <IonCardHeader>
                   <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
                 </IonCardHeader>
@@ -207,7 +207,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
 
               {/* Selected Participants Display */}
               {selectedParticipants.size > 0 && (
-                <IonCard style={{ margin: '16px' }}>
+                <IonCard className="app-card" style={{ margin: '16px' }}>
                   <IonCardHeader>
                     <IonCardTitle style={{ fontSize: '1rem' }}>
                       Ausgewählte Teilnehmer ({selectedParticipants.size})
@@ -259,7 +259,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
 
               {/* Admins List */}
               {admins.length > 0 && (
-                <IonCard style={{ margin: '16px' }}>
+                <IonCard className="app-card" style={{ margin: '16px' }}>
                   <IonCardHeader>
                     <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <IonIcon icon={person} color="tertiary" />
@@ -315,7 +315,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
               )}
 
               {/* Konfis List */}
-              <IonCard style={{ margin: '16px' }}>
+              <IonCard className="app-card" style={{ margin: '16px' }}>
                 <IonCardHeader>
                   <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <IonIcon icon={people} color="primary" />

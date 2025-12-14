@@ -544,297 +544,240 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         </div>
 
         {/* Event Details */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardContent>
-            <IonGrid style={{ padding: '0' }}>
-              <IonRow>
-                <IonCol size="12">
-                  {/* Datum */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                    <div>
-                      <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                        {formatDate(eventData?.event_date || '')}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        {formatTime(eventData?.event_date || '')}
-                        {eventData?.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
-                      </div>
-                    </div>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendar} />
+            </div>
+            <IonLabel>Event-Details</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              {/* Datum */}
+              <div className="app-info-row">
+                <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                <div>
+                  <div className="app-info-row__content" style={{ fontWeight: '600' }}>
+                    {formatDate(eventData?.event_date || '')}
                   </div>
-
-                  {/* Timeslots direkt unter Datum */}
-                  {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem', marginTop: '2px' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.timeslots.map((slot, index) => (
-                          <div key={slot.id} style={{ marginBottom: index < eventData.timeslots!.length - 1 ? '4px' : '0' }}>
-                            <span style={{ fontWeight: '500' }}>Slot {index + 1}:</span>{' '}
-                            {formatTime(slot.start_time)} - {formatTime(slot.end_time)}
-                            <span style={{ color: '#666', marginLeft: '8px' }}>
-                              ({slot.registered_count || 0}/{slot.max_participants})
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* TN gesamt */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
-                    </div>
+                  <div className="app-info-row__sublabel">
+                    {formatTime(eventData?.event_date || '')}
+                    {eventData?.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
                   </div>
+                </div>
+              </div>
 
-                  {/* Warteliste */}
-                  {(eventData as any)?.waitlist_enabled && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={listOutline} style={{ marginRight: '12px', color: '#fd7e14', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {participants.filter(p => p.status === 'pending').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
-                      </div>
-                    </div>
-                  )}
+              {/* TN gesamt */}
+              <div className="app-info-row">
+                <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                <div className="app-info-row__content">
+                  {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
+                </div>
+              </div>
 
-                  {/* Punkte */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={trophy} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.points || 0} Punkte
-                    </div>
+              {/* Warteliste */}
+              {(eventData as any)?.waitlist_enabled && (
+                <div className="app-info-row">
+                  <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
+                  <div className="app-info-row__content">
+                    {participants.filter(p => p.status === 'pending').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
                   </div>
+                </div>
+              )}
 
-                  {/* Typ */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon
-                      icon={home}
-                      style={{
-                        marginRight: '12px',
-                        color: eventData?.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                        fontSize: '1.2rem'
-                      }}
-                    />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </div>
+              {/* Punkte */}
+              <div className="app-info-row">
+                <IonIcon icon={trophy} className="app-info-row__icon" style={{ color: '#ff9500' }} />
+                <div className="app-info-row__content">
+                  {eventData?.points || 0} Punkte
+                </div>
+              </div>
+
+              {/* Typ */}
+              <div className="app-info-row">
+                <IonIcon
+                  icon={home}
+                  className="app-info-row__icon"
+                  style={{ color: eventData?.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                />
+                <div className="app-info-row__content">
+                  {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                </div>
+              </div>
+
+              {/* Kategorien als Tags */}
+              {eventData?.categories && eventData.categories.length > 0 && (
+                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
+                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {eventData.categories.map(c => (
+                      <span key={c.id} className="app-tag app-tag--purple">
+                        {c.name}
+                      </span>
+                    ))}
                   </div>
+                </div>
+              )}
 
-                  {/* Kategorien */}
-                  {eventData?.categories && eventData.categories.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={pricetag} style={{ marginRight: '12px', color: '#8b5cf6', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.categories.map(c => c.name).join(', ')}
-                      </div>
-                    </div>
-                  )}
+              {/* Ort */}
+              {eventData?.location && (
+                <div className="app-info-row">
+                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <div
+                    className="app-info-row__content"
+                    style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
+                    onClick={() => {
+                      if (eventData.location_maps_url) {
+                        window.open(eventData.location_maps_url, '_blank');
+                      } else if (eventData.location) {
+                        const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
+                        window.open(mapsUrl, '_blank');
+                      }
+                    }}
+                  >
+                    {eventData.location}
+                  </div>
+                </div>
+              )}
 
-                  {/* Ort */}
-                  {eventData?.location && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={location} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                      <div
-                        style={{
-                          fontSize: '1rem',
-                          color: '#007aff',
-                          textDecoration: 'underline',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          if (eventData.location_maps_url) {
-                            window.open(eventData.location_maps_url, '_blank');
-                          } else if (eventData.location) {
-                            const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
-                            window.open(mapsUrl, '_blank');
-                          }
-                        }}
-                      >
-                        {eventData.location}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Anmeldezeitraum mit Umbruch */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem', marginTop: '2px' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData?.registration_opens_at ? (
-                        <>
-                          <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                          {eventData?.registration_closes_at && (
-                            <div>bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                          )}
-                        </>
-                      ) : (
-                        'Sofort möglich'
+              {/* Anmeldezeitraum */}
+              <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
+                <div className="app-info-row__content">
+                  {eventData?.registration_opens_at ? (
+                    <>
+                      <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
+                      {eventData?.registration_closes_at && (
+                        <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
                       )}
-                    </div>
+                    </>
+                  ) : (
+                    'Sofort möglich'
+                  )}
+                </div>
+              </div>
+
+              {/* Jahrgang */}
+              {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#007aff' }} />
+                  <div className="app-info-row__content">
+                    {eventData.jahrgaenge.map(j => j.name).join(', ')}
                   </div>
+                </div>
+              )}
 
-                  {/* Jahrgang */}
-                  {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={people} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.jahrgaenge.map(j => j.name).join(', ')}
-                      </div>
-                    </div>
-                  )}
+              {/* Beschreibung */}
+              {eventData?.description && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: '600', color: '#333' }}>
+                    Beschreibung
+                  </h3>
+                  <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
+                    {eventData.description}
+                  </p>
+                </div>
+              )}
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
-                  {eventData?.description && (
-                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
-                      <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                        Beschreibung
-                      </h3>
-                      <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
-                        {eventData.description}
-                      </p>
-                    </div>
-                  )}
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-          </IonCardContent>
-        </IonCard>
-
-        {/* Timeslots */}
-        {eventData?.has_timeslots && (
+        {/* Timeslots mit Teilnehmern */}
+        {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#dc2626',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={time} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={time} />
               </div>
-              <IonLabel>Zeitslots ({eventData?.timeslots?.length || 0})</IonLabel>
+              <IonLabel>Zeitslots ({eventData.timeslots.length})</IonLabel>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
-            {!eventData.timeslots || eventData.timeslots.length === 0 ? (
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
-                  Keine Zeitslots konfiguriert
-                </p>
-              </IonCardContent>
-            ) : (
-              <IonCardContent style={{ padding: '8px 0' }}>
-                <IonList lines="none" style={{ background: 'transparent' }}>
-                  {eventData.timeslots.map((timeslot) => (
-                    <IonItem
-                      key={timeslot.id}
-                      detail={false}
-                      style={{
-                        '--min-height': '80px',
-                        '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px'
-                      }}
-                    >
-                      <IonLabel>
-                        {/* Header mit Icon und Badge */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '4px',
-                          position: 'relative'
-                        }}>
-                          {/* Time Icon */}
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            backgroundColor: '#dc2626',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            boxShadow: '0 2px 8px rgba(235, 68, 90, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon
-                              icon={time}
-                              style={{
-                                fontSize: '0.9rem',
-                                color: 'white'
-                              }}
-                            />
+                {eventData.timeslots.map((timeslot, slotIndex) => {
+                  const slotParticipants = participants.filter(p =>
+                    p.timeslot_start_time === timeslot.start_time &&
+                    p.timeslot_end_time === timeslot.end_time &&
+                    p.status === 'confirmed'
+                  );
+                  const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
+
+                  return (
+                    <div key={timeslot.id} style={{ marginBottom: slotIndex < eventData.timeslots!.length - 1 ? '20px' : '0' }}>
+                      {/* Slot Header */}
+                      <div className="app-list-item app-list-item--events">
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div className="app-icon-circle app-icon-circle--events">
+                              <IonIcon icon={time} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title">
+                                {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
+                              </div>
+                              <div className="app-list-item__subtitle">
+                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
+                              </div>
+                            </div>
                           </div>
-
-                          {/* Time Range */}
-                          <h3 style={{
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            margin: '0',
-                            color: '#333',
-                            lineHeight: '1.3',
-                            flex: 1,
-                            minWidth: 0,
-                            maxWidth: 'calc(100% - 100px)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {timeslot.start_time && timeslot.end_time
-                              ? `${formatTime(timeslot.start_time)} - ${formatTime(timeslot.end_time)}`
-                              : 'Zeit nicht definiert'
-                            }
-                          </h3>
-
-                          {/* Status Badge */}
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: (timeslot.registered_count || 0) >= timeslot.max_participants ? '#dc2626' : '#2dd36f',
-                            fontWeight: '600',
-                            backgroundColor: (timeslot.registered_count || 0) >= timeslot.max_participants ? 'rgba(235, 68, 90, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                            padding: '3px 6px',
-                            borderRadius: '6px',
-                            border: (timeslot.registered_count || 0) >= timeslot.max_participants ? '1px solid rgba(235, 68, 90, 0.3)' : '1px solid rgba(45, 211, 111, 0.3)',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                            position: 'absolute',
-                            right: '0px',
-                            top: '50%',
-                            transform: 'translateY(-50%)'
-                          }}>
-                            {(timeslot.registered_count || 0) >= timeslot.max_participants ? 'Voll' : 'Verfügbar'}
+                          <span className={`app-chip ${isFull ? 'app-chip--danger' : 'app-chip--success'}`}>
+                            {isFull ? 'Voll' : 'Verfügbar'}
                           </span>
                         </div>
+                      </div>
 
-                        {/* Participants Count */}
-                        <div style={{
-                          fontSize: '0.8rem',
-                          color: '#666',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          marginLeft: '40px'
-                        }}>
-                          <span>
-                            {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
-                            {(timeslot.registered_count || 0) >= timeslot.max_participants && ' • Ausgebucht'}
-                          </span>
+                      {/* Teilnehmer dieses Slots */}
+                      {slotParticipants.length > 0 && (
+                        <div style={{ marginLeft: '16px', marginTop: '8px' }}>
+                          {slotParticipants.map((participant, pIndex) => (
+                            <IonItem
+                              key={participant.id}
+                              button
+                              detail={false}
+                              lines="none"
+                              onClick={() => showAttendanceActionSheet(participant)}
+                              style={{
+                                '--background': 'transparent',
+                                '--padding-start': '0',
+                                '--padding-end': '0',
+                                '--inner-padding-end': '0',
+                                '--inner-border-width': '0',
+                                marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0'
+                              }}
+                            >
+                              <div className="app-list-item app-list-item--events" style={{ width: '100%', marginBottom: '0' }}>
+                                <div className="app-list-item__row">
+                                  <div className="app-list-item__main">
+                                    <div className={`app-icon-circle ${
+                                      participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                      participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
+                                    }`}>
+                                      <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
+                                            participant.attendance_status === 'absent' ? closeCircle : people} />
+                                    </div>
+                                    <div className="app-list-item__content">
+                                      <div className="app-list-item__title">{participant.participant_name}</div>
+                                      {participant.jahrgang_name && (
+                                        <div className="app-list-item__subtitle">{participant.jahrgang_name}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className={`app-chip ${
+                                    participant.attendance_status === 'present' ? 'app-chip--success' :
+                                    participant.attendance_status === 'absent' ? 'app-chip--danger' : 'app-chip--info'
+                                  }`}>
+                                    {participant.attendance_status === 'present' ? 'Anwesend' :
+                                     participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht'}
+                                  </span>
+                                </div>
+                              </div>
+                            </IonItem>
+                          ))}
                         </div>
-                      </IonLabel>
-                    </IonItem>
-                  ))}
-                </IonList>
+                      )}
+                    </div>
+                  );
+                })}
               </IonCardContent>
-            )}
             </IonCard>
           </IonList>
         )}
@@ -843,276 +786,173 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#dc2626',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={calendar} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--info">
+                <IonIcon icon={calendar} />
               </div>
               <IonLabel>Weitere Termine dieser Serie</IonLabel>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
-            <IonCardContent style={{ padding: '0' }}>
-              <IonList>
-                {eventData.series_events.map((seriesEvent) => (
-                  <IonItem 
-                    key={seriesEvent.id}
-                    button
-                    onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
-                  >
-                    <IonIcon icon={calendar} slot="start" color="primary" />
-                    <IonLabel>
-                      <h3>{seriesEvent.name}</h3>
-                      <p>
-                        {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)}
-                        • {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} Teilnehmer
-                      </p>
-                    </IonLabel>
-                    <IonChip 
-                      color={
-                        (seriesEvent.registered_count || 0) >= seriesEvent.max_participants 
-                          ? 'danger' 
-                          : 'success'
-                      }
-                      slot="end"
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                {eventData.series_events.map((seriesEvent) => {
+                  const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
+                  return (
+                    <div
+                      key={seriesEvent.id}
+                      className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
-                      {(seriesEvent.registered_count || 0) >= seriesEvent.max_participants ? 'Voll' : 'Verfügbar'}
-                    </IonChip>
-                  </IonItem>
-                ))}
-              </IonList>
-            </IonCardContent>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <IonIcon icon={calendar} style={{ fontSize: '1.2rem', color: '#007aff' }} />
+                          <div>
+                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#333' }}>
+                              {seriesEvent.name}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                              {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} - {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`app-chip ${isFull ? 'app-chip--danger' : 'app-chip--success'}`}>
+                          {isFull ? 'Voll' : 'Verfügbar'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </IonCardContent>
             </IonCard>
           </IonList>
         )}
 
-        {/* Participants List */}
+        {/* Participants List - nur anzeigen wenn KEINE Timeslots oder Warteliste-TN vorhanden */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={people} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={people} />
             </div>
             <IonLabel>
-              Teilnehmer:innen ({participants.filter(p => p.status === 'confirmed').length}
-              {participants.filter(p => p.status === 'pending').length > 0 &&
-                ` + ${participants.filter(p => p.status === 'pending').length}`
-              })
+              {eventData?.has_timeslots
+                ? `Teilnehmer:innen (${participants.filter(p => p.status === 'pending').length} auf Warteliste)`
+                : `Teilnehmer:innen (${participants.filter(p => p.status === 'confirmed').length}${participants.filter(p => p.status === 'pending').length > 0 ? ` + ${participants.filter(p => p.status === 'pending').length}` : ''})`
+              }
             </IonLabel>
           </IonListHeader>
-          <IonCard style={{ margin: '0' }}>
-          {participants.length === 0 ? (
-            <IonCardContent style={{ padding: '16px' }}>
-              <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
-                Noch keine Anmeldungen
-              </p>
-            </IonCardContent>
-          ) : (
-            <IonCardContent style={{ padding: '8px 0' }}>
-              <IonList lines="none" style={{ background: 'transparent' }}>
-                {participants.map((participant) => (
-                  <IonItemSliding
-                    key={participant.id}
-                    ref={(el) => {
-                      if (el) {
-                        slidingRefs.current.set(participant.id, el);
-                      } else {
-                        slidingRefs.current.delete(participant.id);
-                      }
-                    }}
-                  >
-                    <IonItem
-                      button
-                      detail={false}
-                      onClick={() => {
-                        if (participant.status === 'confirmed') {
-                          showAttendanceActionSheet(participant);
-                        } else if (participant.status === 'pending') {
-                          showWaitlistActionSheet(participant);
+          <IonCard className="app-card">
+          {(() => {
+            // Bei Timeslots nur Warteliste anzeigen, sonst alle
+            const displayParticipants = eventData?.has_timeslots
+              ? participants.filter(p => p.status === 'pending')
+              : participants;
+
+            return displayParticipants.length === 0 ? (
+              <IonCardContent style={{ padding: '16px' }}>
+                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
+                  {eventData?.has_timeslots ? 'Keine Warteliste' : 'Noch keine Anmeldungen'}
+                </p>
+              </IonCardContent>
+            ) : (
+              <IonCardContent style={{ padding: '16px' }}>
+                {displayParticipants.map((participant, index) => {
+                  const iconCircleClass = participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                          participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
+                                          participant.status === 'pending' ? 'app-icon-circle--warning' : 'app-icon-circle--info';
+                  const statusIcon = participant.attendance_status === 'present' ? checkmarkCircle :
+                                     participant.attendance_status === 'absent' ? closeCircle : people;
+                  const isWaitlist = participant.status === 'pending';
+
+                  return (
+                    <IonItemSliding
+                      key={participant.id}
+                      ref={(el) => {
+                        if (el) {
+                          slidingRefs.current.set(participant.id, el);
+                        } else {
+                          slidingRefs.current.delete(participant.id);
                         }
                       }}
-                      style={{
-                        '--min-height': '80px',
-                        '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '6px 8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px'
-                      }}
+                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0' }}
                     >
-                      <IonLabel>
-                        {/* Header mit Icon */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '4px',
-                          position: 'relative'
-                        }}>
-                          {/* Status Icon */}
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            backgroundColor: participant.attendance_status === 'present' ? '#2dd36f' :
-                                            participant.attendance_status === 'absent' ? '#dc2626' :
-                                            participant.status === 'pending' ? '#ff9500' : '#007aff',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                            boxShadow: participant.attendance_status === 'present' ? '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
-                                       participant.attendance_status === 'absent' ? '0 2px 8px rgba(235, 68, 90, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
-                                       participant.status === 'pending' ? '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)' :
-                                       '0 2px 8px rgba(0, 122, 255, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon
-                              icon={participant.attendance_status === 'present' ? checkmarkCircle :
-                                    participant.attendance_status === 'absent' ? closeCircle : people}
-                              style={{
-                                fontSize: '0.9rem',
-                                color: 'white'
-                              }}
-                            />
-                          </div>
-
-                          {/* Participant Name */}
-                          <h3 style={{
-                            fontWeight: '600',
-                            fontSize: '1rem',
-                            margin: '0',
-                            color: participant.status === 'pending' ? '#ff9500' : '#333',
-                            lineHeight: '1.3',
-                            flex: 1,
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {participant.participant_name}
-                            {participant.status === 'pending' && (
-                              <span style={{
-                                marginLeft: '6px',
-                                fontSize: '0.8rem',
-                                fontWeight: '500'
-                              }}>
-                                • Warteliste
-                              </span>
-                            )}
-                          </h3>
-                        </div>
-
-                        {/* Details */}
-                        <div style={{
-                          fontSize: '0.8rem',
-                          color: '#666',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          marginLeft: '40px'
-                        }}>
-                          <span>
-                            {participant.jahrgang_name && `${participant.jahrgang_name} • `}
-                            {participant.timeslot_start_time && participant.timeslot_end_time && (
-                              <>Zeitslot: {formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)} • </>
-                            )}
-                            Angemeldet am {new Date(participant.created_at).toLocaleString('de-DE', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                      </IonLabel>
-                    </IonItem>
-                    <IonItemOptions side="end" style={{
-                      gap: '4px',
-                      '--ion-item-background': 'transparent'
-                    }}>
-                      {/* Auf Warteliste setzen - nur für bestätigte Teilnehmer */}
-                      {participant.status === 'confirmed' && (
-                        <IonItemOption
-                          onClick={() => handleDemoteParticipant(participant)}
-                          style={{
-                            '--background': 'transparent',
-                            '--background-activated': 'transparent',
-                            '--background-focused': 'transparent',
-                            '--background-hover': 'transparent',
-                            '--color': 'transparent',
-                            '--ripple-color': 'transparent',
-                            padding: '0 2px',
-                            minWidth: '48px',
-                            maxWidth: '68px'
-                          }}
-                        >
-                          <div style={{
-                            width: '44px',
-                            height: '44px',
-                            backgroundColor: '#fd7e14',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(253, 126, 20, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'white' }} />
-                          </div>
-                        </IonItemOption>
-                      )}
-                      <IonItemOption
-                        onClick={() => handleRemoveParticipant(participant)}
+                      <IonItem
+                        button
+                        detail={false}
+                        lines="none"
+                        onClick={() => {
+                          if (participant.status === 'confirmed') {
+                            showAttendanceActionSheet(participant);
+                          } else if (participant.status === 'pending') {
+                            showWaitlistActionSheet(participant);
+                          }
+                        }}
                         style={{
                           '--background': 'transparent',
-                          '--background-activated': 'transparent',
-                          '--background-focused': 'transparent',
-                          '--background-hover': 'transparent',
-                          '--color': 'transparent',
-                          '--ripple-color': 'transparent',
-                          padding: '0 2px',
-                          paddingRight: '20px',
-                          minWidth: '48px',
-                          maxWidth: '68px'
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0'
                         }}
                       >
-                        <div style={{
-                          width: '44px',
-                          height: '44px',
-                          backgroundColor: '#dc3545',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                        }}>
-                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                        <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0' }}>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className={`app-icon-circle ${iconCircleClass}`}>
+                                <IonIcon icon={statusIcon} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">
+                                  {participant.participant_name}
+                                </div>
+                                {/* Warteliste: nur Jahrgang und Zeitslot, kein Datum */}
+                                {(participant.jahrgang_name || (participant.timeslot_start_time && participant.timeslot_end_time)) && (
+                                  <div className="app-list-item__subtitle">
+                                    {participant.jahrgang_name}
+                                    {participant.jahrgang_name && participant.timeslot_start_time && ' | '}
+                                    {participant.timeslot_start_time && participant.timeslot_end_time && (
+                                      <>{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className={`app-chip ${
+                              participant.attendance_status === 'present' ? 'app-chip--success' :
+                              participant.attendance_status === 'absent' ? 'app-chip--danger' :
+                              isWaitlist ? 'app-chip--warning' : 'app-chip--info'
+                            }`}>
+                              {participant.attendance_status === 'present' ? 'Anwesend' :
+                               participant.attendance_status === 'absent' ? 'Abwesend' :
+                               isWaitlist ? 'Warteliste' : 'Gebucht'}
+                            </span>
+                          </div>
                         </div>
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
-                ))}
-              </IonList>
-            </IonCardContent>
-          )}
+                      </IonItem>
+                      <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                        {participant.status === 'confirmed' && (
+                          <IonItemOption
+                            onClick={() => handleDemoteParticipant(participant)}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px' }}
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                              <IonIcon icon={returnUpBack} />
+                            </div>
+                          </IonItemOption>
+                        )}
+                        <IonItemOption
+                          onClick={() => handleRemoveParticipant(participant)}
+                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px' }}
+                        >
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                            <IonIcon icon={trash} />
+                          </div>
+                        </IonItemOption>
+                      </IonItemOptions>
+                    </IonItemSliding>
+                  );
+                })}
+              </IonCardContent>
+            );
+          })()}
           <IonCardContent style={{ padding: '16px' }}>
             <IonButton
               expand="block"
@@ -1130,93 +970,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {unregistrations.length > 0 && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#dc3545',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={closeCircle} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--danger">
+                <IonIcon icon={closeCircle} />
               </div>
               <IonLabel>Abmeldungen ({unregistrations.length})</IonLabel>
             </IonListHeader>
-            <IonCard style={{ margin: '0' }}>
-            <IonCardContent style={{ padding: '8px 0' }}>
-              <IonList lines="none" style={{ background: 'transparent' }}>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
                 {unregistrations.map((unreg) => (
-                  <IonItem
-                    key={unreg.id}
-                    detail={false}
-                    style={{
-                      '--min-height': '70px',
-                      '--padding-start': '16px',
-                      '--padding-top': '0px',
-                      '--padding-bottom': '0px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '6px 8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <IonLabel>
-                      {/* Header mit Icon */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '4px'
-                      }}>
-                        {/* Status Icon */}
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          backgroundColor: '#dc3545',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                        }}>
-                          <IonIcon
-                            icon={closeCircle}
-                            style={{
-                              fontSize: '0.9rem',
-                              color: 'white'
-                            }}
-                          />
-                        </div>
-
-                        {/* Name */}
-                        <h3 style={{
-                          fontWeight: '600',
-                          fontSize: '1rem',
-                          margin: '0',
-                          color: '#333',
-                          lineHeight: '1.3',
-                          flex: 1,
-                          minWidth: 0,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                  <div key={unreg.id} className="app-list-item app-list-item--danger">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#dc3545' }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#333' }}>
                           {unreg.konfi_name}
-                        </h3>
-                      </div>
-
-                      {/* Details */}
-                      <div style={{
-                        fontSize: '0.8rem',
-                        color: '#666',
-                        marginLeft: '40px'
-                      }}>
-                        <div>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
                           Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
                             day: '2-digit',
                             month: '2-digit',
@@ -1225,26 +994,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             minute: '2-digit'
                           })}
                         </div>
-                        {unreg.reason && (
-                          <div style={{
-                            marginTop: '8px',
-                            padding: '8px 12px',
-                            backgroundColor: 'rgba(220, 53, 69, 0.08)',
-                            borderRadius: '8px',
-                            borderLeft: '3px solid #dc3545',
-                            color: '#666',
-                            fontSize: '0.85rem',
-                            lineHeight: '1.4'
-                          }}>
-                            <span style={{ fontWeight: '600', color: '#dc3545' }}>Grund:</span> {unreg.reason}
-                          </div>
-                        )}
                       </div>
-                    </IonLabel>
-                  </IonItem>
+                    </div>
+                    {unreg.reason && (
+                      <div className="app-reason-box app-reason-box--danger" style={{ marginLeft: '32px' }}>
+                        <span className="app-reason-box__label">Grund:</span> {unreg.reason}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </IonList>
-            </IonCardContent>
+              </IonCardContent>
             </IonCard>
           </IonList>
         )}

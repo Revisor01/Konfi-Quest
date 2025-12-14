@@ -33,6 +33,297 @@ http://ionicframework.com/docs/theming/ */
   --background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
+/* App Card Styling - zentrale Klasse fuer alle Cards */
+ion-card.app-card {
+  --background: white;
+  box-shadow: none;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* ============================================
+   WIEDERVERWENDBARE APP KOMPONENTEN
+   ============================================ */
+
+/* App List Item - Basis-Klasse fuer alle Listenelemente mit farbiger Border */
+.app-list-item {
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-right: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: white;
+  margin-bottom: 8px;
+}
+.app-list-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Farbvarianten fuer List Items - linke Border */
+.app-list-item--events { border-left-color: #dc2626; }
+.app-list-item--chat { border-left-color: #06b6d4; }
+.app-list-item--success { border-left-color: #34c759; }
+.app-list-item--warning { border-left-color: #ff9500; }
+.app-list-item--danger { border-left-color: #dc3545; }
+.app-list-item--info { border-left-color: #007aff; }
+.app-list-item--purple { border-left-color: #8b5cf6; }
+
+/* Selected State fuer List Items */
+.app-list-item--selected {
+  border-color: var(--app-item-color, #dc2626);
+  background: rgba(var(--app-item-color-rgb, 220, 38, 38), 0.08);
+}
+
+/* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
+.app-reason-box {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left-width: 3px;
+  border-left-style: solid;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.app-reason-box--danger {
+  background-color: rgba(220, 53, 69, 0.08);
+  border-left-color: #dc3545;
+  color: #666;
+}
+.app-reason-box--warning {
+  background-color: rgba(255, 149, 0, 0.08);
+  border-left-color: #ff9500;
+  color: #666;
+}
+.app-reason-box--info {
+  background-color: rgba(0, 122, 255, 0.08);
+  border-left-color: #007aff;
+  color: #666;
+}
+.app-reason-box__label {
+  font-weight: 600;
+}
+.app-reason-box--danger .app-reason-box__label { color: #dc3545; }
+.app-reason-box--warning .app-reason-box__label { color: #ff9500; }
+.app-reason-box--info .app-reason-box__label { color: #007aff; }
+
+/* App Status Chip - fuer Status-Anzeigen */
+.app-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.app-chip--events {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+}
+.app-chip--success {
+  background-color: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+.app-chip--warning {
+  background-color: rgba(255, 149, 0, 0.15);
+  color: #ff9500;
+}
+.app-chip--danger {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: #dc3545;
+}
+.app-chip--info {
+  background-color: rgba(0, 122, 255, 0.15);
+  color: #007aff;
+}
+.app-chip--chat {
+  background-color: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+}
+.app-chip--purple {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+/* App Section Header Icon - runder farbiger Icon-Container */
+.app-section-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+.app-section-icon--events { background-color: #dc2626; }
+.app-section-icon--chat { background-color: #06b6d4; }
+.app-section-icon--success { background-color: #34c759; }
+.app-section-icon--warning { background-color: #ff9500; }
+.app-section-icon--danger { background-color: #dc3545; }
+.app-section-icon--info { background-color: #007aff; }
+.app-section-icon--purple { background-color: #8b5cf6; }
+.app-section-icon ion-icon {
+  color: white;
+  font-size: 0.8rem;
+}
+
+/* App Info Row - fuer Info-Zeilen mit Icon */
+.app-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.app-info-row:last-child {
+  margin-bottom: 0;
+}
+.app-info-row__icon {
+  margin-right: 12px;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.app-info-row__content {
+  font-size: 1rem;
+  color: #333;
+}
+.app-info-row__sublabel {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* App Icon Circle - runder Icon-Container fuer Listen-Items */
+.app-icon-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.app-icon-circle--lg {
+  width: 40px;
+  height: 40px;
+}
+.app-icon-circle--events { background-color: #dc2626; }
+.app-icon-circle--chat { background-color: #06b6d4; }
+.app-icon-circle--success { background-color: #34c759; }
+.app-icon-circle--warning { background-color: #ff9500; }
+.app-icon-circle--danger { background-color: #dc3545; }
+.app-icon-circle--info { background-color: #007aff; }
+.app-icon-circle--purple { background-color: #8b5cf6; }
+.app-icon-circle--trophy { background-color: #ff9500; }
+.app-icon-circle ion-icon {
+  color: white;
+  font-size: 0.9rem;
+}
+.app-icon-circle--lg ion-icon {
+  font-size: 1.2rem;
+}
+
+/* App Tag - kleine Kategorie/Label Tags */
+.app-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+.app-tag--events {
+  background-color: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+.app-tag--chat {
+  background-color: rgba(6, 182, 212, 0.12);
+  color: #06b6d4;
+}
+.app-tag--purple {
+  background-color: rgba(139, 92, 246, 0.12);
+  color: #8b5cf6;
+}
+.app-tag--info {
+  background-color: rgba(0, 122, 255, 0.12);
+  color: #007aff;
+}
+.app-tag--success {
+  background-color: rgba(52, 199, 89, 0.12);
+  color: #34c759;
+}
+.app-tag--warning {
+  background-color: rgba(255, 149, 0, 0.12);
+  color: #ff9500;
+}
+
+/* App List Item Layout - mit Chip rechts */
+.app-list-item__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.app-list-item__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+.app-list-item__content {
+  flex: 1;
+  min-width: 0;
+}
+.app-list-item__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-list-item__subtitle {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 2px;
+}
+.app-list-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.app-list-item__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* App Farbvariablen */
+:root {
+  --app-color-events: #dc2626;
+  --app-color-events-rgb: 220, 38, 38;
+  --app-color-chat: #06b6d4;
+  --app-color-chat-rgb: 6, 182, 212;
+  --app-color-success: #34c759;
+  --app-color-success-rgb: 52, 199, 89;
+  --app-color-warning: #ff9500;
+  --app-color-warning-rgb: 255, 149, 0;
+  --app-color-danger: #dc3545;
+  --app-color-danger-rgb: 220, 53, 69;
+  --app-color-info: #007aff;
+  --app-color-info-rgb: 0, 122, 255;
+  --app-color-purple: #8b5cf6;
+  --app-color-purple-rgb: 139, 92, 246;
+  --app-color-trophy: #ff9500;
+}
+
 /* Solideres Popover Styling für IonSelect */
 ion-popover {
   --background: #ffffff;
