@@ -502,7 +502,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '24px', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                           <IonIcon icon={ban} />
@@ -512,7 +512,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onDeleteEvent && (
                       <IonItemOption
                         onClick={() => onDeleteEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '40px', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '24px', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                           <IonIcon icon={trash} />

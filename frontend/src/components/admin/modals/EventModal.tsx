@@ -677,7 +677,7 @@ const EventModal: React.FC<EventModalProps> = ({
               {!formData.has_timeslots && (
                 <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                     <IonButton
                       fill="outline"
                       size="small"
@@ -690,10 +690,10 @@ const EventModal: React.FC<EventModalProps> = ({
                     <IonInput
                       type="text"
                       inputMode="numeric"
-                      value={formData.max_participants.toString()}
+                      value={formData.max_participants === 0 ? '∞' : formData.max_participants.toString()}
                       onIonInput={(e) => {
                         const value = e.detail.value!;
-                        if (value === '') {
+                        if (value === '' || value === '∞') {
                           setFormData({ ...formData, max_participants: 1 });
                         } else {
                           const num = parseInt(value);
@@ -703,17 +703,32 @@ const EventModal: React.FC<EventModalProps> = ({
                         }
                       }}
                       placeholder="5"
-                      disabled={loading}
+                      disabled={loading || formData.max_participants === 0}
                       style={{ textAlign: 'center', flex: 1 }}
                     />
                     <IonButton
                       fill="outline"
                       size="small"
-                      disabled={loading || formData.max_participants >= 999}
+                      disabled={loading || formData.max_participants >= 999 || formData.max_participants === 0}
                       onClick={() => setFormData({ ...formData, max_participants: Math.min(999, formData.max_participants + 1) })}
                       style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                     >
                       <IonIcon icon={addOutline} />
+                    </IonButton>
+                    <IonButton
+                      fill={formData.max_participants === 0 ? 'solid' : 'outline'}
+                      size="small"
+                      disabled={loading}
+                      onClick={() => setFormData({ ...formData, max_participants: formData.max_participants === 0 ? 5 : 0 })}
+                      style={{
+                        '--border-radius': '8px',
+                        minWidth: '40px',
+                        height: '40px',
+                        '--background': formData.max_participants === 0 ? '#dc2626' : undefined,
+                        '--color': formData.max_participants === 0 ? 'white' : undefined
+                      }}
+                    >
+                      ∞
                     </IonButton>
                   </div>
                 </IonItem>

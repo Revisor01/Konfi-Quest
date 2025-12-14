@@ -20,7 +20,7 @@ import {
   IonSelectOption,
   IonItemGroup
 } from '@ionic/react';
-import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline } from 'ionicons/icons';
+import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -282,7 +282,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                 <IonInput
                   value={searchTerm}
                   onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Konfi suchen..."
+                  placeholder="Person suchen..."
                 />
               </IonItem>
               {/* Jahrgang Filter */}
@@ -292,7 +292,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
                   placeholder="Jahrgang"
                   interface="popover"
-                  fill="solid"
                   style={{ width: '100%' }}
                 >
                   {eventData?.jahrgang_name && (
@@ -306,15 +305,25 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   ))}
                 </IonSelect>
               </IonItem>
-              {/* Timeslot Selection for events with timeslots */}
-              {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
+            </IonItemGroup>
+          </IonList>
+
+          {/* Zeitslot Auswahl - separate Card */}
+          {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
+            <IonList inset={true}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--events">
+                  <IonIcon icon={time} />
+                </div>
+                <IonLabel>Slot</IonLabel>
+              </IonListHeader>
+              <IonItemGroup>
                 <IonItem>
                   <IonSelect
                     value={selectedTimeslot}
                     onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
                     placeholder="Zeitslot wählen *"
                     interface="popover"
-                    fill="solid"
                     style={{ width: '100%' }}
                   >
                     {eventData.timeslots.map((timeslot) => {
@@ -333,17 +342,17 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     })}
                   </IonSelect>
                 </IonItem>
-              )}
-            </IonItemGroup>
-          </IonList>
+              </IonItemGroup>
+            </IonList>
+          )}
 
-          {/* Konfis Liste - iOS26 Pattern */}
+          {/* Personen Liste - iOS26 Pattern */}
           <IonList inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={personAdd} />
               </div>
-              <IonLabel>Konfis ({filteredKonfis.length})</IonLabel>
+              <IonLabel>Personen ({filteredKonfis.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
