@@ -499,60 +499,225 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonCard>
         </IonList>
 
+        {/* ZEITFENSTER - VOR Punkte & Teilnehmer */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={time} />
+            </div>
+            <IonLabel>Zeitfenster (optional)</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel>Zeitfenster aktivieren</IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={formData.has_timeslots}
+                  onIonChange={(e) => {
+                    const hasTimeslots = e.detail.checked;
+                    setFormData({ ...formData, has_timeslots: hasTimeslots });
+                    if (!hasTimeslots) {
+                      setTimeslots([]);
+                    }
+                  }}
+                  disabled={loading}
+                />
+              </IonItem>
+
+              {formData.has_timeslots && (
+                <IonItem lines="none" style={{ '--background': 'transparent', padding: '8px 16px' }}>
+                  <IonButton
+                    fill="outline"
+                    onClick={addTimeslot}
+                    disabled={loading}
+                    style={{ width: '100%' }}
+                  >
+                    <IonIcon icon={add} slot="start" />
+                    Zeitfenster hinzufügen
+                  </IonButton>
+                </IonItem>
+              )}
+
+            </IonList>
+          </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* ZEITFENSTER DETAILS - direkt nach Toggle */}
+        {formData.has_timeslots && timeslots.map((timeslot, index) => (
+          <IonList key={index} inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'white' }}>
+                  {index + 1}
+                </span>
+              </div>
+              <IonLabel style={{ flex: 1 }}>Zeitfenster {index + 1}</IonLabel>
+              <IonButton
+                fill="clear"
+                color="danger"
+                onClick={() => removeTimeslot(index)}
+                disabled={loading}
+                size="small"
+              >
+                <IonIcon icon={trash} />
+              </IonButton>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <IonList style={{ background: 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                    <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
+                    <IonInput
+                      type="time"
+                      value={timeslot.start_time ? new Date(timeslot.start_time).toTimeString().slice(0, 5) : ''}
+                      onIonInput={(e) => {
+                        const timeValue = e.detail.value!;
+                        if (timeValue) {
+                          const [hours, minutes] = timeValue.split(':');
+                          const eventDate = new Date(formData.event_date);
+                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                          const toIonDatetimeISO = (date: Date) => {
+                            const pad = (num: number) => num.toString().padStart(2, '0');
+                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+                          };
+                          updateTimeslot(index, 'start_time', toIonDatetimeISO(eventDate));
+                        }
+                      }}
+                      placeholder="z.B. 10:00"
+                      disabled={loading}
+                      step="900"
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                    <IonLabel position="stacked">Endzeit (HH:MM)</IonLabel>
+                    <IonInput
+                      type="time"
+                      value={timeslot.end_time ? new Date(timeslot.end_time).toTimeString().slice(0, 5) : ''}
+                      onIonInput={(e) => {
+                        const timeValue = e.detail.value!;
+                        if (timeValue) {
+                          const [hours, minutes] = timeValue.split(':');
+                          const eventDate = new Date(formData.event_date);
+                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                          const toIonDatetimeISO = (date: Date) => {
+                            const pad = (num: number) => num.toString().padStart(2, '0');
+                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
+                          };
+                          updateTimeslot(index, 'end_time', toIonDatetimeISO(eventDate));
+                        }
+                      }}
+                      placeholder="z.B. 11:00"
+                      disabled={loading}
+                      step="900"
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={loading || timeslot.max_participants <= 1}
+                        onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={removeOutline} />
+                      </IonButton>
+                      <IonInput
+                        type="text"
+                        inputMode="numeric"
+                        value={timeslot.max_participants.toString()}
+                        onIonInput={(e) => {
+                          const value = e.detail.value!;
+                          if (value === '') {
+                            updateTimeslot(index, 'max_participants', 1);
+                          } else {
+                            const num = parseInt(value);
+                            if (!isNaN(num) && num >= 1 && num <= 999) {
+                              updateTimeslot(index, 'max_participants', num);
+                            }
+                          }
+                        }}
+                        placeholder="10"
+                        disabled={loading}
+                        style={{ textAlign: 'center', flex: 1 }}
+                      />
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={loading || timeslot.max_participants >= 999}
+                        onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={addOutline} />
+                      </IonButton>
+                    </div>
+                  </IonItem>
+                </IonList>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        ))}
+
         {/* PUNKTE & TEILNEHMER */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={people} />
             </div>
-            <IonLabel>Punkte & Teilnehmer</IonLabel>
+            <IonLabel>Punkte{!formData.has_timeslots ? ' & Teilnehmer' : ''}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              {/* Max. Teilnehmer mit Stepper */}
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.max_participants <= 1}
-                    onClick={() => setFormData({ ...formData, max_participants: Math.max(1, formData.max_participants - 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
-                  <IonInput
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.max_participants.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') {
-                        setFormData({ ...formData, max_participants: 1 });
-                      } else {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num >= 1 && num <= 999) {
-                          setFormData({ ...formData, max_participants: num });
+              {/* Max. Teilnehmer - nur anzeigen wenn KEINE Zeitfenster aktiv */}
+              {!formData.has_timeslots && (
+                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.max_participants <= 1}
+                      onClick={() => setFormData({ ...formData, max_participants: Math.max(1, formData.max_participants - 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={removeOutline} />
+                    </IonButton>
+                    <IonInput
+                      type="text"
+                      inputMode="numeric"
+                      value={formData.max_participants.toString()}
+                      onIonInput={(e) => {
+                        const value = e.detail.value!;
+                        if (value === '') {
+                          setFormData({ ...formData, max_participants: 1 });
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num >= 1 && num <= 999) {
+                            setFormData({ ...formData, max_participants: num });
+                          }
                         }
-                      }
-                    }}
-                    placeholder="5"
-                    disabled={loading}
-                    style={{ textAlign: 'center', flex: 1 }}
-                  />
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.max_participants >= 999}
-                    onClick={() => setFormData({ ...formData, max_participants: Math.min(999, formData.max_participants + 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
-              </IonItem>
+                      }}
+                      placeholder="5"
+                      disabled={loading}
+                      style={{ textAlign: 'center', flex: 1 }}
+                    />
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.max_participants >= 999}
+                      onClick={() => setFormData({ ...formData, max_participants: Math.min(999, formData.max_participants + 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={addOutline} />
+                    </IonButton>
+                  </div>
+                </IonItem>
+              )}
 
               {/* Punkte mit Stepper */}
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
@@ -791,18 +956,18 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonCard>
         </IonList>
 
-        {/* ANMELDUNGEN & WARTELISTE */}
+        {/* WARTELISTE */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={people} />
             </div>
-            <IonLabel>Anmeldungen & Warteliste</IonLabel>
+            <IonLabel>Warteliste</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.waitlist_enabled ? '12px' : '0' }}>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
                   slot="end"
@@ -856,14 +1021,6 @@ const EventModal: React.FC<EventModalProps> = ({
                       <IonIcon icon={addOutline} />
                     </IonButton>
                   </div>
-                </IonItem>
-              )}
-
-              {!formData.waitlist_enabled && (
-                <IonItem lines="none" style={{ '--background': 'transparent', opacity: 0.6 }}>
-                  <IonLabel color="medium">
-                    <p>Warteliste deaktiviert</p>
-                  </IonLabel>
                 </IonItem>
               )}
             </IonList>
@@ -972,183 +1129,6 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonList>
         )}
 
-        {/* ZEITFENSTER */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={time} />
-            </div>
-            <IonLabel>Zeitfenster (optional)</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel>Zeitfenster aktivieren</IonLabel>
-                <IonToggle
-                  slot="end"
-                  checked={formData.has_timeslots}
-                  onIonChange={(e) => {
-                    const hasTimeslots = e.detail.checked;
-                    setFormData({ ...formData, has_timeslots: hasTimeslots });
-                    if (!hasTimeslots) {
-                      setTimeslots([]);
-                    }
-                  }}
-                  disabled={loading}
-                />
-              </IonItem>
-
-              {formData.has_timeslots && (
-                <IonItem lines="none" style={{ '--background': 'transparent', padding: '8px 16px' }}>
-                  <IonButton
-                    fill="outline"
-                    onClick={addTimeslot}
-                    disabled={loading}
-                    style={{ width: '100%' }}
-                  >
-                    <IonIcon icon={add} slot="start" />
-                    Zeitfenster hinzufügen
-                  </IonButton>
-                </IonItem>
-              )}
-
-              {!formData.has_timeslots && (
-                <IonItem lines="none" style={{ '--background': 'transparent', opacity: 0.6 }}>
-                  <IonLabel color="medium">
-                    <p>Zeitfenster deaktiviert</p>
-                  </IonLabel>
-                </IonItem>
-              )}
-            </IonList>
-          </IonCardContent>
-          </IonCard>
-        </IonList>
-
-        {/* ZEITFENSTER DETAILS */}
-        {formData.has_timeslots && timeslots.map((timeslot, index) => (
-          <IonList key={index} inset={true} style={{ margin: '16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <span style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
-                  {index + 1}
-                </span>
-              </div>
-              <IonLabel style={{ flex: 1 }}>Zeitfenster {index + 1}</IonLabel>
-              <IonButton
-                fill="clear"
-                color="danger"
-                onClick={() => removeTimeslot(index)}
-                disabled={loading}
-                size="small"
-              >
-                <IonIcon icon={trash} />
-              </IonButton>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                    <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
-                    <IonInput
-                      type="time"
-                      value={timeslot.start_time ? new Date(timeslot.start_time).toTimeString().slice(0, 5) : ''}
-                      onIonInput={(e) => {
-                        const timeValue = e.detail.value!;
-                        if (timeValue) {
-                          // Convert HH:MM to full datetime based on event date
-                          const [hours, minutes] = timeValue.split(':');
-                          const eventDate = new Date(formData.event_date);
-                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-                          // Helper function für konsistente ISO-Strings
-                          const toIonDatetimeISO = (date: Date) => {
-                            const pad = (num: number) => num.toString().padStart(2, '0');
-                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-                          };
-
-                          updateTimeslot(index, 'start_time', toIonDatetimeISO(eventDate));
-                        }
-                      }}
-                      placeholder="z.B. 10:00"
-                      disabled={loading}
-                      step="900"
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                    <IonLabel position="stacked">Endzeit (HH:MM)</IonLabel>
-                    <IonInput
-                      type="time"
-                      value={timeslot.end_time ? new Date(timeslot.end_time).toTimeString().slice(0, 5) : ''}
-                      onIonInput={(e) => {
-                        const timeValue = e.detail.value!;
-                        if (timeValue) {
-                          // Convert HH:MM to full datetime based on event date
-                          const [hours, minutes] = timeValue.split(':');
-                          const eventDate = new Date(formData.event_date);
-                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-                          // Helper function für konsistente ISO-Strings
-                          const toIonDatetimeISO = (date: Date) => {
-                            const pad = (num: number) => num.toString().padStart(2, '0');
-                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-                          };
-
-                          updateTimeslot(index, 'end_time', toIonDatetimeISO(eventDate));
-                        }
-                      }}
-                      placeholder="z.B. 11:00"
-                      disabled={loading}
-                      step="900"
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        disabled={loading || timeslot.max_participants <= 1}
-                        onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
-                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                      >
-                        <IonIcon icon={removeOutline} />
-                      </IonButton>
-                      <IonInput
-                        type="text"
-                        inputMode="numeric"
-                        value={timeslot.max_participants.toString()}
-                        onIonInput={(e) => {
-                          const value = e.detail.value!;
-                          if (value === '') {
-                            updateTimeslot(index, 'max_participants', 1);
-                          } else {
-                            const num = parseInt(value);
-                            if (!isNaN(num) && num >= 1 && num <= 999) {
-                              updateTimeslot(index, 'max_participants', num);
-                            }
-                          }
-                        }}
-                        placeholder="10"
-                        disabled={loading}
-                        style={{ textAlign: 'center', flex: 1 }}
-                      />
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        disabled={loading || timeslot.max_participants >= 999}
-                        onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
-                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                      >
-                        <IonIcon icon={addOutline} />
-                      </IonButton>
-                    </div>
-                  </IonItem>
-                </IonList>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        ))}
       </IonContent>
 
       {/* DateTime Modals */}

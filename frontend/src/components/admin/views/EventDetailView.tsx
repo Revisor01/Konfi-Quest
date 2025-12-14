@@ -217,11 +217,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
-  const getRegistrationStatusText = (status: string) => {
+  const getRegistrationStatusText = (status: string, event?: Event | null) => {
     switch (status) {
       case 'upcoming': return 'Bald verfügbar';
       case 'open': return 'Anmeldung offen';
-      case 'closed': return 'Anmeldung geschlossen';
+      case 'closed': {
+        // Prüfe ob ausgebucht (Event voll UND Warteliste voll/deaktiviert)
+        if (event) {
+          const waitlistEnabled = (event as any)?.waitlist_enabled;
+          const maxWaitlistSize = (event as any)?.max_waitlist_size || 0;
+          const pendingCount = participants.filter(p => p.status === 'pending').length;
+          const eventFull = event.registered_count >= event.max_participants;
+
+          if (eventFull) {
+            if (!waitlistEnabled || pendingCount >= maxWaitlistSize) {
+              return 'Ausgebucht';
+            }
+          }
+        }
+        return 'Anmeldung geschlossen';
+      }
       default: return 'Unbekannt';
     }
   };
@@ -694,11 +709,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {eventData.timeslots.map((timeslot, slotIndex) => {
-                  const slotParticipants = participants.filter(p =>
-                    p.timeslot_start_time === timeslot.start_time &&
-                    p.timeslot_end_time === timeslot.end_time &&
-                    p.status === 'confirmed'
-                  );
+                  // Vergleiche über timeslot_id (primär) oder formatierte Zeiten (fallback)
+                  const slotStartFormatted = formatTime(timeslot.start_time);
+                  const slotEndFormatted = formatTime(timeslot.end_time);
+                  const slotParticipants = participants.filter(p => {
+                    if (p.status !== 'confirmed') return false;
+                    // Wenn timeslot_id vorhanden, nutze diese
+                    if ((p as any).timeslot_id && (timeslot as any).id) {
+                      return (p as any).timeslot_id === (timeslot as any).id;
+                    }
+                    // Fallback: Zeit-Vergleich
+                    if (p.timeslot_start_time && p.timeslot_end_time) {
+                      return formatTime(p.timeslot_start_time) === slotStartFormatted &&
+                             formatTime(p.timeslot_end_time) === slotEndFormatted;
+                    }
+                    return false;
+                  });
                   const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
 
                   return (
@@ -712,66 +738,66 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             </div>
                             <div className="app-list-item__content">
                               <div className="app-list-item__title">
-                                {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
+                                {slotStartFormatted} - {slotEndFormatted}
                               </div>
                               <div className="app-list-item__subtitle">
-                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
+                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer | <span className={isFull ? '' : ''} style={{ color: isFull ? '#dc3545' : '#34c759' }}>{isFull ? 'Voll' : 'Verfügbar'}</span>
                               </div>
                             </div>
                           </div>
-                          <span className={`app-chip ${isFull ? 'app-chip--danger' : 'app-chip--success'}`}>
-                            {isFull ? 'Voll' : 'Verfügbar'}
-                          </span>
                         </div>
                       </div>
 
                       {/* Teilnehmer dieses Slots */}
                       {slotParticipants.length > 0 && (
                         <div style={{ marginLeft: '16px', marginTop: '8px' }}>
-                          {slotParticipants.map((participant, pIndex) => (
-                            <IonItem
-                              key={participant.id}
-                              button
-                              detail={false}
-                              lines="none"
-                              onClick={() => showAttendanceActionSheet(participant)}
-                              style={{
-                                '--background': 'transparent',
-                                '--padding-start': '0',
-                                '--padding-end': '0',
-                                '--inner-padding-end': '0',
-                                '--inner-border-width': '0',
-                                marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0'
-                              }}
-                            >
-                              <div className="app-list-item app-list-item--events" style={{ width: '100%', marginBottom: '0' }}>
-                                <div className="app-list-item__row">
-                                  <div className="app-list-item__main">
-                                    <div className={`app-icon-circle ${
-                                      participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                      participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
-                                    }`}>
-                                      <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
-                                            participant.attendance_status === 'absent' ? closeCircle : people} />
-                                    </div>
-                                    <div className="app-list-item__content">
-                                      <div className="app-list-item__title">{participant.participant_name}</div>
-                                      {participant.jahrgang_name && (
-                                        <div className="app-list-item__subtitle">{participant.jahrgang_name}</div>
-                                      )}
+                          {slotParticipants.map((participant, pIndex) => {
+                            const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
+                                               participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht';
+                            const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                                                     participant.attendance_status === 'absent' ? 'app-corner-badge--danger' : 'app-corner-badge--info';
+                            return (
+                              <IonItem
+                                key={participant.id}
+                                button
+                                detail={false}
+                                lines="none"
+                                onClick={() => showAttendanceActionSheet(participant)}
+                                style={{
+                                  '--background': 'transparent',
+                                  '--padding-start': '0',
+                                  '--padding-end': '0',
+                                  '--inner-padding-end': '0',
+                                  '--inner-border-width': '0',
+                                  marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0'
+                                }}
+                              >
+                                <div className="app-list-item app-list-item--events" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                                  {/* Eselsohr-Style Status Badge */}
+                                  <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                                    {statusText}
+                                  </div>
+                                  <div className="app-list-item__row">
+                                    <div className="app-list-item__main">
+                                      <div className={`app-icon-circle ${
+                                        participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                        participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
+                                      }`}>
+                                        <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
+                                              participant.attendance_status === 'absent' ? closeCircle : people} />
+                                      </div>
+                                      <div className="app-list-item__content">
+                                        <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
+                                        <div className="app-list-item__subtitle">
+                                          {participant.jahrgang_name || ''}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                  <span className={`app-chip ${
-                                    participant.attendance_status === 'present' ? 'app-chip--success' :
-                                    participant.attendance_status === 'absent' ? 'app-chip--danger' : 'app-chip--info'
-                                  }`}>
-                                    {participant.attendance_status === 'present' ? 'Anwesend' :
-                                     participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht'}
-                                  </span>
                                 </div>
-                              </div>
-                            </IonItem>
-                          ))}
+                              </IonItem>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -799,24 +825,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <div
                       key={seriesEvent.id}
                       className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
                       onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <IonIcon icon={calendar} style={{ fontSize: '1.2rem', color: '#007aff' }} />
-                          <div>
-                            <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#333' }}>
+                      {/* Eselsohr-Style Status Badge */}
+                      <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
+                        {isFull ? 'Voll' : 'Frei'}
+                      </div>
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
+                            <IonIcon icon={calendar} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
                               {seriesEvent.name}
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: '#666' }}>
-                              {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} - {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
+                            <div className="app-list-item__subtitle">
+                              {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
                             </div>
                           </div>
                         </div>
-                        <span className={`app-chip ${isFull ? 'app-chip--danger' : 'app-chip--success'}`}>
-                          {isFull ? 'Voll' : 'Verfügbar'}
-                        </span>
                       </div>
                     </div>
                   );
@@ -826,33 +855,69 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonList>
         )}
 
-        {/* Participants List - nur anzeigen wenn KEINE Timeslots oder Warteliste-TN vorhanden */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={people} />
-            </div>
-            <IonLabel>
-              {eventData?.has_timeslots
-                ? `Teilnehmer:innen (${participants.filter(p => p.status === 'pending').length} auf Warteliste)`
-                : `Teilnehmer:innen (${participants.filter(p => p.status === 'confirmed').length}${participants.filter(p => p.status === 'pending').length > 0 ? ` + ${participants.filter(p => p.status === 'pending').length}` : ''})`
-              }
-            </IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-          {(() => {
-            // Bei Timeslots nur Warteliste anzeigen, sonst alle
-            const displayParticipants = eventData?.has_timeslots
-              ? participants.filter(p => p.status === 'pending')
-              : participants;
+        {/* Participants List */}
+        {(() => {
+          // Bei Timeslot-Events: zeige Teilnehmer ohne Slot-Zuordnung + Warteliste
+          // Bei normalen Events: zeige alle Teilnehmer
+          const confirmedParticipants = participants.filter(p => p.status === 'confirmed');
+          const waitlistParticipants = participants.filter(p => p.status === 'pending');
 
-            return displayParticipants.length === 0 ? (
-              <IonCardContent style={{ padding: '16px' }}>
-                <p style={{ color: '#666', margin: '0', fontSize: '0.9rem' }}>
-                  {eventData?.has_timeslots ? 'Keine Warteliste' : 'Noch keine Anmeldungen'}
-                </p>
-              </IonCardContent>
-            ) : (
+          // Bei Timeslot-Events: Teilnehmer ohne Slot-Zuordnung finden
+          const unassignedParticipants = eventData?.has_timeslots
+            ? confirmedParticipants.filter(p => !(p as any).timeslot_id && !p.timeslot_start_time)
+            : [];
+
+          const displayParticipants = eventData?.has_timeslots
+            ? [...unassignedParticipants, ...waitlistParticipants]
+            : participants;
+
+          const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
+          const hasUnassigned = unassignedParticipants.length > 0;
+
+          // Wenn keine Teilnehmer und keine Warteliste, nur Button zeigen
+          if (displayParticipants.length === 0) {
+            return (
+              <IonList inset={true} style={{ margin: '16px' }}>
+                <IonCard className="app-card">
+                  <IonCardContent style={{ padding: '16px' }}>
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                    >
+                      <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
+                      Teilnehmer:in hinzufügen
+                    </IonButton>
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            );
+          }
+
+          // Header-Text bestimmen
+          let headerText = '';
+          if (eventData?.has_timeslots) {
+            if (hasUnassigned && hasWaitlist) {
+              headerText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
+            } else if (hasUnassigned) {
+              headerText = `Nicht zugeordnet (${unassignedParticipants.length})`;
+            } else {
+              headerText = `Warteliste (${waitlistParticipants.length})`;
+            }
+          } else {
+            headerText = `Teilnehmer:innen (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
+          }
+
+          return (
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--events">
+                  <IonIcon icon={people} />
+                </div>
+                <IonLabel>{headerText}</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+              {(
               <IonCardContent style={{ padding: '16px' }}>
                 {displayParticipants.map((participant, index) => {
                   const iconCircleClass = participant.attendance_status === 'present' ? 'app-icon-circle--success' :
@@ -861,6 +926,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   const statusIcon = participant.attendance_status === 'present' ? checkmarkCircle :
                                      participant.attendance_status === 'absent' ? closeCircle : people;
                   const isWaitlist = participant.status === 'pending';
+                  const isUnassigned = !isWaitlist && !(participant as any).timeslot_id && !participant.timeslot_start_time;
 
                   return (
                     <IonItemSliding
@@ -893,39 +959,42 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           '--inner-border-width': '0'
                         }}
                       >
-                        <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0' }}>
-                          <div className="app-list-item__row">
-                            <div className="app-list-item__main">
-                              <div className={`app-icon-circle ${iconCircleClass}`}>
-                                <IonIcon icon={statusIcon} />
+                        {(() => {
+                          const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
+                                             participant.attendance_status === 'absent' ? 'Abwesend' :
+                                             isWaitlist ? 'Warteliste' :
+                                             isUnassigned ? 'Nicht zugeordnet' : 'Gebucht';
+                          const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                                                   participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
+                                                   isWaitlist ? 'app-corner-badge--warning' :
+                                                   isUnassigned ? 'app-corner-badge--purple' : 'app-corner-badge--info';
+                          return (
+                            <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : isUnassigned ? 'app-list-item--purple' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                              {/* Eselsohr-Style Status Badge */}
+                              <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                                {statusText}
                               </div>
-                              <div className="app-list-item__content">
-                                <div className="app-list-item__title">
-                                  {participant.participant_name}
-                                </div>
-                                {/* Warteliste: nur Jahrgang und Zeitslot, kein Datum */}
-                                {(participant.jahrgang_name || (participant.timeslot_start_time && participant.timeslot_end_time)) && (
-                                  <div className="app-list-item__subtitle">
-                                    {participant.jahrgang_name}
-                                    {participant.jahrgang_name && participant.timeslot_start_time && ' | '}
-                                    {participant.timeslot_start_time && participant.timeslot_end_time && (
-                                      <>{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
-                                    )}
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className={`app-icon-circle ${isUnassigned ? 'app-icon-circle--purple' : iconCircleClass}`}>
+                                    <IonIcon icon={statusIcon} />
                                   </div>
-                                )}
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
+                                      {participant.participant_name}
+                                    </div>
+                                    <div className="app-list-item__subtitle">
+                                      {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                                      {participant.timeslot_start_time && participant.timeslot_end_time && (
+                                        <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                            <span className={`app-chip ${
-                              participant.attendance_status === 'present' ? 'app-chip--success' :
-                              participant.attendance_status === 'absent' ? 'app-chip--danger' :
-                              isWaitlist ? 'app-chip--warning' : 'app-chip--info'
-                            }`}>
-                              {participant.attendance_status === 'present' ? 'Anwesend' :
-                               participant.attendance_status === 'absent' ? 'Abwesend' :
-                               isWaitlist ? 'Warteliste' : 'Gebucht'}
-                            </span>
-                          </div>
-                        </div>
+                          );
+                        })()}
                       </IonItem>
                       <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
                         {participant.status === 'confirmed' && (
@@ -950,21 +1019,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </IonItemSliding>
                   );
                 })}
+                <div style={{ marginTop: '16px' }}>
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                  >
+                    <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
+                    Teilnehmer:in hinzufügen
+                  </IonButton>
+                </div>
               </IonCardContent>
-            );
-          })()}
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonButton
-              expand="block"
-              fill="outline"
-              onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
-            >
-              <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
-              Teilnehmer:in hinzufügen
-            </IonButton>
-          </IonCardContent>
-          </IonCard>
-        </IonList>
+              )}
+              </IonCard>
+            </IonList>
+          );
+        })()}
 
         {/* Abmeldungen (Unregistrations) */}
         {unregistrations.length > 0 && (

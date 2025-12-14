@@ -147,6 +147,39 @@ ion-card.app-card {
   color: #8b5cf6;
 }
 
+/* App Corner Badge - Eselsohr-Style Badge oben rechts */
+.app-corner-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 4px 10px 4px 14px;
+  border-radius: 0 10px 0 12px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.app-corner-badge::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 100%;
+  background: inherit;
+  filter: brightness(0.85);
+  border-radius: 0 0 0 6px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+.app-corner-badge--events { background-color: #dc2626; }
+.app-corner-badge--success { background-color: #34c759; }
+.app-corner-badge--warning { background-color: #ff9500; }
+.app-corner-badge--danger { background-color: #dc3545; }
+.app-corner-badge--info { background-color: #007aff; }
+.app-corner-badge--chat { background-color: #06b6d4; }
+.app-corner-badge--purple { background-color: #8b5cf6; }
+
 /* App Section Header Icon - runder farbiger Icon-Container */
 .app-section-icon {
   width: 24px;
