@@ -564,7 +564,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={calendar} />
             </div>
-            <IonLabel>Event-Details</IonLabel>
+            <IonLabel>Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
@@ -745,18 +745,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   return (
                     <div key={timeslot.id} style={{ marginBottom: slotIndex < eventData.timeslots!.length - 1 ? '20px' : '0' }}>
                       {/* Slot Header */}
-                      <div className="app-list-item app-list-item--events">
+                      <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} style={{ position: 'relative', overflow: 'hidden' }}>
+                        {/* Corner Badge für Verfügbar/Voll */}
+                        <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
+                          {isFull ? 'Voll' : 'Frei'}
+                        </div>
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
-                            <div className="app-icon-circle app-icon-circle--events">
+                            <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
                               <IonIcon icon={time} />
                             </div>
                             <div className="app-list-item__content">
-                              <div className="app-list-item__title">
+                              <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
                                 {slotStartFormatted} - {slotEndFormatted}
                               </div>
                               <div className="app-list-item__subtitle">
-                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer | <span className={isFull ? '' : ''} style={{ color: isFull ? '#dc3545' : '#34c759' }}>{isFull ? 'Voll' : 'Verfügbar'}</span>
+                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
                               </div>
                             </div>
                           </div>
