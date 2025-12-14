@@ -412,9 +412,18 @@ const EventsView: React.FC<EventsViewProps> = ({
                     style={{
                       width: '100%',
                       borderLeftColor: statusColor,
-                      opacity: shouldGrayOut ? 0.6 : 1
+                      opacity: shouldGrayOut ? 0.6 : 1,
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                   >
+                    {/* Eselsohr-Style Corner Badge */}
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: statusColor }}
+                    >
+                      {statusText}
+                    </div>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         {/* Icon */}
@@ -435,7 +444,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                               textDecoration: isCancelled ? 'line-through' : 'none',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px'
+                              gap: '6px',
+                              paddingRight: '70px'
                             }}
                           >
                             {event.name}
@@ -448,7 +458,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
-                              {event.registered_count}/{event.max_participants}
+                              {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
                             </span>
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                               <span className="app-list-item__meta-item">
@@ -483,17 +493,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                           </div>
                         </div>
                       </div>
-
-                      {/* Status-Chip rechts außen */}
-                      <span
-                        className="app-chip"
-                        style={{
-                          backgroundColor: `${statusColor}20`,
-                          color: statusColor
-                        }}
-                      >
-                        {statusText}
-                      </span>
                     </div>
                   </div>
                 </IonItem>

@@ -27,15 +27,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 STRING_AGG(DISTINCT c.name, ',') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ',') as jahrgang_names,
-                CASE 
+                CASE
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at THEN 'closed'
-                  WHEN COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >=
-                    CASE
-                      WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants)
-                      ELSE e.max_participants
-                    END AND
-                       (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                  WHEN (
+                    CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
+                  ) > 0 AND COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= (
+                    CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
+                  ) AND (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status
         FROM events e
@@ -466,12 +465,54 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         await db.query(jahrgangQuery, [id, jahrgang_ids]);
       }
 
-      // Handle timeslots - delete existing and add new ones
-      await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
+      // Handle timeslots - intelligent update to preserve booking references
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
-        const timeslotQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
+        // Get existing timeslot IDs
+        const { rows: existingSlots } = await db.query(
+          "SELECT id FROM event_timeslots WHERE event_id = $1", [id]
+        );
+        const existingIds = new Set(existingSlots.map(s => s.id));
+
+        // Track which IDs are in the new timeslots
+        const newIds = new Set(timeslots.filter(ts => ts.id).map(ts => ts.id));
+
+        // Delete timeslots that are no longer in the list (and have no bookings)
+        for (const existingId of existingIds) {
+          if (!newIds.has(existingId)) {
+            // Check if this timeslot has bookings
+            const { rows: [bookingCheck] } = await db.query(
+              "SELECT COUNT(*)::int as count FROM event_bookings WHERE timeslot_id = $1", [existingId]
+            );
+            if (bookingCheck.count === 0) {
+              await db.query("DELETE FROM event_timeslots WHERE id = $1", [existingId]);
+            }
+            // If has bookings, keep the timeslot but it won't show in the UI
+          }
+        }
+
+        // Update existing or insert new timeslots
         for (const slot of timeslots) {
-          await db.query(timeslotQuery, [id, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]);
+          if (slot.id && existingIds.has(slot.id)) {
+            // Update existing timeslot
+            await db.query(
+              "UPDATE event_timeslots SET start_time = $1, end_time = $2, max_participants = $3 WHERE id = $4",
+              [slot.start_time, slot.end_time, slot.max_participants, slot.id]
+            );
+          } else {
+            // Insert new timeslot
+            await db.query(
+              "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)",
+              [id, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]
+            );
+          }
+        }
+      } else if (!has_timeslots) {
+        // Only delete timeslots if event no longer has timeslots AND no bookings reference them
+        const { rows: [bookingCheck] } = await db.query(
+          "SELECT COUNT(*)::int as count FROM event_bookings eb JOIN event_timeslots et ON eb.timeslot_id = et.id WHERE et.event_id = $1", [id]
+        );
+        if (bookingCheck.count === 0) {
+          await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
         }
       }
 
@@ -646,8 +687,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       let bookingStatus = 'confirmed';
       let message = 'Event booked successfully';
-      
-      if (confirmedCount >= totalCapacity) {
+
+      // Only check capacity if totalCapacity > 0 (0 means unlimited)
+      if (totalCapacity > 0 && confirmedCount >= totalCapacity) {
         if (!event.waitlist_enabled) {
           return res.status(400).json({ error: 'Event is full' });
         }
@@ -784,15 +826,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         
         const { rows: [capacityResult] } = await db.query(capacityQuery, [capacityParam]);
         const confirmedCount = parseInt(capacityResult.confirmed_count, 10);
-        
-        if (confirmedCount >= maxCapacity) {
+
+        // Only check capacity if maxCapacity > 0 (0 means unlimited)
+        if (maxCapacity > 0 && confirmedCount >= maxCapacity) {
           if (event.waitlist_enabled) {
             const waitlistQuery = isTimeslotBooking
             ? "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'pending'"
             : "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = $1 AND status = 'pending'";
             const { rows: [waitlistResult] } = await db.query(waitlistQuery, [capacityParam]);
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
-            
+
             if (waitlistCount >= event.max_waitlist_size) {
               return res.status(409).json({ error: 'Event and waitlist are full' });
             }
@@ -940,8 +983,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         let currentDate = new Date(startDate);
         for (let i = 0; i < count; i++) {
           dates.push(new Date(currentDate));
-          if (interval === 'week') currentDate.setDate(currentDate.getDate() + 7);
+          if (interval === 'day') currentDate.setDate(currentDate.getDate() + 1);
+          else if (interval === 'week') currentDate.setDate(currentDate.getDate() + 7);
+          else if (interval === '2weeks') currentDate.setDate(currentDate.getDate() + 14);
           else if (interval === 'month') currentDate.setMonth(currentDate.getMonth() + 1);
+          else currentDate.setDate(currentDate.getDate() + 7); // default: weekly
         }
         return dates;
       };

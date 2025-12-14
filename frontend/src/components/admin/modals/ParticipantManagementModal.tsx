@@ -328,7 +328,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                         style={{
                           '--checkbox-background-checked': '#dc2626',
                           '--border-color-checked': '#dc2626',
-                          '--checkmark-color': 'white'
+                          '--checkmark-color': 'white',
+                          marginLeft: 'auto',
+                          flexShrink: 0
                         }}
                       />
                     </div>

@@ -512,7 +512,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   }}>
                     <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
                     <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.status === 'confirmed').length}/{eventData?.max_participants || 0}</span>
+                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.status === 'confirmed').length}/{(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'}</span>
                     </div>
                     <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
                       TN
@@ -582,11 +582,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               </div>
 
+              {/* Zeitslots anzeigen wenn vorhanden */}
+              {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
+                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '4px' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '500', marginBottom: '6px' }}>Zeitfenster:</div>
+                    {eventData.timeslots.map((slot, idx) => (
+                      <div key={slot.id || idx} style={{ fontSize: '0.9rem', color: '#666', marginBottom: '4px' }}>
+                        {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* TN gesamt */}
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
                 <div className="app-info-row__content">
-                  {eventData?.registered_count || 0} / {eventData?.max_participants || 0} Teilnehmer:innen
+                  {eventData?.registered_count || 0} / {(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'} Teilnehmer:innen
                 </div>
               </div>
 
@@ -757,45 +772,67 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
                                                      participant.attendance_status === 'absent' ? 'app-corner-badge--danger' : 'app-corner-badge--info';
                             return (
-                              <IonItem
+                              <IonItemSliding
                                 key={participant.id}
-                                button
-                                detail={false}
-                                lines="none"
-                                onClick={() => showAttendanceActionSheet(participant)}
-                                style={{
-                                  '--background': 'transparent',
-                                  '--padding-start': '0',
-                                  '--padding-end': '0',
-                                  '--inner-padding-end': '0',
-                                  '--inner-border-width': '0',
-                                  marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0'
-                                }}
+                                style={{ marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
                               >
-                                <div className="app-list-item app-list-item--events" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
-                                  {/* Eselsohr-Style Status Badge */}
-                                  <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                                    {statusText}
-                                  </div>
-                                  <div className="app-list-item__row">
-                                    <div className="app-list-item__main">
-                                      <div className={`app-icon-circle ${
-                                        participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                        participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
-                                      }`}>
-                                        <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
-                                              participant.attendance_status === 'absent' ? closeCircle : people} />
-                                      </div>
-                                      <div className="app-list-item__content">
-                                        <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
-                                        <div className="app-list-item__subtitle">
-                                          {participant.jahrgang_name || ''}
+                                <IonItem
+                                  button
+                                  detail={false}
+                                  lines="none"
+                                  onClick={() => showAttendanceActionSheet(participant)}
+                                  style={{
+                                    '--background': 'transparent',
+                                    '--padding-start': '0',
+                                    '--padding-end': '0',
+                                    '--inner-padding-end': '0',
+                                    '--inner-border-width': '0',
+                                    '--border-width': '0'
+                                  }}
+                                >
+                                  <div className="app-list-item app-list-item--events" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                                    {/* Eselsohr-Style Status Badge */}
+                                    <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                                      {statusText}
+                                    </div>
+                                    <div className="app-list-item__row">
+                                      <div className="app-list-item__main">
+                                        <div className={`app-icon-circle ${
+                                          participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                          participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
+                                        }`}>
+                                          <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
+                                                participant.attendance_status === 'absent' ? closeCircle : people} />
+                                        </div>
+                                        <div className="app-list-item__content">
+                                          <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
+                                          <div className="app-list-item__subtitle">
+                                            {participant.jahrgang_name || ''}
+                                          </div>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                              </IonItem>
+                                </IonItem>
+                                <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent', border: 'none' } as any}>
+                                  <IonItemOption
+                                    onClick={() => handleDemoteParticipant(participant)}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px', '--border-width': '0' }}
+                                  >
+                                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                                      <IonIcon icon={returnUpBack} />
+                                    </div>
+                                  </IonItemOption>
+                                  <IonItemOption
+                                    onClick={() => handleRemoveParticipant(participant)}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px', '--border-width': '0' }}
+                                  >
+                                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                      <IonIcon icon={trash} />
+                                    </div>
+                                  </IonItemOption>
+                                </IonItemOptions>
+                              </IonItemSliding>
                             );
                           })}
                         </div>
@@ -926,7 +963,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   const statusIcon = participant.attendance_status === 'present' ? checkmarkCircle :
                                      participant.attendance_status === 'absent' ? closeCircle : people;
                   const isWaitlist = participant.status === 'pending';
-                  const isUnassigned = !isWaitlist && !(participant as any).timeslot_id && !participant.timeslot_start_time;
+                  const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
+                                     participant.attendance_status === 'absent' ? 'Abwesend' :
+                                     isWaitlist ? 'Warteliste' : 'Gebucht';
+                  const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                                           participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
+                                           isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
 
                   return (
                     <IonItemSliding
@@ -938,7 +980,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           slidingRefs.current.delete(participant.id);
                         }
                       }}
-                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0' }}
+                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
                     >
                       <IonItem
                         button
@@ -956,51 +998,40 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           '--padding-start': '0',
                           '--padding-end': '0',
                           '--inner-padding-end': '0',
-                          '--inner-border-width': '0'
+                          '--inner-border-width': '0',
+                          '--border-width': '0'
                         }}
                       >
-                        {(() => {
-                          const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
-                                             participant.attendance_status === 'absent' ? 'Abwesend' :
-                                             isWaitlist ? 'Warteliste' :
-                                             isUnassigned ? 'Nicht zugeordnet' : 'Gebucht';
-                          const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                                                   participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
-                                                   isWaitlist ? 'app-corner-badge--warning' :
-                                                   isUnassigned ? 'app-corner-badge--purple' : 'app-corner-badge--info';
-                          return (
-                            <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : isUnassigned ? 'app-list-item--purple' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
-                              {/* Eselsohr-Style Status Badge */}
-                              <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                                {statusText}
+                        <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                          {/* Eselsohr-Style Status Badge */}
+                          <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                            {statusText}
+                          </div>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className={`app-icon-circle ${iconCircleClass}`}>
+                                <IonIcon icon={statusIcon} />
                               </div>
-                              <div className="app-list-item__row">
-                                <div className="app-list-item__main">
-                                  <div className={`app-icon-circle ${isUnassigned ? 'app-icon-circle--purple' : iconCircleClass}`}>
-                                    <IonIcon icon={statusIcon} />
-                                  </div>
-                                  <div className="app-list-item__content">
-                                    <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
-                                      {participant.participant_name}
-                                    </div>
-                                    <div className="app-list-item__subtitle">
-                                      {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
-                                      {participant.timeslot_start_time && participant.timeslot_end_time && (
-                                        <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
-                                      )}
-                                    </div>
-                                  </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
+                                  {participant.participant_name}
+                                </div>
+                                <div className="app-list-item__subtitle">
+                                  {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                                  {participant.timeslot_start_time && participant.timeslot_end_time && (
+                                    <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                          );
-                        })()}
+                          </div>
+                        </div>
                       </IonItem>
-                      <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                      <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent', border: 'none' } as any}>
                         {participant.status === 'confirmed' && (
                           <IonItemOption
                             onClick={() => handleDemoteParticipant(participant)}
-                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px' }}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', minWidth: '48px', '--border-width': '0' }}
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
@@ -1009,7 +1040,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         )}
                         <IonItemOption
                           onClick={() => handleRemoveParticipant(participant)}
-                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px' }}
+                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 2px', paddingRight: '16px', minWidth: '48px', '--border-width': '0' }}
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />
