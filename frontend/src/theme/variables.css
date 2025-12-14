@@ -292,9 +292,12 @@ ion-card.app-card {
   align-items: center;
   gap: 12px;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 .app-list-item__content {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
 }
 .app-list-item__title {
