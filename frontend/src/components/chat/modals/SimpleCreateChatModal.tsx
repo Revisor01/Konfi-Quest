@@ -600,8 +600,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 <IonCheckbox
                                   checked={isSelected}
                                   style={{
-                                    '--checkbox-background-checked': '#06b6d4',
-                                    '--border-color-checked': '#06b6d4',
+                                    '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
+                                    '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
                                     '--checkmark-color': 'white'
                                   }}
                                 />

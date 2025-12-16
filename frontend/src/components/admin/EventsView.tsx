@@ -361,10 +361,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isCancelled) return '#dc3545';
                 if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6'; // Lila fuer Konfirmation
                 if (isFullyProcessed) return '#6c757d';
-                if (hasUnprocessedBookings) return '#ff6b35';
+                if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';
                 if (calculateRegistrationStatus(event) === 'open') return '#34c759';
-                if (calculateRegistrationStatus(event) === 'upcoming') return '#fd7e14';
+                if (calculateRegistrationStatus(event) === 'upcoming') return '#fd7e14'; // Orange für Bald
                 return '#dc3545';
               })();
 
@@ -502,7 +502,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px 0 8px', minWidth: 'auto', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                           <IonIcon icon={ban} />
@@ -512,7 +512,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onDeleteEvent && (
                       <IonItemOption
                         onClick={() => onDeleteEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 8px 0 4px', minWidth: 'auto', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                           <IonIcon icon={trash} />

@@ -821,7 +821,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                 <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                                   <IonItemOption
                                     onClick={() => handleDemoteParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px 0 8px', minWidth: 'auto', '--border-width': '0' }}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                                       <IonIcon icon={returnUpBack} />
@@ -829,7 +829,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                   </IonItemOption>
                                   <IonItemOption
                                     onClick={() => handleRemoveParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 8px 0 4px', minWidth: 'auto', '--border-width': '0' }}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                                       <IonIcon icon={trash} />
@@ -961,12 +961,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {(
               <IonCardContent style={{ padding: '16px' }}>
                 {displayParticipants.map((participant, index) => {
+                  const isWaitlist = participant.status === 'pending';
+                  // Strich-Farbe matcht Status-Farbe
+                  const listItemClass = participant.attendance_status === 'present' ? 'app-list-item--success' :
+                                        participant.attendance_status === 'absent' ? 'app-list-item--danger' :
+                                        isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
                   const iconCircleClass = participant.attendance_status === 'present' ? 'app-icon-circle--success' :
                                           participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
-                                          participant.status === 'pending' ? 'app-icon-circle--warning' : 'app-icon-circle--info';
+                                          isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
                   const statusIcon = participant.attendance_status === 'present' ? checkmarkCircle :
                                      participant.attendance_status === 'absent' ? closeCircle : people;
-                  const isWaitlist = participant.status === 'pending';
                   const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
                                      participant.attendance_status === 'absent' ? 'Abwesend' :
                                      isWaitlist ? 'Warteliste' : 'Gebucht';
@@ -1006,7 +1010,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           '--border-width': '0'
                         }}
                       >
-                        <div className={`app-list-item ${isWaitlist ? 'app-list-item--warning' : 'app-list-item--events'}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                        <div className={`app-list-item ${listItemClass}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
                           {/* Eselsohr-Style Status Badge */}
                           <div className={`app-corner-badge ${cornerBadgeClass}`}>
                             {statusText}
@@ -1035,7 +1039,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         {participant.status === 'confirmed' && (
                           <IonItemOption
                             onClick={() => handleDemoteParticipant(participant)}
-                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px 0 8px', minWidth: 'auto', '--border-width': '0' }}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
@@ -1044,7 +1048,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         )}
                         <IonItemOption
                           onClick={() => handleRemoveParticipant(participant)}
-                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 8px 0 4px', minWidth: 'auto', '--border-width': '0' }}
+                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />

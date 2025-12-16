@@ -425,9 +425,9 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Event Grunddaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '0' }}>
+          <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="inset" style={{ '--background': 'transparent' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Event Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -438,7 +438,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="inset" style={{ '--background': 'transparent' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
