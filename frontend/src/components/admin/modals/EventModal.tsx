@@ -614,48 +614,60 @@ const EventModal: React.FC<EventModalProps> = ({
                       step="900"
                     />
                   </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        disabled={loading || timeslot.max_participants <= 1}
-                        onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
-                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                      >
-                        <IonIcon icon={removeOutline} />
-                      </IonButton>
-                      <IonInput
-                        type="text"
-                        inputMode="numeric"
-                        value={timeslot.max_participants.toString()}
-                        onIonInput={(e) => {
-                          const value = e.detail.value!;
-                          if (value === '') {
-                            updateTimeslot(index, 'max_participants', 1);
-                          } else {
-                            const num = parseInt(value);
-                            if (!isNaN(num) && num >= 1 && num <= 999) {
-                              updateTimeslot(index, 'max_participants', num);
-                            }
-                          }
-                        }}
-                        placeholder="10"
-                        disabled={loading}
-                        style={{ textAlign: 'center', flex: 1 }}
-                      />
-                      <IonButton
-                        fill="outline"
-                        size="small"
-                        disabled={loading || timeslot.max_participants >= 999}
-                        onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
-                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                      >
-                        <IonIcon icon={addOutline} />
-                      </IonButton>
-                    </div>
+                  <IonItem lines={timeslot.max_participants === 0 ? 'none' : 'inset'} style={{ '--background': 'transparent' }}>
+                    <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
+                    <IonToggle
+                      slot="end"
+                      checked={timeslot.max_participants === 0}
+                      onIonChange={(e) => updateTimeslot(index, 'max_participants', e.detail.checked ? 0 : 5)}
+                      disabled={loading}
+                      style={{ '--track-background-checked': '#dc2626' }}
+                    />
                   </IonItem>
+                  {timeslot.max_participants !== 0 && (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                        <IonButton
+                          fill="outline"
+                          size="small"
+                          disabled={loading || timeslot.max_participants <= 1}
+                          onClick={() => updateTimeslot(index, 'max_participants', Math.max(1, timeslot.max_participants - 1))}
+                          style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                        >
+                          <IonIcon icon={removeOutline} />
+                        </IonButton>
+                        <IonInput
+                          type="text"
+                          inputMode="numeric"
+                          value={timeslot.max_participants.toString()}
+                          onIonInput={(e) => {
+                            const value = e.detail.value!;
+                            if (value === '') {
+                              updateTimeslot(index, 'max_participants', 1);
+                            } else {
+                              const num = parseInt(value);
+                              if (!isNaN(num) && num >= 1 && num <= 999) {
+                                updateTimeslot(index, 'max_participants', num);
+                              }
+                            }
+                          }}
+                          placeholder="10"
+                          disabled={loading}
+                          style={{ textAlign: 'center', flex: 1 }}
+                        />
+                        <IonButton
+                          fill="outline"
+                          size="small"
+                          disabled={loading || timeslot.max_participants >= 999}
+                          onClick={() => updateTimeslot(index, 'max_participants', Math.min(999, timeslot.max_participants + 1))}
+                          style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                        >
+                          <IonIcon icon={addOutline} />
+                        </IonButton>
+                      </div>
+                    </IonItem>
+                  )}
                 </IonList>
               </IonCardContent>
             </IonCard>
@@ -676,9 +688,10 @@ const EventModal: React.FC<EventModalProps> = ({
               {/* Max. Teilnehmer - nur anzeigen wenn KEINE Zeitfenster aktiv */}
               {!formData.has_timeslots && (
                 <>
-                  <IonItem lines="inset" style={{ '--background': 'transparent' }}>
+                  <IonItem lines={formData.max_participants === 0 ? 'none' : 'inset'} style={{ '--background': 'transparent' }}>
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle
+                      slot="end"
                       checked={formData.max_participants === 0}
                       onIonChange={(e) => setFormData({ ...formData, max_participants: e.detail.checked ? 0 : 5 })}
                       disabled={loading}
@@ -686,7 +699,7 @@ const EventModal: React.FC<EventModalProps> = ({
                     />
                   </IonItem>
                   {formData.max_participants !== 0 && (
-                    <IonItem lines="inset" style={{ '--background': 'transparent' }}>
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                         <IonButton

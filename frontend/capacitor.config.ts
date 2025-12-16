@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     Keyboard: {
-      resize: 'ionic'
+      resize: 'native'
     },
     Badge: {
       persist: true,

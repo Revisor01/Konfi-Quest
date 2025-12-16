@@ -82,8 +82,13 @@ ion-item .app-list-item {
   border-color: #dc2626;
   background: rgba(220, 38, 38, 0.08);
 }
-/* Selected State fuer List Items - Chat (Orange) */
+/* Selected State fuer List Items - Chat/Admin (Tuerkis) */
 .app-list-item--chat.app-list-item--selected {
+  border-color: #06b6d4;
+  background: rgba(6, 182, 212, 0.08);
+}
+/* Selected State fuer List Items - Warning/Konfi (Orange) */
+.app-list-item--warning.app-list-item--selected {
   border-color: #ff9500;
   background: rgba(255, 149, 0, 0.08);
 }
@@ -301,7 +306,7 @@ ion-item .app-list-item {
 .app-list-item__row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   width: 100%;
 }
 .app-list-item__main {
@@ -311,6 +316,11 @@ ion-item .app-list-item {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+/* Checkbox rechts außen */
+.app-list-item__row > ion-checkbox {
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .app-list-item__content {
   flex: 1;
