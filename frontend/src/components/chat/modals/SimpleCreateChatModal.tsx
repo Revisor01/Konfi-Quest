@@ -562,50 +562,45 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             }
                           }}
                           style={{
-                            '--background': 'transparent',
-                            '--padding-start': '0',
-                            '--padding-end': '0',
-                            '--inner-padding-end': '0',
-                            '--inner-border-width': '0'
-                          }}
+                            '--background': isSelected ? (isAdmin ? 'rgba(6, 182, 212, 0.08)' : 'rgba(255, 149, 0, 0.08)') : 'transparent',
+                            '--padding-start': '12px',
+                            '--inner-padding-end': '12px',
+                            '--border-radius': '12px',
+                            '--border-width': '1px',
+                            '--border-style': 'solid',
+                            '--border-color': isSelected ? (isAdmin ? '#06b6d4' : '#ff9500') : '#e5e5e5',
+                            marginBottom: '8px'
+                          } as any}
                         >
-                          <div
-                            className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
-                            style={{ width: '100%', marginBottom: '0' }}
-                          >
-                            <div className="app-list-item__row">
-                              <div className="app-list-item__main">
-                                <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
-                                  <IonIcon icon={person} />
-                                </div>
-                                <div className="app-list-item__content">
-                                  <div className="app-list-item__title">
-                                    {getUserDisplayName(targetUser)}
-                                  </div>
-                                  <div className="app-list-item__subtitle">
-                                    <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`} style={{ marginRight: '8px' }}>
-                                      {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
-                                    </span>
-                                    {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
-                                      <span style={{ color: '#666' }}>
-                                        {targetUser.jahrgang_name || targetUser.jahrgang}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                              {chatType === 'group' && (
-                                <IonCheckbox
-                                  checked={isSelected}
-                                  style={{
-                                    '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                    '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                    '--checkmark-color': 'white'
-                                  }}
-                                />
-                              )}
-                            </div>
+                          <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`} slot="start">
+                            <IonIcon icon={person} />
                           </div>
+                          <IonLabel>
+                            <h2 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#333' }}>
+                              {getUserDisplayName(targetUser)}
+                            </h2>
+                            <p style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`}>
+                                {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                              </span>
+                              {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
+                                <span style={{ color: '#666' }}>
+                                  {targetUser.jahrgang_name || targetUser.jahrgang}
+                                </span>
+                              )}
+                            </p>
+                          </IonLabel>
+                          {chatType === 'group' && (
+                            <IonCheckbox
+                              slot="end"
+                              checked={isSelected}
+                              style={{
+                                '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
+                                '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
+                                '--checkmark-color': 'white'
+                              }}
+                            />
+                          )}
                         </IonItem>
                       );
                     })}

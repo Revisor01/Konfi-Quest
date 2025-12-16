@@ -78,7 +78,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const [eventData, setEventData] = useState<Event | null>(null);
   const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
   const [availableJahrgaenge, setAvailableJahrgaenge] = useState<string[]>([]);
-  const [selectedJahrgang, setSelectedJahrgang] = useState<string>('event');
+  const [selectedJahrgang, setSelectedJahrgang] = useState<string>('alle');
 
   const handleClose = () => {
     if (dismiss) {
@@ -97,16 +97,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     try {
       const response = await api.get(`/events/${eventId}`);
       setEventData(response.data);
-      
-      // If event has timeslots, pre-select the first available one
-      if (response.data.has_timeslots && response.data.timeslots && response.data.timeslots.length > 0) {
-        const availableTimeslot = response.data.timeslots.find((t: Timeslot) => 
-          (t.registered_count || 0) < t.max_participants
-        );
-        if (availableTimeslot) {
-          setSelectedTimeslot(availableTimeslot.id);
-        }
-      }
+      // Keine automatische Vorauswahl - User soll Zeitslot selbst wählen
     } catch (error) {
       console.error('Error loading event data:', error);
     }
@@ -321,21 +312,23 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   <IonSelect
                     value={selectedTimeslot}
                     onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
-                    placeholder="Zeitslot wählen *"
+                    placeholder="Zeitslot wählen"
                     interface="popover"
                     style={{ width: '100%' }}
                   >
+                    <IonSelectOption value={null}>Zeitslot wählen...</IonSelectOption>
                     {eventData.timeslots.map((timeslot) => {
-                      const available = (timeslot.registered_count || 0) < timeslot.max_participants;
+                      const isFull = timeslot.max_participants > 0 && (timeslot.registered_count || 0) >= timeslot.max_participants;
+                      const capacityText = timeslot.max_participants === 0
+                        ? `(${timeslot.registered_count || 0})`
+                        : `(${timeslot.registered_count || 0}/${timeslot.max_participants})`;
                       return (
                         <IonSelectOption
                           key={timeslot.id}
                           value={timeslot.id}
-                          disabled={!available}
                         >
-                          {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)}
-                          ({timeslot.registered_count || 0}/{timeslot.max_participants})
-                          {!available && ' - Voll'}
+                          {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} {capacityText}
+                          {isFull && ' - Voll'}
                         </IonSelectOption>
                       );
                     })}
@@ -376,46 +369,36 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                           onClick={() => handleKonfiSelection(konfi.id)}
                           detail={false}
                           lines="none"
+                          className={isSelected ? 'item-selected' : ''}
                           style={{
-                            '--background': 'transparent',
-                            '--padding-start': '0',
-                            '--padding-end': '0',
-                            '--inner-padding-end': '0',
-                            '--inner-border-width': '0'
-                          }}
+                            '--background': isSelected ? 'rgba(220, 38, 38, 0.08)' : 'transparent',
+                            '--padding-start': '12px',
+                            '--inner-padding-end': '12px',
+                            '--border-radius': '12px',
+                            '--border-width': '1px',
+                            '--border-style': 'solid',
+                            '--border-color': isSelected ? '#dc2626' : '#e5e5e5',
+                            marginBottom: '8px'
+                          } as any}
                         >
-                          <div
-                            className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
-                            style={{ width: '100%', marginBottom: '0', position: 'relative' }}
-                          >
-                            {/* Corner Badge "Konfi" */}
-                            <div
-                              className="app-corner-badge app-corner-badge--events"
-                            >
-                              Konfi
-                            </div>
-                            <div className="app-list-item__row">
-                              <div className="app-list-item__main">
-                                <div className="app-icon-circle app-icon-circle--events">
-                                  <IonIcon icon={person} />
-                                </div>
-                                <div className="app-list-item__content">
-                                  <div className="app-list-item__title">{konfi.name}</div>
-                                  {konfi.jahrgang_name && (
-                                    <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
-                                  )}
-                                </div>
-                              </div>
-                              <IonCheckbox
-                                checked={isSelected}
-                                style={{
-                                  '--checkbox-background-checked': '#dc2626',
-                                  '--border-color-checked': '#dc2626',
-                                  '--checkmark-color': 'white'
-                                }}
-                              />
-                            </div>
+                          <div className="app-icon-circle app-icon-circle--events" slot="start">
+                            <IonIcon icon={person} />
                           </div>
+                          <IonLabel>
+                            <h2 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#333' }}>{konfi.name}</h2>
+                            {konfi.jahrgang_name && (
+                              <p style={{ fontSize: '0.8rem', color: '#666' }}>{konfi.jahrgang_name}</p>
+                            )}
+                          </IonLabel>
+                          <IonCheckbox
+                            slot="end"
+                            checked={isSelected}
+                            style={{
+                              '--checkbox-background-checked': '#dc2626',
+                              '--border-color-checked': '#dc2626',
+                              '--checkmark-color': 'white'
+                            }}
+                          />
                         </IonItem>
                       );
                     })}

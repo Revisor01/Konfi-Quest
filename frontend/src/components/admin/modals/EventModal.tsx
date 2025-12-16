@@ -614,7 +614,7 @@ const EventModal: React.FC<EventModalProps> = ({
                       step="900"
                     />
                   </IonItem>
-                  <IonItem lines={timeslot.max_participants === 0 ? 'none' : 'inset'} style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle
                       slot="end"
@@ -688,7 +688,7 @@ const EventModal: React.FC<EventModalProps> = ({
               {/* Max. Teilnehmer - nur anzeigen wenn KEINE Zeitfenster aktiv */}
               {!formData.has_timeslots && (
                 <>
-                  <IonItem lines={formData.max_participants === 0 ? 'none' : 'inset'} style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle
                       slot="end"
