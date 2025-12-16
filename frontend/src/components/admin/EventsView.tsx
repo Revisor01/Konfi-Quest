@@ -384,10 +384,10 @@ const EventsView: React.FC<EventsViewProps> = ({
               const statusIcon = (() => {
                 if (isCancelled) return close;
                 if (isFullyProcessed) return checkmarkCircle;
-                if (hasUnprocessedBookings) return hourglass;
+                if (hasUnprocessedBookings) return flash; // Blitz-Icon für "Verbuchen"
                 if (isPastEvent) return checkmarkCircle;
                 if (calculateRegistrationStatus(event) === 'open') return lockOpenOutline; // Offen = Schloss offen
-                return hourglass;
+                return time; // "Bald" = Uhr-Icon
               })();
 
               return (
@@ -498,11 +498,11 @@ const EventsView: React.FC<EventsViewProps> = ({
                 </IonItem>
 
                 {(onDeleteEvent || onCancelEvent) && (
-                  <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' } as any}>
+                  <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                     {onCancelEvent && (
                       <IonItemOption
                         onClick={() => onCancelEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '24px', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px 0 8px', minWidth: 'auto', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                           <IonIcon icon={ban} />
@@ -512,7 +512,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                     {onDeleteEvent && (
                       <IonItemOption
                         onClick={() => onDeleteEvent(event)}
-                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: '24px', '--border-width': '0' }}
+                        style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 8px 0 4px', minWidth: 'auto', '--border-width': '0' }}
                       >
                         <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                           <IonIcon icon={trash} />

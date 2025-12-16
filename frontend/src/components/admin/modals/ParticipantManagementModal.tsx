@@ -20,7 +20,7 @@ import {
   IonSelectOption,
   IonItemGroup
 } from '@ionic/react';
-import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time } from 'ionicons/icons';
+import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -287,6 +287,11 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               </IonItem>
               {/* Jahrgang Filter */}
               <IonItem>
+                <IonIcon
+                  icon={calendarOutline}
+                  slot="start"
+                  style={{ color: '#8e8e93', fontSize: '1rem' }}
+                />
                 <IonSelect
                   value={selectedJahrgang}
                   onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
@@ -305,20 +310,14 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   ))}
                 </IonSelect>
               </IonItem>
-            </IonItemGroup>
-          </IonList>
-
-          {/* Zeitslot Auswahl - separate Card */}
-          {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
-            <IonList inset={true}>
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--events">
-                  <IonIcon icon={time} />
-                </div>
-                <IonLabel>Slot</IonLabel>
-              </IonListHeader>
-              <IonItemGroup>
+              {/* Zeitslot Auswahl */}
+              {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
                 <IonItem>
+                  <IonIcon
+                    icon={time}
+                    slot="start"
+                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                  />
                   <IonSelect
                     value={selectedTimeslot}
                     onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
@@ -342,9 +341,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     })}
                   </IonSelect>
                 </IonItem>
-              </IonItemGroup>
-            </IonList>
-          )}
+              )}
+            </IonItemGroup>
+          </IonList>
 
           {/* Personen Liste - iOS26 Pattern */}
           <IonList inset={true}>
