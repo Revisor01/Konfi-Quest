@@ -48,11 +48,17 @@ interface Timeslot {
   registered_count: number;
 }
 
+interface EventJahrgang {
+  id: number;
+  name: string;
+}
+
 interface Event {
   has_timeslots?: boolean;
   timeslots?: Timeslot[];
   jahrgang_id?: number;
   jahrgang_name?: string;
+  jahrgaenge?: EventJahrgang[];
 }
 
 interface ParticipantManagementModalProps {
@@ -103,6 +109,11 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     }
   };
 
+  // Event-Jahrgänge ermitteln (für Filter)
+  const eventJahrgaenge = eventData?.jahrgaenge?.map(j => j.name) ||
+    (eventData?.jahrgang_name ? [eventData.jahrgang_name] : []);
+  const hasEventJahrgaenge = eventJahrgaenge.length > 0;
+
   const loadAvailableKonfis = async () => {
     try {
       const response = await api.get('/admin/konfis');
@@ -112,7 +123,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       const participantUserIds = participants.map(p => p.user_id || p.id);
       const available = allKonfis.filter((konfi: Konfi) => !participantUserIds.includes(konfi.id));
 
-      // Extract available Jahrgaenge
+      // Extract available Jahrgaenge (wird nur für Dropdown gebraucht wenn Event keine Jahrgänge hat)
       const jahrgaenge = [...new Set(
         available
           .filter((k: Konfi) => k.jahrgang_name)
@@ -133,13 +144,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
     if (!matchesSearch) return false;
 
-    // Jahrgang filter
-    if (selectedJahrgang === 'event') {
-      // Only show Konfis from event's Jahrgang
-      if (eventData?.jahrgang_name) {
-        return konfi.jahrgang_name === eventData.jahrgang_name;
-      }
+    // Wenn Event Jahrgänge hat, nur diese Konfis zeigen (außer "alle" gewählt)
+    if (hasEventJahrgaenge && selectedJahrgang === 'alle') {
+      // Bei "alle" trotzdem nur Event-Jahrgänge zeigen
+      return eventJahrgaenge.includes(konfi.jahrgang_name || '');
     } else if (selectedJahrgang !== 'alle') {
+      // Spezifischer Jahrgang gewählt
       return konfi.jahrgang_name === selectedJahrgang;
     }
 
@@ -276,34 +286,42 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   placeholder="Person suchen..."
                 />
               </IonItem>
-              {/* Jahrgang Filter */}
-              <IonItem>
-                <IonIcon
-                  icon={calendarOutline}
-                  slot="start"
-                  style={{ color: '#8e8e93', fontSize: '1rem' }}
-                />
-                <IonSelect
-                  value={selectedJahrgang}
-                  onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
-                  placeholder="Jahrgang"
-                  interface="popover"
-                  style={{ width: '100%' }}
-                >
-                  {eventData?.jahrgang_name && (
-                    <IonSelectOption value="event">
-                      Nur {eventData.jahrgang_name}
-                    </IonSelectOption>
-                  )}
-                  <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                  {availableJahrgaenge.map(jg => (
-                    <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+              {/* Jahrgang Filter - nur wenn Event mehrere Jahrgänge hat oder gar keine */}
+              {(eventJahrgaenge.length !== 1) && (
+                <IonItem style={{ '--highlight-background': 'transparent' }}>
+                  <IonIcon
+                    icon={calendarOutline}
+                    slot="start"
+                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                  />
+                  <IonSelect
+                    value={selectedJahrgang}
+                    onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                    placeholder="Jahrgang"
+                    interface="popover"
+                    style={{ width: '100%' }}
+                  >
+                    {hasEventJahrgaenge ? (
+                      <>
+                        <IonSelectOption value="alle">Alle Event-Jahrgänge</IonSelectOption>
+                        {eventJahrgaenge.map(jg => (
+                          <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                        {availableJahrgaenge.map(jg => (
+                          <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                        ))}
+                      </>
+                    )}
+                  </IonSelect>
+                </IonItem>
+              )}
               {/* Zeitslot Auswahl */}
               {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
-                <IonItem>
+                <IonItem style={{ '--highlight-background': 'transparent' }}>
                   <IonIcon
                     icon={time}
                     slot="start"
@@ -375,10 +393,12 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             '--padding-start': '12px',
                             '--inner-padding-end': '12px',
                             '--border-radius': '12px',
-                            '--border-width': '1px',
-                            '--border-style': 'solid',
-                            '--border-color': isSelected ? '#dc2626' : '#e5e5e5',
-                            marginBottom: '8px'
+                            borderLeft: '4px solid #dc2626',
+                            border: `1px solid ${isSelected ? '#dc2626' : '#e5e5e5'}`,
+                            borderLeftWidth: '4px',
+                            borderLeftColor: '#dc2626',
+                            marginBottom: '8px',
+                            '--highlight-background': 'transparent'
                           } as any}
                         >
                           <div className="app-icon-circle app-icon-circle--events" slot="start">

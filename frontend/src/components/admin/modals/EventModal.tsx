@@ -569,51 +569,43 @@ const EventModal: React.FC<EventModalProps> = ({
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                    <IonLabel position="stacked">Startzeit (HH:MM)</IonLabel>
-                    <IonInput
-                      type="time"
-                      value={timeslot.start_time ? new Date(timeslot.start_time).toTimeString().slice(0, 5) : ''}
-                      onIonInput={(e) => {
-                        const timeValue = e.detail.value!;
-                        if (timeValue) {
-                          const [hours, minutes] = timeValue.split(':');
-                          const eventDate = new Date(formData.event_date);
-                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                          const toIonDatetimeISO = (date: Date) => {
-                            const pad = (num: number) => num.toString().padStart(2, '0');
-                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-                          };
-                          updateTimeslot(index, 'start_time', toIonDatetimeISO(eventDate));
-                        }
-                      }}
-                      placeholder="z.B. 10:00"
-                      disabled={loading}
-                      step="900"
-                    />
+                    <IonLabel position="stacked">Startzeit</IonLabel>
+                    <IonDatetimeButton datetime={`timeslot-start-${index}`} />
                   </IonItem>
                   <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                    <IonLabel position="stacked">Endzeit (HH:MM)</IonLabel>
-                    <IonInput
-                      type="time"
-                      value={timeslot.end_time ? new Date(timeslot.end_time).toTimeString().slice(0, 5) : ''}
-                      onIonInput={(e) => {
-                        const timeValue = e.detail.value!;
+                    <IonLabel position="stacked">Endzeit</IonLabel>
+                    <IonDatetimeButton datetime={`timeslot-end-${index}`} />
+                  </IonItem>
+                  <IonModal keepContentsMounted={true}>
+                    <IonDatetime
+                      id={`timeslot-start-${index}`}
+                      presentation="time"
+                      value={timeslot.start_time}
+                      onIonChange={(e) => {
+                        const timeValue = e.detail.value as string;
                         if (timeValue) {
-                          const [hours, minutes] = timeValue.split(':');
-                          const eventDate = new Date(formData.event_date);
-                          eventDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-                          const toIonDatetimeISO = (date: Date) => {
-                            const pad = (num: number) => num.toString().padStart(2, '0');
-                            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-                          };
-                          updateTimeslot(index, 'end_time', toIonDatetimeISO(eventDate));
+                          updateTimeslot(index, 'start_time', timeValue);
                         }
                       }}
-                      placeholder="z.B. 11:00"
+                      minuteValues="0,15,30,45"
                       disabled={loading}
-                      step="900"
                     />
-                  </IonItem>
+                  </IonModal>
+                  <IonModal keepContentsMounted={true}>
+                    <IonDatetime
+                      id={`timeslot-end-${index}`}
+                      presentation="time"
+                      value={timeslot.end_time}
+                      onIonChange={(e) => {
+                        const timeValue = e.detail.value as string;
+                        if (timeValue) {
+                          updateTimeslot(index, 'end_time', timeValue);
+                        }
+                      }}
+                      minuteValues="0,15,30,45"
+                      disabled={loading}
+                    />
+                  </IonModal>
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle

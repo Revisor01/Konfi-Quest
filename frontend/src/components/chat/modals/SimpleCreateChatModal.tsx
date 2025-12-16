@@ -566,10 +566,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             '--padding-start': '12px',
                             '--inner-padding-end': '12px',
                             '--border-radius': '12px',
-                            '--border-width': '1px',
-                            '--border-style': 'solid',
-                            '--border-color': isSelected ? (isAdmin ? '#06b6d4' : '#ff9500') : '#e5e5e5',
-                            marginBottom: '8px'
+                            border: `1px solid ${isSelected ? (isAdmin ? '#06b6d4' : '#ff9500') : '#e5e5e5'}`,
+                            borderLeftWidth: '4px',
+                            borderLeftColor: isAdmin ? '#06b6d4' : '#ff9500',
+                            marginBottom: '8px',
+                            '--highlight-background': 'transparent'
                           } as any}
                         >
                           <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`} slot="start">
