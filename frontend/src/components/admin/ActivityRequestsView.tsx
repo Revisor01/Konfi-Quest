@@ -6,6 +6,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -20,7 +21,7 @@ import {
   closeCircle,
   trash,
   hourglass,
-  document,
+  documentOutline,
   calendar,
   home,
   people,
@@ -230,287 +231,185 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         </div>
       </div>
 
-      {/* Tab-Leiste - 1:1 wie bei Events */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
-          <IonSegment
-            value={statusFilter}
-            onIonChange={(e) => setStatusFilter(e.detail.value as any)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '12px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="pending">
-              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Offen</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="approved">
-              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Genehmigt</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="rejected">
-              <IonLabel style={{ fontSize: '0.75rem', fontWeight: '600' }}>Abgelehnt</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
+      {/* Tab Filter - wie bei Events */}
+      <div style={{ margin: '16px' }}>
+        <IonSegment
+          value={statusFilter}
+          onIonChange={(e) => setStatusFilter(e.detail.value as any)}
+        >
+          <IonSegmentButton value="pending">
+            <IonLabel>Offen</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="approved">
+            <IonLabel>Genehmigt</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="rejected">
+            <IonLabel>Abgelehnt</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
 
-      {/* Anträge Liste */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '8px 0' }}>
-          {filteredAndSortedRequests.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px' }}>
-              <IonIcon
-                icon={document}
-                style={{
-                  fontSize: '3rem',
-                  color: '#059669',
-                  marginBottom: '16px',
-                  display: 'block',
-                  margin: '0 auto 16px auto'
-                }}
-              />
-              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Anträge vorhanden</h3>
-              <p style={{ color: '#999', margin: '0' }}>Konfirmand:innen können Aktivitäten beantragen</p>
-            </div>
-          ) : (
-            <IonList lines="none" style={{ background: 'transparent' }}>
-              {filteredAndSortedRequests.map((request) => {
-                const isPending = request.status === 'pending';
-                const isApproved = request.status === 'approved';
-                const isRejected = request.status === 'rejected';
+      {/* Anträge Liste - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--success">
+            <IonIcon icon={documentOutline} />
+          </div>
+          <IonLabel>Anträge ({filteredAndSortedRequests.length})</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            {filteredAndSortedRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={documentOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#059669',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Anträge vorhanden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Konfirmand:innen können Aktivitäten beantragen</p>
+              </div>
+            ) : (
+              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                {filteredAndSortedRequests.map((request, index) => {
+                  const isPending = request.status === 'pending';
+                  const isApproved = request.status === 'approved';
+                  const isRejected = request.status === 'rejected';
 
-                return (
-                  <IonItemSliding key={request.id}>
-                    <IonItem
-                      button
-                      onClick={() => onSelectRequest(request)}
-                      detail={false}
-                      style={{
-                        '--min-height': '90px',
-                        '--padding-start': '16px',
-                        '--padding-top': '0px',
-                        '--padding-bottom': '0px',
-                        '--background': '#fbfbfb',
-                        '--border-radius': '12px',
-                        margin: '4px 8px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderRadius: '12px',
-                        opacity: (isApproved || isRejected) ? 0.6 : 1
-                      }}
-                    >
-                      <IonLabel>
-                        {/* Header mit Icon und Status Badge */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          marginBottom: '6px'
-                        }}>
-                          {/* Status Icon Kreis */}
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            backgroundColor: isPending ? '#ff9500' : isApproved ? '#047857' : '#dc3545',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: isPending
-                              ? '0 2px 8px rgba(255, 149, 0, 0.3)'
-                              : isApproved
-                              ? '0 2px 8px rgba(4, 120, 87, 0.3)'
-                              : '0 2px 8px rgba(220, 53, 69, 0.3)',
-                            flexShrink: 0
-                          }}>
-                            <IonIcon
-                              icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
-                              style={{
-                                fontSize: '1rem',
-                                color: 'white'
-                              }}
-                            />
-                          </div>
+                  // Status-Farbe und Text
+                  const statusColor = isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545';
+                  const statusText = isPending ? 'Offen' : isApproved ? 'Genehmigt' : 'Abgelehnt';
 
-                          {/* Name groß */}
-                          <h2 style={{
-                            fontWeight: '600',
-                            fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                            margin: '0',
-                            color: (isApproved || isRejected) ? '#999' : '#333',
-                            lineHeight: '1.3',
-                            flex: 1,
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {request.konfi_name}
-                          </h2>
-
-                          {/* Status Badge rechts oben */}
-                          <div style={{
-                            marginLeft: 'auto',
-                            display: 'flex',
-                            gap: '4px',
-                            alignItems: 'center',
-                            flexShrink: 0
-                          }}>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: isPending ? '#ff9500' : isApproved ? '#047857' : '#dc3545',
-                              fontWeight: '600',
-                              backgroundColor: isPending
-                                ? 'rgba(255, 149, 0, 0.15)'
-                                : isApproved
-                                ? 'rgba(4, 120, 87, 0.15)'
-                                : 'rgba(220, 38, 38, 0.15)',
-                              padding: '3px 6px',
-                              borderRadius: '6px',
-                              border: isPending
-                                ? '1px solid rgba(255, 149, 0, 0.3)'
-                                : isApproved
-                                ? '1px solid rgba(4, 120, 87, 0.3)'
-                                : '1px solid rgba(220, 38, 38, 0.3)',
-                              whiteSpace: 'nowrap',
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.08)'
-                            }}>
-                              {isPending ? 'OFFEN' : isApproved ? 'GENEHMIGT' : 'ABGELEHNT'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Zweite Zeile: Datum, Punkte, Typ */}
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          fontSize: '0.8rem',
-                          color: (isApproved || isRejected) ? '#999' : '#666',
-                          marginLeft: '44px',
-                          marginBottom: '4px'
-                        }}>
-                          {/* Datum */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                            <IonIcon
-                              icon={calendar}
-                              style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#dc2626' }}
-                            />
-                            <span>{formatDate(request.requested_date)}</span>
-                          </div>
-
-                          {/* Punkte */}
-                          {request.activity_points && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                              <IonIcon
-                                icon={trophy}
-                                style={{ fontSize: '0.8rem', color: (isApproved || isRejected) ? '#999' : '#ff9500' }}
-                              />
-                              <span style={{ fontWeight: '500' }}>{request.activity_points}P</span>
-                            </div>
-                          )}
-
-                          {/* Typ */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                            <IonIcon
-                              icon={getTypeIcon(request.activity_type || 'gemeinde')}
-                              style={{
-                                fontSize: '0.8rem',
-                                color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde')
-                              }}
-                            />
-                            <span>{request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</span>
-                          </div>
-                        </div>
-
-                        {/* Dritte Zeile: Aktivitätsname */}
-                        <div style={{
-                          fontSize: '0.8rem',
-                          color: (isApproved || isRejected) ? '#999' : '#666',
-                          marginLeft: '44px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          {request.activity_name}
-                        </div>
-                      </IonLabel>
-                    </IonItem>
-
-                    {/* Swipe Actions */}
-                    <IonItemOptions side="end" style={{
-                      gap: '4px',
-                      '--ion-item-background': 'transparent'
-                    }}>
-                      {/* Reset-Button für approved/rejected */}
-                      {!isPending && (
-                        <IonItemOption
-                          onClick={() => onResetRequest(request)}
-                          style={{
-                            '--background': 'transparent',
-                            '--background-activated': 'transparent',
-                            '--background-focused': 'transparent',
-                            '--background-hover': 'transparent',
-                            '--color': 'transparent',
-                            '--ripple-color': 'transparent',
-                            padding: '0 2px',
-                            minWidth: '48px',
-                            maxWidth: '68px'
-                          }}
-                        >
-                          <div style={{
-                            width: '44px',
-                            height: '44px',
-                            backgroundColor: '#ff9500',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 2px 8px rgba(255, 149, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                          }}>
-                            <IonIcon icon={returnUpBack} style={{ fontSize: '1.2rem', color: 'white' }} />
-                          </div>
-                        </IonItemOption>
-                      )}
-
-                      {/* Löschen-Button für alle */}
-                      <IonItemOption
-                        onClick={() => onDeleteRequest(request)}
+                  return (
+                    <IonItemSliding key={request.id} style={{ marginBottom: index < filteredAndSortedRequests.length - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        button
+                        onClick={() => onSelectRequest(request)}
+                        detail={false}
+                        lines="none"
                         style={{
                           '--background': 'transparent',
-                          '--background-activated': 'transparent',
-                          '--background-focused': 'transparent',
-                          '--background-hover': 'transparent',
-                          '--color': 'transparent',
-                          '--ripple-color': 'transparent',
-                          padding: '0 2px',
-                          paddingRight: '20px',
-                          minWidth: '48px',
-                          maxWidth: '68px'
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
                         }}
                       >
-                        <div style={{
-                          width: '44px',
-                          height: '44px',
-                          backgroundColor: '#dc3545',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                        }}>
-                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                        <div
+                          className="app-list-item app-list-item--success"
+                          style={{
+                            width: '100%',
+                            borderLeftColor: statusColor,
+                            opacity: (isApproved || isRejected) ? 0.7 : 1,
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {/* Eselsohr-Style Corner Badge */}
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: statusColor }}
+                          >
+                            {statusText}
+                          </div>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              {/* Status Icon */}
+                              <div
+                                className="app-icon-circle app-icon-circle--lg"
+                                style={{ backgroundColor: statusColor }}
+                              >
+                                <IonIcon icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="app-list-item__content">
+                                {/* Zeile 1: Konfi-Name */}
+                                <div
+                                  className="app-list-item__title"
+                                  style={{
+                                    color: (isApproved || isRejected) ? '#999' : undefined,
+                                    paddingRight: '70px'
+                                  }}
+                                >
+                                  {request.konfi_name}
+                                </div>
+
+                                {/* Zeile 2: Aktivitätsname */}
+                                <div className="app-list-item__subtitle" style={{
+                                  color: (isApproved || isRejected) ? '#999' : '#666',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {request.activity_name}
+                                </div>
+
+                                {/* Zeile 3: Meta-Infos */}
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#059669' }} />
+                                    {formatDate(request.requested_date)}
+                                  </span>
+                                  {request.activity_points && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={trophy} style={{ color: (isApproved || isRejected) ? '#999' : '#ff9500' }} />
+                                      {request.activity_points}P
+                                    </span>
+                                  )}
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon
+                                      icon={getTypeIcon(request.activity_type || 'gemeinde')}
+                                      style={{ color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type || 'gemeinde') }}
+                                    />
+                                    {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </IonItemOption>
-                    </IonItemOptions>
-                  </IonItemSliding>
-                );
-              })}
-            </IonList>
-          )}
-        </IonCardContent>
-      </IonCard>
+                      </IonItem>
+
+                      {/* Swipe Actions */}
+                      <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '4px' } as any}>
+                        {/* Reset-Button für approved/rejected */}
+                        {!isPending && (
+                          <IonItemOption
+                            onClick={() => onResetRequest(request)}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0 4px', minWidth: 'auto', '--border-width': '0' }}
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                              <IonIcon icon={returnUpBack} />
+                            </div>
+                          </IonItemOption>
+                        )}
+
+                        {/* Löschen-Button für alle */}
+                        <IonItemOption
+                          onClick={() => onDeleteRequest(request)}
+                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                        >
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                            <IonIcon icon={trash} />
+                          </div>
+                        </IonItemOption>
+                      </IonItemOptions>
+                    </IonItemSliding>
+                  );
+                })}
+              </IonList>
+            )}
+          </IonCardContent>
+        </IonCard>
+      </IonList>
     </>
   );
 };
