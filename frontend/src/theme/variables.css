@@ -59,25 +59,6 @@ ion-card.app-card {
   overflow: hidden;
 }
 
-/* IonItem mit app-list-item Klasse - native Ionic Komponente */
-ion-item.app-list-item {
-  --background: white;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --inner-padding-end: 0;
-  --min-height: auto;
-  --border-radius: 10px;
-  --border-left-color: inherit;
-  border-radius: 10px;
-  border-left-color: var(--border-left-color);
-  margin-bottom: 8px;
-  overflow: hidden;
-  position: relative;
-}
-ion-item.app-list-item:last-child {
-  margin-bottom: 0;
-}
-
 /* IonItem mit app-list-item - Klick-Feedback begrenzen */
 ion-item .app-list-item {
   --ripple-color: transparent;
@@ -101,32 +82,20 @@ ion-item .app-list-item {
   border-color: #dc2626;
   background: rgba(220, 38, 38, 0.08);
 }
-ion-item.app-list-item--events.app-list-item--selected {
-  --background: rgba(220, 38, 38, 0.08);
-}
 /* Selected State fuer List Items - Chat/Admin (Tuerkis) */
 .app-list-item--chat.app-list-item--selected {
   border-color: #06b6d4;
   background: rgba(6, 182, 212, 0.08);
-}
-ion-item.app-list-item--chat.app-list-item--selected {
-  --background: rgba(6, 182, 212, 0.08);
 }
 /* Selected State fuer List Items - Warning/Konfi (Orange) */
 .app-list-item--warning.app-list-item--selected {
   border-color: #ff9500;
   background: rgba(255, 149, 0, 0.08);
 }
-ion-item.app-list-item--warning.app-list-item--selected {
-  --background: rgba(255, 149, 0, 0.08);
-}
 /* Selected State fuer List Items - Default */
 .app-list-item--selected {
   border-color: #ff9500;
   background: rgba(255, 149, 0, 0.08);
-}
-ion-item.app-list-item--selected {
-  --background: rgba(255, 149, 0, 0.08);
 }
 
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
