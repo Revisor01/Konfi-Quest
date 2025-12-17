@@ -333,25 +333,44 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern */}
+      {/* Tab Filter - wie bei Events */}
+      <div style={{ margin: '16px' }}>
+        <IonSegment
+          value={selectedFilter}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="aktiv">
+            <IonLabel>Aktiv</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="versteckt">
+            <IonLabel>Versteckt</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="inaktiv">
+            <IonLabel>Inaktiv</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Suchfeld */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
-            <IonIcon icon={filterOutline} />
+            <IonIcon icon={search} />
           </div>
-          <IonLabel>Suche & Filter</IonLabel>
+          <IonLabel>Suche</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            {/* Suchfeld */}
+          <IonCardContent style={{ padding: '12px 16px' }}>
             <IonItem
               lines="none"
               style={{
                 '--background': '#f8f9fa',
                 '--border-radius': '12px',
                 '--padding-start': '12px',
-                '--padding-end': '12px',
-                marginBottom: '12px'
+                '--padding-end': '12px'
               }}
             >
               <IonIcon
@@ -373,30 +392,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                 }}
               />
             </IonItem>
-
-            {/* Tab Filter */}
-            <IonSegment
-              value={selectedFilter}
-              onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-              style={{
-                '--background': '#f8f9fa',
-                borderRadius: '12px',
-                padding: '4px'
-              }}
-            >
-              <IonSegmentButton value="alle">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="aktiv">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktiv</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="versteckt">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Versteckt</IonLabel>
-              </IonSegmentButton>
-              <IonSegmentButton value="inaktiv">
-                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Inaktiv</IonLabel>
-              </IonSegmentButton>
-            </IonSegment>
           </IonCardContent>
         </IonCard>
       </IonList>

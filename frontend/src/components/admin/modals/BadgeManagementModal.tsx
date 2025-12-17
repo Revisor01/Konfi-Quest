@@ -390,35 +390,21 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '0' }}>
-                  <IonList style={{ background: 'transparent' }} lines="none">
+                <div slot="content" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {activities.map(activity => {
                       const isSelected = extraCriteria.activity_id === activity.id;
                       return (
-                      <IonItem
-                        key={activity.id}
-                        lines="none"
-                        button
-                        detail={false}
-                        onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--min-height': 'auto',
-                          margin: '6px 0'
-                        }}
-                      >
                         <div
+                          key={activity.id}
                           className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
+                          onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
                           style={{
-                            width: '100%',
-                            marginBottom: '0',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
+                            marginBottom: '0',
                             borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
                           }}
                         >
@@ -445,10 +431,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             }}
                           />
                         </div>
-                      </IonItem>
                       );
                     })}
-                  </IonList>
+                  </div>
                 </div>
               </IonAccordion>
             </IonAccordionGroup>
@@ -473,35 +458,21 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '0' }}>
-                  <IonList style={{ background: 'transparent' }} lines="none">
+                <div slot="content" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {categories.map(category => {
                       const isSelected = extraCriteria.required_category === category.name;
                       return (
-                      <IonItem
-                        key={category.id}
-                        lines="none"
-                        button
-                        detail={false}
-                        onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--min-height': 'auto',
-                          margin: '6px 0'
-                        }}
-                      >
                         <div
+                          key={category.id}
                           className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
+                          onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
                           style={{
-                            width: '100%',
-                            marginBottom: '0',
+                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between'
+                            justifyContent: 'space-between',
+                            marginBottom: '0'
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -519,10 +490,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             }}
                           />
                         </div>
-                      </IonItem>
                       );
                     })}
-                  </IonList>
+                  </div>
                 </div>
               </IonAccordion>
             </IonAccordionGroup>
@@ -531,7 +501,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       case 'time_based':
         return (
-          <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginTop: '16px' }}>
+          <IonItem lines="none" style={{ '--background': 'transparent', marginTop: '16px' }}>
             <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Zeitraum (Wochen)</IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
               <IonButton
@@ -593,18 +563,16 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '0' }}>
-                  <IonList style={{ background: 'transparent' }} lines="none">
+                <div slot="content" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {activities.map(activity => {
                       const activityIds = extraCriteria.activity_ids || [];
                       const isSelected = activityIds.includes(activity.id);
 
                       return (
-                        <IonItem
+                        <div
                           key={activity.id}
-                          lines="none"
-                          button
-                          detail={false}
+                          className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
                           onClick={() => {
                             const currentIds = extraCriteria.activity_ids || [];
                             const newIds = isSelected
@@ -613,53 +581,40 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
                           }}
                           style={{
-                            '--background': 'transparent',
-                            '--padding-start': '0',
-                            '--padding-end': '0',
-                            '--inner-padding-end': '0',
-                            '--inner-border-width': '0',
-                            '--min-height': 'auto',
-                            margin: '6px 0'
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0',
+                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
                           }}
                         >
-                          <div
-                            className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
-                            style={{
-                              width: '100%',
-                              marginBottom: '0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                              <div
-                                className="app-icon-circle"
-                                style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
-                              >
-                                <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div className="app-list-item__title">{activity.name}</div>
-                                <div className="app-list-item__subtitle">
-                                  {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                                </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                            <div
+                              className="app-icon-circle"
+                              style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                            >
+                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="app-list-item__title">{activity.name}</div>
+                              <div className="app-list-item__subtitle">
+                                {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
                               </div>
                             </div>
-                            <IonCheckbox
-                              checked={isSelected}
-                              style={{
-                                '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                                '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                                '--checkmark-color': 'white'
-                              }}
-                            />
                           </div>
-                        </IonItem>
+                          <IonCheckbox
+                            checked={isSelected}
+                            style={{
+                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--checkmark-color': 'white'
+                            }}
+                          />
+                        </div>
                       );
                     })}
-                  </IonList>
+                  </div>
                 </div>
               </IonAccordion>
             </IonAccordionGroup>
@@ -736,7 +691,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -748,7 +703,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
@@ -841,7 +796,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonAccordionGroup>
               </div>
 
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
                 <div style={{ marginTop: '8px', width: '100%' }}>
                   <input
@@ -893,19 +848,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     )}
                   </IonLabel>
                 </IonItem>
-                <div slot="content" style={{ padding: '0' }}>
-                  <IonList style={{ background: 'transparent' }} lines="none">
+                <div slot="content" style={{ padding: '8px 0' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => {
                       const isSelected = formData.criteria_type === value;
                       // Remove emojis from label
                       const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
 
                       return (
-                        <IonItem
+                        <div
                           key={value}
-                          lines="none"
-                          button
-                          detail={false}
+                          className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
                           onClick={() => {
                             if (!loading) {
                               // Set default criteria_value based on type
@@ -923,59 +876,45 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               setExtraCriteria({});
                             }
                           }}
-                          disabled={loading}
                           style={{
-                            '--background': 'transparent',
-                            '--padding-start': '0',
-                            '--padding-end': '0',
-                            '--inner-padding-end': '0',
-                            '--inner-border-width': '0',
-                            '--min-height': 'auto',
-                            margin: '6px 0'
+                            cursor: loading ? 'default' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0'
                           }}
                         >
-                          <div
-                            className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
-                            style={{
-                              width: '100%',
-                              marginBottom: '0',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              opacity: loading ? 0.6 : 1
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                              <div className="app-icon-circle app-icon-circle--warning">
-                                <IonIcon icon={flash} />
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div className="app-list-item__title">{labelWithoutEmoji}</div>
-                                <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
-                                  {type.help}
-                                </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                            <div className="app-icon-circle app-icon-circle--warning">
+                              <IonIcon icon={flash} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="app-list-item__title">{labelWithoutEmoji}</div>
+                              <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                                {type.help}
                               </div>
                             </div>
-                            <IonCheckbox
-                              checked={isSelected}
-                              disabled={loading}
-                              style={{
-                                '--checkbox-background-checked': '#ff9500',
-                                '--border-color-checked': '#ff9500',
-                                '--checkmark-color': 'white'
-                              }}
-                            />
                           </div>
-                        </IonItem>
+                          <IonCheckbox
+                            checked={isSelected}
+                            disabled={loading}
+                            style={{
+                              '--checkbox-background-checked': '#ff9500',
+                              '--border-color-checked': '#ff9500',
+                              '--checkmark-color': 'white'
+                            }}
+                          />
+                        </div>
                       );
                     })}
-                  </IonList>
+                  </div>
                 </div>
               </IonAccordion>
             </IonAccordionGroup>
 
             <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '12px', marginTop: '16px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px', marginTop: '16px' }}>
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>{getValueLabel()}</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -1034,7 +973,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel>
                   <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
@@ -1047,7 +986,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel>
                   <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Geheim</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>
