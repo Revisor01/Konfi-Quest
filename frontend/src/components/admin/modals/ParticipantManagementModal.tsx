@@ -404,30 +404,31 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                               position: 'relative',
                               borderLeftWidth: '4px',
                               borderLeftColor: '#dc2626',
-                              borderLeftStyle: 'solid'
+                              borderLeftStyle: 'solid',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
                             }}
                           >
-                            <div className="app-list-item__row">
-                              <div className="app-list-item__main">
-                                <div className="app-icon-circle app-icon-circle--events">
-                                  <IonIcon icon={person} />
-                                </div>
-                                <div className="app-list-item__content">
-                                  <div className="app-list-item__title">{konfi.name}</div>
-                                  {konfi.jahrgang_name && (
-                                    <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
-                                  )}
-                                </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                              <div className="app-icon-circle app-icon-circle--events">
+                                <IonIcon icon={person} />
                               </div>
-                              <IonCheckbox
-                                checked={isSelected}
-                                style={{
-                                  '--checkbox-background-checked': '#dc2626',
-                                  '--border-color-checked': '#dc2626',
-                                  '--checkmark-color': 'white'
-                                }}
-                              />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="app-list-item__title">{konfi.name}</div>
+                                {konfi.jahrgang_name && (
+                                  <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
+                                )}
+                              </div>
                             </div>
+                            <IonCheckbox
+                              checked={isSelected}
+                              style={{
+                                '--checkbox-background-checked': '#dc2626',
+                                '--border-color-checked': '#dc2626',
+                                '--checkmark-color': 'white'
+                              }}
+                            />
                           </div>
                         </IonItem>
                       );

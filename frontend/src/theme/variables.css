@@ -307,7 +307,6 @@ ion-item .app-list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
   width: 100%;
 }
 .app-list-item__main {
@@ -317,11 +316,6 @@ ion-item .app-list-item {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-}
-/* Checkbox rechts außen - NICHT 50/50 splitten */
-.app-list-item__row > ion-checkbox {
-  flex: 0 0 auto;
-  margin-left: 8px;
 }
 .app-list-item__content {
   flex: 1;
