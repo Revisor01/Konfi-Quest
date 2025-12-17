@@ -5,7 +5,7 @@ interface ActivityRingsProps {
   totalPoints: number;
   gottesdienstPoints: number;
   gemeindePoints: number;
-  // Zielwerte (für Prozentberechnung) - 0 bedeutet ausgeblendet
+  // Zielwerte (für Prozentberechnung) - 0 = kein Limit, Ring dreht weiter
   gottesdienstGoal: number;
   gemeindeGoal: number;
   // Größe
@@ -15,7 +15,8 @@ interface ActivityRingsProps {
 /**
  * Apple Health-Style Activity Rings mit Overachiever-Support
  *
- * - Wenn ein Ziel 0 ist, wird dieser Ring nicht angezeigt
+ * - Alle Ringe werden immer angezeigt (motiviert mehr zu sammeln)
+ * - Wenn ein Ziel 0 ist, zeigt der Ring die Punkte ohne Limit (dreht weiter)
  * - Der Gesamtwert berechnet sich automatisch aus godi + gemeinde
  * - Bei Übererfüllung (>100%) wird ein zweiter äußerer Ring gezeigt
  * - Eigenständige Komponente - leicht austauschbar
@@ -28,28 +29,16 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindeGoal,
   size = 160
 }) => {
-  // Prüfen welche Ringe angezeigt werden sollen
-  const showGottesdienst = gottesdienstGoal > 0;
-  const showGemeinde = gemeindeGoal > 0;
-
-  // Gesamtziel berechnet sich aus den aktiven Zielen
-  const totalGoal = gottesdienstGoal + gemeindeGoal;
-  const showTotal = totalGoal > 0;
-
-  // Wenn nichts angezeigt werden soll, nichts rendern
-  if (!showTotal) {
-    return (
-      <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
-        <div style={{ fontSize: '2rem', fontWeight: '800', color: 'white' }}>{totalPoints}</div>
-        <div style={{ fontSize: '0.9rem' }}>Punkte</div>
-      </div>
-    );
-  }
+  // Alle Ringe werden immer angezeigt - motiviert zum Sammeln!
+  // Wenn Ziel 0 ist, verwenden wir einen Default-Wert für die Visualisierung
+  const effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10;
+  const effectiveGemeindeGoal = gemeindeGoal > 0 ? gemeindeGoal : 10;
+  const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
 
   // Prozent berechnen (kann über 100% gehen für Overachiever)
-  const totalPercent = (totalPoints / totalGoal) * 100;
-  const gottesdienstPercent = gottesdienstGoal > 0 ? (gottesdienstPoints / gottesdienstGoal) * 100 : 0;
-  const gemeindePercent = gemeindeGoal > 0 ? (gemeindePoints / gemeindeGoal) * 100 : 0;
+  const totalPercent = (totalPoints / effectiveTotalGoal) * 100;
+  const gottesdienstPercent = (gottesdienstPoints / effectiveGottesdienstGoal) * 100;
+  const gemeindePercent = (gemeindePoints / effectiveGemeindeGoal) * 100;
 
   // Overachiever Check
   const isOverachiever = totalPercent > 100;
@@ -60,15 +49,15 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const strokeWidth = size * 0.075;
   const gap = strokeWidth * 0.5;
 
-  // Zähle aktive Ringe für dynamische Radien-Berechnung
-  const activeRings = [showTotal, showGottesdienst, showGemeinde].filter(Boolean).length;
+  // Alle 3 Ringe werden immer angezeigt
+  const activeRings = 3;
 
   // Radien für die Ringe (von außen nach innen)
   const outerRadius = center - strokeWidth / 2 - 4;
   const overachieveRadius = outerRadius + strokeWidth + gap * 0.5; // Overachiever außen
 
-  // Dynamische Radien basierend auf aktiven Ringen
-  let ringRadii: number[] = [];
+  // Feste Radien für alle 3 Ringe
+  const ringRadii: number[] = [];
   let currentRadius = outerRadius;
   for (let i = 0; i < activeRings; i++) {
     ringRadii.push(currentRadius);
@@ -132,9 +121,6 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     );
   };
 
-  // Ring-Index für Zuordnung
-  let ringIndex = 0;
-
   return (
     <div style={{
       display: 'flex',
@@ -162,31 +148,25 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           )}
 
           {/* Außenring - Gesamt */}
-          {showTotal && (
-            <Ring
-              radius={ringRadii[ringIndex++]}
-              percent={totalPercent}
-              color={colors.total}
-            />
-          )}
+          <Ring
+            radius={ringRadii[0]}
+            percent={totalPercent}
+            color={colors.total}
+          />
 
           {/* Mittlerer Ring - Gottesdienst */}
-          {showGottesdienst && (
-            <Ring
-              radius={ringRadii[ringIndex++]}
-              percent={gottesdienstPercent}
-              color={colors.gottesdienst}
-            />
-          )}
+          <Ring
+            radius={ringRadii[1]}
+            percent={gottesdienstPercent}
+            color={colors.gottesdienst}
+          />
 
           {/* Innenring - Gemeinde */}
-          {showGemeinde && (
-            <Ring
-              radius={ringRadii[ringIndex++]}
-              percent={gemeindePercent}
-              color={colors.gemeinde}
-            />
-          )}
+          <Ring
+            radius={ringRadii[2]}
+            percent={gemeindePercent}
+            color={colors.gemeinde}
+          />
         </svg>
 
         {/* Zentrale Anzeige */}
@@ -210,7 +190,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             opacity: 0.8,
             marginTop: '2px'
           }}>
-            {isOverachiever ? 'Punkte' : `von ${totalGoal}`}
+            {isOverachiever ? 'Punkte' : `von ${effectiveTotalGoal}`}
           </div>
         </div>
       </div>
@@ -222,35 +202,32 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
         justifyContent: 'center',
         flexWrap: 'wrap'
       }}>
-        {showTotal && (
-          <LegendItem
-            color={colors.total}
-            label="Gesamt"
-            value={totalPoints}
-            goal={totalGoal}
-          />
-        )}
-        {showGottesdienst && (
-          <LegendItem
-            color={colors.gottesdienst}
-            label="Gottesdienst"
-            value={gottesdienstPoints}
-            goal={gottesdienstGoal}
-          />
-        )}
-        {showGemeinde && (
-          <LegendItem
-            color={colors.gemeinde}
-            label="Gemeinde"
-            value={gemeindePoints}
-            goal={gemeindeGoal}
-          />
-        )}
+        <LegendItem
+          color={colors.total}
+          label="Gesamt"
+          value={totalPoints}
+          goal={effectiveTotalGoal}
+          hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
+        />
+        <LegendItem
+          color={colors.gottesdienst}
+          label="Gottesdienst"
+          value={gottesdienstPoints}
+          goal={effectiveGottesdienstGoal}
+          hasGoal={gottesdienstGoal > 0}
+        />
+        <LegendItem
+          color={colors.gemeinde}
+          label="Gemeinde"
+          value={gemeindePoints}
+          goal={effectiveGemeindeGoal}
+          hasGoal={gemeindeGoal > 0}
+        />
         {isOverachiever && (
           <LegendItem
             color={colors.overachieve}
             label="Bonus"
-            value={totalPoints - totalGoal}
+            value={totalPoints - effectiveTotalGoal}
             goal={0}
             isOverachieve={true}
           />
@@ -266,8 +243,9 @@ const LegendItem: React.FC<{
   label: string;
   value: number;
   goal: number;
+  hasGoal?: boolean;
   isOverachieve?: boolean;
-}> = ({ color, label, value, goal, isOverachieve }) => (
+}> = ({ color, label, value, goal, hasGoal = true, isOverachieve }) => (
   <div style={{
     display: 'flex',
     alignItems: 'center',
@@ -284,7 +262,7 @@ const LegendItem: React.FC<{
       color: 'rgba(255, 255, 255, 0.9)',
       fontSize: '0.7rem'
     }}>
-      {label}: <strong>{value}</strong>{!isOverachieve && goal > 0 && `/${goal}`}
+      {label}: <strong>{value}</strong>{!isOverachieve && hasGoal && `/${goal}`}
     </span>
   </div>
 );
