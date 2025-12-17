@@ -12,24 +12,24 @@ import {
   IonIcon,
   IonButton,
   IonButtons,
-  IonInput,
-  IonAlert,
+  IonList,
+  IonListHeader,
+  IonGrid,
+  IonRow,
+  IonCol,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
 import {
-  person,
-  key,
-  mail,
-  save,
-  close,
-  eye,
-  eyeOff,
+  personOutline,
+  keyOutline,
+  mailOutline,
   arrowBack,
-  logOut,
-  checkmark,
-  information,
-  briefcaseOutline
+  logOutOutline,
+  informationCircleOutline,
+  briefcaseOutline,
+  settingsOutline,
+  shieldOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -140,100 +140,206 @@ const AdminProfilePage: React.FC = () => {
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
-        {/* Admin Info */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardContent>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{
-                width: '80px',
-                height: '80px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                color: 'white',
-                fontSize: '1.5rem',
-                fontWeight: '600'
-              }}>
-                {user?.display_name?.charAt(0)?.toUpperCase() || 'A'}
-              </div>
-              <h1 style={{ margin: '0 0 8px 0', fontSize: '1.5rem', fontWeight: '600' }}>
-                {user?.display_name || 'Administrator'}
-              </h1>
-              <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                {profileData.role_title
-                  ? `Administrator · ${profileData.role_title}`
-                  : 'Administrator'}
-              </p>
+        {/* Header - Dashboard-Style */}
+        <div style={{
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          borderRadius: '24px',
+          padding: '0',
+          margin: '16px',
+          marginBottom: '16px',
+          boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          {/* Überschrift - groß und überlappend */}
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            left: '12px',
+            zIndex: 1
+          }}>
+            <h2 style={{
+              fontSize: '4rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px'
+            }}>
+              PROFIL
+            </h2>
+          </div>
+
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '70px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            {/* Avatar */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '16px',
+              color: 'white',
+              fontSize: '2rem',
+              fontWeight: '600',
+              border: '3px solid rgba(255, 255, 255, 0.3)'
+            }}>
+              {user?.display_name?.charAt(0)?.toUpperCase() || 'A'}
             </div>
-          </IonCardContent>
-        </IonCard>
+            <h1 style={{
+              margin: '0 0 8px 0',
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              color: 'white'
+            }}>
+              {user?.display_name || 'Administrator'}
+            </h1>
+            <p style={{
+              margin: '0',
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.9rem'
+            }}>
+              {profileData.role_title
+                ? `Administrator - ${profileData.role_title}`
+                : 'Administrator'}
+            </p>
+          </div>
+        </div>
 
-        {/* Account Settings */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardContent>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
-              Konto-Einstellungen
-            </h3>
-            
-            <IonItem button onClick={handleOpenRoleTitleModal}>
-              <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6' }} />
-              <IonLabel>
-                <h3>Funktionsbeschreibung</h3>
-                <p>{profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin, Jugendmitarbeiter'}</p>
-              </IonLabel>
-            </IonItem>
+        {/* Konto-Einstellungen - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--info">
+              <IonIcon icon={settingsOutline} />
+            </div>
+            <IonLabel>Konto-Einstellungen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {/* Funktionsbeschreibung */}
+                <div
+                  className="app-list-item app-list-item--info"
+                  onClick={handleOpenRoleTitleModal}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--info">
+                        <IonIcon icon={briefcaseOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Funktionsbeschreibung</div>
+                        <div className="app-list-item__subtitle">
+                          {profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin, Jugendmitarbeiter'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <IonItem button onClick={handleOpenEmailModal}>
-              <IonIcon icon={mail} slot="start" color="primary" />
-              <IonLabel>
-                <h3>E-Mail-Adresse ändern</h3>
-                <p>{user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen und Passwort-Reset'}</p>
-              </IonLabel>
-            </IonItem>
+                {/* E-Mail ändern */}
+                <div
+                  className="app-list-item app-list-item--info"
+                  onClick={handleOpenEmailModal}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--primary">
+                        <IonIcon icon={mailOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">E-Mail-Adresse ändern</div>
+                        <div className="app-list-item__subtitle">
+                          {user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen und Passwort-Reset'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <IonItem button onClick={handleOpenPasswordModal}>
-              <IonIcon icon={key} slot="start" color="warning" />
-              <IonLabel>
-                <h3>Passwort ändern</h3>
-                <p>Sicherheitseinstellungen</p>
-              </IonLabel>
-            </IonItem>
-          </IonCardContent>
-        </IonCard>
+                {/* Passwort ändern */}
+                <div
+                  className="app-list-item app-list-item--info"
+                  onClick={handleOpenPasswordModal}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--warning">
+                        <IonIcon icon={keyOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Passwort ändern</div>
+                        <div className="app-list-item__subtitle">Sicherheitseinstellungen</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
-        {/* App Info */}
-        <IonCard style={{ margin: '16px', borderRadius: '16px' }}>
-          <IonCardContent>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: '600' }}>
-              App-Info
-            </h3>
-            <IonItem lines="none" style={{ '--padding-start': '0', '--inner-padding-end': '0' }}>
-              <IonIcon icon={information} slot="start" color="primary" />
-              <IonLabel>
-                <h4>Konfi Quest</h4>
-                <p>Version 2.0 - Ionic 8</p>
-              </IonLabel>
-            </IonItem>
-          </IonCardContent>
-        </IonCard>
+        {/* App-Info - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--primary">
+              <IonIcon icon={informationCircleOutline} />
+            </div>
+            <IonLabel>App-Info</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <div className="app-list-item app-list-item--primary">
+                <div className="app-list-item__row">
+                  <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--primary">
+                      <IonIcon icon={shieldOutline} />
+                    </div>
+                    <div className="app-list-item__content">
+                      <div className="app-list-item__title">Konfi Quest</div>
+                      <div className="app-list-item__subtitle">Version 2.0 - Ionic 8</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
-        {/* Logout */}
-        <IonCard style={{ margin: '16px 16px 32px 16px', borderRadius: '16px' }}>
-          <IonCardContent>
-            <IonButton 
-              expand="block" 
-              color="danger" 
-              fill="outline"
-              onClick={handleLogout}
-            >
-              <IonIcon icon={logOut} slot="start" />
-              Abmelden
-            </IonButton>
-          </IonCardContent>
-        </IonCard>
+        {/* Logout - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px 16px 32px 16px' }}>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonButton
+                expand="block"
+                color="danger"
+                fill="outline"
+                onClick={handleLogout}
+              >
+                <IonIcon icon={logOutOutline} slot="start" />
+                Abmelden
+              </IonButton>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
       </IonContent>
     </IonPage>

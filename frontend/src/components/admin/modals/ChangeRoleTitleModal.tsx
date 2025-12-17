@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -14,6 +14,7 @@ import {
   IonButtons,
   IonInput,
   IonList,
+  IonListHeader,
   IonSpinner,
   IonText
 } from '@ionic/react';
@@ -74,48 +75,19 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION: Funktionsbeschreibung */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#8b5cf6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={briefcaseOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Deine Funktion
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': 'transparent', marginBottom: '8px' }}>
-                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6', marginRight: '12px' }} />
+      <IonContent className="app-gradient-background">
+        {/* Funktionsbeschreibung Sektion - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--info">
+              <IonIcon icon={briefcaseOutline} />
+            </div>
+            <IonLabel>Deine Funktion</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '0' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6' }} />
                 <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
                 <IonInput
                   value={roleTitle}
@@ -124,59 +96,32 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
                   disabled={saving}
                 />
               </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
-        {/* Info-Card */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#3b82f6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={informationCircleOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Hinweis
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'rgba(59, 130, 246, 0.08)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-          border: '1px solid rgba(59, 130, 246, 0.2)'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonText color="primary">
-              <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
-                Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergänzt sie.
-              </p>
-              <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
-              </p>
-            </IonText>
-          </IonCardContent>
-        </IonCard>
+        {/* Hinweis Sektion - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--info">
+              <IonIcon icon={informationCircleOutline} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonText color="primary">
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
+                  Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergänzt sie.
+                </p>
+                <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                  Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
+                </p>
+              </IonText>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );
