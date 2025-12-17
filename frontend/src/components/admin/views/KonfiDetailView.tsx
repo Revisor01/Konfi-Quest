@@ -97,6 +97,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [showPasswordAlert, setShowPasswordAlert] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [loadedPassword, setLoadedPassword] = useState<string | null>(null);
+  const [settings, setSettings] = useState<{ target_gottesdienst: number; target_gemeinde: number }>({
+    target_gottesdienst: 10,
+    target_gemeinde: 10
+  });
 
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
@@ -166,11 +170,24 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
   useEffect(() => {
     loadKonfiData();
+    loadSettings();
   }, [konfiId]);
 
   useEffect(() => {
     setPresentingElement(pageRef.current);
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const response = await api.get('/settings');
+      setSettings({
+        target_gottesdienst: response.data.target_gottesdienst || 0,
+        target_gemeinde: response.data.target_gemeinde || 0
+      });
+    } catch (err) {
+      console.warn('Could not load settings:', err);
+    }
+  };
 
   const loadKonfiData = async () => {
     setLoading(true);
@@ -417,14 +434,33 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </h2>
           </div>
 
+          {/* Voller Name */}
+          <div
+            style={{
+              textAlign: 'center',
+              marginTop: '32px',
+              marginBottom: '4px'
+            }}
+          >
+            <h1
+              style={{
+                margin: '0',
+                fontSize: '1.4rem',
+                fontWeight: '700',
+                color: 'white'
+              }}
+            >
+              {currentKonfi?.name || 'Konfi'}
+            </h1>
+          </div>
+
           {/* Username und Jahrgang */}
           <div
             style={{
               textAlign: 'center',
               marginBottom: '16px',
-              marginTop: '24px',
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: '0.9rem'
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.85rem'
             }}
           >
             {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - @{currentKonfi?.username}
@@ -435,9 +471,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             totalPoints={getTotalPoints()}
             gottesdienstPoints={getGottesdienstPoints()}
             gemeindePoints={getGemeindePoints()}
-            totalGoal={100}
-            gottesdienstGoal={50}
-            gemeindeGoal={50}
+            gottesdienstGoal={settings.target_gottesdienst}
+            gemeindeGoal={settings.target_gemeinde}
             size={160}
           />
 
