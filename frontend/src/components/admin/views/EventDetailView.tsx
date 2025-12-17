@@ -745,27 +745,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   return (
                     <div key={timeslot.id} style={{ marginBottom: slotIndex < eventData.timeslots!.length - 1 ? '20px' : '0' }}>
                       {/* Slot Header */}
-                      <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} style={{ position: 'relative', overflow: 'hidden' }}>
+                      <IonItem
+                        lines="none"
+                        detail={false}
+                        className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
+                      >
                         {/* Corner Badge für Verfügbar/Voll */}
                         <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
                           {isFull ? 'Voll' : 'Frei'}
                         </div>
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
-                              <IonIcon icon={time} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
-                                {slotStartFormatted} - {slotEndFormatted}
-                              </div>
-                              <div className="app-list-item__subtitle">
-                                {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
-                              </div>
-                            </div>
-                          </div>
+                        <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`} slot="start">
+                          <IonIcon icon={time} />
                         </div>
-                      </div>
+                        <IonLabel>
+                          <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                            {slotStartFormatted} - {slotEndFormatted}
+                          </div>
+                          <div className="app-list-item__subtitle">
+                            {timeslot.registered_count || 0}/{timeslot.max_participants} Teilnehmer
+                          </div>
+                        </IonLabel>
+                      </IonItem>
 
                       {/* Teilnehmer dieses Slots */}
                       {slotParticipants.length > 0 && (
@@ -778,45 +778,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             return (
                               <IonItemSliding
                                 key={participant.id}
-                                style={{ marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
+                                style={{ marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0' }}
                               >
                                 <IonItem
                                   button
                                   detail={false}
                                   lines="none"
                                   onClick={() => showAttendanceActionSheet(participant)}
-                                  style={{
-                                    '--background': 'transparent',
-                                    '--padding-start': '0',
-                                    '--padding-end': '0',
-                                    '--inner-padding-end': '0',
-                                    '--inner-border-width': '0',
-                                    '--border-width': '0'
-                                  }}
+                                  className="app-list-item app-list-item--booked"
                                 >
-                                  <div className="app-list-item app-list-item--booked" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
-                                    {/* Eselsohr-Style Status Badge */}
-                                    <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                                      {statusText}
-                                    </div>
-                                    <div className="app-list-item__row">
-                                      <div className="app-list-item__main">
-                                        <div className={`app-icon-circle ${
-                                          participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                          participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
-                                        }`}>
-                                          <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
-                                                participant.attendance_status === 'absent' ? closeCircle : people} />
-                                        </div>
-                                        <div className="app-list-item__content">
-                                          <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
-                                          <div className="app-list-item__subtitle">
-                                            {participant.jahrgang_name || ''}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+                                  {/* Eselsohr-Style Status Badge */}
+                                  <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                                    {statusText}
                                   </div>
+                                  <div className={`app-icon-circle ${
+                                    participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                    participant.attendance_status === 'absent' ? 'app-icon-circle--danger' : 'app-icon-circle--info'
+                                  }`} slot="start">
+                                    <IonIcon icon={participant.attendance_status === 'present' ? checkmarkCircle :
+                                          participant.attendance_status === 'absent' ? closeCircle : people} />
+                                  </div>
+                                  <IonLabel>
+                                    <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
+                                    <div className="app-list-item__subtitle">
+                                      {participant.jahrgang_name || ''}
+                                    </div>
+                                  </IonLabel>
                                 </IonItem>
                                 <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                                   <IonItemOption
@@ -863,32 +850,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 {eventData.series_events.map((seriesEvent) => {
                   const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
                   return (
-                    <div
+                    <IonItem
                       key={seriesEvent.id}
+                      button
+                      detail={false}
+                      lines="none"
                       className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
-                      style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
                       onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
                       {/* Eselsohr-Style Status Badge */}
                       <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
                         {isFull ? 'Voll' : 'Frei'}
                       </div>
-                      <div className="app-list-item__row">
-                        <div className="app-list-item__main">
-                          <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`}>
-                            <IonIcon icon={calendar} />
-                          </div>
-                          <div className="app-list-item__content">
-                            <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
-                              {seriesEvent.name}
-                            </div>
-                            <div className="app-list-item__subtitle">
-                              {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
-                            </div>
-                          </div>
-                        </div>
+                      <div className={`app-icon-circle ${isFull ? 'app-icon-circle--danger' : 'app-icon-circle--success'}`} slot="start">
+                        <IonIcon icon={calendar} />
                       </div>
-                    </div>
+                      <IonLabel>
+                        <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                          {seriesEvent.name}
+                        </div>
+                        <div className="app-list-item__subtitle">
+                          {formatDate(seriesEvent.event_date)} {formatTime(seriesEvent.event_date)} | {seriesEvent.registered_count || 0}/{seriesEvent.max_participants} TN
+                        </div>
+                      </IonLabel>
+                    </IonItem>
                   );
                 })}
               </IonCardContent>
@@ -988,7 +973,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           slidingRefs.current.delete(participant.id);
                         }
                       }}
-                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
+                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0' }}
                     >
                       <IonItem
                         button
@@ -1001,39 +986,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             showWaitlistActionSheet(participant);
                           }
                         }}
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--border-width': '0'
-                        }}
+                        className={`app-list-item ${listItemClass}`}
                       >
-                        <div className={`app-list-item ${listItemClass}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
-                          {/* Eselsohr-Style Status Badge */}
-                          <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                            {statusText}
-                          </div>
-                          <div className="app-list-item__row">
-                            <div className="app-list-item__main">
-                              <div className={`app-icon-circle ${iconCircleClass}`}>
-                                <IonIcon icon={statusIcon} />
-                              </div>
-                              <div className="app-list-item__content">
-                                <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
-                                  {participant.participant_name}
-                                </div>
-                                <div className="app-list-item__subtitle">
-                                  {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
-                                  {participant.timeslot_start_time && participant.timeslot_end_time && (
-                                    <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                        {/* Eselsohr-Style Status Badge */}
+                        <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                          {statusText}
                         </div>
+                        <div className={`app-icon-circle ${iconCircleClass}`} slot="start">
+                          <IonIcon icon={statusIcon} />
+                        </div>
+                        <IonLabel>
+                          <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
+                            {participant.participant_name}
+                          </div>
+                          <div className="app-list-item__subtitle">
+                            {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                            {participant.timeslot_start_time && participant.timeslot_end_time && (
+                              <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                            )}
+                          </div>
+                        </IonLabel>
                       </IonItem>
                       <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                         {participant.status === 'confirmed' && (

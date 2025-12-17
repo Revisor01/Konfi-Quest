@@ -397,104 +397,83 @@ const EventsView: React.FC<EventsViewProps> = ({
                   onClick={() => onSelectEvent(event)}
                   detail={false}
                   lines="none"
+                  className="app-list-item app-list-item--events"
                   style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto'
-                  }}
+                    '--border-left-color': statusColor,
+                    opacity: shouldGrayOut ? 0.6 : 1
+                  } as any}
                 >
+                  {/* Eselsohr-Style Corner Badge */}
                   <div
-                    className="app-list-item app-list-item--events"
-                    style={{
-                      width: '100%',
-                      borderLeftColor: statusColor,
-                      opacity: shouldGrayOut ? 0.6 : 1,
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
+                    className="app-corner-badge"
+                    style={{ backgroundColor: statusColor }}
                   >
-                    {/* Eselsohr-Style Corner Badge */}
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: statusColor }}
-                    >
-                      {statusText}
-                    </div>
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        {/* Icon */}
-                        <div
-                          className="app-icon-circle app-icon-circle--lg"
-                          style={{ backgroundColor: statusColor }}
-                        >
-                          <IonIcon icon={statusIcon} />
-                        </div>
-
-                        {/* Content */}
-                        <div className="app-list-item__content">
-                          {/* Zeile 1: Titel */}
-                          <div
-                            className="app-list-item__title"
-                            style={{
-                              color: isCancelled || shouldGrayOut ? '#999' : undefined,
-                              textDecoration: isCancelled ? 'line-through' : 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              paddingRight: '70px'
-                            }}
-                          >
-                            {event.name}
-                            {event.is_series && (
-                              <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
-                            )}
-                          </div>
-
-                          {/* Zeile 2: Buchungen + Warteliste + Punkte */}
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
-                              {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
-                            </span>
-                            {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
-                                {event.waitlist_count}/{event.max_waitlist_size || 10}
-                              </span>
-                            )}
-                            {event.points > 0 && (
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
-                                {event.points}P
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Zeile 3: Datum + Uhrzeit + Ort */}
-                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
-                              {formatDate(event.event_date)}
-                            </span>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
-                              {formatTime(event.event_date)}
-                            </span>
-                            {event.location && (
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
-                                {event.location}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    {statusText}
                   </div>
+                  <div
+                    className="app-icon-circle app-icon-circle--lg"
+                    slot="start"
+                    style={{ backgroundColor: statusColor }}
+                  >
+                    <IonIcon icon={statusIcon} />
+                  </div>
+                  <IonLabel>
+                    {/* Zeile 1: Titel */}
+                    <div
+                      className="app-list-item__title"
+                      style={{
+                        color: isCancelled || shouldGrayOut ? '#999' : undefined,
+                        textDecoration: isCancelled ? 'line-through' : 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        paddingRight: '70px'
+                      }}
+                    >
+                      {event.name}
+                      {event.is_series && (
+                        <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
+                      )}
+                    </div>
+
+                    {/* Zeile 2: Buchungen + Warteliste + Punkte */}
+                    <div className="app-list-item__meta">
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
+                        {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
+                      </span>
+                      {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                          {event.waitlist_count}/{event.max_waitlist_size || 10}
+                        </span>
+                      )}
+                      {event.points > 0 && (
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                          {event.points}P
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Zeile 3: Datum + Uhrzeit + Ort */}
+                    <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                        {formatDate(event.event_date)}
+                      </span>
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                        {formatTime(event.event_date)}
+                      </span>
+                      {event.location && (
+                        <span className="app-list-item__meta-item">
+                          <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                          {event.location}
+                        </span>
+                      )}
+                    </div>
+                  </IonLabel>
                 </IonItem>
 
                 {(onDeleteEvent || onCancelEvent) && (

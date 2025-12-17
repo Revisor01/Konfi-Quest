@@ -869,9 +869,12 @@ const EventModal: React.FC<EventModalProps> = ({
                     {categories.map((category) => {
                       const isSelected = formData.category_ids.includes(category.id);
                       return (
-                        <div
+                        <IonItem
                           key={category.id}
-                          className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                          button
+                          detail={false}
+                          lines="none"
+                          disabled={loading}
                           onClick={() => {
                             if (!loading) {
                               setFormData(prev => ({
@@ -882,17 +885,11 @@ const EventModal: React.FC<EventModalProps> = ({
                               }));
                             }
                           }}
-                          style={{
-                            cursor: loading ? 'default' : 'pointer',
-                            opacity: loading ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: '0'
-                          }}
+                          className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
                         >
-                          <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
+                          <IonLabel>{category.name}</IonLabel>
                           <IonCheckbox
+                            slot="end"
                             checked={isSelected}
                             disabled={loading}
                             style={{
@@ -901,7 +898,7 @@ const EventModal: React.FC<EventModalProps> = ({
                               '--checkmark-color': 'white'
                             }}
                           />
-                        </div>
+                        </IonItem>
                       );
                     })}
                   </div>
@@ -933,9 +930,12 @@ const EventModal: React.FC<EventModalProps> = ({
                 {jahrgaenge.map((jahrgang) => {
                   const isSelected = formData.jahrgang_ids.includes(jahrgang.id);
                   return (
-                    <div
+                    <IonItem
                       key={jahrgang.id}
-                      className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                      button
+                      detail={false}
+                      lines="none"
+                      disabled={loading}
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -946,17 +946,11 @@ const EventModal: React.FC<EventModalProps> = ({
                           }));
                         }
                       }}
-                      style={{
-                        cursor: loading ? 'default' : 'pointer',
-                        opacity: loading ? 0.6 : 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '0'
-                      }}
+                      className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
                     >
-                      <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
+                      <IonLabel>{jahrgang.name}</IonLabel>
                       <IonCheckbox
+                        slot="end"
                         checked={isSelected}
                         disabled={loading}
                         style={{
@@ -965,7 +959,7 @@ const EventModal: React.FC<EventModalProps> = ({
                           '--checkmark-color': 'white'
                         }}
                       />
-                    </div>
+                    </IonItem>
                   );
                 })}
               </div>
