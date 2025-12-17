@@ -387,38 +387,48 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                           onClick={() => handleKonfiSelection(konfi.id)}
                           detail={false}
                           lines="none"
-                          className={isSelected ? 'item-selected' : ''}
                           style={{
-                            '--background': isSelected ? 'rgba(220, 38, 38, 0.08)' : 'transparent',
-                            '--padding-start': '12px',
-                            '--inner-padding-end': '12px',
-                            '--border-radius': '12px',
-                            borderLeft: '4px solid #dc2626',
-                            border: `1px solid ${isSelected ? '#dc2626' : '#e5e5e5'}`,
-                            borderLeftWidth: '4px',
-                            borderLeftColor: '#dc2626',
-                            marginBottom: '8px',
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0',
                             '--highlight-background': 'transparent'
-                          } as any}
+                          }}
                         >
-                          <div className="app-icon-circle app-icon-circle--events" slot="start">
-                            <IonIcon icon={person} />
-                          </div>
-                          <IonLabel>
-                            <h2 style={{ fontWeight: 600, fontSize: '0.95rem', color: '#333' }}>{konfi.name}</h2>
-                            {konfi.jahrgang_name && (
-                              <p style={{ fontSize: '0.8rem', color: '#666' }}>{konfi.jahrgang_name}</p>
-                            )}
-                          </IonLabel>
-                          <IonCheckbox
-                            slot="end"
-                            checked={isSelected}
+                          <div
+                            className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
                             style={{
-                              '--checkbox-background-checked': '#dc2626',
-                              '--border-color-checked': '#dc2626',
-                              '--checkmark-color': 'white'
+                              width: '100%',
+                              marginBottom: '0',
+                              position: 'relative',
+                              borderLeftWidth: '4px',
+                              borderLeftColor: '#dc2626',
+                              borderLeftStyle: 'solid'
                             }}
-                          />
+                          >
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className="app-icon-circle app-icon-circle--events">
+                                  <IonIcon icon={person} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{konfi.name}</div>
+                                  {konfi.jahrgang_name && (
+                                    <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <IonCheckbox
+                                checked={isSelected}
+                                style={{
+                                  '--checkbox-background-checked': '#dc2626',
+                                  '--border-color-checked': '#dc2626',
+                                  '--checkmark-color': 'white'
+                                }}
+                              />
+                            </div>
+                          </div>
                         </IonItem>
                       );
                     })}
