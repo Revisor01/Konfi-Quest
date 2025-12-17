@@ -13,12 +13,14 @@ import {
   IonSelect,
   IonSelectOption,
   IonList,
+  IonListHeader,
   IonIcon,
   IonCard,
   IonCardContent,
-  IonSpinner
+  IonSpinner,
+  IonText
 } from '@ionic/react';
-import { close, checkmark, closeOutline, checkmarkOutline, personAdd, create } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, personOutline, calendarOutline, informationCircleOutline } from 'ionicons/icons';
 
 interface Jahrgang {
   id: number;
@@ -69,76 +71,31 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
         <IonToolbar>
           <IonTitle>Konfi erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton
-              onClick={handleClose}
-              disabled={loading}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
-            >
+            <IonButton onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton
-              onClick={handleSave}
-              disabled={!isValid || loading}
-            >
-              {loading ? (
-                <IonSpinner name="crescent" />
-              ) : (
-                <IonIcon icon={checkmarkOutline} />
-              )}
+            <IonButton onClick={handleSave} disabled={!isValid || loading}>
+              {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION HEADER */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#5b21b6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(91, 33, 182, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Konfi Daten
-          </h2>
-        </div>
-
-        {/* SEKTION CARD */}
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
+      <IonContent className="app-gradient-background">
+        {/* Name Sektion - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--primary">
+              <IonIcon icon={personOutline} />
+            </div>
+            <IonLabel>Konfi Daten</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '0' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonIcon icon={personOutline} slot="start" style={{ color: '#5b21b6' }} />
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={name}
@@ -149,17 +106,15 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonIcon icon={calendarOutline} slot="start" style={{ color: '#5b21b6' }} />
                 <IonLabel position="stacked">Jahrgang *</IonLabel>
                 <IonSelect
                   value={jahrgang}
                   onIonChange={(e) => setJahrgang(e.detail.value)}
                   placeholder="Jahrgang wählen"
                   disabled={loading}
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Jahrgang auswählen'
-                  }}
+                  interface="popover"
                 >
                   {jahrgaenge.map(jg => (
                     <IonSelectOption key={jg.id} value={jg.name}>
@@ -168,9 +123,28 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                   ))}
                 </IonSelect>
               </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Hinweis Sektion - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--info">
+              <IonIcon icon={informationCircleOutline} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonText color="primary">
+                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                  Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
+                </p>
+              </IonText>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );

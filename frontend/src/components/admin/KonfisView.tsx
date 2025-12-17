@@ -13,18 +13,16 @@ import {
   IonItemOptions,
   IonItemOption,
   IonItem,
-  IonInput,
-  useIonActionSheet
+  IonSearchbar,
+  IonSelect,
+  IonSelectOption
 } from '@ionic/react';
 import {
   trash,
-  search,
   swapVertical,
   star,
   calendar,
   people,
-  flash,
-  filterOutline,
   peopleOutline,
   ribbonOutline,
   searchOutline
@@ -76,7 +74,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onSelectKonfi,
   onDeleteKonfi
 }) => {
-  const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
@@ -265,7 +262,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern mit IonCard */}
+      {/* Suche & Filter - iOS26 Pattern wie Chat */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--primary">
@@ -274,94 +271,57 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
+          <IonCardContent style={{ padding: '0' }}>
             {/* Suchfeld */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              backgroundColor: 'rgba(142, 142, 147, 0.12)',
-              borderRadius: '10px',
-              padding: '10px 14px',
-              marginBottom: '12px'
-            }}>
-              <IonIcon icon={search} style={{ color: '#8e8e93', fontSize: '1.2rem' }} />
-              <IonInput
-                value={searchTerm}
-                onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                placeholder="Konfi suchen..."
-                style={{ '--padding-start': '0', '--padding-end': '0' }}
-              />
-            </div>
+            <IonSearchbar
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Konfi suchen..."
+              style={{
+                '--background': 'transparent',
+                '--box-shadow': 'none',
+                '--border-radius': '0',
+                padding: '8px 8px 0 8px'
+              }}
+            />
 
-            {/* Filter Buttons als Popovers */}
-            <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Trennlinie */}
+            <div style={{ height: '1px', backgroundColor: 'rgba(0, 0, 0, 0.08)', margin: '0 16px' }} />
+
+            {/* Filter Selects */}
+            <div style={{ display: 'flex' }}>
               {/* Jahrgang Filter */}
-              <button
-                onClick={() => {
-                  presentActionSheet({
-                    header: 'Jahrgang wählen',
-                    buttons: [
-                      { text: 'Alle Jahrgänge', handler: () => setSelectedJahrgang('alle') },
-                      ...jahrgaenge.map(jg => ({
-                        text: jg.name,
-                        handler: () => setSelectedJahrgang(jg.name)
-                      })),
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  padding: '10px 14px',
-                  backgroundColor: selectedJahrgang !== 'alle' ? 'rgba(91, 33, 182, 0.12)' : 'rgba(142, 142, 147, 0.12)',
-                  border: selectedJahrgang !== 'alle' ? '1px solid rgba(91, 33, 182, 0.25)' : '1px solid transparent',
-                  borderRadius: '10px',
-                  color: selectedJahrgang !== 'alle' ? '#5b21b6' : '#666',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                <IonIcon icon={filterOutline} style={{ fontSize: '1.1rem' }} />
-                {selectedJahrgang === 'alle' ? 'Jahrgang' : selectedJahrgang}
-              </button>
+              <IonItem lines="none" style={{ '--background': 'transparent', flex: 1 }}>
+                <IonSelect
+                  value={selectedJahrgang}
+                  onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
+                  interface="popover"
+                  placeholder="Jahrgang"
+                  style={{ width: '100%' }}
+                >
+                  <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                  {jahrgaenge.map(jg => (
+                    <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
+
+              {/* Vertikale Trennlinie */}
+              <div style={{ width: '1px', backgroundColor: 'rgba(0, 0, 0, 0.08)', margin: '8px 0' }} />
 
               {/* Sortierung */}
-              <button
-                onClick={() => {
-                  presentActionSheet({
-                    header: 'Sortierung wählen',
-                    buttons: [
-                      { text: 'Nach Name (A-Z)', handler: () => setSortBy('name') },
-                      { text: 'Nach Punkten', handler: () => setSortBy('points') },
-                      { text: 'Abbrechen', role: 'cancel' }
-                    ]
-                  });
-                }}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  padding: '10px 14px',
-                  backgroundColor: sortBy !== 'name' ? 'rgba(91, 33, 182, 0.12)' : 'rgba(142, 142, 147, 0.12)',
-                  border: sortBy !== 'name' ? '1px solid rgba(91, 33, 182, 0.25)' : '1px solid transparent',
-                  borderRadius: '10px',
-                  color: sortBy !== 'name' ? '#5b21b6' : '#666',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
-              >
-                <IonIcon icon={swapVertical} style={{ fontSize: '1.1rem' }} />
-                {sortBy === 'name' ? 'Name' : 'Punkte'}
-              </button>
+              <IonItem lines="none" style={{ '--background': 'transparent', flex: 1 }}>
+                <IonIcon icon={swapVertical} slot="start" style={{ color: '#5b21b6', marginRight: '8px' }} />
+                <IonSelect
+                  value={sortBy}
+                  onIonChange={(e) => setSortBy(e.detail.value)}
+                  interface="popover"
+                  style={{ width: '100%' }}
+                >
+                  <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
+                  <IonSelectOption value="points">Punkte</IonSelectOption>
+                </IonSelect>
+              </IonItem>
             </div>
           </IonCardContent>
         </IonCard>
@@ -505,56 +465,59 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             </div>
                           </div>
 
-                          {/* 3 Progress Bars */}
-                          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            {/* Gottesdienst */}
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Gottesdienst</span>
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGottesdienst}</span>
-                              </div>
-                              <div style={{
-                                height: '4px',
-                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                borderRadius: '2px',
-                                overflow: 'hidden'
-                              }}>
+                          {/* 3 Progress Bars - Godi + Gemeinde nebeneinander, Gesamt darunter */}
+                          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Gottesdienst + Gemeinde nebeneinander */}
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              {/* Gottesdienst */}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
+                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGottesdienst}</span>
+                                </div>
                                 <div style={{
-                                  width: `${Math.min(100, percentGodi)}%`,
-                                  height: '100%',
-                                  backgroundColor: '#3b82f6',
+                                  height: '4px',
+                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
                                   borderRadius: '2px',
-                                  transition: 'width 0.3s ease'
-                                }} />
+                                  overflow: 'hidden'
+                                }}>
+                                  <div style={{
+                                    width: `${Math.min(100, percentGodi)}%`,
+                                    height: '100%',
+                                    backgroundColor: '#3b82f6',
+                                    borderRadius: '2px',
+                                    transition: 'width 0.3s ease'
+                                  }} />
+                                </div>
+                              </div>
+
+                              {/* Gemeinde */}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#22c55e', fontWeight: '600' }}>Gemeinde</span>
+                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGemeinde}</span>
+                                </div>
+                                <div style={{
+                                  height: '4px',
+                                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                                  borderRadius: '2px',
+                                  overflow: 'hidden'
+                                }}>
+                                  <div style={{
+                                    width: `${Math.min(100, percentGem)}%`,
+                                    height: '100%',
+                                    backgroundColor: '#22c55e',
+                                    borderRadius: '2px',
+                                    transition: 'width 0.3s ease'
+                                  }} />
+                                </div>
                               </div>
                             </div>
 
-                            {/* Gemeinde */}
+                            {/* Gesamt - Lila */}
                             <div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span style={{ fontSize: '0.65rem', color: '#22c55e', fontWeight: '600' }}>Gemeinde</span>
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGemeinde}</span>
-                              </div>
-                              <div style={{
-                                height: '4px',
-                                backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                                borderRadius: '2px',
-                                overflow: 'hidden'
-                              }}>
-                                <div style={{
-                                  width: `${Math.min(100, percentGem)}%`,
-                                  height: '100%',
-                                  backgroundColor: '#22c55e',
-                                  borderRadius: '2px',
-                                  transition: 'width 0.3s ease'
-                                }} />
-                              </div>
-                            </div>
-
-                            {/* Gesamt */}
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span style={{ fontSize: '0.7rem', color: statusColor, fontWeight: '700' }}>Gesamt</span>
+                                <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
                                 <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
                                   {totalPoints}/{targetTotal}
                                   {percentTotal > 100 && <span style={{ color: '#10b981', marginLeft: '4px' }}>({percentTotal}%)</span>}
@@ -569,7 +532,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 <div style={{
                                   width: `${Math.min(100, percentTotal)}%`,
                                   height: '100%',
-                                  backgroundColor: statusColor,
+                                  backgroundColor: '#5b21b6',
                                   borderRadius: '3px',
                                   transition: 'width 0.3s ease'
                                 }} />
