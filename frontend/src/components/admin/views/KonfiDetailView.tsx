@@ -204,14 +204,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       const konfiData = konfiRes.data;
       const allActivities = konfiData.activities || [];
 
+      // bonusPoints vom Backend ist ein Array, nicht eine Zahl!
+      const bonusEntriesArray = Array.isArray(konfiData.bonusPoints) ? konfiData.bonusPoints : [];
+      setBonusEntries(bonusEntriesArray);
+
       setCurrentKonfi({
         ...konfiData,
-        bonus: konfiData.totalBonus || konfiData.bonus || 0,
-        bonusPoints: konfiData.totalBonus || konfiData.bonus || 0,
-        totalBonus: konfiData.totalBonus || konfiData.bonus || 0
+        // Nicht die bonus-Werte aus dem Backend übernehmen - wir berechnen aus bonusEntries
       });
-
-      setBonusEntries(konfiData.bonusPoints || []);
 
       try {
         const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
@@ -263,10 +263,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const getBonusPoints = () => {
-    if (!currentKonfi) return 0;
-    const bonusFromEntries = bonusEntries.reduce((sum, bonus) => sum + (bonus.points || 0), 0);
-    const bonusFromKonfi = currentKonfi.bonus || currentKonfi.bonusPoints || currentKonfi.totalBonus || 0;
-    return Math.max(bonusFromEntries, bonusFromKonfi);
+    // Nur aus den bonusEntries berechnen - das ist die einzige zuverlässige Quelle
+    return bonusEntries.reduce((sum, bonus) => sum + (bonus.points || 0), 0);
   };
 
   const formatDate = (dateString: string) => {

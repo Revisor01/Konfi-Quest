@@ -13,12 +13,11 @@ interface ActivityRingsProps {
 }
 
 /**
- * Apple Health-Style Activity Rings mit Overachiever-Support
+ * Apple Health-Style Activity Rings mit Mehrfachdrehungs-Support
  *
  * - Alle Ringe werden immer angezeigt (motiviert mehr zu sammeln)
- * - Wenn ein Ziel 0 ist, zeigt der Ring die Punkte ohne Limit (dreht weiter)
+ * - Bei >100% dreht der Ring weiter und wird dunkler/ändert Farbe
  * - Der Gesamtwert berechnet sich automatisch aus godi + gemeinde
- * - Bei Übererfüllung (>100%) wird ein zweiter äußerer Ring gezeigt
  * - Eigenständige Komponente - leicht austauschbar
  */
 const ActivityRings: React.FC<ActivityRingsProps> = ({
@@ -35,55 +34,56 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const effectiveGemeindeGoal = gemeindeGoal > 0 ? gemeindeGoal : 10;
   const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
 
-  // Prozent berechnen (kann über 100% gehen für Overachiever)
+  // Prozent berechnen (kann über 100% gehen)
   const totalPercent = (totalPoints / effectiveTotalGoal) * 100;
   const gottesdienstPercent = (gottesdienstPoints / effectiveGottesdienstGoal) * 100;
   const gemeindePercent = (gemeindePoints / effectiveGemeindeGoal) * 100;
-
-  // Overachiever Check
-  const isOverachiever = totalPercent > 100;
-  const overachievePercent = isOverachiever ? Math.min(totalPercent - 100, 100) : 0;
 
   // Ring-Parameter
   const center = size / 2;
   const strokeWidth = size * 0.075;
   const gap = strokeWidth * 0.5;
 
-  // Alle 3 Ringe werden immer angezeigt
-  const activeRings = 3;
-
   // Radien für die Ringe (von außen nach innen)
   const outerRadius = center - strokeWidth / 2 - 4;
-  const overachieveRadius = outerRadius + strokeWidth + gap * 0.5; // Overachiever außen
+  const ringRadii = [
+    outerRadius,
+    outerRadius - strokeWidth - gap,
+    outerRadius - 2 * (strokeWidth + gap)
+  ];
 
-  // Feste Radien für alle 3 Ringe
-  const ringRadii: number[] = [];
-  let currentRadius = outerRadius;
-  for (let i = 0; i < activeRings; i++) {
-    ringRadii.push(currentRadius);
-    currentRadius -= strokeWidth + gap;
-  }
-
-  // Farben - Außenring jetzt gold/orange statt lila für besseren Kontrast
+  // Farben
   const colors = {
-    total: '#f59e0b',        // Gold/Orange - Gesamtpunkte (besser sichtbar)
-    overachieve: '#10b981',  // Smaragd-Grün - Overachiever
+    total: '#f59e0b',        // Gold/Orange - Gesamtpunkte
+    totalDark: '#b45309',    // Dunkleres Gold für 2. Runde
     gottesdienst: '#3b82f6', // Blau - Gottesdienst
+    gottesdienstDark: '#1d4ed8', // Dunkleres Blau für 2. Runde
     gemeinde: '#22c55e',     // Grün - Gemeinde
+    gemeindeDark: '#15803d', // Dunkleres Grün für 2. Runde
     background: 'rgba(255, 255, 255, 0.12)'
   };
 
-  // Ring Component mit Overachiever-Support
+  // Ring Component mit Mehrfachdrehungs-Support
   const Ring: React.FC<{
     radius: number;
     percent: number;
     color: string;
-    isOverachieve?: boolean;
-  }> = ({ radius, percent, color, isOverachieve = false }) => {
+    colorDark: string;
+  }> = ({ radius, percent, color, colorDark }) => {
     const circumference = 2 * Math.PI * radius;
-    // Bei normalem Ring maximal 100%, bei Overachieve den tatsächlichen Wert
-    const displayPercent = isOverachieve ? percent : Math.min(percent, 100);
-    const offset = circumference - (circumference * displayPercent) / 100;
+
+    // Berechne wie viele volle Runden und den Rest
+    const fullRounds = Math.floor(percent / 100);
+    const remainder = percent % 100;
+
+    // Erste Runde (immer anzeigen, max 100%)
+    const firstRoundPercent = Math.min(percent, 100);
+    const firstOffset = circumference - (circumference * firstRoundPercent) / 100;
+
+    // Zweite Runde (wenn >100%)
+    const hasSecondRound = percent > 100;
+    const secondRoundPercent = hasSecondRound ? remainder : 0;
+    const secondOffset = circumference - (circumference * secondRoundPercent) / 100;
 
     return (
       <>
@@ -97,8 +97,9 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
-        {/* Fortschritts-Ring */}
-        {displayPercent > 0 && (
+
+        {/* Erste Runde - normale Farbe */}
+        {firstRoundPercent > 0 && (
           <circle
             cx={center}
             cy={center}
@@ -108,7 +109,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={offset}
+            strokeDashoffset={firstOffset}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
@@ -117,9 +118,54 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             }}
           />
         )}
+
+        {/* Zweite Runde - dunklere Farbe, leicht nach innen versetzt */}
+        {hasSecondRound && secondRoundPercent > 0 && (
+          <circle
+            cx={center}
+            cy={center}
+            r={radius - strokeWidth * 0.15}
+            fill="none"
+            stroke={colorDark}
+            strokeWidth={strokeWidth * 0.7}
+            strokeLinecap="round"
+            strokeDasharray={circumference * 0.97}
+            strokeDashoffset={(circumference * 0.97) - ((circumference * 0.97) * secondRoundPercent) / 100}
+            style={{
+              transform: 'rotate(-90deg)',
+              transformOrigin: 'center',
+              transition: 'stroke-dashoffset 0.8s ease-out',
+              filter: `drop-shadow(0 0 4px ${colorDark}70)`
+            }}
+          />
+        )}
+
+        {/* Dritte Runde andeuten wenn >200% */}
+        {percent > 200 && (
+          <circle
+            cx={center}
+            cy={center}
+            r={radius - strokeWidth * 0.3}
+            fill="none"
+            stroke={colorDark}
+            strokeWidth={strokeWidth * 0.4}
+            strokeLinecap="round"
+            strokeDasharray={circumference * 0.94}
+            strokeDashoffset={(circumference * 0.94) - ((circumference * 0.94) * (percent - 200)) / 100}
+            style={{
+              transform: 'rotate(-90deg)',
+              transformOrigin: 'center',
+              transition: 'stroke-dashoffset 0.8s ease-out',
+              opacity: 0.8
+            }}
+          />
+        )}
       </>
     );
   };
+
+  // Prüfen ob irgendein Ring über 100% ist
+  const hasOverachievement = totalPercent > 100 || gottesdienstPercent > 100 || gemeindePercent > 100;
 
   return (
     <div style={{
@@ -129,29 +175,25 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
       gap: '12px'
     }}>
       {/* SVG Rings */}
-      <div style={{ position: 'relative', width: size + (isOverachiever ? 30 : 0), height: size + (isOverachiever ? 30 : 0) }}>
+      <div style={{
+        position: 'relative',
+        width: size,
+        height: size,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         <svg
-          width={size + (isOverachiever ? 30 : 0)}
-          height={size + (isOverachiever ? 30 : 0)}
-          style={{
-            transform: isOverachiever ? 'translate(15px, 15px)' : undefined
-          }}
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
         >
-          {/* Overachiever Ring (ganz außen) */}
-          {isOverachiever && (
-            <Ring
-              radius={overachieveRadius}
-              percent={overachievePercent}
-              color={colors.overachieve}
-              isOverachieve={true}
-            />
-          )}
-
           {/* Außenring - Gesamt */}
           <Ring
             radius={ringRadii[0]}
             percent={totalPercent}
             color={colors.total}
+            colorDark={colors.totalDark}
           />
 
           {/* Mittlerer Ring - Gottesdienst */}
@@ -159,6 +201,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             radius={ringRadii[1]}
             percent={gottesdienstPercent}
             color={colors.gottesdienst}
+            colorDark={colors.gottesdienstDark}
           />
 
           {/* Innenring - Gemeinde */}
@@ -166,6 +209,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             radius={ringRadii[2]}
             percent={gemeindePercent}
             color={colors.gemeinde}
+            colorDark={colors.gemeindeDark}
           />
         </svg>
 
@@ -174,7 +218,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           position: 'absolute',
           top: '50%',
           left: '50%',
-          transform: `translate(-50%, -50%) ${isOverachiever ? 'translate(15px, 15px)' : ''}`,
+          transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           color: 'white'
         }}>
@@ -190,7 +234,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             opacity: 0.8,
             marginTop: '2px'
           }}>
-            {isOverachiever ? 'Punkte' : `von ${effectiveTotalGoal}`}
+            {hasOverachievement ? 'Punkte' : `von ${effectiveTotalGoal}`}
           </div>
         </div>
       </div>
@@ -207,6 +251,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gesamt"
           value={totalPoints}
           goal={effectiveTotalGoal}
+          percent={totalPercent}
           hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
         />
         <LegendItem
@@ -214,6 +259,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gottesdienst"
           value={gottesdienstPoints}
           goal={effectiveGottesdienstGoal}
+          percent={gottesdienstPercent}
           hasGoal={gottesdienstGoal > 0}
         />
         <LegendItem
@@ -221,17 +267,9 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gemeinde"
           value={gemeindePoints}
           goal={effectiveGemeindeGoal}
+          percent={gemeindePercent}
           hasGoal={gemeindeGoal > 0}
         />
-        {isOverachiever && (
-          <LegendItem
-            color={colors.overachieve}
-            label="Bonus"
-            value={totalPoints - effectiveTotalGoal}
-            goal={0}
-            isOverachieve={true}
-          />
-        )}
       </div>
     </div>
   );
@@ -243,9 +281,9 @@ const LegendItem: React.FC<{
   label: string;
   value: number;
   goal: number;
+  percent: number;
   hasGoal?: boolean;
-  isOverachieve?: boolean;
-}> = ({ color, label, value, goal, hasGoal = true, isOverachieve }) => (
+}> = ({ color, label, value, goal, percent, hasGoal = true }) => (
   <div style={{
     display: 'flex',
     alignItems: 'center',
@@ -262,7 +300,13 @@ const LegendItem: React.FC<{
       color: 'rgba(255, 255, 255, 0.9)',
       fontSize: '0.7rem'
     }}>
-      {label}: <strong>{value}</strong>{!isOverachieve && hasGoal && `/${goal}`}
+      {label}: <strong>{value}</strong>
+      {hasGoal && `/${goal}`}
+      {percent > 100 && (
+        <span style={{ color: '#10b981', marginLeft: '4px' }}>
+          ({Math.round(percent)}%)
+        </span>
+      )}
     </span>
   </div>
 );
