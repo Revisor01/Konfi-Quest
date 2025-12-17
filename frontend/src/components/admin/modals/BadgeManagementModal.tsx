@@ -392,7 +392,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonItem>
                 <div slot="content" style={{ padding: '0' }}>
                   <IonList style={{ background: 'transparent' }} lines="none">
-                    {activities.map(activity => (
+                    {activities.map(activity => {
+                      const isSelected = extraCriteria.activity_id === activity.id;
+                      return (
                       <IonItem
                         key={activity.id}
                         lines="none"
@@ -400,44 +402,52 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         detail={false}
                         onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
                         style={{
-                          '--min-height': '56px',
-                          '--padding-start': '16px',
-                          '--background': '#fbfbfb',
-                          '--border-radius': '12px',
-                          margin: '6px 0',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                          border: '1px solid #e0e0e0',
-                          borderRadius: '12px'
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--min-height': 'auto',
+                          margin: '6px 0'
                         }}
                       >
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: '12px',
-                          flexShrink: 0
-                        }}>
-                          <IonIcon
-                            icon={activity.type === 'gottesdienst' ? home : people}
-                            style={{ fontSize: '0.9rem', color: 'white' }}
+                        <div
+                          className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
+                          style={{
+                            width: '100%',
+                            marginBottom: '0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                            <div
+                              className="app-icon-circle"
+                              style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                            >
+                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="app-list-item__title">{activity.name}</div>
+                              <div className="app-list-item__subtitle">
+                                {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                              </div>
+                            </div>
+                          </div>
+                          <IonCheckbox
+                            checked={isSelected}
+                            style={{
+                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--checkmark-color': 'white'
+                            }}
                           />
                         </div>
-                        <IonLabel>
-                          <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
-                          <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                            {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                          </p>
-                        </IonLabel>
-                        <IonCheckbox
-                          slot="end"
-                          checked={extraCriteria.activity_id === activity.id}
-                        />
                       </IonItem>
-                    ))}
+                      );
+                    })}
                   </IonList>
                 </div>
               </IonAccordion>
@@ -465,7 +475,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonItem>
                 <div slot="content" style={{ padding: '0' }}>
                   <IonList style={{ background: 'transparent' }} lines="none">
-                    {categories.map(category => (
+                    {categories.map(category => {
+                      const isSelected = extraCriteria.required_category === category.name;
+                      return (
                       <IonItem
                         key={category.id}
                         lines="none"
@@ -473,25 +485,43 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         detail={false}
                         onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
                         style={{
-                          '--min-height': '56px',
-                          '--padding-start': '16px',
-                          '--background': '#fbfbfb',
-                          '--border-radius': '12px',
-                          margin: '6px 0',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                          border: '1px solid #e0e0e0',
-                          borderRadius: '12px'
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--min-height': 'auto',
+                          margin: '6px 0'
                         }}
                       >
-                        <IonLabel>
-                          <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{category.name}</h3>
-                        </IonLabel>
-                        <IonCheckbox
-                          slot="end"
-                          checked={extraCriteria.required_category === category.name}
-                        />
+                        <div
+                          className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
+                          style={{
+                            width: '100%',
+                            marginBottom: '0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                            <div className="app-icon-circle app-icon-circle--warning">
+                              <IonIcon icon={flag} />
+                            </div>
+                            <div className="app-list-item__title">{category.name}</div>
+                          </div>
+                          <IonCheckbox
+                            checked={isSelected}
+                            style={{
+                              '--checkbox-background-checked': '#ff9500',
+                              '--border-color-checked': '#ff9500',
+                              '--checkmark-color': 'white'
+                            }}
+                          />
+                        </div>
                       </IonItem>
-                    ))}
+                      );
+                    })}
                   </IonList>
                 </div>
               </IonAccordion>
@@ -583,42 +613,49 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
                           }}
                           style={{
-                            '--min-height': '56px',
-                            '--padding-start': '16px',
-                            '--background': '#fbfbfb',
-                            '--border-radius': '12px',
-                            margin: '6px 0',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '12px'
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0',
+                            '--min-height': 'auto',
+                            margin: '6px 0'
                           }}
                         >
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            marginRight: '12px',
-                            flexShrink: 0
-                          }}>
-                            <IonIcon
-                              icon={activity.type === 'gottesdienst' ? home : people}
-                              style={{ fontSize: '0.9rem', color: 'white' }}
+                          <div
+                            className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
+                            style={{
+                              width: '100%',
+                              marginBottom: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                              <div
+                                className="app-icon-circle"
+                                style={{ backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                              >
+                                <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="app-list-item__title">{activity.name}</div>
+                                <div className="app-list-item__subtitle">
+                                  {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                                </div>
+                              </div>
+                            </div>
+                            <IonCheckbox
+                              checked={isSelected}
+                              style={{
+                                '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                                '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                                '--checkmark-color': 'white'
+                              }}
                             />
                           </div>
-                          <IonLabel>
-                            <h3 style={{ fontWeight: '500', fontSize: '0.95rem' }}>{activity.name}</h3>
-                            <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                              {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                            </p>
-                          </IonLabel>
-                          <IonCheckbox
-                            slot="end"
-                            checked={isSelected}
-                          />
                         </IonItem>
                       );
                     })}
@@ -888,27 +925,47 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           }}
                           disabled={loading}
                           style={{
-                            '--min-height': '72px',
-                            '--padding-start': '16px',
-                            '--background': '#fbfbfb',
-                            '--border-radius': '12px',
-                            margin: '6px 0',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '12px'
+                            '--background': 'transparent',
+                            '--padding-start': '0',
+                            '--padding-end': '0',
+                            '--inner-padding-end': '0',
+                            '--inner-border-width': '0',
+                            '--min-height': 'auto',
+                            margin: '6px 0'
                           }}
                         >
-                          <IonLabel>
-                            <h3 style={{ fontWeight: '500', fontSize: '0.95rem', margin: '0 0 4px 0' }}>{labelWithoutEmoji}</h3>
-                            <p style={{ fontSize: '0.8rem', color: '#666', margin: '0', whiteSpace: 'normal' }}>
-                              {type.help}
-                            </p>
-                          </IonLabel>
-                          <IonCheckbox
-                            slot="end"
-                            checked={isSelected}
-                            disabled={loading}
-                          />
+                          <div
+                            className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
+                            style={{
+                              width: '100%',
+                              marginBottom: '0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              opacity: loading ? 0.6 : 1
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                              <div className="app-icon-circle app-icon-circle--warning">
+                                <IonIcon icon={flash} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="app-list-item__title">{labelWithoutEmoji}</div>
+                                <div className="app-list-item__subtitle" style={{ whiteSpace: 'normal' }}>
+                                  {type.help}
+                                </div>
+                              </div>
+                            </div>
+                            <IonCheckbox
+                              checked={isSelected}
+                              disabled={loading}
+                              style={{
+                                '--checkbox-background-checked': '#ff9500',
+                                '--border-color-checked': '#ff9500',
+                                '--checkmark-color': 'white'
+                              }}
+                            />
+                          </div>
                         </IonItem>
                       );
                     })}

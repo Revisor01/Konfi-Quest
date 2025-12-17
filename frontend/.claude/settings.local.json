@@ -40,7 +40,9 @@
       "WebFetch(domain:fatbobman.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(gem install:*)",
-      "Bash(gem update:*)"
+      "Bash(gem update:*)",
+      "mcp__plugin_claude-mem_claude-mem-search__search",
+      "mcp__plugin_claude-mem_claude-mem-search__get_observation"
     ],
     "deny": [],
     "ask": []
