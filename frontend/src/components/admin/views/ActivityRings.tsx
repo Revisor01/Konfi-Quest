@@ -223,18 +223,11 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           color: 'white'
         }}>
           <div style={{
-            fontSize: size * 0.18,
+            fontSize: size * 0.22,
             fontWeight: '800',
             lineHeight: 1
           }}>
             {totalPoints}
-          </div>
-          <div style={{
-            fontSize: size * 0.075,
-            opacity: 0.8,
-            marginTop: '2px'
-          }}>
-            {hasOverachievement ? 'Punkte' : `von ${effectiveTotalGoal}`}
           </div>
         </div>
       </div>
