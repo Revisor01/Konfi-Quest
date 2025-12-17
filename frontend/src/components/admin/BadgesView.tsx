@@ -12,6 +12,7 @@ import {
   IonSegment,
   IonSegmentButton,
   IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption
@@ -22,6 +23,7 @@ import {
   create,
   search,
   ribbon,
+  ribbonOutline,
   trophy,
   star,
   checkmark,
@@ -75,7 +77,8 @@ import {
   stopwatch,
   calendar,
   today,
-  time
+  time,
+  filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -330,89 +333,102 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '14px 16px' }}>
-          <IonItem
-            lines="none"
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '12px',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              margin: '0'
-            }}
-          >
-            <IonIcon
-              icon={search}
-              slot="start"
+      {/* Suche & Filter - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--warning">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            {/* Suchfeld */}
+            <IonItem
+              lines="none"
               style={{
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
+                '--background': '#f8f9fa',
+                '--border-radius': '12px',
+                '--padding-start': '12px',
+                '--padding-end': '12px',
+                marginBottom: '12px'
               }}
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Badge suchen..."
-              style={{
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
-        </IonCardContent>
-      </IonCard>
+            >
+              <IonIcon
+                icon={search}
+                slot="start"
+                style={{
+                  color: '#8e8e93',
+                  marginRight: '8px',
+                  fontSize: '1rem'
+                }}
+              />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Badge suchen..."
+                style={{
+                  '--color': '#000',
+                  '--placeholder-color': '#8e8e93'
+                }}
+              />
+            </IonItem>
 
-      {/* Tab Filter */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonSegment
-            value={selectedFilter}
-            onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '12px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="aktiv">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktiv</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="versteckt">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Versteckt</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="inaktiv">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Inaktiv</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
+            {/* Tab Filter */}
+            <IonSegment
+              value={selectedFilter}
+              onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+              style={{
+                '--background': '#f8f9fa',
+                borderRadius: '12px',
+                padding: '4px'
+              }}
+            >
+              <IonSegmentButton value="alle">
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="aktiv">
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Aktiv</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="versteckt">
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Versteckt</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="inaktiv">
+                <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Inaktiv</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
       {/* Badges Liste - Gruppiert nach Typ */}
       {filteredAndSortedBadges.length === 0 ? (
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '8px 0' }}>
-            <div style={{ textAlign: 'center', padding: '32px' }}>
-              <IonIcon
-                icon={ribbon}
-                style={{
-                  fontSize: '3rem',
-                  color: '#ff9500',
-                  marginBottom: '16px',
-                  display: 'block',
-                  margin: '0 auto 16px auto'
-                }}
-              />
-              <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-              <p style={{ color: '#999', margin: '0' }}>Erstelle deinen ersten Badge!</p>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--warning">
+              <IonIcon icon={ribbonOutline} />
             </div>
-          </IonCardContent>
-        </IonCard>
+            <IonLabel>Badges (0)</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={ribbonOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#ff9500',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>Erstelle deinen ersten Badge!</p>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       ) : (
         (() => {
           // Gruppiere Badges nach criteria_type
@@ -429,207 +445,132 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           );
 
           return sortedGroups.map(([criteriaType, typeBadges]) => (
-            <IonCard key={criteriaType} style={{ margin: '16px' }}>
-              {/* Gruppen-Header */}
-              <div style={{
-                padding: '12px 16px 8px 16px',
-                borderBottom: '1px solid #e0e0e0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <IonIcon icon={flash} style={{ fontSize: '1rem', color: '#ff9500' }} />
-                <h3 style={{
-                  margin: 0,
-                  fontSize: '0.9rem',
-                  fontWeight: '700',
-                  color: '#333',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  {getCriteriaTypeText(criteriaType)}
-                </h3>
-                <span style={{
-                  marginLeft: 'auto',
-                  fontSize: '0.75rem',
-                  color: '#888',
-                  fontWeight: '500'
-                }}>
-                  {typeBadges.length} Badge{typeBadges.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <IonCardContent style={{ padding: '8px 0' }}>
-                <IonList lines="none" style={{ background: 'transparent' }}>
-                  {typeBadges.map((badge) => {
-                    const badgeColor = badge.color || '#667eea';
-                    const isInactive = !badge.is_active;
+            <IonList key={criteriaType} inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--warning">
+                  <IonIcon icon={flash} />
+                </div>
+                <IonLabel>{getCriteriaTypeText(criteriaType)} ({typeBadges.length})</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '16px' }}>
+                  <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                    {typeBadges.map((badge, index) => {
+                      const badgeColor = badge.color || '#667eea';
+                      const isInactive = !badge.is_active;
 
-                    return (
-                      <IonItemSliding key={badge.id}>
-                        <IonItem
-                          button
-                          onClick={() => onSelectBadge(badge)}
-                          detail={false}
-                          style={{
-                            '--min-height': '72px',
-                            '--padding-start': '16px',
-                            '--padding-top': '0px',
-                            '--padding-bottom': '0px',
-                            '--background': '#fbfbfb',
-                            '--border-radius': '12px',
-                            margin: '4px 8px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                            border: '1px solid #e0e0e0',
-                            borderRadius: '12px',
-                            opacity: isInactive ? 0.6 : 1
-                          }}
-                        >
-                          <IonLabel>
-                            {/* Header mit Icon und Status Badge */}
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '12px',
-                              marginBottom: '4px'
-                            }}>
-                              {/* Badge Icon */}
-                              <div style={{
-                                width: '36px',
-                                height: '36px',
-                                backgroundColor: isInactive ? '#999' : badgeColor,
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: isInactive ? '0 2px 8px rgba(0,0,0,0.1)' : `0 2px 8px ${badgeColor}40`,
-                                flexShrink: 0
-                              }}>
-                                <IonIcon
-                                  icon={getIconFromString(badge.icon)}
-                                  style={{
-                                    fontSize: '1.1rem',
-                                    color: 'white'
-                                  }}
-                                />
-                              </div>
+                      // Status-Farbe und Text
+                      const statusColor = (() => {
+                        if (!badge.is_active) return '#dc3545';
+                        if (badge.is_hidden) return '#fd7e14';
+                        return '#34c759';
+                      })();
 
-                              {/* Badge Name */}
-                              <h2 style={{
-                                fontWeight: '600',
-                                fontSize: '1rem',
-                                margin: '0',
-                                color: isInactive ? '#999' : '#333',
-                                lineHeight: '1.3',
-                                flex: 1,
-                                minWidth: 0,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {badge.name}
-                              </h2>
+                      const statusText = (() => {
+                        if (!badge.is_active) return 'Inaktiv';
+                        if (badge.is_hidden) return 'Geheim';
+                        return 'Aktiv';
+                      })();
 
-                              {/* Status Badge */}
-                              <span style={{
-                                fontSize: '0.7rem',
-                                color: (() => {
-                                  if (!badge.is_active) return '#dc3545';
-                                  if (badge.is_hidden) return '#fd7e14';
-                                  return '#34c759';
-                                })(),
-                                fontWeight: '600',
-                                backgroundColor: (() => {
-                                  if (!badge.is_active) return 'rgba(220, 53, 69, 0.15)';
-                                  if (badge.is_hidden) return 'rgba(253, 126, 20, 0.15)';
-                                  return 'rgba(52, 199, 89, 0.15)';
-                                })(),
-                                padding: '3px 6px',
-                                borderRadius: '6px',
-                                border: (() => {
-                                  if (!badge.is_active) return '1px solid rgba(220, 53, 69, 0.3)';
-                                  if (badge.is_hidden) return '1px solid rgba(253, 126, 20, 0.3)';
-                                  return '1px solid rgba(52, 199, 89, 0.3)';
-                                })(),
-                                whiteSpace: 'nowrap',
-                                flexShrink: 0
-                              }}>
-                                {(() => {
-                                  if (!badge.is_active) return 'INAKTIV';
-                                  if (badge.is_hidden) return 'GEHEIM';
-                                  return 'AKTIV';
-                                })()}
-                              </span>
-                            </div>
-
-                            {/* Beschreibung */}
-                            {badge.description && (
-                              <div style={{
-                                fontSize: '0.85rem',
-                                color: isInactive ? '#999' : '#666',
-                                marginBottom: '2px',
-                                marginLeft: '48px',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
-                              }}>
-                                {badge.description}
-                              </div>
-                            )}
-
-                            {/* Verliehen-Count */}
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '0.8rem',
-                              color: isInactive ? '#999' : '#888',
-                              marginLeft: '48px'
-                            }}>
-                              <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: isInactive ? '#999' : '#ff9500' }} />
-                              <span>{badge.earned_count || 0}x verliehen</span>
-                            </div>
-                          </IonLabel>
-                        </IonItem>
-
-                        <IonItemOptions side="end" style={{
-                          gap: '4px',
-                          '--ion-item-background': 'transparent'
-                        }}>
-                          <IonItemOption
-                            onClick={() => onDeleteBadge(badge)}
+                      return (
+                        <IonItemSliding key={badge.id} style={{ marginBottom: index < typeBadges.length - 1 ? '8px' : '0' }}>
+                          <IonItem
+                            button
+                            onClick={() => onSelectBadge(badge)}
+                            detail={false}
+                            lines="none"
                             style={{
                               '--background': 'transparent',
-                              '--background-activated': 'transparent',
-                              '--background-focused': 'transparent',
-                              '--background-hover': 'transparent',
-                              '--color': 'transparent',
-                              '--ripple-color': 'transparent',
-                              padding: '0 2px',
-                              paddingRight: '20px',
-                              minWidth: '48px',
-                              maxWidth: '68px'
+                              '--padding-start': '0',
+                              '--padding-end': '0',
+                              '--inner-padding-end': '0',
+                              '--inner-border-width': '0',
+                              '--border-style': 'none',
+                              '--min-height': 'auto'
                             }}
                           >
-                            <div style={{
-                              width: '44px',
-                              height: '44px',
-                              backgroundColor: '#dc3545',
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                            }}>
-                              <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                            <div
+                              className="app-list-item app-list-item--warning"
+                              style={{
+                                width: '100%',
+                                borderLeftColor: badgeColor,
+                                opacity: isInactive ? 0.6 : 1,
+                                position: 'relative',
+                                overflow: 'hidden'
+                              }}
+                            >
+                              {/* Eselsohr-Style Corner Badge */}
+                              <div
+                                className="app-corner-badge"
+                                style={{ backgroundColor: statusColor }}
+                              >
+                                {statusText}
+                              </div>
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  {/* Badge Icon - mit Badge-eigener Farbe */}
+                                  <div
+                                    className="app-icon-circle app-icon-circle--lg"
+                                    style={{ backgroundColor: isInactive ? '#999' : badgeColor }}
+                                  >
+                                    <IonIcon icon={getIconFromString(badge.icon)} />
+                                  </div>
+
+                                  {/* Content */}
+                                  <div className="app-list-item__content">
+                                    {/* Zeile 1: Titel */}
+                                    <div
+                                      className="app-list-item__title"
+                                      style={{
+                                        color: isInactive ? '#999' : undefined,
+                                        paddingRight: '70px'
+                                      }}
+                                    >
+                                      {badge.name}
+                                    </div>
+
+                                    {/* Zeile 2: Beschreibung */}
+                                    {badge.description && (
+                                      <div className="app-list-item__subtitle" style={{
+                                        color: isInactive ? '#999' : '#666',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                      }}>
+                                        {badge.description}
+                                      </div>
+                                    )}
+
+                                    {/* Zeile 3: Verliehen-Count */}
+                                    <div className="app-list-item__meta">
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={trophy} style={{ color: isInactive ? '#999' : '#ff9500' }} />
+                                        {badge.earned_count || 0}x verliehen
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </IonItemOption>
-                        </IonItemOptions>
-                      </IonItemSliding>
-                    );
-                  })}
-                </IonList>
-              </IonCardContent>
-            </IonCard>
+                          </IonItem>
+
+                          <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
+                            <IonItemOption
+                              onClick={() => onDeleteBadge(badge)}
+                              style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                            >
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                <IonIcon icon={trash} />
+                              </div>
+                            </IonItemOption>
+                          </IonItemOptions>
+                        </IonItemSliding>
+                      );
+                    })}
+                  </IonList>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
           ));
         })()
       )}

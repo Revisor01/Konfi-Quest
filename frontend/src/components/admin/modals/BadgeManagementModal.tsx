@@ -26,6 +26,7 @@ import {
   IonCheckbox,
   IonSpinner,
   IonList,
+  IonListHeader,
   IonAccordion,
   IonAccordionGroup
 } from '@ionic/react';
@@ -686,44 +687,16 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px', '--background': '#f8f9fa' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Badge-Informationen */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#ff9800',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={ribbon} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Badge-Informationen
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--warning">
+              <IonIcon icon={ribbon} />
+            </div>
+            <IonLabel>Badge-Informationen</IonLabel>
+          </IonListHeader>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
@@ -852,44 +825,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+        </IonList>
 
         {/* SEKTION: Badge-Kriterien */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#ff9800',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={settings} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Badge-Kriterien
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--warning">
+              <IonIcon icon={settings} />
+            </div>
+            <IonLabel>Badge-Kriterien</IonLabel>
+          </IonListHeader>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonAccordionGroup>
               <IonAccordion value="criteria-types">
@@ -1018,44 +964,17 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+        </IonList>
 
         {/* SEKTION: Badge-Status */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#ff9800',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(255, 152, 0, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={ribbon} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Badge-Status
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--warning">
+              <IonIcon icon={ribbon} />
+            </div>
+            <IonLabel>Badge-Status</IonLabel>
+          </IonListHeader>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
@@ -1086,6 +1005,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+        </IonList>
 
       </IonContent>
     </IonPage>
