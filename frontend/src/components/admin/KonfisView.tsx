@@ -392,22 +392,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             overflow: 'hidden'
                           }}
                         >
-                          {/* Corner Badge für Prozent wenn >= 100% */}
-                          {isComplete && (
-                            <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: '#10b981' }}
-                            >
-                              {percentTotal}%
-                            </div>
-                          )}
 
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               {/* Avatar */}
                               <div
                                 className="app-icon-circle app-icon-circle--lg"
-                                style={{ backgroundColor: statusColor }}
+                                style={{ backgroundColor: statusColor, color: 'white', fontWeight: '600' }}
                               >
                                 {getInitials(konfi.name)}
                               </div>
@@ -415,15 +406,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                               {/* Content */}
                               <div className="app-list-item__content">
                                 {/* Zeile 1: Name */}
-                                <div
-                                  className="app-list-item__title"
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    paddingRight: isComplete ? '70px' : '0'
-                                  }}
-                                >
+                                <div className="app-list-item__title">
                                   {konfi.name}
                                 </div>
 
