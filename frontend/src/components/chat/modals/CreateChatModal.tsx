@@ -25,7 +25,7 @@ import {
   IonCardTitle,
   IonChip
 } from '@ionic/react';
-import { close, checkmark, person, people, chevronForward } from 'ionicons/icons';
+import { close, checkmark, person, people, chevronForward, chatbubblesOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -220,15 +220,17 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
             </IonCardHeader>
             <IonCardContent>
               <IonItem>
-                <IonLabel position="stacked">Art des Chats</IonLabel>
+                <IonIcon
+                  icon={chatbubblesOutline}
+                  slot="start"
+                  style={{ color: '#8e8e93', fontSize: '1rem' }}
+                />
                 <IonSelect
                   value={chatType}
                   onIonChange={(e) => setChatType(e.detail.value)}
                   placeholder="Chat-Art wählen"
-                  interface="action-sheet"
-                  interfaceOptions={{
-                    header: 'Chat-Art auswählen'
-                  }}
+                  interface="popover"
+                  style={{ width: '100%' }}
                 >
                   <IonSelectOption value="direct">Direktnachricht</IonSelectOption>
                   <IonSelectOption value="group">Gruppenchat</IonSelectOption>

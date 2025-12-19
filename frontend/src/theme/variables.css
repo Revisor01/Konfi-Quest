@@ -41,6 +41,10 @@ ion-card.app-card {
   margin: 0;
 }
 
+ion-card.app-card ion-card-content {
+  padding: 8px 12px;
+}
+
 /* ============================================
    WIEDERVERWENDBARE APP KOMPONENTEN
    ============================================ */
