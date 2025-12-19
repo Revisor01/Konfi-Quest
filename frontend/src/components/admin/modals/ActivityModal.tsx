@@ -83,8 +83,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
     }
   };
 
-  // Dunkelgrün für Aktivitäten
-  const activityColor = '#059669';
+  // Farben für Aktivitäten
+  const activityColor = '#059669'; // Dunkelgrün für Section-Icons
+  const gottesdienstColor = '#3b82f6'; // Blau
+  const gemeindeColor = '#059669'; // Dunkelgrün
 
   return (
     <IonPage>
@@ -114,29 +116,27 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             <IonLabel>Datum & Kommentar</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
-                  />
-                </IonItem>
+            <IonCardContent>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Datum *</IonLabel>
+                <IonInput
+                  type="date"
+                  value={selectedDate}
+                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                  disabled={loading}
+                />
+              </IonItem>
 
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Kommentar (optional)</IonLabel>
-                  <IonTextarea
-                    value={comment}
-                    onIonInput={(e) => setComment(e.detail.value!)}
-                    placeholder="Zusätzliche Informationen..."
-                    rows={3}
-                    disabled={loading}
-                  />
-                </IonItem>
-              </IonList>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Kommentar (optional)</IonLabel>
+                <IonTextarea
+                  value={comment}
+                  onIonInput={(e) => setComment(e.detail.value!)}
+                  placeholder="Zusätzliche Informationen..."
+                  rows={3}
+                  disabled={loading}
+                />
+              </IonItem>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -150,66 +150,63 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
             <IonLabel>Aktivität auswählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
-                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Aktivität *</IonLabel>
-                </IonItem>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {activities
-                    .sort((a, b) => {
-                      if (a.type !== b.type) {
-                        return a.type.localeCompare(b.type);
-                      }
-                      return a.name.localeCompare(b.name);
-                    })
-                    .map(activity => {
-                      const isSelected = selectedActivity === activity.id;
-                      const typeColor = activity.type === 'gottesdienst' ? '#3b82f6' : '#22c55e';
+            <IonCardContent>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {activities
+                  .sort((a, b) => {
+                    if (a.type !== b.type) {
+                      return a.type.localeCompare(b.type);
+                    }
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map(activity => {
+                    const isSelected = selectedActivity === activity.id;
+                    // Gottesdienst blau, Gemeinde dunkelgrün
+                    const typeColor = activity.type === 'gottesdienst' ? gottesdienstColor : gemeindeColor;
 
-                      return (
-                        <div
-                          key={activity.id}
-                          className={`app-list-item ${isSelected ? 'app-list-item--selected' : ''}`}
-                          onClick={() => !loading && setSelectedActivity(activity.id)}
-                          style={{
-                            cursor: loading ? 'default' : 'pointer',
-                            opacity: loading ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            marginBottom: '0',
-                            borderLeftColor: activityColor
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                            <div
-                              className="app-icon-circle"
-                              style={{ backgroundColor: typeColor }}
-                            >
-                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">{activity.name}</div>
-                              <div className="app-list-item__subtitle">
-                                {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} - {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                              </div>
+                    return (
+                      <div
+                        key={activity.id}
+                        className="app-list-item"
+                        onClick={() => !loading && setSelectedActivity(activity.id)}
+                        style={{
+                          cursor: loading ? 'default' : 'pointer',
+                          opacity: loading ? 0.6 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '0',
+                          borderLeftColor: typeColor,
+                          backgroundColor: isSelected ? `${typeColor}10` : undefined
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                          <div
+                            className="app-icon-circle"
+                            style={{ backgroundColor: typeColor }}
+                          >
+                            <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="app-list-item__title">{activity.name}</div>
+                            <div className="app-list-item__subtitle">
+                              {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} - {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
                             </div>
                           </div>
-                          <IonCheckbox
-                            checked={isSelected}
-                            disabled={loading}
-                            style={{
-                              '--checkbox-background-checked': activityColor,
-                              '--border-color-checked': activityColor,
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
-                      );
-                    })}
-                </div>
-              </IonList>
+                        <IonCheckbox
+                          checked={isSelected}
+                          disabled={loading}
+                          style={{
+                            '--checkbox-background-checked': typeColor,
+                            '--border-color-checked': typeColor,
+                            '--checkmark-color': 'white'
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>

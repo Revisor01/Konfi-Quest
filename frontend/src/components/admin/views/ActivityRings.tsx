@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ActivityRingsProps {
   // Aktuelle Werte
@@ -13,11 +13,12 @@ interface ActivityRingsProps {
 }
 
 /**
- * Apple Health-Style Activity Rings mit Mehrfachdrehungs-Support
+ * Apple Health-Style Activity Rings mit Mehrfachdrehungs-Support und Animation
  *
  * - Alle Ringe werden immer angezeigt (motiviert mehr zu sammeln)
  * - Bei >100% dreht der Ring weiter und wird dunkler/ändert Farbe
  * - Der Gesamtwert berechnet sich automatisch aus godi + gemeinde
+ * - Animation beim Erscheinen der Ringe
  * - Eigenständige Komponente - leicht austauschbar
  */
 const ActivityRings: React.FC<ActivityRingsProps> = ({
@@ -28,6 +29,25 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindeGoal,
   size = 160
 }) => {
+  // Animation State - startet bei 0 und animiert zum Zielwert
+  const [animatedTotal, setAnimatedTotal] = useState(0);
+  const [animatedGottesdienst, setAnimatedGottesdienst] = useState(0);
+  const [animatedGemeinde, setAnimatedGemeinde] = useState(0);
+  const [isAnimated, setIsAnimated] = useState(false);
+
+  // Animation beim Mount
+  useEffect(() => {
+    // Kleine Verzögerung für smootheren Start
+    const timer = setTimeout(() => {
+      setAnimatedTotal(totalPoints);
+      setAnimatedGottesdienst(gottesdienstPoints);
+      setAnimatedGemeinde(gemeindePoints);
+      setIsAnimated(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [totalPoints, gottesdienstPoints, gemeindePoints]);
+
   // Alle Ringe werden immer angezeigt - motiviert zum Sammeln!
   // Wenn Ziel 0 ist, verwenden wir einen Default-Wert für die Visualisierung
   const effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10;
@@ -35,9 +55,9 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
 
   // Prozent berechnen (kann über 100% gehen)
-  const totalPercent = (totalPoints / effectiveTotalGoal) * 100;
-  const gottesdienstPercent = (gottesdienstPoints / effectiveGottesdienstGoal) * 100;
-  const gemeindePercent = (gemeindePoints / effectiveGemeindeGoal) * 100;
+  const totalPercent = isAnimated ? (animatedTotal / effectiveTotalGoal) * 100 : 0;
+  const gottesdienstPercent = isAnimated ? (animatedGottesdienst / effectiveGottesdienstGoal) * 100 : 0;
+  const gemeindePercent = isAnimated ? (animatedGemeinde / effectiveGemeindeGoal) * 100 : 0;
 
   // Ring-Parameter
   const center = size / 2;
@@ -52,24 +72,25 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     outerRadius - 2 * (strokeWidth + gap)
   ];
 
-  // Farben
+  // Farben - Gemeinde jetzt dunkelgrün (#059669)
   const colors = {
     total: '#f59e0b',        // Gold/Orange - Gesamtpunkte
     totalDark: '#b45309',    // Dunkleres Gold für 2. Runde
     gottesdienst: '#3b82f6', // Blau - Gottesdienst
     gottesdienstDark: '#1d4ed8', // Dunkleres Blau für 2. Runde
-    gemeinde: '#22c55e',     // Grün - Gemeinde
-    gemeindeDark: '#15803d', // Dunkleres Grün für 2. Runde
+    gemeinde: '#059669',     // Dunkelgrün - Gemeinde (global geändert)
+    gemeindeDark: '#047857', // Noch dunkleres Grün für 2. Runde
     background: 'rgba(255, 255, 255, 0.12)'
   };
 
-  // Ring Component mit Mehrfachdrehungs-Support
+  // Ring Component mit Mehrfachdrehungs-Support und Animation
   const Ring: React.FC<{
     radius: number;
     percent: number;
     color: string;
     colorDark: string;
-  }> = ({ radius, percent, color, colorDark }) => {
+    delay: number;
+  }> = ({ radius, percent, color, colorDark, delay }) => {
     const circumference = 2 * Math.PI * radius;
 
     // Berechne wie viele volle Runden und den Rest
@@ -98,26 +119,24 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           strokeLinecap="round"
         />
 
-        {/* Erste Runde - normale Farbe */}
-        {firstRoundPercent > 0 && (
-          <circle
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={firstOffset}
-            style={{
-              transform: 'rotate(-90deg)',
-              transformOrigin: 'center',
-              transition: 'stroke-dashoffset 0.8s ease-out',
-              filter: `drop-shadow(0 0 6px ${color}50)`
-            }}
-          />
-        )}
+        {/* Erste Runde - normale Farbe mit Animation */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={isAnimated ? firstOffset : circumference}
+          style={{
+            transform: 'rotate(-90deg)',
+            transformOrigin: 'center',
+            transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
+            filter: `drop-shadow(0 0 6px ${color}50)`
+          }}
+        />
 
         {/* Zweite Runde - dunklere Farbe, leicht nach innen versetzt */}
         {hasSecondRound && secondRoundPercent > 0 && (
@@ -130,11 +149,11 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             strokeWidth={strokeWidth * 0.7}
             strokeLinecap="round"
             strokeDasharray={circumference * 0.97}
-            strokeDashoffset={(circumference * 0.97) - ((circumference * 0.97) * secondRoundPercent) / 100}
+            strokeDashoffset={isAnimated ? (circumference * 0.97) - ((circumference * 0.97) * secondRoundPercent) / 100 : circumference * 0.97}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              transition: 'stroke-dashoffset 0.8s ease-out',
+              transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 200}ms`,
               filter: `drop-shadow(0 0 4px ${colorDark}70)`
             }}
           />
@@ -151,11 +170,11 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             strokeWidth={strokeWidth * 0.4}
             strokeLinecap="round"
             strokeDasharray={circumference * 0.94}
-            strokeDashoffset={(circumference * 0.94) - ((circumference * 0.94) * (percent - 200)) / 100}
+            strokeDashoffset={isAnimated ? (circumference * 0.94) - ((circumference * 0.94) * (percent - 200)) / 100 : circumference * 0.94}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              transition: 'stroke-dashoffset 0.8s ease-out',
+              transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 400}ms`,
               opacity: 0.8
             }}
           />
@@ -163,9 +182,6 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
       </>
     );
   };
-
-  // Prüfen ob irgendein Ring über 100% ist
-  const hasOverachievement = totalPercent > 100 || gottesdienstPercent > 100 || gemeindePercent > 100;
 
   return (
     <div style={{
@@ -188,39 +204,44 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           height={size}
           viewBox={`0 0 ${size} ${size}`}
         >
-          {/* Außenring - Gesamt */}
+          {/* Außenring - Gesamt (startet zuerst) */}
           <Ring
             radius={ringRadii[0]}
             percent={totalPercent}
             color={colors.total}
             colorDark={colors.totalDark}
+            delay={0}
           />
 
-          {/* Mittlerer Ring - Gottesdienst */}
+          {/* Mittlerer Ring - Gottesdienst (startet mit Verzögerung) */}
           <Ring
             radius={ringRadii[1]}
             percent={gottesdienstPercent}
             color={colors.gottesdienst}
             colorDark={colors.gottesdienstDark}
+            delay={150}
           />
 
-          {/* Innenring - Gemeinde */}
+          {/* Innenring - Gemeinde (startet mit mehr Verzögerung) */}
           <Ring
             radius={ringRadii[2]}
             percent={gemeindePercent}
             color={colors.gemeinde}
             colorDark={colors.gemeindeDark}
+            delay={300}
           />
         </svg>
 
-        {/* Zentrale Anzeige */}
+        {/* Zentrale Anzeige mit Fade-In */}
         <div style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           textAlign: 'center',
-          color: 'white'
+          color: 'white',
+          opacity: isAnimated ? 1 : 0,
+          transition: 'opacity 0.5s ease-out 0.3s'
         }}>
           <div style={{
             fontSize: size * 0.22,
@@ -232,19 +253,21 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
         </div>
       </div>
 
-      {/* Legende */}
+      {/* Legende mit Fade-In */}
       <div style={{
         display: 'flex',
         gap: '12px',
         justifyContent: 'center',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        opacity: isAnimated ? 1 : 0,
+        transition: 'opacity 0.5s ease-out 0.5s'
       }}>
         <LegendItem
           color={colors.total}
           label="Gesamt"
           value={totalPoints}
           goal={effectiveTotalGoal}
-          percent={totalPercent}
+          percent={(totalPoints / effectiveTotalGoal) * 100}
           hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
         />
         <LegendItem
@@ -252,7 +275,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gottesdienst"
           value={gottesdienstPoints}
           goal={effectiveGottesdienstGoal}
-          percent={gottesdienstPercent}
+          percent={(gottesdienstPoints / effectiveGottesdienstGoal) * 100}
           hasGoal={gottesdienstGoal > 0}
         />
         <LegendItem
@@ -260,7 +283,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gemeinde"
           value={gemeindePoints}
           goal={effectiveGemeindeGoal}
-          percent={gemeindePercent}
+          percent={(gemeindePoints / effectiveGemeindeGoal) * 100}
           hasGoal={gemeindeGoal > 0}
         />
       </div>

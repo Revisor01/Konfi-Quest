@@ -93,29 +93,27 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             <IonLabel>Datum & Begründung</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
-                  />
-                </IonItem>
+            <IonCardContent>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Datum *</IonLabel>
+                <IonInput
+                  type="date"
+                  value={selectedDate}
+                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                  disabled={loading}
+                />
+              </IonItem>
 
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Begründung</IonLabel>
-                  <IonTextarea
-                    value={reason}
-                    onIonInput={(e) => setReason(e.detail.value!)}
-                    placeholder="Warum werden diese Bonuspunkte vergeben?"
-                    rows={3}
-                    disabled={loading}
-                  />
-                </IonItem>
-              </IonList>
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Begründung</IonLabel>
+                <IonTextarea
+                  value={reason}
+                  onIonInput={(e) => setReason(e.detail.value!)}
+                  placeholder="Warum werden diese Bonuspunkte vergeben?"
+                  rows={3}
+                  disabled={loading}
+                />
+              </IonItem>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -129,116 +127,116 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
             <IonLabel>Bonuspunkt Detail</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Bezeichnung *</IonLabel>
+            <IonCardContent>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Bezeichnung *</IonLabel>
+                <IonInput
+                  value={name}
+                  onIonInput={(e) => setName(e.detail.value!)}
+                  placeholder="z.B. Hilfe beim Aufräumen"
+                  clearInput={true}
+                  disabled={loading}
+                />
+              </IonItem>
+
+              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || points <= 1}
+                    onClick={() => setPoints(Math.max(1, points - 1))}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
                   <IonInput
-                    value={name}
-                    onIonInput={(e) => setName(e.detail.value!)}
-                    placeholder="z.B. Hilfe beim Aufräumen"
-                    clearInput={true}
-                    disabled={loading}
-                  />
-                </IonItem>
-
-                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || points <= 1}
-                      onClick={() => setPoints(Math.max(1, points - 1))}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <IonInput
-                      type="text"
-                      inputMode="numeric"
-                      value={points.toString()}
-                      onIonInput={(e) => {
-                        const value = e.detail.value!;
-                        if (value === '') {
-                          setPoints(1);
-                        } else {
-                          const num = parseInt(value);
-                          if (!isNaN(num) && num >= 1 && num <= 50) {
-                            setPoints(num);
-                          }
+                    type="text"
+                    inputMode="numeric"
+                    value={points.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setPoints(1);
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 1 && num <= 50) {
+                          setPoints(num);
                         }
-                      }}
-                      placeholder="1"
-                      disabled={loading}
-                      style={{ textAlign: 'center', flex: 1 }}
-                    />
-                    <IonButton
-                      fill="outline"
-                      size="small"
-                      disabled={loading || points >= 50}
-                      onClick={() => setPoints(Math.min(50, points + 1))}
-                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
-                </IonItem>
-
-                <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
-                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
-                </IonItem>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div
-                    className={`app-list-item ${type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
-                    onClick={() => !loading && setType('gemeinde')}
-                    style={{
-                      cursor: loading ? 'default' : 'pointer',
-                      opacity: loading ? 0.6 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '0',
-                      borderLeftColor: '#f97316'
+                      }
                     }}
+                    placeholder="1"
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || points >= 50}
+                    onClick={() => setPoints(Math.min(50, points + 1))}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
                   >
-                    <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-                    <IonCheckbox
-                      checked={type === 'gemeinde'}
-                      disabled={loading}
-                      style={{
-                        '--checkbox-background-checked': '#f97316',
-                        '--border-color-checked': '#f97316',
-                        '--checkmark-color': 'white'
-                      }}
-                    />
-                  </div>
-                  <div
-                    className={`app-list-item ${type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
-                    onClick={() => !loading && setType('gottesdienst')}
-                    style={{
-                      cursor: loading ? 'default' : 'pointer',
-                      opacity: loading ? 0.6 : 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '0',
-                      borderLeftColor: '#f97316'
-                    }}
-                  >
-                    <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-                    <IonCheckbox
-                      checked={type === 'gottesdienst'}
-                      disabled={loading}
-                      style={{
-                        '--checkbox-background-checked': '#f97316',
-                        '--border-color-checked': '#f97316',
-                        '--checkmark-color': 'white'
-                      }}
-                    />
-                  </div>
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
                 </div>
-              </IonList>
+              </IonItem>
+
+              <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div
+                  className="app-list-item"
+                  onClick={() => !loading && setType('gemeinde')}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0',
+                    borderLeftColor: '#f97316',
+                    backgroundColor: type === 'gemeinde' ? 'rgba(249, 115, 22, 0.1)' : undefined
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+                  <IonCheckbox
+                    checked={type === 'gemeinde'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#f97316',
+                      '--border-color-checked': '#f97316',
+                      '--checkmark-color': 'white'
+                    }}
+                  />
+                </div>
+                <div
+                  className="app-list-item"
+                  onClick={() => !loading && setType('gottesdienst')}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0',
+                    borderLeftColor: '#f97316',
+                    backgroundColor: type === 'gottesdienst' ? 'rgba(249, 115, 22, 0.1)' : undefined
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+                  <IonCheckbox
+                    checked={type === 'gottesdienst'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#f97316',
+                      '--border-color-checked': '#f97316',
+                      '--checkmark-color': 'white'
+                    }}
+                  />
+                </div>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
