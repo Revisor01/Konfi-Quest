@@ -207,6 +207,7 @@ ion-item .app-list-item {
 .app-section-icon--danger { background-color: #dc3545; }
 .app-section-icon--info { background-color: #007aff; }
 .app-section-icon--purple { background-color: #8b5cf6; }
+.app-section-icon--primary { background-color: #5b21b6; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;

@@ -20,7 +20,7 @@ import {
   IonSpinner,
   IonText
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, personOutline, calendarOutline, informationCircleOutline } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, personOutline, informationCircleOutline } from 'ionicons/icons';
 
 interface Jahrgang {
   id: number;
@@ -93,36 +93,36 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             <IonLabel>Konfi Daten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0' }}>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={personOutline} slot="start" style={{ color: '#5b21b6' }} />
-                <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
-                  value={name}
-                  onIonInput={(e) => setName(e.detail.value!)}
-                  placeholder="Vor- und Nachname"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Name *</IonLabel>
+                  <IonInput
+                    value={name}
+                    onIonInput={(e) => setName(e.detail.value!)}
+                    placeholder="Vor- und Nachname"
+                    disabled={loading}
+                    clearInput={true}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={calendarOutline} slot="start" style={{ color: '#5b21b6' }} />
-                <IonLabel position="stacked">Jahrgang *</IonLabel>
-                <IonSelect
-                  value={jahrgang}
-                  onIonChange={(e) => setJahrgang(e.detail.value)}
-                  placeholder="Jahrgang wählen"
-                  disabled={loading}
-                  interface="popover"
-                >
-                  {jahrgaenge.map(jg => (
-                    <IonSelectOption key={jg.id} value={jg.name}>
-                      {jg.name}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Jahrgang *</IonLabel>
+                  <IonSelect
+                    value={jahrgang}
+                    onIonChange={(e) => setJahrgang(e.detail.value)}
+                    placeholder="Jahrgang wählen"
+                    disabled={loading}
+                    interface="popover"
+                  >
+                    {jahrgaenge.map(jg => (
+                      <IonSelectOption key={jg.id} value={jg.name}>
+                        {jg.name}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
