@@ -30,22 +30,26 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
 }) => {
   // Animation startet nach Mount
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
-    // Kurze Verzögerung, damit der initiale Zustand gerendert wird
-    const timer = setTimeout(() => {
-      setShouldAnimate(true);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
+    // Zwei Frames warten damit der Browser den initialen Zustand rendert
+    let frameId: number;
+    const startAnimation = () => {
+      frameId = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setShouldAnimate(true);
+        });
+      });
+    };
+    startAnimation();
+    return () => cancelAnimationFrame(frameId);
+  }, [animationKey]);
 
-  // Wenn sich die Werte ändern, Animation zurücksetzen
+  // Wenn sich die Werte aendern, Animation zuruecksetzen
   useEffect(() => {
     setShouldAnimate(false);
-    const timer = setTimeout(() => {
-      setShouldAnimate(true);
-    }, 50);
-    return () => clearTimeout(timer);
+    setAnimationKey(prev => prev + 1);
   }, [totalPoints, gottesdienstPoints, gemeindePoints]);
 
   // Alle Ringe werden immer angezeigt

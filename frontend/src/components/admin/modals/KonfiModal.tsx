@@ -93,34 +93,36 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             <IonLabel>Konfi Daten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
-                  value={name}
-                  onIonInput={(e) => setName(e.detail.value!)}
-                  placeholder="Vor- und Nachname"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Name *</IonLabel>
+                  <IonInput
+                    value={name}
+                    onIonInput={(e) => setName(e.detail.value!)}
+                    placeholder="Vor- und Nachname"
+                    disabled={loading}
+                    clearInput={true}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Jahrgang *</IonLabel>
-                <IonSelect
-                  value={jahrgang}
-                  onIonChange={(e) => setJahrgang(e.detail.value)}
-                  placeholder="Jahrgang wählen"
-                  disabled={loading}
-                  interface="popover"
-                >
-                  {jahrgaenge.map(jg => (
-                    <IonSelectOption key={jg.id} value={jg.name}>
-                      {jg.name}
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Jahrgang *</IonLabel>
+                  <IonSelect
+                    value={jahrgang}
+                    onIonChange={(e) => setJahrgang(e.detail.value)}
+                    placeholder="Jahrgang wählen"
+                    disabled={loading}
+                    interface="popover"
+                  >
+                    {jahrgaenge.map(jg => (
+                      <IonSelectOption key={jg.id} value={jg.name}>
+                        {jg.name}
+                      </IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -134,7 +136,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
           <IonCard className="app-card" style={{ background: 'rgba(91, 33, 182, 0.08)', border: '1px solid rgba(91, 33, 182, 0.2)' }}>
-            <IonCardContent>
+            <IonCardContent style={{ padding: '16px' }}>
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5', color: '#5b21b6' }}>
                 Benutzername und Passwort werden automatisch generiert. Du kannst das Passwort später in der Detailansicht einsehen oder zurücksetzen.
               </p>
