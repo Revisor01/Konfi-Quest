@@ -1,40 +1,32 @@
 import React, { useState, useRef } from 'react';
 import {
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
   IonGrid,
   IonRow,
   IonCol,
-  IonButton,
   IonIcon,
   IonItem,
   IonLabel,
-  IonBadge,
   IonList,
-  IonChip,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
   IonInput,
   IonSegment,
-  IonSegmentButton,
-  useIonActionSheet
+  IonSegmentButton
 } from '@ionic/react';
 import {
-  add,
   trash,
-  create,
-  search,
   calendar,
-  star,
   home,
   people,
   flash,
-  pricetag
+  pricetag,
+  filterOutline,
+  flashOutline
 } from 'ionicons/icons';
-import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 
 interface Activity {
@@ -57,16 +49,15 @@ interface ActivitiesViewProps {
   canDelete: boolean;
 }
 
-const ActivitiesView: React.FC<ActivitiesViewProps> = ({ 
-  activities, 
-  onUpdate, 
+const ActivitiesView: React.FC<ActivitiesViewProps> = ({
+  activities,
+  onUpdate,
   onAddActivityClick,
   onSelectActivity,
   onDeleteActivity,
   canEdit,
   canDelete
 }) => {
-  const [presentActionSheet] = useIonActionSheet();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
@@ -263,75 +254,62 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld und Filter in einer Karte */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '12px',
-        background: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e0e0e0'
-      }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          {/* Search Bar */}
-          <IonItem
-            lines="none"
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '10px',
-              marginBottom: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              '--min-height': '44px'
-            }}
-          >
-            <IonIcon
-              icon={search}
-              slot="start"
-              style={{
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }}
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Aktivität suchen..."
-              style={{
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
+      {/* Suche & Filter - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--activities">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              {/* Suchfeld */}
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Aktivität suchen</IonLabel>
+                <IonInput
+                  value={searchTerm}
+                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                  placeholder="Name eingeben..."
+                  clearInput={true}
+                />
+              </IonItem>
+              {/* Typ Filter */}
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Typ</IonLabel>
+                <IonSegment
+                  value={selectedType}
+                  onIonChange={(e) => setSelectedType(e.detail.value as string)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonSegmentButton value="alle">
+                    <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="gemeinde">
+                    <IonLabel style={{ fontSize: '0.8rem' }}>Gemeinde</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="gottesdienst">
+                    <IonLabel style={{ fontSize: '0.8rem' }}>GoDi</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
-          {/* Filter Tabs */}
-          <IonSegment
-            value={selectedType}
-            onIonChange={(e) => setSelectedType(e.detail.value as string)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '10px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="gemeinde">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Gemeinde</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="gottesdienst">
-              <IonLabel style={{ fontSize: '0.8rem' }}>GoDi</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
-
-      {/* Aktivitäten Liste */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '8px 0' }}>
-          <IonList lines="none" style={{ background: 'transparent' }}>
+      {/* Aktivitäten Liste - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--activities">
+            <IonIcon icon={flashOutline} />
+          </div>
+          <IonLabel>Aktivitäten ({filteredAndSortedActivities.length})</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
             {filteredAndSortedActivities.map((activity) => (
               <IonItemSliding
                 key={activity.id}
@@ -511,9 +489,10 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                 <p style={{ color: '#999', margin: '0' }}>Noch keine Aktivitäten angelegt</p>
               </div>
             )}
-          </IonList>
-        </IonCardContent>
-      </IonCard>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
     </>
   );
 };

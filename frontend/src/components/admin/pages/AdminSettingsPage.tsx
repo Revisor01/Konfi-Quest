@@ -11,6 +11,7 @@ import {
   IonLabel,
   IonIcon,
   IonList,
+  IonListHeader,
   IonButton,
   useIonAlert
 } from '@ionic/react';
@@ -77,70 +78,29 @@ const AdminSettingsPage: React.FC = () => {
 
         {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
-          <div style={{ margin: '16px 16px 8px 16px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#007aff',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={shield} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--primary">
+                <IonIcon icon={shield} />
               </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Verwaltung
-              </h2>
-            </div>
-            <IonCard style={{
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0',
-              margin: '0'
-            }}>
+              <IonLabel>Verwaltung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
                   <IonItem
                     button
                     routerLink="/admin/users"
                     lines="none"
+                    className="app-list-item app-list-item--users"
                     style={{
-                      '--min-height': '56px',
-                      '--padding-start': '16px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '6px 0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
+                      '--background': 'transparent',
+                      '--padding-start': '0',
+                      '--inner-padding-end': '0'
                     }}
                   >
-                    <div slot="start" style={{
-                      width: '40px',
-                      height: '40px',
-                      backgroundColor: '#007aff',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '12px'
-                    }}>
-                      <IonIcon icon={people} style={{ fontSize: '1.2rem', color: 'white' }} />
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users" slot="start" style={{ marginRight: '12px' }}>
+                      <IonIcon icon={people} />
                     </div>
                     <IonLabel>
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer:innen</h2>
@@ -150,152 +110,71 @@ const AdminSettingsPage: React.FC = () => {
                 </IonList>
               </IonCardContent>
             </IonCard>
-          </div>
+          </IonList>
         )}
 
         {/* System-Administration - NUR für super_admin */}
         {user?.role_name === 'super_admin' && (
-          <div style={{ margin: '16px 16px 8px 16px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginBottom: '12px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#2dd36f',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={business} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--success">
+                <IonIcon icon={business} />
               </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                System-Administration
-              </h2>
-            </div>
-            <IonCard style={{
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0',
-              margin: '0'
-            }}>
+              <IonLabel>System-Administration</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
                   <IonItem
                     button
                     routerLink="/admin/organizations"
                     lines="none"
+                    className="app-list-item app-list-item--success"
                     style={{
-                      '--min-height': '56px',
-                      '--padding-start': '16px',
-                      '--background': '#fbfbfb',
-                      '--border-radius': '12px',
-                      margin: '6px 0',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px'
+                      '--background': 'transparent',
+                      '--padding-start': '0',
+                      '--inner-padding-end': '0'
                     }}
                   >
-                      <div slot="start" style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: '#2dd36f',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: '12px'
-                      }}>
-                        <IonIcon icon={business} style={{ fontSize: '1.2rem', color: 'white' }} />
-                      </div>
-                      <IonLabel>
-                        <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Organisationen</h2>
-                        <p style={{ fontSize: '0.8rem', color: '#666' }}>Gemeinden und Organisationen verwalten</p>
-                      </IonLabel>
-                    </IonItem>
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success" slot="start" style={{ marginRight: '12px' }}>
+                      <IonIcon icon={business} />
+                    </div>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Organisationen</h2>
+                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Gemeinden und Organisationen verwalten</p>
+                    </IonLabel>
+                  </IonItem>
                 </IonList>
               </IonCardContent>
             </IonCard>
-          </div>
+          </IonList>
         )}
 
         {/* BLOCK 2: Inhalt */}
-        <div style={{ margin: '16px 16px 8px 16px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px'
-          }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              backgroundColor: '#ff9500',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)',
-              flexShrink: 0
-            }}>
-              <IonIcon icon={pricetag} style={{ fontSize: '1rem', color: 'white' }} />
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--badges">
+              <IonIcon icon={pricetag} />
             </div>
-            <h2 style={{
-              fontWeight: '600',
-              fontSize: '1.1rem',
-              margin: '0',
-              color: '#333'
-            }}>
-              Inhalt
-            </h2>
-          </div>
-          <IonCard style={{
-            borderRadius: '12px',
-            background: 'white',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-            border: '1px solid #e0e0e0',
-            margin: '0'
-          }}>
+            <IonLabel>Inhalt</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }} lines="none">
                 <IonItem
                   button
                   routerLink="/admin/activities"
                   lines="none"
+                  className="app-list-item app-list-item--activities"
                   style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--inner-padding-end': '0',
+                    marginBottom: '8px'
                   }}
                 >
-                  <div slot="start" style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#16a34a',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities" slot="start" style={{ marginRight: '12px' }}>
+                    <IonIcon icon={flash} />
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Aktivitäten</h2>
@@ -306,28 +185,16 @@ const AdminSettingsPage: React.FC = () => {
                   button
                   routerLink="/admin/settings/categories"
                   lines="none"
+                  className="app-list-item app-list-item--badges"
                   style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--inner-padding-end': '0',
+                    marginBottom: '8px'
                   }}
                 >
-                  <div slot="start" style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#ff9500',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon icon={pricetag} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges" slot="start" style={{ marginRight: '12px' }}>
+                    <IonIcon icon={pricetag} />
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Kategorien</h2>
@@ -338,28 +205,16 @@ const AdminSettingsPage: React.FC = () => {
                   button
                   routerLink="/admin/settings/jahrgaenge"
                   lines="none"
+                  className="app-list-item app-list-item--primary"
                   style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--inner-padding-end': '0',
+                    marginBottom: '8px'
                   }}
                 >
-                  <div slot="start" style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#007aff',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon icon={school} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
+                    <IonIcon icon={school} />
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Jahrgänge</h2>
@@ -370,28 +225,15 @@ const AdminSettingsPage: React.FC = () => {
                   button
                   routerLink="/admin/settings/levels"
                   lines="none"
+                  className="app-list-item app-list-item--level"
                   style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--inner-padding-end': '0'
                   }}
                 >
-                  <div slot="start" style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#ff2d55',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon icon={trophy} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level" slot="start" style={{ marginRight: '12px' }}>
+                    <IonIcon icon={trophy} />
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Level-System</h2>
@@ -401,77 +243,36 @@ const AdminSettingsPage: React.FC = () => {
               </IonList>
             </IonCardContent>
           </IonCard>
-        </div>
+        </IonList>
 
         <div style={{ margin: '0 16px 16px 16px' }}>
           <PushNotificationSettings />
         </div>
 
         {/* Konto */}
-        <div style={{ margin: '16px 16px 8px 16px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '12px'
-          }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              backgroundColor: '#007aff',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-              flexShrink: 0
-            }}>
-              <IonIcon icon={person} style={{ fontSize: '1rem', color: 'white' }} />
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--primary">
+              <IonIcon icon={person} />
             </div>
-            <h2 style={{
-              fontWeight: '600',
-              fontSize: '1.1rem',
-              margin: '0',
-              color: '#333'
-            }}>
-              Konto
-            </h2>
-          </div>
-          <IonCard style={{
-            borderRadius: '12px',
-            background: 'white',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-            border: '1px solid #e0e0e0',
-            margin: '0'
-          }}>
+            <IonLabel>Konto</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }} lines="none">
                 <IonItem
                   button
                   routerLink="/admin/profile"
                   lines="none"
+                  className="app-list-item app-list-item--primary"
                   style={{
-                    '--min-height': '56px',
-                    '--padding-start': '16px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '6px 0',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--inner-padding-end': '0'
                   }}
                 >
-                  <div slot="start" style={{
-                    width: '40px',
-                    height: '40px',
-                    backgroundColor: '#007aff',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '12px'
-                  }}>
-                    <IonIcon icon={person} style={{ fontSize: '1.2rem', color: 'white' }} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
+                    <IonIcon icon={person} />
                   </div>
                   <IonLabel>
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Profil</h2>
@@ -481,7 +282,7 @@ const AdminSettingsPage: React.FC = () => {
               </IonList>
             </IonCardContent>
           </IonCard>
-        </div>
+        </IonList>
 
         <div style={{ margin: '16px', paddingBottom: '16px' }}>
           <IonButton

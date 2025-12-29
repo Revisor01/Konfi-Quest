@@ -14,7 +14,8 @@ import {
   IonCardContent,
   IonIcon,
   IonSpinner,
-  IonList
+  IonList,
+  IonListHeader
 } from '@ionic/react';
 import {
   closeOutline,
@@ -242,44 +243,16 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Antragsdaten */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#059669',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={document} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Antragsdaten
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--success">
+              <IonIcon icon={document} />
+            </div>
+            <IonLabel>Antragsdaten</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <div style={{
               background: '#f5f5f5',
@@ -438,46 +411,18 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             )}
           </IonCardContent>
         </IonCard>
+        </IonList>
 
         {/* SEKTION: Foto - nur bei pending anzeigen */}
         {isPending && (
-          <>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              margin: '24px 16px 12px 16px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#059669',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={imageIcon} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--success">
+                <IonIcon icon={imageIcon} />
               </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Nachweis-Foto
-              </h2>
-            </div>
-
-            <IonCard style={{
-              margin: '0 16px 16px 16px',
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0'
-            }}>
+              <IonLabel>Nachweis-Foto</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {photoUrl ? (
                   <img
@@ -535,48 +480,19 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 )}
               </IonCardContent>
             </IonCard>
-          </>
+          </IonList>
         )}
 
         {/* SEKTION: Bearbeitungsstatus für approved/rejected */}
         {!isPending && (
-          <>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              margin: '24px 16px 12px 16px'
-            }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#059669',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(5, 150, 105, 0.3)',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--success">
+                <IonIcon icon={create} />
               </div>
-              <h2 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: '0',
-                color: '#333'
-              }}>
-                Bearbeitungsstatus
-              </h2>
-            </div>
-
-            <IonCard style={{
-              margin: '0 16px 16px 16px',
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0'
-            }}>
+              <IonLabel>Bearbeitungsstatus</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {/* Status Box - wie Teilnahmedatum */}
                 <div style={{
@@ -661,7 +577,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 )}
               </IonCardContent>
             </IonCard>
-          </>
+          </IonList>
         )}
 
         {/* Buttons unten - NUR bei pending */}
@@ -669,33 +585,20 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <div style={{ padding: '0 16px 24px 16px' }}>
             {/* Ablehn-Kommentar Feld */}
             {showRejectField && (
-              <IonCard style={{
-                marginBottom: '16px',
-                borderRadius: '12px',
-                background: 'white',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                border: '1px solid #e0e0e0'
-              }}>
+              <IonCard className="app-card" style={{ marginBottom: '16px' }}>
                 <IonCardContent style={{ padding: '16px' }}>
-                  <IonItem lines="none" style={{
-                    '--background': '#f5f5f5',
-                    '--border-radius': '12px',
-                    '--padding-start': '16px',
-                    margin: '0',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px'
-                  }}>
-                    <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666', fontWeight: '600' }}>
-                      Grund für Ablehnung (erforderlich)
-                    </IonLabel>
-                    <IonTextarea
-                      value={adminComment}
-                      onIonInput={(e) => setAdminComment(e.detail.value!)}
-                      placeholder="Bitte gib einen Grund für die Ablehnung an..."
-                      rows={3}
-                      disabled={loading}
-                    />
-                  </IonItem>
+                  <IonList style={{ background: 'transparent' }}>
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked">Grund für Ablehnung *</IonLabel>
+                      <IonTextarea
+                        value={adminComment}
+                        onIonInput={(e) => setAdminComment(e.detail.value!)}
+                        placeholder="Bitte gib einen Grund für die Ablehnung an..."
+                        rows={3}
+                        disabled={loading}
+                      />
+                    </IonItem>
+                  </IonList>
                 </IonCardContent>
               </IonCard>
             )}

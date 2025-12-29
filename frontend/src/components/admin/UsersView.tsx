@@ -8,8 +8,8 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
-  IonBadge,
   IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -19,22 +19,17 @@ import {
 } from '@ionic/react';
 import {
   trash,
-  search,
   people,
   person,
   personOutline,
   shield,
-  shieldOutline,
-  checkmark,
-  checkmarkCircle,
-  closeCircle,
   createOutline,
-  calendarOutline,
   at,
   school,
   time,
-  mailOutline,
-  briefcaseOutline
+  briefcaseOutline,
+  filterOutline,
+  peopleOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -270,84 +265,65 @@ const UsersView: React.FC<UsersViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '12px',
-        background: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e0e0e0'
-      }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          {/* Search Bar */}
-          <IonItem
-            lines="none"
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '10px',
-              marginBottom: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              '--min-height': '44px'
-            }}
-          >
-            <IonIcon
-              icon={search}
-              slot="start"
-              style={{
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }}
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Name oder Benutzername suchen..."
-              style={{
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
+      {/* Suche & Filter - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--users">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              {/* Suchfeld */}
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Benutzer:in suchen</IonLabel>
+                <IonInput
+                  value={searchTerm}
+                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                  placeholder="Name oder Benutzername..."
+                  clearInput={true}
+                />
+              </IonItem>
+              {/* Filter */}
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Status</IonLabel>
+                <IonSegment
+                  value={selectedFilter}
+                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonSegmentButton value="alle">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="aktiv">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="admin">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Admin</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="teamer">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Team</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
-          {/* Filter Tabs */}
-          <IonSegment
-            value={selectedFilter}
-            onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '10px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="aktiv">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Aktiv</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="admin">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Admins</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="teamer">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Teamer</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
-
-      {/* Benutzer-Liste */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '12px',
-        background: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e0e0e0'
-      }}>
-        <IonCardContent style={{ padding: '0' }}>
-          <IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
+      {/* Benutzer-Liste - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--users">
+            <IonIcon icon={peopleOutline} />
+          </div>
+          <IonLabel>Benutzer:innen ({filteredAndSortedUsers.length})</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
             {filteredAndSortedUsers.map((user) => (
               <IonItemSliding
                 key={user.id}
@@ -574,9 +550,10 @@ const UsersView: React.FC<UsersViewProps> = ({
                 <p style={{ color: '#999', margin: '0' }}>Noch keine Teammitglieder angelegt</p>
               </div>
             )}
-          </IonList>
-        </IonCardContent>
-      </IonCard>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
     </>
   );
 };

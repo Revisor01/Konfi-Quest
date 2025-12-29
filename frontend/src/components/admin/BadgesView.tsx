@@ -18,17 +18,11 @@ import {
   IonItemOption
 } from '@ionic/react';
 import {
-  add,
   trash,
-  create,
-  search,
   ribbon,
   ribbonOutline,
   trophy,
-  star,
   checkmark,
-  eye,
-  eyeOff,
   medal,
   flame,
   heart,
@@ -80,8 +74,9 @@ import {
   time,
   filterOutline
 } from 'ionicons/icons';
-import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
+
+import { star } from 'ionicons/icons';
 
 // Badge Icon Mapping (shared with BadgeManagementModal)
 const BADGE_ICONS: Record<string, any> = {
@@ -333,65 +328,50 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </div>
       </div>
 
-      {/* Tab Filter - wie bei Events */}
-      <div style={{ margin: '16px' }}>
-        <IonSegment
-          value={selectedFilter}
-          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-        >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="aktiv">
-            <IonLabel>Aktiv</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="versteckt">
-            <IonLabel>Versteckt</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="inaktiv">
-            <IonLabel>Inaktiv</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-      </div>
-
-      {/* Suchfeld */}
+      {/* Suche & Filter - iOS26 Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
-          <div className="app-section-icon app-section-icon--warning">
-            <IonIcon icon={search} />
+          <div className="app-section-icon app-section-icon--badges">
+            <IonIcon icon={filterOutline} />
           </div>
-          <IonLabel>Suche</IonLabel>
+          <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '12px 16px' }}>
-            <IonItem
-              lines="none"
-              style={{
-                '--background': '#f8f9fa',
-                '--border-radius': '12px',
-                '--padding-start': '12px',
-                '--padding-end': '12px'
-              }}
-            >
-              <IonIcon
-                icon={search}
-                slot="start"
-                style={{
-                  color: '#8e8e93',
-                  marginRight: '8px',
-                  fontSize: '1rem'
-                }}
-              />
-              <IonInput
-                value={searchTerm}
-                onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                placeholder="Badge suchen..."
-                style={{
-                  '--color': '#000',
-                  '--placeholder-color': '#8e8e93'
-                }}
-              />
-            </IonItem>
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              {/* Suchfeld */}
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Badge suchen</IonLabel>
+                <IonInput
+                  value={searchTerm}
+                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                  placeholder="Name eingeben..."
+                  clearInput={true}
+                />
+              </IonItem>
+              {/* Status Filter */}
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Status</IonLabel>
+                <IonSegment
+                  value={selectedFilter}
+                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonSegmentButton value="alle">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="aktiv">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="versteckt">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Geheim</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="inaktiv">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Inaktiv</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </IonItem>
+            </IonList>
           </IonCardContent>
         </IonCard>
       </IonList>
@@ -400,7 +380,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       {filteredAndSortedBadges.length === 0 ? (
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={ribbonOutline} />
             </div>
             <IonLabel>Badges (0)</IonLabel>
@@ -442,7 +422,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           return sortedGroups.map(([criteriaType, typeBadges]) => (
             <IonList key={criteriaType} inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
-                <div className="app-section-icon app-section-icon--warning">
+                <div className="app-section-icon app-section-icon--badges">
                   <IonIcon icon={flash} />
                 </div>
                 <IonLabel>{getCriteriaTypeText(criteriaType)} ({typeBadges.length})</IonLabel>

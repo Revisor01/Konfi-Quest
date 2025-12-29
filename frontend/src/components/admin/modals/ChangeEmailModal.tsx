@@ -96,18 +96,20 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             <IonLabel>E-Mail-Adresse</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={mailOutline} slot="start" style={{ color: '#667eea' }} />
-                <IonLabel position="stacked">E-Mail-Adresse *</IonLabel>
-                <IonInput
-                  type="email"
-                  value={email}
-                  onIonInput={(e) => setEmail(e.detail.value!)}
-                  placeholder="deine@email.de"
-                  disabled={saving}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">E-Mail-Adresse *</IonLabel>
+                  <IonInput
+                    type="email"
+                    value={email}
+                    onIonInput={(e) => setEmail(e.detail.value!)}
+                    placeholder="deine@email.de"
+                    disabled={saving}
+                    clearInput={true}
+                  />
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>

@@ -17,10 +17,9 @@ import {
   IonCard,
   IonCardContent,
   IonSelect,
-  IonSelectOption,
-  IonItemGroup
+  IonSelectOption
 } from '@ionic/react';
-import { close, person, people, trash, add, checkmark, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline } from 'ionicons/icons';
+import { person, closeOutline, checkmarkOutline, personAdd, search, filterOutline, time, calendarOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
 
@@ -272,88 +271,79 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
               </div>
               <IonLabel>Suche & Filter</IonLabel>
             </IonListHeader>
-            <IonItemGroup>
-              {/* Suchfeld */}
-              <IonItem>
-                <IonIcon
-                  icon={search}
-                  slot="start"
-                  style={{ color: '#8e8e93', fontSize: '1rem' }}
-                />
-                <IonInput
-                  value={searchTerm}
-                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Person suchen..."
-                />
-              </IonItem>
-              {/* Jahrgang Filter - nur wenn Event mehrere Jahrgänge hat oder gar keine */}
-              {(eventJahrgaenge.length !== 1) && (
-                <IonItem style={{ '--highlight-background': 'transparent' }}>
-                  <IonIcon
-                    icon={calendarOutline}
-                    slot="start"
-                    style={{ color: '#8e8e93', fontSize: '1rem' }}
-                  />
-                  <IonSelect
-                    value={selectedJahrgang}
-                    onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
-                    placeholder="Jahrgang"
-                    interface="popover"
-                    style={{ width: '100%' }}
-                  >
-                    {hasEventJahrgaenge ? (
-                      <>
-                        <IonSelectOption value="alle">Alle Event-Jahrgänge</IonSelectOption>
-                        {eventJahrgaenge.map(jg => (
-                          <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                        ))}
-                      </>
-                    ) : (
-                      <>
-                        <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                        {availableJahrgaenge.map(jg => (
-                          <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                        ))}
-                      </>
-                    )}
-                  </IonSelect>
-                </IonItem>
-              )}
-              {/* Zeitslot Auswahl */}
-              {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
-                <IonItem style={{ '--highlight-background': 'transparent' }}>
-                  <IonIcon
-                    icon={time}
-                    slot="start"
-                    style={{ color: '#8e8e93', fontSize: '1rem' }}
-                  />
-                  <IonSelect
-                    value={selectedTimeslot}
-                    onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
-                    placeholder="Zeitslot wählen"
-                    interface="popover"
-                    style={{ width: '100%' }}
-                  >
-                    <IonSelectOption value={null}>Zeitslot wählen...</IonSelectOption>
-                    {eventData.timeslots.map((timeslot) => {
-                      const isFull = timeslot.max_participants > 0 && (timeslot.registered_count || 0) >= timeslot.max_participants;
-                      const capacityText = timeslot.max_participants === 0
-                        ? `(${timeslot.registered_count || 0})`
-                        : `(${timeslot.registered_count || 0}/${timeslot.max_participants})`;
-                      return (
-                        <IonSelectOption
-                          key={timeslot.id}
-                          value={timeslot.id}
-                        >
-                          {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} {capacityText}
-                          {isFull && ' - Voll'}
-                        </IonSelectOption>
-                      );
-                    })}
-                  </IonSelect>
-                </IonItem>
-              )}
-            </IonItemGroup>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <IonList style={{ background: 'transparent' }}>
+                  {/* Suchfeld */}
+                  <IonItem lines={eventJahrgaenge.length !== 1 || (eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0) ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Person suchen</IonLabel>
+                    <IonInput
+                      value={searchTerm}
+                      onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                      placeholder="Name eingeben..."
+                      clearInput={true}
+                    />
+                  </IonItem>
+                  {/* Jahrgang Filter - nur wenn Event mehrere Jahrgänge hat oder gar keine */}
+                  {(eventJahrgaenge.length !== 1) && (
+                    <IonItem lines={eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 ? 'full' : 'none'} style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked">Jahrgang</IonLabel>
+                      <IonSelect
+                        value={selectedJahrgang}
+                        onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                        placeholder="Jahrgang wählen"
+                        interface="popover"
+                      >
+                        {hasEventJahrgaenge ? (
+                          <>
+                            <IonSelectOption value="alle">Alle Event-Jahrgänge</IonSelectOption>
+                            {eventJahrgaenge.map(jg => (
+                              <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                            ))}
+                          </>
+                        ) : (
+                          <>
+                            <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                            {availableJahrgaenge.map(jg => (
+                              <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                            ))}
+                          </>
+                        )}
+                      </IonSelect>
+                    </IonItem>
+                  )}
+                  {/* Zeitslot Auswahl */}
+                  {eventData?.has_timeslots && eventData.timeslots && eventData.timeslots.length > 0 && (
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel position="stacked">Zeitslot</IonLabel>
+                      <IonSelect
+                        value={selectedTimeslot}
+                        onIonChange={(e) => setSelectedTimeslot(e.detail.value)}
+                        placeholder="Zeitslot wählen"
+                        interface="popover"
+                      >
+                        <IonSelectOption value={null}>Zeitslot wählen...</IonSelectOption>
+                        {eventData.timeslots.map((timeslot) => {
+                          const isFull = timeslot.max_participants > 0 && (timeslot.registered_count || 0) >= timeslot.max_participants;
+                          const capacityText = timeslot.max_participants === 0
+                            ? `(${timeslot.registered_count || 0})`
+                            : `(${timeslot.registered_count || 0}/${timeslot.max_participants})`;
+                          return (
+                            <IonSelectOption
+                              key={timeslot.id}
+                              value={timeslot.id}
+                            >
+                              {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} {capacityText}
+                              {isFull && ' - Voll'}
+                            </IonSelectOption>
+                          );
+                        })}
+                      </IonSelect>
+                    </IonItem>
+                  )}
+                </IonList>
+              </IonCardContent>
+            </IonCard>
           </IonList>
 
           {/* Personen Liste - iOS26 Pattern */}

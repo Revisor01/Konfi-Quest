@@ -115,25 +115,26 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             <IonLabel>Aktuelles Passwort</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#f59e0b' }} />
-                <IonLabel position="stacked">Aktuelles Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.current ? 'text' : 'password'}
-                  value={passwordData.current_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
-                  placeholder="Aktuelles Passwort eingeben"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                >
-                  <IonIcon icon={showPasswords.current ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Aktuelles Passwort *</IonLabel>
+                  <IonInput
+                    type={showPasswords.current ? 'text' : 'password'}
+                    value={passwordData.current_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
+                    placeholder="Aktuelles Passwort eingeben"
+                    disabled={saving}
+                  />
+                  <IonButton
+                    slot="end"
+                    fill="clear"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                  >
+                    <IonIcon icon={showPasswords.current ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -147,44 +148,44 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             <IonLabel>Neues Passwort</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0' }}>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#22c55e' }} />
-                <IonLabel position="stacked">Neues Passwort *</IonLabel>
-                <IonInput
-                  type={showPasswords.new ? 'text' : 'password'}
-                  value={passwordData.new_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
-                  placeholder="Neues Passwort eingeben"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                >
-                  <IonIcon icon={showPasswords.new ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Neues Passwort *</IonLabel>
+                  <IonInput
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={passwordData.new_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
+                    placeholder="Neues Passwort eingeben"
+                    disabled={saving}
+                  />
+                  <IonButton
+                    slot="end"
+                    fill="clear"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                  >
+                    <IonIcon icon={showPasswords.new ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={keyOutline} slot="start" style={{ color: '#22c55e' }} />
-                <IonLabel position="stacked">Neues Passwort bestätigen *</IonLabel>
-                <IonInput
-                  type={showPasswords.confirm ? 'text' : 'password'}
-                  value={passwordData.confirm_password}
-                  onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
-                  placeholder="Neues Passwort bestätigen"
-                  disabled={saving}
-                />
-                <IonButton
-                  slot="end"
-                  fill="clear"
-                  onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                >
-                  <IonIcon icon={showPasswords.confirm ? eyeOffOutline : eyeOutline} />
-                </IonButton>
-              </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Neues Passwort bestätigen *</IonLabel>
+                  <IonInput
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={passwordData.confirm_password}
+                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
+                    placeholder="Neues Passwort bestätigen"
+                    disabled={saving}
+                  />
+                  <IonButton
+                    slot="end"
+                    fill="clear"
+                    onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                  >
+                    <IonIcon icon={showPasswords.confirm ? eyeOffOutline : eyeOutline} />
+                  </IonButton>
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>

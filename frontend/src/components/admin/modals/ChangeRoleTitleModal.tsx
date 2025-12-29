@@ -85,17 +85,19 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             <IonLabel>Deine Funktion</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '0' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonIcon icon={briefcaseOutline} slot="start" style={{ color: '#8b5cf6' }} />
-                <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
-                <IonInput
-                  value={roleTitle}
-                  onIonInput={(e) => setRoleTitle(e.detail.value!)}
-                  placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                  disabled={saving}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
+                  <IonInput
+                    value={roleTitle}
+                    onIonInput={(e) => setRoleTitle(e.detail.value!)}
+                    placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
+                    disabled={saving}
+                    clearInput={true}
+                  />
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>

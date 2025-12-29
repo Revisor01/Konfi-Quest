@@ -8,8 +8,8 @@ import {
   IonIcon,
   IonItem,
   IonLabel,
-  IonBadge,
   IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -19,7 +19,6 @@ import {
 } from '@ionic/react';
 import {
   trash,
-  search,
   business,
   businessOutline,
   people,
@@ -27,8 +26,8 @@ import {
   createOutline,
   checkmarkCircle,
   flash,
-  checkmark,
-  closeCircle
+  closeCircle,
+  filterOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -231,84 +230,65 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         </div>
       </div>
 
-      {/* Suchfeld */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '12px',
-        background: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e0e0e0'
-      }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          {/* Search Bar */}
-          <IonItem
-            lines="none"
-            style={{
-              '--background': '#f8f9fa',
-              '--border-radius': '10px',
-              marginBottom: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-              '--padding-start': '12px',
-              '--padding-end': '12px',
-              '--min-height': '44px'
-            }}
-          >
-            <IonIcon
-              icon={search}
-              slot="start"
-              style={{
-                color: '#8e8e93',
-                marginRight: '8px',
-                fontSize: '1rem'
-              }}
-            />
-            <IonInput
-              value={searchTerm}
-              onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Organisation suchen..."
-              style={{
-                '--color': '#000',
-                '--placeholder-color': '#8e8e93'
-              }}
-            />
-          </IonItem>
+      {/* Suche & Filter - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--success">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList style={{ background: 'transparent' }}>
+              {/* Suchfeld */}
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Organisation suchen</IonLabel>
+                <IonInput
+                  value={searchTerm}
+                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                  placeholder="Name eingeben..."
+                  clearInput={true}
+                />
+              </IonItem>
+              {/* Filter */}
+              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Status</IonLabel>
+                <IonSegment
+                  value={selectedFilter}
+                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+                  style={{ marginTop: '8px' }}
+                >
+                  <IonSegmentButton value="alle">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="aktiv">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="gross">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Gross</IonLabel>
+                  </IonSegmentButton>
+                  <IonSegmentButton value="klein">
+                    <IonLabel style={{ fontSize: '0.75rem' }}>Klein</IonLabel>
+                  </IonSegmentButton>
+                </IonSegment>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
-          {/* Filter Tabs */}
-          <IonSegment
-            value={selectedFilter}
-            onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '10px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="aktiv">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Aktiv</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="gross">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Gross</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="klein">
-              <IonLabel style={{ fontSize: '0.8rem' }}>Klein</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
-
-      {/* Organisationen-Liste */}
-      <IonCard style={{
-        margin: '16px',
-        borderRadius: '12px',
-        background: 'white',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-        border: '1px solid #e0e0e0'
-      }}>
-        <IonCardContent style={{ padding: '0' }}>
-          <IonList lines="none" style={{ background: 'transparent', padding: '8px 0' }}>
+      {/* Organisationen-Liste - iOS26 Pattern */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--success">
+            <IonIcon icon={businessOutline} />
+          </div>
+          <IonLabel>Organisationen ({filteredAndSortedOrganizations.length})</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
             {filteredAndSortedOrganizations.map((organization) => (
               <IonItemSliding
                 key={organization.id}
@@ -519,9 +499,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                 <p style={{ color: '#999', margin: '0' }}>Noch keine Gemeinden angelegt</p>
               </div>
             )}
-          </IonList>
-        </IonCardContent>
-      </IonCard>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
     </>
   );
 };
