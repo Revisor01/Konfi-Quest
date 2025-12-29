@@ -84,42 +84,6 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Datum & Begründung */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--bonus">
-              <IonIcon icon={calendar} />
-            </div>
-            <IonLabel>Datum & Begründung</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
-                  />
-                </IonItem>
-
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Begründung</IonLabel>
-                  <IonTextarea
-                    value={reason}
-                    onIonInput={(e) => setReason(e.detail.value!)}
-                    placeholder="Warum werden diese Bonuspunkte vergeben?"
-                    rows={3}
-                    disabled={loading}
-                  />
-                </IonItem>
-              </IonList>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-
         {/* Bonuspunkt Detail */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
@@ -241,6 +205,42 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                   />
                 </div>
               </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Datum & Begründung */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--bonus">
+              <IonIcon icon={calendar} />
+            </div>
+            <IonLabel>Datum & Begründung</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Datum *</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={selectedDate}
+                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                    disabled={loading}
+                  />
+                </IonItem>
+
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Begründung (optional)</IonLabel>
+                  <IonTextarea
+                    value={reason}
+                    onIonInput={(e) => setReason(e.detail.value!)}
+                    placeholder="Warum werden diese Bonuspunkte vergeben?"
+                    rows={3}
+                    disabled={loading}
+                  />
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
