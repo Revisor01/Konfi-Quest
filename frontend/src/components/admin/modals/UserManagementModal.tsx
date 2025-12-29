@@ -17,6 +17,7 @@ import {
   IonIcon,
   IonCheckbox,
   IonList,
+  IonListHeader,
   IonText,
   IonSpinner
 } from '@ionic/react';
@@ -314,46 +315,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Persönliche Daten */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Persönliche Daten
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={personOutline} />
+            </div>
+            <IonLabel>Persönliche Daten</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Anzeigename *</IonLabel>
                 <IonInput
@@ -410,46 +383,19 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Rolle und Status */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={shieldOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Rolle & Status
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={shieldOutline} />
+            </div>
+            <IonLabel>Rolle & Status</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem
                 button
                 onClick={presentRoleActionSheet}
@@ -496,45 +442,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Jahrgang-Zuweisungen */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={schoolOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Jahrgang-Zuweisungen
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={schoolOutline} />
+            </div>
+            <IonLabel>Jahrgang-Zuweisungen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
             {jahrgaenge.length === 0 ? (
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonLabel style={{ textAlign: 'center' }}>
@@ -583,33 +502,26 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         {/* Bestehende Zuweisungen im Edit-Modus */}
         {isEditMode && user?.assigned_jahrgaenge && user.assigned_jahrgaenge.length > 0 && (
-          <>
-            <IonCard style={{
-              margin: '0 16px 24px 16px',
-              borderRadius: '12px',
-              background: 'white',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #e0e0e0'
-            }}>
-              <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  {user.assigned_jahrgaenge.map(assignment => (
-                    <IonItem key={assignment.id} style={{ '--background': '#f8f9fa', '--border-radius': '8px', marginBottom: '6px' }}>
-                      <IonIcon icon={checkmarkCircle} slot="start" style={{ color: '#667eea' }} />
-                      <IonLabel>
-                        <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>{assignment.name}</h3>
-                        <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
-                          Zugewiesen: {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
-                          {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
-                        </p>
-                      </IonLabel>
-                    </IonItem>
-                  ))}
-                </IonList>
-              </IonCardContent>
-            </IonCard>
-          </>
+          <IonCard className="app-card" style={{ margin: '0 16px 24px 16px' }}>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }} lines="none">
+                {user.assigned_jahrgaenge.map(assignment => (
+                  <IonItem key={assignment.id} style={{ '--background': '#f8f9fa', '--border-radius': '8px', marginBottom: '6px' }}>
+                    <IonIcon icon={checkmarkCircle} slot="start" style={{ color: '#667eea' }} />
+                    <IonLabel>
+                      <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>{assignment.name}</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
+                        Zugewiesen: {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
+                        {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
+                      </p>
+                    </IonLabel>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
         )}
+      </IonList>
       </IonContent>
     </IonPage>
   );

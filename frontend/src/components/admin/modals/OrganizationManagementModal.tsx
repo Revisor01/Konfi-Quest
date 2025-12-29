@@ -15,6 +15,7 @@ import {
   IonCardContent,
   IonIcon,
   IonList,
+  IonListHeader,
   IonSpinner,
   IonTextarea
 } from '@ionic/react';
@@ -322,24 +323,18 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Organisations-Daten */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-          <div style={{
-            width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-          }}>
-            <IonIcon icon={businessOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>
-            Organisation
-          </h2>
-        </div>
-
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--organizations">
+              <IonIcon icon={businessOutline} />
+            </div>
+            <IonLabel>Organisation</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Name der Organisation *</IonLabel>
                 <IonInput
@@ -364,22 +359,19 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Kontakt */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-          <div style={{
-            width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-          }}>
-            <IonIcon icon={mailOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>Kontakt</h2>
-        </div>
-
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--organizations">
+              <IonIcon icon={mailOutline} />
+            </div>
+            <IonLabel>Kontakt</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">E-Mail</IonLabel>
                 <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={saving} />
@@ -406,21 +398,18 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-          <div style={{
-            width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-          }}>
-            <IonIcon icon={shieldOutline} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>Status</h2>
-        </div>
-
-        <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
-          <IonCardContent style={{ padding: '16px' }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--organizations">
+              <IonIcon icon={shieldOutline} />
+            </div>
+            <IonLabel>Status</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
             <IonList style={{ background: 'transparent' }} lines="none">
               <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
                 <IonLabel>
@@ -438,24 +427,18 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Administrator erstellen (nur bei neuer Organisation) */}
         {!isEditMode && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-              <div style={{
-                width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-              }}>
-                <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={personOutline} />
               </div>
-              <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>
-                Organisations-Administrator
-              </h2>
-            </div>
-
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+              <IonLabel>Organisations-Administrator</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <IonList style={{ background: 'transparent' }} lines="none">
                   <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
@@ -482,25 +465,17 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonItem>
               </IonCardContent>
             </IonCard>
-          </>
+          </IonList>
         )}
 
         {/* SEKTION: Organisations-Administratoren verwalten (nur im Edit-Modus) */}
         {isEditMode && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '16px 16px 12px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-                }}>
-                  <IonIcon icon={personOutline} style={{ fontSize: '1rem', color: 'white' }} />
-                </div>
-                <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>
-                  Organisations-Administratoren
-                </h2>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={personOutline} />
               </div>
+              <IonLabel>Organisations-Administratoren</IonLabel>
               <IonButton
                 size="small"
                 fill="clear"
@@ -510,9 +485,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 <IonIcon icon={addOutline} slot="start" />
                 Hinzufügen
               </IonButton>
-            </div>
-
-            <IonCard style={{ margin: '0 16px 16px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 {/* Bestehende Admins */}
                 {orgAdmins.length > 0 ? (
@@ -642,24 +616,19 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 )}
               </IonCardContent>
             </IonCard>
-          </>
+          </IonList>
         )}
 
         {/* SEKTION: Statistiken (nur im Edit-Modus) */}
         {isEditMode && organization && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '16px 16px 12px 16px' }}>
-              <div style={{
-                width: '32px', height: '32px', backgroundColor: '#2dd36f', borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)'
-              }}>
-                <IonIcon icon={businessOutline} style={{ fontSize: '1rem', color: 'white' }} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--organizations">
+                <IonIcon icon={businessOutline} />
               </div>
-              <h2 style={{ fontWeight: '600', fontSize: '1.1rem', margin: '0', color: '#333' }}>Statistiken</h2>
-            </div>
-
-            <IonCard style={{ margin: '0 16px 24px 16px', borderRadius: '12px', background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,0.08)', border: '1px solid #e0e0e0' }}>
+              <IonLabel>Statistiken</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
@@ -690,7 +659,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 </IonItem>
               </IonCardContent>
             </IonCard>
-          </>
+          </IonList>
         )}
       </IonContent>
     </IonPage>

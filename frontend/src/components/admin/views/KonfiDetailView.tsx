@@ -501,7 +501,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Bonuspunkte - iOS26 Pattern - Orange als Hauptfarbe */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#f97316' }}>
+            <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={gift} />
             </div>
             <IonLabel>Bonus ({getBonusPoints()})</IonLabel>
@@ -516,16 +516,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                   {bonusEntries.map((bonus: any, index: number) => (
                     <IonItemSliding key={index}>
-                      <div
-                        className="app-list-item"
-                        style={{ borderLeftColor: '#f97316' }}
-                      >
+                      <div className="app-list-item app-list-item--bonus">
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
-                            <div
-                              className="app-icon-circle"
-                              style={{ backgroundColor: '#f97316' }}
-                            >
+                            <div className="app-icon-circle app-icon-circle--bonus">
                               <IonIcon icon={gift} />
                             </div>
                             <div className="app-list-item__content">
@@ -596,7 +590,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Event Points - iOS26 Pattern - Rot als Hauptfarbe */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#dc2626' }}>
+            <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={podium} />
             </div>
             <IonLabel>Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})</IonLabel>
@@ -612,14 +606,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   {eventPoints.map((eventPoint: any, index: number) => (
                     <div
                       key={index}
-                      className="app-list-item"
-                      style={{
-                        borderLeftColor: '#dc2626'
-                      }}
+                      className="app-list-item app-list-item--events"
                     >
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
-                          <div className="app-icon-circle" style={{ backgroundColor: '#dc2626' }}>
+                          <div className="app-icon-circle app-icon-circle--events">
                             <IonIcon icon={podium} />
                           </div>
                           <div className="app-list-item__content">
@@ -664,7 +655,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Aktivitäten - iOS26 Pattern - Grün als Hauptfarbe */}
         <IonList inset={true} style={{ margin: '16px 16px 32px 16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#059669' }}>
+            <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={flash} />
             </div>
             <IonLabel>Aktivitäten ({activities.filter((a) => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})</IonLabel>

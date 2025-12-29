@@ -16,6 +16,7 @@ import {
   IonCard,
   IonCardContent,
   IonList,
+  IonListHeader,
   IonAccordion,
   IonAccordionGroup,
   IonText
@@ -262,46 +263,18 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Grunddaten */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#9b59b6',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Level Details
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--level">
+              <IonIcon icon={create} />
+            </div>
+            <IonLabel>Level Details</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{
                 '--background': '#f5f5f5',
                 '--border-radius': '12px',
@@ -462,6 +435,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
       </IonContent>
     </IonPage>
   );

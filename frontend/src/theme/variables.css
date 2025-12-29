@@ -83,6 +83,9 @@ ion-item .app-list-item {
 .app-list-item--primary { border-left-color: #5b21b6; }
 .app-list-item--bonus { border-left-color: #f97316; }
 .app-list-item--activities { border-left-color: #059669; }
+.app-list-item--users { border-left-color: #667eea; }
+.app-list-item--level { border-left-color: #9b59b6; }
+.app-list-item--organizations { border-left-color: #2dd36f; }
 
 /* Selected State fuer List Items - Events (Rot) */
 .app-list-item--events.app-list-item--selected {
@@ -232,6 +235,9 @@ ion-item .app-list-item {
 .app-section-icon--primary { background-color: #5b21b6; }
 .app-section-icon--bonus { background-color: #f97316; }
 .app-section-icon--activities { background-color: #059669; }
+.app-section-icon--users { background-color: #667eea; }
+.app-section-icon--level { background-color: #9b59b6; }
+.app-section-icon--organizations { background-color: #2dd36f; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -285,6 +291,9 @@ ion-item .app-list-item {
 .app-icon-circle--primary { background-color: #5b21b6; }
 .app-icon-circle--bonus { background-color: #f97316; }
 .app-icon-circle--activities { background-color: #059669; }
+.app-icon-circle--users { background-color: #667eea; }
+.app-icon-circle--level { background-color: #9b59b6; }
+.app-icon-circle--organizations { background-color: #2dd36f; }
 .app-icon-circle ion-icon {
   color: white;
   font-size: 0.9rem;

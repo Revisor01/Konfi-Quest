@@ -14,6 +14,7 @@ import {
   IonIcon,
   IonSpinner,
   IonList,
+  IonListHeader,
   IonCard,
   IonCardContent
 } from '@ionic/react';
@@ -236,46 +237,18 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Grunddaten */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#2dd36f',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={create} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Grunddaten
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--success">
+              <IonIcon icon={create} />
+            </div>
+            <IonLabel>Grunddaten</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
               <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
@@ -402,45 +375,18 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             </IonList>
           </IonCardContent>
         </IonCard>
+      </IonList>
 
         {/* SEKTION: Kategorien */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#2dd36f',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(45, 211, 111, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={pricetag} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Kategorien
-          </h2>
-        </div>
-
-        <IonCard style={{
-          margin: '0 16px 16px 16px',
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--success">
+              <IonIcon icon={pricetag} />
+            </div>
+            <IonLabel>Kategorien</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
             {initializing ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                 <IonSpinner name="crescent" />
@@ -504,6 +450,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             )}
           </IonCardContent>
         </IonCard>
+      </IonList>
       </IonContent>
     </IonPage>
   );
