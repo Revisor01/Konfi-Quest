@@ -334,32 +334,32 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Name der Organisation *</IonLabel>
-                <IonInput
-                  value={formData.display_name}
-                  onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
-                  placeholder="z.B. Kirchspiel West"
-                  disabled={saving}
-                />
-              </IonItem>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Name der Organisation *</IonLabel>
+                  <IonInput
+                    value={formData.display_name}
+                    onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
+                    placeholder="z.B. Kirchspiel West"
+                    disabled={saving}
+                  />
+                </IonItem>
 
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonLabel position="stacked">Beschreibung (optional)</IonLabel>
-                <IonTextarea
-                  value={formData.description}
-                  onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-                  placeholder="Kurze Beschreibung"
-                  autoGrow={true}
-                  rows={2}
-                  disabled={saving}
-                />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Beschreibung (optional)</IonLabel>
+                  <IonTextarea
+                    value={formData.description}
+                    onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                    placeholder="Kurze Beschreibung"
+                    autoGrow={true}
+                    rows={2}
+                    disabled={saving}
+                  />
+                </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* SEKTION: Kontakt */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -371,34 +371,34 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">E-Mail</IonLabel>
-                <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={saving} />
-              </IonItem>
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Telefon</IonLabel>
-                <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={saving} />
-              </IonItem>
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Adresse</IonLabel>
-                <IonTextarea
-                  value={formData.address}
-                  onIonInput={(e) => setFormData({ ...formData, address: e.detail.value! })}
-                  placeholder="Kirchstraße 1, 25764 Wesselburen"
-                  autoGrow={true}
-                  rows={2}
-                  disabled={saving}
-                />
-              </IonItem>
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonLabel position="stacked">Website</IonLabel>
-                <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={saving} />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">E-Mail</IonLabel>
+                  <IonInput type="email" value={formData.contact_email} onIonInput={(e) => setFormData({ ...formData, contact_email: e.detail.value! })} placeholder="kontakt@beispiel.de" disabled={saving} />
+                </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Telefon</IonLabel>
+                  <IonInput type="tel" value={formData.contact_phone} onIonInput={(e) => setFormData({ ...formData, contact_phone: e.detail.value! })} placeholder="04834 12345" disabled={saving} />
+                </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Adresse</IonLabel>
+                  <IonTextarea
+                    value={formData.address}
+                    onIonInput={(e) => setFormData({ ...formData, address: e.detail.value! })}
+                    placeholder="Kirchstraße 1, 25764 Wesselburen"
+                    autoGrow={true}
+                    rows={2}
+                    disabled={saving}
+                  />
+                </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Website</IonLabel>
+                  <IonInput type="url" value={formData.website_url} onIonInput={(e) => setFormData({ ...formData, website_url: e.detail.value! })} placeholder="https://www.beispiel.de" disabled={saving} />
+                </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* SEKTION: Status */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -410,24 +410,24 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
-                  <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
-                </IonLabel>
-                <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={saving} />
-              </IonItem>
-              {!formData.is_active && (
-                <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', '--border-radius': '10px', marginTop: '8px' }}>
-                  <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#ef4444' }} />
-                  <IonLabel><p style={{ color: '#ef4444', margin: 0, fontWeight: '500' }}>Inaktive Organisationen sind gesperrt</p></IonLabel>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel>
+                    <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Organisation aktiv</h3>
+                    <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>Benutzer können sich anmelden</p>
+                  </IonLabel>
+                  <IonToggle slot="end" checked={formData.is_active} onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })} disabled={saving} />
                 </IonItem>
-              )}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+                {!formData.is_active && (
+                  <IonItem lines="none" style={{ '--background': 'rgba(239, 68, 68, 0.08)', borderRadius: '10px', marginTop: '8px' }}>
+                    <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#ef4444' }} />
+                    <IonLabel><p style={{ color: '#ef4444', margin: 0, fontWeight: '500' }}>Inaktive Organisationen sind gesperrt</p></IonLabel>
+                  </IonItem>
+                )}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* SEKTION: Administrator erstellen (nur bei neuer Organisation) */}
         {!isEditMode && (
@@ -440,22 +440,22 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+                <IonList style={{ background: 'transparent' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Name des Administrators *</IonLabel>
                     <IonInput value={formData.admin_name} onIonInput={(e) => setFormData({ ...formData, admin_name: e.detail.value! })} placeholder="z.B. Pastor Mueller" disabled={saving} />
                   </IonItem>
-                  <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Login-Benutzername *</IonLabel>
                     <IonInput value={formData.admin_username} onIonInput={(e) => setFormData({ ...formData, admin_username: e.detail.value! })} placeholder="z.B. pmueller" disabled={saving} />
                   </IonItem>
-                  <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Passwort *</IonLabel>
                     <IonInput type="password" value={formData.admin_password} onIonInput={(e) => setFormData({ ...formData, admin_password: e.detail.value! })} placeholder="Mindestens 6 Zeichen" disabled={saving} />
                   </IonItem>
                 </IonList>
 
-                <IonItem lines="none" style={{ '--background': 'rgba(45, 211, 111, 0.08)', '--border-radius': '10px', marginTop: '12px' }}>
+                <IonItem lines="none" style={{ '--background': 'rgba(45, 211, 111, 0.08)', borderRadius: '10px', marginTop: '12px' }}>
                   <IonIcon icon={shieldOutline} slot="start" style={{ color: '#2dd36f' }} />
                   <IonLabel>
                     <p style={{ color: '#2dd36f', margin: 0, fontWeight: '500', fontSize: '0.85rem' }}>

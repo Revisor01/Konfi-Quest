@@ -249,131 +249,111 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Name *</IonLabel>
-                <IonInput
-                  value={formData.name}
-                  onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-                  placeholder="z.B. Sonntagsgottesdienst"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
-
-              <IonItem lines="none" style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '12px' }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.points <= 1}
-                    onClick={() => setFormData({ ...formData, points: Math.max(1, formData.points - 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput
-                    type="text"
-                    inputMode="numeric"
-                    value={formData.points.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') {
-                        setFormData({ ...formData, points: 1 });
-                      } else {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num >= 1 && num <= 50) {
-                          setFormData({ ...formData, points: num });
-                        }
-                      }
-                    }}
-                    placeholder="1"
+                    value={formData.name}
+                    onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                    placeholder="z.B. Sonntagsgottesdienst"
                     disabled={loading}
-                    style={{ textAlign: 'center', flex: 1 }}
+                    clearInput={true}
                   />
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || formData.points >= 50}
-                    onClick={() => setFormData({ ...formData, points: Math.min(50, formData.points + 1) })}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
-              </IonItem>
+                </IonItem>
 
-              <IonItem lines="none" style={{ paddingBottom: '8px', paddingTop: '16px' }}>
-                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
-              </IonItem>
-              <IonItem
-                lines="none"
-                button
-                detail={false}
-                onClick={() => {
-                  if (!loading) {
-                    setFormData({ ...formData, type: 'gottesdienst' });
-                  }
-                }}
-                disabled={loading}
-                style={{
-                  '--background': formData.type === 'gottesdienst' ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
-                  '--border-radius': '8px',
-                  marginBottom: '6px'
-                }}
-              >
-                <IonCheckbox
-                  checked={formData.type === 'gottesdienst'}
-                  slot="start"
-                  disabled={loading}
-                  style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
-                />
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', margin: 0 }}>Gottesdienst</h3>
-                </IonLabel>
-                {formData.type === 'gottesdienst' && (
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    slot="end"
-                    style={{ color: '#16a34a' }}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '8px 0' }}>
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.points <= 1}
+                      onClick={() => setFormData({ ...formData, points: Math.max(1, formData.points - 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={removeOutline} />
+                    </IonButton>
+                    <IonInput
+                      type="text"
+                      inputMode="numeric"
+                      value={formData.points.toString()}
+                      onIonInput={(e) => {
+                        const value = e.detail.value!;
+                        if (value === '') {
+                          setFormData({ ...formData, points: 1 });
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num >= 1 && num <= 50) {
+                            setFormData({ ...formData, points: num });
+                          }
+                        }
+                      }}
+                      placeholder="1"
+                      disabled={loading}
+                      style={{ textAlign: 'center', flex: 1 }}
+                    />
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || formData.points >= 50}
+                      onClick={() => setFormData({ ...formData, points: Math.min(50, formData.points + 1) })}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={addOutline} />
+                    </IonButton>
+                  </div>
+                </IonItem>
+
+                <IonItem lines="none" style={{ '--background': 'transparent', paddingTop: '8px' }}>
+                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
+                </IonItem>
+              </IonList>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div
+                  className={`app-list-item app-list-item--activities ${formData.type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
+                  onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+                  <IonCheckbox
+                    checked={formData.type === 'gottesdienst'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#059669',
+                      '--border-color-checked': '#059669',
+                      '--checkmark-color': 'white'
+                    }}
                   />
-                )}
-              </IonItem>
-              <IonItem
-                lines="none"
-                button
-                detail={false}
-                onClick={() => {
-                  if (!loading) {
-                    setFormData({ ...formData, type: 'gemeinde' });
-                  }
-                }}
-                disabled={loading}
-                style={{
-                  '--background': formData.type === 'gemeinde' ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
-                  '--border-radius': '8px',
-                  marginBottom: '6px'
-                }}
-              >
-                <IonCheckbox
-                  checked={formData.type === 'gemeinde'}
-                  slot="start"
-                  disabled={loading}
-                  style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
-                />
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', margin: 0 }}>Gemeinde</h3>
-                </IonLabel>
-                {formData.type === 'gemeinde' && (
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    slot="end"
-                    style={{ color: '#16a34a' }}
+                </div>
+                <div
+                  className={`app-list-item app-list-item--activities ${formData.type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
+                  onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    opacity: loading ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+                  <IonCheckbox
+                    checked={formData.type === 'gemeinde'}
+                    disabled={loading}
+                    style={{
+                      '--checkbox-background-checked': '#059669',
+                      '--border-color-checked': '#059669',
+                      '--checkmark-color': 'white'
+                    }}
                   />
-                )}
-              </IonItem>
-            </IonList>
-          </IonCardContent>
+                </div>
+              </div>
+            </IonCardContent>
         </IonCard>
       </IonList>
 
@@ -392,15 +372,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 <IonSpinner name="crescent" />
               </div>
             ) : categories.length > 0 ? (
-              <IonList style={{ background: 'transparent' }} lines="none">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {categories.map((category) => {
                   const isChecked = formData.category_ids.includes(category.id);
                   return (
-                    <IonItem
+                    <div
                       key={category.id}
-                      lines="none"
-                      button
-                      detail={false}
+                      className={`app-list-item app-list-item--activities ${isChecked ? 'app-list-item--selected' : ''}`}
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -411,33 +389,28 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                           }));
                         }
                       }}
-                      disabled={loading}
                       style={{
-                        '--background': isChecked ? 'rgba(22, 163, 74, 0.08)' : '#f8f9fa',
-                        '--border-radius': '8px',
-                        marginBottom: '6px'
+                        cursor: loading ? 'default' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
                       }}
                     >
+                      <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
                       <IonCheckbox
                         checked={isChecked}
-                        slot="start"
                         disabled={loading}
-                        style={{ '--border-color': '#16a34a', '--background-checked': '#16a34a' }}
+                        style={{
+                          '--checkbox-background-checked': '#059669',
+                          '--border-color-checked': '#059669',
+                          '--checkmark-color': 'white'
+                        }}
                       />
-                      <IonLabel>
-                        <h3 style={{ fontWeight: '500', margin: 0 }}>{category.name}</h3>
-                      </IonLabel>
-                      {isChecked && (
-                        <IonIcon
-                          icon={checkmarkCircle}
-                          slot="end"
-                          style={{ color: '#16a34a' }}
-                        />
-                      )}
-                    </IonItem>
+                    </div>
                   );
                 })}
-              </IonList>
+              </div>
             ) : (
               <div style={{
                 padding: '40px 20px',

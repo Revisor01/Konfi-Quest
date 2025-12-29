@@ -122,6 +122,21 @@ ion-item .app-list-item {
   border-color: #059669;
   background: rgba(5, 150, 105, 0.08);
 }
+/* Selected State fuer List Items - Users (Indigo) */
+.app-list-item--users.app-list-item--selected {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.08);
+}
+/* Selected State fuer List Items - Level (Lila) */
+.app-list-item--level.app-list-item--selected {
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.08);
+}
+/* Selected State fuer List Items - Organizations (Gruen) */
+.app-list-item--organizations.app-list-item--selected {
+  border-color: #2dd36f;
+  background: rgba(45, 211, 111, 0.08);
+}
 
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
 .app-reason-box {

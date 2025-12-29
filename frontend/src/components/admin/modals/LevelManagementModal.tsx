@@ -275,60 +275,39 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{
-                '--background': '#f5f5f5',
-                '--border-radius': '12px',
-                '--padding-start': '16px',
-                margin: '0 0 12px 0',
-                border: '1px solid #e0e0e0',
-                borderRadius: '12px'
-              }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Titel *</IonLabel>
-                <IonInput
-                  value={formData.title}
-                  onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
-                  placeholder="z.B. Anfänger, Bronze, Meister"
-                  disabled={loading}
-                  clearInput={true}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Titel *</IonLabel>
+                  <IonInput
+                    value={formData.title}
+                    onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
+                    placeholder="z.B. Anfänger, Bronze, Meister"
+                    disabled={loading}
+                    clearInput={true}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{
-                '--background': '#f5f5f5',
-                '--border-radius': '12px',
-                '--padding-start': '16px',
-                margin: '0 0 12px 0',
-                border: '1px solid #e0e0e0',
-                borderRadius: '12px'
-              }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Benötigte Punkte *</IonLabel>
-                <IonInput
-                  type="number"
-                  value={formData.points_required}
-                  onIonInput={(e) => setFormData({ ...formData, points_required: parseInt(e.detail.value!) || 0 })}
-                  placeholder="0"
-                  disabled={loading}
-                  min={0}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Benötigte Punkte *</IonLabel>
+                  <IonInput
+                    type="number"
+                    value={formData.points_required}
+                    onIonInput={(e) => setFormData({ ...formData, points_required: parseInt(e.detail.value!) || 0 })}
+                    placeholder="0"
+                    disabled={loading}
+                    min={0}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{
-                '--background': '#f5f5f5',
-                '--border-radius': '12px',
-                '--padding-start': '16px',
-                margin: '0 0 12px 0',
-                border: '1px solid #e0e0e0',
-                borderRadius: '12px'
-              }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Beschreibung</IonLabel>
-                <IonTextarea
-                  value={formData.description}
-                  onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
-                  placeholder="Optionale Beschreibung..."
-                  rows={3}
-                  disabled={loading}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Beschreibung</IonLabel>
+                  <IonTextarea
+                    value={formData.description}
+                    onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                    placeholder="Optionale Beschreibung..."
+                    rows={3}
+                    disabled={loading}
+                  />
+                </IonItem>
 
               {/* Icon Picker */}
               <div style={{ marginTop: '16px' }}>

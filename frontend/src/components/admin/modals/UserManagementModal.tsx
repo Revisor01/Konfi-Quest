@@ -326,64 +326,64 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Anzeigename *</IonLabel>
-                <IonInput
-                  value={formData.display_name}
-                  onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
-                  placeholder="Max Mustermann"
-                  disabled={saving}
-                />
-              </IonItem>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Anzeigename *</IonLabel>
+                  <IonInput
+                    value={formData.display_name}
+                    onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
+                    placeholder="Max Mustermann"
+                    disabled={saving}
+                  />
+                </IonItem>
 
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Benutzername *</IonLabel>
-                <IonInput
-                  value={formData.username}
-                  onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
-                  placeholder="max.mustermann"
-                  disabled={saving}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Benutzername *</IonLabel>
+                  <IonInput
+                    value={formData.username}
+                    onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
+                    placeholder="max.mustermann"
+                    disabled={saving}
+                  />
+                </IonItem>
 
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">Funktionsbeschreibung (optional)</IonLabel>
-                <IonInput
-                  value={formData.role_title}
-                  onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
-                  placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                  disabled={saving}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Funktionsbeschreibung (optional)</IonLabel>
+                  <IonInput
+                    value={formData.role_title}
+                    onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
+                    placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
+                    disabled={saving}
+                  />
+                </IonItem>
 
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
-                <IonLabel position="stacked">E-Mail (optional)</IonLabel>
-                <IonInput
-                  type="email"
-                  value={formData.email}
-                  onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
-                  placeholder="max@example.com"
-                  disabled={saving}
-                />
-              </IonItem>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">E-Mail (optional)</IonLabel>
+                  <IonInput
+                    type="email"
+                    value={formData.email}
+                    onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
+                    placeholder="max@example.com"
+                    disabled={saving}
+                  />
+                </IonItem>
 
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonLabel position="stacked">
-                  Passwort {!isEditMode && <span style={{ color: '#ef4444' }}>*</span>}
-                </IonLabel>
-                <IonInput
-                  type="password"
-                  value={formData.password}
-                  onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
-                  placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
-                  disabled={saving}
-                />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">
+                    Passwort {!isEditMode && <span style={{ color: '#ef4444' }}>*</span>}
+                  </IonLabel>
+                  <IonInput
+                    type="password"
+                    value={formData.password}
+                    onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
+                    placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
+                    disabled={saving}
+                  />
+                </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* SEKTION: Rolle und Status */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -395,54 +395,50 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-              <IonItem
-                button
-                onClick={presentRoleActionSheet}
-                disabled={saving}
-                style={{
-                  '--background': '#f8f9fa',
-                  '--border-radius': '10px',
-                  marginBottom: '12px'
-                }}
-              >
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Rolle *</h3>
-                  <p style={{ color: getSelectedRole() ? '#333' : '#999', margin: 0 }}>
-                    {getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswählen...'}
-                  </p>
-                </IonLabel>
-              </IonItem>
-
-              {getSelectedRole() && getSelectedRole()?.description && (
-                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                  <IonText color="medium">
-                    <p style={{ fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>
-                      {getSelectedRole()?.description}
-                    </p>
-                  </IonText>
-                </IonItem>
-              )}
-
-              <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px' }}>
-                <IonLabel>
-                  <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Konto aktiv</h3>
-                  <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
-                    Benutzer kann sich anmelden
-                  </p>
-                </IonLabel>
-                <IonToggle
-                  slot="end"
-                  checked={formData.is_active}
-                  onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem
+                  button
+                  lines="full"
+                  onClick={presentRoleActionSheet}
                   disabled={saving}
-                  style={{ marginRight: '0' }}
-                />
-              </IonItem>
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+                  style={{ '--background': 'transparent' }}
+                >
+                  <IonLabel>
+                    <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Rolle *</h3>
+                    <p style={{ color: getSelectedRole() ? '#333' : '#999', margin: 0 }}>
+                      {getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswählen...'}
+                    </p>
+                  </IonLabel>
+                </IonItem>
+
+                {getSelectedRole() && getSelectedRole()?.description && (
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonText color="medium">
+                      <p style={{ fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>
+                        {getSelectedRole()?.description}
+                      </p>
+                    </IonText>
+                  </IonItem>
+                )}
+
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel>
+                    <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Konto aktiv</h3>
+                    <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
+                      Benutzer kann sich anmelden
+                    </p>
+                  </IonLabel>
+                  <IonToggle
+                    slot="end"
+                    checked={formData.is_active}
+                    onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
+                    disabled={saving}
+                  />
+                </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* SEKTION: Jahrgang-Zuweisungen */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -461,41 +457,37 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </IonLabel>
               </IonItem>
             ) : (
-              <IonList style={{ background: 'transparent' }} lines="none">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {jahrgaenge.map(jahrgang => {
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
 
                   return (
-                    <IonItem
+                    <div
                       key={jahrgang.id}
+                      className={`app-list-item app-list-item--users ${isAssigned ? 'app-list-item--selected' : ''}`}
+                      onClick={() => !saving && handleJahrgangAssignment(jahrgang.id, !isAssigned)}
                       style={{
-                        '--background': isAssigned ? 'rgba(102, 126, 234, 0.08)' : '#f8f9fa',
-                        '--border-radius': '8px',
-                        marginBottom: '6px'
+                        cursor: saving ? 'default' : 'pointer',
+                        opacity: saving ? 0.6 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
                       }}
                     >
+                      <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
                       <IonCheckbox
                         checked={isAssigned}
-                        onIonChange={(e) => handleJahrgangAssignment(jahrgang.id, e.detail.checked)}
-                        slot="start"
                         disabled={saving}
-                        style={{ '--border-color': '#667eea', '--background-checked': '#667eea' }}
+                        style={{
+                          '--checkbox-background-checked': '#667eea',
+                          '--border-color-checked': '#667eea',
+                          '--checkmark-color': 'white'
+                        }}
                       />
-                      <IonLabel>
-                        <h3 style={{ fontWeight: '500', margin: 0 }}>{jahrgang.name}</h3>
-                      </IonLabel>
-                      {isAssigned && (
-                        <IonIcon
-                          icon={checkmarkCircle}
-                          slot="end"
-                          style={{ color: '#667eea' }}
-                        />
-                      )}
-                    </IonItem>
+                    </div>
                   );
                 })}
-
-              </IonList>
+              </div>
             )}
           </IonCardContent>
         </IonCard>
