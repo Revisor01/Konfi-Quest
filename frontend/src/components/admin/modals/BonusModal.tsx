@@ -18,7 +18,7 @@ import {
   IonCardContent,
   IonCheckbox
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline, chatbubbleOutline } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface BonusModalProps {
@@ -102,6 +102,16 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     onIonInput={(e) => setName(e.detail.value!)}
                     placeholder="z.B. Hilfe beim Aufräumen"
                     clearInput={true}
+                    disabled={loading}
+                  />
+                </IonItem>
+
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Datum *</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={selectedDate}
+                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
                     disabled={loading}
                   />
                 </IonItem>
@@ -209,29 +219,19 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           </IonCard>
         </IonList>
 
-        {/* Datum & Begründung */}
+        {/* Begründung (optional) */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--bonus">
-              <IonIcon icon={calendar} />
+              <IonIcon icon={chatbubbleOutline} />
             </div>
-            <IonLabel>Datum & Begründung</IonLabel>
+            <IonLabel>Begründung (optional)</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Datum *</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={selectedDate}
-                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                    disabled={loading}
-                  />
-                </IonItem>
-
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Begründung (optional)</IonLabel>
+                  <IonLabel position="stacked">Begründung</IonLabel>
                   <IonTextarea
                     value={reason}
                     onIonInput={(e) => setReason(e.detail.value!)}
