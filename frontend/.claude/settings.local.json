@@ -44,7 +44,8 @@
       "mcp__plugin_claude-mem_claude-mem-search__search",
       "mcp__plugin_claude-mem_claude-mem-search__get_observation",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nModals + ActivityRings: Lila Hinweis, Ring-Animation, Gemeinde dunkelgruen\n\n- KonfiModal: Hinweis-Sektion jetzt in Lila statt Blau\n- Alle Modals: Unnoetige padding styles aus IonCardContent entfernt\n- ActivityRings: Animierte Ringe beim Erscheinen \\(gestaffelt von aussen nach innen\\)\n- ActivityRings: Gemeinde-Farbe global auf dunkelgruen \\(#059669\\) geaendert\n- ActivityModal: Gottesdienst blau, Gemeinde gruen - mit korrekter Hinterlegung bei Auswahl\n- ActivityModal: Checkbox-Farben entsprechend dem Typ \\(blau/gruen\\)\n- BonusModal: Auswahl-Hinterlegung bei Typ-Auswahl hinzugefuegt\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []

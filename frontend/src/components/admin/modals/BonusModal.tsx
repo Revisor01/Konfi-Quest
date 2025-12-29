@@ -87,33 +87,35 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         {/* Datum & Begründung */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#f97316' }}>
+            <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={calendar} />
             </div>
             <IonLabel>Datum & Begründung</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Datum *</IonLabel>
-                <IonInput
-                  type="date"
-                  value={selectedDate}
-                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                  disabled={loading}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Datum *</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={selectedDate}
+                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                    disabled={loading}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Begründung</IonLabel>
-                <IonTextarea
-                  value={reason}
-                  onIonInput={(e) => setReason(e.detail.value!)}
-                  placeholder="Warum werden diese Bonuspunkte vergeben?"
-                  rows={3}
-                  disabled={loading}
-                />
-              </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Begründung</IonLabel>
+                  <IonTextarea
+                    value={reason}
+                    onIonInput={(e) => setReason(e.detail.value!)}
+                    placeholder="Warum werden diese Bonuspunkte vergeben?"
+                    rows={3}
+                    disabled={loading}
+                  />
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -121,66 +123,68 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         {/* Bonuspunkt Detail */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#f97316' }}>
+            <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={gift} />
             </div>
             <IonLabel>Bonuspunkt Detail</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Bezeichnung *</IonLabel>
-                <IonInput
-                  value={name}
-                  onIonInput={(e) => setName(e.detail.value!)}
-                  placeholder="z.B. Hilfe beim Aufräumen"
-                  clearInput={true}
-                  disabled={loading}
-                />
-              </IonItem>
-
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
-                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || points <= 1}
-                    onClick={() => setPoints(Math.max(1, points - 1))}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={removeOutline} />
-                  </IonButton>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Bezeichnung *</IonLabel>
                   <IonInput
-                    type="text"
-                    inputMode="numeric"
-                    value={points.toString()}
-                    onIonInput={(e) => {
-                      const value = e.detail.value!;
-                      if (value === '') {
-                        setPoints(1);
-                      } else {
-                        const num = parseInt(value);
-                        if (!isNaN(num) && num >= 1 && num <= 50) {
-                          setPoints(num);
-                        }
-                      }
-                    }}
-                    placeholder="1"
+                    value={name}
+                    onIonInput={(e) => setName(e.detail.value!)}
+                    placeholder="z.B. Hilfe beim Aufräumen"
+                    clearInput={true}
                     disabled={loading}
-                    style={{ textAlign: 'center', flex: 1 }}
                   />
-                  <IonButton
-                    fill="outline"
-                    size="small"
-                    disabled={loading || points >= 50}
-                    onClick={() => setPoints(Math.min(50, points + 1))}
-                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
-                  >
-                    <IonIcon icon={addOutline} />
-                  </IonButton>
-                </div>
-              </IonItem>
+                </IonItem>
+
+                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                  <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || points <= 1}
+                      onClick={() => setPoints(Math.max(1, points - 1))}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={removeOutline} />
+                    </IonButton>
+                    <IonInput
+                      type="text"
+                      inputMode="numeric"
+                      value={points.toString()}
+                      onIonInput={(e) => {
+                        const value = e.detail.value!;
+                        if (value === '') {
+                          setPoints(1);
+                        } else {
+                          const num = parseInt(value);
+                          if (!isNaN(num) && num >= 1 && num <= 50) {
+                            setPoints(num);
+                          }
+                        }
+                      }}
+                      placeholder="1"
+                      disabled={loading}
+                      style={{ textAlign: 'center', flex: 1 }}
+                    />
+                    <IonButton
+                      fill="outline"
+                      size="small"
+                      disabled={loading || points >= 50}
+                      onClick={() => setPoints(Math.min(50, points + 1))}
+                      style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                    >
+                      <IonIcon icon={addOutline} />
+                    </IonButton>
+                  </div>
+                </IonItem>
+              </IonList>
 
               <div style={{ marginTop: '16px', marginBottom: '8px' }}>
                 <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</span>

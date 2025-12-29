@@ -84,7 +84,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   };
 
   // Farben für Aktivitäten
-  const activityColor = '#059669'; // Dunkelgrün für Section-Icons
   const gottesdienstColor = '#3b82f6'; // Blau
   const gemeindeColor = '#059669'; // Dunkelgrün
 
@@ -110,33 +109,35 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         {/* Datum & Kommentar */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: activityColor }}>
+            <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={calendar} />
             </div>
             <IonLabel>Datum & Kommentar</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Datum *</IonLabel>
-                <IonInput
-                  type="date"
-                  value={selectedDate}
-                  onIonInput={(e) => setSelectedDate(e.detail.value!)}
-                  disabled={loading}
-                />
-              </IonItem>
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Datum *</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={selectedDate}
+                    onIonInput={(e) => setSelectedDate(e.detail.value!)}
+                    disabled={loading}
+                  />
+                </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Kommentar (optional)</IonLabel>
-                <IonTextarea
-                  value={comment}
-                  onIonInput={(e) => setComment(e.detail.value!)}
-                  placeholder="Zusätzliche Informationen..."
-                  rows={3}
-                  disabled={loading}
-                />
-              </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Kommentar (optional)</IonLabel>
+                  <IonTextarea
+                    value={comment}
+                    onIonInput={(e) => setComment(e.detail.value!)}
+                    placeholder="Zusätzliche Informationen..."
+                    rows={3}
+                    disabled={loading}
+                  />
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -144,13 +145,13 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         {/* Aktivität auswählen */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: activityColor }}>
+            <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={flash} />
             </div>
             <IonLabel>Aktivität auswählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {activities
                   .sort((a, b) => {

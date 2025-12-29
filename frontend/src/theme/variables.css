@@ -80,6 +80,9 @@ ion-item .app-list-item {
 .app-list-item--info { border-left-color: #007aff; }
 .app-list-item--purple { border-left-color: #8b5cf6; }
 .app-list-item--booked { border-left-color: #007aff; }
+.app-list-item--primary { border-left-color: #5b21b6; }
+.app-list-item--bonus { border-left-color: #f97316; }
+.app-list-item--activities { border-left-color: #059669; }
 
 /* Selected State fuer List Items - Events (Rot) */
 .app-list-item--events.app-list-item--selected {
@@ -100,6 +103,21 @@ ion-item .app-list-item {
 .app-list-item--selected {
   border-color: #ff9500;
   background: rgba(255, 149, 0, 0.08);
+}
+/* Selected State fuer List Items - Primary (Lila) */
+.app-list-item--primary.app-list-item--selected {
+  border-color: #5b21b6;
+  background: rgba(91, 33, 182, 0.08);
+}
+/* Selected State fuer List Items - Bonus (Orange) */
+.app-list-item--bonus.app-list-item--selected {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+}
+/* Selected State fuer List Items - Activities (Dunkelgruen) */
+.app-list-item--activities.app-list-item--selected {
+  border-color: #059669;
+  background: rgba(5, 150, 105, 0.08);
 }
 
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
@@ -212,6 +230,8 @@ ion-item .app-list-item {
 .app-section-icon--info { background-color: #007aff; }
 .app-section-icon--purple { background-color: #8b5cf6; }
 .app-section-icon--primary { background-color: #5b21b6; }
+.app-section-icon--bonus { background-color: #f97316; }
+.app-section-icon--activities { background-color: #059669; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -262,6 +282,9 @@ ion-item .app-list-item {
 .app-icon-circle--info { background-color: #007aff; }
 .app-icon-circle--purple { background-color: #8b5cf6; }
 .app-icon-circle--trophy { background-color: #ff9500; }
+.app-icon-circle--primary { background-color: #5b21b6; }
+.app-icon-circle--bonus { background-color: #f97316; }
+.app-icon-circle--activities { background-color: #059669; }
 .app-icon-circle ion-icon {
   color: white;
   font-size: 0.9rem;
