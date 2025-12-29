@@ -28,28 +28,16 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindeGoal,
   size = 160
 }) => {
-  // Animation startet nach Mount
+  // Animation startet nach Mount mit Verzögerung
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
-    // Zwei Frames warten damit der Browser den initialen Zustand rendert
-    let frameId: number;
-    const startAnimation = () => {
-      frameId = requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setShouldAnimate(true);
-        });
-      });
-    };
-    startAnimation();
-    return () => cancelAnimationFrame(frameId);
-  }, [animationKey]);
-
-  // Wenn sich die Werte aendern, Animation zuruecksetzen
-  useEffect(() => {
+    // Kurze Verzögerung damit der Browser den initialen Zustand rendert
     setShouldAnimate(false);
-    setAnimationKey(prev => prev + 1);
+    const timer = setTimeout(() => {
+      setShouldAnimate(true);
+    }, 50);
+    return () => clearTimeout(timer);
   }, [totalPoints, gottesdienstPoints, gemeindePoints]);
 
   // Alle Ringe werden immer angezeigt
