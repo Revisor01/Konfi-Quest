@@ -410,7 +410,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                               icon={request.activity_type === 'gottesdienst' ? home : people}
                               style={{
                                 fontSize: '0.8rem',
-                                color: (isApproved || isRejected) ? '#999' : request.activity_type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                                color: (isApproved || isRejected) ? '#999' : request.activity_type === 'gottesdienst' ? '#007aff' : '#28a745'
                               }}
                             />
                             <span>{request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</span>

@@ -253,6 +253,8 @@ ion-item .app-list-item {
 .app-section-icon--users { background-color: #667eea; }
 .app-section-icon--level { background-color: #9b59b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
+.app-section-icon--badges { background-color: #ff9500; }
+.app-section-icon--requests { background-color: #28a745; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
