@@ -99,7 +99,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+    return type === 'gottesdienst' ? '#007aff' : '#155724';
   };
 
   return (
