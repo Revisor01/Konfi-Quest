@@ -265,50 +265,40 @@ const UsersView: React.FC<UsersViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern */}
+      {/* Tab Navigation - einfaches IonSegment */}
+      <div style={{ margin: '16px' }}>
+        <IonSegment
+          value={selectedFilter}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="aktiv">
+            <IonLabel>Aktiv</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="admin">
+            <IonLabel>Admin</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="teamer">
+            <IonLabel>Team</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--users">
-            <IonIcon icon={filterOutline} />
-          </div>
-          <IonLabel>Suche & Filter</IonLabel>
-        </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              {/* Suchfeld */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Benutzer:in suchen</IonLabel>
-                <IonInput
-                  value={searchTerm}
-                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Name oder Benutzername..."
-                  clearInput={true}
-                />
-              </IonItem>
-              {/* Filter */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Status</IonLabel>
-                <IonSegment
-                  value={selectedFilter}
-                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-                  style={{ marginTop: '8px' }}
-                >
-                  <IonSegmentButton value="alle">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="aktiv">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="admin">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Admin</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="teamer">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Team</IonLabel>
-                  </IonSegmentButton>
-                </IonSegment>
-              </IonItem>
-            </IonList>
+          <IonCardContent style={{ padding: '8px 16px' }}>
+            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+              <IonIcon icon={filterOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Benutzer:in suchen..."
+                clearInput={true}
+              />
+            </IonItem>
           </IonCardContent>
         </IonCard>
       </IonList>
@@ -324,12 +314,16 @@ const UsersView: React.FC<UsersViewProps> = ({
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-            {filteredAndSortedUsers.map((user) => (
+            {filteredAndSortedUsers.map((user, index) => {
+              const roleColor = getRoleColor(user.role_name);
+
+              return (
               <IonItemSliding
                 key={user.id}
                 ref={(ref) => {
                   if (ref) slidingRefs.current.set(user.id, ref);
                 }}
+                style={{ marginBottom: index < filteredAndSortedUsers.length - 1 ? '8px' : '0' }}
               >
                 <IonItem
                   button={user.can_edit !== false}
@@ -340,162 +334,104 @@ const UsersView: React.FC<UsersViewProps> = ({
                       onSelectUser(user);
                     }
                   }}
+                  lines="none"
                   style={{
-                    '--min-height': '100px',
-                    '--padding-start': '16px',
-                    '--padding-top': '0px',
-                    '--padding-bottom': '0px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '4px 8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px',
-                    opacity: user.is_active ? 1 : 0.6
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto'
                   }}
                 >
-                  <IonLabel>
-                    {/* Header mit Icon und Rollen-Badge rechts */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '4px',
-                      position: 'relative'
-                    }}>
-                      {/* Role Icon - 32px */}
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: getRoleColor(user.role_name),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: `0 2px 8px ${getRoleColor(user.role_name)}40`,
-                        flexShrink: 0
-                      }}>
-                        <IonIcon
-                          icon={user.role_name === 'org_admin' ? shield : user.role_name === 'admin' ? shield : person}
-                          style={{ fontSize: '0.9rem', color: 'white' }}
-                        />
+                  <div
+                    className="app-list-item app-list-item--users"
+                    style={{
+                      width: '100%',
+                      borderLeftColor: roleColor,
+                      opacity: user.is_active ? 1 : 0.6,
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Eselsohr-Style Corner Badge */}
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: roleColor }}
+                    >
+                      {user.role_name === 'org_admin' ? 'Org Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
+                    </div>
+
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        {/* Role Icon */}
+                        <div
+                          className="app-icon-circle app-icon-circle--lg"
+                          style={{ backgroundColor: roleColor }}
+                        >
+                          <IonIcon icon={user.role_name === 'org_admin' || user.role_name === 'admin' ? shield : person} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="app-list-item__content">
+                          {/* Zeile 1: Name */}
+                          <div
+                            className="app-list-item__title"
+                            style={{
+                              color: user.is_active ? '#333' : '#999',
+                              paddingRight: '70px'
+                            }}
+                          >
+                            {user.display_name}
+                          </div>
+
+                          {/* Zeile 2: Username + Titel */}
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={at} style={{ color: user.is_active ? '#007aff' : '#999' }} />
+                              {user.username}
+                            </span>
+                            {user.role_title && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={briefcaseOutline} style={{ color: user.is_active ? '#f59e0b' : '#999' }} />
+                                {user.role_title}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Zeile 3: Jahrgänge + Login */}
+                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                            {user.assigned_jahrgaenge_count > 0 && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={school} style={{ color: user.is_active ? '#007aff' : '#999' }} />
+                                {user.assigned_jahrgaenge_count} Jg.
+                              </span>
+                            )}
+                            {user.last_login_at && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={time} style={{ color: user.is_active ? '#34c759' : '#999' }} />
+                                {formatDate(user.last_login_at)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-
-                      {/* Name */}
-                      <h2 style={{
-                        fontWeight: '600',
-                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-                        margin: '0',
-                        color: user.is_active ? '#333' : '#999',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        minWidth: 0,
-                        maxWidth: 'calc(100% - 120px)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {user.display_name}
-                      </h2>
-
-                      {/* Rollen-Badge rechts außen */}
-                      <span style={{
-                        fontSize: '0.7rem',
-                        color: user.is_active ? getRoleColor(user.role_name) : '#999',
-                        fontWeight: '600',
-                        backgroundColor: user.is_active ? `${getRoleColor(user.role_name)}15` : 'rgba(153, 153, 153, 0.15)',
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        border: user.is_active ? `1px solid ${getRoleColor(user.role_name)}30` : '1px solid rgba(153, 153, 153, 0.3)',
-                        whiteSpace: 'nowrap',
-                        position: 'absolute',
-                        right: '0px',
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-                      }}>
-                        {user.role_name === 'org_admin' ? 'Org Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Teamer:in'}
-                      </span>
                     </div>
-
-                    {/* Username und Titel - Zeile 1 */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontSize: '0.85rem',
-                      color: user.is_active ? '#666' : '#999',
-                      marginBottom: '4px',
-                      marginLeft: '44px'
-                    }}>
-                      <IonIcon icon={at} style={{ fontSize: '0.9rem', color: user.is_active ? '#007aff' : '#999' }} />
-                      <span style={{ fontWeight: '500', color: user.is_active ? '#333' : '#999' }}>
-                        {user.username}
-                      </span>
-                      {user.role_title && (
-                        <>
-                          <IonIcon icon={briefcaseOutline} style={{ fontSize: '0.85rem', color: user.is_active ? '#f59e0b' : '#999', marginLeft: '8px' }} />
-                          <span style={{ color: user.is_active ? '#666' : '#999' }}>
-                            {user.role_title}
-                          </span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Details - Zeile 2 */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      fontSize: '0.8rem',
-                      color: user.is_active ? '#666' : '#999',
-                      marginLeft: '44px'
-                    }}>
-                      {user.assigned_jahrgaenge_count > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={school} style={{ fontSize: '0.8rem', color: user.is_active ? '#007aff' : '#999' }} />
-                          <span>{user.assigned_jahrgaenge_count} Jg.</span>
-                        </div>
-                      )}
-                      {user.last_login_at && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={time} style={{ fontSize: '0.8rem', color: user.is_active ? '#34c759' : '#999' }} />
-                          <span>{formatDate(user.last_login_at)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </IonLabel>
+                  </div>
                 </IonItem>
 
                 {user.can_edit !== false && (
-                  <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                  <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                     <IonItemOption
                       onClick={() => {
                         closeAllSlidingItems();
                         onSelectUser(user);
                       }}
-                      style={{
-                        '--background': 'transparent',
-                        '--background-activated': 'transparent',
-                        '--background-focused': 'transparent',
-                        '--background-hover': 'transparent',
-                        '--color': 'transparent',
-                        '--ripple-color': 'transparent',
-                        padding: '0 2px',
-                        minWidth: '48px',
-                        maxWidth: '48px'
-                      }}
+                      style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                     >
-                      <div style={{
-                        width: '44px',
-                        height: '44px',
-                        backgroundColor: '#667eea',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                      }}>
-                        <IonIcon icon={createOutline} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                        <IonIcon icon={createOutline} />
                       </div>
                     </IonItemOption>
                     <IonItemOption
@@ -503,36 +439,17 @@ const UsersView: React.FC<UsersViewProps> = ({
                         closeAllSlidingItems();
                         onDeleteUser(user);
                       }}
-                      style={{
-                        '--background': 'transparent',
-                        '--background-activated': 'transparent',
-                        '--background-focused': 'transparent',
-                        '--background-hover': 'transparent',
-                        '--color': 'transparent',
-                        '--ripple-color': 'transparent',
-                        padding: '0 2px',
-                        paddingRight: '12px',
-                        minWidth: '48px',
-                        maxWidth: '60px'
-                      }}
+                      style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                     >
-                      <div style={{
-                        width: '44px',
-                        height: '44px',
-                        backgroundColor: '#dc3545',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                      }}>
-                        <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                        <IonIcon icon={trash} />
                       </div>
                     </IonItemOption>
                   </IonItemOptions>
                 )}
               </IonItemSliding>
-            ))}
+              );
+            })}
 
             {filteredAndSortedUsers.length === 0 && (
               <div style={{ textAlign: 'center', padding: '32px' }}>

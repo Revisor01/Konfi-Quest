@@ -131,12 +131,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
             {jahrgang ? 'Jahrgang bearbeiten' : 'Neuer Jahrgang'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} style={{
-              '--background': '#f8f9fa',
-              '--background-hover': '#e9ecef',
-              '--color': '#6c757d',
-              '--border-radius': '8px'
-            }}>
+            <IonButton onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -179,12 +174,36 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 </IonItem>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
-                  <IonInput
-                    type="date"
-                    value={formData.confirmation_date}
-                    onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
-                    disabled={loading}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
+                    {formData.confirmation_date && (
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        backgroundColor: 'rgba(52, 199, 89, 0.15)',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(52, 199, 89, 0.3)'
+                      }}>
+                        <IonIcon icon={calendar} style={{ color: '#34c759', fontSize: '1.1rem' }} />
+                        <span style={{ color: '#34c759', fontWeight: '600', fontSize: '0.9rem' }}>
+                          {new Date(formData.confirmation_date).toLocaleDateString('de-DE', {
+                            weekday: 'long',
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    <IonInput
+                      type="date"
+                      value={formData.confirmation_date}
+                      onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
+                      disabled={loading}
+                      style={{ flex: formData.confirmation_date ? '0 0 auto' : '1' }}
+                    />
+                  </div>
                 </IonItem>
               </IonList>
             </IonCardContent>

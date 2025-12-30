@@ -328,50 +328,40 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern */}
+      {/* Tab Navigation - einfaches IonSegment */}
+      <div style={{ margin: '16px' }}>
+        <IonSegment
+          value={selectedFilter}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="aktiv">
+            <IonLabel>Aktiv</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="versteckt">
+            <IonLabel>Geheim</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="inaktiv">
+            <IonLabel>Inaktiv</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--badges">
-            <IonIcon icon={filterOutline} />
-          </div>
-          <IonLabel>Suche & Filter</IonLabel>
-        </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              {/* Suchfeld */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Badge suchen</IonLabel>
-                <IonInput
-                  value={searchTerm}
-                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Name eingeben..."
-                  clearInput={true}
-                />
-              </IonItem>
-              {/* Status Filter */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Status</IonLabel>
-                <IonSegment
-                  value={selectedFilter}
-                  onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-                  style={{ marginTop: '8px' }}
-                >
-                  <IonSegmentButton value="alle">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="aktiv">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="versteckt">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Geheim</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="inaktiv">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Inaktiv</IonLabel>
-                  </IonSegmentButton>
-                </IonSegment>
-              </IonItem>
-            </IonList>
+          <IonCardContent style={{ padding: '8px 16px' }}>
+            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+              <IonIcon icon={filterOutline} slot="start" style={{ color: '#ff9500', marginRight: '12px' }} />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Badge suchen..."
+                clearInput={true}
+              />
+            </IonItem>
           </IonCardContent>
         </IonCard>
       </IonList>

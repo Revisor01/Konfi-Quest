@@ -254,47 +254,37 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern */}
+      {/* Tab Navigation - einfaches IonSegment */}
+      <div style={{ margin: '16px' }}>
+        <IonSegment
+          value={selectedType}
+          onIonChange={(e) => setSelectedType(e.detail.value as string)}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="gemeinde">
+            <IonLabel>Gemeinde</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="gottesdienst">
+            <IonLabel>GoDi</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
+
+      {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--activities">
-            <IonIcon icon={filterOutline} />
-          </div>
-          <IonLabel>Suche & Filter</IonLabel>
-        </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              {/* Suchfeld */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Aktivität suchen</IonLabel>
-                <IonInput
-                  value={searchTerm}
-                  onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                  placeholder="Name eingeben..."
-                  clearInput={true}
-                />
-              </IonItem>
-              {/* Typ Filter */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Typ</IonLabel>
-                <IonSegment
-                  value={selectedType}
-                  onIonChange={(e) => setSelectedType(e.detail.value as string)}
-                  style={{ marginTop: '8px' }}
-                >
-                  <IonSegmentButton value="alle">
-                    <IonLabel style={{ fontSize: '0.8rem' }}>Alle</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="gemeinde">
-                    <IonLabel style={{ fontSize: '0.8rem' }}>Gemeinde</IonLabel>
-                  </IonSegmentButton>
-                  <IonSegmentButton value="gottesdienst">
-                    <IonLabel style={{ fontSize: '0.8rem' }}>GoDi</IonLabel>
-                  </IonSegmentButton>
-                </IonSegment>
-              </IonItem>
-            </IonList>
+          <IonCardContent style={{ padding: '8px 16px' }}>
+            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+              <IonIcon icon={filterOutline} slot="start" style={{ color: '#16a34a', marginRight: '12px' }} />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Aktivität suchen..."
+                clearInput={true}
+              />
+            </IonItem>
           </IonCardContent>
         </IonCard>
       </IonList>
@@ -310,7 +300,10 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-            {filteredAndSortedActivities.map((activity) => (
+            {filteredAndSortedActivities.map((activity, index) => {
+              const typeColor = activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f';
+
+              return (
               <IonItemSliding
                 key={activity.id}
                 ref={(el) => {
@@ -320,158 +313,96 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
                     slidingRefs.current.delete(activity.id);
                   }
                 }}
+                style={{ marginBottom: index < filteredAndSortedActivities.length - 1 ? '8px' : '0' }}
               >
                 <IonItem
                   button={canEdit}
                   onClick={canEdit ? () => onSelectActivity(activity) : undefined}
                   detail={false}
+                  lines="none"
                   style={{
-                    '--min-height': '72px',
-                    '--padding-start': '16px',
-                    '--padding-top': '0px',
-                    '--padding-bottom': '0px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '4px 8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    border: '1px solid #e0e0e0',
-                    borderRadius: '12px',
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto',
                     opacity: canEdit ? 1 : 0.6,
                     cursor: canEdit ? 'pointer' : 'default'
                   }}
                 >
-                  <IonLabel>
-                    {/* Header mit Icon und Badge */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '6px',
-                      position: 'relative'
-                    }}>
-                      {/* Activity Icon - 32px wie andere Views */}
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        boxShadow: activity.type === 'gottesdienst'
-                          ? '0 2px 8px rgba(0, 122, 255, 0.4)'
-                          : '0 2px 8px rgba(45, 211, 111, 0.4)'
-                      }}>
-                        <IonIcon
-                          icon={getTypeIcon(activity.type)}
-                          style={{
-                            fontSize: '0.9rem',
-                            color: 'white'
-                          }}
-                        />
-                      </div>
-
-                      {/* Activity Name */}
-                      <h2 style={{
-                        fontWeight: '600',
-                        fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
-                        margin: '0',
-                        color: '#333',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        minWidth: 0,
-                        maxWidth: 'calc(100% - 100px)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {activity.name}
-                      </h2>
-
-                      {/* Points Badge */}
-                      <span style={{
-                        fontSize: '0.7rem',
-                        color: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
-                        fontWeight: '600',
-                        backgroundColor: activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(45, 211, 111, 0.15)',
-                        padding: '3px 6px',
-                        borderRadius: '6px',
-                        border: activity.type === 'gottesdienst' ? '1px solid rgba(0, 122, 255, 0.3)' : '1px solid rgba(45, 211, 111, 0.3)',
-                        whiteSpace: 'nowrap',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                        position: 'absolute',
-                        right: '0px',
-                        top: '50%',
-                        transform: 'translateY(-50%)'
-                      }}>
-                        +{activity.points}
-                      </span>
+                  <div
+                    className="app-list-item app-list-item--activities"
+                    style={{
+                      width: '100%',
+                      borderLeftColor: typeColor,
+                      position: 'relative',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Eselsohr-Style Corner Badge */}
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: typeColor }}
+                    >
+                      +{activity.points}P
                     </div>
 
-                    {/* Type and Categories */}
-                    <div style={{
-                      fontSize: '0.8rem',
-                      color: '#666',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      marginLeft: '44px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon
-                          icon={getTypeIcon(activity.type)}
-                          style={{
-                            fontSize: '0.8rem',
-                            color: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
-                          }}
-                        />
-                        <span>{getTypeText(activity.type)}</span>
-                      </div>
-                      {activity.categories && activity.categories.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <IonIcon icon={pricetag} style={{ fontSize: '0.8rem', color: '#ff9500' }} />
-                          <span>{activity.categories.map(cat => cat.name).join(', ')}</span>
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        {/* Activity Icon */}
+                        <div
+                          className="app-icon-circle app-icon-circle--lg"
+                          style={{ backgroundColor: typeColor }}
+                        >
+                          <IonIcon icon={getTypeIcon(activity.type)} />
                         </div>
-                      )}
+
+                        {/* Content */}
+                        <div className="app-list-item__content">
+                          {/* Zeile 1: Name */}
+                          <div
+                            className="app-list-item__title"
+                            style={{ paddingRight: '60px' }}
+                          >
+                            {activity.name}
+                          </div>
+
+                          {/* Zeile 2: Typ + Kategorien */}
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={getTypeIcon(activity.type)} style={{ color: typeColor }} />
+                              {getTypeText(activity.type)}
+                            </span>
+                            {activity.categories && activity.categories.length > 0 && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={pricetag} style={{ color: '#ff9500' }} />
+                                {activity.categories.map(cat => cat.name).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </IonLabel>
+                  </div>
                 </IonItem>
 
                 {canDelete && (
-                  <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                  <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
                     <IonItemOption
                       onClick={() => handleDeleteWithSlideClose(activity)}
-                      style={{
-                        '--background': 'transparent',
-                        '--background-activated': 'transparent',
-                        '--background-focused': 'transparent',
-                        '--background-hover': 'transparent',
-                        '--color': 'transparent',
-                        '--ripple-color': 'transparent',
-                        padding: '0 2px',
-                        paddingRight: '20px',
-                        minWidth: '48px',
-                        maxWidth: '68px'
-                      }}
+                      style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                     >
-                      <div style={{
-                        width: '44px',
-                        height: '44px',
-                        backgroundColor: '#dc3545',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                      }}>
-                        <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                        <IonIcon icon={trash} />
                       </div>
                     </IonItemOption>
                   </IonItemOptions>
                 )}
               </IonItemSliding>
-            ))}
+              );
+            })}
             
             {filteredAndSortedActivities.length === 0 && (
               <div style={{ textAlign: 'center', padding: '32px' }}>

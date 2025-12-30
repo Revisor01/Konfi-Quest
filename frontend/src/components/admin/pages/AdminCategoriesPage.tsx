@@ -132,12 +132,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
             {category ? 'Kategorie bearbeiten' : 'Neue Kategorie'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading} style={{
-              '--background': '#f8f9fa',
-              '--background-hover': '#e9ecef',
-              '--color': '#6c757d',
-              '--border-radius': '8px'
-            }}>
+            <IonButton onClick={handleClose} disabled={loading}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -160,7 +155,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         {/* Kategorie Details - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--badges">
+            <div className="app-section-icon" style={{ backgroundColor: 'rgba(255, 149, 0, 0.15)', color: '#ff9500' }}>
               <IonIcon icon={pricetag} />
             </div>
             <IonLabel>Kategorie Details</IonLabel>
@@ -418,7 +413,7 @@ const AdminCategoriesPage: React.FC = () => {
         {/* Categories List - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--badges">
+            <div className="app-section-icon" style={{ backgroundColor: 'rgba(255, 149, 0, 0.15)', color: '#ff9500' }}>
               <IonIcon icon={pricetagOutline} />
             </div>
             <IonLabel>Kategorien ({categories.length})</IonLabel>
@@ -459,7 +454,7 @@ const AdminCategoriesPage: React.FC = () => {
                         onClick={canEdit ? () => openEditModal(category) : undefined}
                         detail={false}
                         lines="none"
-                        className="app-list-item app-list-item--badges"
+                        className="app-list-item"
                         style={{
                           '--background': 'transparent',
                           '--padding-start': '0',
@@ -468,8 +463,18 @@ const AdminCategoriesPage: React.FC = () => {
                           cursor: canEdit ? 'pointer' : 'default'
                         }}
                       >
-                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges" slot="start" style={{ marginRight: '12px' }}>
-                          <IonIcon icon={pricetag} />
+                        <div slot="start" style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          backgroundColor: '#ff9500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: '12px',
+                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)'
+                        }}>
+                          <IonIcon icon={pricetag} style={{ color: 'white', fontSize: '1.2rem' }} />
                         </div>
                         <IonLabel>
                           <h2 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0', color: '#333' }}>
