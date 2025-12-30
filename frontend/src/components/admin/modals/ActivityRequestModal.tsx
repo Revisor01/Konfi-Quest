@@ -15,7 +15,8 @@ import {
   IonList,
   IonListHeader,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonCheckbox
 } from '@ionic/react';
 import {
   closeOutline,
@@ -72,7 +73,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [request, setRequest] = useState<ActivityRequest | null>(null);
   const [adminComment, setAdminComment] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [showRejectField, setShowRejectField] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<'approve' | 'reject' | null>(null);
 
   useEffect(() => {
     if (requestId) {
@@ -119,30 +120,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     }
   };
 
-  const handleApprove = async () => {
-    if (!request) return;
+  const handleSubmit = async () => {
+    if (!request || !selectedAction) return;
 
-    setLoading(true);
-    try {
-      await api.put(`/admin/activities/requests/${request.id}`, {
-        status: 'approved',
-        admin_comment: adminComment
-      });
-      setSuccess(`Antrag von "${request.konfi_name}" genehmigt`);
-      window.dispatchEvent(new CustomEvent('requestStatusChanged'));
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Genehmigen des Antrags');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!request) return;
-
-    if (!adminComment.trim()) {
+    if (selectedAction === 'reject' && !adminComment.trim()) {
       setError('Bitte gib einen Grund für die Ablehnung an');
       return;
     }
@@ -150,15 +131,15 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     setLoading(true);
     try {
       await api.put(`/admin/activities/requests/${request.id}`, {
-        status: 'rejected',
+        status: selectedAction === 'approve' ? 'approved' : 'rejected',
         admin_comment: adminComment
       });
-      setSuccess(`Antrag von "${request.konfi_name}" abgelehnt`);
+      setSuccess(`Antrag von "${request.konfi_name}" ${selectedAction === 'approve' ? 'genehmigt' : 'abgelehnt'}`);
       window.dispatchEvent(new CustomEvent('requestStatusChanged'));
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Ablehnen des Antrags');
+      setError(err.response?.data?.error || `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} des Antrags`);
     } finally {
       setLoading(false);
     }
@@ -218,6 +199,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
+          {isPending && selectedAction && (
+            <IonButtons slot="end">
+              <IonButton onClick={handleSubmit} disabled={loading || (selectedAction === 'reject' && !adminComment.trim())}>
+                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkCircle} />}
+              </IonButton>
+            </IonButtons>
+          )}
         </IonToolbar>
       </IonHeader>
 
@@ -310,7 +298,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {isPending && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--purple">
+              <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={imageOutline} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
@@ -367,7 +355,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonListHeader>
               <div
                 className="app-section-icon"
-                style={{ backgroundColor: isApproved ? '#28a745' : '#dc3545' }}
+                style={{ backgroundColor: isApproved ? '#059669' : '#dc3545' }}
               >
                 <IonIcon icon={isApproved ? checkmarkCircle : closeCircle} />
               </div>
@@ -380,11 +368,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <IonIcon
                       icon={isApproved ? checkmarkCircle : closeCircle}
                       slot="start"
-                      style={{ color: isApproved ? '#28a745' : '#dc3545', fontSize: '1rem' }}
+                      style={{ color: isApproved ? '#059669' : '#dc3545', fontSize: '1rem' }}
                     />
                     <IonLabel className="ion-text-wrap">
                       <p>Status</p>
-                      <h2 style={{ color: isApproved ? '#28a745' : '#dc3545' }}>
+                      <h2 style={{ color: isApproved ? '#059669' : '#dc3545' }}>
                         {isApproved ? 'Genehmigt' : 'Abgelehnt'} {request.approved_by_name ? `von ${request.approved_by_name}` : ''} am {formatDateTime(request.updated_at)}
                       </h2>
                     </IonLabel>
@@ -414,72 +402,97 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
         {/* SEKTION: Aktion - NUR bei pending */}
         {isPending && (
-          <>
-            {showRejectField && (
-              <IonList inset={true} style={{ margin: '16px' }}>
-                <IonListHeader>
-                  <div className="app-section-icon app-section-icon--danger">
-                    <IonIcon icon={alertCircleOutline} />
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--requests">
+                <IonIcon icon={checkmarkCircle} />
+              </div>
+              <IonLabel>Entscheidung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Genehmigen */}
+                  <div
+                    className={`app-list-item app-list-item--activities ${selectedAction === 'approve' ? 'app-list-item--selected' : ''}`}
+                    onClick={() => !loading && setSelectedAction('approve')}
+                    style={{
+                      cursor: loading ? 'default' : 'pointer',
+                      opacity: loading ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <IonIcon icon={checkmarkCircle} style={{ color: '#059669', fontSize: '1.2rem' }} />
+                      <span style={{ fontWeight: '500', color: '#333' }}>Genehmigen</span>
+                    </div>
+                    <IonCheckbox
+                      checked={selectedAction === 'approve'}
+                      disabled={loading}
+                      style={{
+                        '--checkbox-background-checked': '#059669',
+                        '--border-color-checked': '#059669',
+                        '--checkmark-color': 'white'
+                      }}
+                    />
                   </div>
-                  <IonLabel>Ablehnungsgrund</IonLabel>
-                </IonListHeader>
-                <IonCard className="app-card">
-                  <IonCardContent style={{ padding: '16px' }}>
+
+                  {/* Ablehnen */}
+                  <div
+                    className={`app-list-item app-list-item--events ${selectedAction === 'reject' ? 'app-list-item--selected' : ''}`}
+                    onClick={() => !loading && setSelectedAction('reject')}
+                    style={{
+                      cursor: loading ? 'default' : 'pointer',
+                      opacity: loading ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <IonIcon icon={closeCircle} style={{ color: '#dc3545', fontSize: '1.2rem' }} />
+                      <span style={{ fontWeight: '500', color: '#333' }}>Ablehnen</span>
+                    </div>
+                    <IonCheckbox
+                      checked={selectedAction === 'reject'}
+                      disabled={loading}
+                      style={{
+                        '--checkbox-background-checked': '#dc3545',
+                        '--border-color-checked': '#dc3545',
+                        '--checkmark-color': 'white'
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Ablehnungsgrund - nur wenn Ablehnen gewählt */}
+                {selectedAction === 'reject' && (
+                  <div style={{ marginTop: '16px' }}>
+                    <IonLabel style={{ fontSize: '0.85rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                      Grund für die Ablehnung *
+                    </IonLabel>
                     <IonTextarea
                       value={adminComment}
                       onIonInput={(e) => setAdminComment(e.detail.value!)}
                       placeholder="Bitte gib einen Grund für die Ablehnung an..."
                       rows={3}
                       disabled={loading}
-                      style={{ width: '100%' }}
+                      style={{
+                        width: '100%',
+                        background: '#f5f5f5',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        '--padding-start': '12px',
+                        '--padding-end': '12px'
+                      }}
                     />
-                  </IonCardContent>
-                </IonCard>
-              </IonList>
-            )}
-
-            {/* Action Buttons */}
-            <div style={{ padding: '0 16px 24px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <IonButton
-                expand="block"
-                fill="outline"
-                onClick={handleApprove}
-                disabled={loading}
-                style={{
-                  '--border-color': '#28a745',
-                  '--color': '#28a745',
-                  '--background-hover': 'rgba(40, 167, 69, 0.1)',
-                  '--border-width': '2px',
-                  height: '48px',
-                  fontWeight: '600'
-                }}
-              >
-                {loading ? <IonSpinner name="crescent" /> : 'Genehmigen'}
-              </IonButton>
-              <IonButton
-                expand="block"
-                fill="outline"
-                onClick={() => {
-                  if (!showRejectField) {
-                    setShowRejectField(true);
-                  } else {
-                    handleReject();
-                  }
-                }}
-                disabled={loading || (showRejectField && !adminComment.trim())}
-                style={{
-                  '--border-color': '#991b1b',
-                  '--color': '#991b1b',
-                  '--background-hover': 'rgba(153, 27, 27, 0.1)',
-                  '--border-width': '2px',
-                  height: '48px',
-                  fontWeight: '600'
-                }}
-              >
-                {loading ? <IonSpinner name="crescent" /> : showRejectField ? 'Ablehnen bestätigen' : 'Ablehnen'}
-              </IonButton>
-            </div>
-          </>
+                  </div>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
       </IonContent>
     </IonPage>

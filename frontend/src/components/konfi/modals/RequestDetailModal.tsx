@@ -219,7 +219,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         {isPending && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--purple">
+              <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={imageOutline} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
@@ -276,7 +276,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             <div
               className="app-section-icon"
               style={{
-                backgroundColor: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545'
+                backgroundColor: isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545'
               }}
             >
               <IonIcon icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle} />
@@ -291,13 +291,13 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                     icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
                     slot="start"
                     style={{
-                      color: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545',
+                      color: isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545',
                       fontSize: '1rem'
                     }}
                   />
                   <IonLabel>
                     <p>Bearbeitungsstatus</p>
-                    <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545' }}>
+                    <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545' }}>
                       {isPending ? 'Wartend auf Bearbeitung' : isApproved ? 'Genehmigt und verbucht' : 'Abgelehnt'}
                     </h2>
                   </IonLabel>
