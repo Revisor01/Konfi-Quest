@@ -220,9 +220,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <IonList style={{ background: 'transparent' }}>
+              <IonList>
                 {/* Konfi */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={personOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Konfi</p>
@@ -238,7 +238,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 </IonItem>
 
                 {/* Aktivität */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon
                     icon={request.activity_type === 'gottesdienst' ? home : people}
                     slot="start"
@@ -252,7 +252,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Punkte */}
                 {request.activity_points && (
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="inset">
                     <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel>
                       <p>Punkte</p>
@@ -262,7 +262,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 )}
 
                 {/* Teilnahmedatum */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Teilnahmedatum</p>
@@ -271,7 +271,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 </IonItem>
 
                 {/* Eingereicht */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Eingereicht</p>
@@ -281,7 +281,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Kommentar */}
                 {request.comment && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none">
                     <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Kommentar vom Konfi</p>
@@ -363,8 +363,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonList>
+                  <IonItem lines="inset">
                     <IonIcon
                       icon={isApproved ? checkmarkCircle : closeCircle}
                       slot="start"
@@ -380,7 +380,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                   {/* Begründung */}
                   {request.admin_comment && (
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonItem lines="none">
                       <IonIcon
                         icon={isApproved ? chatbubbleEllipsesOutline : alertCircleOutline}
                         slot="start"

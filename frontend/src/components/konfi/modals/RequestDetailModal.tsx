@@ -159,9 +159,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <IonList style={{ background: 'transparent' }}>
+              <IonList>
                 {/* Aktivität */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon
                     icon={request.activity_type === 'gottesdienst' ? home : people}
                     slot="start"
@@ -174,7 +174,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 </IonItem>
 
                 {/* Punkte */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Punkte</p>
@@ -183,7 +183,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 </IonItem>
 
                 {/* Teilnahmedatum */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={calendar} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Teilnahmedatum</p>
@@ -192,7 +192,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 </IonItem>
 
                 {/* Eingereicht */}
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonItem lines="inset">
                   <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Eingereicht</p>
@@ -202,7 +202,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
                 {/* Kommentar */}
                 {request.comment && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none">
                     <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Deine Anmerkung</p>
@@ -285,8 +285,8 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+              <IonList>
+                <IonItem lines="inset">
                   <IonIcon
                     icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
                     slot="start"
@@ -305,7 +305,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
                 {/* Ablehnungsgrund */}
                 {isRejected && request.admin_comment && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none">
                     <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#dc3545', fontSize: '1rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Grund der Ablehnung</p>
