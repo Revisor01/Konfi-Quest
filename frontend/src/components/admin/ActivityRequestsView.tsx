@@ -106,7 +106,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
     <>
       {/* Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+        background: 'linear-gradient(135deg, #1e7b34 0%, #155724 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
@@ -265,7 +265,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   icon={documentOutline}
                   style={{
                     fontSize: '3rem',
-                    color: '#059669',
+                    color: '#155724',
                     marginBottom: '16px',
                     display: 'block',
                     margin: '0 auto 16px auto'
@@ -282,7 +282,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   const isRejected = request.status === 'rejected';
 
                   // Status-Farbe und Text
-                  const statusColor = isPending ? '#ff9500' : isApproved ? '#059669' : '#dc3545';
+                  const statusColor = isPending ? '#ff9500' : isApproved ? '#155724' : '#dc3545';
                   const statusText = isPending ? 'Offen' : isApproved ? 'Genehmigt' : 'Abgelehnt';
 
                   return (
@@ -355,7 +355,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                 {/* Zeile 3: Meta-Infos */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#059669' }} />
+                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#155724' }} />
                                     {formatDate(request.requested_date)}
                                   </span>
                                   {request.activity_points && (
