@@ -378,7 +378,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
               <IonAccordion value="activity-picker">
-                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
                       Aktivität auswählen
@@ -446,7 +446,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
               <IonAccordion value="category-picker">
-                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
                       Kategorie auswählen
@@ -551,7 +551,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           <div style={{ marginTop: '16px' }}>
             <IonAccordionGroup>
               <IonAccordion value="activity-combination-picker">
-                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
                       Aktivitäten kombinieren (mehrere auswählbar)
@@ -689,9 +689,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonLabel>Badge-Informationen</IonLabel>
           </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="inset">
                 <IonLabel position="stacked">Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -703,7 +703,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+              <IonItem lines="inset">
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
@@ -717,7 +717,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               <div style={{ marginTop: '16px' }}>
                 <IonAccordionGroup>
                   <IonAccordion value="icon-picker">
-                    <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                    <IonItem slot="header" lines="none">
                       <div style={{
                         width: '50px',
                         height: '50px',
@@ -796,7 +796,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonAccordionGroup>
               </div>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none">
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
                 <div style={{ marginTop: '8px', width: '100%' }}>
                   <input
@@ -828,10 +828,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonLabel>Badge-Kriterien</IonLabel>
           </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
+          <IonCardContent>
             <IonAccordionGroup>
               <IonAccordion value="criteria-types">
-                <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem slot="header" lines="none">
                   <IonLabel>
                     <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
                       Kriterium-Typ
@@ -971,9 +971,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonLabel>Badge-Status</IonLabel>
           </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="inset">
                 <IonLabel>
                   <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Aktiv</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge kann verliehen werden</p>
@@ -986,7 +986,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none">
                 <IonLabel>
                   <h3 style={{ color: '#333', margin: '0 0 4px 0', fontWeight: '600' }}>Geheim</h3>
                   <p style={{ color: '#666', margin: '0', fontSize: '0.85rem' }}>Badge ist für Konfis nicht sichtbar bis sie es erhalten</p>

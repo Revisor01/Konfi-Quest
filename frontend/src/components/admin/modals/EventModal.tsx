@@ -425,9 +425,9 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Event Grunddaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="inset">
                 <IonLabel position="stacked">Event Name *</IonLabel>
                 <IonInput
                   value={formData.name}
@@ -438,7 +438,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+              <IonItem lines="inset">
                 <IonLabel position="stacked">Beschreibung</IonLabel>
                 <IonTextarea
                   value={formData.description}
@@ -449,7 +449,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none">
                 <IonLabel position="stacked">Ort</IonLabel>
                 <IonInput
                   value={formData.location}
@@ -473,24 +473,24 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Datum & Zeit</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Anmeldung ab</IonLabel>
                 <IonDatetimeButton datetime="registration-opens-picker" />
               </IonItem>
 
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Anmeldeschluss</IonLabel>
                 <IonDatetimeButton datetime="registration-closes-picker" />
               </IonItem>
@@ -508,9 +508,9 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Zeitfenster (optional)</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="none" >
                 <IonLabel>Zeitfenster aktivieren</IonLabel>
                 <IonToggle
                   slot="end"
@@ -566,13 +566,13 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonButton>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonCardContent>
+                <IonList>
+                  <IonItem lines="none" >
                     <IonLabel position="stacked">Startzeit</IonLabel>
                     <IonDatetimeButton datetime={`timeslot-start-${index}`} />
                   </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                  <IonItem lines="none" >
                     <IonLabel position="stacked">Endzeit</IonLabel>
                     <IonDatetimeButton datetime={`timeslot-end-${index}`} />
                   </IonItem>
@@ -606,7 +606,7 @@ const EventModal: React.FC<EventModalProps> = ({
                       disabled={loading}
                     />
                   </IonModal>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" >
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle
                       slot="end"
@@ -617,7 +617,7 @@ const EventModal: React.FC<EventModalProps> = ({
                     />
                   </IonItem>
                   {timeslot.max_participants !== 0 && (
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonItem lines="none" >
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer pro Slot</IonLabel>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                         <IonButton
@@ -675,12 +675,12 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Punkte{!formData.has_timeslots ? ' & Teilnehmer' : ''}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+          <IonCardContent>
+            <IonList>
               {/* Max. Teilnehmer - nur anzeigen wenn KEINE Zeitfenster aktiv */}
               {!formData.has_timeslots && (
                 <>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonItem lines="none" >
                     <IonLabel>Unbegrenzte Teilnehmer</IonLabel>
                     <IonToggle
                       slot="end"
@@ -691,7 +691,7 @@ const EventModal: React.FC<EventModalProps> = ({
                     />
                   </IonItem>
                   {formData.max_participants !== 0 && (
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonItem lines="none" >
                       <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Teilnehmer</IonLabel>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                         <IonButton
@@ -738,7 +738,7 @@ const EventModal: React.FC<EventModalProps> = ({
               )}
 
               {/* Punkte mit Stepper */}
-              <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonItem lines="none" >
                 <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte</IonLabel>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                   <IonButton
@@ -846,8 +846,8 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Kategorien & Zielgruppe</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+          <IonCardContent>
+            <IonList>
               {categories.length > 0 ? (
                 <>
                   <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px' }}>
@@ -907,7 +907,7 @@ const EventModal: React.FC<EventModalProps> = ({
                   </div>
                 </>
               ) : (
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem lines="none" >
                   <IonLabel color="medium">
                     <p>Keine Kategorien verfügbar</p>
                   </IonLabel>
@@ -983,8 +983,8 @@ const EventModal: React.FC<EventModalProps> = ({
             <IonLabel>Warteliste</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+          <IonCardContent>
+            <IonList>
               <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: formData.waitlist_enabled ? '12px' : '0' }}>
                 <IonLabel>Warteliste aktivieren</IonLabel>
                 <IonToggle
@@ -998,7 +998,7 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonItem>
 
               {formData.waitlist_enabled && (
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem lines="none" >
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Max. Wartelisten-Plätze</IonLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                     <IonButton
@@ -1056,9 +1056,9 @@ const EventModal: React.FC<EventModalProps> = ({
               <IonLabel>Event-Serie (optional)</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }}>
-                  <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+              <IonCardContent>
+                <IonList>
+                  <IonItem lines="none" >
                     <IonLabel>Als Serie erstellen</IonLabel>
                     <IonToggle
                       slot="end"
@@ -1070,7 +1070,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
                   {formData.is_series && (
                     <>
-                      <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '12px' }}>
+                      <IonItem lines="none" >
                         <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Anzahl Events</IonLabel>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
                           <IonButton
@@ -1113,7 +1113,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         </div>
                       </IonItem>
 
-                      <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonItem lines="none" >
                         <IonLabel position="stacked">Intervall</IonLabel>
                         <IonSelect
                           value={formData.series_interval}

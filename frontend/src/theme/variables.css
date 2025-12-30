@@ -56,6 +56,18 @@ ion-card.app-card ion-item {
   --inner-padding-end: 0;
 }
 
+/* Kleinere Texte in app-card IonItems für kompakteres Layout */
+ion-card.app-card ion-item ion-label p {
+  font-size: 0.75rem;
+  color: #8e8e93;
+  margin-bottom: 2px;
+}
+
+ion-card.app-card ion-item ion-label h2 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* ============================================
    WIEDERVERWENDBARE APP KOMPONENTEN
    ============================================ */
