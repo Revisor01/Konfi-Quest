@@ -242,7 +242,7 @@ ion-item .app-list-item {
 }
 .app-section-icon--events { background-color: #dc2626; }
 .app-section-icon--chat { background-color: #06b6d4; }
-.app-section-icon--success { background-color: #155724; }
+.app-section-icon--success { background-color: #28a745; }
 .app-section-icon--warning { background-color: #ff9500; }
 .app-section-icon--danger { background-color: #dc3545; }
 .app-section-icon--info { background-color: #007aff; }
@@ -254,7 +254,7 @@ ion-item .app-list-item {
 .app-section-icon--level { background-color: #9b59b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
 .app-section-icon--badges { background-color: #ff9500; }
-.app-section-icon--requests { background-color: #155724; }
+.app-section-icon--requests { background-color: #28a745; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;

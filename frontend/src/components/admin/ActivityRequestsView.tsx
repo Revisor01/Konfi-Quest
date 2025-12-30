@@ -99,14 +99,14 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   };
 
   const getTypeColor = (type: string) => {
-    return type === 'gottesdienst' ? '#007aff' : '#155724';
+    return type === 'gottesdienst' ? '#007aff' : '#28a745';
   };
 
   return (
     <>
       {/* Header - Dashboard-Style */}
       <div style={{
-        background: 'linear-gradient(135deg, #1e7b34 0%, #155724 100%)',
+        background: 'linear-gradient(135deg, #34ce57 0%, #28a745 100%)',
         borderRadius: '24px',
         padding: '0',
         margin: '16px',
@@ -265,7 +265,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   icon={documentOutline}
                   style={{
                     fontSize: '3rem',
-                    color: '#155724',
+                    color: '#28a745',
                     marginBottom: '16px',
                     display: 'block',
                     margin: '0 auto 16px auto'
@@ -282,7 +282,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                   const isRejected = request.status === 'rejected';
 
                   // Status-Farbe und Text
-                  const statusColor = isPending ? '#ff9500' : isApproved ? '#155724' : '#dc3545';
+                  const statusColor = isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545';
                   const statusText = isPending ? 'Offen' : isApproved ? 'Genehmigt' : 'Abgelehnt';
 
                   return (
@@ -355,7 +355,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                                 {/* Zeile 3: Meta-Infos */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#155724' }} />
+                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#28a745' }} />
                                     {formatDate(request.requested_date)}
                                   </span>
                                   {request.activity_points && (

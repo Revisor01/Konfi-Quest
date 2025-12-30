@@ -12,7 +12,9 @@ import {
   IonList,
   IonListHeader,
   IonLabel,
-  IonItem
+  IonItem,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   closeOutline,
@@ -146,7 +148,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
+      <IonContent className="app-gradient-background">
         {/* SEKTION: Antragsdaten */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
@@ -155,57 +157,62 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             </div>
             <IonLabel>Antragsdaten</IonLabel>
           </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                {/* Aktivität */}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonIcon
+                    icon={request.activity_type === 'gottesdienst' ? home : people}
+                    slot="start"
+                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                  />
+                  <IonLabel>
+                    <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
+                    <h2>{request.activity_name}</h2>
+                  </IonLabel>
+                </IonItem>
 
-          {/* Aktivität */}
-          <IonItem>
-            <IonIcon
-              icon={request.activity_type === 'gottesdienst' ? home : people}
-              slot="start"
-              style={{ color: '#8e8e93', fontSize: '1rem' }}
-            />
-            <IonLabel>
-              <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
-              <h2>{request.activity_name}</h2>
-            </IonLabel>
-          </IonItem>
+                {/* Punkte */}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonLabel>
+                    <p>Punkte</p>
+                    <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
+                  </IonLabel>
+                </IonItem>
 
-          {/* Punkte */}
-          <IonItem>
-            <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-            <IonLabel>
-              <p>Punkte</p>
-              <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
-            </IonLabel>
-          </IonItem>
+                {/* Teilnahmedatum */}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonIcon icon={calendar} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonLabel>
+                    <p>Teilnahmedatum</p>
+                    <h2>{formatDate(request.requested_date)}</h2>
+                  </IonLabel>
+                </IonItem>
 
-          {/* Teilnahmedatum */}
-          <IonItem>
-            <IonIcon icon={calendar} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-            <IonLabel>
-              <p>Teilnahmedatum</p>
-              <h2>{formatDate(request.requested_date)}</h2>
-            </IonLabel>
-          </IonItem>
+                {/* Eingereicht */}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                  <IonLabel>
+                    <p>Eingereicht</p>
+                    <h2>{formatDateTime(request.created_at)}</h2>
+                  </IonLabel>
+                </IonItem>
 
-          {/* Eingereicht */}
-          <IonItem>
-            <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-            <IonLabel>
-              <p>Eingereicht</p>
-              <h2>{formatDateTime(request.created_at)}</h2>
-            </IonLabel>
-          </IonItem>
-
-          {/* Kommentar */}
-          {request.comment && (
-            <IonItem>
-              <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-              <IonLabel className="ion-text-wrap">
-                <p>Deine Anmerkung</p>
-                <h2 style={{ whiteSpace: 'pre-wrap' }}>{request.comment}</h2>
-              </IonLabel>
-            </IonItem>
-          )}
+                {/* Kommentar */}
+                {request.comment && (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+                    <IonLabel className="ion-text-wrap">
+                      <p>Deine Anmerkung</p>
+                      <h2 style={{ whiteSpace: 'pre-wrap' }}>{request.comment}</h2>
+                    </IonLabel>
+                  </IonItem>
+                )}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
         </IonList>
 
         {/* SEKTION: Foto - nur bei pending anzeigen */}
@@ -217,9 +224,8 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
-
-            <IonItem lines="none">
-              <div style={{ width: '100%', padding: '8px 0' }}>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
                 {loadingPhoto ? (
                   <div style={{
                     background: '#f5f5f5',
@@ -259,8 +265,8 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                     </p>
                   </div>
                 )}
-              </div>
-            </IonItem>
+              </IonCardContent>
+            </IonCard>
           </IonList>
         )}
 
@@ -270,41 +276,46 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             <div
               className="app-section-icon"
               style={{
-                backgroundColor: isPending ? '#ff9500' : isApproved ? '#155724' : '#dc3545'
+                backgroundColor: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545'
               }}
             >
               <IonIcon icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle} />
             </div>
             <IonLabel>Status</IonLabel>
           </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonIcon
+                    icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
+                    slot="start"
+                    style={{
+                      color: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545',
+                      fontSize: '1rem'
+                    }}
+                  />
+                  <IonLabel>
+                    <p>Bearbeitungsstatus</p>
+                    <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#28a745' : '#dc3545' }}>
+                      {isPending ? 'Wartend auf Bearbeitung' : isApproved ? 'Genehmigt und verbucht' : 'Abgelehnt'}
+                    </h2>
+                  </IonLabel>
+                </IonItem>
 
-          <IonItem>
-            <IonIcon
-              icon={isPending ? hourglass : isApproved ? checkmarkCircle : closeCircle}
-              slot="start"
-              style={{
-                color: isPending ? '#ff9500' : isApproved ? '#155724' : '#dc3545',
-                fontSize: '1rem'
-              }}
-            />
-            <IonLabel>
-              <p>Bearbeitungsstatus</p>
-              <h2 style={{ color: isPending ? '#ff9500' : isApproved ? '#155724' : '#dc3545' }}>
-                {isPending ? 'Wartend auf Bearbeitung' : isApproved ? 'Genehmigt und verbucht' : 'Abgelehnt'}
-              </h2>
-            </IonLabel>
-          </IonItem>
-
-          {/* Ablehnungsgrund */}
-          {isRejected && request.admin_comment && (
-            <IonItem>
-              <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#dc3545', fontSize: '1rem' }} />
-              <IonLabel className="ion-text-wrap">
-                <p>Grund der Ablehnung</p>
-                <h2 style={{ color: '#dc3545', whiteSpace: 'pre-wrap' }}>{request.admin_comment}</h2>
-              </IonLabel>
-            </IonItem>
-          )}
+                {/* Ablehnungsgrund */}
+                {isRejected && request.admin_comment && (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonIcon icon={alertCircleOutline} slot="start" style={{ color: '#dc3545', fontSize: '1rem' }} />
+                    <IonLabel className="ion-text-wrap">
+                      <p>Grund der Ablehnung</p>
+                      <h2 style={{ color: '#dc3545', whiteSpace: 'pre-wrap' }}>{request.admin_comment}</h2>
+                    </IonLabel>
+                  </IonItem>
+                )}
+              </IonList>
+            </IonCardContent>
+          </IonCard>
         </IonList>
 
         {/* Löschen Button - nur bei pending */}
