@@ -219,7 +219,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <IonLabel>Antragsdaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <IonList style={{ background: 'transparent' }}>
                 {/* Konfi */}
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
@@ -304,7 +304,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 {photoUrl ? (
                   <img
                     src={photoUrl}
@@ -362,7 +362,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Bearbeitungsstatus</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 <IonList style={{ background: 'transparent' }}>
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonIcon
@@ -410,7 +410,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Entscheidung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {/* Genehmigen */}
                   <div

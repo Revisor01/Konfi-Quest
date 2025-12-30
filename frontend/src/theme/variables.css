@@ -42,7 +42,19 @@ ion-card.app-card {
 }
 
 ion-card.app-card ion-card-content {
-  padding: 8px 12px;
+  padding: 8px 0;
+}
+
+ion-card.app-card ion-card-content ion-list {
+  padding: 0;
+  margin: 0;
+}
+
+/* Wenn keine IonList in der Card ist, brauchen wir seitliches Padding */
+ion-card.app-card ion-card-content > div:first-child:last-child,
+ion-card.app-card ion-card-content > img:first-child:last-child,
+ion-card.app-card ion-card-content > ion-textarea:first-child:last-child {
+  margin: 0 12px;
 }
 
 /* ============================================

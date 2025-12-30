@@ -158,7 +158,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             <IonLabel>Antragsdaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <IonList style={{ background: 'transparent' }}>
                 {/* Aktivität */}
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
@@ -225,7 +225,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 {loadingPhoto ? (
                   <div style={{
                     background: '#f5f5f5',
@@ -284,7 +284,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             <IonLabel>Status</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonIcon
