@@ -507,24 +507,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 placeholder="Chaträume durchsuchen..."
               />
             </IonItem>
-            {/* Filter - Typ Label links, Select rechts */}
-            <IonItem
-              button={false}
-              style={{
-                '--background-activated': 'transparent',
-                '--background-focused': 'transparent',
-                '--background-hover': 'transparent',
-                '--ripple-color': 'transparent'
-              }}
-            >
-              <IonLabel>Typ</IonLabel>
+            {/* Filter - Icon + Select linksbündig */}
+            <IonItem>
+              <IonIcon
+                icon={chatbubbles}
+                slot="start"
+                style={{ color: '#8e8e93', fontSize: '1rem' }}
+              />
               <IonSelect
-                slot="end"
                 value={filterType}
                 onIonChange={(e) => setFilterType(e.detail.value!)}
                 placeholder="Alle Chats"
                 interface="popover"
-                fill="solid"
+                style={{ width: '100%' }}
               >
                 <IonSelectOption value="alle">Alle Chats</IonSelectOption>
                 <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
