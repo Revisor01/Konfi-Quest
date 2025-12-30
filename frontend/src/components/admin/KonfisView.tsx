@@ -266,45 +266,55 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        {/* Suchfeld */}
-        <IonItem>
-          <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-          <IonInput
-            value={searchTerm}
-            onIonInput={(e) => setSearchTerm(e.detail.value!)}
-            placeholder="Konfi suchen..."
-          />
-        </IonItem>
-        {/* Jahrgang Filter */}
-        <IonItem>
-          <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-          <IonSelect
-            value={selectedJahrgang}
-            onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
-            interface="popover"
-            placeholder="Jahrgang"
-            style={{ width: '100%' }}
-          >
-            <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-            {jahrgaenge.map(jg => (
-              <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
-            ))}
-          </IonSelect>
-        </IonItem>
-        {/* Sortierung */}
-        <IonItem>
-          <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-          <IonSelect
-            value={sortBy}
-            onIonChange={(e) => setSortBy(e.detail.value)}
-            interface="popover"
-            placeholder="Sortierung"
-            style={{ width: '100%' }}
-          >
-            <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
-            <IonSelectOption value="points">Punkte</IonSelectOption>
-          </IonSelect>
-        </IonItem>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--primary">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '0' }}>
+            {/* Suchfeld */}
+            <IonItem>
+              <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Konfi suchen..."
+              />
+            </IonItem>
+            {/* Jahrgang Filter */}
+            <IonItem>
+              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonSelect
+                value={selectedJahrgang}
+                onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
+                interface="popover"
+                placeholder="Jahrgang"
+                style={{ width: '100%' }}
+              >
+                <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                {jahrgaenge.map(jg => (
+                  <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
+            {/* Sortierung */}
+            <IonItem lines="none">
+              <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonSelect
+                value={sortBy}
+                onIonChange={(e) => setSortBy(e.detail.value)}
+                interface="popover"
+                placeholder="Sortierung"
+                style={{ width: '100%' }}
+              >
+                <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
+                <IonSelectOption value="points">Punkte</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+          </IonCardContent>
+        </IonCard>
       </IonList>
 
       {/* Konfis Liste - iOS26 Pattern */}
