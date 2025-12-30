@@ -48,7 +48,9 @@
       "Bash(ssh:*)",
       "Bash(ping:*)",
       "mcp__plugin_claude-mem_mem-search__get_recent_context",
-      "mcp__plugin_claude-mem_mem-search__get_observation"
+      "mcp__plugin_claude-mem_mem-search__get_observation",
+      "Bash(npm outdated:*)",
+      "Bash(npm update:*)"
     ],
     "deny": [],
     "ask": []
