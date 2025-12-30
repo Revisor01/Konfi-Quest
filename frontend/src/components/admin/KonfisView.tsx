@@ -264,35 +264,33 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </div>
       </div>
 
-      {/* Suche & Filter - iOS26 Pattern */}
+      {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--primary">
-            <IonIcon icon={filterOutline} />
-          </div>
-          <IonLabel>Suche & Filter</IonLabel>
-        </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+          <IonCardContent style={{ padding: '12px 16px' }}>
+            <IonList lines="none" style={{ background: 'transparent' }}>
               {/* Suchfeld */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Konfi suchen</IonLabel>
+              <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', marginBottom: '8px' }}>
+                <IonIcon icon={search} slot="start" style={{ color: '#5b21b6', fontSize: '1.2rem', marginRight: '12px' }} />
+                <IonLabel style={{ color: '#5b21b6', fontWeight: '600', fontSize: '0.85rem', marginBottom: '4px' }}>Konfi suchen</IonLabel>
                 <IonInput
                   value={searchTerm}
                   onIonInput={(e) => setSearchTerm(e.detail.value!)}
                   placeholder="Name eingeben..."
                   clearInput={true}
+                  style={{ '--padding-start': '0' }}
                 />
               </IonItem>
               {/* Jahrgang Filter */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Jahrgang</IonLabel>
+              <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0', marginBottom: '8px' }}>
+                <IonIcon icon={calendarOutline} slot="start" style={{ color: '#5b21b6', fontSize: '1.2rem', marginRight: '12px' }} />
+                <IonLabel style={{ color: '#5b21b6', fontWeight: '600', fontSize: '0.85rem' }}>Jahrgang</IonLabel>
                 <IonSelect
                   value={selectedJahrgang}
                   onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
                   interface="popover"
                   placeholder="Jahrgang wählen"
+                  style={{ '--padding-start': '0' }}
                 >
                   <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
                   {jahrgaenge.map(jg => (
@@ -301,13 +299,15 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 </IonSelect>
               </IonItem>
               {/* Sortierung */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonLabel position="stacked">Sortierung</IonLabel>
+              <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+                <IonIcon icon={swapVertical} slot="start" style={{ color: '#5b21b6', fontSize: '1.2rem', marginRight: '12px' }} />
+                <IonLabel style={{ color: '#5b21b6', fontWeight: '600', fontSize: '0.85rem' }}>Sortierung</IonLabel>
                 <IonSelect
                   value={sortBy}
                   onIonChange={(e) => setSortBy(e.detail.value)}
                   interface="popover"
                   placeholder="Sortierung wählen"
+                  style={{ '--padding-start': '0' }}
                 >
                   <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
                   <IonSelectOption value="points">Punkte</IonSelectOption>
