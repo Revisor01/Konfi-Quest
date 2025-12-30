@@ -42,7 +42,7 @@ ion-card.app-card {
 }
 
 ion-card.app-card ion-card-content {
-  padding: 0 16px;
+  padding: 8px 16px;
 }
 
 ion-card.app-card ion-card-content ion-list {
