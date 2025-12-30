@@ -28,10 +28,12 @@ import {
   closeOutline,
   checkmarkOutline,
   person,
+  personOutline,
   search,
   chatbubbles,
   peopleOutline,
-  filterOutline
+  filterOutline,
+  calendarOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
@@ -484,33 +486,44 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                   placeholder="Person suchen..."
                 />
               </IonItem>
-              {/* Filter in einer Zeile */}
+              {/* Rolle Filter */}
               <IonItem>
-                <div style={{ display: 'flex', gap: '8px', width: '100%', padding: '8px 0' }}>
-                  <IonSelect
-                    value={selectedRole}
-                    onIonChange={(e) => setSelectedRole(e.detail.value!)}
-                    placeholder="Alle Rollen"
-                    interface="popover"
-                    style={{ flex: 1 }}
-                  >
-                    <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
-                    <IonSelectOption value="konfi">Konfis</IonSelectOption>
-                    <IonSelectOption value="admin">Admins</IonSelectOption>
-                  </IonSelect>
-                  <IonSelect
-                    value={selectedJahrgang}
-                    onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
-                    placeholder="Alle Jahrgänge"
-                    interface="popover"
-                    style={{ flex: 1 }}
-                  >
-                    <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                    {availableJahrgaenge.map(jg => (
-                      <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                    ))}
-                  </IonSelect>
-                </div>
+                <IonIcon
+                  icon={personOutline}
+                  slot="start"
+                  style={{ color: '#8e8e93', fontSize: '1rem' }}
+                />
+                <IonSelect
+                  value={selectedRole}
+                  onIonChange={(e) => setSelectedRole(e.detail.value!)}
+                  placeholder="Alle Rollen"
+                  interface="popover"
+                  style={{ width: '100%' }}
+                >
+                  <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
+                  <IonSelectOption value="konfi">Konfis</IonSelectOption>
+                  <IonSelectOption value="admin">Admins</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+              {/* Jahrgang Filter */}
+              <IonItem>
+                <IonIcon
+                  icon={calendarOutline}
+                  slot="start"
+                  style={{ color: '#8e8e93', fontSize: '1rem' }}
+                />
+                <IonSelect
+                  value={selectedJahrgang}
+                  onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                  placeholder="Alle Jahrgänge"
+                  interface="popover"
+                  style={{ width: '100%' }}
+                >
+                  <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                  {availableJahrgaenge.map(jg => (
+                    <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                  ))}
+                </IonSelect>
               </IonItem>
             </IonItemGroup>
           </IonList>

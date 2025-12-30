@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
 import {
-  IonCard,
-  IonCardContent,
   IonGrid,
   IonRow,
   IonCol,
   IonIcon,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonList,
   IonListHeader,
@@ -15,7 +14,9 @@ import {
   IonItemOption,
   IonInput,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
 import {
   trash,
@@ -29,7 +30,8 @@ import {
   time,
   briefcaseOutline,
   filterOutline,
-  peopleOutline
+  peopleOutline,
+  search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -288,19 +290,22 @@ const UsersView: React.FC<UsersViewProps> = ({
 
       {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '8px 16px' }}>
-            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-              <IonIcon icon={filterOutline} slot="start" style={{ color: '#667eea', marginRight: '12px' }} />
-              <IonInput
-                value={searchTerm}
-                onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                placeholder="Benutzer:in suchen..."
-                clearInput={true}
-              />
-            </IonItem>
-          </IonCardContent>
-        </IonCard>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--users">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Benutzer:in suchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
       </IonList>
 
       {/* Benutzer-Liste - iOS26 Pattern */}

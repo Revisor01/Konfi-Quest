@@ -7,6 +7,7 @@ import {
   IonCol,
   IonIcon,
   IonItem,
+  IonItemGroup,
   IonLabel,
   IonInput,
   IonSegment,
@@ -72,7 +73,8 @@ import {
   calendar,
   today,
   time,
-  filterOutline
+  filterOutline,
+  search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -351,19 +353,22 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
       {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '8px 16px' }}>
-            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-              <IonIcon icon={filterOutline} slot="start" style={{ color: '#ff9500', marginRight: '12px' }} />
-              <IonInput
-                value={searchTerm}
-                onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                placeholder="Badge suchen..."
-                clearInput={true}
-              />
-            </IonItem>
-          </IonCardContent>
-        </IonCard>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--badges">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonItemGroup>
+          <IonItem>
+            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonInput
+              value={searchTerm}
+              onIonInput={(e) => setSearchTerm(e.detail.value!)}
+              placeholder="Badge suchen..."
+            />
+          </IonItem>
+        </IonItemGroup>
       </IonList>
 
       {/* Badges Liste - Gruppiert nach Typ */}
