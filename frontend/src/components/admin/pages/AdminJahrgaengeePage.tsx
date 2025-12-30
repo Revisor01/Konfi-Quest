@@ -13,31 +13,26 @@ import {
   useIonModal,
   useIonAlert,
   IonCard,
-  IonCardHeader,
   IonCardContent,
   IonItem,
   IonLabel,
+  IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
   IonInput,
-  IonTextarea,
-  IonSpinner,
-  IonGrid,
-  IonRow,
-  IonCol
+  IonSpinner
 } from '@ionic/react';
 import {
   add,
   school,
-  createOutline,
-  trashOutline,
   checkmarkOutline,
   closeOutline,
-  people,
   arrowBack,
   calendar,
-  trash
+  trash,
+  schoolOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -160,81 +155,41 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
-        {/* Section Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#007aff',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={school} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Jahrgang Details
-          </h2>
-        </div>
-
-        {/* Card */}
-        <IonCard style={{
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0',
-          margin: '0 16px 16px 16px'
-        }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonItem lines="none" style={{
-              '--background': '#f5f5f5',
-              '--border-radius': '12px',
-              '--padding-start': '16px',
-              margin: '0 0 12px 0',
-              border: '1px solid #e0e0e0',
-              borderRadius: '12px'
-            }}>
-              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Name *</IonLabel>
-              <IonInput
-                value={formData.name}
-                onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
-                placeholder="z.B. Jahrgang 2024/2025"
-                disabled={loading}
-              />
-            </IonItem>
-
-            <IonItem lines="none" style={{
-              '--background': '#f5f5f5',
-              '--border-radius': '12px',
-              '--padding-start': '16px',
-              margin: '0',
-              border: '1px solid #e0e0e0',
-              borderRadius: '12px'
-            }}>
-              <IonLabel position="stacked" style={{ marginBottom: '8px', color: '#666' }}>Konfirmationsdatum</IonLabel>
-              <IonInput
-                type="date"
-                value={formData.confirmation_date}
-                onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
-                disabled={loading}
-              />
-            </IonItem>
-          </IonCardContent>
-        </IonCard>
+      <IonContent className="app-gradient-background">
+        {/* Jahrgang Details - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--primary">
+              <IonIcon icon={school} />
+            </div>
+            <IonLabel>Jahrgang Details</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList style={{ background: 'transparent' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Name *</IonLabel>
+                  <IonInput
+                    value={formData.name}
+                    onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                    placeholder="z.B. Jahrgang 2024/2025"
+                    disabled={loading}
+                    clearInput={true}
+                  />
+                </IonItem>
+                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
+                  <IonInput
+                    type="date"
+                    value={formData.confirmation_date}
+                    onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
+                    disabled={loading}
+                  />
+                </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );
@@ -471,148 +426,96 @@ const AdminJahrgaengeePage: React.FC = () => {
               </div>
             </div>
 
-        {/* Jahrgaenge List */}
-        <IonCard style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '8px 0' }}>
-            {jahrgaenge.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={school}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#007aff',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Jahrgänge gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Noch keine Jahrgänge angelegt</p>
-              </div>
-            ) : (
-              jahrgaenge.map((jahrgang) => (
-                <IonItemSliding
-                  key={jahrgang.id}
-                  ref={(el) => {
-                    if (el) {
-                      slidingRefs.current.set(jahrgang.id, el);
-                    } else {
-                      slidingRefs.current.delete(jahrgang.id);
-                    }
-                  }}
-                >
-                  <IonItem
-                    button={canEdit}
-                    onClick={canEdit ? () => openEditModal(jahrgang) : undefined}
-                    detail={false}
+        {/* Jahrgaenge List - iOS26 Pattern */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--primary">
+              <IonIcon icon={schoolOutline} />
+            </div>
+            <IonLabel>Jahrgänge ({jahrgaenge.length})</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              {jahrgaenge.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px' }}>
+                  <IonIcon
+                    icon={school}
                     style={{
-                      '--min-height': '70px',
-                      '--padding-start': '16px',
-                      '--background': '#f5f5f5',
-                      '--border-radius': '12px',
-                      margin: '4px 8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px',
-                      opacity: canEdit ? 1 : 0.6,
-                      cursor: canEdit ? 'pointer' : 'default'
+                      fontSize: '3rem',
+                      color: '#007aff',
+                      marginBottom: '16px',
+                      display: 'block',
+                      margin: '0 auto 16px auto'
                     }}
-                  >
-                    <IonLabel>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '12px'
-                      }}>
-                        <div style={{
-                          width: '32px',
-                          height: '32px',
-                          backgroundColor: '#007aff',
-                          marginTop: '2px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(0, 122, 255, 0.3)',
-                          flexShrink: 0
-                        }}>
-                          <IonIcon
-                            icon={school}
-                            style={{
-                              fontSize: '0.9rem',
-                              color: 'white'
-                            }}
-                          />
+                  />
+                  <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Jahrgänge gefunden</h3>
+                  <p style={{ color: '#999', margin: '0' }}>Noch keine Jahrgänge angelegt</p>
+                </div>
+              ) : (
+                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                  {jahrgaenge.map((jahrgang, index) => (
+                    <IonItemSliding
+                      key={jahrgang.id}
+                      ref={(el) => {
+                        if (el) {
+                          slidingRefs.current.set(jahrgang.id, el);
+                        } else {
+                          slidingRefs.current.delete(jahrgang.id);
+                        }
+                      }}
+                      style={{ marginBottom: index < jahrgaenge.length - 1 ? '8px' : '0' }}
+                    >
+                      <IonItem
+                        button={canEdit}
+                        onClick={canEdit ? () => openEditModal(jahrgang) : undefined}
+                        detail={false}
+                        lines="none"
+                        className="app-list-item app-list-item--primary"
+                        style={{
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--inner-padding-end': '0',
+                          opacity: canEdit ? 1 : 0.6,
+                          cursor: canEdit ? 'pointer' : 'default'
+                        }}
+                      >
+                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
+                          <IonIcon icon={school} />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <h2 style={{
-                            fontWeight: '600',
-                            fontSize: '0.95rem',
-                            margin: '0 0 4px 0',
-                            color: '#333'
-                          }}>
+                        <IonLabel>
+                          <h2 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0', color: '#333' }}>
                             {jahrgang.name}
                           </h2>
                           {jahrgang.confirmation_date && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <IonIcon icon={calendar} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
-                              <span style={{
-                                fontSize: '0.8rem',
-                                color: '#666'
-                              }}>
+                              <span style={{ fontSize: '0.8rem', color: '#666' }}>
                                 Konfirmationsdatum: {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
                               </span>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    </IonLabel>
-                  </IonItem>
+                        </IonLabel>
+                      </IonItem>
 
-                  {canDelete && (
-                    <IonItemOptions side="end" style={{
-                      gap: '4px',
-                      '--ion-item-background': 'transparent'
-                    }}>
-                      <IonItemOption
-                        onClick={() => handleDeleteWithSlideClose(jahrgang)}
-                        style={{
-                          '--background': 'transparent',
-                          '--background-activated': 'transparent',
-                          '--background-focused': 'transparent',
-                          '--background-hover': 'transparent',
-                          '--color': 'transparent',
-                          '--ripple-color': 'transparent',
-                          padding: '0 8px',
-                          paddingRight: '20px',
-                          minWidth: '56px',
-                          maxWidth: '56px'
-                        }}
-                      >
-                        <div style={{
-                          width: '44px',
-                          height: '44px',
-                          backgroundColor: '#dc3545',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                        }}>
-                          <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
-                        </div>
-                      </IonItemOption>
-                    </IonItemOptions>
-                  )}
-                </IonItemSliding>
-              ))
-            )}
-          </IonCardContent>
-        </IonCard>
+                      {canDelete && (
+                        <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' }}>
+                          <IonItemOption
+                            onClick={() => handleDeleteWithSlideClose(jahrgang)}
+                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                              <IonIcon icon={trash} />
+                            </div>
+                          </IonItemOption>
+                        </IonItemOptions>
+                      )}
+                    </IonItemSliding>
+                  ))}
+                </IonList>
+              )}
+            </IonCardContent>
+          </IonCard>
+        </IonList>
           </>
         )}
 

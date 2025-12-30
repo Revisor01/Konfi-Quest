@@ -12,7 +12,6 @@ import {
   IonBadge,
   IonList,
   IonListHeader,
-  IonItemGroup,
   IonChip,
   IonItemSliding,
   IonItemOptions,
@@ -21,8 +20,7 @@ import {
   IonSelect,
   IonSelectOption,
   IonSegment,
-  IonSegmentButton,
-  useIonActionSheet
+  IonSegmentButton
 } from '@ionic/react';
 import {
   add,
