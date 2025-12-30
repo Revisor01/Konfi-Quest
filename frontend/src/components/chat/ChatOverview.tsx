@@ -29,10 +29,11 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { 
-  chatbubbles, 
-  people, 
-  person, 
+import {
+  chatbubbles,
+  chatbubblesOutline,
+  people,
+  person,
   settings,
   add,
   time,
@@ -510,7 +511,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             {/* Filter - Icon + Select linksbündig */}
             <IonItem>
               <IonIcon
-                icon={chatbubbles}
+                icon={chatbubblesOutline}
                 slot="start"
                 style={{ color: '#8e8e93', fontSize: '1rem' }}
               />
