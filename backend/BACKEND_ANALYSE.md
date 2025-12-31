@@ -221,8 +221,8 @@ router.post('/create',
 ## 10. PRIORITÄTEN-LISTE
 
 ### SOFORT (Phase 1)
-1. Rate Limiting für Auth-Endpoints
-2. JWT_SECRET durch sicheren Wert ersetzen
+1. ~~Rate Limiting für Auth-Endpoints~~ - ERLEDIGT (31.12.2025)
+2. JWT_SECRET durch sicheren Wert ersetzen - MANUELL auf Server in .env ändern
 3. organization_id Filter überall prüfen/hinzufügen
 4. Passwort aus Responses entfernen
 
