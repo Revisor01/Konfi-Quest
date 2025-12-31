@@ -223,14 +223,18 @@ router.post('/create',
 ### SOFORT (Phase 1)
 1. ~~Rate Limiting für Auth-Endpoints~~ - ERLEDIGT (31.12.2025)
 2. JWT_SECRET durch sicheren Wert ersetzen - MANUELL auf Server in .env ändern
-3. organization_id Filter überall prüfen/hinzufügen
-4. Passwort aus Responses entfernen
+3. ~~organization_id Filter überall prüfen/hinzufügen~~ - ERLEDIGT (31.12.2025)
+   - activities.js: War bereits korrekt
+   - badges.js: 6 Queries mit org_id abgesichert
+   - events.js: War bereits korrekt
+   - bonus_points INSERT: Mit org_id ergänzt
+4. Passwort aus Responses entfernen - BEWUSSTE ENTSCHEIDUNG (Admin-Onboarding Feature)
 
 ### BALD (Phase 2)
-1. Transaktionen für kritische Operationen
+1. Transaktionen für kritische Operationen (Race Conditions)
 2. Input-Validierung mit express-validator
 3. Einheitliche Error-Responses
-4. bonus_points INSERT vereinheitlichen
+4. ~~bonus_points INSERT vereinheitlichen~~ - ERLEDIGT (31.12.2025)
 
 ### SPÄTER (Phase 3)
 1. Audit-Logging implementieren
