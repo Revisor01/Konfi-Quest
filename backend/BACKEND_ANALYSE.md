@@ -233,7 +233,8 @@ router.post('/create',
 ### BALD (Phase 2)
 1. ~~Transaktionen für kritische Operationen (Race Conditions)~~ - ERLEDIGT (31.12.2025)
    - Event-Buchungen mit FOR UPDATE Lock abgesichert
-2. Input-Validierung mit express-validator
+2. Input-Validierung mit express-validator (~60 Endpoints, ~5-8h Aufwand)
+   - Priorität: auth.js, events.js, activities.js zuerst
 3. Einheitliche Error-Responses
 4. ~~bonus_points INSERT vereinheitlichen~~ - ERLEDIGT (31.12.2025)
 
