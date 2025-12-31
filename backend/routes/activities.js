@@ -400,8 +400,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const date = completed_date || new Date().toISOString().split('T')[0];
   
     try {
-      await db.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date) VALUES ($1, $2, $3, $4, $5, $6)", [konfiId, points, type, description, req.user.id, date]);
-      
+      await db.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", [konfiId, points, type, description, req.user.id, date, req.user.organization_id]);
+
       const pointField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
       

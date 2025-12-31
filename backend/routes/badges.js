@@ -168,14 +168,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
         case 'time_based':
           if (criteria.weeks) {
             const timeBasedQuery = `
-              SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1
+              SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
               UNION ALL
               SELECT e.event_date as date FROM event_bookings eb
               JOIN events e ON eb.event_id = e.id
-              WHERE eb.user_id = $1 AND eb.attendance_status = 'present'
+              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
               ORDER BY date DESC
             `;
-            const { rows: results } = await db.query(timeBasedQuery, [konfiId]);
+            const { rows: results } = await db.query(timeBasedQuery, [konfiId, konfi.organization_id]);
             const now = new Date();
             const cutoff = new Date(now.getTime() - (criteria.weeks * 7 * 24 * 60 * 60 * 1000));
             const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
@@ -186,42 +186,42 @@ const checkAndAwardBadges = async (db, konfiId) => {
         case 'activity_count':
           const activityCountQuery = `
             SELECT (
-              (SELECT COUNT(*) FROM konfi_activities WHERE konfi_id = $1) +
-              (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present')
+              (SELECT COUNT(*) FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2) +
+              (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
             ) as count
           `;
-          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [konfiId]);
+          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [konfiId, konfi.organization_id]);
           earned = activityCountResult && parseInt(activityCountResult.count) >= badge.criteria_value;
           break;
 
         case 'event_count':
           const { rows: [eventCountResult] } = await db.query(
-            "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present'",
-            [konfiId]
+            "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+            [konfiId, konfi.organization_id]
           );
           earned = eventCountResult && parseInt(eventCountResult.count) >= badge.criteria_value;
           break;
         
         case 'bonus_points':
-          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1", [konfiId]);
+          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
           earned = bonusResult && parseInt(bonusResult.count) >= badge.criteria_value;
           break;
-        
+
         case 'unique_activities':
-          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM konfi_activities WHERE konfi_id = $1", [konfiId]);
+          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
           earned = uniqueResults.length >= badge.criteria_value;
           break;
         
         case 'streak':
           const streakQuery = `
-            SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1
+            SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
             UNION ALL
             SELECT e.event_date as date FROM event_bookings eb
             JOIN events e ON eb.event_id = e.id
-            WHERE eb.user_id = $1 AND eb.attendance_status = 'present'
+            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
             ORDER BY date DESC
           `;
-          const { rows: streakResults } = await db.query(streakQuery, [konfiId]);
+          const { rows: streakResults } = await db.query(streakQuery, [konfiId, konfi.organization_id]);
 
           function getYearWeek(date) {
             const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
