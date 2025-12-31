@@ -646,64 +646,95 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
   });
   
-  // Book event
+  // Book event (mit Transaktion gegen Race Conditions)
   router.post('/:id/book', rbacVerifier, async (req, res) => {
     const eventId = req.params.id;
     const konfiId = req.user.id;
     const { timeslot_id } = req.body;
-    
+
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Only konfis can book events' });
     }
-    
+
     try {
       console.log("Booking event:", eventId, "for user:", konfiId, "org:", req.user.organization_id);
-      
-      // 1. Check if event exists and registration is open
-      const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
-      if (!event) return res.status(404).json({ error: 'Event not found' });
-      
+
+      // Transaktion starten für Race-Condition-Schutz
+      await db.query('BEGIN');
+
+      // 1. Check if event exists and registration is open (FOR UPDATE sperrt die Zeile)
+      const { rows: [event] } = await db.query(
+        "SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+        [eventId, req.user.organization_id]
+      );
+      if (!event) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
       const now = new Date();
-      if (now < new Date(event.registration_opens_at)) return res.status(400).json({ error: 'Registration not yet open' });
-      if (now > new Date(event.registration_closes_at)) return res.status(400).json({ error: 'Registration is closed' });
-      
+      if (now < new Date(event.registration_opens_at)) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Anmeldung noch nicht geöffnet' });
+      }
+      if (now > new Date(event.registration_closes_at)) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Anmeldung bereits geschlossen' });
+      }
+
       // 2. Check if already booked
-      const { rows: [existingBooking] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2 AND status = 'confirmed'", [eventId, konfiId]);
-      if (existingBooking) return res.status(409).json({ error: 'Already booked this event' });
-      
+      const { rows: [existingBooking] } = await db.query(
+        "SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2",
+        [eventId, konfiId]
+      );
+      if (existingBooking) {
+        await db.query('ROLLBACK');
+        return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
+      }
+
       // 3. Check available spots and waitlist
-      // For timeslot events, calculate total capacity from timeslots
       let totalCapacity = event.max_participants;
       if (event.has_timeslots) {
-        const { rows: timeslots } = await db.query("SELECT SUM(max_participants) as total_capacity FROM event_timeslots WHERE event_id = $1", [eventId]);
+        const { rows: timeslots } = await db.query(
+          "SELECT SUM(max_participants) as total_capacity FROM event_timeslots WHERE event_id = $1",
+          [eventId]
+        );
         if (timeslots[0] && timeslots[0].total_capacity) {
           totalCapacity = parseInt(timeslots[0].total_capacity, 10);
         }
       }
-      
-      const { rows: [counts] } = await db.query("SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'pending') as pending_count FROM event_bookings WHERE event_id = $1", [eventId]);
+
+      const { rows: [counts] } = await db.query(
+        "SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'pending') as pending_count FROM event_bookings WHERE event_id = $1",
+        [eventId]
+      );
       const confirmedCount = parseInt(counts.confirmed_count, 10);
       const pendingCount = parseInt(counts.pending_count, 10);
-      
+
       let bookingStatus = 'confirmed';
-      let message = 'Event booked successfully';
+      let message = 'Erfolgreich angemeldet';
 
       // Only check capacity if totalCapacity > 0 (0 means unlimited)
       if (totalCapacity > 0 && confirmedCount >= totalCapacity) {
         if (!event.waitlist_enabled) {
-          return res.status(400).json({ error: 'Event is full' });
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: 'Das Event ist leider bereits ausgebucht' });
         }
         if (pendingCount >= event.max_waitlist_size) {
-          return res.status(400).json({ error: 'Event and waitlist are full' });
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: 'Das Event und die Warteliste sind leider voll' });
         }
         bookingStatus = 'pending';
-        message = 'Added to waitlist';
+        message = 'Auf die Warteliste gesetzt';
       }
-      
+
       // 4. Create booking
       const insertBookingQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
       const { rows: [newBooking] } = await db.query(insertBookingQuery, [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id]);
-      
+
+      // Transaktion abschließen
+      await db.query('COMMIT');
+
       res.status(201).json({ id: newBooking.id, message, status: bookingStatus });
 
       // Live Update: Notify the konfi and admins about the booking
@@ -711,8 +742,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking' });
 
     } catch (err) {
+      await db.query('ROLLBACK');
       console.error(`Database error in POST /events/${eventId}/book:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler bei der Anmeldung' });
     }
   });
   
