@@ -231,7 +231,8 @@ router.post('/create',
 4. Passwort aus Responses entfernen - BEWUSSTE ENTSCHEIDUNG (Admin-Onboarding Feature)
 
 ### BALD (Phase 2)
-1. Transaktionen für kritische Operationen (Race Conditions)
+1. ~~Transaktionen für kritische Operationen (Race Conditions)~~ - ERLEDIGT (31.12.2025)
+   - Event-Buchungen mit FOR UPDATE Lock abgesichert
 2. Input-Validierung mit express-validator
 3. Einheitliche Error-Responses
 4. ~~bonus_points INSERT vereinheitlichen~~ - ERLEDIGT (31.12.2025)
