@@ -10,6 +10,7 @@ const multer = require('multer');
 const nodemailer = require('nodemailer');
 const http = require('http');
 const { Server } = require('socket.io');
+const rateLimit = require('express-rate-limit');
 
 // ====================================================================
 // SERVER CONFIGURATION
@@ -139,13 +140,48 @@ transporter.verify(function(error, success) {
 });
 
 // ====================================================================
+// RATE LIMITING
+// ====================================================================
+
+// Allgemeiner Rate Limiter für alle Requests
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 1000, // Max 1000 Requests pro 15 Minuten
+  message: { error: 'Zu viele Anfragen. Bitte versuche es später erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Strenger Rate Limiter für Auth-Endpoints (Brute-Force Schutz)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 10, // Max 10 Login-Versuche pro 15 Minuten
+  message: { error: 'Zu viele Login-Versuche. Bitte warte 15 Minuten.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true // Erfolgreiche Logins nicht zählen
+});
+
+// Rate Limiter für Registrierung (Spam-Schutz)
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 Stunde
+  max: 5, // Max 5 Registrierungen pro Stunde pro IP
+  message: { error: 'Zu viele Registrierungen. Bitte warte eine Stunde.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// ====================================================================
 // MIDDLEWARE SETUP
 // ====================================================================
 
-console.log('🔧 Setting up middleware...');
+console.log('Setting up middleware...');
 
 // CORS wird komplett von Apache gehandelt
 // app.use(cors()); // DEAKTIVIERT - Apache macht das
+
+// Allgemeiner Rate Limiter
+app.use(generalLimiter);
 
 app.use(express.json());
 
@@ -325,7 +361,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Konfi Points API is running' });
 });
 
-app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG));
+app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
 app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));

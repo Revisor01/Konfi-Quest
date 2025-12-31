@@ -7,7 +7,8 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
 
 // Unified auth routes - combines all login functionality
-module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
+module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) => {
+  const { authLimiter, registerLimiter } = rateLimiters;
   
   // Helper function to send email
   const sendEmail = async (to, subject, html) => {
@@ -32,9 +33,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
   };
 
   // ===== UNIFIED LOGIN ENDPOINTS =====
-  
+
+  // Rate Limiter Middleware für Login (falls vorhanden)
+  const loginMiddleware = authLimiter ? [authLimiter] : [];
+
   // Unified RBAC login - works for both admins and konfis
-  router.post('/login', async (req, res) => {
+  router.post('/login', ...loginMiddleware, async (req, res) => {
     const { username, password } = req.body;
     console.log(`🔐 RBAC login attempt for: ${username}`);
 
@@ -224,8 +228,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG) => {
     }
   });
 
-  // Request password reset
-  router.post('/request-password-reset', async (req, res) => {
+  // Request password reset (mit Rate Limiting gegen Spam)
+  router.post('/request-password-reset', ...loginMiddleware, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     
