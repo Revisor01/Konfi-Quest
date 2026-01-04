@@ -81,8 +81,8 @@ const AdminInvitePage: React.FC = () => {
       const code = response.data.invite_code;
       setInviteCode(code);
 
-      // Generate QR Code
-      const registrationUrl = `${window.location.origin}/register?code=${code}`;
+      // Generate QR Code - immer https://konfi-quest.de verwenden
+      const registrationUrl = `https://konfi-quest.de/register?code=${code}`;
       const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
         width: 256,
         margin: 2,
@@ -104,7 +104,7 @@ const AdminInvitePage: React.FC = () => {
   const copyInviteLink = async () => {
     if (!inviteCode) return;
 
-    const registrationUrl = `${window.location.origin}/register?code=${inviteCode}`;
+    const registrationUrl = `https://konfi-quest.de/register?code=${inviteCode}`;
     try {
       await navigator.clipboard.writeText(registrationUrl);
       setSuccess('Link kopiert');
@@ -116,7 +116,7 @@ const AdminInvitePage: React.FC = () => {
   const shareInvite = async () => {
     if (!inviteCode) return;
 
-    const registrationUrl = `${window.location.origin}/register?code=${inviteCode}`;
+    const registrationUrl = `https://konfi-quest.de/register?code=${inviteCode}`;
     const jahrgangName = jahrgaenge.find(j => j.id === selectedJahrgang)?.name || 'Konfi';
 
     if (navigator.share) {

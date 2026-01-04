@@ -347,7 +347,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
     try {
       const { rows: [invite] } = await db.query(`
-        SELECT ic.*, j.name as jahrgang_name, o.name as organization_name
+        SELECT ic.*, j.name as jahrgang_name, COALESCE(o.display_name, o.name) as organization_name
         FROM invite_codes ic
         JOIN jahrgaenge j ON ic.jahrgang_id = j.id
         JOIN organizations o ON ic.organization_id = o.id
@@ -372,18 +372,39 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
   // Register new Konfi with invite code (public endpoint)
   router.post('/register-konfi', async (req, res) => {
-    const { invite_code, display_name, username, password } = req.body;
+    const { invite_code, display_name, username, password, email } = req.body;
 
     if (!invite_code || !display_name || !username || !password) {
       return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' });
+    // Passwort-Validierung: min 8 Zeichen, Groß/Klein, Zahl, Sonderzeichen
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen lang sein' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'Passwort muss mindestens einen Großbuchstaben enthalten' });
+    }
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Passwort muss mindestens eine Zahl enthalten' });
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password)) {
+      return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten' });
     }
 
     if (username.length < 3) {
       return res.status(400).json({ error: 'Benutzername muss mindestens 3 Zeichen lang sein' });
+    }
+
+    // Optional: E-Mail validieren wenn angegeben
+    if (email && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+      }
     }
 
     try {
@@ -423,12 +444,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       try {
         await client.query('BEGIN');
 
-        // Create user
+        // Create user (mit optionaler E-Mail)
         const { rows: [newUser] } = await client.query(`
-          INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
-          VALUES ($1, $2, $3, $4, $5)
+          INSERT INTO users (username, display_name, password_hash, role_id, organization_id, email)
+          VALUES ($1, $2, $3, $4, $5, $6)
           RETURNING id
-        `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id]);
+        `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id, email?.trim() || null]);
 
         // Create konfi profile
         await client.query(`
