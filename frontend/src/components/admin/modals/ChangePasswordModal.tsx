@@ -115,8 +115,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             <IonLabel>Aktuelles Passwort</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Aktuelles Passwort *</IonLabel>
                   <IonInput
@@ -148,8 +148,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             <IonLabel>Neues Passwort</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Neues Passwort *</IonLabel>
                   <IonInput

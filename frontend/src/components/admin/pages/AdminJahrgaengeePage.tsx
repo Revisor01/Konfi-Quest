@@ -22,7 +22,10 @@ import {
   IonItemOptions,
   IonItemOption,
   IonInput,
-  IonSpinner
+  IonSpinner,
+  IonDatetime,
+  IonDatetimeButton,
+  IonModal
 } from '@ionic/react';
 import {
   add,
@@ -154,14 +157,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
         {/* Jahrgang Details - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--jahrgang">
               <IonIcon icon={school} />
             </div>
             <IonLabel>Jahrgang Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput
@@ -172,43 +175,30 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                     clearInput={true}
                   />
                 </IonItem>
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                <IonItem lines="none" style={{ '--background': 'transparent', marginBottom: '8px' }}>
                   <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', marginTop: '8px' }}>
-                    {formData.confirmation_date && (
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        backgroundColor: 'rgba(52, 199, 89, 0.15)',
-                        padding: '8px 12px',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(52, 199, 89, 0.3)'
-                      }}>
-                        <IonIcon icon={calendar} style={{ color: '#34c759', fontSize: '1.1rem' }} />
-                        <span style={{ color: '#34c759', fontWeight: '600', fontSize: '0.9rem' }}>
-                          {new Date(formData.confirmation_date).toLocaleDateString('de-DE', {
-                            weekday: 'long',
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    <IonInput
-                      type="date"
-                      value={formData.confirmation_date}
-                      onIonInput={(e) => setFormData({ ...formData, confirmation_date: e.detail.value! })}
-                      disabled={loading}
-                      style={{ flex: formData.confirmation_date ? '0 0 auto' : '1' }}
-                    />
-                  </div>
+                  <IonDatetimeButton datetime="confirmation-date" disabled={loading} />
                 </IonItem>
               </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        <IonModal keepContentsMounted={true}>
+          <IonDatetime
+            id="confirmation-date"
+            presentation="date"
+            locale="de-DE"
+            value={formData.confirmation_date || undefined}
+            onIonChange={(e) => {
+              const value = e.detail.value;
+              if (typeof value === 'string') {
+                setFormData({ ...formData, confirmation_date: value.split('T')[0] });
+              }
+            }}
+            disabled={loading}
+          />
+        </IonModal>
       </IonContent>
     </IonPage>
   );
@@ -448,7 +438,7 @@ const AdminJahrgaengeePage: React.FC = () => {
         {/* Jahrgaenge List - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--jahrgang">
               <IonIcon icon={schoolOutline} />
             </div>
             <IonLabel>Jahrgänge ({jahrgaenge.length})</IonLabel>
@@ -489,31 +479,41 @@ const AdminJahrgaengeePage: React.FC = () => {
                         onClick={canEdit ? () => openEditModal(jahrgang) : undefined}
                         detail={false}
                         lines="none"
-                        className="app-list-item app-list-item--primary"
                         style={{
                           '--background': 'transparent',
                           '--padding-start': '0',
+                          '--padding-end': '0',
                           '--inner-padding-end': '0',
-                          opacity: canEdit ? 1 : 0.6,
-                          cursor: canEdit ? 'pointer' : 'default'
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
                         }}
                       >
-                        <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
-                          <IonIcon icon={school} />
-                        </div>
-                        <IonLabel>
-                          <h2 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0', color: '#333' }}>
-                            {jahrgang.name}
-                          </h2>
-                          {jahrgang.confirmation_date && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={calendar} style={{ fontSize: '0.8rem', color: '#dc2626' }} />
-                              <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                                Konfirmationsdatum: {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
-                              </span>
+                        <div
+                          className="app-list-item app-list-item--jahrgang"
+                          style={{ width: '100%' }}
+                        >
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
+                                <IonIcon icon={school} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">
+                                  {jahrgang.name}
+                                </div>
+                                {jahrgang.confirmation_date && (
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={calendar} style={{ color: '#007aff' }} />
+                                      {new Date(jahrgang.confirmation_date).toLocaleDateString('de-DE')}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </IonLabel>
+                          </div>
+                        </div>
                       </IonItem>
 
                       {canDelete && (

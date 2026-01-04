@@ -167,9 +167,17 @@ interface LevelManagementModalProps {
   level?: Level;
   onClose: () => void;
   onSuccess: () => void;
+  dismiss?: () => void;
 }
 
-const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onClose, onSuccess }) => {
+const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onClose, onSuccess, dismiss }) => {
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const { setSuccess, setError } = useApp();
   const [formData, setFormData] = useState<Level>({
     name: '',
@@ -226,7 +234,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         setSuccess('Level erstellt');
       }
       onSuccess();
-      onClose();
+      handleClose();
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Speichern');
     } finally {
@@ -241,7 +249,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           <IonTitle>{level ? 'Level bearbeiten' : 'Neues Level'}</IonTitle>
           <IonButtons slot="start">
             <IonButton
-              onClick={onClose}
+              onClick={handleClose}
               disabled={loading}
             >
               <IonIcon icon={closeOutline} />
@@ -251,7 +259,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             <IonButton
               onClick={handleSubmit}
               disabled={!isFormValid || loading}
-              color="primary"
+              color="success"
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -273,8 +281,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             <IonLabel>Level Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Titel *</IonLabel>
                   <IonInput

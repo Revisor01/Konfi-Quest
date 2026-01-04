@@ -32,11 +32,12 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    // Kurze Verzögerung damit der Browser den initialen Zustand rendert
+    // Reset bei Änderung der Werte für Re-Animation
     setShouldAnimate(false);
+    // Etwas längere Verzögerung für zuverlässige Animation
     const timer = setTimeout(() => {
       setShouldAnimate(true);
-    }, 50);
+    }, 100);
     return () => clearTimeout(timer);
   }, [totalPoints, gottesdienstPoints, gemeindePoints]);
 

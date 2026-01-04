@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(timeout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(openssl rand:*)",
+      "Bash(git push)",
+      "Bash(ssh root@server.godsapp.de \"cd /opt/Konfi-Quest && git pull && docker-compose down && docker-compose up -d --build\")",
+      "Bash(ssh root@server.godsapp.de \"docker exec konfi-quest-db-1 psql -U konfi_user -d konfi_db -c ''\\\\d event_bookings''\")",
+      "Bash(ssh:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

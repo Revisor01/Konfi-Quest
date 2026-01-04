@@ -32,6 +32,7 @@ import { BadgeProvider, useBadge } from './contexts/BadgeContext';
 import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
 import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
+import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import MainTabs from './components/layout/MainTabs';
 
@@ -163,6 +164,7 @@ const AppContent: React.FC = () => {
         <IonReactRouter>
           <IonRouterOutlet>
             <Route path="/login" component={LoginView} exact />
+            <Route path="/register" component={KonfiRegisterPage} exact />
             <Redirect exact from="/" to="/login" />
           </IonRouterOutlet>
         </IonReactRouter>

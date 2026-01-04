@@ -247,8 +247,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonLabel>Grunddaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput
@@ -309,14 +309,20 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               </IonList>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
-                  className={`app-list-item app-list-item--activities ${formData.type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     opacity: loading ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    borderRight: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderLeft: '3px solid #007aff',
+                    background: formData.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'white'
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
@@ -324,21 +330,28 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     checked={formData.type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
+                      '--checkbox-background-checked': '#007aff',
+                      '--border-color-checked': '#007aff',
+                      '--border-color': '#007aff',
                       '--checkmark-color': 'white'
                     }}
                   />
                 </div>
                 <div
-                  className={`app-list-item app-list-item--activities ${formData.type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     opacity: loading ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between'
+                    justifyContent: 'space-between',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    borderRight: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderLeft: '3px solid #059669',
+                    background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : 'white'
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
@@ -348,6 +361,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     style={{
                       '--checkbox-background-checked': '#059669',
                       '--border-color-checked': '#059669',
+                      '--border-color': '#059669',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -366,7 +380,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonLabel>Kategorien</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
             {initializing ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                 <IonSpinner name="crescent" />

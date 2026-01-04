@@ -7,12 +7,12 @@ import {
   IonContent,
   IonCard,
   IonCardContent,
-  IonItem,
   IonLabel,
   IonIcon,
   IonList,
   IonListHeader,
   IonButton,
+  IonNote,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -24,17 +24,39 @@ import {
   person,
   trophy,
   logOut,
-  flash
+  flash,
+  notifications,
+  chevronForward,
+  statsChart,
+  qrCode
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
-import PushNotificationSettings from '../../common/PushNotificationSettings';
 import { logout } from '../../../services/auth';
+import { useHistory } from 'react-router-dom';
 
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
-  const { user } = useApp();
+  const { user, pushNotificationsPermission, requestPushPermissions } = useApp();
   const [presentAlert] = useIonAlert();
+  const history = useHistory();
+
+  const getPushPermissionText = () => {
+    switch (pushNotificationsPermission) {
+      case 'granted': return 'Aktiviert';
+      case 'denied': return 'Deaktiviert';
+      case 'prompt': return 'Nicht gefragt';
+      default: return 'Unbekannt';
+    }
+  };
+
+  const getPushPermissionColor = () => {
+    switch (pushNotificationsPermission) {
+      case 'granted': return '#34c759';
+      case 'denied': return '#dc3545';
+      default: return '#ff9500';
+    }
+  };
 
   const handleLogout = () => {
     presentAlert({
@@ -80,34 +102,59 @@ const AdminSettingsPage: React.FC = () => {
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--primary">
+              <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={shield} />
               </div>
               <IonLabel>Verwaltung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  <IonItem
-                    button
-                    routerLink="/admin/users"
-                    lines="none"
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div
                     className="app-list-item app-list-item--users"
-                    style={{
-                      '--background': 'transparent',
-                      '--padding-start': '0',
-                      '--inner-padding-end': '0'
-                    }}
+                    onClick={() => history.push('/admin/users')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users" slot="start" style={{ marginRight: '12px' }}>
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                       <IonIcon icon={people} />
                     </div>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Benutzer:innen</h2>
-                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Admins, Teamer:innen und Rollen verwalten</p>
-                    </IonLabel>
-                  </IonItem>
-                </IonList>
+                    <div style={{ flex: 1 }}>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Benutzer:innen</h2>
+                      <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Admins, Teamer:innen und Rollen verwalten</p>
+                    </div>
+                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                  </div>
+
+                  <div
+                    className="app-list-item app-list-item--activities"
+                    onClick={() => history.push('/admin/settings/goals')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                      <IonIcon icon={statsChart} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Punkte-Ziele</h2>
+                      <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Ziel-Punkte für Gottesdienst und Gemeinde</p>
+                    </div>
+                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                  </div>
+
+                  <div
+                    className="app-list-item app-list-item--jahrgang"
+                    onClick={() => history.push('/admin/settings/invite')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
+                      <IonIcon icon={qrCode} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Konfis einladen</h2>
+                      <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>QR-Code für Selbstregistrierung</p>
+                    </div>
+                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                  </div>
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -117,34 +164,29 @@ const AdminSettingsPage: React.FC = () => {
         {user?.role_name === 'super_admin' && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--success">
+              <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={business} />
               </div>
               <IonLabel>System-Administration</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <IonList style={{ background: 'transparent' }} lines="none">
-                  <IonItem
-                    button
-                    routerLink="/admin/organizations"
-                    lines="none"
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div
                     className="app-list-item app-list-item--success"
-                    style={{
-                      '--background': 'transparent',
-                      '--padding-start': '0',
-                      '--inner-padding-end': '0'
-                    }}
+                    onClick={() => history.push('/admin/organizations')}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success" slot="start" style={{ marginRight: '12px' }}>
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
                       <IonIcon icon={business} />
                     </div>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Organisationen</h2>
-                      <p style={{ fontSize: '0.8rem', color: '#666' }}>Gemeinden und Organisationen verwalten</p>
-                    </IonLabel>
-                  </IonItem>
-                </IonList>
+                    <div style={{ flex: 1 }}>
+                      <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Organisationen</h2>
+                      <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Gemeinden und Organisationen verwalten</p>
+                    </div>
+                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                  </div>
+                </div>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -153,148 +195,152 @@ const AdminSettingsPage: React.FC = () => {
         {/* BLOCK 2: Inhalt */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--badges">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={pricetag} />
             </div>
             <IonLabel>Inhalt</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-                <IonItem
-                  button
-                  routerLink="/admin/activities"
-                  lines="none"
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div
                   className="app-list-item app-list-item--activities"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--inner-padding-end': '0',
-                    marginBottom: '8px'
-                  }}
+                  onClick={() => history.push('/admin/activities')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities" slot="start" style={{ marginRight: '12px' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={flash} />
                   </div>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Aktivitäten</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Aktivitäten und Punkte verwalten</p>
-                  </IonLabel>
-                </IonItem>
-                <IonItem
-                  button
-                  routerLink="/admin/settings/categories"
-                  lines="none"
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Aktivitäten</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Aktivitäten und Punkte verwalten</p>
+                  </div>
+                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                </div>
+
+                <div
                   className="app-list-item app-list-item--badges"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--inner-padding-end': '0',
-                    marginBottom: '8px'
-                  }}
+                  onClick={() => history.push('/admin/settings/categories')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges" slot="start" style={{ marginRight: '12px' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                     <IonIcon icon={pricetag} />
                   </div>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Kategorien</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Kategorien für Aktivitäten und Events</p>
-                  </IonLabel>
-                </IonItem>
-                <IonItem
-                  button
-                  routerLink="/admin/settings/jahrgaenge"
-                  lines="none"
-                  className="app-list-item app-list-item--primary"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--inner-padding-end': '0',
-                    marginBottom: '8px'
-                  }}
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Kategorien</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Kategorien für Aktivitäten und Events</p>
+                  </div>
+                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--jahrgang"
+                  onClick={() => history.push('/admin/settings/jahrgaenge')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={school} />
                   </div>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Jahrgänge</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Konfirmand:innen verwalten</p>
-                  </IonLabel>
-                </IonItem>
-                <IonItem
-                  button
-                  routerLink="/admin/settings/levels"
-                  lines="none"
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Jahrgänge</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Konfirmand:innen verwalten</p>
+                  </div>
+                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                </div>
+
+                <div
                   className="app-list-item app-list-item--level"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--inner-padding-end': '0'
-                  }}
+                  onClick={() => history.push('/admin/settings/levels')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level" slot="start" style={{ marginRight: '12px' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={trophy} />
                   </div>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Level-System</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Punkte-Level und Belohnungen</p>
-                  </IonLabel>
-                </IonItem>
-              </IonList>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Level-System</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Punkte-Level und Belohnungen</p>
+                  </div>
+                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                </div>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
 
-        <div style={{ margin: '0 16px 16px 16px' }}>
-          <PushNotificationSettings />
-        </div>
-
         {/* Konto */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={person} />
             </div>
             <IonLabel>Konto</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-                <IonItem
-                  button
-                  routerLink="/admin/profile"
-                  lines="none"
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div
                   className="app-list-item app-list-item--primary"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--inner-padding-end': '0'
-                  }}
+                  onClick={() => history.push('/admin/profile')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary" slot="start" style={{ marginRight: '12px' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
                     <IonIcon icon={person} />
                   </div>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Profil</h2>
-                    <p style={{ fontSize: '0.8rem', color: '#666' }}>Passwort und E-Mail ändern</p>
-                  </IonLabel>
-                </IonItem>
-              </IonList>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Profil</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Passwort und E-Mail ändern</p>
+                  </div>
+                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--warning"
+                  onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
+                  style={{
+                    cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                    <IonIcon icon={notifications} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Push-Benachrichtigungen</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Chat-Nachrichten und Updates</p>
+                  </div>
+                  <span style={{
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    color: getPushPermissionColor(),
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    background: `${getPushPermissionColor()}15`
+                  }}>
+                    {getPushPermissionText()}
+                  </span>
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--danger"
+                  onClick={handleLogout}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                    <IonIcon icon={logOut} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
+                  </div>
+                </div>
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
 
-        <div style={{ margin: '16px', paddingBottom: '16px' }}>
-          <IonButton
-            expand="block"
-            color="danger"
-            fill="outline"
-            onClick={handleLogout}
-          >
-            <IonIcon icon={logOut} slot="start" />
-            Abmelden
-          </IonButton>
-        </div>
+        <div style={{ height: '16px' }}></div>
       </IonContent>
     </IonPage>
   );

@@ -10,7 +10,6 @@ import {
   IonItem,
   IonLabel,
   IonInput,
-  useIonActionSheet,
   IonToggle,
   IonCard,
   IonCardContent,
@@ -18,7 +17,6 @@ import {
   IonCheckbox,
   IonList,
   IonListHeader,
-  IonText,
   IonSpinner
 } from '@ionic/react';
 import {
@@ -84,7 +82,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError, user: currentUser } = useApp();
-  const [presentActionSheet] = useIonActionSheet();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -252,25 +249,26 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     return roles.find(role => role.id === formData.role_id);
   };
 
-  const presentRoleActionSheet = () => {
-    const allowedRoles = roles.filter(role => canAssignRole(role.name));
+  const getAllowedRoles = () => {
+    return roles.filter(role => canAssignRole(role.name));
+  };
 
-    const buttons = allowedRoles.map(role => ({
-      text: role.display_name,
-      handler: () => {
-        setFormData({ ...formData, role_id: role.id });
-      }
-    }));
+  const getRoleColor = (roleName: string) => {
+    switch (roleName) {
+      case 'org_admin': return '#3b82f6';
+      case 'admin': return '#ef4444';
+      case 'teamer': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
 
-    buttons.push({
-      text: 'Abbrechen',
-      handler: () => { }
-    });
-
-    presentActionSheet({
-      header: 'Rolle auswählen',
-      buttons: buttons
-    });
+  const getRoleDisplayName = (roleName: string) => {
+    switch (roleName) {
+      case 'org_admin': return 'Admin';
+      case 'admin': return 'Hauptamt';
+      case 'teamer': return 'Team';
+      default: return roleName;
+    }
   };
 
   const isValid = formData.username.trim() && formData.display_name.trim() && formData.role_id > 0;
@@ -325,7 +323,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <IonLabel>Persönliche Daten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Anzeigename *</IonLabel>
@@ -394,48 +392,90 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <IonLabel>Rolle & Status</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
-                <IonItem
-                  button
-                  lines="full"
-                  onClick={presentRoleActionSheet}
+            <IonCardContent style={{ padding: '16px 16px 8px 16px' }}>
+              {/* Rolle - klickbare Liste */}
+              <div style={{ marginBottom: '16px' }}>
+                <IonLabel style={{ fontSize: '0.85rem', color: '#666', marginBottom: '8px', display: 'block' }}>
+                  Rolle *
+                </IonLabel>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {getAllowedRoles().map(role => {
+                    const isSelected = formData.role_id === role.id;
+                    const roleColor = getRoleColor(role.name);
+
+                    return (
+                      <div
+                        key={role.id}
+                        onClick={() => !saving && setFormData({ ...formData, role_id: role.id })}
+                        style={{
+                          cursor: saving ? 'default' : 'pointer',
+                          opacity: saving ? 0.6 : 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          borderRadius: '10px',
+                          borderTop: '1px solid rgba(0,0,0,0.06)',
+                          borderRight: '1px solid rgba(0,0,0,0.06)',
+                          borderBottom: '1px solid rgba(0,0,0,0.06)',
+                          borderLeft: `3px solid ${roleColor}`,
+                          background: isSelected ? `${roleColor}15` : 'white'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div
+                            className="app-icon-circle"
+                            style={{ backgroundColor: roleColor, width: '32px', height: '32px' }}
+                          >
+                            <IonIcon icon={shieldOutline} style={{ fontSize: '0.9rem' }} />
+                          </div>
+                          <div>
+                            <span style={{ fontWeight: '500', color: '#333', display: 'block' }}>
+                              {getRoleDisplayName(role.name)}
+                            </span>
+                            {role.description && (
+                              <span style={{ fontSize: '0.75rem', color: '#8e8e93' }}>
+                                {role.description}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <IonCheckbox
+                          checked={isSelected}
+                          disabled={saving}
+                          style={{
+                            '--checkbox-background-checked': roleColor,
+                            '--border-color-checked': roleColor,
+                            '--border-color': roleColor,
+                            '--checkmark-color': 'white'
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Konto aktiv Toggle */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 0',
+                borderTop: '1px solid rgba(0,0,0,0.06)'
+              }}>
+                <div>
+                  <h3 style={{ fontWeight: '500', margin: '0 0 4px 0', fontSize: '0.95rem' }}>Konto aktiv</h3>
+                  <p style={{ color: '#666', margin: 0, fontSize: '0.8rem' }}>
+                    Benutzer kann sich anmelden
+                  </p>
+                </div>
+                <IonToggle
+                  checked={formData.is_active}
+                  onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
                   disabled={saving}
-                  style={{ '--background': 'transparent' }}
-                >
-                  <IonLabel>
-                    <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Rolle *</h3>
-                    <p style={{ color: getSelectedRole() ? '#333' : '#999', margin: 0 }}>
-                      {getSelectedRole() ? getSelectedRole()?.display_name : 'Rolle auswählen...'}
-                    </p>
-                  </IonLabel>
-                </IonItem>
-
-                {getSelectedRole() && getSelectedRole()?.description && (
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonText color="medium">
-                      <p style={{ fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>
-                        {getSelectedRole()?.description}
-                      </p>
-                    </IonText>
-                  </IonItem>
-                )}
-
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel>
-                    <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>Konto aktiv</h3>
-                    <p style={{ color: '#666', margin: 0, fontSize: '0.85rem' }}>
-                      Benutzer kann sich anmelden
-                    </p>
-                  </IonLabel>
-                  <IonToggle
-                    slot="end"
-                    checked={formData.is_active}
-                    onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                    disabled={saving}
-                  />
-                </IonItem>
-              </IonList>
+                />
+              </div>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -457,7 +497,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </IonLabel>
               </IonItem>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {jahrgaenge.map(jahrgang => {
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
 
@@ -492,28 +532,47 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </IonCardContent>
         </IonCard>
 
-        {/* Bestehende Zuweisungen im Edit-Modus */}
+        </IonList>
+
+        {/* Bestehende Zuweisungen im Edit-Modus - als eigene Sektion */}
         {isEditMode && user?.assigned_jahrgaenge && user.assigned_jahrgaenge.length > 0 && (
-          <IonCard className="app-card" style={{ margin: '0 16px 24px 16px' }}>
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }} lines="none">
-                {user.assigned_jahrgaenge.map(assignment => (
-                  <IonItem key={assignment.id} style={{ '--background': '#f8f9fa', '--border-radius': '8px', marginBottom: '6px' }}>
-                    <IonIcon icon={checkmarkCircle} slot="start" style={{ color: '#667eea' }} />
-                    <IonLabel>
-                      <h3 style={{ fontWeight: '500', margin: '0 0 4px 0' }}>{assignment.name}</h3>
-                      <p style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
-                        Zugewiesen: {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
-                        {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
-                      </p>
-                    </IonLabel>
-                  </IonItem>
-                ))}
-              </IonList>
-            </IonCardContent>
-          </IonCard>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--users">
+                <IonIcon icon={checkmarkCircle} />
+              </div>
+              <IonLabel>Aktuelle Zuweisungen</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {user.assigned_jahrgaenge.map(assignment => (
+                    <div
+                      key={assignment.id}
+                      className="app-list-item app-list-item--users"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}
+                    >
+                      <IonIcon icon={checkmarkCircle} style={{ color: '#667eea', fontSize: '1.1rem', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontWeight: '500', fontSize: '0.9rem', color: '#333', display: 'block' }}>
+                          {assignment.name}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#8e8e93' }}>
+                          {new Date(assignment.assigned_at).toLocaleDateString('de-DE')}
+                          {assignment.assigned_by_name && ` von ${assignment.assigned_by_name}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
-      </IonList>
       </IonContent>
     </IonPage>
   );

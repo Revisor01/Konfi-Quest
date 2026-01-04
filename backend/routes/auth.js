@@ -290,6 +290,184 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
   });
 
+  // ===== INVITE CODE SYSTEM =====
+
+  // Generate invite code for Konfi registration (org_admin only)
+  router.post('/invite-code', verifyToken, async (req, res) => {
+    const { jahrgang_id } = req.body;
+    const userId = req.user.id;
+    const organizationId = req.user.organization_id;
+
+    // Only org_admin can generate invite codes
+    if (req.user.role_name !== 'org_admin' && !req.user.is_super_admin) {
+      return res.status(403).json({ error: 'Nur Org-Admins können Einladungscodes erstellen' });
+    }
+
+    if (!jahrgang_id) {
+      return res.status(400).json({ error: 'Jahrgang ist erforderlich' });
+    }
+
+    try {
+      // Verify jahrgang belongs to same organization
+      const { rows: [jahrgang] } = await db.query(
+        'SELECT id, name FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [jahrgang_id, organizationId]
+      );
+
+      if (!jahrgang) {
+        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+      }
+
+      // Generate unique invite code (8 characters, uppercase alphanumeric)
+      const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      // Store invite code
+      await db.query(`
+        INSERT INTO invite_codes (code, organization_id, jahrgang_id, created_by, expires_at)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [inviteCode, organizationId, jahrgang_id, userId, expiresAt]);
+
+      console.log(`✅ Invite code ${inviteCode} created for jahrgang ${jahrgang.name} by user ${userId}`);
+      res.json({
+        invite_code: inviteCode,
+        jahrgang_name: jahrgang.name,
+        expires_at: expiresAt
+      });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/invite-code:', err);
+      res.status(500).json({ error: 'Fehler beim Erstellen des Einladungscodes' });
+    }
+  });
+
+  // Validate invite code (public endpoint)
+  router.get('/validate-invite/:code', async (req, res) => {
+    const { code } = req.params;
+
+    try {
+      const { rows: [invite] } = await db.query(`
+        SELECT ic.*, j.name as jahrgang_name, o.name as organization_name
+        FROM invite_codes ic
+        JOIN jahrgaenge j ON ic.jahrgang_id = j.id
+        JOIN organizations o ON ic.organization_id = o.id
+        WHERE ic.code = $1 AND ic.expires_at > NOW() AND ic.used_at IS NULL
+      `, [code.toUpperCase()]);
+
+      if (!invite) {
+        return res.status(400).json({ error: 'Ungültiger oder abgelaufener Einladungscode' });
+      }
+
+      res.json({
+        valid: true,
+        jahrgang_name: invite.jahrgang_name,
+        organization_name: invite.organization_name
+      });
+
+    } catch (err) {
+      console.error('Database error in GET /api/auth/validate-invite:', err);
+      res.status(500).json({ error: 'Fehler bei der Validierung' });
+    }
+  });
+
+  // Register new Konfi with invite code (public endpoint)
+  router.post('/register-konfi', async (req, res) => {
+    const { invite_code, display_name, username, password } = req.body;
+
+    if (!invite_code || !display_name || !username || !password) {
+      return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen lang sein' });
+    }
+
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'Benutzername muss mindestens 3 Zeichen lang sein' });
+    }
+
+    try {
+      // Validate invite code
+      const { rows: [invite] } = await db.query(`
+        SELECT ic.*, j.name as jahrgang_name
+        FROM invite_codes ic
+        JOIN jahrgaenge j ON ic.jahrgang_id = j.id
+        WHERE ic.code = $1 AND ic.expires_at > NOW() AND ic.used_at IS NULL
+      `, [invite_code.toUpperCase()]);
+
+      if (!invite) {
+        return res.status(400).json({ error: 'Ungültiger oder abgelaufener Einladungscode' });
+      }
+
+      // Check if username already exists
+      const { rows: existingUsers } = await db.query(
+        'SELECT id FROM users WHERE username = $1',
+        [username.toLowerCase()]
+      );
+
+      if (existingUsers.length > 0) {
+        return res.status(409).json({ error: 'Benutzername bereits vergeben' });
+      }
+
+      // Get konfi role id
+      const { rows: [konfiRole] } = await db.query("SELECT id FROM roles WHERE name = 'konfi'");
+      if (!konfiRole) {
+        return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // Create user in transaction
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+
+        // Create user
+        const { rows: [newUser] } = await client.query(`
+          INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id
+        `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id]);
+
+        // Create konfi profile
+        await client.query(`
+          INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points)
+          VALUES ($1, $2, 0, 0)
+        `, [newUser.id, invite.jahrgang_id]);
+
+        // Mark invite code as used (optional - can be reused)
+        // await client.query('UPDATE invite_codes SET used_at = NOW() WHERE id = $1', [invite.id]);
+
+        await client.query('COMMIT');
+
+        console.log(`✅ New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
+        res.json({
+          message: 'Registrierung erfolgreich',
+          user: {
+            id: newUser.id,
+            display_name: display_name,
+            username: username,
+            jahrgang: invite.jahrgang_name
+          }
+        });
+
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+
+    } catch (err) {
+      if (err.code === '23505') { // unique constraint
+        return res.status(409).json({ error: 'Benutzername bereits vergeben' });
+      }
+      console.error('Database error in POST /api/auth/register-konfi:', err);
+      res.status(500).json({ error: 'Fehler bei der Registrierung' });
+    }
+  });
+
   // Reset password with token
   router.post('/reset-password', async (req, res) => {
     const { token, newPassword } = req.body;

@@ -155,14 +155,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         {/* Kategorie Details - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: 'rgba(255, 149, 0, 0.15)', color: '#ff9500' }}>
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={pricetag} />
             </div>
             <IonLabel>Kategorie Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonList style={{ background: 'transparent' }}>
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput
@@ -413,7 +413,7 @@ const AdminCategoriesPage: React.FC = () => {
         {/* Categories List - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: 'rgba(255, 149, 0, 0.15)', color: '#ff9500' }}>
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={pricetagOutline} />
             </div>
             <IonLabel>Kategorien ({categories.length})</IonLabel>
@@ -426,7 +426,7 @@ const AdminCategoriesPage: React.FC = () => {
                     icon={pricetag}
                     style={{
                       fontSize: '3rem',
-                      color: '#ff9500',
+                      color: '#f59e0b',
                       marginBottom: '16px',
                       display: 'block',
                       margin: '0 auto 16px auto'
@@ -454,39 +454,40 @@ const AdminCategoriesPage: React.FC = () => {
                         onClick={canEdit ? () => openEditModal(category) : undefined}
                         detail={false}
                         lines="none"
-                        className="app-list-item"
                         style={{
                           '--background': 'transparent',
                           '--padding-start': '0',
+                          '--padding-end': '0',
                           '--inner-padding-end': '0',
-                          opacity: canEdit ? 1 : 0.6,
-                          cursor: canEdit ? 'pointer' : 'default'
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
                         }}
                       >
-                        <div slot="start" style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          backgroundColor: '#ff9500',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginRight: '12px',
-                          boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)'
-                        }}>
-                          <IonIcon icon={pricetag} style={{ color: 'white', fontSize: '1.2rem' }} />
-                        </div>
-                        <IonLabel>
-                          <h2 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0', color: '#333' }}>
-                            {category.name}
-                          </h2>
-                          {category.description && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <IonIcon icon={informationCircleOutline} style={{ fontSize: '0.8rem', color: '#007aff' }} />
-                              <span style={{ fontSize: '0.8rem', color: '#666' }}>{category.description}</span>
+                        <div
+                          className="app-list-item app-list-item--badges"
+                          style={{ width: '100%' }}
+                        >
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                                <IonIcon icon={pricetag} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">
+                                  {category.name}
+                                </div>
+                                {category.description && (
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      {category.description}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </IonLabel>
+                          </div>
+                        </div>
                       </IonItem>
 
                       {canDelete && (

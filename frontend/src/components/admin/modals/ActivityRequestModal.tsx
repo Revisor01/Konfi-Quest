@@ -304,7 +304,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Nachweis-Foto</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: '16px' }}>
                 {photoUrl ? (
                   <img
                     src={photoUrl}
@@ -410,7 +410,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Entscheidung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
+              <IonCardContent style={{ padding: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {/* Genehmigen */}
                   <div

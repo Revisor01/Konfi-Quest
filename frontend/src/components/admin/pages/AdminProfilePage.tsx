@@ -224,75 +224,128 @@ const AdminProfilePage: React.FC = () => {
         {/* Konto-Einstellungen - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={settingsOutline} />
             </div>
             <IonLabel>Konto-Einstellungen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
                 {/* Funktionsbeschreibung */}
-                <div
-                  className="app-list-item app-list-item--info"
+                <IonItem
+                  button
                   onClick={handleOpenRoleTitleModal}
-                  style={{ cursor: 'pointer' }}
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto',
+                    marginBottom: '8px'
+                  }}
                 >
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--info">
-                        <IonIcon icon={briefcaseOutline} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title">Funktionsbeschreibung</div>
-                        <div className="app-list-item__subtitle">
-                          {profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin, Jugendmitarbeiter'}
+                  <div
+                    className="app-list-item app-list-item--purple"
+                    style={{ width: '100%' }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--purple">
+                          <IonIcon icon={briefcaseOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">Funktionsbeschreibung</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              {profileData.role_title ? `Aktuell: ${profileData.role_title}` : 'z.B. Pastor, Diakonin'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </IonItem>
 
                 {/* E-Mail ändern */}
-                <div
-                  className="app-list-item app-list-item--info"
+                <IonItem
+                  button
                   onClick={handleOpenEmailModal}
-                  style={{ cursor: 'pointer' }}
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto',
+                    marginBottom: '8px'
+                  }}
                 >
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--primary">
-                        <IonIcon icon={mailOutline} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title">E-Mail-Adresse ändern</div>
-                        <div className="app-list-item__subtitle">
-                          {user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen und Passwort-Reset'}
+                  <div
+                    className="app-list-item app-list-item--purple"
+                    style={{ width: '100%' }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--purple">
+                          <IonIcon icon={mailOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">E-Mail-Adresse ändern</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              {user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </IonItem>
 
                 {/* Passwort ändern */}
-                <div
-                  className="app-list-item app-list-item--info"
+                <IonItem
+                  button
                   onClick={handleOpenPasswordModal}
-                  style={{ cursor: 'pointer' }}
+                  detail={false}
+                  lines="none"
+                  style={{
+                    '--background': 'transparent',
+                    '--padding-start': '0',
+                    '--padding-end': '0',
+                    '--inner-padding-end': '0',
+                    '--inner-border-width': '0',
+                    '--border-style': 'none',
+                    '--min-height': 'auto'
+                  }}
                 >
-                  <div className="app-list-item__row">
-                    <div className="app-list-item__main">
-                      <div className="app-icon-circle app-icon-circle--warning">
-                        <IonIcon icon={keyOutline} />
-                      </div>
-                      <div className="app-list-item__content">
-                        <div className="app-list-item__title">Passwort ändern</div>
-                        <div className="app-list-item__subtitle">Sicherheitseinstellungen</div>
+                  <div
+                    className="app-list-item app-list-item--purple"
+                    style={{ width: '100%' }}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle app-icon-circle--purple">
+                          <IonIcon icon={keyOutline} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">Passwort ändern</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">Sicherheitseinstellungen</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                </IonItem>
+              </IonList>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -300,22 +353,24 @@ const AdminProfilePage: React.FC = () => {
         {/* App-Info - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>App-Info</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <div className="app-list-item app-list-item--primary">
+              <div className="app-list-item app-list-item--purple">
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--primary">
+                    <div className="app-icon-circle app-icon-circle--purple">
                       <IonIcon icon={shieldOutline} />
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title">Konfi Quest</div>
-                      <div className="app-list-item__subtitle">Version 2.0 - Ionic 8</div>
+                      <div className="app-list-item__meta">
+                        <span className="app-list-item__meta-item">Version 2.0 - Ionic 8</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -325,7 +380,7 @@ const AdminProfilePage: React.FC = () => {
         </IonList>
 
         {/* Logout - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px 16px 32px 16px' }}>
+        <IonList inset={true} style={{ margin: '16px 16px 16px 16px' }}>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               <IonButton

@@ -24,8 +24,8 @@ import {
   people,
   flash,
   pricetag,
-  filterOutline,
-  flashOutline
+  flashOutline,
+  search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 
@@ -276,15 +276,16 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '8px 16px' }}>
-            <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
-              <IonIcon icon={filterOutline} slot="start" style={{ color: '#16a34a', marginRight: '12px' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <IonIcon icon={search} style={{ color: '#8e8e93', fontSize: '1.2rem', flexShrink: 0 }} />
               <IonInput
                 value={searchTerm}
                 onIonInput={(e) => setSearchTerm(e.detail.value!)}
                 placeholder="Aktivität suchen..."
                 clearInput={true}
+                style={{ '--padding-start': '0' }}
               />
-            </IonItem>
+            </div>
           </IonCardContent>
         </IonCard>
       </IonList>

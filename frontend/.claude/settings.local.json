@@ -10,11 +10,6 @@
       "Bash(git push:*)",
       "Read(//Users/simonluthe/Documents/Konfipoints/**)",
       "Bash(grep:*)",
-      "Bash(ssh root@server.godsapp.de \"docker exec -it konfi-quest-db-1 psql -U konfi_user -d konfi_db -c \"\"SELECT id, name, waitlist_enabled, max_waitlist_size, (SELECT COUNT(*) FROM event_bookings WHERE event_id = events.id AND status = ''pending'') as pending_count FROM events WHERE organization_id = 1 LIMIT 5;\"\"\")",
-      "Bash(ssh root@server.godsapp.de \"docker ps --format ''{{.Names}}''\")",
-      "Bash(ssh root@server.godsapp.de \"docker exec -it konfi-quest_postgres_1 psql -U konfi_user -d konfi_db -c \"\"SELECT id, name, waitlist_enabled, max_waitlist_size, (SELECT COUNT(*) FROM event_bookings WHERE event_id = events.id AND status = ''pending'') as pending_count FROM events WHERE organization_id = 1 ORDER BY event_date DESC LIMIT 5;\"\"\")",
-      "Bash(ssh root@server.godsapp.de \"docker exec konfi-quest_postgres_1 psql -U konfi_user -d konfi_db -c \"\"SELECT id, name, waitlist_enabled, max_waitlist_size, (SELECT COUNT(*) FROM event_bookings WHERE event_id = events.id AND status = ''pending'') as pending_count FROM events WHERE organization_id = 1 ORDER BY event_date DESC LIMIT 5;\"\"\")",
-      "Bash(ssh root@server.godsapp.de \"cd /opt/Konfi-Quest && git pull && docker-compose down && docker-compose up -d --build\")",
       "Bash(ssh root@server.godsapp.de:*)",
       "Bash(git checkout:*)",
       "Bash(find:*)",
@@ -50,7 +45,10 @@
       "mcp__plugin_claude-mem_mem-search__get_recent_context",
       "mcp__plugin_claude-mem_mem-search__get_observation",
       "Bash(npm outdated:*)",
-      "Bash(npm update:*)"
+      "Bash(npm update:*)",
+      "Bash(npm audit:*)",
+      "Bash(wc:*)",
+      "Bash(sort:*)"
     ],
     "deny": [],
     "ask": []

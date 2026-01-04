@@ -86,29 +86,49 @@ ion-card.app-card ion-item ion-label h2 {
   overflow: hidden;
 }
 
-/* IonItem mit app-list-item - Klick-Feedback begrenzen */
-ion-item .app-list-item {
+/* IonItem mit app-list-item - Klick-Feedback auf ganze Zeile */
+ion-item.app-list-item {
+  --background: white;
+  --background-activated: rgba(0, 0, 0, 0.08);
+  --background-focused: rgba(0, 0, 0, 0.06);
+  --background-hover: rgba(0, 0, 0, 0.04);
   --ripple-color: transparent;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-right: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
 }
-.app-list-item:last-child {
+ion-item.app-list-item::part(native) {
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+.app-list-item:last-child,
+ion-item.app-list-item:last-child {
   margin-bottom: 0;
 }
 
 /* Farbvarianten fuer List Items - linke Border */
-.app-list-item--events { border-left-color: #dc2626; }
-.app-list-item--chat { border-left-color: #06b6d4; }
-.app-list-item--success { border-left-color: #34c759; }
-.app-list-item--warning { border-left-color: #ff9500; }
-.app-list-item--danger { border-left-color: #dc3545; }
-.app-list-item--info { border-left-color: #007aff; }
-.app-list-item--purple { border-left-color: #8b5cf6; }
-.app-list-item--booked { border-left-color: #007aff; }
-.app-list-item--primary { border-left-color: #5b21b6; }
-.app-list-item--bonus { border-left-color: #f97316; }
-.app-list-item--activities { border-left-color: #059669; }
-.app-list-item--users { border-left-color: #667eea; }
-.app-list-item--level { border-left-color: #9b59b6; }
-.app-list-item--organizations { border-left-color: #2dd36f; }
+.app-list-item--events, ion-item.app-list-item--events { border-left-color: #dc2626; }
+.app-list-item--chat, ion-item.app-list-item--chat { border-left-color: #06b6d4; }
+.app-list-item--success, ion-item.app-list-item--success { border-left-color: #34c759; }
+.app-list-item--warning, ion-item.app-list-item--warning { border-left-color: #ff9500; }
+.app-list-item--danger, ion-item.app-list-item--danger { border-left-color: #dc3545; }
+.app-list-item--info, ion-item.app-list-item--info { border-left-color: #007aff; }
+.app-list-item--purple, ion-item.app-list-item--purple { border-left-color: #8b5cf6; }
+.app-list-item--booked, ion-item.app-list-item--booked { border-left-color: #007aff; }
+.app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
+.app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
+.app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #059669; }
+.app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
+.app-list-item--level, ion-item.app-list-item--level { border-left-color: #9b59b6; }
+.app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #2dd36f; }
+.app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
+.app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #8b5cf6; }
+.app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
 
 /* Selected State fuer List Items - Events (Rot) */
 .app-list-item--events.app-list-item--selected {
@@ -276,8 +296,9 @@ ion-item .app-list-item {
 .app-section-icon--users { background-color: #667eea; }
 .app-section-icon--level { background-color: #9b59b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
-.app-section-icon--badges { background-color: #ff9500; }
+.app-section-icon--badges { background-color: #f59e0b; }
 .app-section-icon--requests { background-color: #059669; }
+.app-section-icon--jahrgang { background-color: #007aff; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -334,6 +355,8 @@ ion-item .app-list-item {
 .app-icon-circle--users { background-color: #667eea; }
 .app-icon-circle--level { background-color: #9b59b6; }
 .app-icon-circle--organizations { background-color: #2dd36f; }
+.app-icon-circle--badges { background-color: #f59e0b; }
+.app-icon-circle--jahrgang { background-color: #007aff; }
 .app-icon-circle ion-icon {
   color: white;
   font-size: 0.9rem;

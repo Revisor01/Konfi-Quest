@@ -339,57 +339,49 @@ const AdminLevelsPage: React.FC = () => {
                             onClick={() => handleEdit(level)}
                             detail={false}
                             lines="none"
-                            className="app-list-item app-list-item--level"
                             style={{
                               '--background': 'transparent',
                               '--padding-start': '0',
-                              '--inner-padding-end': '0'
+                              '--padding-end': '0',
+                              '--inner-padding-end': '0',
+                              '--inner-border-width': '0',
+                              '--border-style': 'none',
+                              '--min-height': 'auto'
                             }}
                           >
                             <div
-                              slot="start"
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                backgroundColor: level.color || '#9b59b6',
-                                borderRadius: '50%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 8px rgba(155, 89, 182, 0.3)',
-                                marginRight: '12px'
-                              }}
+                              className="app-list-item app-list-item--level"
+                              style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                             >
-                              <IonIcon
-                                icon={getIconFromString(level.icon || 'trophy')}
-                                style={{ fontSize: '1.2rem', color: 'white' }}
-                              />
-                            </div>
-                            <IonLabel>
-                              <h2 style={{ fontWeight: '600', fontSize: '0.95rem', margin: '0 0 4px 0', color: '#333' }}>
-                                {level.title}
-                              </h2>
-                              {level.description && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <IonIcon icon={informationCircle} style={{ fontSize: '0.8rem', color: '#007aff' }} />
-                                  <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                                    {level.description}
-                                  </span>
+                              {/* Corner Badge für Punkte */}
+                              <div
+                                className="app-corner-badge"
+                                style={{ backgroundColor: level.color || '#9b59b6' }}
+                              >
+                                {level.points_required}P
+                              </div>
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div
+                                    className="app-icon-circle app-icon-circle--lg"
+                                    style={{ backgroundColor: level.color || '#9b59b6' }}
+                                  >
+                                    <IonIcon icon={getIconFromString(level.icon || 'trophy')} />
+                                  </div>
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                      {level.title}
+                                    </div>
+                                    {level.description && (
+                                      <div className="app-list-item__meta">
+                                        <span className="app-list-item__meta-item">
+                                          {level.description}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                            </IonLabel>
-                            <div
-                              slot="end"
-                              style={{
-                                background: 'rgba(155, 89, 182, 0.1)',
-                                borderRadius: '12px',
-                                padding: '4px 10px',
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                color: '#9b59b6'
-                              }}
-                            >
-                              {level.points_required} P
+                              </div>
                             </div>
                           </IonItem>
 

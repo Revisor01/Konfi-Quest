@@ -365,7 +365,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                       className="app-corner-badge"
                       style={{ backgroundColor: roleColor }}
                     >
-                      {user.role_name === 'org_admin' ? 'Org Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
+                      {user.role_name === 'org_admin' ? 'Admin' : user.role_name === 'admin' ? 'Hauptamt' : 'Team'}
                     </div>
 
                     <div className="app-list-item__row">
