@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   appId: 'de.godsapp.konfiquest',
   appName: 'konfipoints-clean',
   webDir: 'dist',
+  server: {
+    // Deep Links: App öffnet sich bei konfi-quest.de Links
+    url: 'https://konfi-quest.de',
+    cleartext: false
+  },
   plugins: {
     Keyboard: {
       resize: 'ionic'
@@ -20,6 +25,15 @@ const config: CapacitorConfig = {
     FCM: {
       // Native FCM Plugin für APNS/FCM Token Management
     }
+  },
+  // iOS Universal Links / Android App Links
+  ios: {
+    // Associated Domains werden in Xcode konfiguriert:
+    // applinks:konfi-quest.de
+  },
+  android: {
+    // Intent Filters für Deep Links
+    // Werden in AndroidManifest.xml konfiguriert
   }
 };
 

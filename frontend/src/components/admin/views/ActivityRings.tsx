@@ -1,24 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface ActivityRingsProps {
-  // Aktuelle Werte
   totalPoints: number;
   gottesdienstPoints: number;
   gemeindePoints: number;
-  // Zielwerte (für Prozentberechnung) - 0 = kein Limit, Ring dreht weiter
   gottesdienstGoal: number;
   gemeindeGoal: number;
-  // Größe
   size?: number;
 }
 
 /**
- * Apple Health-Style Activity Rings mit Auffüll-Animation
- *
- * - Alle Ringe werden immer angezeigt (motiviert mehr zu sammeln)
- * - Bei >100% dreht der Ring weiter und wird dunkler/ändert Farbe
- * - Ringe füllen sich beim Erscheinen von 0 auf den Zielwert auf
- * - Gestaffelte Animation von außen nach innen
+ * Apple Health-Style Activity Rings mit Zeichnen-Animation
+ * Die Ringe "zeichnen" sich von 0 bis zum Zielwert
  */
 const ActivityRings: React.FC<ActivityRingsProps> = ({
   totalPoints,
@@ -28,48 +21,83 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindeGoal,
   size = 160
 }) => {
-  // Animation state: 0 = initial (leer), 1 = animieren zum Ziel
-  const [animationPhase, setAnimationPhase] = useState(0);
-  // Eindeutiger Key für kompletten Re-Mount bei Werteänderung
-  const [animationKey, setAnimationKey] = useState(0);
+  // Animierte Werte (starten bei 0)
+  const [animatedValues, setAnimatedValues] = useState({
+    total: 0,
+    gottesdienst: 0,
+    gemeinde: 0
+  });
 
-  useEffect(() => {
-    // Bei Werteänderung: Reset und Re-Animation
-    setAnimationPhase(0);
-    setAnimationKey(k => k + 1);
+  // Ref für Animation Frame
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-    // Zwei Frames warten, damit der Browser das leere Rendering sieht
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setAnimationPhase(1);
-      });
-    });
-  }, [totalPoints, gottesdienstPoints, gemeindePoints]);
-
-  // Alle Ringe werden immer angezeigt
+  // Zielwerte berechnen
   const effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10;
   const effectiveGemeindeGoal = gemeindeGoal > 0 ? gemeindeGoal : 10;
   const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
 
-  // Prozent berechnen (kann über 100% gehen)
-  const totalPercent = (totalPoints / effectiveTotalGoal) * 100;
-  const gottesdienstPercent = (gottesdienstPoints / effectiveGottesdienstGoal) * 100;
-  const gemeindePercent = (gemeindePoints / effectiveGemeindeGoal) * 100;
+  const targetPercents = {
+    total: (totalPoints / effectiveTotalGoal) * 100,
+    gottesdienst: (gottesdienstPoints / effectiveGottesdienstGoal) * 100,
+    gemeinde: (gemeindePoints / effectiveGemeindeGoal) * 100
+  };
+
+  // Animation starten wenn Werte sich ändern
+  useEffect(() => {
+    // Reset auf 0
+    setAnimatedValues({ total: 0, gottesdienst: 0, gemeinde: 0 });
+    startTimeRef.current = null;
+
+    // Kurze Verzögerung damit der Reset sichtbar wird
+    const timeout = setTimeout(() => {
+      const animate = (timestamp: number) => {
+        if (!startTimeRef.current) {
+          startTimeRef.current = timestamp;
+        }
+
+        const elapsed = timestamp - startTimeRef.current;
+        const duration = 1500; // 1.5 Sekunden Animation
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing: ease-out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        setAnimatedValues({
+          total: targetPercents.total * eased,
+          gottesdienst: targetPercents.gottesdienst * eased,
+          gemeinde: targetPercents.gemeinde * eased
+        });
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate);
+        }
+      };
+
+      animationRef.current = requestAnimationFrame(animate);
+    }, 100);
+
+    return () => {
+      clearTimeout(timeout);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [totalPoints, gottesdienstPoints, gemeindePoints, targetPercents.total, targetPercents.gottesdienst, targetPercents.gemeinde]);
 
   // Ring-Parameter
   const center = size / 2;
   const strokeWidth = size * 0.075;
   const gap = strokeWidth * 0.5;
-
-  // Radien für die Ringe (von außen nach innen)
   const outerRadius = center - strokeWidth / 2 - 4;
+
   const ringRadii = [
     outerRadius,
     outerRadius - strokeWidth - gap,
     outerRadius - 2 * (strokeWidth + gap)
   ];
 
-  // Farben - Gemeinde dunkelgrün (#059669)
+  // Farben
   const colors = {
     total: '#f59e0b',
     totalDark: '#b45309',
@@ -80,28 +108,30 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     background: 'rgba(255, 255, 255, 0.12)'
   };
 
-  // Ring Component mit Auffüll-Animation
+  // Ring Component
   const Ring: React.FC<{
     radius: number;
     percent: number;
     color: string;
     colorDark: string;
-    delay: number;
-  }> = ({ radius, percent, color, colorDark, delay }) => {
+  }> = ({ radius, percent, color, colorDark }) => {
     const circumference = 2 * Math.PI * radius;
 
     // Erste Runde (max 100%)
     const firstRoundPercent = Math.min(percent, 100);
-    // Animation: Start bei circumference (leer), Ende bei berechnetem Offset
-    const targetOffset = circumference - (circumference * firstRoundPercent) / 100;
-    const currentOffset = animationPhase === 1 ? targetOffset : circumference;
+    const offset = circumference - (circumference * firstRoundPercent) / 100;
 
     // Zweite Runde (wenn >100%)
     const hasSecondRound = percent > 100;
-    const secondRoundPercent = percent > 100 ? (percent % 100) : 0;
+    const secondRoundPercent = percent > 100 ? Math.min(percent - 100, 100) : 0;
     const secondCircumference = circumference * 0.97;
-    const secondTargetOffset = secondCircumference - (secondCircumference * secondRoundPercent) / 100;
-    const secondCurrentOffset = animationPhase === 1 ? secondTargetOffset : secondCircumference;
+    const secondOffset = secondCircumference - (secondCircumference * secondRoundPercent) / 100;
+
+    // Dritte Runde (wenn >200%)
+    const hasThirdRound = percent > 200;
+    const thirdRoundPercent = percent > 200 ? Math.min(percent - 200, 100) : 0;
+    const thirdCircumference = circumference * 0.94;
+    const thirdOffset = thirdCircumference - (thirdCircumference * thirdRoundPercent) / 100;
 
     return (
       <>
@@ -116,7 +146,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           strokeLinecap="round"
         />
 
-        {/* Erste Runde - füllt sich auf */}
+        {/* Erste Runde */}
         <circle
           cx={center}
           cy={center}
@@ -126,16 +156,15 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
-          strokeDashoffset={currentOffset}
+          strokeDashoffset={offset}
           style={{
             transform: 'rotate(-90deg)',
             transformOrigin: 'center',
-            transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay}ms`,
             filter: `drop-shadow(0 0 6px ${color}50)`
           }}
         />
 
-        {/* Zweite Runde - dunklere Farbe (wenn >100%) */}
+        {/* Zweite Runde (dunklere Farbe) */}
         {hasSecondRound && (
           <circle
             cx={center}
@@ -146,18 +175,17 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             strokeWidth={strokeWidth * 0.7}
             strokeLinecap="round"
             strokeDasharray={secondCircumference}
-            strokeDashoffset={secondCurrentOffset}
+            strokeDashoffset={secondOffset}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 300}ms`,
               filter: `drop-shadow(0 0 4px ${colorDark}70)`
             }}
           />
         )}
 
-        {/* Dritte Runde andeuten wenn >200% */}
-        {percent > 200 && (
+        {/* Dritte Runde */}
+        {hasThirdRound && (
           <circle
             cx={center}
             cy={center}
@@ -166,15 +194,11 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             stroke={colorDark}
             strokeWidth={strokeWidth * 0.4}
             strokeLinecap="round"
-            strokeDasharray={circumference * 0.94}
-            strokeDashoffset={animationPhase === 1
-              ? (circumference * 0.94) - ((circumference * 0.94) * (percent - 200)) / 100
-              : circumference * 0.94
-            }
+            strokeDasharray={thirdCircumference}
+            strokeDashoffset={thirdOffset}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              transition: `stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1) ${delay + 600}ms`,
               opacity: 0.8
             }}
           />
@@ -199,37 +223,29 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
         justifyContent: 'center',
         alignItems: 'center'
       }}>
-        <svg
-          key={animationKey}
-          width={size}
-          height={size}
-          viewBox={`0 0 ${size} ${size}`}
-        >
-          {/* Außenring - Gesamt (startet zuerst) */}
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {/* Außenring - Gesamt */}
           <Ring
             radius={ringRadii[0]}
-            percent={totalPercent}
+            percent={animatedValues.total}
             color={colors.total}
             colorDark={colors.totalDark}
-            delay={0}
           />
 
           {/* Mittlerer Ring - Gottesdienst */}
           <Ring
             radius={ringRadii[1]}
-            percent={gottesdienstPercent}
+            percent={animatedValues.gottesdienst}
             color={colors.gottesdienst}
             colorDark={colors.gottesdienstDark}
-            delay={150}
           />
 
           {/* Innenring - Gemeinde */}
           <Ring
             radius={ringRadii[2]}
-            percent={gemeindePercent}
+            percent={animatedValues.gemeinde}
             color={colors.gemeinde}
             colorDark={colors.gemeindeDark}
-            delay={300}
           />
         </svg>
 
@@ -264,7 +280,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gesamt"
           value={totalPoints}
           goal={effectiveTotalGoal}
-          percent={totalPercent}
+          percent={targetPercents.total}
           hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
         />
         <LegendItem
@@ -272,7 +288,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gottesdienst"
           value={gottesdienstPoints}
           goal={effectiveGottesdienstGoal}
-          percent={gottesdienstPercent}
+          percent={targetPercents.gottesdienst}
           hasGoal={gottesdienstGoal > 0}
         />
         <LegendItem
@@ -280,7 +296,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           label="Gemeinde"
           value={gemeindePoints}
           goal={effectiveGemeindeGoal}
-          percent={gemeindePercent}
+          percent={targetPercents.gemeinde}
           hasGoal={gemeindeGoal > 0}
         />
       </div>
