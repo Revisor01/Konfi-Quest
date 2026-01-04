@@ -54,7 +54,7 @@ const AdminInvitePage: React.FC = () => {
   const loadJahrgaenge = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/jahrgaenge');
+      const response = await api.get('/admin/jahrgaenge');
       setJahrgaenge(response.data);
       if (response.data.length > 0) {
         setSelectedJahrgang(response.data[0].id);
@@ -181,7 +181,7 @@ const AdminInvitePage: React.FC = () => {
                           setQrCodeDataUrl(null);
                         }}
                         placeholder="Jahrgang wählen"
-                        interface="action-sheet"
+                        interface="popover"
                       >
                         {jahrgaenge.map((jahrgang) => (
                           <IonSelectOption key={jahrgang.id} value={jahrgang.id}>

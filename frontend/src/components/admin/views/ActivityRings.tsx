@@ -28,17 +28,22 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindeGoal,
   size = 160
 }) => {
-  // Animation startet nach Mount mit Verzögerung
-  const [shouldAnimate, setShouldAnimate] = useState(false);
+  // Animation state: 0 = initial (leer), 1 = animieren zum Ziel
+  const [animationPhase, setAnimationPhase] = useState(0);
+  // Eindeutiger Key für kompletten Re-Mount bei Werteänderung
+  const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
-    // Reset bei Änderung der Werte für Re-Animation
-    setShouldAnimate(false);
-    // Etwas längere Verzögerung für zuverlässige Animation
-    const timer = setTimeout(() => {
-      setShouldAnimate(true);
-    }, 100);
-    return () => clearTimeout(timer);
+    // Bei Werteänderung: Reset und Re-Animation
+    setAnimationPhase(0);
+    setAnimationKey(k => k + 1);
+
+    // Zwei Frames warten, damit der Browser das leere Rendering sieht
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnimationPhase(1);
+      });
+    });
   }, [totalPoints, gottesdienstPoints, gemeindePoints]);
 
   // Alle Ringe werden immer angezeigt
@@ -89,14 +94,14 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     const firstRoundPercent = Math.min(percent, 100);
     // Animation: Start bei circumference (leer), Ende bei berechnetem Offset
     const targetOffset = circumference - (circumference * firstRoundPercent) / 100;
-    const currentOffset = shouldAnimate ? targetOffset : circumference;
+    const currentOffset = animationPhase === 1 ? targetOffset : circumference;
 
     // Zweite Runde (wenn >100%)
     const hasSecondRound = percent > 100;
     const secondRoundPercent = percent > 100 ? (percent % 100) : 0;
     const secondCircumference = circumference * 0.97;
     const secondTargetOffset = secondCircumference - (secondCircumference * secondRoundPercent) / 100;
-    const secondCurrentOffset = shouldAnimate ? secondTargetOffset : secondCircumference;
+    const secondCurrentOffset = animationPhase === 1 ? secondTargetOffset : secondCircumference;
 
     return (
       <>
@@ -162,7 +167,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             strokeWidth={strokeWidth * 0.4}
             strokeLinecap="round"
             strokeDasharray={circumference * 0.94}
-            strokeDashoffset={shouldAnimate
+            strokeDashoffset={animationPhase === 1
               ? (circumference * 0.94) - ((circumference * 0.94) * (percent - 200)) / 100
               : circumference * 0.94
             }
@@ -195,6 +200,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
         alignItems: 'center'
       }}>
         <svg
+          key={animationKey}
           width={size}
           height={size}
           viewBox={`0 0 ${size} ${size}`}
