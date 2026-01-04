@@ -150,7 +150,8 @@ const AdminLevelsPage: React.FC = () => {
     onSuccess: () => {
       dismissLevelModal();
       loadLevels();
-    }
+    },
+    dismiss: () => dismissLevelModal()
   });
 
   const handleAdd = () => {
@@ -353,6 +354,18 @@ const AdminLevelsPage: React.FC = () => {
                               className="app-list-item app-list-item--level"
                               style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                             >
+                              {/* Indikatorstrich links mit Level-Farbe */}
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  left: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: '4px',
+                                  backgroundColor: level.color || '#9b59b6',
+                                  borderRadius: '4px 0 0 4px'
+                                }}
+                              />
                               {/* Corner Badge für Punkte */}
                               <div
                                 className="app-corner-badge"

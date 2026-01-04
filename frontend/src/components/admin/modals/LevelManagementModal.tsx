@@ -259,7 +259,6 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             <IonButton
               onClick={handleSubmit}
               disabled={!isFormValid || loading}
-              color="success"
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -423,6 +422,8 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           </IonCardContent>
         </IonCard>
       </IonList>
+      {/* Abstand unten für bessere Sichtbarkeit */}
+      <div style={{ height: '32px' }} />
       </IonContent>
     </IonPage>
   );

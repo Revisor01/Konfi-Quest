@@ -109,7 +109,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Aktuelles Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={lockClosedOutline} />
             </div>
             <IonLabel>Aktuelles Passwort</IonLabel>
@@ -142,7 +142,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Neues Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={keyOutline} />
             </div>
             <IonLabel>Neues Passwort</IonLabel>
@@ -208,14 +208,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+          <IonCard className="app-card" style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
             <IonCardContent style={{ padding: '16px' }}>
-              <IonText color="primary">
+              <IonText style={{ color: '#8b5cf6' }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
                   Das Passwort muss mindestens 6 Zeichen lang sein.
                 </p>

@@ -61,7 +61,18 @@ const AdminProfilePage: React.FC = () => {
   // Email Modal mit useIonModal Hook
   const [presentEmailModalHook, dismissEmailModalHook] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModalHook(),
-    onSuccess: () => dismissEmailModalHook(),
+    onSuccess: async () => {
+      dismissEmailModalHook();
+      // User-Daten im Context aktualisieren
+      try {
+        const response = await api.get('/auth/me');
+        // User im localStorage aktualisieren für Context
+        localStorage.setItem('konfi_user', JSON.stringify(response.data));
+        window.location.reload(); // Einfachste Lösung für Context-Update
+      } catch (err) {
+        console.error('Error refreshing user:', err);
+      }
+    },
     initialEmail: user?.email || ''
   });
 

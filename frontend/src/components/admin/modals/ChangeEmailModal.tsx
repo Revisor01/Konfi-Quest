@@ -90,7 +90,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* E-Mail-Adresse Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>E-Mail-Adresse</IonLabel>
@@ -117,14 +117,14 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+          <IonCard className="app-card" style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
             <IonCardContent style={{ padding: '16px' }}>
-              <IonText color="primary">
+              <IonText style={{ color: '#8b5cf6' }}>
                 <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
                   Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.
                 </p>
