@@ -293,30 +293,20 @@ const LoginView: React.FC = () => {
 
               <div style={{
                 textAlign: 'center',
-                marginTop: '24px',
+                marginTop: '20px',
                 paddingTop: '16px',
                 borderTop: '1px solid #e5e7eb'
               }}>
-                <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: '#7f8c8d' }}>
-                  Noch keinen Account?
-                </p>
-                <IonButton
-                  expand="full"
-                  fill="outline"
+                <span
                   onClick={() => history.push('/register')}
                   style={{
-                    '--border-color': '#667eea',
-                    '--color': '#667eea',
-                    '--border-radius': '12px',
-                    height: '44px',
-                    fontSize: '0.95rem',
-                    fontWeight: '500',
-                    margin: '0'
+                    color: '#667eea',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem'
                   }}
                 >
-                  <IonIcon icon={person} slot="start" />
-                  Registrieren
-                </IonButton>
+                  Noch keinen Account? <strong>Mit Einladungscode registrieren</strong>
+                </span>
               </div>
             </IonCardContent>
           </IonCard>

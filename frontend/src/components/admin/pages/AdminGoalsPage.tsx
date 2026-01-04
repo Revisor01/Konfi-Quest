@@ -9,9 +9,7 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
-  IonItem,
   IonLabel,
-  IonInput,
   IonButton,
   IonButtons,
   IonIcon,
@@ -22,7 +20,9 @@ import {
   statsChart,
   checkmarkOutline,
   sunnyOutline,
-  peopleOutline
+  peopleOutline,
+  addOutline,
+  removeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -110,20 +110,47 @@ const AdminGoalsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonList style={{ background: 'transparent', padding: '0' }}>
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                      <IonLabel position="stacked">Ziel-Punkte *</IonLabel>
-                      <IonInput
-                        type="number"
-                        value={formData.target_gottesdienst}
-                        onIonInput={(e) => setFormData({ ...formData, target_gottesdienst: parseInt(e.detail.value!) || 0 })}
-                        placeholder="10"
-                        min={0}
-                      />
-                    </IonItem>
-                  </IonList>
-                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0' }}>
-                    Anzahl der Gottesdienst-Punkte, die ein Konfi erreichen soll.
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    padding: '8px 0'
+                  }}>
+                    <IonButton
+                      fill="clear"
+                      onClick={() => setFormData({ ...formData, target_gottesdienst: Math.max(0, formData.target_gottesdienst - 1) })}
+                      style={{
+                        '--color': '#3b82f6',
+                        width: '48px',
+                        height: '48px'
+                      }}
+                    >
+                      <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
+                    </IonButton>
+                    <div style={{
+                      fontSize: '2.5rem',
+                      fontWeight: '700',
+                      color: '#3b82f6',
+                      minWidth: '80px',
+                      textAlign: 'center'
+                    }}>
+                      {formData.target_gottesdienst}
+                    </div>
+                    <IonButton
+                      fill="clear"
+                      onClick={() => setFormData({ ...formData, target_gottesdienst: formData.target_gottesdienst + 1 })}
+                      style={{
+                        '--color': '#3b82f6',
+                        width: '48px',
+                        height: '48px'
+                      }}
+                    >
+                      <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
+                    </IonButton>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0', textAlign: 'center' }}>
+                    Ziel-Punkte für Gottesdienste
                   </p>
                 </IonCardContent>
               </IonCard>
@@ -139,20 +166,47 @@ const AdminGoalsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonList style={{ background: 'transparent', padding: '0' }}>
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                      <IonLabel position="stacked">Ziel-Punkte *</IonLabel>
-                      <IonInput
-                        type="number"
-                        value={formData.target_gemeinde}
-                        onIonInput={(e) => setFormData({ ...formData, target_gemeinde: parseInt(e.detail.value!) || 0 })}
-                        placeholder="10"
-                        min={0}
-                      />
-                    </IonItem>
-                  </IonList>
-                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0' }}>
-                    Anzahl der Gemeinde-Punkte, die ein Konfi erreichen soll.
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    padding: '8px 0'
+                  }}>
+                    <IonButton
+                      fill="clear"
+                      onClick={() => setFormData({ ...formData, target_gemeinde: Math.max(0, formData.target_gemeinde - 1) })}
+                      style={{
+                        '--color': '#059669',
+                        width: '48px',
+                        height: '48px'
+                      }}
+                    >
+                      <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
+                    </IonButton>
+                    <div style={{
+                      fontSize: '2.5rem',
+                      fontWeight: '700',
+                      color: '#059669',
+                      minWidth: '80px',
+                      textAlign: 'center'
+                    }}>
+                      {formData.target_gemeinde}
+                    </div>
+                    <IonButton
+                      fill="clear"
+                      onClick={() => setFormData({ ...formData, target_gemeinde: formData.target_gemeinde + 1 })}
+                      style={{
+                        '--color': '#059669',
+                        width: '48px',
+                        height: '48px'
+                      }}
+                    >
+                      <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
+                    </IonButton>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0', textAlign: 'center' }}>
+                    Ziel-Punkte für Gemeindeaktivitäten
                   </p>
                 </IonCardContent>
               </IonCard>

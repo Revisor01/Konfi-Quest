@@ -485,22 +485,24 @@ const KonfiRegisterPage: React.FC = () => {
                     />
                   </IonItem>
 
-                  {/* Passwort-Anforderungen */}
-                  <div style={{
-                    background: '#f8f9fa',
-                    borderRadius: '10px',
-                    padding: '12px',
-                    marginBottom: '12px',
-                    fontSize: '0.8rem'
-                  }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                      <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
-                      <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
-                      <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
-                      <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
-                      <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
+                  {/* Passwort-Anforderungen - ausblenden wenn alle erfüllt */}
+                  {!isPasswordValid && formData.password.length > 0 && (
+                    <div style={{
+                      background: '#f8f9fa',
+                      borderRadius: '10px',
+                      padding: '12px',
+                      marginBottom: '12px',
+                      fontSize: '0.8rem'
+                    }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                        <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
+                        <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
+                        <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
+                        <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
+                        <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Passwort bestätigen */}
                   <IonItem lines="none" style={{
