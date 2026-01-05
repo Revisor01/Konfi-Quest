@@ -3,6 +3,8 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     environment:
       POSTGRES_DB: konfi_db
       POSTGRES_USER: konfi_user
@@ -32,6 +34,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     ports:
       - "127.0.0.1:8623:5000"  # Nur localhost, Port 8623
     environment:
@@ -60,6 +64,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
     ports:
       - "127.0.0.1:8624:80"  # Port 8624 für Frontend
     restart: unless-stopped

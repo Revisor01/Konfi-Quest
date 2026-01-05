@@ -254,7 +254,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Aktivität Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={starOutline} />
             </div>
             <IonLabel>Aktivität wählen</IonLabel>
@@ -351,7 +351,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Anmerkungen Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={textOutline} />
             </div>
             <IonLabel>Anmerkungen (optional)</IonLabel>
@@ -374,7 +374,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Foto Sektion - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={imageOutline} />
             </div>
             <IonLabel>Foto als Nachweis (optional)</IonLabel>
