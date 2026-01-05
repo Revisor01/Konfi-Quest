@@ -270,7 +270,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       </div>
 
       {/* Badges Grid */}
-      <IonList inset={true} style={{ margin: '16px' }}>
+      <IonList inset={true} style={{ margin: '16px', marginBottom: '0' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
             <IonIcon icon={trophy} />
@@ -281,7 +281,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
       <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
-          <IonCard className="app-card" style={{ margin: '16px' }}>
+          <IonCard className="app-card" style={{ margin: '16px', marginTop: '8px' }}>
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
                 <IonIcon icon={trophyOutline} style={{ fontSize: '3rem', color: '#ff9500', marginBottom: '16px', display: 'block', margin: '0 auto 16px auto' }} />
@@ -300,7 +300,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const categoryHasUndiscoveredSecrets = categorySecretCount > categoryEarnedSecretCount;
 
             return (
-              <IonCard key={category.key} className="app-card" style={{ margin: '16px' }}>
+              <IonCard key={category.key} className="app-card" style={{ margin: '16px', marginTop: '8px' }}>
                 <IonCardContent style={{ padding: '16px' }}>
                   {/* Category Header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
