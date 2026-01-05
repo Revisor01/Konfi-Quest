@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonCard,
   IonCardContent,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonSegment,
   IonSegmentButton,
-  IonLabel
+  IonLabel,
+  IonModal,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonContent
 } from '@ionic/react';
 import {
   trophy,
-  eyeOff,
-  statsChart,
   trophyOutline,
   medal,
   ribbon,
@@ -71,7 +73,9 @@ import {
   gridOutline,
   prismOutline,
   cubeOutline,
-  handLeft
+  handLeft,
+  closeOutline,
+  checkmark
 } from 'ionicons/icons';
 
 // Badge Icon Mapping
@@ -168,10 +172,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   selectedFilter,
   onFilterChange
 }) => {
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
-  // Badges nach Kategorien gruppieren - ALLE 13 Typen
+  // Badges nach Kategorien gruppieren
   const getBadgeCategories = () => {
-    // Erst filtern
     let filtered = badges;
     switch (selectedFilter) {
       case 'nicht_erhalten':
@@ -184,147 +188,30 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         filtered = badges;
     }
 
-    // ALLE Kategorien aus der Datenbank
-    // Geheime Badges erscheinen in ihrer normalen Kategorie (mit GEHEIM-Label)
     const categories: { key: string; title: string; icon: string; color: string; badges: Badge[] }[] = [
-      // Punkte-basierte Badges
-      {
-        key: 'total_points',
-        title: 'Punkte-Sammler',
-        icon: trophy,
-        color: '#ffd700',
-        badges: filtered
-          .filter(b => b.criteria_type === 'total_points')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'gottesdienst_points',
-        title: 'Gottesdienst-Held',
-        icon: sunny,
-        color: '#ff9500',
-        badges: filtered
-          .filter(b => b.criteria_type === 'gottesdienst_points')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'gemeinde_points',
-        title: 'Gemeinde-Star',
-        icon: people,
-        color: '#2dd36f',
-        badges: filtered
-          .filter(b => b.criteria_type === 'gemeinde_points')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'bonus_points',
-        title: 'Bonus-Jaeger',
-        icon: gift,
-        color: '#ff6b9d',
-        badges: filtered
-          .filter(b => b.criteria_type === 'bonus_points')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'both_categories',
-        title: 'Allrounder',
-        icon: layersOutline,
-        color: '#5856d6',
-        badges: filtered
-          .filter(b => b.criteria_type === 'both_categories')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      // Aktivitäten-basierte Badges
-      {
-        key: 'activity_count',
-        title: 'Aktiv dabei',
-        icon: checkmarkCircle,
-        color: '#3880ff',
-        badges: filtered
-          .filter(b => b.criteria_type === 'activity_count')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'unique_activities',
-        title: 'Vielseitig',
-        icon: gridOutline,
-        color: '#10dc60',
-        badges: filtered
-          .filter(b => b.criteria_type === 'unique_activities')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'activity_combination',
-        title: 'Kombinier-Profi',
-        icon: prismOutline,
-        color: '#7044ff',
-        badges: filtered
-          .filter(b => b.criteria_type === 'activity_combination')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'category_activities',
-        title: 'Kategorie-Meister',
-        icon: cubeOutline,
-        color: '#0cd1e8',
-        badges: filtered
-          .filter(b => b.criteria_type === 'category_activities')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'specific_activity',
-        title: 'Spezialist',
-        icon: handLeft,
-        color: '#ffce00',
-        badges: filtered
-          .filter(b => b.criteria_type === 'specific_activity')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      // Zeit-basierte Badges
-      {
-        key: 'streak',
-        title: 'Serien-Champion',
-        icon: flame,
-        color: '#eb445a',
-        badges: filtered
-          .filter(b => b.criteria_type === 'streak')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      {
-        key: 'time_based',
-        title: 'Zeitreisender',
-        icon: time,
-        color: '#8e8e93',
-        badges: filtered
-          .filter(b => b.criteria_type === 'time_based')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      },
-      // Event-basierte Badges
-      {
-        key: 'event_count',
-        title: 'Event-Champion',
-        icon: calendar,
-        color: '#e63946',
-        badges: filtered
-          .filter(b => b.criteria_type === 'event_count')
-          .sort((a, b) => a.criteria_value - b.criteria_value)
-      }
+      { key: 'total_points', title: 'Punkte-Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'total_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'gottesdienst_points', title: 'Gottesdienst-Held', icon: sunny, color: '#ff9500', badges: filtered.filter(b => b.criteria_type === 'gottesdienst_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'gemeinde_points', title: 'Gemeinde-Star', icon: people, color: '#059669', badges: filtered.filter(b => b.criteria_type === 'gemeinde_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'bonus_points', title: 'Bonus-Jaeger', icon: gift, color: '#ff6b9d', badges: filtered.filter(b => b.criteria_type === 'bonus_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'both_categories', title: 'Allrounder', icon: layersOutline, color: '#5856d6', badges: filtered.filter(b => b.criteria_type === 'both_categories').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'activity_count', title: 'Aktiv dabei', icon: checkmarkCircle, color: '#3880ff', badges: filtered.filter(b => b.criteria_type === 'activity_count').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'unique_activities', title: 'Vielseitig', icon: gridOutline, color: '#10dc60', badges: filtered.filter(b => b.criteria_type === 'unique_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'activity_combination', title: 'Kombinier-Profi', icon: prismOutline, color: '#7044ff', badges: filtered.filter(b => b.criteria_type === 'activity_combination').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'category_activities', title: 'Kategorie-Meister', icon: cubeOutline, color: '#0cd1e8', badges: filtered.filter(b => b.criteria_type === 'category_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'specific_activity', title: 'Spezialist', icon: handLeft, color: '#ffce00', badges: filtered.filter(b => b.criteria_type === 'specific_activity').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a', badges: filtered.filter(b => b.criteria_type === 'streak').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'time_based').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946', badges: filtered.filter(b => b.criteria_type === 'event_count').sort((a, b) => a.criteria_value - b.criteria_value) }
     ];
 
-    // Nur Kategorien mit Badges anzeigen
     return categories.filter(cat => cat.badges.length > 0);
   };
 
   const badgeCategories = getBadgeCategories();
-
-  // Check if there are undiscovered secret badges
   const earnedSecretCount = badges.filter(b => b.is_earned && b.is_hidden).length;
-  const hasUndiscoveredSecrets = badgeStats.totalSecret > earnedSecretCount;
 
   const getBadgeColor = (badge: Badge) => {
-    if (badge.color) {
-      return badge.color;
-    }
-
+    if (badge.color) return badge.color;
     if (badge.criteria_type === 'total_points') {
       if (badge.criteria_value <= 5) return '#cd7f32';
       if (badge.criteria_value <= 15) return '#c0c0c0';
@@ -333,27 +220,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     return '#667eea';
   };
 
-  // CSS für Animationen
-  const shimmerKeyframes = `
-    @keyframes shimmer {
-      0% { background-position: -200% center; }
-      100% { background-position: 200% center; }
-    }
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
-      50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.5); }
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-3px); }
-    }
-  `;
-
   return (
     <div>
-      <style>{shimmerKeyframes}</style>
-
-      {/* Achievements Header - Dashboard-Style (gleich wie Dashboard Badges) */}
+      {/* Achievements Header */}
       <div style={{
         background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
         borderRadius: '20px',
@@ -364,166 +233,55 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Dekorative Kreise im Hintergrund */}
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          right: '-30px',
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-20px',
-          left: '-20px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)'
-        }} />
+        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
 
-        {/* Header mit Icon */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '20px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: 'rgba(255, 255, 255, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <IonIcon icon={trophy} style={{ fontSize: '1.6rem', color: 'white' }} />
           </div>
           <div>
-            <h2 style={{
-              margin: '0',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              color: 'white'
-            }}>
-              Deine Badges
-            </h2>
-            <p style={{
-              margin: '2px 0 0 0',
-              fontSize: '0.85rem',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              Sammle alle Erfolge!
-            </p>
+            <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Deine Badges</h2>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Sammle alle Erfolge!</p>
           </div>
         </div>
 
-        {/* Stats Row - immer einzeilig */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          {/* Sichtbare Badges */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {badges.filter(b => b.is_earned && !b.is_hidden).length}/{badgeStats.totalVisible}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              SICHTBAR
-            </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{badges.filter(b => b.is_earned && !b.is_hidden).length}/{badgeStats.totalVisible}</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>SICHTBAR</div>
           </div>
-
-          {/* Geheime Badges */}
           {badgeStats.totalSecret > 0 && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {badges.filter(b => b.is_earned && b.is_hidden).length}/{badgeStats.totalSecret}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                GEHEIM
-              </div>
+            <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{earnedSecretCount}/{badgeStats.totalSecret}</div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEHEIM</div>
             </div>
           )}
-
-          {/* Fortschritt Prozent */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}%
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              GESAMT
-            </div>
+          <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}%</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
           </div>
         </div>
       </div>
 
-      {/* Tab Navigation - wie Admin */}
+      {/* Filter */}
       <div style={{ margin: '16px' }}>
-        <IonSegment
-          value={selectedFilter}
-          onIonChange={(e) => onFilterChange(e.detail.value as string)}
-        >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="nicht_erhalten">
-            <IonLabel>Offen</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="in_arbeit">
-            <IonLabel>In Arbeit</IonLabel>
-          </IonSegmentButton>
+        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
+          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
+          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
         </IonSegment>
       </div>
 
-      {/* Badges nach Kategorien - VERTIKALES GRID */}
+      {/* Badges Grid */}
       <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
           <IonCard className="app-card" style={{ margin: '16px' }}>
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={trophyOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#ff9500',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
+                <IonIcon icon={trophyOutline} style={{ fontSize: '3rem', color: '#ff9500', marginBottom: '16px', display: 'block', margin: '0 auto 16px auto' }} />
                 <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>
-                  Sammle Punkte für deine ersten Badges!
-                </p>
+                <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Badges!</p>
               </div>
             </IonCardContent>
           </IonCard>
@@ -532,7 +290,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const earnedCount = category.badges.filter(b => b.is_earned).length;
             const totalCount = category.badges.length;
             const progressPercent = Math.round((earnedCount / totalCount) * 100);
-            // Pruefen ob es in DIESER Kategorie noch nicht entdeckte Geheim-Badges gibt
             const categorySecretCount = category.badges.filter(b => b.is_hidden).length;
             const categoryEarnedSecretCount = category.badges.filter(b => b.is_hidden && b.is_earned).length;
             const categoryHasUndiscoveredSecrets = categorySecretCount > categoryEarnedSecretCount;
@@ -540,295 +297,355 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             return (
               <IonCard key={category.key} className="app-card" style={{ margin: '16px' }}>
                 <IonCardContent style={{ padding: '16px' }}>
-                  {/* Kategorie Header */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '16px'
-                  }}>
+                  {/* Category Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '12px',
+                        width: '42px', height: '42px', borderRadius: '12px',
                         background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}cc 100%)`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: `0 4px 12px ${category.color}40`
                       }}>
-                        <IonIcon
-                          icon={category.icon}
-                          style={{ fontSize: '1.3rem', color: 'white' }}
-                        />
+                        <IonIcon icon={category.icon} style={{ fontSize: '1.3rem', color: 'white' }} />
                       </div>
                       <div>
-                        <h3 style={{
-                          margin: '0',
-                          fontSize: '1.1rem',
-                          fontWeight: '700',
-                          color: '#333'
-                        }}>
-                          {category.title}
-                        </h3>
-                        <span style={{
-                          fontSize: '0.85rem',
-                          color: '#888'
-                        }}>
-                          {earnedCount} von {totalCount}
-                        </span>
+                        <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '700', color: '#333' }}>{category.title}</h3>
+                        <span style={{ fontSize: '0.85rem', color: '#888' }}>{earnedCount} von {totalCount}</span>
                       </div>
                     </div>
 
                     {/* Progress Circle */}
-                    <div style={{
-                      width: '48px',
-                      height: '48px',
-                      position: 'relative'
-                    }}>
+                    <div style={{ width: '48px', height: '48px', position: 'relative' }}>
                       <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
-                        <circle
-                          cx="24"
-                          cy="24"
-                          r="20"
-                          fill="none"
-                          stroke="#e8e8e8"
-                          strokeWidth="4"
-                        />
-                        <circle
-                          cx="24"
-                          cy="24"
-                          r="20"
-                          fill="none"
-                          stroke={category.color}
-                          strokeWidth="4"
-                          strokeLinecap="round"
-                          strokeDasharray={`${progressPercent * 1.257} 125.7`}
-                        />
+                        <circle cx="24" cy="24" r="20" fill="none" stroke="#e8e8e8" strokeWidth="4" />
+                        <circle cx="24" cy="24" r="20" fill="none" stroke={category.color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${progressPercent * 1.257} 125.7`} />
                       </svg>
                       <span style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
+                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                         fontSize: progressPercent === 100 && categoryHasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
-                        fontWeight: '700',
-                        color: category.color
+                        fontWeight: '700', color: category.color
                       }}>
                         {progressPercent === 100 && categoryHasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
                       </span>
                     </div>
                   </div>
 
-                  {/* 2-Spalten Grid Container */}
-                  <IonGrid style={{ padding: '0' }}>
-                    <IonRow>
-                      {category.badges.map((badge) => {
-                        const badgeColor = getBadgeColor(badge);
-                        const isEarned = badge.is_earned;
-                        const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
+                  {/* 3-Column Badge Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '12px'
+                  }}>
+                    {category.badges.map((badge) => {
+                      const badgeColor = getBadgeColor(badge);
+                      const isEarned = badge.is_earned;
+                      const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
 
-                        return (
-                          <IonCol size="12" key={badge.id} style={{ padding: '6px' }}>
-                            <div style={{
-                              background: isEarned ? '#fafafa' : '#f8f8f8',
-                              borderRadius: '14px',
-                              padding: '16px',
-                              position: 'relative',
-                              border: isEarned
-                                ? `2px solid ${badgeColor}50`
-                                : '1px solid #e8e8e8',
-                              boxShadow: isEarned
-                                ? `0 4px 16px ${badgeColor}15`
-                                : 'none',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '16px'
-                            }}>
+                      return (
+                        <div
+                          key={badge.id}
+                          onClick={() => setSelectedBadge(badge)}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            padding: '12px 8px',
+                            borderRadius: '16px',
+                            background: isEarned ? `${badgeColor}10` : '#f5f5f5',
+                            border: isEarned ? `2px solid ${badgeColor}40` : '2px solid transparent',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            position: 'relative'
+                          }}
+                        >
+                          {/* Badge Icon */}
+                          <div style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: isEarned
+                              ? `linear-gradient(145deg, ${badgeColor} 0%, ${badgeColor}cc 100%)`
+                              : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
+                            boxShadow: isEarned ? `0 4px 12px ${badgeColor}40` : '0 2px 8px rgba(0,0,0,0.1)',
+                            position: 'relative',
+                            marginBottom: '8px'
+                          }}>
+                            {/* Progress Ring */}
+                            {hasProgress && (
+                              <svg style={{ position: 'absolute', top: '-4px', left: '-4px', width: '64px', height: '64px', transform: 'rotate(-90deg)' }}>
+                                <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="3" />
+                                <circle cx="32" cy="32" r="28" fill="none" stroke="#667eea" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(badge.progress_percentage || 0) * 1.76} 176`} />
+                              </svg>
+                            )}
 
-                            {/* Badge Icon Container - Links */}
-                            <div style={{
-                              width: '56px',
-                              height: '56px',
-                              borderRadius: '50%',
-                              flexShrink: 0,
-                              position: 'relative',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              background: isEarned
-                                ? `linear-gradient(145deg, ${badgeColor} 0%, ${badgeColor}cc 100%)`
-                                : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
-                              boxShadow: isEarned
-                                ? `0 4px 12px ${badgeColor}40`
-                                : '0 2px 8px rgba(0,0,0,0.12)'
-                            }}>
-                              {/* Progress Ring für Badges in Arbeit */}
-                              {hasProgress && (
-                                <svg
-                                  style={{
-                                    position: 'absolute',
-                                    top: '-4px',
-                                    left: '-4px',
-                                    width: '64px',
-                                    height: '64px',
-                                    transform: 'rotate(-90deg)'
-                                  }}
-                                >
-                                  <circle cx="32" cy="32" r="28" fill="none" stroke="#e0e0e0" strokeWidth="3" />
-                                  <circle
-                                    cx="32" cy="32" r="28" fill="none"
-                                    stroke="#667eea" strokeWidth="3" strokeLinecap="round"
-                                    strokeDasharray={`${(badge.progress_percentage || 0) * 1.76} 176`}
-                                  />
-                                </svg>
-                              )}
+                            <IonIcon
+                              icon={getIconFromString(badge.icon)}
+                              style={{
+                                fontSize: '1.8rem',
+                                color: isEarned ? 'white' : '#999'
+                              }}
+                            />
 
-                              {/* Lock Icon für nicht erreichte Badges */}
-                              {!isEarned && !hasProgress && (
-                                <div style={{
-                                  position: 'absolute',
-                                  bottom: '-2px',
-                                  right: '-2px',
-                                  width: '20px',
-                                  height: '20px',
-                                  borderRadius: '50%',
-                                  background: '#8e8e93',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                }}>
-                                  <IonIcon icon={lockClosed} style={{ fontSize: '0.6rem', color: 'white' }} />
-                                </div>
-                              )}
-
-                              <IonIcon
-                                icon={getIconFromString(badge.icon)}
-                                style={{
-                                  fontSize: '1.8rem',
-                                  color: isEarned ? 'white' : '#888',
-                                  opacity: isEarned ? 1 : 0.6
-                                }}
-                              />
-                            </div>
-
-                            {/* Content - Mitte */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <h4 style={{
-                                  margin: 0,
-                                  fontSize: '1rem',
-                                  fontWeight: '700',
-                                  color: isEarned ? '#333' : '#888'
-                                }}>
-                                  {badge.name}
-                                </h4>
-                                {badge.is_hidden && (
-                                  <span style={{
-                                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                                    color: 'white',
-                                    fontSize: '0.55rem',
-                                    fontWeight: '700',
-                                    padding: '2px 6px',
-                                    borderRadius: '6px'
-                                  }}>
-                                    GEHEIM
-                                  </span>
-                                )}
-                              </div>
-                              <p style={{
-                                margin: 0,
-                                fontSize: '0.85rem',
-                                color: isEarned ? '#666' : '#aaa',
-                                lineHeight: '1.4'
+                            {/* Earned Checkmark */}
+                            {isEarned && (
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '-2px',
+                                right: '-2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#22c55e',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '2px solid white'
                               }}>
-                                {badge.description}
-                              </p>
+                                <IonIcon icon={checkmark} style={{ fontSize: '0.7rem', color: 'white' }} />
+                              </div>
+                            )}
 
-                              {/* Progress Bar für Badges in Arbeit */}
-                              {hasProgress && (
-                                <div style={{ marginTop: '8px' }}>
-                                  <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: '4px'
-                                  }}>
-                                    <span style={{ fontSize: '0.75rem', color: '#667eea', fontWeight: '600' }}>
-                                      Fortschritt
-                                    </span>
-                                    <span style={{ fontSize: '0.75rem', color: '#667eea', fontWeight: '700' }}>
-                                      {badge.progress_points}/{badge.criteria_value}
-                                    </span>
-                                  </div>
-                                  <div style={{
-                                    height: '6px',
-                                    background: '#e8e8e8',
-                                    borderRadius: '3px',
-                                    overflow: 'hidden'
-                                  }}>
-                                    <div style={{
-                                      height: '100%',
-                                      width: `${badge.progress_percentage}%`,
-                                      background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                                      borderRadius: '3px'
-                                    }} />
-                                  </div>
-                                </div>
-                              )}
+                            {/* Lock for not earned */}
+                            {!isEarned && !hasProgress && (
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '-2px',
+                                right: '-2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#8e8e93',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '2px solid white'
+                              }}>
+                                <IonIcon icon={lockClosed} style={{ fontSize: '0.6rem', color: 'white' }} />
+                              </div>
+                            )}
+                          </div>
 
-                              {/* Earned Date */}
-                              {isEarned && badge.earned_at && (
-                                <div style={{
-                                  marginTop: '6px',
-                                  fontSize: '0.75rem',
-                                  color: '#888'
-                                }}>
-                                  Erreicht am {new Date(badge.earned_at).toLocaleDateString('de-DE')}
-                                </div>
-                              )}
-                            </div>
+                          {/* Badge Name */}
+                          <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            color: isEarned ? '#333' : '#999',
+                            textAlign: 'center',
+                            lineHeight: '1.2',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical'
+                          }}>
+                            {badge.name}
+                          </span>
 
-                            {/* Status Icon - Rechts */}
-                            <div style={{ flexShrink: 0 }}>
-                              {isEarned ? (
-                                <div style={{
-                                  width: '32px',
-                                  height: '32px',
-                                  borderRadius: '50%',
-                                  background: badgeColor,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: `0 2px 8px ${badgeColor}40`
-                                }}>
-                                  <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.2rem', color: 'white' }} />
-                                </div>
-                              ) : hasProgress ? (
-                                <div style={{
-                                  fontSize: '0.85rem',
-                                  fontWeight: '700',
-                                  color: '#667eea'
-                                }}>
-                                  {badge.progress_percentage}%
-                                </div>
-                              ) : (
-                                <IonIcon icon={lockClosed} style={{ fontSize: '1.2rem', color: '#ccc' }} />
-                              )}
-                            </div>
-                            </div>
-                          </IonCol>
-                        );
-                      })}
-                    </IonRow>
-                  </IonGrid>
+                          {/* Progress percentage for in-progress badges */}
+                          {hasProgress && (
+                            <span style={{
+                              fontSize: '0.65rem',
+                              fontWeight: '700',
+                              color: '#667eea',
+                              marginTop: '2px'
+                            }}>
+                              {badge.progress_percentage}%
+                            </span>
+                          )}
+
+                          {/* Secret Badge Label */}
+                          {badge.is_hidden && badge.is_earned && (
+                            <span style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                              color: 'white',
+                              fontSize: '0.5rem',
+                              fontWeight: '700',
+                              padding: '2px 4px',
+                              borderRadius: '4px'
+                            }}>
+                              GEHEIM
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </IonCardContent>
               </IonCard>
             );
           })
         )}
       </div>
+
+      {/* Badge Detail Modal */}
+      <IonModal isOpen={!!selectedBadge} onDidDismiss={() => setSelectedBadge(null)}>
+        {selectedBadge && (
+          <>
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>{selectedBadge.name}</IonTitle>
+                <IonButtons slot="end">
+                  <IonButton onClick={() => setSelectedBadge(null)}>
+                    <IonIcon icon={closeOutline} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent className="app-gradient-background">
+              <div style={{ padding: '24px', textAlign: 'center' }}>
+                {/* Large Badge Icon */}
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  margin: '0 auto 24px auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: selectedBadge.is_earned
+                    ? `linear-gradient(145deg, ${getBadgeColor(selectedBadge)} 0%, ${getBadgeColor(selectedBadge)}cc 100%)`
+                    : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
+                  boxShadow: selectedBadge.is_earned
+                    ? `0 8px 32px ${getBadgeColor(selectedBadge)}40`
+                    : '0 4px 16px rgba(0,0,0,0.1)'
+                }}>
+                  <IonIcon
+                    icon={getIconFromString(selectedBadge.icon)}
+                    style={{
+                      fontSize: '3.5rem',
+                      color: selectedBadge.is_earned ? 'white' : '#999'
+                    }}
+                  />
+                </div>
+
+                {/* Status */}
+                {selectedBadge.is_earned ? (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#22c55e',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    marginBottom: '16px'
+                  }}>
+                    <IonIcon icon={checkmarkCircle} />
+                    Erreicht!
+                  </div>
+                ) : selectedBadge.progress_percentage && selectedBadge.progress_percentage > 0 ? (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#667eea',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    marginBottom: '16px'
+                  }}>
+                    {selectedBadge.progress_percentage}% - In Arbeit
+                  </div>
+                ) : (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#8e8e93',
+                    color: 'white',
+                    padding: '8px 16px',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    marginBottom: '16px'
+                  }}>
+                    <IonIcon icon={lockClosed} />
+                    Noch nicht erreicht
+                  </div>
+                )}
+
+                {/* Secret Badge Label */}
+                {selectedBadge.is_hidden && (
+                  <div style={{
+                    display: 'inline-block',
+                    background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    marginBottom: '16px',
+                    marginLeft: '8px'
+                  }}>
+                    GEHEIM-BADGE
+                  </div>
+                )}
+
+                {/* Description */}
+                <IonCard className="app-card" style={{ margin: '16px 0', textAlign: 'left' }}>
+                  <IonCardContent>
+                    <h4 style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#333' }}>Beschreibung</h4>
+                    <p style={{ margin: '0', color: '#666', lineHeight: '1.5' }}>
+                      {selectedBadge.description || 'Keine Beschreibung verfügbar.'}
+                    </p>
+                  </IonCardContent>
+                </IonCard>
+
+                {/* Progress */}
+                {!selectedBadge.is_earned && selectedBadge.progress_percentage !== undefined && (
+                  <IonCard className="app-card" style={{ margin: '16px 0', textAlign: 'left' }}>
+                    <IonCardContent>
+                      <h4 style={{ margin: '0 0 12px 0', fontWeight: '600', color: '#333' }}>Fortschritt</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ color: '#666' }}>Aktuell</span>
+                        <span style={{ fontWeight: '700', color: '#667eea' }}>
+                          {selectedBadge.progress_points || 0} / {selectedBadge.criteria_value}
+                        </span>
+                      </div>
+                      <div style={{ height: '8px', background: '#e8e8e8', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${selectedBadge.progress_percentage}%`,
+                          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                          borderRadius: '4px',
+                          transition: 'width 0.3s'
+                        }} />
+                      </div>
+                    </IonCardContent>
+                  </IonCard>
+                )}
+
+                {/* Earned Date */}
+                {selectedBadge.is_earned && selectedBadge.earned_at && (
+                  <IonCard className="app-card" style={{ margin: '16px 0', textAlign: 'left' }}>
+                    <IonCardContent>
+                      <h4 style={{ margin: '0 0 8px 0', fontWeight: '600', color: '#333' }}>Erreicht am</h4>
+                      <p style={{ margin: '0', color: '#666' }}>
+                        {new Date(selectedBadge.earned_at).toLocaleDateString('de-DE', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </IonCardContent>
+                  </IonCard>
+                )}
+              </div>
+            </IonContent>
+          </>
+        )}
+      </IonModal>
     </div>
   );
 };
