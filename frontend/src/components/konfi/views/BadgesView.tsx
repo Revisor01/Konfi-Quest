@@ -6,7 +6,9 @@ import {
   IonSegment,
   IonSegmentButton,
   IonLabel,
-  IonPopover
+  IonPopover,
+  IonList,
+  IonListHeader
 } from '@ionic/react';
 import {
   trophy,
@@ -267,22 +269,16 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Überschrift mit Icon und Anzahl */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        margin: '16px 16px 8px 16px'
-      }}>
-        <div className="app-section-icon app-section-icon--warning">
-          <IonIcon icon={trophy} />
-        </div>
-        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#666' }}>
-          Erreichte Badges ({badges.filter(b => b.is_earned).length})
-        </span>
-      </div>
-
       {/* Badges Grid */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--warning">
+            <IonIcon icon={trophy} />
+          </div>
+          <IonLabel>Erreichte Badges ({badges.filter(b => b.is_earned).length})</IonLabel>
+        </IonListHeader>
+      </IonList>
+
       <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
           <IonCard className="app-card" style={{ margin: '16px' }}>
@@ -545,11 +541,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                   margin: '0',
                   fontSize: '0.8rem',
                   color: '#666',
-                  lineHeight: '1.3',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
+                  lineHeight: '1.3'
                 }}>
                   {selectedBadge.description || 'Keine Beschreibung'}
                 </p>
