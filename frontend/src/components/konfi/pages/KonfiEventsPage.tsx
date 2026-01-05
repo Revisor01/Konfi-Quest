@@ -51,7 +51,7 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | null;
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
 }
 
 const KonfiEventsPage: React.FC = () => {

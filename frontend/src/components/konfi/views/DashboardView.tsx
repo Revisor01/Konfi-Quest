@@ -717,7 +717,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {regularEvents.map((event) => {
-                const isWaitlist = (event as any).booking_status === 'waitlist';
+                // Warteliste: booking_status kann 'waitlist' oder 'pending' sein
+                const isWaitlist = (event as any).booking_status === 'waitlist' || (event as any).booking_status === 'pending';
                 return (
                   <div
                     key={event.id}

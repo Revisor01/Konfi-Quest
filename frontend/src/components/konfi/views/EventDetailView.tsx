@@ -332,14 +332,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     const isParticipated = isPastEvent && eventData.is_registered;
     const attendanceStatus = eventData.attendance_status;
     const isKonfi = isKonfirmationEvent(eventData);
+    // Warteliste: booking_status kann 'waitlist' oder 'pending' sein
+    const isOnWaitlist = (eventData as any).booking_status === 'waitlist' || (eventData as any).booking_status === 'pending';
+    // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
+    const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !attendanceStatus;
 
     if (eventData.cancelled) return { color: '#dc3545', text: 'ABGESAGT' };
     if (isParticipated && attendanceStatus === 'present') return { color: '#34c759', text: 'VERBUCHT' };
     if (isParticipated && attendanceStatus === 'absent') return { color: '#dc3545', text: 'VERPASST' };
-    if (isParticipated && !attendanceStatus) return { color: '#fd7e14', text: 'AUSSTEHEND' };
-    if ((eventData as any).booking_status === 'waitlist') return { color: '#fd7e14', text: `WARTELISTE (${eventData.waitlist_position || 1})` };
-    if (eventData.is_registered) return { color: '#007aff', text: 'ANGEMELDET' };
-    if (isKonfi && !isPastEvent) return { color: '#8b5cf6', text: 'KONFIRMATION' };
+    if (isAusstehend) return { color: '#fd7e14', text: 'AUSSTEHEND' };
+    if (isOnWaitlist) return { color: '#fd7e14', text: `WARTELISTE (${eventData.waitlist_position || '?'})` };
+    if (eventData.is_registered && !isPastEvent) return { color: '#007aff', text: 'ANGEMELDET' };
+    if (isKonfi && !isPastEvent && !eventData.is_registered) return { color: '#8b5cf6', text: 'KONFIRMATION' };
     if (!isPastEvent) {
       if (eventData.registration_status === 'open') return { color: '#34c759', text: 'OFFEN' };
       if (eventData.registration_status === 'upcoming') return { color: '#fd7e14', text: 'BALD' };
