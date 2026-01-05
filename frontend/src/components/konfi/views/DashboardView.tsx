@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   IonProgressBar,
-  IonAvatar,
   IonIcon,
   useIonAlert,
   IonPopover
 } from '@ionic/react';
+import ActivityRings from '../../admin/views/ActivityRings';
 import { useHistory } from 'react-router-dom';
 import {
   time,
@@ -345,7 +345,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div style={{ padding: '16px' }}>
       
-      {/* Header Card mit kombiniertem Progress */}
+      {/* Header Card mit ActivityRings */}
       <div style={{
         background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
         borderRadius: '24px',
@@ -365,73 +365,79 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           background: 'rgba(255, 255, 255, 0.05)',
           borderRadius: '50%'
         }}/>
-        
+
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-            <IonAvatar style={{ width: '60px', height: '60px' }}>
+          {/* Begruessung */}
+          <h2 style={{
+            fontSize: '1.8rem',
+            fontWeight: '800',
+            margin: '0 0 4px 0',
+            color: 'white',
+            textAlign: 'center'
+          }}>
+            Hey {getFirstName(dashboardData.konfi.display_name)}!
+          </h2>
+          <p style={{
+            fontSize: '1rem',
+            margin: '0 0 20px 0',
+            color: 'rgba(255, 255, 255, 0.8)',
+            textAlign: 'center'
+          }}>
+            {dashboardData.konfi.jahrgang_name}
+          </p>
+
+          {/* Activity Rings - klickbar fuer Punkte-Historie */}
+          <div
+            onClick={onOpenPointsHistory}
+            style={{
+              cursor: onOpenPointsHistory ? 'pointer' : 'default',
+              display: 'flex',
+              justifyContent: 'center'
+            }}
+          >
+            <ActivityRings
+              totalPoints={totalCurrentPoints}
+              gottesdienstPoints={gottesdienstPoints}
+              gemeindePoints={gemeindePoints}
+              gottesdienstGoal={targetGottesdienst}
+              gemeindeGoal={targetGemeinde}
+              size={180}
+            />
+          </div>
+
+          {/* Level Badge + Icons */}
+          {dashboardData.level_info?.current_level && (
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
               <div style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                background: 'rgba(255, 255, 255, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: 'inline-block',
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '8px',
+                padding: '6px 16px',
+                fontSize: '0.9rem',
                 color: 'white',
-                fontWeight: '700',
-                fontSize: '1.5rem',
-                backdropFilter: 'blur(10px)'
+                fontWeight: '600',
+                marginBottom: '12px'
               }}>
-                {getInitials(dashboardData.konfi.display_name)}
+                {dashboardData.level_info.current_level.title}
               </div>
-            </IonAvatar>
-            
-            <div style={{ flex: 1 }}>
-              <h2 style={{
-                fontSize: '1.8rem',
-                fontWeight: '800',
-                margin: '0 0 4px 0',
-                color: 'white'
-              }}>
-                Hey {dashboardData.konfi.display_name}!
-              </h2>
-              <p style={{
-                fontSize: '1rem',
-                margin: '0 0 4px 0',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                {dashboardData.konfi.jahrgang_name}
-              </p>
-              {dashboardData.level_info?.current_level && (
-                <div style={{
-                  display: 'inline-block',
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '8px',
-                  padding: '4px 12px',
-                  fontSize: '0.85rem',
-                  color: 'white',
-                  fontWeight: '600'
-                }}>
-                  {dashboardData.level_info.current_level.title}
-                </div>
-              )}
 
               {/* Level Icons Row - erreichte farbig, nicht erreichte ausgegraut */}
               {dashboardData.level_info?.all_levels && dashboardData.level_info.all_levels.length > 0 && (
                 <div style={{
                   display: 'flex',
                   gap: '8px',
-                  marginTop: '12px',
-                  justifyContent: 'flex-start',
+                  justifyContent: 'center',
                   flexWrap: 'wrap'
                 }}>
                   {dashboardData.level_info.all_levels.map((level, index) => {
                     const isReached = index < dashboardData.level_info!.level_index;
+                    const isCurrent = index === dashboardData.level_info!.level_index - 1;
                     return (
                       <div
                         key={level.id}
                         onClick={(e) => {
+                          e.stopPropagation();
                           setLevelPopover({
                             isOpen: true,
                             event: e.nativeEvent,
@@ -452,7 +458,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           boxShadow: isReached
                             ? `0 4px 12px ${level.color || '#667eea'}50`
                             : 'none',
-                          border: isReached
+                          border: isCurrent
+                            ? '2px solid rgba(255, 255, 255, 0.8)'
+                            : isReached
                             ? '2px solid rgba(255, 255, 255, 0.3)'
                             : '2px dashed rgba(255, 255, 255, 0.2)',
                           transition: 'all 0.3s ease',
@@ -474,87 +482,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Kombinierter Gesamtprogress - klickbar fuer Punkte-Historie */}
-          {(targetGottesdienst > 0 || targetGemeinde > 0) && (
-            <div
-              onClick={onOpenPointsHistory}
-              style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '16px',
-                padding: '16px',
-                cursor: onOpenPointsHistory ? 'pointer' : 'default',
-                transition: 'background 0.2s ease'
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: '8px',
-                marginBottom: '12px',
-                justifyContent: 'center'
-              }}>
-                <span style={{
-                  fontSize: '2.5rem',
-                  fontWeight: '900',
-                  color: 'white'
-                }}>
-                  {totalCurrentPoints}
-                </span>
-                <span style={{
-                  fontSize: '1.5rem',
-                  color: 'rgba(255, 255, 255, 0.7)'
-                }}>
-                  / {totalTarget}
-                </span>
-              </div>
-              
-              {/* Zwei kleine Progress Bars */}
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {targetGottesdienst > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      marginBottom: '4px'
-                    }}>
-                      Gottesdienst: {gottesdienstPoints}/{targetGottesdienst}
-                    </div>
-                    <IonProgressBar 
-                      value={Math.min(gottesdienstPoints / targetGottesdienst, 1)}
-                      style={{
-                        '--progress-background': 'rgba(255, 255, 255, 0.9)',
-                        '--background': 'rgba(255, 255, 255, 0.3)',
-                        'height': '4px',
-                        'borderRadius': '2px'
-                      }}
-                    />
-                  </div>
-                )}
-                {targetGemeinde > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '0.7rem',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      marginBottom: '4px'
-                    }}>
-                      Gemeinde: {gemeindePoints}/{targetGemeinde}
-                    </div>
-                    <IonProgressBar 
-                      value={Math.min(gemeindePoints / targetGemeinde, 1)}
-                      style={{
-                        '--progress-background': 'rgba(255, 255, 255, 0.9)',
-                        '--background': 'rgba(255, 255, 255, 0.3)',
-                        'height': '4px',
-                        'borderRadius': '2px'
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
           )}
 
           {/* Level Progress */}
@@ -567,13 +494,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 marginBottom: '6px'
               }}>
                 <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-                  Nächstes Level: {dashboardData.level_info.next_level.title}
+                  Naechstes Level: {dashboardData.level_info.next_level.title}
                 </span>
                 <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                   {dashboardData.level_info.points_to_next_level ? `noch ${dashboardData.level_info.points_to_next_level} Punkte` : `${dashboardData.level_info.progress_percentage}%`}
                 </span>
               </div>
-              <IonProgressBar 
+              <IonProgressBar
                 value={dashboardData.level_info.progress_percentage / 100}
                 style={{
                   '--progress-background': 'rgba(255, 255, 255, 0.8)',
@@ -1414,19 +1341,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Level Popover */}
+      {/* Level Popover - mit solidem Hintergrund */}
       <IonPopover
         isOpen={levelPopover.isOpen}
         event={levelPopover.event}
         onDidDismiss={() => setLevelPopover({ isOpen: false, event: undefined, level: null, isReached: false })}
         side="top"
         alignment="center"
+        style={{
+          '--background': '#ffffff'
+        }}
       >
         {levelPopover.level && (
           <div style={{
             padding: '16px',
             textAlign: 'center',
-            minWidth: '180px'
+            minWidth: '180px',
+            background: '#ffffff'
           }}>
             {/* Level Icon */}
             <div style={{
@@ -1435,7 +1366,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               borderRadius: '50%',
               background: levelPopover.isReached
                 ? `linear-gradient(135deg, ${levelPopover.level.color || '#667eea'} 0%, ${levelPopover.level.color || '#667eea'}dd 100%)`
-                : 'rgba(0, 0, 0, 0.1)',
+                : '#e5e7eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1448,7 +1379,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 icon={getIconFromString(levelPopover.level.icon)}
                 style={{
                   fontSize: '1.5rem',
-                  color: levelPopover.isReached ? 'white' : 'rgba(0, 0, 0, 0.3)'
+                  color: levelPopover.isReached ? 'white' : '#9ca3af'
                 }}
               />
             </div>
@@ -1458,25 +1389,16 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               fontWeight: '700',
               fontSize: '1.1rem',
               color: levelPopover.level.color || '#667eea',
-              marginBottom: '4px'
-            }}>
-              {levelPopover.level.title}
-            </div>
-
-            {/* Level Name / Description */}
-            <div style={{
-              fontSize: '0.9rem',
-              color: '#666',
               marginBottom: '8px'
             }}>
-              {levelPopover.level.name}
+              {levelPopover.level.title}
             </div>
 
             {/* Points Required */}
             <div style={{
               fontSize: '0.85rem',
-              color: '#999',
-              marginBottom: '8px'
+              color: '#666',
+              marginBottom: '12px'
             }}>
               {levelPopover.level.points_required} Punkte erforderlich
             </div>
@@ -1484,12 +1406,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Status Badge */}
             <div style={{
               display: 'inline-block',
-              padding: '4px 12px',
+              padding: '6px 14px',
               borderRadius: '12px',
               fontSize: '0.8rem',
               fontWeight: '600',
-              background: levelPopover.isReached ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 0, 0, 0.05)',
-              color: levelPopover.isReached ? '#10b981' : '#999'
+              background: levelPopover.isReached ? '#dcfce7' : '#f3f4f6',
+              color: levelPopover.isReached ? '#16a34a' : '#6b7280'
             }}>
               {levelPopover.isReached ? 'Erreicht!' : 'Noch nicht erreicht'}
             </div>
