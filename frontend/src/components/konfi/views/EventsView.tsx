@@ -166,114 +166,132 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   return (
     <div>
-      {/* Events Header - Dashboard-Style */}
+      {/* Events Header - Neues kompaktes Design */}
       <div style={{
-        background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-        borderRadius: '24px',
-        padding: '0',
+        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+        borderRadius: '20px',
+        padding: '24px',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
+        boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
         position: 'relative',
-        overflow: 'hidden',
-        minHeight: '220px',
-        display: 'flex',
-        flexDirection: 'column'
+        overflow: 'hidden'
       }}>
-        {/* Überschrift - groß und überlappend */}
+        {/* Dekorative Kreise im Hintergrund */}
         <div style={{
           position: 'absolute',
-          top: '-5px',
-          left: '12px',
+          top: '-30px',
+          right: '-30px',
+          width: '120px',
+          height: '120px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-20px',
+          left: '-20px',
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.08)'
+        }} />
+
+        {/* Header mit Icon */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          position: 'relative',
           zIndex: 1
         }}>
-          <h2 style={{
-            fontSize: '4rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: 'rgba(255, 255, 255, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            EVENTS
-          </h2>
+            <IonIcon icon={calendar} style={{ fontSize: '1.6rem', color: 'white' }} />
+          </div>
+          <div>
+            <h2 style={{
+              margin: '0',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              color: 'white'
+            }}>
+              Events
+            </h2>
+            <p style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              Termine und Veranstaltungen
+            </p>
+          </div>
         </div>
-        
-        {/* Content */}
+
+        {/* Stats Row */}
         <div style={{
-          position: 'relative',
-          zIndex: 2,
-          padding: '70px 24px 24px 24px',
-          flex: 1,
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              {statsData.map((stat, index) => (
-                <IonCol key={index} size="4" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 12px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon 
-                      icon={stat.icon} 
-                      style={{ 
-                        fontSize: '1.5rem', 
-                        color: 'rgba(255, 255, 255, 0.9)', 
-                        marginBottom: '8px', 
-                        display: 'block',
-                        margin: '0 auto 8px auto'
-                      }} 
-                    />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{stat.count}</span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                      {stat.label}
-                    </div>
-                  </div>
-                </IonCol>
-              ))}
-            </IonRow>
-          </IonGrid>
+          {statsData.map((stat, index) => (
+            <div key={index} style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              textAlign: 'center',
+              minWidth: '85px'
+            }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+                {stat.count}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+                {stat.label.toUpperCase()}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonSegment 
-            value={activeTab} 
-            onIonChange={(e) => onTabChange(e.detail.value as any)}
-            style={{ 
-              '--background': '#f8f9fa',
-              borderRadius: '12px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="upcoming">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-                Anstehend
-              </IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="registered">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-                Meine Events
-              </IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="konfirmation">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-                Konfirmation
-              </IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
+      {/* Tab Navigation - ohne Card Wrapper */}
+      <div style={{ padding: '0 16px', marginBottom: '8px' }}>
+        <IonSegment
+          value={activeTab}
+          onIonChange={(e) => onTabChange(e.detail.value as any)}
+          style={{
+            '--background': '#f0f0f0',
+            borderRadius: '12px',
+            padding: '4px'
+          }}
+        >
+          <IonSegmentButton value="upcoming">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
+              Anstehend
+            </IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="registered">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
+              Meine Events
+            </IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="konfirmation">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
+              Konfirmation
+            </IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
 
       {/* Events Liste - Admin Design */}
       {(() => {

@@ -362,22 +362,49 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       
       {/* Header Card mit ActivityRings */}
       <div style={{
-        background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
+        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%)',
         borderRadius: '24px',
         padding: '24px',
         marginBottom: '16px',
-        boxShadow: '0 10px 40px rgba(91, 33, 182, 0.3)',
+        boxShadow: '0 10px 40px rgba(91, 33, 182, 0.35)',
         position: 'relative',
         overflow: 'hidden'
       }}>
-        {/* Background Pattern */}
+        {/* Dekorative Kreise im Hintergrund */}
         <div style={{
           position: 'absolute',
-          top: '-20px',
-          right: '-20px',
-          width: '150px',
-          height: '150px',
-          background: 'rgba(255, 255, 255, 0.05)',
+          top: '-40px',
+          right: '-40px',
+          width: '140px',
+          height: '140px',
+          background: 'rgba(255, 255, 255, 0.08)',
+          borderRadius: '50%'
+        }}/>
+        <div style={{
+          position: 'absolute',
+          top: '60px',
+          right: '30px',
+          width: '60px',
+          height: '60px',
+          background: 'rgba(255, 255, 255, 0.06)',
+          borderRadius: '50%'
+        }}/>
+        <div style={{
+          position: 'absolute',
+          bottom: '-30px',
+          left: '-30px',
+          width: '100px',
+          height: '100px',
+          background: 'rgba(255, 255, 255, 0.06)',
+          borderRadius: '50%'
+        }}/>
+        <div style={{
+          position: 'absolute',
+          bottom: '40px',
+          left: '40px',
+          width: '40px',
+          height: '40px',
+          background: 'rgba(255, 255, 255, 0.04)',
           borderRadius: '50%'
         }}/>
 
@@ -1181,19 +1208,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                               width: '44px',
                               height: '44px',
                               borderRadius: '50%',
-                              background: 'rgba(139, 92, 246, 0.2)',
+                              background: 'rgba(168, 85, 247, 0.15)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              border: '2px dashed rgba(139, 92, 246, 0.4)',
-                              opacity: 0.6
+                              border: '2px dashed rgba(168, 85, 247, 0.5)',
+                              opacity: 0.7
                             }}
                           >
                             <IonIcon
                               icon={helpCircle}
                               style={{
                                 fontSize: '1.2rem',
-                                color: 'rgba(139, 92, 246, 0.6)'
+                                color: 'rgba(168, 85, 247, 0.7)'
                               }}
                             />
                           </div>
