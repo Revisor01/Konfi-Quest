@@ -674,20 +674,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               </div>
 
-              {/* Beschreibung (im selben Card wie Admin) */}
-              {eventData.description && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                    Beschreibung
-                  </h3>
-                  <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
-                    {eventData.description}
-                  </p>
-                </div>
-              )}
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Beschreibung - eigene Card mit rotem Icon */}
+        {eventData.description && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={informationCircle} />
+              </div>
+              <IonLabel>Beschreibung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
+                  {eventData.description}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* Teilnehmer-Liste */}
         {participants.length > 0 && (

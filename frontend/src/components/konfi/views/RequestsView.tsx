@@ -290,7 +290,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                           style={{
                             width: '100%',
                             borderLeftColor: statusColor,
-                            opacity: (isApproved || isRejected) ? 0.7 : 1,
                             position: 'relative',
                             overflow: 'hidden'
                           }}
@@ -319,7 +318,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                                 <div
                                   className="app-list-item__title"
                                   style={{
-                                    color: (isApproved || isRejected) ? '#999' : undefined,
                                     paddingRight: '70px'
                                   }}
                                 >
@@ -329,23 +327,23 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                                 {/* Zeile 2: Datum + Punkte + Typ + Foto */}
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: (isApproved || isRejected) ? '#999' : '#059669' }} />
+                                    <IonIcon icon={calendar} style={{ color: '#059669' }} />
                                     {formatDate(request.requested_date)}
                                   </span>
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={trophy} style={{ color: (isApproved || isRejected) ? '#999' : '#ff9500' }} />
+                                    <IonIcon icon={trophy} style={{ color: '#ff9500' }} />
                                     {request.activity_points}P
                                   </span>
                                   <span className="app-list-item__meta-item">
                                     <IonIcon
                                       icon={request.activity_type === 'gottesdienst' ? home : people}
-                                      style={{ color: (isApproved || isRejected) ? '#999' : getTypeColor(request.activity_type) }}
+                                      style={{ color: getTypeColor(request.activity_type) }}
                                     />
                                     {request.activity_type === 'gottesdienst' ? 'GD' : 'Gem.'}
                                   </span>
                                   {request.photo_filename && (
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={camera} style={{ color: (isApproved || isRejected) ? '#999' : '#7045f6' }} />
+                                      <IonIcon icon={camera} style={{ color: '#7045f6' }} />
                                       Foto
                                     </span>
                                   )}
@@ -354,7 +352,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                                 {/* Zeile 3: Kommentar (falls vorhanden) */}
                                 {request.comment && (
                                   <div className="app-list-item__subtitle" style={{
-                                    color: (isApproved || isRejected) ? '#999' : '#666',
+                                    color: '#666',
                                     fontStyle: 'italic',
                                     marginTop: '4px'
                                   }}>
