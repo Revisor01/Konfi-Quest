@@ -353,183 +353,188 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     <div>
       <style>{shimmerKeyframes}</style>
 
-      {/* Achievements Header - Dashboard-Style */}
+      {/* Achievements Header - Dashboard-Style (gleich wie Dashboard Badges) */}
       <div style={{
-        background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
-        borderRadius: '24px',
-        padding: '0',
+        background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
+        borderRadius: '20px',
+        padding: '24px',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(255, 149, 0, 0.3)',
+        boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)',
         position: 'relative',
-        overflow: 'hidden',
-        minHeight: '220px',
-        display: 'flex',
-        flexDirection: 'column'
+        overflow: 'hidden'
       }}>
-        {/* Überschrift - groß und überlappend */}
+        {/* Dekorative Kreise im Hintergrund */}
         <div style={{
           position: 'absolute',
-          top: '-5px',
-          left: '12px',
+          top: '-30px',
+          right: '-30px',
+          width: '120px',
+          height: '120px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.1)'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-20px',
+          left: '-20px',
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(255, 255, 255, 0.08)'
+        }} />
+
+        {/* Header mit Icon */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          marginBottom: '20px',
+          position: 'relative',
           zIndex: 1
         }}>
-          <h2 style={{
-            fontSize: '4rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: 'rgba(255, 255, 255, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            BADGES
-          </h2>
+            <IonIcon icon={trophy} style={{ fontSize: '1.6rem', color: 'white' }} />
+          </div>
+          <div>
+            <h2 style={{
+              margin: '0',
+              fontSize: '1.4rem',
+              fontWeight: '700',
+              color: 'white'
+            }}>
+              Deine Badges
+            </h2>
+            <p style={{
+              margin: '2px 0 0 0',
+              fontSize: '0.85rem',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              Sammle alle Erfolge!
+            </p>
+          </div>
         </div>
 
-        {/* Content */}
+        {/* Stats Row - wie auf dem Dashboard */}
         <div style={{
-          position: 'relative',
-          zIndex: 2,
-          padding: '70px 24px 24px 24px',
-          flex: 1,
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={trophy}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{badges.filter(b => b.is_earned && !b.is_hidden).length}</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '500', opacity: 0.8 }}>/{badgeStats.totalVisible}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Badges
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={statsChart}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '500', opacity: 0.8 }}>%</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={eyeOff}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{badges.filter(b => b.is_earned && b.is_hidden).length}</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: '500', opacity: 0.8 }}>/{badgeStats.totalSecret}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Geheim
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+          {/* Sichtbare Badges */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            textAlign: 'center',
+            minWidth: '85px'
+          }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+              {badges.filter(b => b.is_earned && !b.is_hidden).length}/{badgeStats.totalVisible}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+              SICHTBAR
+            </div>
+          </div>
+
+          {/* Geheime Badges */}
+          {badgeStats.totalSecret > 0 && (
+            <div style={{
+              background: 'rgba(139, 92, 246, 0.4)',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              textAlign: 'center',
+              minWidth: '85px',
+              border: '1px solid rgba(139, 92, 246, 0.3)'
+            }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+                {badges.filter(b => b.is_earned && b.is_hidden).length}/{badgeStats.totalSecret}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+                GEHEIM
+              </div>
+            </div>
+          )}
+
+          {/* Fortschritt Prozent */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            textAlign: 'center',
+            minWidth: '85px'
+          }}>
+            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+              {Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}%
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+              GESAMT
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Filter Navigation */}
-      <IonCard style={{ margin: '16px' }}>
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonSegment
-            value={selectedFilter}
-            onIonChange={(e) => onFilterChange(e.detail.value as string)}
-            style={{
-              '--background': '#f8f9fa',
-              borderRadius: '12px',
-              padding: '4px'
-            }}
-          >
-            <IonSegmentButton value="alle">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Alle</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="nicht_erhalten">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>Offen</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="in_arbeit">
-              <IonLabel style={{ fontWeight: '600', fontSize: '0.75rem' }}>In Arbeit</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </IonCardContent>
-      </IonCard>
+      {/* Filter Navigation - ohne Card Wrapper */}
+      <div style={{ padding: '0 16px', marginBottom: '8px' }}>
+        <IonSegment
+          value={selectedFilter}
+          onIonChange={(e) => onFilterChange(e.detail.value as string)}
+          style={{
+            '--background': '#f0f0f0',
+            borderRadius: '12px',
+            padding: '4px'
+          }}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="nicht_erhalten">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>Offen</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="in_arbeit">
+            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>In Arbeit</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
 
       {/* Badges nach Kategorien - VERTIKALES GRID */}
       <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
-          <IonCard style={{ margin: '16px' }}>
-            <IonCardContent>
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={trophyOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#ff9500',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Badges!</p>
-              </div>
-            </IonCardContent>
-          </IonCard>
+          <div style={{
+            margin: '16px',
+            padding: '40px 24px',
+            background: 'white',
+            borderRadius: '16px',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+          }}>
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px auto',
+              opacity: 0.3
+            }}>
+              <IonIcon icon={trophyOutline} style={{ fontSize: '2.5rem', color: 'white' }} />
+            </div>
+            <h3 style={{ color: '#333', margin: '0 0 8px 0', fontWeight: '600' }}>Keine Badges gefunden</h3>
+            <p style={{ color: '#888', margin: '0', fontSize: '0.9rem' }}>Sammle Punkte für deine ersten Badges!</p>
+          </div>
         ) : (
           badgeCategories.map((category) => {
             const earnedCount = category.badges.filter(b => b.is_earned).length;
