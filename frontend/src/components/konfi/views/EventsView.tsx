@@ -146,8 +146,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     const attendanceStatus = event.attendance_status;
     const isOnWaitlist = event.booking_status === 'waitlist';
     const isCancelled = event.cancelled;
+    const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
 
-    // Bestimme Farbe
+    // Bestimme Farbe - Konfirmation in Lila!
     let statusColor = '#fd7e14'; // Default: Orange für offen
     if (isCancelled) statusColor = '#dc3545';
     else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759';
@@ -155,6 +156,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isPastEvent && isOnWaitlist) statusColor = '#6c757d';
     else if (isOnWaitlist) statusColor = '#fd7e14';
     else if (event.is_registered) statusColor = '#007aff';
+    else if (isKonfirmationEvent && !isPastEvent) statusColor = '#8b5cf6'; // Lila für Konfirmation
     else if (isPastEvent) statusColor = '#6c757d';
     else if (event.registration_status === 'open') statusColor = '#34c759';
     else if (event.registration_status === 'upcoming') statusColor = '#fd7e14';
@@ -168,6 +170,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isPastEvent && isOnWaitlist) statusText = 'Vergangen';
     else if (isOnWaitlist) statusText = `Warteliste (${event.waitlist_position || 1})`;
     else if (event.is_registered) statusText = 'Angemeldet';
+    else if (isKonfirmationEvent && !isPastEvent) statusText = 'Konfirmation'; // Text für Konfirmation
     else if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) statusText = 'Warteliste';
     else if (event.registration_status === 'open') statusText = 'Offen';
     else if (event.registration_status === 'upcoming') statusText = 'Bald';

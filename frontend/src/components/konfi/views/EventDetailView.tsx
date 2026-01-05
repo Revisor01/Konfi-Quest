@@ -9,20 +9,14 @@ import {
   IonButton,
   IonIcon,
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonRefresher,
   IonRefresherContent,
-  IonText,
   IonChip,
-  IonBadge,
-  IonGrid,
-  IonRow,
-  IonCol,
   useIonAlert,
   useIonModal,
   useIonActionSheet
@@ -36,12 +30,14 @@ import {
   trophy,
   checkmarkCircle,
   closeCircle,
-  close,
   informationCircle,
   warning,
   hourglass,
   ribbon,
-  listOutline
+  listOutline,
+  home,
+  calendarOutline,
+  pricetag
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -127,10 +123,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await api.delete(`/konfi/events/${eventData.id}/register`, {
         data: { reason: reason.trim() }
       });
-      
+
       setSuccess(`Von "${eventData.name}" abgemeldet`);
       await loadEventData();
-      
+
       // Trigger events update for parent page
       window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (err: any) {
@@ -138,7 +134,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
-  // Modal mit useIonModal Hook - korrekte Ionic Implementierung  
+  // Modal mit useIonModal Hook - korrekte Ionic Implementierung
   const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
     onClose: () => {
@@ -221,37 +217,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     });
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'success';
-      case 'closed': return 'warning';
-      case 'cancelled': return 'danger';
-      default: return 'medium';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'open': return 'Anmeldung offen';
-      case 'closed': return 'Anmeldung geschlossen';
-      case 'cancelled': return 'Abgesagt';
-      default: return 'Bald verfügbar';
-    }
-  };
-
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;
-    
+
     const eventDate = new Date(event.event_date);
     const now = new Date();
     const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
-    
+
     return now < twoDaysBeforeEvent;
   };
 
   const isKonfirmationEvent = (event: Event) => {
     return event.categories?.some(cat => cat.name.toLowerCase().includes('konfirmation')) ||
-           event.category_names?.toLowerCase().includes('konfirmation') || 
+           event.category_names?.toLowerCase().includes('konfirmation') ||
            false;
   };
 
@@ -259,8 +237,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     try {
       const response = await api.get('/konfi/events');
       const myEvents = response.data.filter((e: Event) => e.is_registered);
-      const hasKonfirmation = myEvents.some((e: Event) => 
-        e.category_names?.toLowerCase().includes('konfirmation') || 
+      const hasKonfirmation = myEvents.some((e: Event) =>
+        e.category_names?.toLowerCase().includes('konfirmation') ||
         isKonfirmationEvent(e)
       );
       return hasKonfirmation;
@@ -336,7 +314,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       } as any);
 
       presentActionSheet({
-        header: 'Zeitslot auswaehlen',
+        header: 'Zeitslot auswählen',
         buttons: timeslotButtons
       });
       return;
@@ -345,6 +323,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     // No timeslots - register directly
     doRegister();
   };
+
+  // Status-Infos berechnen
+  const getStatusInfo = () => {
+    if (!eventData) return { color: '#666', text: 'Laden...', icon: hourglass };
+
+    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isParticipated = isPastEvent && eventData.is_registered;
+    const attendanceStatus = eventData.attendance_status;
+    const isKonfi = isKonfirmationEvent(eventData);
+
+    if (eventData.cancelled) return { color: '#dc3545', text: 'ABGESAGT' };
+    if (isParticipated && attendanceStatus === 'present') return { color: '#34c759', text: 'VERBUCHT' };
+    if (isParticipated && attendanceStatus === 'absent') return { color: '#dc3545', text: 'VERPASST' };
+    if (isParticipated && !attendanceStatus) return { color: '#fd7e14', text: 'AUSSTEHEND' };
+    if ((eventData as any).booking_status === 'waitlist') return { color: '#fd7e14', text: `WARTELISTE (${eventData.waitlist_position || 1})` };
+    if (eventData.is_registered) return { color: '#007aff', text: 'ANGEMELDET' };
+    if (isKonfi && !isPastEvent) return { color: '#8b5cf6', text: 'KONFIRMATION' };
+    if (!isPastEvent) {
+      if (eventData.registration_status === 'open') return { color: '#34c759', text: 'OFFEN' };
+      if (eventData.registration_status === 'upcoming') return { color: '#fd7e14', text: 'BALD' };
+      return { color: '#dc3545', text: 'GESCHLOSSEN' };
+    }
+    return { color: '#6c757d', text: 'VERGANGEN' };
+  };
+
+  const statusInfo = getStatusInfo();
 
   if (loading) {
     return (
@@ -411,379 +415,334 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Event Header - Neues kompaktes Design */}
+        {/* Event Header - Dashboard-Style wie Admin */}
         <div style={{
-          background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-          borderRadius: '20px',
-          padding: '24px',
+          background: `linear-gradient(135deg, ${statusInfo.color} 0%, ${statusInfo.color}dd 100%)`,
+          borderRadius: '24px',
+          padding: '0',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
+          boxShadow: `0 20px 40px ${statusInfo.color}44`,
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          {/* Dekorative Kreise im Hintergrund */}
+          {/* Überschrift - groß und überlappend */}
           <div style={{
             position: 'absolute',
-            top: '-30px',
-            right: '-30px',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-20px',
-            left: '-20px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.08)'
-          }} />
-
-          {/* Header mit Icon und Status */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: '12px',
-            marginBottom: '20px',
-            position: 'relative',
+            top: '-5px',
+            left: '12px',
             zIndex: 1
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '14px',
-                background: 'rgba(255, 255, 255, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <IonIcon icon={calendar} style={{ fontSize: '1.6rem', color: 'white' }} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <h2 style={{
-                  margin: '0',
-                  fontSize: '1.2rem',
-                  fontWeight: '700',
-                  color: 'white',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {eventData.name}
-                </h2>
-                <p style={{
-                  margin: '2px 0 0 0',
-                  fontSize: '0.85rem',
-                  color: 'rgba(255, 255, 255, 0.8)'
-                }}>
-                  {formatDate(eventData.event_date)}
-                </p>
-              </div>
-            </div>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '280px'
+            }}>
+              {(eventData?.name || 'EVENT').toUpperCase()}
+            </h2>
+          </div>
 
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            padding: '60px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
+          }}>
             {/* Status Badge */}
             <div style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               borderRadius: '8px',
-              padding: '6px 10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              flexShrink: 0
+              padding: '6px 12px'
             }}>
               <span style={{
-                color: (() => {
-                  const isPastEvent = new Date(eventData.event_date) < new Date();
-                  const isParticipated = isPastEvent && eventData.is_registered;
-                  const attendanceStatus = eventData.attendance_status;
-
-                  if (eventData.cancelled) return '#dc3545';
-                  if (isParticipated && attendanceStatus === 'present') return '#28a745';
-                  if (isParticipated && attendanceStatus === 'absent') return '#dc3545';
-                  if ((eventData as any).booking_status === 'waitlist') return '#fd7e14';
-                  if (eventData.is_registered) return '#007aff';
-                  if (eventData.registration_status === 'open') return '#28a745';
-                  return '#666';
-                })(),
+                color: statusInfo.color,
                 fontSize: '0.75rem',
                 fontWeight: '700'
               }}>
-                {(() => {
-                  const isPastEvent = new Date(eventData.event_date) < new Date();
-                  const isParticipated = isPastEvent && eventData.is_registered;
-                  const attendanceStatus = eventData.attendance_status;
-
-                  if (eventData.cancelled) return 'ABGESAGT';
-                  if (isParticipated && attendanceStatus === 'present') return 'VERBUCHT';
-                  if (isParticipated && attendanceStatus === 'absent') return 'VERPASST';
-                  if ((eventData as any).booking_status === 'waitlist') return `WARTELISTE`;
-                  if (eventData.is_registered) return 'ANGEMELDET';
-                  if (!isPastEvent) {
-                    if (eventData.registration_status === 'open') return 'OFFEN';
-                    if (eventData.registration_status === 'upcoming') return 'BALD';
-                    return 'GESCHLOSSEN';
-                  }
-                  return 'VERGANGEN';
-                })()}
+                {statusInfo.text}
               </span>
             </div>
-          </div>
 
-          {/* Stats Row - immer einzeilig */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
-            position: 'relative',
-            zIndex: 1
-          }}>
+            {/* Event Info Grid */}
             <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
+              display: 'flex',
+              gap: '8px'
             }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {eventData.max_participants - eventData.registered_count}
+              <div style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px',
+                padding: '16px 12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                  {eventData.max_participants - eventData.registered_count}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  FREI
+                </div>
               </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                FREI
+              <div style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px',
+                padding: '16px 12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <IonIcon icon={trophy} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                  {eventData.points}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  PUNKTE
+                </div>
               </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {eventData.points}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                PUNKTE
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {eventData.registered_count}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                DABEI
+              <div style={{
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px',
+                padding: '16px 12px',
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                  {eventData.registered_count}
+                </div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                  DABEI
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Event Details Card */}
-        <IonCard className="app-card" style={{ margin: '16px' }}>
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonGrid style={{ padding: '0' }}>
-              <IonRow>
-                <IonCol size="12">
-                  {/* Datum */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={calendar} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                    <div>
-                      <div style={{ fontSize: '1rem', fontWeight: '600', color: '#333' }}>
-                        {formatDate(eventData.event_date)}
-                      </div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>
-                        {formatTime(eventData.event_date)}
-                        {eventData.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
-                      </div>
+        {/* Event Details - Admin Pattern mit IonListHeader */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendarOutline} />
+            </div>
+            <IonLabel>Details</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              {/* Datum */}
+              <div className="app-info-row">
+                <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                <div>
+                  <div className="app-info-row__content" style={{ fontWeight: '600' }}>
+                    {formatDate(eventData.event_date)}
+                  </div>
+                  <div className="app-info-row__sublabel">
+                    {formatTime(eventData.event_date)}
+                    {eventData.event_end_time && ` - ${formatTime(eventData.event_end_time)}`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Gebuchter Timeslot anzeigen wenn angemeldet */}
+              {eventData.has_timeslots && eventData.is_registered && eventData.booked_timeslot_start && (
+                <div className="app-info-row">
+                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                  <div>
+                    <div className="app-info-row__sublabel">Dein Zeitslot:</div>
+                    <div className="app-info-row__content" style={{ fontWeight: '600', color: '#34c759' }}>
+                      {formatTime(eventData.booked_timeslot_start)}
+                      {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
                     </div>
                   </div>
+                </div>
+              )}
 
-                  {/* Gebuchter Timeslot anzeigen wenn angemeldet */}
-                  {eventData.has_timeslots && eventData.is_registered && eventData.booked_timeslot_start && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#28a745', fontSize: '1.2rem' }} />
-                      <div>
-                        <div style={{ fontSize: '0.85rem', color: '#666' }}>Dein Zeitslot:</div>
-                        <div style={{ fontSize: '1rem', fontWeight: '600', color: '#28a745' }}>
-                          {formatTime(eventData.booked_timeslot_start)}
-                          {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+              {/* TN gesamt */}
+              <div className="app-info-row">
+                <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                <div className="app-info-row__content">
+                  {eventData.registered_count} / {eventData.max_participants} Teilnehmer:innen
+                </div>
+              </div>
 
-                  {/* TN gesamt */}
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={people} style={{ marginRight: '12px', color: '#34c759', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData.registered_count} / {eventData.max_participants} Teilnehmer:innen
-                    </div>
+              {/* Ort */}
+              {eventData.location && (
+                <div
+                  className="app-info-row"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    if (eventData.location_maps_url) {
+                      window.open(eventData.location_maps_url, '_blank');
+                    } else {
+                      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      const encodedLocation = encodeURIComponent(eventData.location || '');
+                      const mapsUrl = isIOS
+                        ? `maps://maps.apple.com/?q=${encodedLocation}`
+                        : `https://maps.google.com/maps?q=${encodedLocation}`;
+                      window.open(mapsUrl, '_blank');
+                    }
+                  }}
+                >
+                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <div className="app-info-row__content" style={{ color: '#007aff', textDecoration: 'underline' }}>
+                    {eventData.location}
                   </div>
+                </div>
+              )}
 
-                  {/* Ort */}
-                  {eventData.location && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        marginBottom: '12px',
-                        cursor: 'pointer',
-                        padding: '4px',
-                        borderRadius: '8px',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onClick={() => {
-                        if (eventData.location_maps_url) {
-                          window.open(eventData.location_maps_url, '_blank');
-                        } else {
-                          // Fallback to Apple Maps on iOS, Google Maps otherwise
-                          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                          const encodedLocation = encodeURIComponent(eventData.location || '');
-                          const mapsUrl = isIOS
-                            ? `maps://maps.apple.com/?q=${encodedLocation}`
-                            : `https://maps.google.com/maps?q=${encodedLocation}`;
-                          window.open(mapsUrl, '_blank');
-                        }
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f0f0f0';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
-                    >
-                      <IonIcon icon={location} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#007aff', textDecoration: 'underline' }}>
-                        {eventData.location}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Anmeldezeitraum mit Umbruch */}
-                  {(eventData.registration_opens_at || eventData.registration_closes_at) && (
-                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '12px' }}>
-                      <IonIcon icon={time} style={{ marginRight: '12px', color: '#dc2626', fontSize: '1.2rem', marginTop: '2px' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.registration_opens_at ? (
-                          <>
-                            <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                            {eventData.registration_closes_at && (
-                              <div>bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                            )}
-                          </>
-                        ) : (
-                          'Sofort möglich'
+              {/* Anmeldezeitraum */}
+              {(eventData.registration_opens_at || eventData.registration_closes_at) && (
+                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
+                  <div className="app-info-row__content">
+                    {eventData.registration_opens_at ? (
+                      <>
+                        <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
+                        {eventData.registration_closes_at && (
+                          <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
                         )}
-                      </div>
-                    </div>
-                  )}
-
-                  {eventData.waitlist_enabled && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={listOutline} style={{ marginRight: '12px', color: '#fd7e14', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        Warteliste: {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10}
-                        {(eventData as any).waitlist_position && ` (Du: Platz ${(eventData as any).waitlist_position})`}
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                    <IonIcon icon={trophy} style={{ marginRight: '12px', color: '#ff9500', fontSize: '1.2rem' }} />
-                    <div style={{ fontSize: '1rem', color: '#333' }}>
-                      {eventData.points} Punkte • {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </div>
+                      </>
+                    ) : (
+                      'Sofort möglich'
+                    )}
                   </div>
+                </div>
+              )}
 
+              {/* Warteliste */}
+              {eventData.waitlist_enabled && (
+                <div className="app-info-row">
+                  <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
+                  <div className="app-info-row__content">
+                    Warteliste: {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10}
+                    {(eventData as any).waitlist_position && ` (Du: Platz ${(eventData as any).waitlist_position})`}
+                  </div>
+                </div>
+              )}
 
-                  {eventData.categories && eventData.categories.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
-                      <IonIcon icon={ribbon} style={{ marginRight: '12px', color: '#007aff', fontSize: '1.2rem' }} />
-                      <div style={{ fontSize: '1rem', color: '#333' }}>
-                        {eventData.categories.map(cat => cat.name).join(', ')}
-                      </div>
-                    </div>
-                  )}
-                </IonCol>
-              </IonRow>
-            </IonGrid>
-          </IonCardContent>
-        </IonCard>
+              {/* Punkte */}
+              <div className="app-info-row">
+                <IonIcon icon={trophy} className="app-info-row__icon" style={{ color: '#ff9500' }} />
+                <div className="app-info-row__content">
+                  {eventData.points} Punkte
+                </div>
+              </div>
+
+              {/* Typ */}
+              <div className="app-info-row">
+                <IonIcon
+                  icon={home}
+                  className="app-info-row__icon"
+                  style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#059669' }}
+                />
+                <div className="app-info-row__content">
+                  {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                </div>
+              </div>
+
+              {/* Kategorien als Tags */}
+              {eventData.categories && eventData.categories.length > 0 && (
+                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
+                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                    {eventData.categories.map(c => (
+                      <span key={c.id} className="app-tag app-tag--purple">
+                        {c.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* Description */}
         {eventData.description && (
-          <IonCard className="app-card" style={{ margin: '16px' }}>
-            <IonCardContent style={{ padding: '16px' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', fontWeight: '600', color: '#333' }}>
-                Beschreibung
-              </h3>
-              <p style={{ margin: '0', fontSize: '1rem', color: '#666', lineHeight: '1.5' }}>
-                {eventData.description}
-              </p>
-            </IonCardContent>
-          </IonCard>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--info">
+                <IonIcon icon={informationCircle} />
+              </div>
+              <IonLabel>Beschreibung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <p style={{ margin: '0', fontSize: '1rem', color: '#666', lineHeight: '1.5' }}>
+                  {eventData.description}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Teilnehmer-Liste */}
         {participants.length > 0 && (
-          <IonCard className="app-card" style={{ margin: '16px' }}>
-            <IonCardContent style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
-                <IonIcon icon={people} style={{ fontSize: '1.2rem', color: '#34c759', marginRight: '8px' }} />
-                <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '600', color: '#333' }}>
-                  Angemeldete Teilnehmer:innen ({participants.length})
-                </h3>
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--success">
+                <IonIcon icon={people} />
               </div>
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '8px'
-              }}>
-                {participants.map((participant) => (
-                  <IonChip
-                    key={participant.id}
-                    style={{
-                      margin: 0,
-                      backgroundColor: 'rgba(52, 199, 89, 0.1)',
-                      border: '1px solid rgba(52, 199, 89, 0.3)'
-                    }}
-                  >
-                    <IonLabel style={{ color: '#2d7d46', fontWeight: '500' }}>
-                      {participant.display_name}
-                    </IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            </IonCardContent>
-          </IonCard>
+              <IonLabel>Teilnehmer:innen ({participants.length})</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent style={{ padding: '16px' }}>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  {participants.map((participant) => (
+                    <IonChip
+                      key={participant.id}
+                      style={{
+                        margin: 0,
+                        backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                        border: '1px solid rgba(52, 199, 89, 0.3)'
+                      }}
+                    >
+                      <IonLabel style={{ color: '#2d7d46', fontWeight: '500' }}>
+                        {participant.display_name}
+                      </IonLabel>
+                    </IonChip>
+                  ))}
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
         )}
 
-        {/* Action Buttons - same width as admin cards */}
+        {/* Action Buttons */}
         <div style={{ padding: '16px', paddingBottom: '32px' }}>
           {eventData.is_registered ? (
-            <div>              
+            <div>
               {canUnregister(eventData) ? (
-                <IonButton 
-                  expand="block" 
-                  fill="outline" 
+                <IonButton
+                  expand="block"
+                  fill="outline"
                   color="danger"
-                  onClick={() => presentUnregisterModal({ 
+                  onClick={() => presentUnregisterModal({
                     presentingElement: pageRef.current || undefined
                   })}
-                  style={{ 
+                  style={{
                     height: '48px',
                     borderRadius: '12px',
                     fontWeight: '600'
@@ -793,12 +752,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   Abmelden
                 </IonButton>
               ) : (
-                <IonButton 
-                  expand="block" 
-                  fill="outline" 
+                <IonButton
+                  expand="block"
+                  fill="outline"
                   color="medium"
                   disabled
-                  style={{ 
+                  style={{
                     height: '48px',
                     borderRadius: '12px',
                     fontWeight: '600'
@@ -810,11 +769,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               )}
             </div>
           ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
-            <IonButton 
-              expand="block" 
+            <IonButton
+              expand="block"
               disabled
               color="medium"
-              style={{ 
+              style={{
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600'
@@ -824,9 +783,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               Konfirmationstermin bereits gebucht
             </IonButton>
           ) : eventData.can_register && eventData.registration_status === 'open' && eventData.registered_count < eventData.max_participants ? (
-            <IonButton 
-              expand="block" 
-              style={{ 
+            <IonButton
+              expand="block"
+              style={{
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600',
@@ -841,9 +800,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               Anmelden ({eventData.registered_count}/{eventData.max_participants})
             </IonButton>
           ) : eventData.waitlist_enabled && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
-            <IonButton 
-              expand="block" 
-              style={{ 
+            <IonButton
+              expand="block"
+              style={{
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600',
@@ -858,11 +817,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               Warteliste offen ({(eventData as any).waitlist_count || 0}/{eventData.max_waitlist_size || 0})
             </IonButton>
           ) : (
-            <IonButton 
-              expand="block" 
+            <IonButton
+              expand="block"
               disabled
               color="medium"
-              style={{ 
+              style={{
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600'
