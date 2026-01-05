@@ -409,26 +409,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                                   {event.name}
                                 </div>
 
-                                {/* Zeile 2: Datum + Uhrzeit */}
+                                {/* Zeile 2: Buchungen + Warteliste + Punkte (wie Admin) */}
                                 <div className="app-list-item__meta">
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
-                                    {formatDate(event.event_date)}
-                                  </span>
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
-                                    {formatTime(event.event_date)}
-                                  </span>
-                                  {event.location && (
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
-                                      {event.location}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Zeile 3: Teilnehmer + Warteliste + Punkte */}
-                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                                   <span className="app-list-item__meta-item">
                                     <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
                                     {event.registered_count}/{event.max_participants}
@@ -443,6 +425,24 @@ const EventsView: React.FC<EventsViewProps> = ({
                                     <span className="app-list-item__meta-item">
                                       <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
                                       {event.points}P
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Zeile 3: Datum + Uhrzeit + Ort (wie Admin) */}
+                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                                    {formatDate(event.event_date)}
+                                  </span>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                                    {formatTime(event.event_date)}
+                                  </span>
+                                  {event.location && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                                      {event.location}
                                     </span>
                                   )}
                                 </div>

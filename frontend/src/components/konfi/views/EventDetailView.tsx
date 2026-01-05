@@ -34,7 +34,6 @@ import {
   hourglass,
   listOutline,
   home,
-  calendarOutline,
   pricetag
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -538,11 +537,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </div>
         </div>
 
-        {/* Event Details - Admin Pattern mit IonListHeader */}
+        {/* Event Details - 1:1 wie Admin */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={calendarOutline} />
+              <IonIcon icon={calendar} />
             </div>
             <IonLabel>Details</IonLabel>
           </IonListHeader>
@@ -562,16 +561,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               </div>
 
-              {/* Gebuchter Timeslot anzeigen wenn angemeldet */}
-              {eventData.has_timeslots && eventData.is_registered && eventData.booked_timeslot_start && (
-                <div className="app-info-row">
-                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#34c759' }} />
-                  <div>
-                    <div className="app-info-row__sublabel">Dein Zeitslot:</div>
-                    <div className="app-info-row__content" style={{ fontWeight: '600', color: '#34c759' }}>
-                      {formatTime(eventData.booked_timeslot_start)}
-                      {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
-                    </div>
+              {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
+              {eventData.has_timeslots && timeslots.length > 0 && (
+                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '4px' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '500', marginBottom: '6px' }}>Zeitfenster:</div>
+                    {timeslots.map((slot, idx) => (
+                      <div key={slot.id || idx} style={{ fontSize: '0.9rem', color: '#666', marginBottom: '4px' }}>
+                        {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
+                      </div>
+                    ))}
+                    {/* Gebuchter Timeslot hervorheben wenn angemeldet */}
+                    {eventData.is_registered && eventData.booked_timeslot_start && (
+                      <div style={{ fontSize: '0.9rem', color: '#34c759', fontWeight: '600', marginTop: '8px' }}>
+                        Dein Slot: {formatTime(eventData.booked_timeslot_start)}
+                        {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -580,60 +587,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
                 <div className="app-info-row__content">
-                  {eventData.registered_count} / {eventData.max_participants} Teilnehmer:innen
+                  {eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'} Teilnehmer:innen
                 </div>
               </div>
-
-              {/* Ort */}
-              {eventData.location && (
-                <div
-                  className="app-info-row"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    if (eventData.location_maps_url) {
-                      window.open(eventData.location_maps_url, '_blank');
-                    } else {
-                      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-                      const encodedLocation = encodeURIComponent(eventData.location || '');
-                      const mapsUrl = isIOS
-                        ? `maps://maps.apple.com/?q=${encodedLocation}`
-                        : `https://maps.google.com/maps?q=${encodedLocation}`;
-                      window.open(mapsUrl, '_blank');
-                    }
-                  }}
-                >
-                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                  <div className="app-info-row__content" style={{ color: '#007aff', textDecoration: 'underline' }}>
-                    {eventData.location}
-                  </div>
-                </div>
-              )}
-
-              {/* Anmeldezeitraum */}
-              {(eventData.registration_opens_at || eventData.registration_closes_at) && (
-                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
-                  <div className="app-info-row__content">
-                    {eventData.registration_opens_at ? (
-                      <>
-                        <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
-                        {eventData.registration_closes_at && (
-                          <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
-                        )}
-                      </>
-                    ) : (
-                      'Sofort möglich'
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Warteliste */}
               {eventData.waitlist_enabled && (
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
                   <div className="app-info-row__content">
-                    Warteliste: {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10}
+                    {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
                     {(eventData as any).waitlist_position && ` (Du: Platz ${(eventData as any).waitlist_position})`}
                   </div>
                 </div>
@@ -652,7 +615,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <IonIcon
                   icon={home}
                   className="app-info-row__icon"
-                  style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#059669' }}
+                  style={{ color: eventData.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
                 />
                 <div className="app-info-row__content">
                   {eventData.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
@@ -663,7 +626,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
                   <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                     {eventData.categories.map(c => (
                       <span key={c.id} className="app-tag app-tag--purple">
                         {c.name}
@@ -672,28 +635,59 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   </div>
                 </div>
               )}
+
+              {/* Ort */}
+              {eventData.location && (
+                <div className="app-info-row">
+                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <div
+                    className="app-info-row__content"
+                    style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
+                    onClick={() => {
+                      if (eventData.location_maps_url) {
+                        window.open(eventData.location_maps_url, '_blank');
+                      } else if (eventData.location) {
+                        const mapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(eventData.location)}`;
+                        window.open(mapsUrl, '_blank');
+                      }
+                    }}
+                  >
+                    {eventData.location}
+                  </div>
+                </div>
+              )}
+
+              {/* Anmeldezeitraum */}
+              <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
+                <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
+                <div className="app-info-row__content">
+                  {eventData.registration_opens_at ? (
+                    <>
+                      <div>von {new Date(eventData.registration_opens_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_opens_at)}</div>
+                      {eventData.registration_closes_at && (
+                        <div className="app-info-row__sublabel">bis {new Date(eventData.registration_closes_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {formatTime(eventData.registration_closes_at)}</div>
+                      )}
+                    </>
+                  ) : (
+                    'Sofort möglich'
+                  )}
+                </div>
+              </div>
+
+              {/* Beschreibung (im selben Card wie Admin) */}
+              {eventData.description && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: '600', color: '#333' }}>
+                    Beschreibung
+                  </h3>
+                  <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
+                    {eventData.description}
+                  </p>
+                </div>
+              )}
             </IonCardContent>
           </IonCard>
         </IonList>
-
-        {/* Description */}
-        {eventData.description && (
-          <IonList inset={true} style={{ margin: '16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--info">
-                <IonIcon icon={informationCircle} />
-              </div>
-              <IonLabel>Beschreibung</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <p style={{ margin: '0', fontSize: '1rem', color: '#666', lineHeight: '1.5' }}>
-                  {eventData.description}
-                </p>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
 
         {/* Teilnehmer-Liste */}
         {participants.length > 0 && (
