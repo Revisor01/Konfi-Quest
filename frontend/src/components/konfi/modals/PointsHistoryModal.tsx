@@ -9,13 +9,14 @@ import {
   IonButton,
   IonButtons,
   IonSpinner,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
   IonCard,
   IonCardContent,
   IonList,
-  IonListHeader
+  IonListHeader,
+  IonLabel,
+  IonGrid,
+  IonRow,
+  IonCol
 } from '@ionic/react';
 import {
   closeOutline,
@@ -23,7 +24,8 @@ import {
   flashOutline,
   giftOutline,
   calendarOutline,
-  timeOutline
+  timeOutline,
+  trophyOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 
@@ -53,7 +55,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
   const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, bonus: 0, event: 0, total: 0 });
-  const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
     loadHistory();
@@ -82,9 +83,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     });
   };
 
-  const getCategoryColor = (category: string, sourceType: string) => {
-    if (sourceType === 'bonus') return '#f59e0b';
-    if (sourceType === 'event') return '#dc2626';
+  // Farbe basierend auf category (gottesdienst=blau, gemeinde=grün)
+  const getCategoryColor = (category: string) => {
     switch (category) {
       case 'gottesdienst': return '#3b82f6';
       case 'gemeinde': return '#059669';
@@ -92,9 +92,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  const getCategoryIcon = (category: string, sourceType: string) => {
-    if (sourceType === 'bonus') return giftOutline;
-    if (sourceType === 'event') return calendarOutline;
+  // Icon basierend auf category
+  const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'gottesdienst': return starOutline;
       case 'gemeinde': return flashOutline;
@@ -102,10 +101,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  const getCategoryLabel = (category: string, sourceType: string) => {
-    const typeLabel = category === 'gottesdienst' ? 'GD' : category === 'gemeinde' ? 'Gem' : '';
-    if (sourceType === 'bonus') return typeLabel ? `Bonus (${typeLabel})` : 'Bonus';
-    if (sourceType === 'event') return typeLabel ? `Event (${typeLabel})` : 'Event';
+  // Label für die Kategorie
+  const getCategoryLabel = (category: string) => {
     switch (category) {
       case 'gottesdienst': return 'Gottesdienst';
       case 'gemeinde': return 'Gemeinde';
@@ -113,13 +110,55 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  const filteredHistory = filter === 'all'
-    ? history
-    : filter === 'bonus'
-      ? history.filter(h => h.source_type === 'bonus')
-      : filter === 'event'
-        ? history.filter(h => h.source_type === 'event')
-        : history.filter(h => h.category === filter && h.source_type !== 'bonus' && h.source_type !== 'event');
+  // Typ-Badge Farbe (orange für Bonus, rot für Event)
+  const getTypeBadgeColor = (sourceType: string) => {
+    switch (sourceType) {
+      case 'bonus': return '#f59e0b';
+      case 'event': return '#dc2626';
+      default: return null;
+    }
+  };
+
+  // Typ-Badge Label
+  const getTypeBadgeLabel = (sourceType: string) => {
+    switch (sourceType) {
+      case 'bonus': return 'Bonus';
+      case 'event': return 'Event';
+      default: return null;
+    }
+  };
+
+  // Berechne korrekte Punkte (Events und Bonus zählen zu ihrer category)
+  const calculateTotals = () => {
+    let gottesdienstTotal = 0;
+    let gemeindeTotal = 0;
+    let eventCount = 0;
+    let bonusCount = 0;
+
+    history.forEach(entry => {
+      if (entry.category === 'gottesdienst') {
+        gottesdienstTotal += entry.points;
+      } else if (entry.category === 'gemeinde') {
+        gemeindeTotal += entry.points;
+      }
+
+      if (entry.source_type === 'event') {
+        eventCount++;
+      } else if (entry.source_type === 'bonus') {
+        bonusCount++;
+      }
+    });
+
+    return {
+      total: gottesdienstTotal + gemeindeTotal,
+      gottesdienst: gottesdienstTotal,
+      gemeinde: gemeindeTotal,
+      eventCount,
+      bonusCount
+    };
+  };
+
+  const calculatedTotals = calculateTotals();
 
   return (
     <IonPage>
@@ -141,7 +180,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
           </div>
         ) : (
           <>
-            {/* Header - Dashboard-Style */}
+            {/* Header - Kompakter Dashboard-Style */}
             <div style={{
               background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
               borderRadius: '24px',
@@ -151,7 +190,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
               boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
               position: 'relative',
               overflow: 'hidden',
-              minHeight: '200px',
+              minHeight: '220px',
               display: 'flex',
               flexDirection: 'column'
             }}>
@@ -182,125 +221,145 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center'
+                justifyContent: 'center'
               }}>
-                {/* Gesamt-Punkte groß */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: '8px',
-                  marginBottom: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '3.5rem',
-                    fontWeight: '900',
-                    color: 'white'
-                  }}>
-                    {totals.total}
-                  </span>
-                  <span style={{
-                    fontSize: '1.2rem',
-                    color: 'rgba(255, 255, 255, 0.8)'
-                  }}>
-                    Punkte
-                  </span>
-                </div>
-
-                {/* Info-Badges */}
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  marginTop: '12px'
-                }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <IonIcon icon={starOutline} style={{ fontSize: '0.85rem' }} />
-                    {totals.gottesdienst} Gottesdienst
-                  </div>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <IonIcon icon={flashOutline} style={{ fontSize: '0.85rem' }} />
-                    {totals.gemeinde} Gemeinde
-                  </div>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
-                    {history.filter(h => h.source_type === 'event').length} Events
-                  </div>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.15)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
-                    fontSize: '0.75rem',
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <IonIcon icon={giftOutline} style={{ fontSize: '0.85rem' }} />
-                    {history.filter(h => h.source_type === 'bonus').length} Bonus
-                  </div>
-                </div>
+                <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+                  {/* Erste Reihe: Gesamt, Gottesdienst, Gemeinde */}
+                  <IonRow>
+                    <IonCol size="4" style={{ padding: '0 4px' }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '16px 12px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <IonIcon
+                          icon={trophyOutline}
+                          style={{
+                            fontSize: '1.5rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            display: 'block',
+                            margin: '0 auto 8px auto'
+                          }}
+                        />
+                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                          {calculatedTotals.total}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                          Gesamt
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol size="4" style={{ padding: '0 4px' }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '16px 12px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <IonIcon
+                          icon={starOutline}
+                          style={{
+                            fontSize: '1.5rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            display: 'block',
+                            margin: '0 auto 8px auto'
+                          }}
+                        />
+                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                          {calculatedTotals.gottesdienst}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                          Gottesdienst
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol size="4" style={{ padding: '0 4px' }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '16px 12px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <IonIcon
+                          icon={flashOutline}
+                          style={{
+                            fontSize: '1.5rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            display: 'block',
+                            margin: '0 auto 8px auto'
+                          }}
+                        />
+                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                          {calculatedTotals.gemeinde}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                          Gemeinde
+                        </div>
+                      </div>
+                    </IonCol>
+                  </IonRow>
+                  {/* Zweite Reihe: Events, Bonus */}
+                  <IonRow style={{ marginTop: '8px' }}>
+                    <IonCol size="2" style={{ padding: '0 4px' }}></IonCol>
+                    <IonCol size="4" style={{ padding: '0 4px' }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '12px 8px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <IonIcon
+                          icon={calendarOutline}
+                          style={{
+                            fontSize: '1.2rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            display: 'block',
+                            margin: '0 auto 4px auto'
+                          }}
+                        />
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>
+                          {calculatedTotals.eventCount}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                          Events
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol size="4" style={{ padding: '0 4px' }}>
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.2)',
+                        borderRadius: '12px',
+                        padding: '12px 8px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <IonIcon
+                          icon={giftOutline}
+                          style={{
+                            fontSize: '1.2rem',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            display: 'block',
+                            margin: '0 auto 4px auto'
+                          }}
+                        />
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>
+                          {calculatedTotals.bonusCount}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                          Bonus
+                        </div>
+                      </div>
+                    </IonCol>
+                    <IonCol size="2" style={{ padding: '0 4px' }}></IonCol>
+                  </IonRow>
+                </IonGrid>
               </div>
             </div>
-
-            {/* Filter Segment - iOS26 Pattern */}
-            <IonList inset={true} style={{ margin: '16px' }}>
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--purple">
-                  <IonIcon icon={timeOutline} />
-                </div>
-                <IonLabel>Filter</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent style={{ padding: '8px' }}>
-                  <IonSegment value={filter} onIonChange={e => setFilter(e.detail.value as string)}>
-                    <IonSegmentButton value="all">
-                      <IonLabel>Alle</IonLabel>
-                    </IonSegmentButton>
-                    <IonSegmentButton value="gottesdienst">
-                      <IonLabel>GD</IonLabel>
-                    </IonSegmentButton>
-                    <IonSegmentButton value="gemeinde">
-                      <IonLabel>Gem</IonLabel>
-                    </IonSegmentButton>
-                    <IonSegmentButton value="event">
-                      <IonLabel>Event</IonLabel>
-                    </IonSegmentButton>
-                    <IonSegmentButton value="bonus">
-                      <IonLabel>Bonus</IonLabel>
-                    </IonSegmentButton>
-                  </IonSegment>
-                </IonCardContent>
-              </IonCard>
-            </IonList>
 
             {/* Verlauf Sektion - iOS26 Pattern */}
             <IonList inset={true} style={{ margin: '16px' }}>
@@ -308,26 +367,24 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={timeOutline} />
                 </div>
-                <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Eintraege'})</IonLabel>
+                <IonLabel>Verlauf ({history.length} {history.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '8px' }}>
-                  {filteredHistory.length === 0 ? (
+                <IonCardContent style={{ padding: history.length === 0 ? '16px' : '8px' }}>
+                  {history.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
-                      Noch keine Eintraege vorhanden
+                      Noch keine Einträge vorhanden
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {filteredHistory.map((entry) => {
-                        const color = getCategoryColor(entry.category, entry.source_type);
-                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' :
-                                              entry.category === 'gemeinde' ? 'app-list-item--success' :
-                                              entry.source_type === 'event' ? 'app-list-item--events' :
-                                              entry.source_type === 'bonus' ? 'app-list-item--warning' : 'app-list-item--purple';
-                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' :
-                                                entry.category === 'gemeinde' ? 'app-icon-circle--success' :
-                                                entry.source_type === 'event' ? 'app-icon-circle--events' :
-                                                entry.source_type === 'bonus' ? 'app-icon-circle--warning' : 'app-icon-circle--purple';
+                      {history.map((entry) => {
+                        const categoryColor = getCategoryColor(entry.category);
+                        const typeBadgeColor = getTypeBadgeColor(entry.source_type);
+                        const typeBadgeLabel = getTypeBadgeLabel(entry.source_type);
+
+                        // Farbe basiert auf category (blau/grün)
+                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--success';
+                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success';
 
                         return (
                           <div
@@ -335,24 +392,37 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                             className={`app-list-item ${listItemClass}`}
                             style={{ position: 'relative', overflow: 'hidden' }}
                           >
-                            {/* Corner Badge fuer Punkte - Eselsohr */}
+                            {/* Corner Badge für Punkte - Eselsohr oben rechts */}
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: color }}
+                              style={{ backgroundColor: categoryColor }}
                             >
                               +{entry.points}
                             </div>
 
+                            {/* Zweites Eselsohr für Typ (Bonus/Event) - darunter */}
+                            {typeBadgeColor && typeBadgeLabel && (
+                              <div
+                                className="app-corner-badge"
+                                style={{
+                                  backgroundColor: typeBadgeColor,
+                                  top: '32px'
+                                }}
+                              >
+                                {typeBadgeLabel}
+                              </div>
+                            )}
+
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div className={`app-icon-circle ${iconCircleClass}`}>
-                                  <IonIcon icon={getCategoryIcon(entry.category, entry.source_type)} />
+                                  <IonIcon icon={getCategoryIcon(entry.category)} />
                                 </div>
                                 <div className="app-list-item__content">
                                   <div className="app-list-item__title">{entry.title}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      {getCategoryLabel(entry.category, entry.source_type)}
+                                      {getCategoryLabel(entry.category)}
                                     </span>
                                     <span className="app-list-item__meta-item">
                                       {formatDate(entry.date)}
