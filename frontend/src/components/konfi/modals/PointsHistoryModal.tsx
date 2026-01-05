@@ -89,8 +89,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  // Icon basierend auf category
-  const getCategoryIcon = (category: string) => {
+  // Icon basierend auf category und source_type
+  const getCategoryIcon = (category: string, sourceType?: string) => {
+    if (sourceType === 'bonus') return giftOutline;
+    if (sourceType === 'event') return calendarOutline;
     switch (category) {
       case 'gottesdienst': return starOutline;
       case 'gemeinde': return flashOutline;
@@ -274,7 +276,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                                   fontSize: '0.65rem',
                                   fontWeight: '700',
                                   padding: '4px 8px',
-                                  borderRadius: '0 0 0 8px'
+                                  borderRadius: '0 0 8px 8px'
                                 }}>
                                   {typeBadgeLabel}
                                 </div>
@@ -283,14 +285,14 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               {typeBadgeColor && (
                                 <div style={{ width: '2px', background: 'white' }} />
                               )}
-                              {/* Punkte-Badge - rechts unten abgerundet */}
+                              {/* Punkte-Badge - beide Ecken unten abgerundet */}
                               <div style={{
                                 backgroundColor: categoryColor,
                                 color: 'white',
                                 fontSize: '0.65rem',
                                 fontWeight: '700',
                                 padding: '4px 8px',
-                                borderRadius: typeBadgeColor ? '0 0 0 8px' : '0 0 0 8px'
+                                borderRadius: '0 0 8px 8px'
                               }}>
                                 +{entry.points}
                               </div>
@@ -299,7 +301,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div className={`app-icon-circle ${iconCircleClass}`}>
-                                  <IonIcon icon={getCategoryIcon(entry.category)} />
+                                  <IonIcon icon={getCategoryIcon(entry.category, entry.source_type)} />
                                 </div>
                                 <div className="app-list-item__content">
                                   <div className="app-list-item__title">{entry.title}</div>
