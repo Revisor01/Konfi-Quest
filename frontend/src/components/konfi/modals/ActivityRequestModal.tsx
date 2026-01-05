@@ -19,7 +19,9 @@ import {
   IonProgressBar,
   IonList,
   IonListHeader,
-  useIonActionSheet,
+  IonAccordion,
+  IonAccordionGroup,
+  IonSearchbar,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -57,13 +59,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError } = useApp();
-  const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [searchText, setSearchText] = useState('');
 
   const [formData, setFormData] = useState({
     activity_id: '',
@@ -83,35 +85,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       const response = await api.get('/konfi/activities');
       setActivities(response.data);
     } catch (err) {
-      setError('Fehler beim Laden der Aktivitäten');
+      setError('Fehler beim Laden der Aktivitaeten');
       console.error('Error loading activities:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleActivitySelect = () => {
-    if (activities.length === 0) {
-      setError('Keine Aktivitäten verfügbar');
-      return;
-    }
-
-    const buttons = activities.map(activity => ({
-      text: `${activity.name} (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'})`,
-      handler: () => {
-        setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
-      }
-    }));
-
-    buttons.push({
-      text: 'Abbrechen',
-      handler: () => {}
-    });
-
-    presentActionSheet({
-      header: 'Aktivität auswählen',
-      buttons
-    });
   };
 
   const handlePhotoSelect = () => {
@@ -129,7 +107,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     if (file) {
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setError('Foto ist zu groß. Maximal 5MB erlaubt.');
+        setError('Foto ist zu gross. Maximal 5MB erlaubt.');
         return;
       }
 
@@ -171,16 +149,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const handleSubmit = async () => {
     if (!formData.activity_id) {
-      setError('Bitte wähle eine Aktivität aus');
+      setError('Bitte waehle eine Aktivitaet aus');
       return;
     }
-
-    // Description is now optional - no validation needed
 
     if (!formData.photo_file) {
       presentAlert({
         header: 'Kein Foto',
-        message: 'Anträge benötigen normalerweise ein Foto als Nachweis. Möchtest du trotzdem fortfahren?',
+        message: 'Antraege benoetigen normalerweise ein Foto als Nachweis. Moechtest du trotzdem fortfahren?',
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           { text: 'Ohne Foto fortfahren', handler: () => submitRequest() }
@@ -229,6 +205,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const selectedActivity = activities.find(a => a.id.toString() === formData.activity_id);
 
+  // Filter activities by search text
+  const filteredActivities = activities.filter(activity =>
+    activity.name.toLowerCase().includes(searchText.toLowerCase()) ||
+    activity.category_names?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
     <IonPage>
       <IonHeader>
@@ -251,72 +233,104 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Aktivität Sektion - iOS26 Pattern */}
+        {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={starOutline} />
             </div>
-            <IonLabel>Aktivität wählen</IonLabel>
+            <IonLabel>Aktivitaet waehlen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem
-                button
-                onClick={handleActivitySelect}
-                disabled={loading || submitting}
-                lines="none"
-                style={{ '--background': 'transparent' }}
-              >
-                <IonLabel>
-                  {selectedActivity ? (
-                    <>
-                      <h3 style={{ fontWeight: '600' }}>{selectedActivity.name}</h3>
-                      <p>{selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'} - {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}</p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 style={{ fontWeight: '600' }}>Aktivität auswählen</h3>
-                      <p>Tippe hier um eine Aktivität zu wählen</p>
-                    </>
-                  )}
-                </IonLabel>
-              </IonItem>
-
-              {selectedActivity && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px',
-                  backgroundColor: selectedActivity.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(5, 150, 105, 0.08)',
-                  borderRadius: '8px',
-                  border: selectedActivity.type === 'gottesdienst' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(5, 150, 105, 0.2)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <IonIcon
-                      icon={selectedActivity.type === 'gottesdienst' ? homeOutline : peopleOutline}
-                      style={{ color: selectedActivity.type === 'gottesdienst' ? '#3b82f6' : '#059669' }}
+            <IonCardContent style={{ padding: '8px' }}>
+              <IonAccordionGroup>
+                <IonAccordion value="activity-picker">
+                  <IonItem slot="header" lines="none">
+                    <IonLabel>
+                      <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                        Aktivitaet auswaehlen
+                      </h3>
+                      {selectedActivity && (
+                        <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                          {selectedActivity.name} ({selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})
+                        </p>
+                      )}
+                    </IonLabel>
+                  </IonItem>
+                  <div slot="content" style={{ padding: '8px' }}>
+                    {/* Suchfeld */}
+                    <IonSearchbar
+                      value={searchText}
+                      onIonInput={(e) => setSearchText(e.detail.value || '')}
+                      placeholder="Aktivitaet suchen..."
+                      style={{ '--background': '#f5f5f5', '--border-radius': '12px', padding: '0', marginBottom: '12px' }}
                     />
-                    <span style={{ fontWeight: '600', color: selectedActivity.type === 'gottesdienst' ? '#3b82f6' : '#059669' }}>
-                      {selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </span>
-                    <span style={{ color: '#666', fontWeight: '500' }}>
-                      - {selectedActivity.points} {selectedActivity.points === 1 ? 'Punkt' : 'Punkte'}
-                    </span>
+
+                    {/* Aktivitaeten Liste */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                      {filteredActivities.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
+                          Keine Aktivitaeten gefunden
+                        </div>
+                      ) : (
+                        filteredActivities.map(activity => {
+                          const isSelected = formData.activity_id === activity.id.toString();
+                          const typeColor = activity.type === 'gottesdienst' ? '#3b82f6' : '#059669';
+
+                          return (
+                            <div
+                              key={activity.id}
+                              onClick={() => setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }))}
+                              className={`app-list-item ${activity.type === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--success'}`}
+                              style={{
+                                cursor: 'pointer',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                background: isSelected ? `${typeColor}15` : undefined,
+                                border: isSelected ? `2px solid ${typeColor}` : undefined
+                              }}
+                            >
+                              {/* Corner Badge fuer Punkte */}
+                              <div
+                                className="app-corner-badge"
+                                style={{ backgroundColor: typeColor }}
+                              >
+                                +{activity.points}P
+                              </div>
+
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className={`app-icon-circle ${activity.type === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success'}`}>
+                                    <IonIcon icon={activity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
+                                  </div>
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      {activity.name}
+                                      {isSelected && (
+                                        <IonIcon icon={checkmarkCircle} style={{ color: typeColor, fontSize: '1rem' }} />
+                                      )}
+                                    </div>
+                                    <div className="app-list-item__meta">
+                                      <span className="app-list-item__meta-item">
+                                        {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                                      </span>
+                                      {activity.category_names && (
+                                        <span className="app-list-item__meta-item">
+                                          {activity.category_names}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
-
-                  {selectedActivity.description && (
-                    <p style={{ margin: '0', fontSize: '0.85rem', color: '#666' }}>
-                      {selectedActivity.description}
-                    </p>
-                  )}
-
-                  {selectedActivity.category_names && (
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#8e8e93' }}>
-                      Kategorien: {selectedActivity.category_names}
-                    </p>
-                  )}
-                </div>
-              )}
+                </IonAccordion>
+              </IonAccordionGroup>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -327,7 +341,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={calendarOutline} />
             </div>
-            <IonLabel>Datum wählen</IonLabel>
+            <IonLabel>Datum waehlen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -400,7 +414,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         style={{ fontSize: '1.2rem', color: '#22c55e' }}
                       />
                       <span style={{ fontWeight: '600', color: '#22c55e' }}>
-                        Foto ausgewählt
+                        Foto ausgewaehlt
                       </span>
                     </div>
                     <IonButton
@@ -419,10 +433,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                     <IonIcon
                       icon={camera}
-                      style={{ fontSize: '1.2rem', color: '#8b5cf6' }}
+                      style={{ fontSize: '1.2rem', color: '#22c55e' }}
                     />
                     <span style={{ fontWeight: '500', color: '#666' }}>
-                      Foto hinzufügen
+                      Foto hinzufuegen
                     </span>
                   </div>
                 )}

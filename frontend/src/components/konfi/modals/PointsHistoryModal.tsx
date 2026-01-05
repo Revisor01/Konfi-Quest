@@ -271,92 +271,58 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={timeOutline} />
                 </div>
-                <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
+                <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Eintraege'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '8px' }}>
                   {filteredHistory.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
-                      Noch keine Einträge vorhanden
+                      Noch keine Eintraege vorhanden
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {filteredHistory.map((entry) => {
                         const color = getCategoryColor(entry.category, entry.source_type);
+                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' :
+                                              entry.category === 'gemeinde' ? 'app-list-item--success' :
+                                              entry.source_type === 'event' ? 'app-list-item--events' :
+                                              entry.source_type === 'bonus' ? 'app-list-item--warning' : 'app-list-item--purple';
+                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' :
+                                                entry.category === 'gemeinde' ? 'app-icon-circle--success' :
+                                                entry.source_type === 'event' ? 'app-icon-circle--events' :
+                                                entry.source_type === 'bonus' ? 'app-icon-circle--warning' : 'app-icon-circle--purple';
+
                         return (
                           <div
                             key={`${entry.source_type}-${entry.id}`}
-                            className="app-list-item"
-                            style={{
-                              borderLeftColor: color,
-                              padding: '12px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '12px'
-                            }}
+                            className={`app-list-item ${listItemClass}`}
+                            style={{ position: 'relative', overflow: 'hidden' }}
                           >
-                            {/* Icon */}
-                            <div style={{
-                              width: '40px',
-                              height: '40px',
-                              backgroundColor: color,
-                              borderRadius: '50%',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0
-                            }}>
-                              <IonIcon
-                                icon={getCategoryIcon(entry.category, entry.source_type)}
-                                style={{ fontSize: '1.2rem', color: 'white' }}
-                              />
-                            </div>
-
-                            {/* Content */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{
-                                fontWeight: '600',
-                                fontSize: '0.95rem',
-                                color: '#333',
-                                marginBottom: '4px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}>
-                                {entry.title}
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <span style={{
-                                  fontSize: '0.7rem',
-                                  fontWeight: '600',
-                                  padding: '2px 8px',
-                                  borderRadius: '10px',
-                                  backgroundColor: `${color}20`,
-                                  color: color
-                                }}>
-                                  {getCategoryLabel(entry.category, entry.source_type)}
-                                </span>
-                                <span style={{
-                                  fontSize: '0.75rem',
-                                  color: '#666',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}>
-                                  <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
-                                  {formatDate(entry.date)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Points */}
-                            <div style={{
-                              fontWeight: '700',
-                              fontSize: '1.1rem',
-                              color: color,
-                              flexShrink: 0
-                            }}>
+                            {/* Corner Badge fuer Punkte - Eselsohr */}
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: color }}
+                            >
                               +{entry.points}
+                            </div>
+
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className={`app-icon-circle ${iconCircleClass}`}>
+                                  <IonIcon icon={getCategoryIcon(entry.category, entry.source_type)} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{entry.title}</div>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      {getCategoryLabel(entry.category, entry.source_type)}
+                                    </span>
+                                    <span className="app-list-item__meta-item">
+                                      {formatDate(entry.date)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         );
