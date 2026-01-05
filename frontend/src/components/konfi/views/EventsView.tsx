@@ -236,12 +236,11 @@ const EventsView: React.FC<EventsViewProps> = ({
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Row - immer einzeilig */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '12px',
-          flexWrap: 'wrap',
+          gap: '8px',
           position: 'relative',
           zIndex: 1
         }}>
@@ -249,14 +248,15 @@ const EventsView: React.FC<EventsViewProps> = ({
             <div key={index} style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '12px 16px',
+              padding: '10px 12px',
               textAlign: 'center',
-              minWidth: '85px'
+              flex: '1 1 0',
+              maxWidth: '100px'
             }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
                 {stat.count}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
                 {stat.label.toUpperCase()}
               </div>
             </div>
@@ -264,31 +264,20 @@ const EventsView: React.FC<EventsViewProps> = ({
         </div>
       </div>
 
-      {/* Tab Navigation - ohne Card Wrapper */}
-      <div style={{ padding: '0 16px', marginBottom: '8px' }}>
+      {/* Tab Navigation - wie Admin */}
+      <div style={{ margin: '16px' }}>
         <IonSegment
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}
-          style={{
-            '--background': '#f0f0f0',
-            borderRadius: '12px',
-            padding: '4px'
-          }}
         >
           <IonSegmentButton value="upcoming">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-              Anstehend
-            </IonLabel>
+            <IonLabel>Anstehend</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="registered">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-              Meine Events
-            </IonLabel>
+            <IonLabel>Meine</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="konfirmation">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>
-              Konfirmation
-            </IonLabel>
+            <IonLabel>Konfi</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>

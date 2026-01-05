@@ -485,25 +485,20 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         </div>
       </div>
 
-      {/* Filter Navigation - ohne Card Wrapper */}
-      <div style={{ padding: '0 16px', marginBottom: '8px' }}>
+      {/* Tab Navigation - wie Admin */}
+      <div style={{ margin: '16px' }}>
         <IonSegment
           value={selectedFilter}
           onIonChange={(e) => onFilterChange(e.detail.value as string)}
-          style={{
-            '--background': '#f0f0f0',
-            borderRadius: '12px',
-            padding: '4px'
-          }}
         >
           <IonSegmentButton value="alle">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>Alle</IonLabel>
+            <IonLabel>Alle</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="nicht_erhalten">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>Offen</IonLabel>
+            <IonLabel>Offen</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="in_arbeit">
-            <IonLabel style={{ fontWeight: '600', fontSize: '0.8rem' }}>In Arbeit</IonLabel>
+            <IonLabel>In Arbeit</IonLabel>
           </IonSegmentButton>
         </IonSegment>
       </div>
@@ -542,11 +537,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const progressPercent = Math.round((earnedCount / totalCount) * 100);
 
             return (
-              <IonCard key={category.key} style={{
-                margin: '16px',
-                borderRadius: '16px',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
-              }}>
+              <IonCard key={category.key} className="app-card" style={{ margin: '16px' }}>
                 <IonCardContent style={{ padding: '16px' }}>
                   {/* Kategorie Header */}
                   <div style={{
