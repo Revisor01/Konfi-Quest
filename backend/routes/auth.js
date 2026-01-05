@@ -153,18 +153,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     const { email } = req.body;
     const userId = req.user.id;
 
-    if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
+    // E-Mail ist optional - wenn angegeben, muss sie gueltig sein
+    const trimmedEmail = email?.trim() || null;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+    if (trimmedEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedEmail)) {
+        return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
+      }
     }
 
     try {
-      await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [email, userId]);
+      await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [trimmedEmail, userId]);
 
-      console.log(`✅ Email updated for ${req.user.type} ID ${userId} to ${email}`);
-      res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert' });
+      console.log(`✅ Email updated for ${req.user.type} ID ${userId} to ${trimmedEmail || '(removed)'}`);
+      res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert', email: trimmedEmail });
 
     } catch (err) {
         if (err.code === '23505') { // unique_violation for email

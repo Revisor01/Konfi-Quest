@@ -61,26 +61,29 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   }, []);
 
   const handleSave = async () => {
-    if (!email.trim()) {
-      setError('E-Mail-Adresse ist erforderlich');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Ungültige E-Mail-Adresse');
-      return;
+    // E-Mail ist optional, aber wenn angegeben muss sie gueltig sein
+    if (email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setError('Ungültige E-Mail-Adresse');
+        return;
+      }
     }
 
     setSaving(true);
     try {
       await api.post('/auth/update-email', {
-        email: email.trim()
+        email: email.trim() || null
       });
       setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+      const errorMsg = err.response?.data?.error;
+      if (errorMsg?.includes('bereits verwendet') || err.response?.status === 409) {
+        setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
+      } else {
+        setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+      }
     } finally {
       setSaving(false);
     }
@@ -97,7 +100,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || loading || !email.trim()}>
+            <IonButton onClick={handleSave} disabled={saving || loading}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -117,7 +120,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             <IonCardContent style={{ padding: '16px' }}>
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">E-Mail-Adresse *</IonLabel>
+                  <IonLabel position="stacked">E-Mail-Adresse (optional)</IonLabel>
                   {loading ? (
                     <div style={{ padding: '12px 0' }}>
                       <IonSpinner name="crescent" style={{ width: '20px', height: '20px' }} />

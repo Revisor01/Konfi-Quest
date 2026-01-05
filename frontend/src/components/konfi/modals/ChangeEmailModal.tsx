@@ -77,7 +77,12 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
       setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
       onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+      const errorMsg = err.response?.data?.error;
+      if (errorMsg?.includes('bereits verwendet') || err.response?.status === 409) {
+        setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
+      } else {
+        setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');
+      }
     } finally {
       setSaving(false);
     }

@@ -177,8 +177,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     onSuccess: () => {
       dismissEmailModal();
       onReload();
-    },
-    initialEmail: profile?.email || ''
+    }
+    // initialEmail wird nicht mehr benoetigt - Modal laedt selbst vom Server
   });
 
   // Modal with useIonModal Hook for Password Change
@@ -726,9 +726,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 <IonLabel>
                   <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>E-Mail-Adresse</h2>
                   <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                    {user?.email ? `${user.email}` : 'Für Benachrichtigungen'}
+                    {profile.email || user?.email ? (profile.email || user?.email) : 'Noch nicht hinterlegt'}
                   </p>
                 </IonLabel>
+                <IonIcon icon={chevronForward} slot="end" style={{ color: '#999' }} />
               </IonItem>
 
               {/* Passwort ändern */}

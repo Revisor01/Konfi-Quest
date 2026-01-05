@@ -76,8 +76,8 @@ const AdminProfilePage: React.FC = () => {
       } catch (err) {
         console.error('Error refreshing user:', err);
       }
-    },
-    initialEmail: profileData.email || user?.email || ''
+    }
+    // initialEmail wird nicht mehr benoetigt - Modal laedt selbst vom Server
   });
 
   // Password Modal mit useIonModal Hook
