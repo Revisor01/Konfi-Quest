@@ -126,6 +126,11 @@ const SMTP_CONFIG = {
   auth: {
     user: process.env.SMTP_USER || 'profil@konfi-quest.de',
     pass: process.env.SMTP_PASS
+  },
+  // TLS-Optionen: Hostname-Validierung lockern fuer Docker-Umgebung
+  // (Zertifikat ist auf server.godsapp.de ausgestellt, aber Docker nutzt IP)
+  tls: {
+    rejectUnauthorized: false
   }
 };
 
