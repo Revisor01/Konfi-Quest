@@ -151,15 +151,15 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
     const isAusstehend = isPastEvent && event.is_registered && !isOnWaitlist && !attendanceStatus;
 
-    // Bestimme Farbe
+    // Bestimme Farbe - Konfirmation IMMER Lila (auch wenn angemeldet)
     let statusColor = '#fd7e14'; // Default: Orange
     if (isCancelled) statusColor = '#dc3545'; // Rot
+    else if (isKonfirmationEvent && !isPastEvent) statusColor = '#8b5cf6'; // Lila - Konfirmation (immer, auch wenn angemeldet)
     else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759'; // Grün - Verbucht
     else if (isParticipated && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Verpasst
     else if (isAusstehend) statusColor = '#fd7e14'; // Orange - Ausstehend (auf Verbuchung wartend)
     else if (isOnWaitlist) statusColor = '#fd7e14'; // Orange - Warteliste
     else if (event.is_registered && !isPastEvent) statusColor = '#007aff'; // Blau - Angemeldet
-    else if (isKonfirmationEvent && !isPastEvent && !event.is_registered) statusColor = '#8b5cf6'; // Lila - Konfirmation (nur wenn nicht angemeldet)
     else if (isPastEvent) statusColor = '#6c757d'; // Grau - Vergangen
     else if (event.registration_status === 'open') statusColor = '#34c759'; // Grün - Offen
     else if (event.registration_status === 'upcoming') statusColor = '#fd7e14'; // Orange - Bald
@@ -168,12 +168,12 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Bestimme Text
     let statusText = 'Offen';
     if (isCancelled) statusText = 'Abgesagt';
+    else if (isKonfirmationEvent && !isPastEvent) statusText = event.is_registered ? 'Angemeldet' : 'Konfirmation'; // Konfirmation Text
     else if (isParticipated && attendanceStatus === 'present') statusText = 'Verbucht';
     else if (isParticipated && attendanceStatus === 'absent') statusText = 'Verpasst';
     else if (isAusstehend) statusText = 'Ausstehend';
     else if (isOnWaitlist) statusText = `Warteliste (${event.waitlist_position || '?'})`;
     else if (event.is_registered && !isPastEvent) statusText = 'Angemeldet';
-    else if (isKonfirmationEvent && !isPastEvent && !event.is_registered) statusText = 'Konfirmation';
     else if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) statusText = 'Warteliste';
     else if (event.registration_status === 'open') statusText = 'Offen';
     else if (event.registration_status === 'upcoming') statusText = 'Bald';

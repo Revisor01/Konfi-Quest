@@ -10,13 +10,15 @@ import {
   IonIcon,
   IonCard,
   IonCardContent,
-  IonItem,
   IonLabel,
   IonList,
   IonListHeader,
   IonRefresher,
   IonRefresherContent,
   IonChip,
+  IonGrid,
+  IonRow,
+  IonCol,
   useIonAlert,
   useIonModal,
   useIonActionSheet
@@ -33,11 +35,11 @@ import {
   informationCircle,
   warning,
   hourglass,
-  ribbon,
   listOutline,
   home,
   calendarOutline,
-  pricetag
+  pricetag,
+  flash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -76,7 +78,7 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | null;
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
   has_timeslots?: boolean;
   booked_timeslot_id?: number;
   booked_timeslot_start?: string;
@@ -126,25 +128,22 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
       setSuccess(`Von "${eventData.name}" abgemeldet`);
       await loadEventData();
-
-      // Trigger events update for parent page
       window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
     }
   };
 
-  // Modal mit useIonModal Hook - korrekte Ionic Implementierung
   const [presentUnregisterModal, dismissUnregisterModal] = useIonModal(UnregisterModal, {
     eventName: eventData?.name || '',
     onClose: () => {
       dismissUnregisterModal();
-      loadEventData(); // Seite aktualisieren nach Modal schließen
+      loadEventData();
     },
     onUnregister: handleUnregister,
     dismiss: (data?: string, role?: string) => {
       dismissUnregisterModal(data, role);
-      loadEventData(); // Seite aktualisieren nach Abmeldung
+      loadEventData();
     }
   });
 
@@ -155,7 +154,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const loadEventData = async () => {
     setLoading(true);
     try {
-      // Get event details from konfi API with konfi-specific data
       const eventsResponse = await api.get('/konfi/events');
       const event = eventsResponse.data.find((e: Event) => e.id === eventId);
 
@@ -164,38 +162,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         return;
       }
 
-      // Event already has all konfi-specific data from /konfi/events
       setEventData(event);
 
-      // Load timeslots if event has them
       if ((event as any).has_timeslots) {
         try {
           const timeslotsResponse = await api.get(`/konfi/events/${eventId}/timeslots`);
           setTimeslots(timeslotsResponse.data || []);
         } catch (err) {
-          console.error('Error loading timeslots:', err);
           setTimeslots([]);
         }
       } else {
         setTimeslots([]);
       }
 
-      // Check if user already has a konfirmation booked
       const hasKonfirmation = await checkExistingKonfirmation();
       setHasExistingKonfirmation(hasKonfirmation);
 
-      // Load participants (anonymized)
       try {
         const participantsResponse = await api.get(`/konfi/events/${eventId}/participants`);
         setParticipants(participantsResponse.data || []);
       } catch (err) {
-        console.error('Error loading participants:', err);
         setParticipants([]);
       }
-
     } catch (err) {
       setError('Fehler beim Laden der Event-Details');
-      console.error('Error loading event details:', err);
     } finally {
       setLoading(false);
     }
@@ -219,11 +209,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;
-
     const eventDate = new Date(event.event_date);
     const now = new Date();
     const twoDaysBeforeEvent = new Date(eventDate.getTime() - (2 * 24 * 60 * 60 * 1000));
-
     return now < twoDaysBeforeEvent;
   };
 
@@ -237,13 +225,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     try {
       const response = await api.get('/konfi/events');
       const myEvents = response.data.filter((e: Event) => e.is_registered);
-      const hasKonfirmation = myEvents.some((e: Event) =>
+      return myEvents.some((e: Event) =>
         e.category_names?.toLowerCase().includes('konfirmation') ||
         isKonfirmationEvent(e)
       );
-      return hasKonfirmation;
     } catch (err) {
-      console.error('Error checking existing konfirmation:', err);
       return false;
     }
   };
@@ -259,8 +245,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       await api.post(`/konfi/events/${eventData.id}/register`, payload);
       setSuccess(`Erfolgreich für "${eventData.name}" angemeldet!`);
       await loadEventData();
-
-      // Trigger events update for parent page
       window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler bei der Anmeldung');
@@ -270,7 +254,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleRegister = async () => {
     if (!eventData) return;
 
-    // Check if this is a Konfirmation event and if user already has one
     if (isKonfirmationEvent(eventData)) {
       const hasExistingKonfirmation = await checkExistingKonfirmation();
       if (hasExistingKonfirmation) {
@@ -283,10 +266,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
     }
 
-    // Check if event has timeslots - show ActionSheet to select
     const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
     if (hasTimeslots) {
-      // Build ActionSheet buttons from timeslots
       const timeslotButtons = timeslots.map((slot) => {
         const isFull = parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
         const startTime = formatTime(slot.start_time);
@@ -306,7 +287,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         };
       });
 
-      // Add cancel button
       timeslotButtons.push({
         text: 'Abbrechen',
         role: 'cancel' as any,
@@ -320,39 +300,32 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       return;
     }
 
-    // No timeslots - register directly
     doRegister();
   };
 
-  // Status-Infos berechnen
-  const getStatusInfo = () => {
-    if (!eventData) return { color: '#666', text: 'Laden...', icon: hourglass };
+  // Header-Farbe basierend auf Status
+  const getHeaderColor = () => {
+    if (!eventData) return '#dc2626';
 
     const isPastEvent = new Date(eventData.event_date) < new Date();
-    const isParticipated = isPastEvent && eventData.is_registered;
-    const attendanceStatus = eventData.attendance_status;
     const isKonfi = isKonfirmationEvent(eventData);
-    // Warteliste: booking_status kann 'waitlist' oder 'pending' sein
     const isOnWaitlist = (eventData as any).booking_status === 'waitlist' || (eventData as any).booking_status === 'pending';
-    // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
-    const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !attendanceStatus;
+    const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
-    if (eventData.cancelled) return { color: '#dc3545', text: 'ABGESAGT' };
-    if (isParticipated && attendanceStatus === 'present') return { color: '#34c759', text: 'VERBUCHT' };
-    if (isParticipated && attendanceStatus === 'absent') return { color: '#dc3545', text: 'VERPASST' };
-    if (isAusstehend) return { color: '#fd7e14', text: 'AUSSTEHEND' };
-    if (isOnWaitlist) return { color: '#fd7e14', text: `WARTELISTE (${eventData.waitlist_position || '?'})` };
-    if (eventData.is_registered && !isPastEvent) return { color: '#007aff', text: 'ANGEMELDET' };
-    if (isKonfi && !isPastEvent && !eventData.is_registered) return { color: '#8b5cf6', text: 'KONFIRMATION' };
-    if (!isPastEvent) {
-      if (eventData.registration_status === 'open') return { color: '#34c759', text: 'OFFEN' };
-      if (eventData.registration_status === 'upcoming') return { color: '#fd7e14', text: 'BALD' };
-      return { color: '#dc3545', text: 'GESCHLOSSEN' };
-    }
-    return { color: '#6c757d', text: 'VERGANGEN' };
+    if (eventData.cancelled) return '#dc3545';
+    if (isKonfi && !isPastEvent) return '#8b5cf6'; // Lila für Konfirmation
+    if (isPastEvent && eventData.attendance_status === 'present') return '#34c759';
+    if (isPastEvent && eventData.attendance_status === 'absent') return '#dc3545';
+    if (isAusstehend) return '#fd7e14';
+    if (isOnWaitlist) return '#fd7e14';
+    if (eventData.is_registered && !isPastEvent) return '#007aff';
+    if (isPastEvent) return '#6c757d';
+    if (eventData.registration_status === 'open') return '#34c759';
+    if (eventData.registration_status === 'upcoming') return '#fd7e14';
+    return '#dc2626';
   };
 
-  const statusInfo = getStatusInfo();
+  const headerColor = getHeaderColor();
 
   if (loading) {
     return (
@@ -392,6 +365,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     );
   }
 
+  const spotsLeft = eventData.max_participants - eventData.registered_count;
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent>
@@ -419,17 +394,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Event Header - Dashboard-Style wie Admin */}
+        {/* Event Header - Dashboard-Style wie Admin (OHNE Status-Indikator) */}
         <div style={{
-          background: `linear-gradient(135deg, ${statusInfo.color} 0%, ${statusInfo.color}dd 100%)`,
+          background: `linear-gradient(135deg, ${headerColor} 0%, ${headerColor}dd 100%)`,
           borderRadius: '24px',
           padding: '0',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: `0 20px 40px ${statusInfo.color}44`,
+          boxShadow: `0 20px 40px ${headerColor}44`,
           position: 'relative',
           overflow: 'hidden',
-          minHeight: '220px',
+          minHeight: '200px',
           display: 'flex',
           flexDirection: 'column'
         }}>
@@ -460,84 +435,68 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <div style={{
             position: 'relative',
             zIndex: 2,
-            padding: '60px 24px 24px 24px',
+            padding: '50px 24px 24px 24px',
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center'
           }}>
-            {/* Status Badge */}
-            <div style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: '8px',
-              padding: '6px 12px'
-            }}>
-              <span style={{
-                color: statusInfo.color,
-                fontSize: '0.75rem',
-                fontWeight: '700'
-              }}>
-                {statusInfo.text}
-              </span>
-            </div>
-
-            {/* Event Info Grid */}
-            <div style={{
-              display: 'flex',
-              gap: '8px'
-            }}>
-              <div style={{
-                flex: 1,
-                background: 'rgba(255, 255, 255, 0.2)',
-                borderRadius: '12px',
-                padding: '16px 12px',
-                color: 'white',
-                textAlign: 'center'
-              }}>
-                <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                  {eventData.max_participants - eventData.registered_count}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  FREI
-                </div>
-              </div>
-              <div style={{
-                flex: 1,
-                background: 'rgba(255, 255, 255, 0.2)',
-                borderRadius: '12px',
-                padding: '16px 12px',
-                color: 'white',
-                textAlign: 'center'
-              }}>
-                <IonIcon icon={trophy} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                  {eventData.points}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  PUNKTE
-                </div>
-              </div>
-              <div style={{
-                flex: 1,
-                background: 'rgba(255, 255, 255, 0.2)',
-                borderRadius: '12px',
-                padding: '16px 12px',
-                color: 'white',
-                textAlign: 'center'
-              }}>
-                <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
-                <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                  {eventData.registered_count}
-                </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                  DABEI
-                </div>
-              </div>
-            </div>
+            {/* Event Info Grid - wie Admin */}
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+              <IonRow>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                      {spotsLeft > 0 ? spotsLeft : 0}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Frei
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={flash} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                      {eventData.points}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Punkte
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', display: 'block', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
+                      {eventData.registered_count}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Dabei
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
           </div>
         </div>
 
@@ -666,7 +625,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
                   <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
-                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                     {eventData.categories.map(c => (
                       <span key={c.id} className="app-tag app-tag--purple">
                         {c.name}
