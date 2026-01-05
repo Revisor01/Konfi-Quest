@@ -103,8 +103,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
   };
 
   const getCategoryLabel = (category: string, sourceType: string) => {
-    if (sourceType === 'bonus') return 'Bonus';
-    if (sourceType === 'event') return 'Event';
+    const typeLabel = category === 'gottesdienst' ? 'GD' : category === 'gemeinde' ? 'Gem' : '';
+    if (sourceType === 'bonus') return typeLabel ? `Bonus (${typeLabel})` : 'Bonus';
+    if (sourceType === 'event') return typeLabel ? `Event (${typeLabel})` : 'Event';
     switch (category) {
       case 'gottesdienst': return 'Gottesdienst';
       case 'gemeinde': return 'Gemeinde';
