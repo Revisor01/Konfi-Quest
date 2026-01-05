@@ -3,10 +3,10 @@ import {
   IonCard,
   IonCardContent,
   IonIcon,
-  IonButton,
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonAvatar,
   IonProgressBar,
   useIonModal,
@@ -609,263 +609,130 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       )}
 
-      {/* Account Settings - Styled like AdminSettingsPage */}
-      <div style={{ margin: '16px 16px 8px 16px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '12px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#667eea',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={person} style={{ fontSize: '1rem', color: 'white' }} />
+      {/* Konto-Einstellungen - Admin-Stil mit app-list-item */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--users">
+            <IonIcon icon={person} />
           </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Konto-Einstellungen
-          </h2>
-        </div>
-        <IonCard style={{
-          borderRadius: '12px',
-          background: 'white',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-          border: '1px solid #e0e0e0',
-          margin: '0'
-        }}>
+          <IonLabel>Konto</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }} lines="none">
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
               {/* Punkte-Übersicht */}
-              <IonItem
-                button
+              <div
+                className="app-list-item app-list-item--warning"
                 onClick={() => {
                   presentPointsHistoryModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                lines="none"
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
               >
-                <div slot="start" style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#ffd700',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '12px'
-                }}>
-                  <IonIcon icon={star} style={{ fontSize: '1.2rem', color: 'white' }} />
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                  <IonIcon icon={star} />
                 </div>
-                <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Punkte-Übersicht</h2>
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
-                    {profile.total_points || 0} Punkte gesamt
-                  </p>
-                </IonLabel>
-                <IonIcon icon={chevronForward} slot="end" style={{ color: '#999' }} />
-              </IonItem>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Punkte-Übersicht</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>{profile.total_points || 0} Punkte gesamt</p>
+                </div>
+                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+              </div>
 
               {/* E-Mail ändern */}
-              <IonItem
-                button
+              <div
+                className="app-list-item app-list-item--primary"
                 onClick={() => {
                   presentEmailModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                lines="none"
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
               >
-                <div slot="start" style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#3b82f6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '12px'
-                }}>
-                  <IonIcon icon={person} style={{ fontSize: '1.2rem', color: 'white' }} />
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
+                  <IonIcon icon={person} />
                 </div>
-                <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>E-Mail-Adresse</h2>
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>E-Mail-Adresse</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>
                     {profile.email || user?.email ? (profile.email || user?.email) : 'Noch nicht hinterlegt'}
                   </p>
-                </IonLabel>
-                <IonIcon icon={chevronForward} slot="end" style={{ color: '#999' }} />
-              </IonItem>
+                </div>
+                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+              </div>
 
               {/* Passwort ändern */}
-              <IonItem
-                button
+              <div
+                className="app-list-item app-list-item--activities"
                 onClick={() => {
                   presentPasswordModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                lines="none"
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
               >
-                <div slot="start" style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#f59e0b',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '12px'
-                }}>
-                  <IonIcon icon={key} style={{ fontSize: '1.2rem', color: 'white' }} />
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                  <IonIcon icon={key} />
                 </div>
-                <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Passwort ändern</h2>
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>Sicherheitseinstellungen</p>
-                </IonLabel>
-              </IonItem>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Passwort ändern</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Sicherheitseinstellungen</p>
+                </div>
+                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+              </div>
 
               {/* Bibelübersetzung */}
-              <IonItem
-                button
+              <div
+                className="app-list-item app-list-item--badges"
                 onClick={() => {
                   presentActionSheet({
                     header: 'Bibelübersetzung wählen',
                     subHeader: 'Für die Tageslosung',
                     buttons: [
-                      {
-                        text: 'Lutherbibel 2017',
-                        role: selectedTranslation === 'LUT' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('LUT')
-                      },
-                      {
-                        text: 'Elberfelder Bibel',
-                        role: selectedTranslation === 'ELB' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('ELB')
-                      },
-                      {
-                        text: 'Gute Nachricht Bibel',
-                        role: selectedTranslation === 'GNB' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('GNB')
-                      },
-                      {
-                        text: 'Bibel in gerechter Sprache',
-                        role: selectedTranslation === 'BIGS' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('BIGS')
-                      },
-                      {
-                        text: 'New International Version',
-                        role: selectedTranslation === 'NIV' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('NIV')
-                      },
-                      {
-                        text: 'Louis Segond 1910',
-                        role: selectedTranslation === 'LSG' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('LSG')
-                      },
-                      {
-                        text: 'Reina-Valera 1960',
-                        role: selectedTranslation === 'RVR60' ? 'selected' : undefined,
-                        handler: () => handleTranslationChange('RVR60')
-                      },
-                      {
-                        text: 'Abbrechen',
-                        role: 'cancel'
-                      }
+                      { text: 'Lutherbibel 2017', role: selectedTranslation === 'LUT' ? 'selected' : undefined, handler: () => handleTranslationChange('LUT') },
+                      { text: 'Elberfelder Bibel', role: selectedTranslation === 'ELB' ? 'selected' : undefined, handler: () => handleTranslationChange('ELB') },
+                      { text: 'Gute Nachricht Bibel', role: selectedTranslation === 'GNB' ? 'selected' : undefined, handler: () => handleTranslationChange('GNB') },
+                      { text: 'Bibel in gerechter Sprache', role: selectedTranslation === 'BIGS' ? 'selected' : undefined, handler: () => handleTranslationChange('BIGS') },
+                      { text: 'New International Version', role: selectedTranslation === 'NIV' ? 'selected' : undefined, handler: () => handleTranslationChange('NIV') },
+                      { text: 'Louis Segond 1910', role: selectedTranslation === 'LSG' ? 'selected' : undefined, handler: () => handleTranslationChange('LSG') },
+                      { text: 'Reina-Valera 1960', role: selectedTranslation === 'RVR60' ? 'selected' : undefined, handler: () => handleTranslationChange('RVR60') },
+                      { text: 'Abbrechen', role: 'cancel' }
                     ]
                   });
                 }}
-                lines="none"
-                style={{
-                  '--min-height': '56px',
-                  '--padding-start': '16px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 0',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e0e0e0',
-                  borderRadius: '12px'
-                }}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
               >
-                <div slot="start" style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#8b5cf6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '12px'
-                }}>
-                  <IonIcon icon={book} style={{ fontSize: '1.2rem', color: 'white' }} />
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                  <IonIcon icon={book} />
                 </div>
-                <IonLabel>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem' }}>Bibelübersetzung</h2>
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>{getTranslationName(selectedTranslation)}</p>
-                </IonLabel>
-              </IonItem>
-            </IonList>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Bibelübersetzung</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>{getTranslationName(selectedTranslation)}</p>
+                </div>
+                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
+              </div>
+
+              {/* Abmelden - in Liste integriert wie Admin */}
+              <div
+                className="app-list-item app-list-item--danger"
+                onClick={handleLogout}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                  <IonIcon icon={logOut} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
+                  <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
+                </div>
+              </div>
+            </div>
           </IonCardContent>
         </IonCard>
-      </div>
+      </IonList>
 
-      {/* Logout */}
-      <IonCard style={{ margin: '16px 16px 32px 16px', borderRadius: '8px' }}>
-        <IonCardContent>
-          <IonButton 
-            expand="block" 
-            color="danger" 
-            fill="outline"
-            onClick={handleLogout}
-          >
-            <IonIcon icon={logOut} slot="start" />
-            Abmelden
-          </IonButton>
-        </IonCardContent>
-      </IonCard>
+      <div style={{ height: '32px' }}></div>
     </div>
   );
 };

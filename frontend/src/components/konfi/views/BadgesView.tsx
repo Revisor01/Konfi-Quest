@@ -532,6 +532,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const earnedCount = category.badges.filter(b => b.is_earned).length;
             const totalCount = category.badges.length;
             const progressPercent = Math.round((earnedCount / totalCount) * 100);
+            // Pruefen ob es in DIESER Kategorie noch nicht entdeckte Geheim-Badges gibt
+            const categorySecretCount = category.badges.filter(b => b.is_hidden).length;
+            const categoryEarnedSecretCount = category.badges.filter(b => b.is_hidden && b.is_earned).length;
+            const categoryHasUndiscoveredSecrets = categorySecretCount > categoryEarnedSecretCount;
 
             return (
               <IonCard key={category.key} className="app-card" style={{ margin: '16px' }}>
@@ -608,11 +612,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
-                        fontSize: progressPercent === 100 && hasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
+                        fontSize: progressPercent === 100 && categoryHasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
                         fontWeight: '700',
                         color: category.color
                       }}>
-                        {progressPercent === 100 && hasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
+                        {progressPercent === 100 && categoryHasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
                       </span>
                     </div>
                   </div>
