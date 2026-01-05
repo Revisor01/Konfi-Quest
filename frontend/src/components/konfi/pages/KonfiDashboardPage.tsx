@@ -59,6 +59,11 @@ interface BadgeStats {
   secretEarned: number;
 }
 
+interface AllBadgesData {
+  available: any[];
+  earned: any[];
+}
+
 interface DailyVerse {
   losungstext: string;
   losungsvers: string;
@@ -78,6 +83,7 @@ const KonfiDashboardPage: React.FC = () => {
   const [showLehrtext, setShowLehrtext] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [badgeStats, setBadgeStats] = useState<BadgeStats>({ totalAvailable: 0, totalEarned: 0, secretAvailable: 0, secretEarned: 0 });
+  const [allBadges, setAllBadges] = useState<AllBadgesData>({ available: [], earned: [] });
   const [loading, setLoading] = useState(true);
   const pageRef = useRef<HTMLElement>(null);
 
@@ -203,18 +209,21 @@ const KonfiDashboardPage: React.FC = () => {
     try {
       const response = await api.get('/konfi/badges');
       const { available, earned, stats } = response.data;
-      
+
+      // Speichere alle Badges fuer Dashboard-Anzeige
+      setAllBadges({ available: available || [], earned: earned || [] });
+
       // Count visible badges earned vs available
       const visibleEarned = earned.filter((badge: any) => !badge.is_hidden).length;
       const visibleTotal = stats?.totalVisible || 0;
-      
+
       // Count secret badges earned vs total secret
       const secretEarned = earned.filter((badge: any) => badge.is_hidden === true).length;
       const secretTotal = stats?.totalSecret || 0;
-      
+
       setBadgeStats({
         totalAvailable: visibleTotal,
-        totalEarned: visibleEarned, 
+        totalEarned: visibleEarned,
         secretAvailable: secretTotal,
         secretEarned: secretEarned
       });
@@ -283,6 +292,7 @@ const KonfiDashboardPage: React.FC = () => {
           dashboardData={dashboardData}
           dailyVerse={dailyVerse}
           badgeStats={badgeStats}
+          allBadges={allBadges}
           upcomingEvents={upcomingEvents}
           targetGottesdienst={targetGottesdienst}
           targetGemeinde={targetGemeinde}

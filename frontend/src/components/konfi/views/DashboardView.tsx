@@ -195,10 +195,16 @@ interface BadgeStats {
   secretEarned: number;
 }
 
+interface AllBadgesData {
+  available: any[];
+  earned: any[];
+}
+
 interface DashboardViewProps {
   dashboardData: DashboardData;
   dailyVerse: DailyVerse | null;
   badgeStats: BadgeStats;
+  allBadges: AllBadgesData;
   upcomingEvents: any[];
   targetGottesdienst: number;
   targetGemeinde: number;
@@ -208,7 +214,8 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({
   dashboardData,
   dailyVerse,
-  badgeStats: _badgeStats,
+  badgeStats,
+  allBadges,
   upcomingEvents,
   targetGottesdienst,
   targetGemeinde,
@@ -227,6 +234,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     level: any | null;
     isReached: boolean;
   }>({ isOpen: false, event: undefined, level: null, isReached: false });
+
+  // Badge Popover State
+  const [badgePopover, setBadgePopover] = useState<{
+    isOpen: boolean;
+    event: Event | undefined;
+    badge: any | null;
+    isEarned: boolean;
+  }>({ isOpen: false, event: undefined, badge: null, isEarned: false });
 
   // Load Tageslosung directly from backend
   useEffect(() => {
@@ -865,8 +880,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Badges Section - im KonfiBadgesView Design */}
-      {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 && (
+      {/* Badges Section - Level-artiges Design mit Icons */}
+      {(allBadges.available.length > 0 || allBadges.earned.length > 0) && (
         <div style={{
           background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
           borderRadius: '20px',
@@ -874,8 +889,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           marginBottom: '16px',
           boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)',
           position: 'relative',
-          overflow: 'hidden',
-          minHeight: '180px'
+          overflow: 'hidden'
         }}>
           {/* Background Text */}
           <div style={{
@@ -906,7 +920,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </h2>
           </div>
 
-          {/* NEU Badge Counter oben rechts */}
+          {/* Badge Counter oben rechts */}
           <div style={{
             position: 'absolute',
             top: '20px',
@@ -920,160 +934,129 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             fontWeight: '700',
             zIndex: 3
           }}>
-            {dashboardData.recent_badges.length} {dashboardData.recent_badges.length === 1 ? 'NEUES BADGE' : 'NEUE BADGES'}
+            {badgeStats.totalEarned}/{badgeStats.totalAvailable} BADGES
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 16px 20px 16px' }}>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '12px'
-            }}>
-              {dashboardData.recent_badges.slice(0, 4).map((badge) => {
-                const badgeColor = getBadgeColor(badge);
+          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 24px 20px' }}>
+            {/* Badge Icons Grid - wie Level Icons */}
+            {(() => {
+              // Kombiniere alle Badges: earned + available (nicht earned)
+              const earnedIds = new Set(allBadges.earned.map((b: any) => b.id));
+              const recentBadgeIds = new Set(dashboardData.recent_badges?.map((b: any) => b.id) || []);
 
-                return (
-                  <div
-                    key={badge.id}
-                    onClick={() => history.push('/konfi/badges')}
-                    style={{
-                      background: '#ffffff',
-                      borderRadius: '16px',
-                      padding: '16px 12px',
-                      textAlign: 'center',
-                      position: 'relative',
-                      border: `2px solid ${badgeColor}40`,
-                      boxShadow: `0 6px 20px ${badgeColor}15`,
-                      minHeight: '180px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease'
-                    }}
-                  >
-                    {/* Geheim-Badge Indikator */}
-                    {badge.is_hidden && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                        color: 'white',
-                        fontSize: '0.55rem',
-                        fontWeight: '700',
-                        padding: '3px 6px',
-                        borderRadius: '8px',
-                        boxShadow: '0 2px 6px rgba(255, 107, 53, 0.3)'
-                      }}>
-                        GEHEIM
-                      </div>
-                    )}
+              // Alle sichtbaren Badges (nicht hidden, ausser sie sind earned)
+              const allVisibleBadges = [
+                ...allBadges.earned,
+                ...allBadges.available.filter((b: any) => !earnedIds.has(b.id) && !b.is_hidden)
+              ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-                    {/* Badge Icon Container - wie in KonfiBadgesView */}
-                    <div style={{
-                      width: '70px',
-                      height: '70px',
-                      borderRadius: '50%',
-                      marginBottom: '12px',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: `linear-gradient(145deg, ${badgeColor} 0%, ${badgeColor}cc 100%)`,
-                      boxShadow: `0 6px 16px ${badgeColor}40`,
-                      animation: 'float 3s ease-in-out infinite'
-                    }}>
-                      {/* Outer Ring */}
-                      <div style={{
-                        position: 'absolute',
-                        top: '-3px',
-                        left: '-3px',
-                        right: '-3px',
-                        bottom: '-3px',
-                        borderRadius: '50%',
-                        border: `2px solid ${badgeColor}50`
-                      }} />
+              return (
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  justifyContent: 'center'
+                }}>
+                  {allVisibleBadges.map((badge) => {
+                    const isEarned = earnedIds.has(badge.id);
+                    const isRecent = recentBadgeIds.has(badge.id);
+                    const badgeColor = getBadgeColor(badge);
 
-                      <IonIcon
-                        icon={getIconFromString(badge.icon)}
-                        style={{
-                          fontSize: '2.2rem',
-                          color: 'white',
-                          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.25))'
+                    return (
+                      <div
+                        key={badge.id}
+                        onClick={(e) => {
+                          setBadgePopover({
+                            isOpen: true,
+                            event: e.nativeEvent,
+                            badge: badge,
+                            isEarned: isEarned
+                          });
                         }}
-                      />
-                    </div>
-
-                    {/* Badge Name */}
-                    <h4 style={{
-                      margin: '0 0 6px 0',
-                      fontSize: '0.95rem',
-                      fontWeight: '700',
-                      color: '#333',
-                      lineHeight: '1.2',
-                      minHeight: '2.4em',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
-                      {badge.name}
-                    </h4>
-
-                    {/* Badge Beschreibung */}
-                    <p style={{
-                      margin: '0 0 10px 0',
-                      fontSize: '0.75rem',
-                      color: '#666',
-                      lineHeight: '1.35',
-                      flex: 1,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
-                      {badge.description}
-                    </p>
-
-                    {/* Erreicht Badge */}
-                    <div style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      background: `linear-gradient(135deg, ${badgeColor} 0%, ${badgeColor}dd 100%)`,
-                      color: 'white',
-                      fontSize: '0.65rem',
-                      fontWeight: '700',
-                      padding: '5px 10px',
-                      borderRadius: '16px',
-                      boxShadow: `0 3px 10px ${badgeColor}35`
-                    }}>
-                      <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.8rem' }} />
-                      ERREICHT
-                    </div>
-
-                    {/* Datum */}
-                    {badge.earned_at && (
-                      <div style={{
-                        marginTop: '6px',
-                        fontSize: '0.7rem',
-                        color: '#888'
-                      }}>
-                        am {new Date(badge.earned_at).toLocaleDateString('de-DE')}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          background: isEarned
+                            ? `linear-gradient(135deg, ${badgeColor} 0%, ${badgeColor}dd 100%)`
+                            : 'rgba(255, 255, 255, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: isEarned
+                            ? isRecent
+                              ? `0 0 0 3px rgba(255, 255, 255, 0.8), 0 4px 12px ${badgeColor}60`
+                              : `0 4px 12px ${badgeColor}50`
+                            : 'none',
+                          border: isRecent
+                            ? '3px solid rgba(255, 255, 255, 0.9)'
+                            : isEarned
+                            ? '2px solid rgba(255, 255, 255, 0.3)'
+                            : '2px dashed rgba(255, 255, 255, 0.25)',
+                          transition: 'all 0.3s ease',
+                          opacity: isEarned ? 1 : 0.5,
+                          cursor: 'pointer',
+                          position: 'relative',
+                          animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
+                        }}
+                      >
+                        <IonIcon
+                          icon={isEarned ? getIconFromString(badge.icon) : eyeOff}
+                          style={{
+                            fontSize: isEarned ? '1.4rem' : '1rem',
+                            color: isEarned ? 'white' : 'rgba(255, 255, 255, 0.4)',
+                            filter: isEarned ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none'
+                          }}
+                        />
+                        {/* NEU Indikator fuer kuerzlich erreichte */}
+                        {isRecent && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '-4px',
+                            right: '-4px',
+                            width: '14px',
+                            height: '14px',
+                            borderRadius: '50%',
+                            background: '#10b981',
+                            border: '2px solid white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <IonIcon icon={checkmarkCircle} style={{ fontSize: '10px', color: 'white' }} />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Link zu allen Badges */}
+            <div
+              onClick={() => history.push('/konfi/badges')}
+              style={{
+                marginTop: '16px',
+                textAlign: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <span style={{
+                fontSize: '0.85rem',
+                color: 'rgba(255, 255, 255, 0.9)',
+                textDecoration: 'underline'
+              }}>
+                Alle Badges anzeigen
+              </span>
             </div>
           </div>
 
-          {/* CSS Animation */}
+          {/* CSS Animation fuer neue Badges */}
           <style>{`
-            @keyframes float {
-              0%, 100% { transform: translateY(0px); }
-              50% { transform: translateY(-3px); }
+            @keyframes badgePulse {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.08); }
             }
           `}</style>
         </div>
@@ -1415,6 +1398,114 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             }}>
               {levelPopover.isReached ? 'Erreicht!' : 'Noch nicht erreicht'}
             </div>
+          </div>
+        )}
+      </IonPopover>
+
+      {/* Badge Popover - mit solidem Hintergrund */}
+      <IonPopover
+        isOpen={badgePopover.isOpen}
+        event={badgePopover.event}
+        onDidDismiss={() => setBadgePopover({ isOpen: false, event: undefined, badge: null, isEarned: false })}
+        side="top"
+        alignment="center"
+        style={{
+          '--background': '#ffffff'
+        }}
+      >
+        {badgePopover.badge && (
+          <div style={{
+            padding: '16px',
+            textAlign: 'center',
+            minWidth: '200px',
+            maxWidth: '280px',
+            background: '#ffffff'
+          }}>
+            {/* Badge Icon */}
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: badgePopover.isEarned
+                ? `linear-gradient(135deg, ${getBadgeColor(badgePopover.badge)} 0%, ${getBadgeColor(badgePopover.badge)}dd 100%)`
+                : '#e5e7eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 12px auto',
+              boxShadow: badgePopover.isEarned
+                ? `0 4px 12px ${getBadgeColor(badgePopover.badge)}50`
+                : 'none'
+            }}>
+              <IonIcon
+                icon={badgePopover.isEarned ? getIconFromString(badgePopover.badge.icon) : eyeOff}
+                style={{
+                  fontSize: '1.8rem',
+                  color: badgePopover.isEarned ? 'white' : '#9ca3af'
+                }}
+              />
+            </div>
+
+            {/* Badge Name */}
+            <div style={{
+              fontWeight: '700',
+              fontSize: '1.1rem',
+              color: badgePopover.isEarned ? getBadgeColor(badgePopover.badge) : '#333',
+              marginBottom: '6px'
+            }}>
+              {badgePopover.badge.name}
+            </div>
+
+            {/* Badge Description */}
+            {badgePopover.isEarned && badgePopover.badge.description && (
+              <div style={{
+                fontSize: '0.85rem',
+                color: '#666',
+                marginBottom: '12px',
+                lineHeight: '1.4'
+              }}>
+                {badgePopover.badge.description}
+              </div>
+            )}
+
+            {/* Geheim Badge Hinweis */}
+            {badgePopover.badge.is_hidden && (
+              <div style={{
+                fontSize: '0.75rem',
+                color: '#f59e0b',
+                marginBottom: '8px',
+                fontWeight: '600'
+              }}>
+                Geheim-Badge
+              </div>
+            )}
+
+            {/* Earned Date oder Hint */}
+            {badgePopover.isEarned ? (
+              <div style={{
+                display: 'inline-block',
+                padding: '6px 14px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                background: '#dcfce7',
+                color: '#16a34a'
+              }}>
+                Erreicht am {new Date(badgePopover.badge.earned_at).toLocaleDateString('de-DE')}
+              </div>
+            ) : (
+              <div style={{
+                display: 'inline-block',
+                padding: '6px 14px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                background: '#f3f4f6',
+                color: '#6b7280'
+              }}>
+                Noch nicht erreicht
+              </div>
+            )}
           </div>
         )}
       </IonPopover>
