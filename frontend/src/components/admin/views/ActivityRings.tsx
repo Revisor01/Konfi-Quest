@@ -184,22 +184,23 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           />
         )}
 
-        {/* Dritte Runde */}
+        {/* Dritte Runde - noch hellere/sichtbarere Farbe */}
         {hasThirdRound && (
           <circle
             cx={center}
             cy={center}
-            r={radius - strokeWidth * 0.3}
+            r={radius - strokeWidth * 0.35}
             fill="none"
-            stroke={colorDark}
-            strokeWidth={strokeWidth * 0.4}
+            stroke={color}
+            strokeWidth={strokeWidth * 0.35}
             strokeLinecap="round"
             strokeDasharray={thirdCircumference}
             strokeDashoffset={thirdOffset}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              opacity: 0.8
+              filter: `drop-shadow(0 0 3px ${color}90)`,
+              opacity: 0.95
             }}
           />
         )}

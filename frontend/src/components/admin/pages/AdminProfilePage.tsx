@@ -41,9 +41,9 @@ import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
-  const { user, setSuccess, setError } = useApp();
+  const { user, setUser, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  const [profileData, setProfileData] = useState<{ role_title?: string }>({});
+  const [profileData, setProfileData] = useState<{ role_title?: string; email?: string }>({});
 
   // Profildaten laden
   useEffect(() => {
@@ -66,14 +66,18 @@ const AdminProfilePage: React.FC = () => {
       // User-Daten im Context aktualisieren
       try {
         const response = await api.get('/auth/me');
-        // User im localStorage aktualisieren für Context
-        localStorage.setItem('konfi_user', JSON.stringify(response.data));
-        window.location.reload(); // Einfachste Lösung für Context-Update
+        setProfileData(response.data);
+        // User im Context und localStorage aktualisieren
+        if (user) {
+          const updatedUser = { ...user, email: response.data.email };
+          localStorage.setItem('konfi_user', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
       } catch (err) {
         console.error('Error refreshing user:', err);
       }
     },
-    initialEmail: user?.email || ''
+    initialEmail: profileData.email || user?.email || ''
   });
 
   // Password Modal mit useIonModal Hook
@@ -312,7 +316,7 @@ const AdminProfilePage: React.FC = () => {
                           <div className="app-list-item__title">E-Mail-Adresse ändern</div>
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              {user?.email ? `Aktuell: ${user.email}` : 'E-Mail für Benachrichtigungen'}
+                              {(profileData.email || user?.email) ? `Aktuell: ${profileData.email || user?.email}` : 'E-Mail für Benachrichtigungen'}
                             </span>
                           </div>
                         </div>

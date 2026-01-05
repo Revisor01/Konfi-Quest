@@ -33,6 +33,8 @@ import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
 import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
+import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
+import ResetPasswordPage from './components/auth/ResetPasswordPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import MainTabs from './components/layout/MainTabs';
 
@@ -165,6 +167,8 @@ const AppContent: React.FC = () => {
           <IonRouterOutlet>
             <Route path="/login" component={LoginView} exact />
             <Route path="/register" component={KonfiRegisterPage} exact />
+            <Route path="/forgot-password" component={ForgotPasswordPage} exact />
+            <Route path="/reset-password" component={ResetPasswordPage} exact />
             <Redirect exact from="/" to="/login" />
           </IonRouterOutlet>
         </IonReactRouter>

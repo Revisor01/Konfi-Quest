@@ -25,7 +25,10 @@ import {
   school,
   refreshOutline,
   copyOutline,
-  shareOutline
+  shareOutline,
+  add,
+  timeOutline,
+  checkmarkCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -37,6 +40,15 @@ interface Jahrgang {
   name: string;
 }
 
+interface ExistingInvite {
+  id: number;
+  invite_code: string;
+  jahrgang_id: number;
+  jahrgang_name: string;
+  expires_at: string;
+  used_count: number;
+}
+
 const AdminInvitePage: React.FC = () => {
   const { pageRef } = useModalPage('admin-invite');
   const { setSuccess, setError } = useApp();
@@ -46,21 +58,27 @@ const AdminInvitePage: React.FC = () => {
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [existingInvites, setExistingInvites] = useState<ExistingInvite[]>([]);
+  const [extendingInvite, setExtendingInvite] = useState<number | null>(null);
 
   useEffect(() => {
-    loadJahrgaenge();
+    loadData();
   }, []);
 
-  const loadJahrgaenge = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/jahrgaenge');
-      setJahrgaenge(response.data);
-      if (response.data.length > 0) {
-        setSelectedJahrgang(response.data[0].id);
+      const [jahrgaengeRes, invitesRes] = await Promise.all([
+        api.get('/admin/jahrgaenge'),
+        api.get('/auth/invite-codes').catch(() => ({ data: [] }))
+      ]);
+      setJahrgaenge(jahrgaengeRes.data);
+      setExistingInvites(invitesRes.data || []);
+      if (jahrgaengeRes.data.length > 0) {
+        setSelectedJahrgang(jahrgaengeRes.data[0].id);
       }
     } catch (error: any) {
-      setError('Fehler beim Laden der Jahrgänge');
+      setError('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
     }
@@ -94,11 +112,47 @@ const AdminInvitePage: React.FC = () => {
       setQrCodeDataUrl(qrDataUrl);
 
       setSuccess('Einladungscode generiert');
+      await loadData(); // Reload to show in existing invites
     } catch (error: any) {
       setError(error.response?.data?.error || 'Fehler beim Generieren des Codes');
     } finally {
       setGeneratingCode(false);
     }
+  };
+
+  const extendInvite = async (inviteId: number) => {
+    try {
+      setExtendingInvite(inviteId);
+      await api.post(`/auth/invite-codes/${inviteId}/extend`);
+      setSuccess('Einladungscode um 7 Tage verlängert');
+      await loadData();
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Fehler beim Verlängern des Codes');
+    } finally {
+      setExtendingInvite(null);
+    }
+  };
+
+  const showExistingInviteQR = async (invite: ExistingInvite) => {
+    const registrationUrl = `https://konfi-quest.de/register?code=${invite.invite_code}`;
+    const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
+      width: 256,
+      margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    });
+    setInviteCode(invite.invite_code);
+    setQrCodeDataUrl(qrDataUrl);
+    setSelectedJahrgang(invite.jahrgang_id);
+  };
+
+  const formatExpiryDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) return 'Abgelaufen';
+    if (diffDays === 1) return 'Läuft morgen ab';
+    return `Noch ${diffDays} Tage gültig`;
   };
 
   const copyInviteLink = async () => {
@@ -193,6 +247,7 @@ const AdminInvitePage: React.FC = () => {
                   </IonList>
                   <IonButton
                     expand="block"
+                    fill="outline"
                     onClick={generateInviteCode}
                     disabled={generatingCode || !selectedJahrgang}
                     style={{ marginTop: '16px' }}
@@ -201,14 +256,105 @@ const AdminInvitePage: React.FC = () => {
                       <IonSpinner name="crescent" />
                     ) : (
                       <>
-                        <IonIcon icon={refreshOutline} slot="start" />
-                        {inviteCode ? 'Neuen Code generieren' : 'Einladungscode generieren'}
+                        <IonIcon icon={add} slot="start" />
+                        Neuen Einladungscode generieren
                       </>
                     )}
                   </IonButton>
                 </IonCardContent>
               </IonCard>
             </IonList>
+
+            {/* Bestehende Einladungscodes */}
+            {existingInvites.length > 0 && (
+              <IonList inset={true} style={{ margin: '16px' }}>
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--jahrgang">
+                    <IonIcon icon={checkmarkCircleOutline} />
+                  </div>
+                  <IonLabel>Aktive Einladungscodes</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
+                  <IonCardContent style={{ padding: '16px' }}>
+                    <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                      {existingInvites.map((invite, index) => {
+                        const isExpired = new Date(invite.expires_at) < new Date();
+                        return (
+                          <div
+                            key={invite.id}
+                            className="app-list-item"
+                            style={{
+                              marginBottom: index < existingInvites.length - 1 ? '8px' : '0',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              borderLeftColor: isExpired ? '#ef4444' : '#22c55e',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => showExistingInviteQR(invite)}
+                          >
+                            {/* Corner Badge */}
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: isExpired ? '#ef4444' : '#22c55e' }}
+                            >
+                              {invite.used_count || 0}x
+                            </div>
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div
+                                  className="app-icon-circle"
+                                  style={{ backgroundColor: isExpired ? '#ef4444' : '#22c55e' }}
+                                >
+                                  <IonIcon icon={qrCodeOutline} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                    {invite.jahrgang_name}
+                                  </div>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                                      {invite.invite_code}
+                                    </span>
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={timeOutline} style={{ color: isExpired ? '#ef4444' : '#666' }} />
+                                      {formatExpiryDate(invite.expires_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {!isExpired && (
+                              <IonButton
+                                fill="clear"
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  extendInvite(invite.id);
+                                }}
+                                disabled={extendingInvite === invite.id}
+                                style={{
+                                  position: 'absolute',
+                                  bottom: '4px',
+                                  right: '8px',
+                                  '--color': '#22c55e',
+                                  fontSize: '0.75rem'
+                                }}
+                              >
+                                {extendingInvite === invite.id ? (
+                                  <IonSpinner name="crescent" style={{ width: '14px', height: '14px' }} />
+                                ) : (
+                                  '+7 Tage'
+                                )}
+                              </IonButton>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </IonList>
+                  </IonCardContent>
+                </IonCard>
+              </IonList>
+            )}
 
             {/* QR Code Anzeige */}
             {qrCodeDataUrl && inviteCode && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -41,6 +41,24 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   const { setSuccess, setError } = useApp();
   const [email, setEmail] = useState(initialEmail);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load current email from server when modal opens
+  useEffect(() => {
+    const loadCurrentEmail = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        setEmail(response.data.email || '');
+      } catch (err) {
+        console.error('Error loading email:', err);
+        // Fallback to initialEmail prop
+        setEmail(initialEmail);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCurrentEmail();
+  }, []);
 
   const handleSave = async () => {
     if (!email.trim()) {
@@ -79,7 +97,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || !email.trim()}>
+            <IonButton onClick={handleSave} disabled={saving || loading || !email.trim()}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -100,14 +118,20 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">E-Mail-Adresse *</IonLabel>
-                  <IonInput
-                    type="email"
-                    value={email}
-                    onIonInput={(e) => setEmail(e.detail.value!)}
-                    placeholder="deine@email.de"
-                    disabled={saving}
-                    clearInput={true}
-                  />
+                  {loading ? (
+                    <div style={{ padding: '12px 0' }}>
+                      <IonSpinner name="crescent" style={{ width: '20px', height: '20px' }} />
+                    </div>
+                  ) : (
+                    <IonInput
+                      type="email"
+                      value={email}
+                      onIonInput={(e) => setEmail(e.detail.value!)}
+                      placeholder="deine@email.de"
+                      disabled={saving}
+                      clearInput={true}
+                    />
+                  )}
                 </IonItem>
               </IonList>
             </IonCardContent>

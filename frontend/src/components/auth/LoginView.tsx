@@ -291,9 +291,26 @@ const LoginView: React.FC = () => {
                 </div>
               )}
 
+              {/* Passwort vergessen Link */}
               <div style={{
                 textAlign: 'center',
-                marginTop: '20px',
+                marginTop: '16px'
+              }}>
+                <span
+                  onClick={() => history.push('/forgot-password')}
+                  style={{
+                    color: '#7f8c8d',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  Passwort vergessen?
+                </span>
+              </div>
+
+              <div style={{
+                textAlign: 'center',
+                marginTop: '16px',
                 paddingTop: '16px',
                 borderTop: '1px solid #e5e7eb'
               }}>

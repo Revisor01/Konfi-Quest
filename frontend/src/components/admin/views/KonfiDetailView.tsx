@@ -13,6 +13,7 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
+  IonItem,
   IonRefresher,
   IonRefresherContent,
   IonAlert,
@@ -513,51 +514,76 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem' }}>Noch keine Bonuspunkte erhalten</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0 0 16px 0' }}>
                   {bonusEntries.map((bonus: any, index: number) => (
-                    <IonItemSliding key={index}>
-                      <div className="app-list-item app-list-item--bonus">
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className="app-icon-circle app-icon-circle--bonus">
-                              <IonIcon icon={gift} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title">{bonus.description || 'Bonuspunkte'}</div>
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={calendar} style={{ color: '#666' }} />
-                                  {formatDate(bonus.completed_date || bonus.date)}
-                                </span>
-                                <span className="app-list-item__meta-item">{bonus.admin || 'Admin'}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <span
+                    <IonItemSliding key={bonus.id || index} style={{ marginBottom: index < bonusEntries.length - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        detail={false}
+                        lines="none"
+                        style={{
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
+                        }}
+                      >
+                        <div
+                          className="app-list-item app-list-item--bonus"
+                          style={{
+                            width: '100%',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderLeftColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                          }}
+                        >
+                          {/* Corner Badge für Punkte */}
+                          <div
+                            className="app-corner-badge"
                             style={{
-                              fontSize: '0.8rem',
-                              color: bonus.type === 'gottesdienst' ? '#007aff' : '#22c55e',
-                              fontWeight: '600',
-                              backgroundColor:
-                                bonus.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.15)' : 'rgba(34, 197, 94, 0.15)',
-                              padding: '4px 8px',
-                              borderRadius: '8px'
+                              backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
                             }}
                           >
                             +{bonus.points}
-                          </span>
+                          </div>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div
+                                className="app-icon-circle"
+                                style={{
+                                  backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                                }}
+                              >
+                                <IonIcon icon={gift} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                  {bonus.description || 'Bonuspunkte'}
+                                </div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} style={{ color: '#666' }} />
+                                    {formatDate(bonus.completed_date || bonus.date)}
+                                  </span>
+                                  <span className="app-list-item__meta-item">{bonus.admin || 'Admin'}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      </IonItem>
                       <IonItemOptions
                         side="end"
-                        style={{ '--ion-item-background': 'transparent', border: 'none', gap: '4px' } as any}
+                        style={{ '--ion-item-background': 'transparent', border: 'none' }}
                       >
                         <IonItemOption
                           onClick={() => handleDeleteBonus(bonus)}
                           style={{
                             '--background': 'transparent',
                             '--color': 'transparent',
-                            padding: '0 4px',
+                            padding: '0',
                             minWidth: 'auto',
                             '--border-width': '0'
                           }}
@@ -569,7 +595,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                       </IonItemOptions>
                     </IonItemSliding>
                   ))}
-                </div>
+                </IonList>
               )}
               <IonButton
                 expand="block"
@@ -602,19 +628,41 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <p style={{ margin: '0', fontSize: '0.9rem' }}>Noch keine Event-Punkte erhalten</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
                   {eventPoints.map((eventPoint: any, index: number) => (
                     <div
-                      key={index}
+                      key={eventPoint.id || index}
                       className="app-list-item app-list-item--events"
+                      style={{
+                        position: 'relative',
+                        overflow: 'hidden',
+                        marginBottom: index < eventPoints.length - 1 ? '8px' : '0',
+                        borderLeftColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                      }}
                     >
+                      {/* Corner Badge für Punkte */}
+                      <div
+                        className="app-corner-badge"
+                        style={{
+                          backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                        }}
+                      >
+                        +{eventPoint.points}
+                      </div>
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
-                          <div className="app-icon-circle app-icon-circle--events">
+                          <div
+                            className="app-icon-circle"
+                            style={{
+                              backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                            }}
+                          >
                             <IonIcon icon={podium} />
                           </div>
                           <div className="app-list-item__content">
-                            <div className="app-list-item__title">{eventPoint.event_name || 'Event'}</div>
+                            <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                              {eventPoint.event_name || 'Event'}
+                            </div>
                             <div className="app-list-item__meta">
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={calendar} style={{ color: '#666' }} />
@@ -628,25 +676,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             </div>
                           </div>
                         </div>
-                        <span
-                          style={{
-                            fontSize: '0.8rem',
-                            color: eventPoint.point_type === 'gottesdienst' ? '#007aff' : '#22c55e',
-                            fontWeight: '600',
-                            backgroundColor:
-                              eventPoint.point_type === 'gottesdienst'
-                                ? 'rgba(0, 122, 255, 0.15)'
-                                : 'rgba(34, 197, 94, 0.15)',
-                            padding: '4px 8px',
-                            borderRadius: '8px'
-                          }}
-                        >
-                          +{eventPoint.points}
-                        </span>
                       </div>
                     </div>
                   ))}
-                </div>
+                </IonList>
               )}
             </IonCardContent>
           </IonCard>
@@ -667,94 +700,104 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem' }}>Noch keine Aktivitäten vorhanden</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-                  {activities.slice(0, 10).map((activity) => (
-                    <IonItemSliding key={activity.id}>
-                      <div
-                        className={`app-list-item ${activity.isPending ? 'app-list-item--warning' : ''}`}
-                        style={{
-                          borderLeftColor: activity.isPending
-                            ? '#f59e0b'
-                            : activity.type === 'gottesdienst'
-                            ? '#007aff'
-                            : '#22c55e',
-                          cursor: activity.hasPhoto ? 'pointer' : 'default',
-                          opacity: activity.isPending ? 0.8 : 1
-                        }}
+                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0 0 16px 0' }}>
+                  {activities.slice(0, 10).map((activity, index) => (
+                    <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        button={activity.hasPhoto}
                         onClick={() => handlePhotoClick(activity)}
+                        detail={false}
+                        lines="none"
+                        style={{
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
+                        }}
                       >
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div
-                              className="app-icon-circle"
-                              style={{
-                                backgroundColor: activity.isPending
-                                  ? '#f59e0b'
-                                  : activity.type === 'gottesdienst'
-                                  ? '#007aff'
-                                  : '#22c55e'
-                              }}
-                            >
-                              <IonIcon icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : flash} />
-                            </div>
-                            <div className="app-list-item__content">
+                        <div
+                          className={`app-list-item ${activity.isPending ? 'app-list-item--warning' : ''}`}
+                          style={{
+                            width: '100%',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            borderLeftColor: activity.isPending
+                              ? '#f59e0b'
+                              : activity.type === 'gottesdienst'
+                              ? '#3b82f6'
+                              : '#059669',
+                            opacity: activity.isPending ? 0.8 : 1
+                          }}
+                        >
+                          {/* Corner Badge für Punkte */}
+                          <div
+                            className="app-corner-badge"
+                            style={{
+                              backgroundColor: activity.isPending
+                                ? '#f59e0b'
+                                : activity.type === 'gottesdienst'
+                                ? '#3b82f6'
+                                : '#059669'
+                            }}
+                          >
+                            {activity.isPending ? '?' : '+'}{activity.points}
+                          </div>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
                               <div
-                                className="app-list-item__title"
+                                className="app-icon-circle"
                                 style={{
-                                  color: activity.isPending ? '#f59e0b' : undefined,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px'
+                                  backgroundColor: activity.isPending
+                                    ? '#f59e0b'
+                                    : activity.type === 'gottesdienst'
+                                    ? '#3b82f6'
+                                    : '#059669'
                                 }}
                               >
-                                {activity.name}
-                                {activity.hasPhoto && (
-                                  <IonIcon icon={image} style={{ fontSize: '0.8rem', color: '#5b21b6', opacity: 0.7 }} />
-                                )}
+                                <IonIcon icon={activity.isPending ? time : activity.type === 'gottesdienst' ? school : flash} />
                               </div>
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={calendar} style={{ color: '#666' }} />
-                                  {formatDate(activity.date)}
-                                </span>
-                                <span className="app-list-item__meta-item">{activity.admin}</span>
+                              <div className="app-list-item__content">
+                                <div
+                                  className="app-list-item__title"
+                                  style={{
+                                    color: activity.isPending ? '#f59e0b' : undefined,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    paddingRight: '50px'
+                                  }}
+                                >
+                                  {activity.name}
+                                  {activity.hasPhoto && (
+                                    <IonIcon icon={image} style={{ fontSize: '0.8rem', color: '#5b21b6', opacity: 0.7 }} />
+                                  )}
+                                </div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} style={{ color: '#666' }} />
+                                    {formatDate(activity.date)}
+                                  </span>
+                                  <span className="app-list-item__meta-item">{activity.admin}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <span
-                            style={{
-                              fontSize: '0.8rem',
-                              color: activity.isPending
-                                ? '#f59e0b'
-                                : activity.type === 'gottesdienst'
-                                ? '#007aff'
-                                : '#22c55e',
-                              fontWeight: '600',
-                              backgroundColor: activity.isPending
-                                ? 'rgba(245, 158, 11, 0.15)'
-                                : activity.type === 'gottesdienst'
-                                ? 'rgba(0, 122, 255, 0.15)'
-                                : 'rgba(34, 197, 94, 0.15)',
-                              padding: '4px 8px',
-                              borderRadius: '8px'
-                            }}
-                          >
-                            {activity.isPending ? '?' : '+'}
-                            {activity.points}
-                          </span>
                         </div>
-                      </div>
+                      </IonItem>
                       {!activity.isPending && (
                         <IonItemOptions
                           side="end"
-                          style={{ '--ion-item-background': 'transparent', border: 'none', gap: '4px' } as any}
+                          style={{ '--ion-item-background': 'transparent', border: 'none' }}
                         >
                           <IonItemOption
                             onClick={() => handleDeleteActivity(activity)}
                             style={{
                               '--background': 'transparent',
                               '--color': 'transparent',
-                              padding: '0 4px',
+                              padding: '0',
                               minWidth: 'auto',
                               '--border-width': '0'
                             }}
@@ -767,7 +810,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                       )}
                     </IonItemSliding>
                   ))}
-                </div>
+                </IonList>
               )}
               <IonButton
                 expand="block"

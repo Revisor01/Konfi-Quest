@@ -341,6 +341,69 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
   });
 
+  // Get all invite codes for organization (org_admin only)
+  router.get('/invite-codes', verifyToken, async (req, res) => {
+    const organizationId = req.user.organization_id;
+
+    if (req.user.role_name !== 'org_admin') {
+      return res.status(403).json({ error: 'Nur Administratoren können Einladungscodes einsehen' });
+    }
+
+    try {
+      const { rows } = await db.query(`
+        SELECT ic.id, ic.code as invite_code, ic.jahrgang_id, j.name as jahrgang_name,
+               ic.expires_at, ic.created_at,
+               (SELECT COUNT(*) FROM users u
+                JOIN konfi_profiles kp ON u.id = kp.user_id
+                WHERE kp.invite_code_id = ic.id) as used_count
+        FROM invite_codes ic
+        JOIN jahrgaenge j ON ic.jahrgang_id = j.id
+        WHERE ic.organization_id = $1 AND ic.expires_at > NOW()
+        ORDER BY ic.created_at DESC
+      `, [organizationId]);
+
+      res.json(rows);
+
+    } catch (err) {
+      console.error('Database error in GET /api/auth/invite-codes:', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Einladungscodes' });
+    }
+  });
+
+  // Extend invite code by 7 days (org_admin only)
+  router.post('/invite-codes/:id/extend', verifyToken, async (req, res) => {
+    const { id } = req.params;
+    const organizationId = req.user.organization_id;
+
+    if (req.user.role_name !== 'org_admin') {
+      return res.status(403).json({ error: 'Nur Administratoren können Einladungscodes verlängern' });
+    }
+
+    try {
+      const { rows: [invite] } = await db.query(`
+        SELECT * FROM invite_codes WHERE id = $1 AND organization_id = $2
+      `, [id, organizationId]);
+
+      if (!invite) {
+        return res.status(404).json({ error: 'Einladungscode nicht gefunden' });
+      }
+
+      // Add 7 days to current expiry
+      const newExpiry = new Date(invite.expires_at);
+      newExpiry.setDate(newExpiry.getDate() + 7);
+
+      await db.query(`
+        UPDATE invite_codes SET expires_at = $1 WHERE id = $2
+      `, [newExpiry, id]);
+
+      res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry });
+
+    } catch (err) {
+      console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
+      res.status(500).json({ error: 'Fehler beim Verlängern des Einladungscodes' });
+    }
+  });
+
   // Validate invite code (public endpoint)
   router.get('/validate-invite/:code', async (req, res) => {
     const { code } = req.params;
