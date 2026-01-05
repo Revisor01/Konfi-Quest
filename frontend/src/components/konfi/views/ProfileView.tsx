@@ -13,18 +13,18 @@ import {
   useIonActionSheet
 } from '@ionic/react';
 import {
-  person,
-  calendar,
-  star,
+  personOutline,
+  calendarOutline,
+  starOutline,
   trophy,
   flash,
-  logOut,
+  logOutOutline,
   checkmark,
   rocket,
-  key,
-  book,
-  location,
-  chevronForward
+  keyOutline,
+  bookOutline,
+  locationOutline,
+  mailOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -203,10 +203,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   const getActivityIcon = (activity: RecentActivity) => {
     switch (activity.type) {
       case 'badge': return trophy;
-      case 'event': return calendar;
+      case 'event': return calendarOutline;
       case 'activity': return flash;
       case 'request': return checkmark;
-      default: return star;
+      default: return starOutline;
     }
   };
 
@@ -322,6 +322,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
+          justifyContent: 'center',
           gap: '8px',
           marginBottom: '16px',
           position: 'relative',
@@ -337,7 +338,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
             alignItems: 'center',
             gap: '4px'
           }}>
-            <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
+            <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
             {profile.jahrgang_name}
           </div>
           {profile.email && (
@@ -351,7 +352,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               alignItems: 'center',
               gap: '4px'
             }}>
-              <IonIcon icon={person} style={{ fontSize: '0.85rem' }} />
+              <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
               {profile.email}
             </div>
           )}
@@ -365,7 +366,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
             alignItems: 'center',
             gap: '4px'
           }}>
-            <IonIcon icon={star} style={{ fontSize: '0.85rem' }} />
+            <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
             Seit {formatDate(profile.created_at)}
           </div>
         </div>
@@ -479,12 +480,12 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               flexShrink: 0,
               border: '2px solid rgba(255, 255, 255, 0.3)'
             }}>
-              <IonIcon 
-                icon={calendar} 
-                style={{ 
-                  fontSize: '1.5rem', 
+              <IonIcon
+                icon={calendarOutline}
+                style={{
+                  fontSize: '1.5rem',
                   color: 'white'
-                }} 
+                }}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -523,7 +524,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                         }
                       }}
                     >
-                      <IonIcon icon={location} style={{ fontSize: '1rem' }} />
+                      <IonIcon icon={locationOutline} style={{ fontSize: '1rem' }} />
                       {profile.confirmation_location}
                     </p>
                   )}
@@ -612,82 +613,136 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       )}
 
-      {/* Konto-Einstellungen - Admin-Stil mit app-list-item */}
+      {/* Konto-Einstellungen - iOS26 Pattern wie Admin */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
-          <div className="app-section-icon app-section-icon--users">
-            <IonIcon icon={person} />
+          <div className="app-section-icon app-section-icon--purple">
+            <IonIcon icon={personOutline} />
           </div>
-          <IonLabel>Konto</IonLabel>
+          <IonLabel>Konto-Einstellungen</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
               {/* Punkte-Übersicht */}
-              <div
-                className="app-list-item app-list-item--warning"
+              <IonItem
+                button
                 onClick={() => {
                   presentPointsHistoryModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto',
+                  marginBottom: '8px'
+                }}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                  <IonIcon icon={star} />
+                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={starOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Punkte-Übersicht</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">{profile.total_points || 0} Punkte gesamt</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Punkte-Übersicht</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>{profile.total_points || 0} Punkte gesamt</p>
-                </div>
-                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
-              </div>
+              </IonItem>
 
               {/* E-Mail ändern */}
-              <div
-                className="app-list-item app-list-item--primary"
+              <IonItem
+                button
                 onClick={() => {
                   presentEmailModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto',
+                  marginBottom: '8px'
+                }}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
-                  <IonIcon icon={person} />
+                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={mailOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">E-Mail-Adresse ändern</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">
+                            {(profile.email || user?.email) ? `Aktuell: ${profile.email || user?.email}` : 'E-Mail für Benachrichtigungen'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>E-Mail-Adresse</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>
-                    {profile.email || user?.email ? (profile.email || user?.email) : 'Noch nicht hinterlegt'}
-                  </p>
-                </div>
-                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
-              </div>
+              </IonItem>
 
               {/* Passwort ändern */}
-              <div
-                className="app-list-item app-list-item--activities"
+              <IonItem
+                button
                 onClick={() => {
                   presentPasswordModal({
                     presentingElement: presentingElement || undefined
                   });
                 }}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto',
+                  marginBottom: '8px'
+                }}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
-                  <IonIcon icon={key} />
+                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={keyOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Passwort ändern</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">Sicherheitseinstellungen</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Passwort ändern</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Sicherheitseinstellungen</p>
-                </div>
-                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
-              </div>
+              </IonItem>
 
               {/* Bibelübersetzung */}
-              <div
-                className="app-list-item app-list-item--badges"
+              <IonItem
+                button
                 onClick={() => {
                   presentActionSheet({
                     header: 'Bibelübersetzung wählen',
@@ -704,33 +759,59 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                     ]
                   });
                 }}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto'
+                }}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
-                  <IonIcon icon={book} />
+                <div className="app-list-item app-list-item--purple" style={{ width: '100%' }}>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div className="app-icon-circle app-icon-circle--purple">
+                        <IonIcon icon={bookOutline} />
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">Bibelübersetzung</div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">{getTranslationName(selectedTranslation)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Bibelübersetzung</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>{getTranslationName(selectedTranslation)}</p>
-                </div>
-                <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
-              </div>
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
 
-              {/* Abmelden - in Liste integriert wie Admin */}
-              <div
-                className="app-list-item app-list-item--danger"
-                onClick={handleLogout}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                  <IonIcon icon={logOut} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
-                  <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
-                </div>
-              </div>
-            </div>
+      {/* Logout - iOS26 Pattern wie Admin */}
+      <IonList inset={true} style={{ margin: '16px 16px 16px 16px' }}>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '16px' }}>
+            <IonItem
+              button
+              onClick={handleLogout}
+              detail={false}
+              lines="none"
+              style={{
+                '--background': 'transparent',
+                '--padding-start': '0',
+                '--padding-end': '0',
+                '--inner-padding-end': '0',
+                '--color': '#dc3545'
+              }}
+            >
+              <IonIcon icon={logOutOutline} slot="start" color="danger" />
+              <IonLabel color="danger">Abmelden</IonLabel>
+            </IonItem>
           </IonCardContent>
         </IonCard>
       </IonList>

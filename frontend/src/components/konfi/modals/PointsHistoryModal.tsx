@@ -13,7 +13,9 @@ import {
   IonSegmentButton,
   IonLabel,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonList,
+  IonListHeader
 } from '@ionic/react';
 import {
   closeOutline,
@@ -21,11 +23,7 @@ import {
   flashOutline,
   giftOutline,
   calendarOutline,
-  star,
-  flash,
-  gift,
-  calendar,
-  chevronForward
+  timeOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 
@@ -89,18 +87,18 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     if (sourceType === 'event') return '#dc2626';
     switch (category) {
       case 'gottesdienst': return '#3b82f6';
-      case 'gemeinde': return '#22c55e';
+      case 'gemeinde': return '#059669';
       default: return '#8b5cf6';
     }
   };
 
   const getCategoryIcon = (category: string, sourceType: string) => {
-    if (sourceType === 'bonus') return gift;
-    if (sourceType === 'event') return calendar;
+    if (sourceType === 'bonus') return giftOutline;
+    if (sourceType === 'event') return calendarOutline;
     switch (category) {
-      case 'gottesdienst': return star;
-      case 'gemeinde': return flash;
-      default: return star;
+      case 'gottesdienst': return starOutline;
+      case 'gemeinde': return flashOutline;
+      default: return starOutline;
     }
   };
 
@@ -126,7 +124,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Punkte-Historie</IonTitle>
+          <IonTitle>Punkte-Übersicht</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={onClose}>
               <IonIcon icon={closeOutline} />
@@ -135,33 +133,34 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
+      <IonContent className="app-gradient-background">
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
-          <div style={{ padding: '16px' }}>
-            {/* Totals Card - im Dashboard-Style */}
+          <>
+            {/* Punkte-Übersicht Header - Dashboard Style */}
             <div style={{
-              background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              borderRadius: '24px',
               padding: '0',
+              margin: '16px',
               marginBottom: '16px',
-              boxShadow: '0 8px 32px rgba(91, 33, 182, 0.25)',
+              boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
               position: 'relative',
               overflow: 'hidden',
-              minHeight: '180px'
+              minHeight: '200px'
             }}>
               {/* Background Text */}
               <div style={{
                 position: 'absolute',
                 top: '-5px',
-                left: '10px',
+                left: '12px',
                 zIndex: 1
               }}>
                 <h2 style={{
-                  fontSize: '2.8rem',
+                  fontSize: '3rem',
                   fontWeight: '900',
                   color: 'rgba(255, 255, 255, 0.08)',
                   margin: '0',
@@ -171,7 +170,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                   DEINE
                 </h2>
                 <h2 style={{
-                  fontSize: '2.8rem',
+                  fontSize: '3rem',
                   fontWeight: '900',
                   color: 'rgba(255, 255, 255, 0.08)',
                   margin: '0',
@@ -189,7 +188,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                   backdropFilter: 'blur(10px)',
                   borderRadius: '16px',
                   padding: '16px',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
+                  textAlign: 'center'
                 }}>
                   <div style={{
                     display: 'flex',
@@ -221,17 +221,17 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     padding: '12px 8px',
                     textAlign: 'center'
                   }}>
-                    <IonIcon icon={star} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
+                    <IonIcon icon={starOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.gottesdienst}</div>
                     <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Gottesdienst</div>
                   </div>
                   <div style={{
-                    background: 'rgba(34, 197, 94, 0.3)',
+                    background: 'rgba(5, 150, 105, 0.3)',
                     borderRadius: '12px',
                     padding: '12px 8px',
                     textAlign: 'center'
                   }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
+                    <IonIcon icon={flashOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.gemeinde}</div>
                     <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Gemeinde</div>
                   </div>
@@ -241,7 +241,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     padding: '12px 8px',
                     textAlign: 'center'
                   }}>
-                    <IonIcon icon={calendar} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
+                    <IonIcon icon={calendarOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.event}</div>
                     <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Event</div>
                   </div>
@@ -251,7 +251,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     padding: '12px 8px',
                     textAlign: 'center'
                   }}>
-                    <IonIcon icon={gift} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
+                    <IonIcon icon={giftOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
                     <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.bonus}</div>
                     <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Bonus</div>
                   </div>
@@ -259,166 +259,133 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
               </div>
             </div>
 
-            {/* Filter Segment */}
-            <div style={{ marginBottom: '16px' }}>
-              <IonSegment value={filter} onIonChange={e => setFilter(e.detail.value as string)}>
-                <IonSegmentButton value="all">
-                  <IonLabel>Alle</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="gottesdienst">
-                  <IonLabel>GD</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="gemeinde">
-                  <IonLabel>Gem</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="event">
-                  <IonLabel>Event</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="bonus">
-                  <IonLabel>Bonus</IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-            </div>
-
-            {/* History List - Karten-Stil mit farbigen Rändern */}
-            <div style={{ marginBottom: '8px' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '12px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#667eea',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                  flexShrink: 0
-                }}>
-                  <IonIcon icon={calendarOutline} style={{ fontSize: '1rem', color: 'white' }} />
-                </div>
-                <h2 style={{
-                  fontWeight: '600',
-                  fontSize: '1.1rem',
-                  margin: '0',
-                  color: '#333'
-                }}>
-                  Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})
-                </h2>
-              </div>
-            </div>
-
-            {filteredHistory.length === 0 ? (
-              <IonCard style={{
-                borderRadius: '12px',
-                background: 'white',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                border: '1px solid #e0e0e0',
-                margin: '0'
-              }}>
-                <IonCardContent>
-                  <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
-                    Noch keine Einträge vorhanden
-                  </div>
+            {/* Filter Segment - iOS26 Pattern */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '8px' }}>
+                  <IonSegment value={filter} onIonChange={e => setFilter(e.detail.value as string)}>
+                    <IonSegmentButton value="all">
+                      <IonLabel>Alle</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="gottesdienst">
+                      <IonLabel>GD</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="gemeinde">
+                      <IonLabel>Gem</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="event">
+                      <IonLabel>Event</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="bonus">
+                      <IonLabel>Bonus</IonLabel>
+                    </IonSegmentButton>
+                  </IonSegment>
                 </IonCardContent>
               </IonCard>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {filteredHistory.map((entry) => {
-                  const color = getCategoryColor(entry.category, entry.source_type);
-                  return (
-                    <IonCard
-                      key={`${entry.source_type}-${entry.id}`}
-                      style={{
-                        borderRadius: '12px',
-                        background: 'white',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                        border: '1px solid #e0e0e0',
-                        borderLeft: `4px solid ${color}`,
-                        margin: '0'
-                      }}
-                    >
-                      <IonCardContent style={{ padding: '12px 16px' }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px'
-                        }}>
-                          {/* Icon */}
-                          <div style={{
-                            width: '40px',
-                            height: '40px',
-                            backgroundColor: color,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0
-                          }}>
-                            <IonIcon
-                              icon={getCategoryIcon(entry.category, entry.source_type)}
-                              style={{ fontSize: '1.2rem', color: 'white' }}
-                            />
-                          </div>
+            </IonList>
 
-                          {/* Content */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Verlauf Sektion - iOS26 Pattern */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--purple">
+                  <IonIcon icon={timeOutline} />
+                </div>
+                <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '8px' }}>
+                  {filteredHistory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                      Noch keine Einträge vorhanden
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {filteredHistory.map((entry) => {
+                        const color = getCategoryColor(entry.category, entry.source_type);
+                        return (
+                          <div
+                            key={`${entry.source_type}-${entry.id}`}
+                            className="app-list-item"
+                            style={{
+                              borderLeftColor: color,
+                              padding: '12px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px'
+                            }}
+                          >
+                            {/* Icon */}
                             <div style={{
-                              fontWeight: '600',
-                              fontSize: '0.95rem',
-                              color: '#333',
-                              marginBottom: '4px',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
+                              width: '40px',
+                              height: '40px',
+                              backgroundColor: color,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
                             }}>
-                              {entry.title}
+                              <IonIcon
+                                icon={getCategoryIcon(entry.category, entry.source_type)}
+                                style={{ fontSize: '1.2rem', color: 'white' }}
+                              />
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              <span style={{
-                                fontSize: '0.7rem',
-                                fontWeight: '600',
-                                padding: '2px 8px',
-                                borderRadius: '10px',
-                                backgroundColor: `${color}20`,
-                                color: color
-                              }}>
-                                {getCategoryLabel(entry.category, entry.source_type)}
-                              </span>
-                              <span style={{
-                                fontSize: '0.75rem',
-                                color: '#666',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}>
-                                <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
-                                {formatDate(entry.date)}
-                              </span>
-                            </div>
-                          </div>
 
-                          {/* Points */}
-                          <div style={{
-                            fontWeight: '700',
-                            fontSize: '1.1rem',
-                            color: color,
-                            flexShrink: 0
-                          }}>
-                            +{entry.points}
+                            {/* Content */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontWeight: '600',
+                                fontSize: '0.95rem',
+                                color: '#333',
+                                marginBottom: '4px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {entry.title}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: '600',
+                                  padding: '2px 8px',
+                                  borderRadius: '10px',
+                                  backgroundColor: `${color}20`,
+                                  color: color
+                                }}>
+                                  {getCategoryLabel(entry.category, entry.source_type)}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  color: '#666',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  <IonIcon icon={calendarOutline} style={{ fontSize: '0.75rem' }} />
+                                  {formatDate(entry.date)}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Points */}
+                            <div style={{
+                              fontWeight: '700',
+                              fontSize: '1.1rem',
+                              color: color,
+                              flexShrink: 0
+                            }}>
+                              +{entry.points}
+                            </div>
                           </div>
-                        </div>
-                      </IonCardContent>
-                    </IonCard>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+          </>
         )}
       </IonContent>
     </IonPage>
