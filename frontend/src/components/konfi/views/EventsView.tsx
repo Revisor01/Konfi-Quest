@@ -224,7 +224,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               fontWeight: '700',
               color: 'white'
             }}>
-              Events
+              Deine Events
             </h2>
             <p style={{
               margin: '2px 0 0 0',

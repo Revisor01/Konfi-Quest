@@ -451,12 +451,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           {/* Geheime Badges */}
           {badgeStats.totalSecret > 0 && (
             <div style={{
-              background: 'rgba(139, 92, 246, 0.4)',
+              background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
               padding: '12px 16px',
               textAlign: 'center',
-              minWidth: '85px',
-              border: '1px solid rgba(139, 92, 246, 0.3)'
+              minWidth: '85px'
             }}>
               <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
                 {badges.filter(b => b.is_earned && b.is_hidden).length}/{badgeStats.totalSecret}
