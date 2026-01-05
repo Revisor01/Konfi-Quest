@@ -14,9 +14,6 @@ import {
   IonButtons,
   IonList,
   IonListHeader,
-  IonGrid,
-  IonRow,
-  IonCol,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -29,7 +26,8 @@ import {
   informationCircleOutline,
   briefcaseOutline,
   settingsOutline,
-  shieldOutline
+  shieldOutline,
+  calendarOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -43,7 +41,7 @@ const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setUser, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
-  const [profileData, setProfileData] = useState<{ role_title?: string; email?: string }>({});
+  const [profileData, setProfileData] = useState<{ role_title?: string; email?: string; created_at?: string }>({});
 
   // Profildaten laden
   useEffect(() => {
@@ -233,6 +231,46 @@ const AdminProfilePage: React.FC = () => {
                 ? `Administrator - ${profileData.role_title}`
                 : 'Administrator'}
             </p>
+
+            {/* Info-Zeile: E-Mail und Mitglied seit */}
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '8px',
+              marginTop: '12px'
+            }}>
+              {(profileData.email || user?.email) && (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
+                  {profileData.email || user?.email}
+                </div>
+              )}
+              {profileData.created_at && (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  fontSize: '0.75rem',
+                  color: 'rgba(255, 255, 255, 0.95)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
+                  Seit {new Date(profileData.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

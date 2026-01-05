@@ -7,7 +7,6 @@ import {
   IonLabel,
   IonList,
   IonListHeader,
-  IonAvatar,
   IonProgressBar,
   useIonModal,
   useIonAlert,
@@ -246,7 +245,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   return (
     <div>
-      {/* Profile Header - Kompaktes Banner-Design */}
+      {/* Profile Header - Kompaktes Banner-Design mit integrierten Infos */}
       <div style={{
         background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
         borderRadius: '20px',
@@ -282,25 +281,25 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          marginBottom: '20px',
+          marginBottom: '16px',
           position: 'relative',
           zIndex: 1
         }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
+            width: '56px',
+            height: '56px',
+            borderRadius: '16px',
             background: 'rgba(255, 255, 255, 0.25)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: '700',
-            fontSize: '1.2rem',
+            fontSize: '1.3rem',
             color: 'white'
           }}>
             {getInitials(profile.display_name)}
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h2 style={{
               margin: '0',
               fontSize: '1.4rem',
@@ -312,10 +311,62 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
             <p style={{
               margin: '2px 0 0 0',
               fontSize: '0.85rem',
-              color: 'rgba(255, 255, 255, 0.8)'
+              color: 'rgba(255, 255, 255, 0.9)'
             }}>
-              {profile.jahrgang_name}
+              @{profile.username}
             </p>
+          </div>
+        </div>
+
+        {/* Info-Zeile: Jahrgang, E-Mail, Mitglied seit */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '16px',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            fontSize: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
+            {profile.jahrgang_name}
+          </div>
+          {profile.email && (
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              fontSize: '0.75rem',
+              color: 'rgba(255, 255, 255, 0.95)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              <IonIcon icon={person} style={{ fontSize: '0.85rem' }} />
+              {profile.email}
+            </div>
+          )}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            borderRadius: '8px',
+            padding: '6px 10px',
+            fontSize: '0.75rem',
+            color: 'rgba(255, 255, 255, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <IonIcon icon={star} style={{ fontSize: '0.85rem' }} />
+            Seit {formatDate(profile.created_at)}
           </div>
         </div>
 
@@ -374,54 +425,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           </div>
         </div>
       </div>
-
-      {/* Persönliche Informationen - Erweitert */}
-      <IonCard style={{ margin: '16px', borderRadius: '8px' }}>
-        <IonCardContent>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <IonAvatar style={{ 
-              width: '60px', 
-              height: '60px',
-              flexShrink: 0
-            }}>
-              <div style={{
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '1.2rem'
-              }}>
-                {getInitials(profile.display_name)}
-              </div>
-            </IonAvatar>
-            
-            <div style={{ flex: 1 }}>
-              <h2 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', fontWeight: '600' }}>
-                {profile.display_name}
-              </h2>
-              <p style={{ margin: '0', color: '#666', fontSize: '0.9rem' }}>
-                {profile.username ? `${profile.username}` : '...'}
-              </p>
-              <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
-                {profile.jahrgang_name}
-              </p>
-              {profile.email && (
-                <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
-                  {profile.email}
-                </p>
-              )}
-              <p style={{ margin: '0', color: '#999', fontSize: '0.85rem' }}>
-                Mitglied seit {formatDate(profile.created_at)}
-              </p>
-            </div>
-          </div>
-        </IonCardContent>
-      </IonCard>
 
       {/* Konfirmationstermin Card - Dashboard Blau Style mit Background Header */}
       <div style={{ 
