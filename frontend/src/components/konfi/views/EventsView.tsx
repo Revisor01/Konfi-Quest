@@ -1,24 +1,17 @@
 import React from 'react';
 import {
   IonCard,
-  IonCardHeader,
-  IonCardTitle,
   IonCardContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonButton,
   IonIcon,
   IonItem,
-  IonLabel,
-  IonBadge,
   IonList,
-  IonChip,
+  IonListHeader,
+  IonLabel,
   IonSegment,
   IonSegmentButton,
   IonItemSliding
 } from '@ionic/react';
-import { 
+import {
   calendar,
   time,
   location,
@@ -26,11 +19,10 @@ import {
   checkmarkCircle,
   hourglass,
   close,
-  statsChart,
   trophy,
-  ribbon,
   listOutline,
-  calendarOutline
+  calendarOutline,
+  lockOpenOutline
 } from 'ionicons/icons';
 
 interface Category {
@@ -78,30 +70,13 @@ interface EventsViewProps {
   onUpdate: () => void;
 }
 
-const EventsView: React.FC<EventsViewProps> = ({ 
-  events, 
+const EventsView: React.FC<EventsViewProps> = ({
+  events,
   activeTab,
   onTabChange,
   onSelectEvent,
   onUpdate
 }) => {
-
-  const getStatusColor = (event: Event) => {
-    if (event.is_registered) return 'success';
-    if (event.registration_status === 'open') return 'primary';
-    if (event.registration_status === 'closed') return 'warning';
-    if (event.registration_status === 'cancelled') return 'danger';
-    return 'medium';
-  };
-
-  const getStatusText = (event: Event) => {
-    if (event.is_registered) return 'Angemeldet';
-    if (event.registration_status === 'open') return 'Anmeldung offen';
-    if (event.registration_status === 'closed') return 'Anmeldung geschlossen';
-    if (event.registration_status === 'cancelled') return 'Abgesagt';
-    if (event.registration_status === 'upcoming') return 'Bald verfügbar';
-    return 'Unbekannt';
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -121,7 +96,7 @@ const EventsView: React.FC<EventsViewProps> = ({
   const allEvents = events.length;
   const konfirmationEvents = events.filter(e => e.category_names?.toLowerCase().includes('konfirmation'));
   const nonKonfirmationEvents = events.filter(e => !e.category_names?.toLowerCase().includes('konfirmation'));
-  
+
   const eventCounts = {
     all: allEvents,
     upcoming: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
@@ -139,30 +114,98 @@ const EventsView: React.FC<EventsViewProps> = ({
         return [
           { label: 'Gesamt', count: eventCounts.upcoming, icon: calendar },
           { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date() && !e.is_registered).length, icon: time },
-          { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: statsChart }
+          { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: checkmarkCircle }
         ];
       case 'registered':
         return [
           { label: 'Gebucht', count: eventCounts.registered, icon: calendar },
           { label: 'Anstehend', count: eventCounts.registeredUpcoming, icon: time },
-          { label: 'Vergangen', count: eventCounts.registeredPast, icon: statsChart }
+          { label: 'Vergangen', count: eventCounts.registeredPast, icon: checkmarkCircle }
         ];
       case 'konfirmation':
         return [
           { label: 'Gesamt', count: eventCounts.konfirmation, icon: calendar },
           { label: 'Anstehend', count: eventCounts.konfirmationUpcoming, icon: time },
-          { label: 'Gebucht', count: eventCounts.konfirmationRegistered, icon: statsChart }
+          { label: 'Gebucht', count: eventCounts.konfirmationRegistered, icon: checkmarkCircle }
         ];
       default:
         return [
           { label: 'Gesamt', count: eventCounts.all, icon: calendar },
           { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
-          { label: 'Gebucht', count: eventCounts.registered, icon: statsChart }
+          { label: 'Gebucht', count: eventCounts.registered, icon: checkmarkCircle }
         ];
     }
   };
 
   const statsData = getStatLabelsAndCounts();
+
+  // Berechne Status-Infos für ein Event
+  const getEventStatusInfo = (event: Event) => {
+    const isPastEvent = new Date(event.event_date) < new Date();
+    const isParticipated = isPastEvent && event.is_registered;
+    const attendanceStatus = event.attendance_status;
+    const isOnWaitlist = event.booking_status === 'waitlist';
+    const isCancelled = event.cancelled;
+
+    // Bestimme Farbe
+    let statusColor = '#fd7e14'; // Default: Orange für offen
+    if (isCancelled) statusColor = '#dc3545';
+    else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759';
+    else if (isParticipated && attendanceStatus === 'absent') statusColor = '#dc3545';
+    else if (isPastEvent && isOnWaitlist) statusColor = '#6c757d';
+    else if (isOnWaitlist) statusColor = '#fd7e14';
+    else if (event.is_registered) statusColor = '#007aff';
+    else if (isPastEvent) statusColor = '#6c757d';
+    else if (event.registration_status === 'open') statusColor = '#34c759';
+    else if (event.registration_status === 'upcoming') statusColor = '#fd7e14';
+    else statusColor = '#dc3545';
+
+    // Bestimme Text
+    let statusText = 'OFFEN';
+    if (isCancelled) statusText = 'Abgesagt';
+    else if (isParticipated && attendanceStatus === 'present') statusText = 'Verbucht';
+    else if (isParticipated && attendanceStatus === 'absent') statusText = 'Verpasst';
+    else if (isPastEvent && isOnWaitlist) statusText = 'Vergangen';
+    else if (isOnWaitlist) statusText = `Warteliste (${event.waitlist_position || 1})`;
+    else if (event.is_registered) statusText = 'Angemeldet';
+    else if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) statusText = 'Warteliste';
+    else if (event.registration_status === 'open') statusText = 'Offen';
+    else if (event.registration_status === 'upcoming') statusText = 'Bald';
+    else if (isPastEvent) statusText = 'Vergangen';
+    else statusText = 'Geschlossen';
+
+    // Bestimme Icon
+    let statusIcon = calendar;
+    if (isCancelled) statusIcon = close;
+    else if (isParticipated && attendanceStatus === 'present') statusIcon = checkmarkCircle;
+    else if (isParticipated && attendanceStatus === 'absent') statusIcon = close;
+    else if (isParticipated && !attendanceStatus) statusIcon = hourglass;
+    else if (isOnWaitlist) statusIcon = hourglass;
+    else if (event.is_registered) statusIcon = checkmarkCircle;
+    else if (isPastEvent) statusIcon = hourglass;
+    else if (event.registration_status === 'open') statusIcon = lockOpenOutline;
+    else statusIcon = time;
+
+    const shouldGrayOut = isPastEvent && !isParticipated;
+
+    return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated };
+  };
+
+  // Filtere Events basierend auf aktivem Tab
+  const getFilteredEvents = () => {
+    switch (activeTab) {
+      case 'upcoming':
+        return nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
+      case 'registered':
+        return events.filter(e => e.is_registered);
+      case 'konfirmation':
+        return konfirmationEvents;
+      default:
+        return events;
+    }
+  };
+
+  const filteredEvents = getFilteredEvents();
 
   return (
     <div>
@@ -282,319 +325,161 @@ const EventsView: React.FC<EventsViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Events Liste - Admin Design */}
-      {(() => {
-        // Filtere Events basierend auf aktivem Tab
-        let filteredEvents = events;
-        switch (activeTab) {
-          case 'upcoming':
-            filteredEvents = nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
-            break;
-          case 'registered':
-            filteredEvents = events.filter(e => e.is_registered);
-            break;
-          case 'konfirmation':
-            filteredEvents = konfirmationEvents;
-            break;
-          default:
-            filteredEvents = events;
-        }
-        
-        return filteredEvents.length > 0 && (
-          <IonCard style={{ margin: '16px' }}>
-            <IonCardContent style={{ padding: '8px 0' }}>
-              <IonList lines="none" style={{ background: 'transparent' }}>
-                {filteredEvents.map((event) => {
-              const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
-              const isCancelled = event.cancelled;
-              const isPastEvent = new Date(event.event_date) < new Date();
-              
-              return (
-              <IonItemSliding key={event.id}>
-                <IonItem 
-                  onClick={() => onSelectEvent(event)}
-                  style={{ 
-                  '--min-height': '110px',
-                  '--padding-start': '16px', 
-                  '--padding-top': '0px', 
-                  '--padding-bottom': '0px',
-                  '--background': '#fbfbfb',
-                  '--border-radius': '12px',
-                  margin: '6px 8px',
-                  boxShadow: isCancelled ? '0 2px 8px rgba(239, 68, 68, 0.2)' : isKonfirmationEvent ? '0 2px 8px rgba(139, 92, 246, 0.15)' : '0 2px 8px rgba(0,0,0,0.06)',
-                  border: isCancelled ? '1px solid #fca5a5' : isKonfirmationEvent ? '1px solid #c4b5fd' : '1px solid #e0e0e0',
-                  borderRadius: '12px',
-                  opacity: isPastEvent ? 0.6 : 1
-                }}
-              >
-                <IonLabel>
-                  {/* Titel mit Icon und Status Badge in einer Reihe */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '8px',
-                    position: 'relative'
-                  }}>
-                    <div style={{ 
-                      width: '32px', 
-                      height: '32px',
-backgroundColor: (() => {
-                        const isPastEvent = new Date(event.event_date) < new Date();
-                        const isParticipated = isPastEvent && event.is_registered;
-                        const attendanceStatus = event.attendance_status;
-                        const isOnWaitlist = (event as any).booking_status === 'waitlist';
-                        
-                        if (event.cancelled) return '#dc3545'; // Rot für abgesagt
-                        if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
-                        if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst
-                        // Vergangene Wartelisten-Events grau
-                        if (isPastEvent && isOnWaitlist) return '#6c757d'; // Grau für vergangen  
-                        if (isOnWaitlist) return '#fd7e14'; // Orange für Warteliste
-                        if (event.is_registered) return '#007aff'; // Blau für angemeldet
-                        if (isPastEvent) return '#6c757d'; // Grau für vergangen
-                        return '#fd7e14'; // Orange für offen
-                      })(),
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)',
-                      flexShrink: 0
-                    }}>
-                      <IonIcon 
-icon={(() => {
-                          const isPastEvent = new Date(event.event_date) < new Date();
-                          const isParticipated = isPastEvent && event.is_registered;
-                          const attendanceStatus = event.attendance_status;
-                          
-                          if (event.cancelled) return close; // X für abgesagt
-                          if (isParticipated && attendanceStatus === 'present') return checkmarkCircle; // Häkchen für verbucht
-                          if (isParticipated && attendanceStatus === 'absent') return close; // X für verpasst
-                          if (isParticipated && !attendanceStatus) return hourglass; // Sanduhr für offen
-                          if ((event as any).registration_status_detail === 'waitlist') return checkmarkCircle; // Häkchen für Warteliste
-                          if (event.is_registered) return checkmarkCircle; // Häkchen für angemeldet
-                          if (isPastEvent) return hourglass; // Sanduhr für vergangen
-                          return calendar; // Kalender für anstehend
-                        })()}
-                        style={{ 
-                          fontSize: '1rem', 
-                          color: 'white'
-                        }} 
-                      />
-                    </div>
-                    <h2 style={{ 
-                      fontWeight: '600', 
-                      fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)', // Responsive Schriftgröße
-                      margin: '0',
-                      color: event.cancelled ? '#999' : isPastEvent ? '#999' : '#333',
-                      textDecoration: event.cancelled ? 'line-through' : 'none',
-                      lineHeight: '1.3',
-                      flex: 1,
-                      minWidth: 0,
-                      marginRight: '110px', // Fester Platz für Badge
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap' // Titel wird automatisch mit ... abgekürzt
-                    }}>
-                      {event.name}
-                    </h2>
-                    
-                    {/* Status Badge rechts */}
-                    {(() => {
-                      const isPastEvent = new Date(event.event_date) < new Date();
-                      const isParticipated = isPastEvent && event.is_registered;
-                      
-                      // Zeige Badge nur wenn Event zukünftig ist ODER Benutzer war angemeldet
-                      const showBadge = !isPastEvent || isParticipated;
-                      
-                      if (!showBadge) return null;
-                      
-                      return (
-                        <span style={{
-                          fontSize: '0.7rem',
-color: (() => {
-                            const isPastEvent = new Date(event.event_date) < new Date();
-                            const isParticipated = isPastEvent && event.is_registered;
-                            const attendanceStatus = event.attendance_status;
-                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
-                            
-                            if (event.cancelled) return '#dc3545'; // Rot für abgesagt
-                            if (isParticipated && attendanceStatus === 'present') return '#28a745'; // Grün für verbucht
-                            if (isParticipated && attendanceStatus === 'absent') return '#dc3545'; // Rot für verpasst
-                            // Vergangene Wartelisten-Events grau
-                            if (isPastEvent && isOnWaitlist) return '#6c757d'; // Grau für vergangen
-                            if (isOnWaitlist) return '#fd7e14'; // Orange für Warteliste
-                            if (event.is_registered) return '#007aff'; // Blau für angemeldet
-                            if (event.registration_status === 'open') return '#fd7e14'; // Orange für offen
-                            if (event.registration_status === 'upcoming') return '#ffc409'; // Gelb für bald
-                            return '#dc3545'; // Rot für geschlossen
-                          })(),
-                          fontWeight: '600',
-backgroundColor: (() => {
-                            const isPastEvent = new Date(event.event_date) < new Date();
-                            const isParticipated = isPastEvent && event.is_registered;
-                            const attendanceStatus = event.attendance_status;
-                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
-                            
-                            if (event.cancelled) return '#f8d7da'; // Hellrot für abgesagt
-                            if (isParticipated && attendanceStatus === 'present') return '#d4edda'; // Hellgrün für verbucht
-                            if (isParticipated && attendanceStatus === 'absent') return '#f8d7da'; // Hellrot für verpasst
-                            // Vergangene Wartelisten-Events grau
-                            if (isPastEvent && isOnWaitlist) return '#e9ecef'; // Hellgrau für vergangen
-                            if (isOnWaitlist) return '#fff4e6'; // Hellorange für Warteliste
-                            if (event.is_registered) return '#e3f2fd'; // Hellblau für angemeldet
-                            if (event.registration_status === 'open') return '#fff4e6'; // Hellorange für offen
-                            if (event.registration_status === 'upcoming') return '#fff3cd'; // Hellgelb für bald
-                            return '#f8d7da'; // Hellrot für geschlossen
-                          })(),
-                          padding: '3px 6px',
-                          borderRadius: '6px',
-border: `1px solid ${(() => {
-                            const isPastEvent = new Date(event.event_date) < new Date();
-                            const isParticipated = isPastEvent && event.is_registered;
-                            const attendanceStatus = event.attendance_status;
-                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
-                            
-                            if (event.cancelled) return '#f5c6cb'; // Border rot für abgesagt
-                            if (isParticipated && attendanceStatus === 'present') return '#c3e6cb'; // Border grün für verbucht
-                            if (isParticipated && attendanceStatus === 'absent') return '#f5c6cb'; // Border rot für verpasst
-                            // Vergangene Wartelisten-Events grau
-                            if (isPastEvent && isOnWaitlist) return '#dee2e6'; // Border grau für vergangen
-                            if (isOnWaitlist) return '#fdbf85'; // Border orange für Warteliste
-                            if (event.is_registered) return '#bbdefb'; // Border blau für angemeldet
-                            if (event.registration_status === 'open') return '#fdbf85'; // Border orange für offen
-                            if (event.registration_status === 'upcoming') return '#ffeaa7'; // Border gelb für bald
-                            return '#f5c6cb'; // Border rot für geschlossen
-                          })()}`,
-                          whiteSpace: 'nowrap',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.08)',
-                          flexShrink: 0,
-                          position: 'absolute',
-                          right: '0',
-                          top: '50%',
-                          transform: 'translateY(-50%)'
-                        }}>
-                          {(() => {
-                            const isPastEvent = new Date(event.event_date) < new Date();
-                            const isParticipated = isPastEvent && event.is_registered;
-                            const attendanceStatus = event.attendance_status;
-                            const isOnWaitlist = (event as any).booking_status === 'waitlist';
-                            
-                            if (event.cancelled) return 'ABGESAGT';
-                            if (isParticipated && attendanceStatus === 'present') return 'VERBUCHT';
-                            if (isParticipated && attendanceStatus === 'absent') return 'VERPASST';
-                            // Vergangene Wartelisten-Events - einfach als VERGANGEN markieren
-                            if (isPastEvent && isOnWaitlist) return 'VERGANGEN';
-                            if (isOnWaitlist) return `WARTELISTE (${(event as any).waitlist_position || 1})`;
-                            if (event.is_registered) return 'ANGEMELDET';
-                            if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'WARTELISTE';
-                            if (event.registration_status === 'open') return 'OFFEN';
-                            if (event.registration_status === 'upcoming') return 'BALD';
-                            return 'GESCHLOSSEN';
-                          })()}
-                        </span>
-                      );
-                    })()}
-                  </div>
+      {/* Events Liste - Admin Pattern mit CSS-Klassen */}
+      {filteredEvents.length > 0 && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendarOutline} />
+            </div>
+            <IonLabel>Events ({filteredEvents.length})</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                {filteredEvents.map((event, index) => {
+                  const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated } = getEventStatusInfo(event);
+                  const isCancelled = event.cancelled;
+                  const showBadge = !isPastEvent || isParticipated || isCancelled;
 
-                  
-                  {/* Datum und Zeit */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '0.85rem',
-                    color: isPastEvent ? '#999' : '#666',
-                    marginBottom: '6px',
-                    marginLeft: '44px'
-                  }}>
-                    <IonIcon icon={calendar} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#dc2626' }} />
-                    <span style={{ fontWeight: '500', color: isPastEvent ? '#999' : '#333' }}>
-                      {formatDate(event.event_date)}
-                    </span>
-                    <IonIcon icon={time} style={{ fontSize: '0.9rem', color: isPastEvent ? '#999' : '#ff6b35', marginLeft: '8px' }} />
-                    <span style={{ color: isPastEvent ? '#999' : '#666' }}>
-                      {formatTime(event.event_date)}
-                    </span>
-                  </div>
-                  
-                  {/* Location und Teilnehmer */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '16px',
-                    fontSize: '0.8rem',
-                    color: isPastEvent ? '#999' : '#666',
-                    marginLeft: '44px'
-                  }}>
-                    {event.location && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={location} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#007aff' }} />
-                        <span>{event.location}</span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={people} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#34c759' }} />
-                      <span>{event.registered_count}/{event.max_participants}</span>
-                      {event.waitlist_enabled && (event as any).waitlist_count > 0 && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
-                          <IonIcon icon={listOutline} style={{ fontSize: '0.7rem', color: isPastEvent ? '#999' : '#fd7e14' }} />
-                          <span style={{ color: isPastEvent ? '#999' : '#666' }}>{(event as any).waitlist_count}/{event.max_waitlist_size || 10}</span>
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <IonIcon icon={trophy} style={{ fontSize: '0.8rem', color: isPastEvent ? '#999' : '#ff9500' }} />
-                      <span>{event.points}P</span>
-                    </div>
-                  </div>
-                </IonLabel>
-              </IonItem>
-              </IonItemSliding>
-                );
+                  return (
+                    <IonItemSliding key={event.id} style={{ marginBottom: index < filteredEvents.length - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        button
+                        onClick={() => onSelectEvent(event)}
+                        detail={false}
+                        lines="none"
+                        style={{
+                          '--background': 'transparent',
+                          '--padding-start': '0',
+                          '--padding-end': '0',
+                          '--inner-padding-end': '0',
+                          '--inner-border-width': '0',
+                          '--border-style': 'none',
+                          '--min-height': 'auto'
+                        }}
+                      >
+                        <div
+                          className="app-list-item app-list-item--events"
+                          style={{
+                            width: '100%',
+                            borderLeftColor: statusColor,
+                            opacity: shouldGrayOut ? 0.6 : 1,
+                            position: 'relative',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {/* Eselsohr-Style Corner Badge */}
+                          {showBadge && (
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: statusColor }}
+                            >
+                              {statusText}
+                            </div>
+                          )}
+
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              {/* Status Icon */}
+                              <div
+                                className="app-icon-circle app-icon-circle--lg"
+                                style={{ backgroundColor: statusColor }}
+                              >
+                                <IonIcon icon={statusIcon} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="app-list-item__content">
+                                {/* Zeile 1: Titel */}
+                                <div
+                                  className="app-list-item__title"
+                                  style={{
+                                    color: isCancelled || shouldGrayOut ? '#999' : undefined,
+                                    textDecoration: isCancelled ? 'line-through' : 'none',
+                                    paddingRight: showBadge ? '70px' : '0'
+                                  }}
+                                >
+                                  {event.name}
+                                </div>
+
+                                {/* Zeile 2: Datum + Uhrzeit */}
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                                    {formatDate(event.event_date)}
+                                  </span>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
+                                    {formatTime(event.event_date)}
+                                  </span>
+                                  {event.location && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
+                                      {event.location}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Zeile 3: Teilnehmer + Warteliste + Punkte */}
+                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
+                                    {event.registered_count}/{event.max_participants}
+                                  </span>
+                                  {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
+                                      {event.waitlist_count}/{event.max_waitlist_size || 10}
+                                    </span>
+                                  )}
+                                  {event.points > 0 && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={trophy} style={{ color: shouldGrayOut ? '#999' : '#ff9500' }} />
+                                      {event.points}P
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </IonItem>
+                    </IonItemSliding>
+                  );
                 })}
               </IonList>
             </IonCardContent>
           </IonCard>
-        );
-      })()}
+        </IonList>
+      )}
 
-      {(() => {
-        // Zeige leere Nachricht basierend auf Tab
-        let filteredEvents = events;
-        switch (activeTab) {
-          case 'upcoming':
-            filteredEvents = nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
-            break;
-          case 'registered':
-            filteredEvents = events.filter(e => e.is_registered);
-            break;
-          case 'konfirmation':
-            filteredEvents = konfirmationEvents;
-            break;
-          default:
-            filteredEvents = events;
-        }
-        
-        return filteredEvents.length === 0 && (
-          <IonCard style={{ margin: '16px' }}>
+      {/* Keine Events gefunden */}
+      {filteredEvents.length === 0 && (
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={calendarOutline} />
+            </div>
+            <IonLabel>Events (0)</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon 
-                  icon={calendarOutline} 
-                  style={{ 
-                    fontSize: '3rem', 
-                    color: '#dc2626', 
+                <IonIcon
+                  icon={calendarOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#dc2626',
                     marginBottom: '16px',
                     display: 'block',
                     margin: '0 auto 16px auto'
-                  }} 
+                  }}
                 />
                 <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
                 <p style={{ color: '#999', margin: '0' }}>
-                  {activeTab === 'registered' 
-                    ? 'Du bist noch für keine Events angemeldet' 
+                  {activeTab === 'registered'
+                    ? 'Du bist noch für keine Events angemeldet'
                     : activeTab === 'konfirmation'
                     ? 'Keine Konfirmationstermine verfügbar'
                     : 'Keine anstehenden Events'
@@ -603,8 +488,8 @@ border: `1px solid ${(() => {
               </div>
             </IonCardContent>
           </IonCard>
-        );
-      })()}
+        </IonList>
+      )}
     </div>
   );
 };
