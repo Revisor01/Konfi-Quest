@@ -13,10 +13,7 @@ import {
   IonCardContent,
   IonList,
   IonListHeader,
-  IonLabel,
-  IonGrid,
-  IonRow,
-  IonCol
+  IonLabel
 } from '@ionic/react';
 import {
   closeOutline,
@@ -180,184 +177,52 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
           </div>
         ) : (
           <>
-            {/* Header - Kompakter Dashboard-Style */}
+            {/* Header - Kompakter Style wie BadgesView */}
             <div style={{
               background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              borderRadius: '24px',
-              padding: '0',
+              borderRadius: '20px',
+              padding: '24px',
               margin: '16px',
               marginBottom: '16px',
-              boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.25)',
               position: 'relative',
-              overflow: 'hidden',
-              minHeight: '220px',
-              display: 'flex',
-              flexDirection: 'column'
+              overflow: 'hidden'
             }}>
-              {/* Überschrift - groß und überlappend */}
-              <div style={{
-                position: 'absolute',
-                top: '-5px',
-                left: '12px',
-                zIndex: 1
-              }}>
-                <h2 style={{
-                  fontSize: '4rem',
-                  fontWeight: '900',
-                  color: 'rgba(255, 255, 255, 0.1)',
-                  margin: '0',
-                  lineHeight: '0.8',
-                  letterSpacing: '-2px'
-                }}>
-                  PUNKTE
-                </h2>
+              <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
+              <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <IonIcon icon={trophyOutline} style={{ fontSize: '1.6rem', color: 'white' }} />
+                </div>
+                <div>
+                  <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Deine Punkte</h2>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Übersicht aller gesammelten Punkte</p>
+                </div>
               </div>
 
-              {/* Content */}
-              <div style={{
-                position: 'relative',
-                zIndex: 2,
-                padding: '70px 24px 24px 24px',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center'
-              }}>
-                <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-                  {/* Erste Reihe: Gesamt, Gottesdienst, Gemeinde */}
-                  <IonRow>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={trophyOutline}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                          {calculatedTotals.total}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Gesamt
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={starOutline}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                          {calculatedTotals.gottesdienst}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Gottesdienst
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '16px 12px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={flashOutline}
-                          style={{
-                            fontSize: '1.5rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            display: 'block',
-                            margin: '0 auto 8px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                          {calculatedTotals.gemeinde}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                          Gemeinde
-                        </div>
-                      </div>
-                    </IonCol>
-                  </IonRow>
-                  {/* Zweite Reihe: Events, Bonus */}
-                  <IonRow style={{ marginTop: '8px' }}>
-                    <IonCol size="2" style={{ padding: '0 4px' }}></IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '12px 8px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={calendarOutline}
-                          style={{
-                            fontSize: '1.2rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            display: 'block',
-                            margin: '0 auto 4px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>
-                          {calculatedTotals.eventCount}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                          Events
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="4" style={{ padding: '0 4px' }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        padding: '12px 8px',
-                        color: 'white',
-                        textAlign: 'center'
-                      }}>
-                        <IonIcon
-                          icon={giftOutline}
-                          style={{
-                            fontSize: '1.2rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            display: 'block',
-                            margin: '0 auto 4px auto'
-                          }}
-                        />
-                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>
-                          {calculatedTotals.bonusCount}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                          Bonus
-                        </div>
-                      </div>
-                    </IonCol>
-                    <IonCol size="2" style={{ padding: '0 4px' }}></IonCol>
-                  </IonRow>
-                </IonGrid>
+              {/* Stats Boxen - 5 nebeneinander */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', position: 'relative', zIndex: 1 }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.total}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.gottesdienst}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GD</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.gemeinde}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEM</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.eventCount}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>EVENTS</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.bonusCount}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>BONUS</div>
+                </div>
               </div>
             </div>
 
@@ -392,26 +257,44 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                             className={`app-list-item ${listItemClass}`}
                             style={{ position: 'relative', overflow: 'hidden' }}
                           >
-                            {/* Corner Badge für Punkte - Eselsohr oben rechts */}
-                            <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: categoryColor }}
-                            >
-                              +{entry.points}
-                            </div>
-
-                            {/* Zweites Eselsohr für Typ (Bonus/Event) - darunter */}
-                            {typeBadgeColor && typeBadgeLabel && (
-                              <div
-                                className="app-corner-badge"
-                                style={{
+                            {/* Corner Badges Container - oben rechts */}
+                            <div style={{
+                              position: 'absolute',
+                              top: '0',
+                              right: '0',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              zIndex: 10
+                            }}>
+                              {/* Typ-Badge zuerst (Bonus/Event) - links unten abgerundet */}
+                              {typeBadgeColor && typeBadgeLabel && (
+                                <div style={{
                                   backgroundColor: typeBadgeColor,
-                                  top: '32px'
-                                }}
-                              >
-                                {typeBadgeLabel}
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '700',
+                                  padding: '4px 8px',
+                                  borderRadius: '0 0 0 8px'
+                                }}>
+                                  {typeBadgeLabel}
+                                </div>
+                              )}
+                              {/* Weißer Abstand */}
+                              {typeBadgeColor && (
+                                <div style={{ width: '2px', background: 'white' }} />
+                              )}
+                              {/* Punkte-Badge - rechts unten abgerundet */}
+                              <div style={{
+                                backgroundColor: categoryColor,
+                                color: 'white',
+                                fontSize: '0.65rem',
+                                fontWeight: '700',
+                                padding: '4px 8px',
+                                borderRadius: typeBadgeColor ? '0 0 0 8px' : '0 0 0 8px'
+                              }}>
+                                +{entry.points}
                               </div>
-                            )}
+                            </div>
 
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
