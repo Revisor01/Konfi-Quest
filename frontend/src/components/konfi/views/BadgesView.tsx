@@ -542,116 +542,120 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const progressPercent = Math.round((earnedCount / totalCount) * 100);
 
             return (
-              <div key={category.key} style={{ marginBottom: '28px' }}>
-                {/* Kategorie Header */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '0 16px',
-                  marginBottom: '16px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '12px',
-                      background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}cc 100%)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: `0 4px 12px ${category.color}40`
-                    }}>
-                      <IonIcon
-                        icon={category.icon}
-                        style={{ fontSize: '1.3rem', color: 'white' }}
-                      />
+              <IonCard key={category.key} style={{
+                margin: '16px',
+                borderRadius: '16px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.08)'
+              }}>
+                <IonCardContent style={{ padding: '16px' }}>
+                  {/* Kategorie Header */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}cc 100%)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: `0 4px 12px ${category.color}40`
+                      }}>
+                        <IonIcon
+                          icon={category.icon}
+                          style={{ fontSize: '1.3rem', color: 'white' }}
+                        />
+                      </div>
+                      <div>
+                        <h3 style={{
+                          margin: '0',
+                          fontSize: '1.1rem',
+                          fontWeight: '700',
+                          color: '#333'
+                        }}>
+                          {category.title}
+                        </h3>
+                        <span style={{
+                          fontSize: '0.85rem',
+                          color: '#888'
+                        }}>
+                          {earnedCount} von {totalCount}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 style={{
-                        margin: '0',
-                        fontSize: '1.1rem',
-                        fontWeight: '700',
-                        color: '#333'
-                      }}>
-                        {category.title}
-                      </h3>
+
+                    {/* Progress Circle */}
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      position: 'relative'
+                    }}>
+                      <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          fill="none"
+                          stroke="#e8e8e8"
+                          strokeWidth="4"
+                        />
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          fill="none"
+                          stroke={category.color}
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeDasharray={`${progressPercent * 1.257} 125.7`}
+                        />
+                      </svg>
                       <span style={{
-                        fontSize: '0.85rem',
-                        color: '#888'
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        fontSize: progressPercent === 100 && hasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
+                        fontWeight: '700',
+                        color: category.color
                       }}>
-                        {earnedCount} von {totalCount}
+                        {progressPercent === 100 && hasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
                       </span>
                     </div>
                   </div>
 
-                  {/* Progress Circle */}
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    position: 'relative'
-                  }}>
-                    <svg width="48" height="48" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle
-                        cx="24"
-                        cy="24"
-                        r="20"
-                        fill="none"
-                        stroke="#e8e8e8"
-                        strokeWidth="4"
-                      />
-                      <circle
-                        cx="24"
-                        cy="24"
-                        r="20"
-                        fill="none"
-                        stroke={category.color}
-                        strokeWidth="4"
-                        strokeLinecap="round"
-                        strokeDasharray={`${progressPercent * 1.257} 125.7`}
-                      />
-                    </svg>
-                    <span style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      fontSize: progressPercent === 100 && hasUndiscoveredSecrets ? '0.6rem' : '0.7rem',
-                      fontWeight: '700',
-                      color: category.color
-                    }}>
-                      {progressPercent === 100 && hasUndiscoveredSecrets ? '100%?' : `${progressPercent}%`}
-                    </span>
-                  </div>
-                </div>
+                  {/* 2-Spalten Grid Container */}
+                  <IonGrid style={{ padding: '0' }}>
+                    <IonRow>
+                      {category.badges.map((badge) => {
+                        const badgeColor = getBadgeColor(badge);
+                        const isEarned = badge.is_earned;
+                        const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
 
-                {/* 2-Spalten Grid Container */}
-                <IonGrid style={{ padding: '0 12px' }}>
-                  <IonRow>
-                    {category.badges.map((badge) => {
-                      const badgeColor = getBadgeColor(badge);
-                      const isEarned = badge.is_earned;
-                      const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
-
-                      return (
-                        <IonCol size="6" sizeMd="3" key={badge.id} style={{ padding: '6px' }}>
-                          <div style={{
-                            background: '#ffffff',
-                            borderRadius: '16px',
-                            padding: '16px 12px',
-                            textAlign: 'center',
-                            position: 'relative',
-                            border: isEarned
-                              ? `2px solid ${badgeColor}40`
-                              : '2px solid #f0f0f0',
-                            boxShadow: isEarned
-                              ? `0 6px 20px ${badgeColor}15`
-                              : '0 2px 8px rgba(0,0,0,0.04)',
-                            minHeight: '200px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center'
-                          }}>
+                        return (
+                          <IonCol size="6" sizeMd="3" key={badge.id} style={{ padding: '6px' }}>
+                            <div style={{
+                              background: isEarned ? '#fafafa' : '#f8f8f8',
+                              borderRadius: '14px',
+                              padding: '14px 10px',
+                              textAlign: 'center',
+                              position: 'relative',
+                              border: isEarned
+                                ? `2px solid ${badgeColor}50`
+                                : '1px solid #e8e8e8',
+                              boxShadow: isEarned
+                                ? `0 4px 16px ${badgeColor}15`
+                                : 'none',
+                              minHeight: '180px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center'
+                            }}>
 
                             {/* Geheim-Badge Indikator */}
                             {badge.is_hidden && (
@@ -881,13 +885,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 GESPERRT
                               </div>
                             )}
-                          </div>
-                        </IonCol>
-                      );
-                    })}
-                  </IonRow>
-                </IonGrid>
-              </div>
+                            </div>
+                          </IonCol>
+                        );
+                      })}
+                    </IonRow>
+                  </IonGrid>
+                </IonCardContent>
+              </IonCard>
             );
           })
         )}
