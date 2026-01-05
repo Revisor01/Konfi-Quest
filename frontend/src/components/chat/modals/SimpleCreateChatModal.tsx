@@ -139,8 +139,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           display_name: u.name,
           type: u.type as 'admin' | 'konfi',
           jahrgang_name: u.jahrgang_name,
-          // Funktionsbeschreibung fuer Admins
-          role_description: u.role_title || u.role_display_name || u.role_name
+          // Funktionsbeschreibung vom Backend (bereits mit Fallback)
+          role_description: u.role_description
         }));
 
         console.log('Loaded users for konfi chat:', {
@@ -486,45 +486,49 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                   placeholder="Person suchen..."
                 />
               </IonItem>
-              {/* Rolle Filter */}
-              <IonItem>
-                <IonIcon
-                  icon={personOutline}
-                  slot="start"
-                  style={{ color: '#8e8e93', fontSize: '1rem' }}
-                />
-                <IonSelect
-                  value={selectedRole}
-                  onIonChange={(e) => setSelectedRole(e.detail.value!)}
-                  placeholder="Alle Rollen"
-                  interface="popover"
-                  style={{ width: '100%' }}
-                >
-                  <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
-                  <IonSelectOption value="konfi">Konfis</IonSelectOption>
-                  <IonSelectOption value="admin">Admins</IonSelectOption>
-                </IonSelect>
-              </IonItem>
-              {/* Jahrgang Filter */}
-              <IonItem>
-                <IonIcon
-                  icon={calendarOutline}
-                  slot="start"
-                  style={{ color: '#8e8e93', fontSize: '1rem' }}
-                />
-                <IonSelect
-                  value={selectedJahrgang}
-                  onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
-                  placeholder="Alle Jahrgänge"
-                  interface="popover"
-                  style={{ width: '100%' }}
-                >
-                  <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                  {availableJahrgaenge.map(jg => (
-                    <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+              {/* Rolle Filter - nur für Admins */}
+              {isAdmin && (
+                <IonItem>
+                  <IonIcon
+                    icon={personOutline}
+                    slot="start"
+                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                  />
+                  <IonSelect
+                    value={selectedRole}
+                    onIonChange={(e) => setSelectedRole(e.detail.value!)}
+                    placeholder="Alle Rollen"
+                    interface="popover"
+                    style={{ width: '100%' }}
+                  >
+                    <IonSelectOption value="alle">Alle Rollen</IonSelectOption>
+                    <IonSelectOption value="konfi">Konfis</IonSelectOption>
+                    <IonSelectOption value="admin">Admins</IonSelectOption>
+                  </IonSelect>
+                </IonItem>
+              )}
+              {/* Jahrgang Filter - nur für Admins */}
+              {isAdmin && availableJahrgaenge.length > 0 && (
+                <IonItem>
+                  <IonIcon
+                    icon={calendarOutline}
+                    slot="start"
+                    style={{ color: '#8e8e93', fontSize: '1rem' }}
+                  />
+                  <IonSelect
+                    value={selectedJahrgang}
+                    onIonChange={(e) => setSelectedJahrgang(e.detail.value!)}
+                    placeholder="Alle Jahrgänge"
+                    interface="popover"
+                    style={{ width: '100%' }}
+                  >
+                    <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                    {availableJahrgaenge.map(jg => (
+                      <IonSelectOption key={jg} value={jg}>{jg}</IonSelectOption>
+                    ))}
+                  </IonSelect>
+                </IonItem>
+              )}
             </IonItemGroup>
           </IonList>
 
