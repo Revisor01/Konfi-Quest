@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -25,7 +25,9 @@ import {
   lockClosedOutline,
   eyeOutline,
   eyeOffOutline,
-  informationCircleOutline
+  shieldCheckmarkOutline,
+  checkmarkCircle,
+  alertCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -34,6 +36,31 @@ interface ChangePasswordModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
+
+interface PasswordCheck {
+  minLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecial: boolean;
+}
+
+// Password Check Item Component
+const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: checked ? '#10b981' : '#9ca3af',
+    fontSize: '0.8rem'
+  }}>
+    <IonIcon
+      icon={checked ? checkmarkCircle : alertCircle}
+      style={{ fontSize: '0.9rem' }}
+    />
+    <span>{label}</span>
+  </div>
+);
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSuccess }) => {
   const { setSuccess, setError } = useApp();
@@ -49,20 +76,42 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     new: false,
     confirm: false
   });
+  const [passwordChecks, setPasswordChecks] = useState<PasswordCheck>({
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecial: false
+  });
+
+  // Password validation effect
+  useEffect(() => {
+    const pw = passwordData.new_password;
+    setPasswordChecks({
+      minLength: pw.length >= 8,
+      hasUppercase: /[A-Z]/.test(pw),
+      hasLowercase: /[a-z]/.test(pw),
+      hasNumber: /[0-9]/.test(pw),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)
+    });
+  }, [passwordData.new_password]);
+
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
+  const passwordsMatch = passwordData.new_password === passwordData.confirm_password && passwordData.confirm_password.length > 0;
 
   const handleSave = async () => {
-    if (!passwordData.current_password || !passwordData.new_password || !passwordData.confirm_password) {
-      setError('Alle Passwort-Felder sind erforderlich');
+    if (!passwordData.current_password) {
+      setError('Bitte geben Sie Ihr aktuelles Passwort ein');
       return;
     }
 
-    if (passwordData.new_password !== passwordData.confirm_password) {
-      setError('Neue Passwörter stimmen nicht überein');
+    if (!isPasswordValid) {
+      setError('Das neue Passwort erfüllt nicht alle Anforderungen');
       return;
     }
 
-    if (passwordData.new_password.length < 6) {
-      setError('Neues Passwort muss mindestens 6 Zeichen lang sein');
+    if (!passwordsMatch) {
+      setError('Die neuen Passwörter stimmen nicht überein');
       return;
     }
 
@@ -81,11 +130,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     }
   };
 
-  const isValid = passwordData.current_password &&
-    passwordData.new_password &&
-    passwordData.confirm_password &&
-    passwordData.new_password === passwordData.confirm_password &&
-    passwordData.new_password.length >= 6;
+  const isValid = passwordData.current_password && isPasswordValid && passwordsMatch;
 
   return (
     <IonPage>
@@ -190,8 +235,29 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
           </IonCard>
         </IonList>
 
-        {/* Validation Feedback */}
-        {passwordData.new_password && passwordData.confirm_password && passwordData.new_password !== passwordData.confirm_password && (
+        {/* Passwort-Anforderungen Sektion */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--purple">
+              <IonIcon icon={shieldCheckmarkOutline} />
+            </div>
+            <IonLabel>Passwort-Anforderungen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent style={{ padding: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
+                <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
+                <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
+                <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
+                <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Validation Feedback - Passwörter stimmen nicht überein */}
+        {passwordData.new_password && passwordData.confirm_password && !passwordsMatch && (
           <IonList inset={true} style={{ margin: '16px' }}>
             <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
               <IonCardContent style={{ padding: '12px 16px' }}>
@@ -205,24 +271,19 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
           </IonList>
         )}
 
-        {/* Hinweis Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
-              <IonIcon icon={informationCircleOutline} />
-            </div>
-            <IonLabel>Hinweis</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card" style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonText style={{ color: '#8b5cf6' }}>
-                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  Das Passwort muss mindestens 6 Zeichen lang sein.
-                </p>
-              </IonText>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+        {/* Bestätigung wenn alles passt */}
+        {isValid && (
+          <IonList inset={true} style={{ margin: '16px' }}>
+            <IonCard className="app-card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <IonCardContent style={{ padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>
+                  <IonIcon icon={checkmarkCircle} />
+                  <span style={{ fontSize: '0.85rem' }}>Alle Anforderungen erfüllt - bereit zum Speichern</span>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
       </IonContent>
     </IonPage>
   );

@@ -140,57 +140,16 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
           </div>
         ) : (
           <>
-            {/* Punkte-Übersicht Header - Dashboard Style */}
-            <div style={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              borderRadius: '24px',
-              padding: '0',
-              margin: '16px',
-              marginBottom: '16px',
-              boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
-              position: 'relative',
-              overflow: 'hidden',
-              minHeight: '200px'
-            }}>
-              {/* Background Text */}
-              <div style={{
-                position: 'absolute',
-                top: '-5px',
-                left: '12px',
-                zIndex: 1
-              }}>
-                <h2 style={{
-                  fontSize: '3rem',
-                  fontWeight: '900',
-                  color: 'rgba(255, 255, 255, 0.08)',
-                  margin: '0',
-                  lineHeight: '0.9',
-                  letterSpacing: '-2px'
-                }}>
-                  DEINE
-                </h2>
-                <h2 style={{
-                  fontSize: '3rem',
-                  fontWeight: '900',
-                  color: 'rgba(255, 255, 255, 0.08)',
-                  margin: '0',
-                  lineHeight: '0.9',
-                  letterSpacing: '-2px'
-                }}>
-                  PUNKTE
-                </h2>
-              </div>
-
-              <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
-                {/* Gesamt-Punkte gross */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '16px',
-                  padding: '16px',
-                  marginBottom: '16px',
-                  textAlign: 'center'
-                }}>
+            {/* Punkte-Übersicht Header - iOS26 Pattern */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--purple">
+                  <IonIcon icon={starOutline} />
+                </div>
+                <IonLabel>Gesamt-Punkte</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '20px', textAlign: 'center' }}>
                   <div style={{
                     display: 'flex',
                     alignItems: 'baseline',
@@ -200,67 +159,89 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                     <span style={{
                       fontSize: '3rem',
                       fontWeight: '900',
-                      color: 'white'
+                      color: '#8b5cf6'
                     }}>
                       {totals.total}
                     </span>
                     <span style={{
                       fontSize: '1.2rem',
-                      color: 'rgba(255, 255, 255, 0.7)'
+                      color: '#666'
                     }}>
                       Punkte
                     </span>
                   </div>
-                </div>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
 
-                {/* Kategorie-Aufschlüsselung */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div style={{
-                    background: 'rgba(59, 130, 246, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 8px',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={starOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.gottesdienst}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Gottesdienst</div>
-                  </div>
-                  <div style={{
-                    background: 'rgba(5, 150, 105, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 8px',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={flashOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.gemeinde}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Gemeinde</div>
-                  </div>
-                  <div style={{
-                    background: 'rgba(220, 38, 38, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 8px',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={calendarOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.event}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Event</div>
-                  </div>
-                  <div style={{
-                    background: 'rgba(245, 158, 11, 0.3)',
-                    borderRadius: '12px',
-                    padding: '12px 8px',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={giftOutline} style={{ fontSize: '1.2rem', color: 'white', marginBottom: '4px', display: 'block' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{totals.bonus}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)' }}>Bonus</div>
-                  </div>
+            {/* Kategorie-Aufschlüsselung - iOS26 Pattern */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--purple">
+                  <IonIcon icon={flashOutline} />
                 </div>
-              </div>
-            </div>
+                <IonLabel>Aufschlüsselung</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent style={{ padding: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      textAlign: 'center',
+                      border: '1px solid rgba(59, 130, 246, 0.2)'
+                    }}>
+                      <IonIcon icon={starOutline} style={{ fontSize: '1.4rem', color: '#3b82f6', marginBottom: '4px', display: 'block' }} />
+                      <div style={{ fontSize: '1.3rem', fontWeight: '700', color: '#3b82f6' }}>{totals.gottesdienst}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#666' }}>Gottesdienst</div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(5, 150, 105, 0.1)',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      textAlign: 'center',
+                      border: '1px solid rgba(5, 150, 105, 0.2)'
+                    }}>
+                      <IonIcon icon={flashOutline} style={{ fontSize: '1.4rem', color: '#059669', marginBottom: '4px', display: 'block' }} />
+                      <div style={{ fontSize: '1.3rem', fontWeight: '700', color: '#059669' }}>{totals.gemeinde}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#666' }}>Gemeinde</div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(220, 38, 38, 0.1)',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      textAlign: 'center',
+                      border: '1px solid rgba(220, 38, 38, 0.2)'
+                    }}>
+                      <IonIcon icon={calendarOutline} style={{ fontSize: '1.4rem', color: '#dc2626', marginBottom: '4px', display: 'block' }} />
+                      <div style={{ fontSize: '1.3rem', fontWeight: '700', color: '#dc2626' }}>{totals.event}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#666' }}>Event</div>
+                    </div>
+                    <div style={{
+                      background: 'rgba(245, 158, 11, 0.1)',
+                      borderRadius: '12px',
+                      padding: '12px',
+                      textAlign: 'center',
+                      border: '1px solid rgba(245, 158, 11, 0.2)'
+                    }}>
+                      <IonIcon icon={giftOutline} style={{ fontSize: '1.4rem', color: '#f59e0b', marginBottom: '4px', display: 'block' }} />
+                      <div style={{ fontSize: '1.3rem', fontWeight: '700', color: '#f59e0b' }}>{totals.bonus}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#666' }}>Bonus</div>
+                    </div>
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
 
             {/* Filter Segment - iOS26 Pattern */}
             <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--purple">
+                  <IonIcon icon={timeOutline} />
+                </div>
+                <IonLabel>Filter</IonLabel>
+              </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent style={{ padding: '8px' }}>
                   <IonSegment value={filter} onIonChange={e => setFilter(e.detail.value as string)}>
