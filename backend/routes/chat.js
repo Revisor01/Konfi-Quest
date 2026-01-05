@@ -1657,10 +1657,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
       // Alle Admins, Org-Admins und Teamer der Organisation
+      // role_title ist die selbst gewählte Rollenbezeichnung (z.B. "Pastorin", "Teamerin")
       const adminQuery = `
         SELECT DISTINCT u.id, u.display_name as name, 'admin' as type,
           r.name as role_name,
-          COALESCE(NULLIF(r.description, ''),
+          COALESCE(NULLIF(u.role_title, ''),
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
               WHEN r.name = 'org_admin' THEN 'Admin'

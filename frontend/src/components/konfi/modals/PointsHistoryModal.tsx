@@ -268,7 +268,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               flexDirection: 'row',
                               zIndex: 10
                             }}>
-                              {/* Typ-Badge zuerst (Bonus/Event) - nur links unten abgerundet */}
+                              {/* Typ-Badge zuerst (Bonus/Event) - unten links und rechts abgerundet */}
                               {typeBadgeColor && typeBadgeLabel && (
                                 <div style={{
                                   backgroundColor: typeBadgeColor,
@@ -276,7 +276,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                                   fontSize: '0.65rem',
                                   fontWeight: '700',
                                   padding: '4px 8px',
-                                  borderRadius: '0 0 0 8px'
+                                  borderRadius: '0 0 8px 8px'
                                 }}>
                                   {typeBadgeLabel}
                                 </div>
@@ -285,14 +285,14 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               {typeBadgeColor && (
                                 <div style={{ width: '2px', background: 'white' }} />
                               )}
-                              {/* Punkte-Badge - nur rechts unten abgerundet */}
+                              {/* Punkte-Badge - unten links und oben rechts abgerundet */}
                               <div style={{
                                 backgroundColor: categoryColor,
                                 color: 'white',
                                 fontSize: '0.65rem',
                                 fontWeight: '700',
                                 padding: '4px 8px',
-                                borderRadius: '0 0 8px 0'
+                                borderRadius: '0 8px 0 8px'
                               }}>
                                 +{entry.points}
                               </div>
