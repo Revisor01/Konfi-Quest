@@ -423,12 +423,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           </div>
         </div>
 
-        {/* Stats Row - wie auf dem Dashboard */}
+        {/* Stats Row - immer einzeilig */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '12px',
-          flexWrap: 'wrap',
+          gap: '8px',
           position: 'relative',
           zIndex: 1
         }}>
@@ -436,14 +435,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           <div style={{
             background: 'rgba(255, 255, 255, 0.2)',
             borderRadius: '12px',
-            padding: '12px 16px',
+            padding: '10px 12px',
             textAlign: 'center',
-            minWidth: '85px'
+            flex: '1 1 0',
+            maxWidth: '100px'
           }}>
-            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
               {badges.filter(b => b.is_earned && !b.is_hidden).length}/{badgeStats.totalVisible}
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
               SICHTBAR
             </div>
           </div>
@@ -453,14 +453,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             <div style={{
               background: 'rgba(255, 255, 255, 0.2)',
               borderRadius: '12px',
-              padding: '12px 16px',
+              padding: '10px 12px',
               textAlign: 'center',
-              minWidth: '85px'
+              flex: '1 1 0',
+              maxWidth: '100px'
             }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
                 {badges.filter(b => b.is_earned && b.is_hidden).length}/{badgeStats.totalSecret}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
                 GEHEIM
               </div>
             </div>
@@ -470,14 +471,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           <div style={{
             background: 'rgba(255, 255, 255, 0.2)',
             borderRadius: '12px',
-            padding: '12px 16px',
+            padding: '10px 12px',
             textAlign: 'center',
-            minWidth: '85px'
+            flex: '1 1 0',
+            maxWidth: '100px'
           }}>
-            <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'white' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
               {Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}%
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.5px' }}>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
               GESAMT
             </div>
           </div>
@@ -505,30 +507,26 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       {/* Badges nach Kategorien - VERTIKALES GRID */}
       <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
-          <div style={{
-            margin: '16px',
-            padding: '40px 24px',
-            background: 'white',
-            borderRadius: '16px',
-            textAlign: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto',
-              opacity: 0.3
-            }}>
-              <IonIcon icon={trophyOutline} style={{ fontSize: '2.5rem', color: 'white' }} />
-            </div>
-            <h3 style={{ color: '#333', margin: '0 0 8px 0', fontWeight: '600' }}>Keine Badges gefunden</h3>
-            <p style={{ color: '#888', margin: '0', fontSize: '0.9rem' }}>Sammle Punkte für deine ersten Badges!</p>
-          </div>
+          <IonCard className="app-card" style={{ margin: '16px' }}>
+            <IonCardContent>
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <IonIcon
+                  icon={trophyOutline}
+                  style={{
+                    fontSize: '3rem',
+                    color: '#ff9500',
+                    marginBottom: '16px',
+                    display: 'block',
+                    margin: '0 auto 16px auto'
+                  }}
+                />
+                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
+                <p style={{ color: '#999', margin: '0' }}>
+                  Sammle Punkte für deine ersten Badges!
+                </p>
+              </div>
+            </IonCardContent>
+          </IonCard>
         ) : (
           badgeCategories.map((category) => {
             const earnedCount = category.badges.filter(b => b.is_earned).length;
