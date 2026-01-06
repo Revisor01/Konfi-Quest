@@ -270,18 +270,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       </div>
 
       {/* Badges Grid */}
-      <IonList inset={true} style={{ margin: '16px', marginBottom: '0' }}>
+      <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--warning">
             <IonIcon icon={trophy} />
           </div>
           <IonLabel>Erreichte Badges ({badges.filter(b => b.is_earned).length})</IonLabel>
         </IonListHeader>
-      </IonList>
-
-      <div style={{ paddingBottom: '16px' }}>
         {badgeCategories.length === 0 ? (
-          <IonCard className="app-card" style={{ margin: '16px', marginTop: '8px' }}>
+          <IonCard className="app-card">
             <IonCardContent>
               <div style={{ textAlign: 'center', padding: '32px' }}>
                 <IonIcon icon={trophyOutline} style={{ fontSize: '3rem', color: '#ff9500', marginBottom: '16px', display: 'block', margin: '0 auto 16px auto' }} />
@@ -291,7 +288,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             </IonCardContent>
           </IonCard>
         ) : (
-          badgeCategories.map((category) => {
+          badgeCategories.map((category, index) => {
             const earnedCount = category.badges.filter(b => b.is_earned).length;
             const totalCount = category.badges.length;
             const progressPercent = Math.round((earnedCount / totalCount) * 100);
@@ -300,7 +297,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             const categoryHasUndiscoveredSecrets = categorySecretCount > categoryEarnedSecretCount;
 
             return (
-              <IonCard key={category.key} className="app-card" style={{ margin: '16px', marginTop: '8px' }}>
+              <IonCard key={category.key} className="app-card" style={{ marginTop: index > 0 ? '8px' : '0' }}>
                 <IonCardContent style={{ padding: '16px' }}>
                   {/* Category Header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -490,7 +487,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             );
           })
         )}
-      </div>
+      </IonList>
 
       {/* Badge Detail Popover - Kompakt */}
       <IonPopover
