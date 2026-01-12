@@ -116,3 +116,6 @@ backend/push/firebase-service-account.json
 # Persistent data (bind mounts)
 postgres/
 uploads/
+
+# Portainer Stack (enthält sensible Daten)
+portainer-stack.yml

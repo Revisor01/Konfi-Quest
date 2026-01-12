@@ -48,7 +48,9 @@
       "Bash(npm update:*)",
       "Bash(npm audit:*)",
       "Bash(wc:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(git rebase:*)",
+      "Bash(GIT_EDITOR=true git rebase:*)"
     ],
     "deny": [],
     "ask": []
