@@ -327,7 +327,6 @@ const authRoutes = require('./routes/auth');
 const konfiRoutes = require('./routes/konfi');
 const eventsRoutes = require('./routes/events');
 const chatRoutes = require('./routes/chat');
-const statisticsRoutes = require('./routes/statistics');
 const settingsRoutes = require('./routes/settings');
 const notificationsRoutes = require('./routes/notifications');
 const BackgroundService = require('./services/backgroundService');
@@ -341,7 +340,6 @@ const adminCategoriesRoutes = require('./routes/categories');
 const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
-const permissionsRoutes = require('./routes/permissions');
 const levelsRoutes = require('./routes/levels');
 
 // ====================================================================
@@ -376,7 +374,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
-app.use('/api/statistics', statisticsRoutes(db, { verifyTokenRBAC: rbacVerifier }));
+
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 
 app.use('/api/events', eventsRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
@@ -392,7 +390,7 @@ app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/permissions', permissionsRoutes(db, rbacVerifier, roleHelpers));
+
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 
 // ====================================================================

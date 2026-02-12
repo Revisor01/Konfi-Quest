@@ -66,13 +66,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
       if (!user) {
         console.log(`❌ Login failed: user '${username}' not found`);
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
         console.log(`❌ Login failed: wrong password for user '${username}'`);
-        return res.status(401).json({ error: 'Invalid credentials' });
+        return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
@@ -110,7 +110,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
     } catch (err) {
       console.error('Database error in POST /api/auth/login:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -294,7 +294,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
     } catch (err) {
       console.error('Database error in POST /api/auth/request-password-reset:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

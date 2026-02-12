@@ -13,7 +13,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       res.json(categories);
     } catch (err) {
       console.error('Database error in GET /api/categories:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -21,7 +21,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Name is required' });
+      return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
@@ -29,16 +29,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const params = [name.trim(), description, type || 'both', req.user.organization_id];
       const { rows: [newCategory] } = await db.query(query, params);
 
-      res.status(201).json({ id: newCategory.id, message: 'Category created successfully' });
+      res.status(201).json({ id: newCategory.id, message: 'Kategorie erfolgreich erstellt' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'create');
     } catch (err) {
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Category name already exists' });
+        return res.status(409).json({ error: 'Kategoriename existiert bereits' });
       }
       console.error('Database error in POST /api/categories:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -46,7 +46,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).json({ error: 'Name is required' });
+      return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
@@ -55,18 +55,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(query, params);
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({ error: 'Kategorie nicht gefunden' });
       }
-      res.json({ message: 'Category updated successfully' });
+      res.json({ message: 'Kategorie erfolgreich aktualisiert' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'update');
     } catch (err) {
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'Category name already exists' });
+        return res.status(409).json({ error: 'Kategoriename existiert bereits' });
       }
       console.error(`Database error in PUT /api/categories/${req.params.id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -95,16 +95,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(deleteQuery, [categoryId, req.user.organization_id]);
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({ error: 'Kategorie nicht gefunden' });
       }
 
-      res.json({ message: 'Category deleted successfully' });
+      res.json({ message: 'Kategorie erfolgreich gelöscht' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'categories', 'delete');
     } catch (err) {
       console.error(`Database error in DELETE /api/categories/${categoryId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

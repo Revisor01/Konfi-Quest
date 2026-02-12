@@ -19,7 +19,7 @@ module.exports = (db, verifyTokenRBAC) => {
 
     if (!token || !platform) {
       console.log('❌ Missing token or platform');
-      return res.status(400).json({ error: 'Token and platform required' });
+      return res.status(400).json({ error: 'Token und Plattform erforderlich' });
     }
 
     try {
@@ -87,7 +87,7 @@ module.exports = (db, verifyTokenRBAC) => {
         });
       }
 
-      res.json({ success: true, message: 'Token saved successfully' });
+      res.json({ success: true, message: 'Token erfolgreich gespeichert' });
 
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
@@ -96,7 +96,7 @@ module.exports = (db, verifyTokenRBAC) => {
       if (err.code === '23505') { 
         return res.status(409).json({ error: 'A token for this user and device already exists.' });
       }
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -113,7 +113,7 @@ module.exports = (db, verifyTokenRBAC) => {
 
       if (!tokens || tokens.length === 0) {
         console.log('⚠️ No push tokens found for user:', userId);
-        return res.json({ success: false, message: 'No push tokens found' });
+        return res.json({ success: false, message: 'Keine Push-Tokens gefunden' });
       }
 
       console.log('📱 Found', tokens.length, 'push tokens');
@@ -150,7 +150,7 @@ module.exports = (db, verifyTokenRBAC) => {
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
       console.error('Database error in POST /test-push:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -166,7 +166,7 @@ module.exports = (db, verifyTokenRBAC) => {
 
     if (!device_id || !platform) {
       console.log('❌ Missing device_id or platform');
-      return res.status(400).json({ error: 'Device ID and platform required' });
+      return res.status(400).json({ error: 'Geräte-ID und Plattform erforderlich' });
     }
 
     try {
@@ -180,14 +180,14 @@ module.exports = (db, verifyTokenRBAC) => {
       console.log('✅ Push token deleted for device:', device_id, 'Changes:', rowCount);
       res.json({ 
         success: true, 
-        message: 'Push token removed for current device',
+        message: 'Push-Token für dieses Gerät entfernt',
         changes: rowCount
       });
       
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
       console.error('Database error in DELETE /device-token:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

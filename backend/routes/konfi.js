@@ -17,7 +17,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   // Get konfi dashboard data
   router.get('/dashboard', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -48,7 +48,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
       if (!konfi) {
-        return res.status(404).json({ error: 'Konfi not found' });
+        return res.status(404).json({ error: 'Konfi nicht gefunden' });
       }
 
       // Check if badges table exists and get badges for this konfi
@@ -253,14 +253,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
     } catch (err) {
       console.error('Database error in GET /dashboard:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get konfi profile
   router.get('/profile', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -278,7 +278,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: [konfi] } = await db.query(query, [konfiId]);
       
       if (!konfi) {
-        return res.status(404).json({ error: 'Konfi not found' });
+        return res.status(404).json({ error: 'Konfi nicht gefunden' });
       }
 
       // Get bonus points
@@ -407,14 +407,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
     } catch (err) {
       console.error('Database error in GET /profile:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get konfi's points history (all activities, bonus points, events with dates)
   router.get('/points-history', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
@@ -508,14 +508,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
     } catch (err) {
       console.error('Database error in GET /points-history:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get konfi's activity requests
   router.get('/requests', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -531,14 +531,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json(requests);
     } catch (err) {
       console.error('Database error in GET /requests:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Submit new activity request
   router.post('/requests', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -546,7 +546,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { activity_id, description, photo_filename, requested_date } = req.body;
       
       if (!activity_id) {
-        return res.status(400).json({ error: 'Activity ID is required' });
+        return res.status(400).json({ error: 'Aktivitäts-ID ist erforderlich' });
       }
       
       const date = requested_date || new Date().toISOString().split('T')[0];
@@ -558,7 +558,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
 
       if (!activity) {
-        return res.status(404).json({ error: 'Activity not found' });
+        return res.status(404).json({ error: 'Aktivität nicht gefunden' });
       }
 
       const insertQuery = `
@@ -649,14 +649,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
       console.error('Database error in POST /requests:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Upload photo for activity request (encrypted storage)
   router.post('/upload-photo', verifyTokenRBAC, requestUpload.single('photo'), async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -686,11 +686,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       
       if (!request) {
-        return res.status(404).json({ error: 'Request not found' });
+        return res.status(404).json({ error: 'Antrag nicht gefunden' });
       }
       
       if (!request.photo_filename) {
-        return res.status(404).json({ error: 'No photo found' });
+        return res.status(404).json({ error: 'Kein Foto gefunden' });
       }
       
       // Check permissions: Admin can see all, Konfi can only see own
@@ -698,7 +698,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const isOwnRequest = req.user.type === 'konfi' && req.user.id === request.konfi_id;
       
       if (!isAdmin && !isOwnRequest) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       const fs = require('fs');
@@ -706,7 +706,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
       
       if (!fs.existsSync(photoPath)) {
-        return res.status(404).json({ error: 'Photo file not found' });
+        return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
       
       // Set correct content type for images
@@ -714,14 +714,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.sendFile(photoPath);
     } catch (err) {
       console.error('Error serving photo:', err);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'Serverfehler' });
     }
   });
 
   // Delete own activity request (only if pending)
   router.delete('/requests/:id', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -754,14 +754,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'delete');
     } catch (err) {
       console.error('Database error in DELETE /requests/:id:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get available activities for requests
   router.get('/activities', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -779,14 +779,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json(activities);
     } catch (err) {
       console.error('Database error in GET /activities:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get konfi's badges
   router.get('/badges', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -998,14 +998,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
     } catch (err) {
       console.error('Database error in GET /badges:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get badge statistics for konfi
   router.get('/badges/stats', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1031,14 +1031,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
     } catch (err) {
       console.error('Database error in GET /badges/stats:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Mark all badges as seen for konfi
   router.post('/badges/mark-seen', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
@@ -1047,17 +1047,17 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         'UPDATE konfi_badges SET seen = true WHERE konfi_id = $1 AND organization_id = $2 AND seen = false',
         [konfiId, req.user.organization_id]
       );
-      res.json({ success: true, message: 'All badges marked as seen' });
+      res.json({ success: true, message: 'Alle Badges als gesehen markiert' });
     } catch (err) {
       console.error('Database error in POST /badges/mark-seen:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get events with konfi-specific data (registration status, attendance status)
   router.get('/events', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1150,14 +1150,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
     } catch (err) {
       console.error('Database error in GET /konfi/events:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get konfi's registration status for a specific event
   router.get('/events/:id/status', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1202,7 +1202,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       `, [eventId, req.user.organization_id]);
       
       if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
       
       const confirmedCount = parseInt(event.registered_count) || 0;
@@ -1236,14 +1236,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
     } catch (err) {
       console.error('Database error in GET /events/:id/status:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get event participants for konfi view (anonymized: Vorname N.)
   router.get('/events/:id/participants', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
@@ -1283,14 +1283,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json(anonymizedParticipants);
     } catch (err) {
       console.error('Database error in GET /events/:id/participants:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Get daily verse (Tageslosung) with caching
   router.get('/tageslosung', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1443,7 +1443,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   // Get timeslots for a specific event (Konfi access)
   router.get('/events/:id/timeslots', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
@@ -1477,14 +1477,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json(timeslots);
     } catch (err) {
       console.error('Database error in GET /events/:id/timeslots:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Register for event
   router.post('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
     try {
@@ -1497,7 +1497,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: [existing] } = await db.query(checkQuery, [konfiId, eventId]);
 
       if (existing) {
-        return res.status(409).json({ error: 'Already registered for this event' });
+        return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
       }
 
       // Check if this is a Konfirmation event and if user already has one
@@ -1545,7 +1545,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: [event] } = await db.query(eventQuery, [eventId, req.user.organization_id]);
 
       if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
       // Check if event has timeslots and validate timeslot selection
@@ -1628,14 +1628,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
       console.error('Database error in POST /events/:id/register:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Unregister from event
   router.delete('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1714,14 +1714,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
       console.error('Database error in DELETE /events/:id/register:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
   // Update bible translation preference
   router.put('/bible-translation', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Konfi access required' });
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
     try {
@@ -1732,7 +1732,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const validTranslations = ['LUT', 'ELB', 'GNB', 'BIGS', 'NIV', 'LSG', 'RVR60'];
       if (!validTranslations.includes(translation)) {
         return res.status(400).json({ 
-          error: 'Invalid translation',
+          error: 'Ungültige Bibelübersetzung',
           valid_translations: validTranslations
         });
       }
@@ -1751,7 +1751,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
     } catch (err) {
       console.error('Database error in PUT /bible-translation:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

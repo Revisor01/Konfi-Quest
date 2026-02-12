@@ -72,14 +72,3 @@ export const leaveRoom = (roomId: number) => {
   }
 };
 
-export const emitTyping = (roomId: number) => {
-  if (socket?.connected) {
-    socket.emit('typing', roomId);
-  }
-};
-
-export const emitStopTyping = (roomId: number) => {
-  if (socket?.connected) {
-    socket.emit('stopTyping', roomId);
-  }
-};

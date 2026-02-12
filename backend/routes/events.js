@@ -101,7 +101,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       console.error('Database error in GET /events:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -171,7 +171,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       console.error('Database error in GET /events/cancelled:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -185,7 +185,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [event] } = await db.query("SELECT id, has_timeslots FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
 
       if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
       if (!event.has_timeslots) {
@@ -206,7 +206,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       console.error(`Database error in GET /events/${req.params.id}/timeslots:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -219,7 +219,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
       
       if (!event) {
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
       
       // Get participants
@@ -327,7 +327,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       console.error(`Database error in GET /events/${req.params.id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -341,7 +341,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } = req.body;
     
     if (!name || !event_date || !max_participants) {
-      return res.status(400).json({ error: 'Name, event_date, and max_participants are required' });
+      return res.status(400).json({ error: 'Name, Datum und maximale Teilnehmerzahl sind erforderlich' });
     }
     
     // NOTE: For transactions with pg-pool, a client must be checked out.
@@ -392,7 +392,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await Promise.all(promises);
 
-      res.status(201).json({ id: eventId, message: 'Event created successfully' });
+      res.status(201).json({ id: eventId, message: 'Event erfolgreich erstellt' });
 
       // Live Update: Notify all konfis and admins about the new event
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { eventId });
@@ -410,7 +410,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'A similar event might already exist.' });
       }
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -448,7 +448,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       if (rowCount === 0) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Event not found or you do not have permission to edit it' });
+        return res.status(404).json({ error: 'Event nicht gefunden oder keine Berechtigung' });
       }
       
       // Clear and re-add categories and jahrgaenge
@@ -517,7 +517,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       await db.query('COMMIT');
-      res.json({ message: 'Event updated successfully' });
+      res.json({ message: 'Event erfolgreich aktualisiert' });
 
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
@@ -525,7 +525,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in PUT /events/${id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -642,7 +642,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in DELETE /events/${id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -653,7 +653,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { timeslot_id } = req.body;
 
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Only konfis can book events' });
+      return res.status(403).json({ error: 'Nur Konfis können Events buchen' });
     }
 
     try {
@@ -754,7 +754,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const konfiId = req.user.id;
     
     if (req.user.type !== 'konfi') {
-      return res.status(403).json({ error: 'Only konfis can cancel bookings' });
+      return res.status(403).json({ error: 'Nur Konfis können Buchungen stornieren' });
     }
     
     try {
@@ -767,7 +767,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       );
 
       if (!booking) {
-        return res.status(404).json({ error: 'Booking not found' });
+        return res.status(404).json({ error: 'Buchung nicht gefunden' });
       }
 
       // Delete the booking
@@ -805,7 +805,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      res.json({ message: 'Booking canceled successfully' });
+      res.json({ message: 'Buchung erfolgreich storniert' });
 
       // Live Update: Notify the konfi and admins about the cancellation
       liveUpdate.sendToUser('konfi', konfiId, 'events', 'update', { eventId, action: 'canceled' });
@@ -813,7 +813,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       console.error(`Database error in DELETE /events/${eventId}/book:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -827,24 +827,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       // 1. Get event details
       const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
-      if (!event) return res.status(404).json({ error: 'Event not found' });
+      if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
       
       // 2. Validate user
       const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
-      if (!user) return res.status(404).json({ error: 'User not found' });
+      if (!user) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       
       // 3. Validate timeslot if provided
       let timeslot = null;
       if (event.has_timeslots) {
-        if (!timeslot_id) return res.status(400).json({ error: 'Timeslot selection required for this event' });
+        if (!timeslot_id) return res.status(400).json({ error: 'Zeitslot-Auswahl für dieses Event erforderlich' });
         const { rows: [ts] } = await db.query("SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
-        if (!ts) return res.status(404).json({ error: 'Timeslot not found' });
+        if (!ts) return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
         timeslot = ts;
       }
       
       // 4. Check if already booked
       const { rows: [existing] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2", [eventId, user_id]);
-      if (existing) return res.status(409).json({ error: 'User already booked this event' });
+      if (existing) return res.status(409).json({ error: 'Benutzer ist bereits für dieses Event angemeldet' });
       
       // 5. Determine final status
       let finalStatus = status;
@@ -869,11 +869,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
 
             if (waitlistCount >= event.max_waitlist_size) {
-              return res.status(409).json({ error: 'Event and waitlist are full' });
+              return res.status(409).json({ error: 'Event und Warteliste sind voll' });
             }
             finalStatus = 'pending';
           } else {
-            return res.status(409).json({ error: 'Event is full and waitlist is disabled' });
+            return res.status(409).json({ error: 'Event ist voll und Warteliste ist deaktiviert' });
           }
         } else {
           finalStatus = 'confirmed';
@@ -902,9 +902,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } catch (err) {
       console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'This user is already associated with this event.' });
+        return res.status(409).json({ error: 'Dieser Benutzer ist bereits für dieses Event angemeldet.' });
       }
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -922,8 +922,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         JOIN users u ON eb.user_id = u.id 
         WHERE eb.id = $1 AND eb.event_id = $2`, [bookingId, eventId]);
       
-      if (!booking) return res.status(404).json({ error: 'Booking not found' });
-      if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Access denied' });
+      if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
+      if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
       
       // Delete the booking
       await db.query("DELETE FROM event_bookings WHERE id = $1", [bookingId]);
@@ -960,7 +960,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      res.json({ message: 'Participant removed successfully' });
+      res.json({ message: 'Teilnehmer erfolgreich entfernt' });
 
       // Live Update: Notify the removed konfi and admins
       liveUpdate.sendToUser('konfi', booking.user_id, 'events', 'update', { eventId, action: 'removed' });
@@ -968,7 +968,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       console.error(`Database error in DELETE /events/${eventId}/bookings/${bookingId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -976,7 +976,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.get('/user/bookings', rbacVerifier, async (req, res) => {
     try {
       if (req.user.type !== 'konfi') {
-        return res.status(403).json({ error: 'Only konfis can view their bookings' });
+        return res.status(403).json({ error: 'Nur Konfis können ihre Buchungen einsehen' });
       }
       
       const query = `
@@ -991,7 +991,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       console.error('Database error in GET /events/user/bookings:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1005,7 +1005,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } = req.body;
     
     if (!name || !event_date || !series_count || series_count < 2) {
-      return res.status(400).json({ error: 'Name, event_date, and series_count (min 2) are required' });
+      return res.status(400).json({ error: 'Name, Datum und Serienanzahl (min. 2) sind erforderlich' });
     }
     
     await db.query('BEGIN');
@@ -1149,7 +1149,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await db.query('COMMIT');
       res.status(201).json({ 
-        message: 'Series events created successfully', 
+        message: 'Serien-Events erfolgreich erstellt', 
         series_id: seriesId,
         events_created: seriesDates.length
       });
@@ -1157,7 +1157,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     } catch (err) {
       await db.query('ROLLBACK');
       console.error('Database error in POST /events/series:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1168,24 +1168,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     
     try {
       if (!['confirmed', 'pending'].includes(status)) {
-        return res.status(400).json({ error: 'Invalid status. Must be confirmed or pending' });
+        return res.status(400).json({ error: 'Ungültiger Status. Muss bestätigt oder ausstehend sein' });
       }
       
       console.log("Updating participant status:", participantId, "to:", status, "for event:", eventId);
       
       const { rows: [booking] } = await db.query("SELECT status FROM event_bookings WHERE id = $1 AND event_id = $2", [participantId, eventId]);
-      if (!booking) return res.status(404).json({ error: 'Booking not found' });
+      if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
       if (booking.status === status) return res.status(400).json({ error: `Participant already ${status}` });
       
       const { rowCount } = await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
-      if (rowCount === 0) return res.status(404).json({ error: 'Booking not found during update' }); // Should be rare
+      if (rowCount === 0) return res.status(404).json({ error: 'Buchung während Aktualisierung nicht gefunden' }); // Should be rare
       
       const action = status === 'confirmed' ? 'promoted from waitlist' : 'moved to waitlist';
       res.json({ message: `Participant ${action}`, status });
       
     } catch (err) {
       console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1195,7 +1195,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { attendance_status } = req.body;
     
     if (!['present', 'absent'].includes(attendance_status)) {
-      return res.status(400).json({ error: 'Invalid attendance status' });
+      return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
     }
     
     await db.query('BEGIN');
@@ -1211,7 +1211,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [eventData] } = await db.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
       if (!eventData) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Event or participant not found, or access denied' });
+        return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
       }
       
       await db.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
@@ -1260,7 +1260,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
 
-          return res.json({ message: `Attendance updated and ${eventData.points} ${pointType} points awarded`, points_awarded: true });
+          return res.json({ message: `Anwesenheit aktualisiert und ${eventData.points} ${pointType}-Punkte vergeben`, points_awarded: true });
         } else {
           await db.query('COMMIT');
 
@@ -1274,7 +1274,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           // Live Update: Notify admins about event attendance change
           liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
 
-          return res.json({ message: 'Attendance updated (points already awarded)', points_awarded: false });
+          return res.json({ message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false });
         }
         
       } else if (attendance_status === 'absent') {
@@ -1314,12 +1314,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       await db.query('COMMIT');
-      res.json({ message: 'Attendance updated', points_awarded: false, points_removed: false });
+      res.json({ message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false });
       
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/attendance:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1332,13 +1332,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [event] } = await db.query("SELECT name FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
       if (!event) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Event not found' });
+        return res.status(404).json({ error: 'Event nicht gefunden' });
       }
       
       const { rows: [existingChat] } = await db.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]);
       if (existingChat) {
         await db.query('ROLLBACK');
-        return res.status(409).json({ error: 'Chat already exists for this event' });
+        return res.status(409).json({ error: 'Chat existiert bereits für dieses Event' });
       }
       
       const chatName = `${event.name} - Chat`;
@@ -1361,14 +1361,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await db.query('COMMIT');
       res.status(201).json({ 
         chat_room_id: chatRoomId, 
-        message: 'Chat created and participants added successfully',
+        message: 'Chat erstellt und Teilnehmer erfolgreich hinzugefügt',
         participants_added: participants.length
       });
       
     } catch (err) {
       await db.query('ROLLBACK');
       console.error(`Database error in POST /events/${eventId}/chat:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

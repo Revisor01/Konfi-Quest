@@ -345,7 +345,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /api/badges:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -367,13 +367,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rows: [badge] } = await db.query(badgeQuery, [req.params.id, req.user.organization_id]);
 
       if (!badge) {
-        return res.status(404).json({ error: 'Badge not found' });
+        return res.status(404).json({ error: 'Badge nicht gefunden' });
       }
 
       res.json(badge);
     } catch (err) {
       console.error('Database error in GET /api/badges/:id:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -381,7 +381,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
-      return res.status(400).json({ error: 'Name, icon, criteria type and value are required' });
+      return res.status(400).json({ error: 'Name, Icon, Kriterientyp und Wert sind erforderlich' });
     }
     
     try {
@@ -396,13 +396,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, color || '#667eea', req.user.id, req.user.organization_id];
       const { rows: [newBadge] } = await db.query(query, params);
       
-      res.status(201).json({ id: newBadge.id, message: 'Badge created successfully' });
+      res.status(201).json({ id: newBadge.id, message: 'Badge erfolgreich erstellt' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'create');
     } catch (err) {
       console.error('Database error in POST /api/badges:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -422,15 +422,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(query, params);
       
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Badge not found or you do not have permission to edit it.' });
+        return res.status(404).json({ error: 'Badge nicht gefunden oder keine Berechtigung' });
       }
-      res.json({ message: 'Badge updated successfully' });
+      res.json({ message: 'Badge erfolgreich aktualisiert' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'update');
     } catch (err) {
       console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -444,11 +444,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       
       if (rowCount === 0) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'Badge not found or you do not have permission to delete it.' });
+        return res.status(404).json({ error: 'Badge nicht gefunden oder keine Berechtigung' });
       }
       
       await db.query('COMMIT');
-      res.json({ message: 'Badge deleted successfully' });
+      res.json({ message: 'Badge erfolgreich gelöscht' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'delete');
@@ -460,7 +460,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         console.error('Failed to rollback transaction:', rollbackErr);
       }
       console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   

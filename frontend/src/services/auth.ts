@@ -17,19 +17,6 @@ interface User {
   // permissions entfernt - jetzt rollen-basiert (role_name)
 }
 
-export const login = async (username: string, password: string, type: 'admin' | 'konfi'): Promise<User> => {
-  // Use unified login endpoint with auto-detection
-  const response = await api.post('/auth/login', { username, password });
-  const { token, user } = response.data;
-
-  if (!token || !user) throw new Error('Fehlender Token oder Benutzer');
-
-  localStorage.setItem('konfi_token', token);
-  localStorage.setItem('konfi_user', JSON.stringify(user));
-
-  return user;
-};
-
 export const loginWithAutoDetection = async (username: string, password: string): Promise<User> => {
   console.log('Login starten…', { username, password });
   
@@ -150,17 +137,3 @@ export const checkAuth = (): User | null => {
   return null;
 };
 
-export const getToken = (): string | null => {
-  return localStorage.getItem('konfi_token');
-};
-
-export const getUser = (): User | null => {
-  const raw = localStorage.getItem('konfi_user');
-  try {
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.error('Fehler beim Parsen von konfi_user:', err);
-    localStorage.removeItem('konfi_user');
-    return null;
-  }
-};

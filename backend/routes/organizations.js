@@ -30,7 +30,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(organizations);
     } catch (err) {
       console.error('Database error in GET /organizations:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -117,13 +117,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { rows: [organization] } = await db.query(query, [organizationId]);
       
       if (!organization) {
-        return res.status(404).json({ error: 'Organization not found' });
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
       
       res.json(organization);
     } catch (err) {
       console.error('Database error in GET /organizations/current:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -137,11 +137,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       } = req.body;
       
       if (!name || !slug || !display_name) {
-        return res.status(400).json({ error: 'Name, slug, and display_name are required' });
+        return res.status(400).json({ error: 'Name, Slug und Anzeigename sind erforderlich' });
       }
       
       if (!admin_username || !admin_password || !admin_display_name) {
-        return res.status(400).json({ error: 'Admin username, password, and display name are required' });
+        return res.status(400).json({ error: 'Admin-Benutzername, Passwort und Anzeigename sind erforderlich' });
       }
       
       // 1. Create Organization
@@ -230,10 +230,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Organization slug already exists' });
+        return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
       }
       console.error('Error creating organization:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -267,16 +267,16 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       ]);
         
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Organization not found' });
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
         
-      res.json({ message: 'Organization updated successfully' });
+      res.json({ message: 'Organisation erfolgreich aktualisiert' });
     } catch (err) {
       if (err.code === '23505') { // unique_violation
-        return res.status(409).json({ error: 'Organization slug already exists' });
+        return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
       }
       console.error('Error updating organization:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -292,7 +292,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       
       if (parseInt(result.count, 10) > 0) {
         return res.status(409).json({ 
-          error: 'Cannot delete organization with existing konfis. Please transfer or delete all data first.' 
+          error: 'Organisation mit bestehenden Konfis kann nicht gelöscht werden. Bitte zuerst alle Daten übertragen oder löschen.' 
         });
       }
       
@@ -301,13 +301,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { rowCount } = await db.query(deleteQuery, [id]);
         
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Organization not found' });
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
         
-      res.json({ message: 'Organization deleted successfully' });
+      res.json({ message: 'Organisation erfolgreich gelöscht' });
     } catch (err) {
       console.error('Error deleting organization:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -341,7 +341,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(users);
     } catch (err) {
       console.error('Error fetching organization users:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -479,7 +479,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json(stats);
     } catch (err) {
       console.error('Database error in GET /organizations/:id/stats:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

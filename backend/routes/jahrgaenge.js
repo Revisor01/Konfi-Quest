@@ -13,7 +13,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       res.json(jahrgaenge);
     } catch (err) {
       console.error('Database error in GET /api/jahrgaenge:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -21,7 +21,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+      return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
@@ -44,7 +44,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
       }
       console.error('Database error in POST /api/jahrgaenge:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -52,7 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+      return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
@@ -61,9 +61,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(query, params);
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Jahrgang not found' });
+        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
       }
-      res.json({ message: 'Jahrgang updated successfully' });
+      res.json({ message: 'Jahrgang erfolgreich aktualisiert' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'update');
@@ -72,7 +72,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits' });
       }
       console.error(`Database error in PUT /api/jahrgaenge/${req.params.id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -157,16 +157,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rowCount } = await db.query(deleteJahrgangQuery, [jahrgangId, req.user.organization_id]);
 
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Jahrgang not found' });
+        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
       }
 
-      res.json({ message: 'Jahrgang deleted successfully' });
+      res.json({ message: 'Jahrgang erfolgreich gelöscht' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'delete');
     } catch (err) {
       console.error(`Database error in DELETE /api/jahrgaenge/${jahrgangId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

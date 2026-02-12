@@ -53,7 +53,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
     } catch (err) {
       console.error('Database error in GET /api/activities/:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -61,8 +61,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: POST /api/activities/
   router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
     const { name, points, type, category_ids } = req.body;
-    if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
-    if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Type must be gottesdienst or gemeinde' });
+    if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
+    if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Typ muss gottesdienst oder gemeinde sein' });
 
     try {
       const insertActivityQuery = "INSERT INTO activities (name, points, type, organization_id) VALUES ($1, $2, $3, $4) RETURNING id";
@@ -76,14 +76,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
       }
 
-      res.status(201).json({ id: activityId, message: 'Activity created successfully' });
+      res.status(201).json({ id: activityId, message: 'Aktivität erfolgreich erstellt' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'create');
 
     } catch (err) {
       console.error('Database error in POST /api/activities/:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -92,14 +92,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const activityId = req.params.id;
     const { name, points, type, category_ids } = req.body;
-    if (!name || !points || !type) return res.status(400).json({ error: 'Name, points and type are required' });
+    if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
 
     try {
       const updateQuery = "UPDATE activities SET name = $1, points = $2, type = $3 WHERE id = $4 AND organization_id = $5";
       const { rowCount } = await db.query(updateQuery, [name, points, type, activityId, req.user.organization_id]);
       
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Activity not found or you do not have permission to edit it' });
+        return res.status(404).json({ error: 'Aktivität nicht gefunden oder keine Berechtigung' });
       }
 
       // Update categories: delete all existing and then add the new ones
@@ -112,14 +112,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
       }
 
-      res.json({ message: 'Activity updated successfully' });
+      res.json({ message: 'Aktivität erfolgreich aktualisiert' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'update');
 
     } catch (err) {
       console.error(`Database error in PUT /api/activities/${activityId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -149,7 +149,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
     } catch (err) {
       console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -179,7 +179,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
     } catch (err) {
       console.error('Database error in GET /api/activities/requests:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -197,10 +197,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         WHERE ar.id = $1 AND a.organization_id = $2
       `;
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
-      if (!request) return res.status(404).json({ error: 'Request not found' });
+      if (!request) return res.status(404).json({ error: 'Antrag nicht gefunden' });
 
       const oldStatus = request.status;
-      if (oldStatus === 'pending') return res.status(400).json({ error: 'Request is already pending' });
+      if (oldStatus === 'pending') return res.status(400).json({ error: 'Antrag ist bereits ausstehend' });
 
       // SCHRITT 1: Alte Entscheidung rückgängig machen
       if (oldStatus === 'approved') {
@@ -232,11 +232,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       );
 
       console.log(`Request ${requestId} reset to pending from ${oldStatus}`);
-      res.json({ message: 'Request reset to pending', oldStatus });
+      res.json({ message: 'Antrag auf ausstehend zurückgesetzt', oldStatus });
 
     } catch (err) {
       console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -245,7 +245,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   router.put('/requests/:id', rbacVerifier, requireAdmin, async (req, res) => {
     const requestId = req.params.id;
     const { status, admin_comment } = req.body;
-    if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Invalid status' });
+    if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Ungültiger Status' });
 
     try {
       const getRequestQuery = `
@@ -256,11 +256,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         WHERE ar.id = $1 AND a.organization_id = $2
       `;
       const { rows: [request] } = await db.query(getRequestQuery, [requestId, req.user.organization_id]);
-      if (!request) return res.status(404).json({ error: 'Request not found' });
+      if (!request) return res.status(404).json({ error: 'Antrag nicht gefunden' });
 
       // Nur pending Anträge können bearbeitet werden
       if (request.status !== 'pending') {
-        return res.status(400).json({ error: 'Only pending requests can be approved or rejected' });
+        return res.status(400).json({ error: 'Nur ausstehende Anträge können genehmigt oder abgelehnt werden' });
       }
 
       // Status ändern
@@ -341,7 +341,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // Don't fail the request if notification fails
       }
 
-      res.json({ message: 'Request status updated', newBadges });
+      res.json({ message: 'Antragsstatus aktualisiert', newBadges });
 
       // Live-Update für Anträge und Konfi-Punkte senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
@@ -349,7 +349,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToKonfi(request.konfi_id, 'requests', 'update');
     } catch (err) {
       console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -361,12 +361,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: POST /api/activities/assign-activity
   router.post('/assign-activity', rbacVerifier, requireTeamer, async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
-    if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi ID and Activity ID are required' });
+    if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi-ID und Aktivitäts-ID sind erforderlich' });
     const date = completed_date || new Date().toISOString().split('T')[0];
   
     try {
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
-      if (!activity) return res.status(404).json({ error: 'Activity not found' });
+      if (!activity) return res.status(404).json({ error: 'Aktivität nicht gefunden' });
   
       await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
       
@@ -374,7 +374,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
       
       const badgeResult = await checkAndAwardBadges(db, konfiId);
-      res.json({ message: 'Activity assigned successfully', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
+      res.json({ message: 'Aktivität erfolgreich zugewiesen', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
 
       // Push-Notification an Konfi senden
       try {
@@ -388,7 +388,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-activity:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -396,7 +396,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: POST /api/activities/assign-bonus
   router.post('/assign-bonus', rbacVerifier, requireTeamer, async (req, res) => {
     const { konfiId, points, type, description, completed_date } = req.body;
-    if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'All fields are required' });
+    if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
     const date = completed_date || new Date().toISOString().split('T')[0];
   
     try {
@@ -414,14 +414,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         console.error('Error sending bonus points push:', pushErr);
       }
 
-      res.json({ message: 'Bonus points assigned successfully', newBadges });
+      res.json({ message: 'Bonuspunkte erfolgreich vergeben', newBadges });
 
       // Live-Update an Konfi senden
       liveUpdate.sendToKonfi(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
       console.error('Database error in POST /api/activities/assign-bonus:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -445,7 +445,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       );
 
       if (!request) {
-        return res.status(404).json({ error: 'Request not found' });
+        return res.status(404).json({ error: 'Antrag nicht gefunden' });
       }
 
       // Organization check
@@ -454,7 +454,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       }
 
       if (!request.photo_filename) {
-        return res.status(404).json({ error: 'No photo found' });
+        return res.status(404).json({ error: 'Kein Foto gefunden' });
       }
 
       const fs = require('fs');
@@ -462,7 +462,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const photoPath = path.join(__dirname, '../uploads/requests', request.photo_filename);
 
       if (!fs.existsSync(photoPath)) {
-        return res.status(404).json({ error: 'Photo file not found' });
+        return res.status(404).json({ error: 'Foto-Datei nicht gefunden' });
       }
 
       // Set correct content type for images
@@ -470,7 +470,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       res.sendFile(photoPath);
     } catch (err) {
       console.error('Error serving activity request photo:', err);
-      res.status(500).json({ error: 'Error loading photo' });
+      res.status(500).json({ error: 'Fehler beim Laden des Fotos' });
     }
   });
 

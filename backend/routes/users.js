@@ -54,7 +54,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
     } catch (err) {
       console.error('Database error in GET /users:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -86,7 +86,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const { rows: [user] } = await db.query(userQuery, [id, organizationId]);
 
       if (!user) {
-        return res.status(404).json({ error: 'User not found' });
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
       const { rows: jahrgaenge } = await db.query(jahrgaengeQuery, [id]);
@@ -98,7 +98,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
     } catch (err) {
       console.error(`Database error in GET /users/${id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -108,7 +108,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     const { username, email, display_name, role_title, password, role_id } = req.body;
 
     if (!username || !display_name || !password || !role_id) {
-      return res.status(400).json({ error: 'Username, display_name, password, and role_id are required' });
+      return res.status(400).json({ error: 'Benutzername, Name, Passwort und Rolle sind erforderlich' });
     }
 
     try {
@@ -117,7 +117,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const { rows: [role] } = await db.query(roleCheckQuery, [role_id, organizationId]);
 
       if (!role) {
-        return res.status(400).json({ error: 'Invalid role for this organization' });
+        return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
       }
 
       // Prüfen ob Benutzername bereits existiert (GLOBAL eindeutig!)
@@ -143,7 +143,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       res.status(201).json({
         id: newUser.id,
-        message: 'User created successfully',
+        message: 'Benutzer erfolgreich erstellt',
         username,
         display_name
       });
@@ -168,14 +168,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       // Check if user exists in organization
       const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [id, organizationId]);
       if (!user) {
-        return res.status(404).json({ error: 'User not found in this organization' });
+        return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
       }
 
       // Verify role exists in organization if role_id is provided
       if (role_id) {
         const { rows: [role] } = await db.query("SELECT id FROM roles WHERE id = $1 AND organization_id = $2", [role_id, organizationId]);
         if (!role) {
-          return res.status(400).json({ error: 'Invalid role for this organization' });
+          return res.status(400).json({ error: 'Ungültige Rolle für diese Organisation' });
         }
       }
 
@@ -202,7 +202,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       }
 
       if (updateFields.length === 0) {
-        return res.status(400).json({ error: 'No fields to update' });
+        return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
       }
 
       updateFields.push('updated_at = NOW()');
@@ -215,10 +215,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       if (rowCount === 0) {
         // This case should theoretically not be hit due to the initial check, but is good for safety.
-        return res.status(404).json({ error: 'User not found' });
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
-      res.json({ message: 'User updated successfully' });
+      res.json({ message: 'Benutzer erfolgreich aktualisiert' });
 
     } catch (err) {
       if (err.code === '23505') {
@@ -236,7 +236,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
     // Prevent self-deletion
     if (parseInt(id) === req.user.id) {
-      return res.status(400).json({ error: 'Cannot delete your own account' });
+      return res.status(400).json({ error: 'Du kannst dein eigenes Konto nicht löschen' });
     }
 
     try {
@@ -250,16 +250,16 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       if (deleteUserResult.rowCount === 0) {
         await db.query('ROLLBACK');
-        return res.status(404).json({ error: 'User not found in this organization' });
+        return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
       }
 
       await db.query('COMMIT');
-      res.json({ message: 'User deleted successfully' });
+      res.json({ message: 'Benutzer erfolgreich gelöscht' });
 
     } catch (err) {
       await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error(`Database error in DELETE /users/${id}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -277,7 +277,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         // Check if user exists in organization
         const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [userId, organizationId]);
         if (!user) {
-            return res.status(404).json({ error: 'User not found in this organization' });
+            return res.status(404).json({ error: 'Benutzer in dieser Organisation nicht gefunden' });
         }
 
         await db.query('BEGIN');
@@ -325,7 +325,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
             if (validJahrgaenge.length !== jahrgangIds.length) {
                 await db.query('ROLLBACK');
-                return res.status(400).json({ error: 'One or more jahrgang_id is invalid or does not belong to this organization.' });
+                return res.status(400).json({ error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Organisation.' });
             }
 
             // Now, insert all new assignments
@@ -401,7 +401,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     } catch (err) {
         await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
         console.error(`Database error in POST /users/${userId}/jahrgaenge:`, err);
-        res.status(500).json({ error: 'Database error while assigning jahrgaenge' });
+        res.status(500).json({ error: 'Datenbankfehler beim Zuweisen der Jahrgänge' });
     }
   });
 
@@ -426,7 +426,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json(rows);
     } catch (err) {
       console.error(`Database error in GET /users/${id}/jahrgaenge:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -452,7 +452,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json(rows);
     } catch (err) {
       console.error('Database error in GET /me/jahrgaenge:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

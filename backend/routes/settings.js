@@ -23,7 +23,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json(settings);
     } catch (err) {
       console.error('Database error in GET /settings:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -54,7 +54,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
           'group_direct_all'
         ];
         if (!validPermissions.includes(konfi_chat_permissions)) {
-          return res.status(400).json({ error: 'Invalid chat permissions value. Valid options: ' + validPermissions.join(', ') });
+          return res.status(400).json({ error: 'Ungültiger Chat-Berechtigungswert. Gültige Optionen: ' + validPermissions.join(', ') });
         }
         const upsertQuery = `
           INSERT INTO settings (key, value)
@@ -65,11 +65,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         await db.query(upsertQuery, [konfi_chat_permissions]);
       }
 
-      res.json({ message: 'Settings updated successfully' });
+      res.json({ message: 'Einstellungen erfolgreich aktualisiert' });
 
     } catch (err) {
       console.error('Database error in PUT /settings:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

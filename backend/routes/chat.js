@@ -191,7 +191,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   router.get('/admins', verifyTokenRBAC, async (req, res) => {
     try {
       if (req.user.type !== 'konfi') {
-        return res.status(403).json({ error: 'Konfi access required' });
+        return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
       }
       
       const organizationId = req.user.organization_id;
@@ -201,7 +201,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error('Database error in GET /admins:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -212,10 +212,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const organizationId = req.user.organization_id;
       
       if (!target_user_id || !target_user_type) {
-        return res.status(400).json({ error: 'Target user required' });
+        return res.status(400).json({ error: 'Ziel-Benutzer erforderlich' });
       }
       if (!['admin', 'konfi'].includes(target_user_type)) {
-        return res.status(400).json({ error: 'Invalid target user type' });
+        return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
       }
 
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben
@@ -225,7 +225,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
       const { rows: [validUser] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [target_user_id, organizationId]);
       if (!validUser) {
-        return res.status(403).json({ error: 'Target user not found in your organization' });
+        return res.status(403).json({ error: 'Benutzer nicht in deiner Organisation gefunden' });
       }
       
       const user1_type = req.user.type;
@@ -249,7 +249,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       "SELECT u.display_name as name FROM users u JOIN roles r ON u.role_id = r.id JOIN konfi_profiles kp ON u.id = kp.user_id WHERE u.id = $1 AND r.name = 'konfi'";
       const { rows: [targetUser] } = await db.query(targetQuery, [target_user_id]);
       if (!targetUser) {
-        return res.status(404).json({ error: 'Target user not found' });
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
       
       const roomName = targetUser.name;
@@ -268,7 +268,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error('Database error in POST /direct:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -280,10 +280,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const organizationId = req.user.organization_id;
       
       if (!type || !name) {
-        return res.status(400).json({ error: 'Type and name are required' });
+        return res.status(400).json({ error: 'Typ und Name sind erforderlich' });
       }
       if (!['direct', 'group', 'jahrgang', 'admin_team'].includes(type)) {
-        return res.status(400).json({ error: 'Invalid chat type' });
+        return res.status(400).json({ error: 'Ungültiger Chat-Typ' });
       }
       
       // DATENSCHUTZ: Konfis dürfen NUR Direktnachrichten mit Admins erstellen (keine Gruppen, keine Konfi-zu-Konfi Chats)
@@ -299,15 +299,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       if (type === 'jahrgang') {
         if (!jahrgang_id) {
-          return res.status(400).json({ error: 'Jahrgang ID required for jahrgang chats' });
+          return res.status(400).json({ error: 'Jahrgangs-ID für Jahrgangs-Chats erforderlich' });
         }
         const { rows: [validJahrgang] } = await db.query("SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (!validJahrgang) {
-          return res.status(403).json({ error: 'Jahrgang not found in your organization' });
+          return res.status(403).json({ error: 'Jahrgang nicht in deiner Organisation gefunden' });
         }
         const { rows: [existing] } = await db.query("SELECT id FROM chat_rooms WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2", [jahrgang_id, organizationId]);
         if (existing) {
-          return res.status(400).json({ error: 'Jahrgang chat already exists' });
+          return res.status(400).json({ error: 'Jahrgangs-Chat existiert bereits' });
         }
       }
       
@@ -345,7 +345,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       res.json({ room_id: roomId, created: true });
     } catch (err) {
       console.error('Database error in POST /rooms:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -423,7 +423,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error('Database error in GET /rooms:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -455,7 +455,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       }
       
       if (!hasAccess) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       // 2. Fetch room data
@@ -470,7 +470,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [room] } = await db.query(roomQuery, [roomId, organizationId]);
       
       if (!room) {
-        return res.status(404).json({ error: 'Room not found' });
+        return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
       
       // 3. Fetch participant list
@@ -497,7 +497,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error(`Database error in GET /rooms/${req.params.roomId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -521,7 +521,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [access] } = await db.query(accessQuery, accessParams);
       
       if (!access) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       const messagesQuery = `
@@ -597,7 +597,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       res.json(processedMessages.reverse());
     } catch (err) {
       console.error(`Database error in GET /rooms/${req.params.roomId}/messages:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -623,7 +623,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       if (!content && !req.file) {
         console.log('❌ Rejecting: No content and no file');
-        return res.status(400).json({ error: 'Content or file required' });
+        return res.status(400).json({ error: 'Inhalt oder Datei erforderlich' });
       }
       
       // Check access
@@ -633,7 +633,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const accessParams = userType === 'admin' ? [roomId] : [roomId, userId, userType];
       const { rows: [access] } = await db.query(accessQuery, accessParams);
       if (!access) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       // Process file
@@ -765,7 +765,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error(`Database error in POST /rooms/${req.params.roomId}/messages:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -790,7 +790,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rowCount } = await db.query(query, [roomId, userId, userType]);
       
       console.log(`✅ Room ${roomId} marked as read for user ${userId} (${userType})`);
-      res.json({ message: 'Room marked as read', affected: rowCount });
+      res.json({ message: 'Raum als gelesen markiert', affected: rowCount });
       
     } catch (err) {
       console.error(`Database error in POST /rooms/${req.params.roomId}/mark-read:`, err);
@@ -813,7 +813,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       const { rows: [access] } = await db.query(accessQuery, accessParams);
       if (!access) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       // Get participants with their details
@@ -845,7 +845,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
     } catch (err) {
       console.error(`Database error in GET /rooms/${req.params.roomId}/participants:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -857,38 +857,38 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const requesterType = req.user.type;
       
       if (requesterType !== 'admin') {
-        return res.status(403).json({ error: 'Only admins can add participants' });
+        return res.status(403).json({ error: 'Nur Admins können Teilnehmer hinzufügen' });
       }
       if (!user_id || !user_type) {
         return res.status(400).json({ error: 'user_id and user_type are required' });
       }
       if (!['admin', 'konfi'].includes(user_type)) {
-        return res.status(400).json({ error: 'Invalid user_type' });
+        return res.status(400).json({ error: 'Ungültiger Benutzertyp' });
       }
       
       const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
       if (!room) {
-        return res.status(404).json({ error: 'Room not found' });
+        return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
       if (room.type !== 'group') {
-        return res.status(400).json({ error: 'Can only add participants to group chats' });
+        return res.status(400).json({ error: 'Teilnehmer können nur zu Gruppenchats hinzugefügt werden' });
       }
       
       const { rows: [existing] } = await db.query("SELECT 1 FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3", [roomId, user_id, user_type]);
       if (existing) {
-        return res.status(409).json({ error: 'User is already a participant' });
+        return res.status(409).json({ error: 'Benutzer ist bereits Teilnehmer' });
       }
       
       await db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3)", [roomId, user_id, user_type]);
-      res.status(201).json({ message: 'Participant added successfully' });
+      res.status(201).json({ message: 'Teilnehmer erfolgreich hinzugefügt' });
       
     } catch (err) {
       // Handle unique constraint violation in case of a race condition
       if (err.code === '23505') {
-        return res.status(409).json({ error: 'User is already a participant' });
+        return res.status(409).json({ error: 'Benutzer ist bereits Teilnehmer' });
       }
       console.error(`Database error in POST /rooms/${req.params.roomId}/participants:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -901,26 +901,26 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const requesterType = req.user.type;
       
       if (requesterType !== 'admin') {
-        return res.status(403).json({ error: 'Only admins can remove participants' });
+        return res.status(403).json({ error: 'Nur Admins können Teilnehmer entfernen' });
       }
       
       const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
       if (!room) {
-        return res.status(404).json({ error: 'Room not found' });
+        return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
       if (room.type !== 'group') {
-        return res.status(400).json({ error: 'Can only remove participants from group chats' });
+        return res.status(400).json({ error: 'Teilnehmer können nur aus Gruppenchats entfernt werden' });
       }
       
       const { rowCount } = await db.query("DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3", [roomId, userId, userType]);
       if (rowCount === 0) {
-        return res.status(404).json({ error: 'Participant not found' });
+        return res.status(404).json({ error: 'Teilnehmer nicht gefunden' });
       }
       
-      res.json({ message: 'Participant removed successfully' });
+      res.json({ message: 'Teilnehmer erfolgreich entfernt' });
     } catch (err) {
       console.error(`Database error in DELETE /rooms/${req.params.roomId}/participants/...:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -930,7 +930,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
     
     if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
+      return res.status(401).json({ error: 'Kein Token vorhanden' });
     }
     
     // Verify token manually since we can't use middleware for query params
@@ -938,7 +938,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
     } catch (error) {
-      return res.status(401).json({ error: 'Invalid token' });
+      return res.status(401).json({ error: 'Ungültiger Token' });
     }
     try {
       const filename = req.params.filename;
@@ -953,7 +953,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       );
       
       if (!fileMessage) {
-        return res.status(404).json({ error: 'File not found' });
+        return res.status(404).json({ error: 'Datei nicht gefunden' });
       }
       
       // Check if user is member of the chat room
@@ -964,7 +964,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       );
       
       if (!membership) {
-        return res.status(403).json({ error: 'Access denied' });
+        return res.status(403).json({ error: 'Zugriff verweigert' });
       }
       
       const filePath = path.join(uploadsDir, 'chat', filename);
@@ -989,11 +989,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         
         res.sendFile(filePath);
       } else {
-        res.status(404).json({ error: 'File not found on disk' });
+        res.status(404).json({ error: 'Datei nicht auf dem Server gefunden' });
       }
     } catch (error) {
       console.error('Error serving chat file:', error);
-      res.status(500).json({ error: 'Server error' });
+      res.status(500).json({ error: 'Serverfehler' });
     }
   });
 
@@ -1037,7 +1037,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         });
       } else {
         console.error('❌ Badge update endpoint error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Interner Serverfehler' });
       }
     }
   });
@@ -1053,21 +1053,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     
     // Only admins can create polls
     if (userType !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can create polls' });
+      return res.status(403).json({ error: 'Nur Admins können Umfragen erstellen' });
     }
     
     // Validate input
     if (!question || !question.trim()) {
-      return res.status(400).json({ error: 'Question is required' });
+      return res.status(400).json({ error: 'Frage ist erforderlich' });
     }
     
     if (!options || !Array.isArray(options) || options.length < 2) {
-      return res.status(400).json({ error: 'At least 2 options are required' });
+      return res.status(400).json({ error: 'Mindestens 2 Optionen sind erforderlich' });
     }
     
     const validOptions = options.filter(opt => opt && opt.trim());
     if (validOptions.length < 2) {
-      return res.status(400).json({ error: 'At least 2 valid options are required' });
+      return res.status(400).json({ error: 'Mindestens 2 gültige Optionen sind erforderlich' });
     }
     
     try {
@@ -1075,7 +1075,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [room] } = await db.query("SELECT 1 FROM chat_rooms WHERE id = $1 AND organization_id = $2", [roomId, req.user.organization_id]);
       
       if (!room) {
-        return res.status(404).json({ error: 'Room not found' });
+        return res.status(404).json({ error: 'Raum nicht gefunden' });
       }
       
       // Calculate expires_at
@@ -1125,7 +1125,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     } catch (err) {
       await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error('Database error in POST /rooms/:roomId/polls:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -1139,7 +1139,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     console.log(`🗳️ Poll voting request: pollId=${pollId}, option=${option_index}, user=${userId} (${userType})`);
     
     if (option_index === undefined || option_index === null) {
-      return res.status(400).json({ error: 'Option index is required' });
+      return res.status(400).json({ error: 'Option-Index ist erforderlich' });
     }
     
     try {
@@ -1164,12 +1164,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       }
       
       if (!poll) {
-        return res.status(404).json({ error: 'Poll not found' });
+        return res.status(404).json({ error: 'Umfrage nicht gefunden' });
       }
       
       // Check if poll has expired
       if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
-        return res.status(400).json({ error: 'Poll has expired' });
+        return res.status(400).json({ error: 'Umfrage ist abgelaufen' });
       }
       
       // Parse options and validate option_index
@@ -1178,11 +1178,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         parsedOptions = JSON.parse(poll.options);
       } catch (e) {
         console.error('Failed to parse poll options:', poll.options);
-        return res.status(500).json({ error: 'Invalid poll data' });
+        return res.status(500).json({ error: 'Ungültige Umfragedaten' });
       }
       
       if (option_index < 0 || option_index >= parsedOptions.length) {
-        return res.status(400).json({ error: 'Invalid option index' });
+        return res.status(400).json({ error: 'Ungültiger Option-Index' });
       }
       
       // Check if user has access to the room
@@ -1194,7 +1194,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [access] } = await db.query(accessQuery, [poll.room_id, userId, userType, req.user.organization_id]);
       
       if (!access) {
-        return res.status(403).json({ error: 'Access denied to this room' });
+        return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
       }
       
       await db.query('BEGIN');
@@ -1216,7 +1216,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         );
         await db.query('COMMIT');
         return res.json({ 
-          message: 'Vote removed successfully',
+          message: 'Stimme erfolgreich entfernt',
           poll_id: actualPollId,
           option_index: option_index,
           user_id: userId,
@@ -1241,7 +1241,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       await db.query('COMMIT');
       
       res.json({ 
-        message: 'Vote recorded successfully',
+        message: 'Stimme erfolgreich abgegeben',
         poll_id: actualPollId,
         option_index: option_index,
         user_id: userId,
@@ -1251,7 +1251,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     } catch (err) {
       await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error('Database error in POST /polls/:pollId/vote:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -1272,7 +1272,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [message] } = await db.query(messageQuery, [messageId]);
       
       if (!message) {
-        return res.status(404).json({ error: 'Message not found' });
+        return res.status(404).json({ error: 'Nachricht nicht gefunden' });
       }
       
       // Check if user can delete this message (own message or admin in same org)
@@ -1280,7 +1280,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
                        (userType === 'admin' && message.organization_id == req.user.organization_id);
       
       if (!canDelete) {
-        return res.status(403).json({ error: 'You can only delete your own messages' });
+        return res.status(403).json({ error: 'Du kannst nur eigene Nachrichten löschen' });
       }
       
       // Soft delete the message
@@ -1295,11 +1295,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         console.log(`📡 WebSocket: Broadcasted message deletion to room_${message.room_id}`);
       }
 
-      res.json({ message: 'Message deleted successfully' });
+      res.json({ message: 'Nachricht erfolgreich gelöscht' });
       
     } catch (err) {
       console.error('Database error in DELETE /messages/:messageId:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -1313,7 +1313,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     console.log(`🗳️ Poll voting by messageId: messageId=${messageId}, option=${option_index}, user=${userId} (${userType})`);
     
     if (option_index === undefined || option_index === null) {
-      return res.status(400).json({ error: 'Option index is required' });
+      return res.status(400).json({ error: 'Option-Index ist erforderlich' });
     }
     
     try {
@@ -1327,12 +1327,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [poll] } = await db.query(getPollQuery, [messageId]);
       
       if (!poll) {
-        return res.status(404).json({ error: 'Poll not found for this message' });
+        return res.status(404).json({ error: 'Umfrage für diese Nachricht nicht gefunden' });
       }
       
       // Check if poll has expired
       if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
-        return res.status(400).json({ error: 'Poll has expired' });
+        return res.status(400).json({ error: 'Umfrage ist abgelaufen' });
       }
       
       // Parse options and validate option_index
@@ -1341,11 +1341,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         parsedOptions = JSON.parse(poll.options);
       } catch (e) {
         console.error('Failed to parse poll options:', poll.options);
-        return res.status(500).json({ error: 'Invalid poll data' });
+        return res.status(500).json({ error: 'Ungültige Umfragedaten' });
       }
       
       if (option_index < 0 || option_index >= parsedOptions.length) {
-        return res.status(400).json({ error: 'Invalid option index' });
+        return res.status(400).json({ error: 'Ungültiger Option-Index' });
       }
       
       // Check if user has access to the room
@@ -1357,7 +1357,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [access] } = await db.query(accessQuery, [poll.room_id, userId, userType, req.user.organization_id]);
       
       if (!access) {
-        return res.status(403).json({ error: 'Access denied to this room' });
+        return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
       }
       
       await db.query('BEGIN');
@@ -1377,7 +1377,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         
         if (existingVote) {
           await db.query('ROLLBACK');
-          return res.status(400).json({ error: 'You have already voted for this option' });
+          return res.status(400).json({ error: 'Du hast bereits für diese Option abgestimmt' });
         }
       }
       
@@ -1390,7 +1390,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       await db.query('COMMIT');
       
       res.json({ 
-        message: 'Vote recorded successfully',
+        message: 'Stimme erfolgreich abgegeben',
         poll_id: poll.id,
         message_id: parseInt(messageId),
         option_index: option_index,
@@ -1400,7 +1400,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     } catch (err) {
       await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error('Database error in POST /messages/:messageId/vote:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1412,7 +1412,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const forceDelete = req.query.force === 'true';
     
     if (userType !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can delete chat rooms' });
+      return res.status(403).json({ error: 'Nur Admins können Chat-Räume löschen' });
     }
     
     try {
@@ -1500,7 +1500,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     } catch (err) {
       await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
       console.error(`Database error in DELETE /rooms/${roomId}:`, err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
   
@@ -1514,13 +1514,13 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const userType = req.user.type;
 
     if (!emoji) {
-      return res.status(400).json({ error: 'Emoji is required' });
+      return res.status(400).json({ error: 'Emoji ist erforderlich' });
     }
 
     // Nur bestimmte Emojis erlauben (Sicherheit)
     const allowedEmojis = ['like', 'heart', 'laugh', 'wow', 'sad', 'pray'];
     if (!allowedEmojis.includes(emoji)) {
-      return res.status(400).json({ error: 'Invalid emoji type' });
+      return res.status(400).json({ error: 'Ungültiger Emoji-Typ' });
     }
 
     try {
@@ -1604,7 +1604,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
     } catch (err) {
       console.error('Database error in POST /messages/:messageId/reactions:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -1626,7 +1626,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
     } catch (err) {
       console.error('Database error in GET /messages/:messageId/reactions:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 
@@ -1639,7 +1639,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
       // Nur für Konfis verfügbar
       if (userType !== 'konfi') {
-        return res.status(403).json({ error: 'Only Konfis can use this endpoint' });
+        return res.status(403).json({ error: 'Nur Konfis können diesen Endpunkt nutzen' });
       }
 
       // 1. Get Konfi's jahrgang
@@ -1652,7 +1652,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { rows: [konfiProfile] } = await db.query(konfiQuery, [userId]);
       
       if (!konfiProfile || !konfiProfile.jahrgang_id) {
-        return res.status(400).json({ error: 'Konfi not assigned to jahrgang' });
+        return res.status(400).json({ error: 'Konfi ist keinem Jahrgang zugewiesen' });
       }
 
       // DATENSCHUTZ: Konfis dürfen NUR Admins anschreiben (keine Konfi-zu-Konfi Chats)
@@ -1716,7 +1716,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
 
     } catch (err) {
       console.error('Database error in GET /chat/available-users:', err);
-      res.status(500).json({ error: 'Database error' });
+      res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
 

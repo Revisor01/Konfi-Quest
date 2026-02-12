@@ -45,7 +45,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json(rows);
         } catch (err) {
             console.error('Database error in GET /konfis:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -66,7 +66,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows: [konfi] } = await db.query(konfiQuery, [req.params.id, req.user.organization_id]);
 
             if (!konfi) {
-                return res.status(404).json({ error: 'Konfi not found' });
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             // Get activities
@@ -99,7 +99,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json(konfi);
         } catch (err) {
             console.error('Database error in GET /konfis/:id (first route):', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -107,7 +107,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
-            return res.status(400).json({ error: 'Name and Jahrgang are required' });
+            return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
         }
 
         const password = generateBiblicalPassword();
@@ -131,7 +131,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             if (!role) {
                 await db.query('ROLLBACK');
-                return res.status(500).json({ error: 'Konfi role not found' });
+                return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
             }
 
             const userQuery = `
@@ -172,16 +172,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             await db.query('COMMIT');
-            res.status(201).json({ id: userId, username, password, message: 'Konfi created successfully' });
+            res.status(201).json({ id: userId, username, password, message: 'Konfi erfolgreich erstellt' });
 
         } catch (err) {
             await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
 
             if (err.code === '23505') { // unique_violation
-                return res.status(409).json({ error: 'Username already exists' });
+                return res.status(409).json({ error: 'Benutzername existiert bereits' });
             }
             console.error('Database error in POST /konfis:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -189,7 +189,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
-            return res.status(400).json({ error: 'Name and Jahrgang are required' });
+            return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
         }
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
@@ -207,7 +207,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             if (userUpdateCount === 0) {
                 await db.query('ROLLBACK');
-                return res.status(404).json({ error: 'Konfi not found' });
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
@@ -258,12 +258,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             await db.query('COMMIT');
-            res.json({ message: 'Konfi updated successfully' });
+            res.json({ message: 'Konfi erfolgreich aktualisiert' });
 
         } catch (err) {
             await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
             console.error('Database error in PUT /konfis/:id:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -281,7 +281,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             if (!user) {
                 await db.query('ROLLBACK');
-                return res.status(404).json({ error: 'Konfi not found' });
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
             
             // Delete related data (in correct order to avoid FK violations)
@@ -303,12 +303,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             await db.query("DELETE FROM users WHERE id = $1", [userId]);
             
             await db.query('COMMIT');
-            res.json({ message: 'Konfi deleted successfully' });
+            res.json({ message: 'Konfi erfolgreich gelöscht' });
 
         } catch (err) {
             await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
             console.error('Database error in DELETE /konfis/:id:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -327,19 +327,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             if (rowCount === 0) {
                 await db.query('ROLLBACK');
-                return res.status(404).json({ error: 'Konfi not found' });
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
             
             const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = $1 WHERE user_id = $2";
             await db.query(updateProfileQuery, [newPassword, req.params.id]);
 
             await db.query('COMMIT');
-            res.json({ message: 'Password regenerated successfully', password: newPassword });
+            res.json({ message: 'Passwort erfolgreich neu generiert', password: newPassword });
 
         } catch (err) {
             await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
             console.error('Database error in POST /konfis/:id/regenerate-password:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -361,7 +361,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
             if (!konfi) {
-                return res.status(404).json({ error: 'Konfi not found' });
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             const activitiesQuery = `
@@ -396,7 +396,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
         } catch (err) {
             console.error('Database error in GET /konfis/:id (second route):', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -418,7 +418,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json(eventPoints || []);
         } catch (err) {
             console.error('Database error in GET /konfis/:id/event-points:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -426,7 +426,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.post('/:id/bonus-points', rbacVerifier, requireAdmin, async (req, res) => {
         const { points, type, description } = req.body;
         if (!points || !type || !description) {
-            return res.status(400).json({ error: 'Points, type and description are required' });
+            return res.status(400).json({ error: 'Punkte, Typ und Beschreibung sind erforderlich' });
         }
 
         try {
@@ -453,7 +453,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Don't fail the request if badge checking fails
             }
 
-            res.status(201).json({ message: 'Bonus points added successfully' });
+            res.status(201).json({ message: 'Bonuspunkte erfolgreich hinzugefügt' });
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points });
@@ -461,7 +461,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
         } catch (err) {
             console.error('Database error in POST /konfis/:id/bonus-points:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -471,7 +471,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows: [bonus] } = await db.query('SELECT * FROM bonus_points WHERE id = $1 AND konfi_id = $2', [req.params.bonusId, req.params.id]);
             
             if (!bonus) {
-                return res.status(404).json({ error: 'Bonus points not found' });
+                return res.status(404).json({ error: 'Bonuspunkte nicht gefunden' });
             }
             
             await db.query('DELETE FROM bonus_points WHERE id = $1', [req.params.bonusId]);
@@ -491,7 +491,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Don't fail the request if badge checking fails
             }
 
-            res.json({ message: 'Bonus points deleted successfully' });
+            res.json({ message: 'Bonuspunkte erfolgreich gelöscht' });
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -bonus.points });
@@ -499,7 +499,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
         } catch (err) {
             console.error('Database error in DELETE /konfis/:id/bonus-points/:bonusId:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -507,14 +507,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.post('/:id/activities', rbacVerifier, requireAdmin, async (req, res) => {
         const { activity_id, completed_date, comment } = req.body;
         if (!activity_id || !completed_date) {
-            return res.status(400).json({ error: 'Activity ID and date are required' });
+            return res.status(400).json({ error: 'Aktivitäts-ID und Datum sind erforderlich' });
         }
 
         try {
             const { rows: [activity] } = await db.query('SELECT * FROM activities WHERE id = $1 AND organization_id = $2', [activity_id, req.user.organization_id]);
 
             if (!activity) {
-                return res.status(404).json({ error: 'Activity not found' });
+                return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
             
             const query = `
@@ -540,7 +540,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Don't fail the request if badge checking fails
             }
 
-            res.status(201).json({ message: 'Activity added successfully' });
+            res.status(201).json({ message: 'Aktivität erfolgreich hinzugefügt' });
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: activity.points });
@@ -548,7 +548,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
         } catch (err) {
             console.error('Database error in POST /konfis/:id/activities:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
@@ -563,7 +563,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows: [activity] } = await db.query(getActivityQuery, [req.params.activityId, req.params.id]);
             
             if (!activity) {
-                return res.status(404).json({ error: 'Activity not found' });
+                return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
             
             await db.query('DELETE FROM konfi_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
@@ -583,7 +583,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Don't fail the request if badge checking fails
             }
 
-            res.json({ message: 'Activity deleted successfully' });
+            res.json({ message: 'Aktivität erfolgreich gelöscht' });
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points: -activity.points });
@@ -591,7 +591,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
         } catch (err) {
             console.error('Database error in DELETE /konfis/:id/activities/:activityId:', err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
 
