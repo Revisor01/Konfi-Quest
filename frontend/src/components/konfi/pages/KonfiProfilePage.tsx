@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -136,7 +136,7 @@ const KonfiProfilePage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        <ProfileView profile={profile} onReload={loadProfile} presentingElement={presentingElement || null} />
+        <ProfileView profile={profile} onReload={loadProfile} presentingElement={presentingElement || null} pageRef={pageRef} />
       </IonContent>
     </IonPage>
   );

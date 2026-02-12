@@ -1249,7 +1249,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           
           await db.query('COMMIT');
 
-          // Push-Notification: Teilnahme bestaetigt mit Punkten
+          // Push-Notification: Teilnahme bestätigt mit Punkten
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points);
           } catch (pushErr) {
@@ -1264,7 +1264,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         } else {
           await db.query('COMMIT');
 
-          // Push-Notification: Teilnahme bestaetigt (Punkte bereits vergeben)
+          // Push-Notification: Teilnahme bestätigt (Punkte bereits vergeben)
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0);
           } catch (pushErr) {

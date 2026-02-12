@@ -61,7 +61,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   }, []);
 
   const handleSave = async () => {
-    // E-Mail ist optional, aber wenn angegeben muss sie gueltig sein
+    // E-Mail ist optional, aber wenn angegeben muss sie gültig sein
     if (email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {

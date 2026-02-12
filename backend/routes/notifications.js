@@ -42,8 +42,8 @@ module.exports = (db, verifyTokenRBAC) => {
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // WICHTIG: FCM Token kann nur EINEM User gehoeren!
-      // Wenn sich ein neuer User auf demselben Geraet anmeldet, muss der Token
+      // WICHTIG: FCM Token kann nur EINEM User gehören!
+      // Wenn sich ein neuer User auf demselben Gerät anmeldet, muss der Token
       // von allen anderen Usern entfernt werden, um doppelte Benachrichtigungen zu verhindern.
       const { rowCount: deletedOtherUsers } = await db.query(
         'DELETE FROM push_tokens WHERE token = $1 AND user_id != $2',

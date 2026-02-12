@@ -75,7 +75,7 @@ const AdminProfilePage: React.FC = () => {
         console.error('Error refreshing user:', err);
       }
     }
-    // initialEmail wird nicht mehr benoetigt - Modal laedt selbst vom Server
+    // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
   });
 
   // Password Modal mit useIonModal Hook

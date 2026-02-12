@@ -210,7 +210,7 @@ const KonfiDashboardPage: React.FC = () => {
       const response = await api.get('/konfi/badges');
       const { available, earned, stats } = response.data;
 
-      // Speichere alle Badges fuer Dashboard-Anzeige
+      // Speichere alle Badges für Dashboard-Anzeige
       setAllBadges({ available: available || [], earned: earned || [] });
 
       // Count visible badges earned vs available

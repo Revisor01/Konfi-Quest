@@ -85,7 +85,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       const response = await api.get('/konfi/activities');
       setActivities(response.data);
     } catch (err) {
-      setError('Fehler beim Laden der Aktivitaeten');
+      setError('Fehler beim Laden der Aktivitäten');
       console.error('Error loading activities:', err);
     } finally {
       setLoading(false);
@@ -107,7 +107,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     if (file) {
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setError('Foto ist zu gross. Maximal 5MB erlaubt.');
+        setError('Foto ist zu groß. Maximal 5MB erlaubt.');
         return;
       }
 
@@ -149,14 +149,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const handleSubmit = async () => {
     if (!formData.activity_id) {
-      setError('Bitte waehle eine Aktivitaet aus');
+      setError('Bitte wähle eine Aktivität aus');
       return;
     }
 
     if (!formData.photo_file) {
       presentAlert({
         header: 'Kein Foto',
-        message: 'Antraege benoetigen normalerweise ein Foto als Nachweis. Moechtest du trotzdem fortfahren?',
+        message: 'Anträge benötigen normalerweise ein Foto als Nachweis. Möchtest du trotzdem fortfahren?',
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
           { text: 'Ohne Foto fortfahren', handler: () => submitRequest() }
@@ -233,22 +233,22 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
+        {/* Aktivität Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={starOutline} />
             </div>
-            <IonLabel>Aktivitaet waehlen</IonLabel>
+            <IonLabel>Aktivität wählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '8px' }}>
+            <IonCardContent style={{ padding: '0' }}>
               <IonAccordionGroup>
                 <IonAccordion value="activity-picker">
-                  <IonItem slot="header" lines="none">
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
                       <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
-                        Aktivitaet auswaehlen
+                        Aktivität auswählen
                       </h3>
                       {selectedActivity && (
                         <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
@@ -257,20 +257,20 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       )}
                     </IonLabel>
                   </IonItem>
-                  <div slot="content" style={{ padding: '8px' }}>
+                  <div slot="content" style={{ padding: '0 16px 16px' }}>
                     {/* Suchfeld */}
                     <IonSearchbar
                       value={searchText}
                       onIonInput={(e) => setSearchText(e.detail.value || '')}
-                      placeholder="Aktivitaet suchen..."
-                      style={{ '--background': '#f5f5f5', '--border-radius': '12px', padding: '0', marginBottom: '12px' }}
+                      placeholder="Aktivität suchen..."
+                      style={{ '--background': '#f5f5f5', '--border-radius': '12px', padding: '0', marginBottom: '8px' }}
                     />
 
-                    {/* Aktivitaeten Liste */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                    {/* Aktivitäten Liste */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflowY: 'auto' }}>
                       {filteredActivities.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
-                          Keine Aktivitaeten gefunden
+                          Keine Aktivitäten gefunden
                         </div>
                       ) : (
                         filteredActivities.map(activity => {
@@ -286,11 +286,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                                 cursor: 'pointer',
                                 position: 'relative',
                                 overflow: 'hidden',
+                                padding: '12px 14px',
+                                minHeight: '52px',
                                 background: isSelected ? `${typeColor}15` : undefined,
                                 border: isSelected ? `2px solid ${typeColor}` : undefined
                               }}
                             >
-                              {/* Corner Badge fuer Punkte */}
+                              {/* Corner Badge für Punkte */}
                               <div
                                 className="app-corner-badge"
                                 style={{ backgroundColor: typeColor }}
@@ -300,14 +302,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  <div className={`app-icon-circle ${activity.type === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success'}`}>
+                                  <div className={`app-icon-circle ${activity.type === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success'}`} style={{ width: '32px', height: '32px', minWidth: '32px', fontSize: '0.85rem' }}>
                                     <IonIcon icon={activity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
                                   </div>
-                                  <div className="app-list-item__content">
-                                    <div className="app-list-item__title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div className="app-list-item__content" style={{ paddingRight: '44px' }}>
+                                    <div className="app-list-item__title" style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'normal', fontSize: '0.88rem', lineHeight: '1.3' }}>
                                       {activity.name}
                                       {isSelected && (
-                                        <IonIcon icon={checkmarkCircle} style={{ color: typeColor, fontSize: '1rem' }} />
+                                        <IonIcon icon={checkmarkCircle} style={{ color: typeColor, fontSize: '0.9rem', flexShrink: 0 }} />
                                       )}
                                     </div>
                                     <div className="app-list-item__meta">
@@ -341,7 +343,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={calendarOutline} />
             </div>
-            <IonLabel>Datum waehlen</IonLabel>
+            <IonLabel>Datum wählen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -414,7 +416,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                         style={{ fontSize: '1.2rem', color: '#22c55e' }}
                       />
                       <span style={{ fontWeight: '600', color: '#22c55e' }}>
-                        Foto ausgewaehlt
+                        Foto ausgewählt
                       </span>
                     </div>
                     <IonButton
@@ -436,7 +438,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       style={{ fontSize: '1.2rem', color: '#22c55e' }}
                     />
                     <span style={{ fontWeight: '500', color: '#666' }}>
-                      Foto hinzufuegen
+                      Foto hinzufügen
                     </span>
                   </div>
                 )}

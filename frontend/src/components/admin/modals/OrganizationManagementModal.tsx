@@ -265,8 +265,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       return;
     }
 
-    if (newAdminData.password.length < 6) {
-      setError('Das Passwort muss mindestens 6 Zeichen lang sein');
+    if (newAdminData.password.length < 8) {
+      setError('Das Passwort muss mindestens 8 Zeichen lang sein');
       return;
     }
 

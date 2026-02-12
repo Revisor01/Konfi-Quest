@@ -19,16 +19,23 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is required!');
+  process.exit(1);
+}
 
 // ====================================================================
 // SOCKET.IO SETUP
 // ====================================================================
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'https://konfi-quest.de,https://www.konfi-quest.de').split(',');
+
 const io = new Server(server, {
   cors: {
-    origin: '*',  // Alle Origins - Apache handelt CORS
-    methods: ['GET', 'POST']
+    origin: ALLOWED_ORIGINS,
+    methods: ['GET', 'POST'],
+    credentials: true
   },
   // Debug: Mehr Logging
   pingTimeout: 60000,
@@ -127,7 +134,7 @@ const SMTP_CONFIG = {
     user: process.env.SMTP_USER || 'profil@konfi-quest.de',
     pass: process.env.SMTP_PASS
   },
-  // TLS-Optionen: Hostname-Validierung lockern fuer Docker-Umgebung
+  // TLS-Optionen: Hostname-Validierung lockern für Docker-Umgebung
   // (Zertifikat ist auf server.godsapp.de ausgestellt, aber Docker nutzt IP)
   tls: {
     rejectUnauthorized: false
@@ -222,18 +229,18 @@ const chatUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
-      'image/', // Alle Bilder
-      'application/pdf', // PDFs
-      'video/', // Videos
-      'audio/', // Audio
-      'application/msword', // DOC
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
-      'application/vnd.ms-powerpoint', // PPT
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // PPTX
-      'text/' // Text-Dateien
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
+      'application/pdf',
+      'video/mp4', 'video/quicktime', 'video/webm',
+      'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv'
     ];
     
-    const isAllowed = allowedMimes.some(mime => file.mimetype.startsWith(mime));
+    const isAllowed = allowedMimes.includes(file.mimetype);
     if (isAllowed) {
       cb(null, true);
     } else {

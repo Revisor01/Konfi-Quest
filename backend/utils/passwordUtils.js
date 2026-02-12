@@ -21,6 +21,26 @@ const generateBiblicalPassword = () => {
   return `${book}${chapter},${verse}`;
 };
 
+const validatePassword = (password) => {
+  if (password.length < 8) {
+    return 'Passwort muss mindestens 8 Zeichen lang sein';
+  }
+  if (!/[A-Z]/.test(password)) {
+    return 'Passwort muss mindestens einen Großbuchstaben enthalten';
+  }
+  if (!/[a-z]/.test(password)) {
+    return 'Passwort muss mindestens einen Kleinbuchstaben enthalten';
+  }
+  if (!/[0-9]/.test(password)) {
+    return 'Passwort muss mindestens eine Zahl enthalten';
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password)) {
+    return 'Passwort muss mindestens ein Sonderzeichen enthalten';
+  }
+  return null;
+};
+
 module.exports = {
-  generateBiblicalPassword
+  generateBiblicalPassword,
+  validatePassword
 };

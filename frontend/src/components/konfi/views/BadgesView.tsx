@@ -188,7 +188,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       { key: 'total_points', title: 'Punkte-Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'total_points').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'gottesdienst_points', title: 'Gottesdienst-Held', icon: sunny, color: '#ff9500', badges: filtered.filter(b => b.criteria_type === 'gottesdienst_points').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'gemeinde_points', title: 'Gemeinde-Star', icon: people, color: '#059669', badges: filtered.filter(b => b.criteria_type === 'gemeinde_points').sort((a, b) => a.criteria_value - b.criteria_value) },
-      { key: 'bonus_points', title: 'Bonus-Jaeger', icon: gift, color: '#ff6b9d', badges: filtered.filter(b => b.criteria_type === 'bonus_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'bonus_points', title: 'Bonus-Jäger', icon: gift, color: '#ff6b9d', badges: filtered.filter(b => b.criteria_type === 'bonus_points').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'both_categories', title: 'Allrounder', icon: layersOutline, color: '#5856d6', badges: filtered.filter(b => b.criteria_type === 'both_categories').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'activity_count', title: 'Aktiv dabei', icon: checkmarkCircle, color: '#3880ff', badges: filtered.filter(b => b.criteria_type === 'activity_count').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'unique_activities', title: 'Vielseitig', icon: gridOutline, color: '#10dc60', badges: filtered.filter(b => b.criteria_type === 'unique_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
@@ -462,21 +462,18 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                             </span>
                           )}
 
-                          {/* Secret Badge Label */}
+                          {/* Secret Badge Eselsohr */}
                           {badge.is_hidden && badge.is_earned && (
-                            <span style={{
-                              position: 'absolute',
-                              top: '4px',
-                              right: '4px',
-                              background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                              color: 'white',
-                              fontSize: '0.5rem',
-                              fontWeight: '700',
-                              padding: '2px 4px',
-                              borderRadius: '4px'
-                            }}>
+                            <div
+                              className="app-corner-badge"
+                              style={{
+                                background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                                fontSize: '0.5rem',
+                                padding: '3px 8px'
+                              }}
+                            >
                               GEHEIM
-                            </span>
+                            </div>
                           )}
                         </div>
                       );

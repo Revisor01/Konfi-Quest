@@ -79,7 +79,7 @@ class PushService {
     try {
       console.log('📨 Sending chat notification to user:', userId);
 
-      // Hole zuerst die Tokens des Senders um sie auszuschliessen
+      // Hole zuerst die Tokens des Senders um sie auszuschließen
       const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
       const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
       const senderTokenList = senderTokens.map(t => t.token);

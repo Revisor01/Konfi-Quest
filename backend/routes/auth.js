@@ -2,9 +2,13 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { validatePassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) => {
@@ -120,8 +124,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ error: 'Aktuelles und neues Passwort sind erforderlich' });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: 'Das neue Passwort muss mindestens 6 Zeichen lang sein' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
     }
     
     try {
@@ -153,7 +158,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     const { email } = req.body;
     const userId = req.user.id;
 
-    // E-Mail ist optional - wenn angegeben, muss sie gueltig sein
+    // E-Mail ist optional - wenn angegeben, muss sie gültig sein
     const trimmedEmail = email?.trim() || null;
 
     if (trimmedEmail) {
@@ -444,21 +449,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
     }
 
-    // Passwort-Validierung: min 8 Zeichen, Groß/Klein, Zahl, Sonderzeichen
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen lang sein' });
-    }
-    if (!/[A-Z]/.test(password)) {
-      return res.status(400).json({ error: 'Passwort muss mindestens einen Großbuchstaben enthalten' });
-    }
-    if (!/[a-z]/.test(password)) {
-      return res.status(400).json({ error: 'Passwort muss mindestens einen Kleinbuchstaben enthalten' });
-    }
-    if (!/[0-9]/.test(password)) {
-      return res.status(400).json({ error: 'Passwort muss mindestens eine Zahl enthalten' });
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password)) {
-      return res.status(400).json({ error: 'Passwort muss mindestens ein Sonderzeichen enthalten' });
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
     }
 
     if (username.length < 3) {

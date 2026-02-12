@@ -478,7 +478,7 @@ interface Message {
 
 // Emoji-Mapping: Interne IDs zu Ionicons
 const REACTION_EMOJIS: { [key: string]: { outline: string; filled: string; label: string; color: string } } = {
-  like: { outline: thumbsUpOutline, filled: thumbsUp, label: 'Gefaellt mir', color: '#3b82f6' },
+  like: { outline: thumbsUpOutline, filled: thumbsUp, label: 'Gefällt mir', color: '#3b82f6' },
   heart: { outline: heartOutline, filled: heart, label: 'Liebe', color: '#ef4444' },
   laugh: { outline: happyOutline, filled: happy, label: 'Lustig', color: '#f59e0b' },
   wow: { outline: alertCircleOutline, filled: alertCircle, label: 'Wow', color: '#8b5cf6' },
@@ -809,7 +809,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         formData.append('file', selectedFile);
         console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       }
-      // Reply-Referenz hinzufuegen wenn vorhanden
+      // Reply-Referenz hinzufügen wenn vorhanden
       if (replyToMessage) {
         formData.append('reply_to', replyToMessage.id.toString());
       }
@@ -899,7 +899,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     });
   };
 
-  // Reaktion hinzufuegen/entfernen
+  // Reaktion hinzufügen/entfernen
   const toggleReaction = async (messageId: number, emoji: string) => {
     try {
       await Haptics.impact({ style: ImpactStyle.Light });
@@ -951,7 +951,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
   };
 
-  // Reaktion-Picker oeffnen
+  // Reaktion-Picker öffnen
   const openReactionPicker = (message: Message) => {
     setReactionTargetMessage(message);
     setShowReactionPicker(true);
@@ -2115,7 +2115,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           '--padding-top': '8px',
           '--padding-bottom': '8px'
         }}>
-          {/* Flex-Container fuer Input und Buttons - vertikal zentriert */}
+          {/* Flex-Container für Input und Buttons - vertikal zentriert */}
           <div style={{
             display: 'flex',
             alignItems: 'center',

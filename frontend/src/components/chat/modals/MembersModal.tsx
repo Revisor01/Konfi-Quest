@@ -277,7 +277,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       roleText = 'Konfi';
     }
 
-    // Jahrgang ermitteln (nur fuer Konfis)
+    // Jahrgang ermitteln (nur für Konfis)
     const jahrgang = !isAdmin ? (
       'jahrgang_name' in targetUser
         ? targetUser.jahrgang_name
@@ -307,7 +307,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
             </div>
           </div>
 
-          {/* Checkbox fuer Add-Modus */}
+          {/* Checkbox für Add-Modus */}
           {isSelectable && (
             <IonCheckbox
               checked={isSelected}
@@ -319,7 +319,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
             />
           )}
 
-          {/* Loeschen-Button fuer Mitglieder-Ansicht */}
+          {/* Löschen-Button für Mitglieder-Ansicht */}
           {onRemove && canManageMembers && (
             <IonButton
               fill="clear"
@@ -349,7 +349,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
           </IonButtons>
 
           <IonTitle>
-            {showAddMode ? 'Mitglied hinzufuegen' : 'Mitglieder'}
+            {showAddMode ? 'Mitglied hinzufügen' : 'Mitglieder'}
           </IonTitle>
 
           {canManageMembers && (

@@ -357,7 +357,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               // Farbe basierend auf Status - Konfirmation in Lila!
               const statusColor = (() => {
                 if (isCancelled) return '#dc3545';
-                if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6'; // Lila fuer Konfirmation
+                if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6'; // Lila für Konfirmation
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';

@@ -7,56 +7,56 @@ const liveUpdate = require('../utils/liveUpdate');
 const CRITERIA_TYPES = {
   // === PUNKTE-BASIERTE KRITERIEN (Einfach & häufig verwendet) ===
   total_points: { 
-    label: "🎯 Gesamtpunkte", 
+    label: "Gesamtpunkte", 
     description: "Mindestanzahl aller Punkte",
     help: "Badge wird vergeben, wenn die Summe aus Gottesdienst- und Gemeindepunkten erreicht wird. Beispiel: Wert 20 = mindestens 20 Punkte insgesamt."
   },
   gottesdienst_points: { 
-    label: "📖 Gottesdienst-Punkte", 
+    label: "Gottesdienst-Punkte", 
     description: "Mindestanzahl gottesdienstlicher Punkte",
     help: "Badge wird vergeben, wenn die angegebene Anzahl gottesdienstlicher Punkte erreicht wird. Beispiel: Wert 10 = mindestens 10 Gottesdienst-Punkte."
   },
   gemeinde_points: { 
-    label: "🤝 Gemeinde-Punkte", 
+    label: "Gemeinde-Punkte", 
     description: "Mindestanzahl gemeindlicher Punkte",
     help: "Badge wird vergeben, wenn die angegebene Anzahl gemeindlicher Punkte erreicht wird. Beispiel: Wert 15 = mindestens 15 Gemeinde-Punkte."
   },
   both_categories: { 
-    label: "⚖️ Beide Kategorien", 
+    label: "Beide Kategorien", 
     description: "Mindestpunkte in beiden Bereichen",
     help: "Badge wird vergeben, wenn sowohl bei Gottesdienst- als auch bei Gemeindepunkten der Mindestwert erreicht wird. Beispiel: Wert 5 = mindestens 5 Gottesdienst-Punkte UND 5 Gemeinde-Punkte."
   },
   
   // === AKTIVITÄTS-BASIERTE KRITERIEN (Mittlere Komplexität) ===
   activity_count: {
-    label: "📊 Aktivitäten & Events",
+    label: "Aktivitäten & Events",
     description: "Gesamtanzahl aller Aktivitäten und Events",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und besuchten Events erreicht wird. Beispiel: Wert 10 = mindestens 10 Aktivitäten/Events."
   },
   event_count: {
-    label: "🎪 Event-Teilnahmen",
+    label: "Event-Teilnahmen",
     description: "Anzahl besuchter Events",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Events besucht wurde (mit Anwesenheit bestätigt). Beispiel: Wert 6 = mindestens 6 Events besucht."
   },
   unique_activities: {
-    label: "🌟 Verschiedene Aktivitäten",
+    label: "Verschiedene Aktivitäten",
     description: "Anzahl unterschiedlicher Aktivitäten",
     help: "Badge wird vergeben, wenn die angegebene Anzahl verschiedener Aktivitäten absolviert wurde. Mehrfache Teilnahme an derselben Aktivität zählt nur einmal. Beispiel: Wert 3 = 3 verschiedene Aktivitäten."
   },
   
   // === SPEZIFISCHE AKTIVITÄTS-KRITERIEN (Spezifischer) ===
   specific_activity: { 
-    label: "🎯 Spezifische Aktivität", 
+    label: "Spezifische Aktivität", 
     description: "Bestimmte Aktivität X-mal absolviert",
     help: "Badge wird vergeben, wenn eine bestimmte Aktivität die angegebene Anzahl mal absolviert wurde. Beispiel: Wert 5 + 'Sonntagsgottesdienst' = 5x am Sonntagsgottesdienst teilgenommen."
   },
   category_activities: {
-    label: "🏷️ Kategorie-Aktivitäten",
+    label: "Kategorie-Aktivitäten",
     description: "Aktivitäten & Events aus Kategorie",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und Events aus einer bestimmten Kategorie absolviert wurde. Beispiel: Wert 3 + Kategorie 'Kasualien' = 3 Kasualien (Aktivitäten oder Events)."
   },
   activity_combination: {
-    label: "🎭 Aktivitäts-Kombination",
+    label: "Aktivitäts-Kombination",
     description: "Spezifische Kombination von Aktivitäten",
     help: "Badge wird vergeben, wenn alle ausgewählten Aktivitäten mindestens einmal absolviert wurden. Der Wert gibt die Mindestanzahl an benötigten Aktivitäten aus der Liste an. Beispiel: 'Adventskalender' - alle 24 Türchen besucht."
   },
@@ -68,14 +68,14 @@ const CRITERIA_TYPES = {
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Aktivitäten und Events innerhalb der festgelegten Wochen absolviert wurde. Beispiel: Wert 2 + 4 Wochen = 2 Aktivitäten/Events in 4 Wochen."
   },
   streak: {
-    label: "🔥 Serie",
+    label: "Serie",
     description: "Aufeinanderfolgende Wochen aktiv",
     help: "Badge wird vergeben, wenn in der angegebenen Anzahl aufeinanderfolgender Wochen mindestens eine Aktivität oder ein Event absolviert wurde. Beispiel: Wert 4 = 4 Wochen in Folge aktiv."
   },
   
   // === SPEZIAL-KRITERIEN (Selten verwendet) ===
   bonus_points: { 
-    label: "💰 Bonuspunkte", 
+    label: "Bonuspunkte", 
     description: "Anzahl erhaltener Bonuspunkte",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Bonuspunkt-Einträgen erhalten wurde (unabhängig von der Höhe der Bonuspunkte). Beispiel: Wert 2 = mindestens 2 Bonuspunkt-Vergaben."
   }

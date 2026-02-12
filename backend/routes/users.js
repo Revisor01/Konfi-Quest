@@ -495,7 +495,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
 
       console.log(`Password reset by ${req.user.role_name} (ID: ${req.user.id}) for user ID ${id}`);
-      res.json({ message: 'Passwort erfolgreich zurueckgesetzt' });
+      res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {
       console.error(`Database error in PUT /users/${id}/reset-password:`, err);

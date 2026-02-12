@@ -108,7 +108,7 @@ class BackgroundService {
 
     console.log('Event-Erinnerungs-Service gestartet (alle 15 Minuten)');
 
-    // Sofort einmal ausfuehren, dann alle 15 Minuten
+    // Sofort einmal ausführen, dann alle 15 Minuten
     this.sendEventReminders(db);
 
     const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -273,7 +273,7 @@ class BackgroundService {
   }
 
   /**
-   * Prueft ob es Events gibt die verbucht werden muessen
+   * Prüft ob es Events gibt die verbucht werden müssen
    */
   static async checkPendingEvents(db) {
     try {

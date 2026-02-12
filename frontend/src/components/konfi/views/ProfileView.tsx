@@ -91,9 +91,10 @@ interface ProfileViewProps {
   profile: KonfiProfile;
   onReload: () => void;
   presentingElement: HTMLElement | null;
+  pageRef?: React.RefObject<HTMLElement | null>;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
   const { user, setSuccess, setError } = useApp();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
@@ -174,7 +175,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       dismissEmailModal();
       onReload();
     }
-    // initialEmail wird nicht mehr benoetigt - Modal laedt selbst vom Server
+    // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
   });
 
   // Modal with useIonModal Hook for Password Change
@@ -629,7 +630,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 button
                 onClick={() => {
                   presentPointsHistoryModal({
-                    presentingElement: presentingElement || undefined
+                    presentingElement: pageRef?.current || presentingElement || undefined
                   });
                 }}
                 detail={false}
@@ -667,7 +668,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 button
                 onClick={() => {
                   presentEmailModal({
-                    presentingElement: presentingElement || undefined
+                    presentingElement: pageRef?.current || presentingElement || undefined
                   });
                 }}
                 detail={false}
@@ -707,7 +708,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
                 button
                 onClick={() => {
                   presentPasswordModal({
-                    presentingElement: presentingElement || undefined
+                    presentingElement: pageRef?.current || presentingElement || undefined
                   });
                 }}
                 detail={false}
@@ -792,26 +793,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       </IonList>
 
-      {/* Logout - iOS26 Pattern wie Admin */}
-      <IonList inset={true} style={{ margin: '16px 16px 16px 16px' }}>
+      {/* Logout - groß und rot */}
+      <IonList inset={true} style={{ margin: '16px' }}>
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
-            <IonItem
-              button
+            <div
+              className="app-list-item app-list-item--danger"
               onClick={handleLogout}
-              detail={false}
-              lines="none"
-              style={{
-                '--background': 'transparent',
-                '--padding-start': '0',
-                '--padding-end': '0',
-                '--inner-padding-end': '0',
-                '--color': '#dc3545'
-              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
             >
-              <IonIcon icon={logOutOutline} slot="start" color="danger" />
-              <IonLabel color="danger">Abmelden</IonLabel>
-            </IonItem>
+              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                <IonIcon icon={logOutOutline} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
+                <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
+              </div>
+            </div>
           </IonCardContent>
         </IonCard>
       </IonList>

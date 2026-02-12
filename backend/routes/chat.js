@@ -535,7 +535,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
               p.question, p.options, p.expires_at, p.multiple_choice,
               p.id as poll_id,
               CASE
-                WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde geloescht'
+                WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde gelöscht'
                 ELSE m.content
               END as content,
               CASE

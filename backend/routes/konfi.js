@@ -5,7 +5,10 @@ const router = express.Router();
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'konfi-secret-2025';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 // Konfi-specific routes
 module.exports = (db, rbacMiddleware, upload, requestUpload) => {
@@ -265,7 +268,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       const query = `
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, kp.password_plain, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date
+               kp.jahrgang_id, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
@@ -571,7 +574,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
           [
             konfiId,
-            'Antrag eingereicht ✅',
+            'Antrag eingereicht',
             `Dein Antrag für "${activity.name}" wurde eingereicht und wird geprüft.`,
             'activity_request_submitted',
             JSON.stringify({ 
@@ -1553,7 +1556,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       if (event.has_timeslots) {
         if (!timeslot_id) {
-          return res.status(400).json({ error: 'Bitte waehle einen Zeitslot aus' });
+          return res.status(400).json({ error: 'Bitte wähle einen Zeitslot aus' });
         }
 
         // Validate timeslot exists and belongs to this event

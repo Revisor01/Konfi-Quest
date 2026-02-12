@@ -29,7 +29,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             const query = `
-                SELECT u.id, u.display_name as name, u.username, kp.password_plain, 
+                SELECT u.id, u.display_name as name, u.username,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
@@ -53,7 +53,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             const konfiQuery = `
-                SELECT u.id, u.display_name as name, u.username, kp.password_plain as password,
+                SELECT u.id, u.display_name as name, u.username,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"

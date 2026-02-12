@@ -409,7 +409,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         }}/>
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          {/* Begruessung */}
+          {/* Begrüßung */}
           <h2 style={{
             fontSize: '1.8rem',
             fontWeight: '800',
@@ -428,7 +428,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             {dashboardData.konfi.jahrgang_name}
           </p>
 
-          {/* Activity Rings - klickbar fuer Punkte-Historie */}
+          {/* Activity Rings - klickbar für Punkte-Historie */}
           <div
             onClick={onOpenPointsHistory}
             style={{
@@ -536,7 +536,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 marginBottom: '6px'
               }}>
                 <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-                  Naechstes Level: {dashboardData.level_info.next_level.title}
+                  Nächstes Level: {dashboardData.level_info.next_level.title}
                 </span>
                 <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
                   {dashboardData.level_info.points_to_next_level ? `noch ${dashboardData.level_info.points_to_next_level} Punkte` : `${dashboardData.level_info.progress_percentage}%`}
@@ -1024,7 +1024,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 ...allBadges.available.filter((b: any) => !earnedIds.has(b.id) && !b.is_hidden)
               ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-              // Geheime Badges (hidden) - zeige nur erreichte + Platzhalter fuer nicht erreichte
+              // Geheime Badges (hidden) - zeige nur erreichte + Platzhalter für nicht erreichte
               const secretEarned = allBadges.earned.filter((b: any) => b.is_hidden);
               const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
@@ -1089,7 +1089,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                               filter: isEarned ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))' : 'none'
                             }}
                           />
-                          {/* NEU Indikator fuer kuerzlich erreichte */}
+                          {/* NEU Indikator für kürzlich erreichte */}
                           {isRecent && (
                             <div style={{
                               position: 'absolute',
@@ -1201,7 +1201,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           );
                         })}
 
-                        {/* Platzhalter fuer nicht erreichte geheime Badges */}
+                        {/* Platzhalter für nicht erreichte geheime Badges */}
                         {Array.from({ length: secretNotEarnedCount }).map((_, index) => (
                           <div
                             key={`secret-placeholder-${index}`}
@@ -1252,7 +1252,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          {/* CSS Animation fuer neue Badges */}
+          {/* CSS Animation für neue Badges */}
           <style>{`
             @keyframes badgePulse {
               0%, 100% { transform: scale(1); }
@@ -1606,7 +1606,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         )}
       </IonPopover>
 
-      {/* Badge Popover - mit solidem Hintergrund */}
+      {/* Badge Popover - kompakt wie BadgesView */}
       <IonPopover
         isOpen={badgePopover.isOpen}
         event={badgePopover.event}
@@ -1614,102 +1614,120 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         side="top"
         alignment="center"
         style={{
-          '--background': '#ffffff'
-        }}
+          '--width': '260px',
+          '--background': 'white'
+        } as any}
       >
         {badgePopover.badge && (
-          <div style={{
-            padding: '16px',
-            textAlign: 'center',
-            minWidth: '200px',
-            maxWidth: '280px',
-            background: '#ffffff'
-          }}>
-            {/* Badge Icon */}
+          <div style={{ padding: '12px', background: 'white', position: 'relative', overflow: 'hidden' }}>
+            {/* Geheim Eselsohr */}
+            {badgePopover.badge.is_hidden && (
+              <div
+                className="app-corner-badge"
+                style={{
+                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
+                  fontSize: '0.5rem',
+                  padding: '3px 8px'
+                }}
+              >
+                GEHEIM
+              </div>
+            )}
+
+            {/* Kompakte Darstellung */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Badge Icon - kleiner */}
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: badgePopover.isEarned
+                  ? `linear-gradient(145deg, ${getBadgeColor(badgePopover.badge)} 0%, ${getBadgeColor(badgePopover.badge)}cc 100%)`
+                  : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
+                boxShadow: badgePopover.isEarned
+                  ? `0 2px 8px ${getBadgeColor(badgePopover.badge)}40`
+                  : '0 1px 4px rgba(0,0,0,0.1)'
+              }}>
+                <IonIcon
+                  icon={badgePopover.isEarned ? getIconFromString(badgePopover.badge.icon) : eyeOff}
+                  style={{
+                    fontSize: '1.4rem',
+                    color: badgePopover.isEarned ? 'white' : '#999'
+                  }}
+                />
+              </div>
+
+              {/* Text Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333' }}>
+                  {badgePopover.badge.name}
+                </h3>
+                <p style={{
+                  margin: '0',
+                  fontSize: '0.8rem',
+                  color: '#666',
+                  lineHeight: '1.3'
+                }}>
+                  {badgePopover.badge.description || 'Keine Beschreibung'}
+                </p>
+              </div>
+            </div>
+
+            {/* Status und Datum */}
             <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              background: badgePopover.isEarned
-                ? `linear-gradient(135deg, ${getBadgeColor(badgePopover.badge)} 0%, ${getBadgeColor(badgePopover.badge)}dd 100%)`
-                : '#e5e7eb',
+              marginTop: '10px',
+              paddingTop: '10px',
+              borderTop: '1px solid #eee',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px auto',
-              boxShadow: badgePopover.isEarned
-                ? `0 4px 12px ${getBadgeColor(badgePopover.badge)}50`
-                : 'none'
+              justifyContent: 'space-between'
             }}>
-              <IonIcon
-                icon={badgePopover.isEarned ? getIconFromString(badgePopover.badge.icon) : eyeOff}
-                style={{
-                  fontSize: '1.8rem',
-                  color: badgePopover.isEarned ? 'white' : '#9ca3af'
-                }}
-              />
+              {badgePopover.isEarned ? (
+                <>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: '#22c55e',
+                    color: 'white',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontSize: '0.7rem',
+                    fontWeight: '600'
+                  }}>
+                    <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.75rem' }} />
+                    Erreicht
+                  </div>
+                  {badgePopover.badge.earned_at && (
+                    <span style={{ fontSize: '0.7rem', color: '#888' }}>
+                      {new Date(badgePopover.badge.earned_at).toLocaleDateString('de-DE', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: '#8e8e93',
+                  color: 'white',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '600'
+                }}>
+                  Noch nicht erreicht
+                </div>
+              )}
             </div>
-
-            {/* Badge Name */}
-            <div style={{
-              fontWeight: '700',
-              fontSize: '1.1rem',
-              color: badgePopover.isEarned ? getBadgeColor(badgePopover.badge) : '#333',
-              marginBottom: '6px'
-            }}>
-              {badgePopover.badge.name}
-            </div>
-
-            {/* Badge Description */}
-            {badgePopover.isEarned && badgePopover.badge.description && (
-              <div style={{
-                fontSize: '0.85rem',
-                color: '#666',
-                marginBottom: '12px',
-                lineHeight: '1.4'
-              }}>
-                {badgePopover.badge.description}
-              </div>
-            )}
-
-            {/* Geheim Badge Hinweis */}
-            {badgePopover.badge.is_hidden && (
-              <div style={{
-                fontSize: '0.75rem',
-                color: '#f59e0b',
-                marginBottom: '8px',
-                fontWeight: '600'
-              }}>
-                Geheim-Badge
-              </div>
-            )}
-
-            {/* Earned Date oder Hint */}
-            {badgePopover.isEarned ? (
-              <div style={{
-                display: 'inline-block',
-                padding: '6px 14px',
-                borderRadius: '12px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                background: '#dcfce7',
-                color: '#16a34a'
-              }}>
-                Erreicht am {new Date(badgePopover.badge.earned_at).toLocaleDateString('de-DE')}
-              </div>
-            ) : (
-              <div style={{
-                display: 'inline-block',
-                padding: '6px 14px',
-                borderRadius: '12px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                background: '#f3f4f6',
-                color: '#6b7280'
-              }}>
-                Noch nicht erreicht
-              </div>
-            )}
           </div>
         )}
       </IonPopover>
