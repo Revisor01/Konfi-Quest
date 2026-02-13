@@ -57,7 +57,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
       await onSave();
       handleClose();
     } catch (err) {
-      console.error('Error saving bonus points:', err);
+ console.error('Error saving bonus points:', err);
     } finally {
       setLoading(false);
     }

@@ -21,7 +21,7 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is required!');
+ console.error('FATAL: JWT_SECRET environment variable is required!');
   process.exit(1);
 }
 
@@ -44,52 +44,52 @@ const io = new Server(server, {
 
 // Debug: Log alle Engine-Level Events
 io.engine.on('connection_error', (err) => {
-  console.log('❌ Socket.io Engine connection_error:', err.req?.url, err.code, err.message, err.context);
+ console.log('Socket.io Engine connection_error:', err.req?.url, err.code, err.message, err.context);
 });
 
 io.engine.on('initial_headers', (headers, req) => {
-  console.log('🔌 Socket.io initial_headers for:', req.url?.substring(0, 50));
+ console.log('Socket.io initial_headers for:', req.url?.substring(0, 50));
 });
 
 // Socket.io JWT Authentication Middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  console.log('🔌 Socket.io Auth attempt - Token present:', !!token, token ? `(${token.substring(0, 20)}...)` : '');
+ console.log('Socket.io Auth attempt - Token present:', !!token, token ? `(${token.substring(0, 20)}...)` : '');
 
   if (!token) {
-    console.log('❌ Socket.io Auth failed: No token provided');
+ console.log('Socket.io Auth failed: No token provided');
     return next(new Error('Authentication required'));
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
-    console.log('✅ Socket.io Auth success for user:', decoded.display_name, '(ID:', decoded.id, ')');
+ console.log('Socket.io Auth success for user:', decoded.display_name, '(ID:', decoded.id, ')');
     next();
   } catch (err) {
-    console.log('❌ Socket.io Auth failed: Invalid token -', err.message);
+ console.log('Socket.io Auth failed: Invalid token -', err.message);
     return next(new Error('Invalid token'));
   }
 });
 
 // Socket.io Connection Handler
 io.on('connection', (socket) => {
-  console.log(`🔌 User connected: ${socket.user.display_name} (${socket.user.id})`);
+ console.log(`User connected: ${socket.user.display_name} (${socket.user.id})`);
 
   // User tritt automatisch seinem persönlichen Room bei (für globale Benachrichtigungen)
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
-  console.log(`📥 ${socket.user.display_name} auto-joined personal room: ${userRoom}`);
+ console.log(`${socket.user.display_name} auto-joined personal room: ${userRoom}`);
 
   // User tritt seinen Chat-Rooms bei
   socket.on('joinRoom', (roomId) => {
     socket.join(`room_${roomId}`);
-    console.log(`📥 ${socket.user.display_name} joined room ${roomId}`);
+ console.log(`${socket.user.display_name} joined room ${roomId}`);
   });
 
   socket.on('leaveRoom', (roomId) => {
     socket.leave(`room_${roomId}`);
-    console.log(`📤 ${socket.user.display_name} left room ${roomId}`);
+ console.log(`${socket.user.display_name} left room ${roomId}`);
   });
 
   // Typing Indicator
@@ -109,7 +109,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔌 User disconnected: ${socket.user.display_name}`);
+ console.log(`User disconnected: ${socket.user.display_name}`);
   });
 });
 
@@ -145,9 +145,9 @@ const transporter = nodemailer.createTransport(SMTP_CONFIG);
 
 transporter.verify(function(error, success) {
   if (error) {
-    console.error('❌ SMTP connection failed:', error);
+ console.error('SMTP connection failed:', error);
   } else {
-    console.log('✅ SMTP server ready for messages');
+ console.log('SMTP server ready for messages');
   }
 });
 
@@ -244,7 +244,7 @@ const chatUpload = multer({
     if (isAllowed) {
       cb(null, true);
     } else {
-      console.log(`❌ File rejected: ${file.originalname} (${file.mimetype})`);
+ console.log(`File rejected: ${file.originalname} (${file.mimetype})`);
       cb(null, false);
     }
   }
@@ -321,7 +321,7 @@ if (!fs.existsSync(dataDir)) {
 // ROUTE IMPORTS
 // ====================================================================
 
-console.log('🔗 Mounting API routes...');
+console.log('Mounting API routes...');
 
 const authRoutes = require('./routes/auth');
 const konfiRoutes = require('./routes/konfi');
@@ -412,7 +412,7 @@ BackgroundService.startAllServices(db);
 // ====================================================================
 
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+ console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
@@ -421,9 +421,9 @@ app.use((err, req, res, next) => {
 // ====================================================================
 
 server.listen(PORT, () => {
-  console.log(`🚀 Konfi Points API running on port ${PORT}`);
-  console.log(`🔌 WebSocket server ready`);
-  console.log(`📁 Uploads directory: ${uploadsDir}`);
+ console.log(`Konfi Points API running on port ${PORT}`);
+ console.log(`WebSocket server ready`);
+ console.log(`Uploads directory: ${uploadsDir}`);
 });
 
 // ====================================================================
@@ -432,12 +432,12 @@ server.listen(PORT, () => {
 
 // GEÄNDERT: Der Shutdown-Prozess verwendet jetzt db.end() und async/await.
 process.on('SIGINT', async () => {
-  console.log('\n🛑 Shutting down gracefully...');
+ console.log('\n Shutting down gracefully...');
   try {
     await db.end();
-    console.log('🐘 Database connection pool closed.');
+ console.log('Database connection pool closed.');
   } catch (err) {
-    console.error('Error closing the database pool:', err.message);
+ console.error('Error closing the database pool:', err.message);
   } finally {
     process.exit(0);
   }

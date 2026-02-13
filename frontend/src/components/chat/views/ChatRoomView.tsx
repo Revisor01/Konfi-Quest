@@ -55,7 +55,7 @@ const ChatRoomView: React.FC<ChatRoomViewProps> = ({ roomId, onBack }) => {
       const response = await api.get(`/chat/rooms/${roomId}`);
       setRoom(response.data);
     } catch (err) {
-      console.error('Error loading room:', err);
+ console.error('Error loading room:', err);
       setError('Fehler beim Laden des Chat-Raums.');
     } finally {
       setLoading(false);

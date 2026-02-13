@@ -50,7 +50,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         const response = await api.get('/auth/me');
         setEmail(response.data.email || '');
       } catch (err) {
-        console.error('Error loading email:', err);
+ console.error('Error loading email:', err);
         // Fallback to initialEmail prop
         setEmail(initialEmail);
       } finally {

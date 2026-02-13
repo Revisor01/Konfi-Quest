@@ -298,21 +298,21 @@ const checkAndAwardBadges = async (db, konfiId) => {
             ]
           );
         }
-        console.log(`🎉 ${earnedBadgeDetails.length} Badge-Notification(s) für Konfi ${konfi.name} gesendet`);
+ console.log(`${earnedBadgeDetails.length} Badge-Notification(s) für Konfi ${konfi.name} gesendet`);
 
         // Send push notifications for each badge
         for (const badge of earnedBadgeDetails) {
           await PushService.sendBadgeEarnedToKonfi(db, konfiId, badge.name, badge.icon, badge.description);
         }
       } catch (notifErr) {
-        console.error('Error sending badge notifications:', notifErr);
+ console.error('Error sending badge notifications:', notifErr);
         // Don't fail the badge award if notification fails
       }
     }
     
     return { count: newBadges, badges: earnedBadgeDetails };
   } catch (err) {
-    console.error('Error in checkAndAwardBadges:', err);
+ console.error('Error in checkAndAwardBadges:', err);
     throw err; // Re-throw the error to be handled by the caller
   }
 };
@@ -344,7 +344,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rows } = await db.query(badgeQuery, [req.user.organization_id]);
       res.json(rows);
     } catch (err) {
-      console.error('Database error in GET /api/badges:', err);
+ console.error('Database error in GET /api/badges:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -372,7 +372,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
       res.json(badge);
     } catch (err) {
-      console.error('Database error in GET /api/badges/:id:', err);
+ console.error('Database error in GET /api/badges/:id:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -401,7 +401,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'create');
     } catch (err) {
-      console.error('Database error in POST /api/badges:', err);
+ console.error('Database error in POST /api/badges:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -429,7 +429,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'update');
     } catch (err) {
-      console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
+ console.error(`Database error in PUT /api/badges/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -457,9 +457,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       try {
         await db.query('ROLLBACK');
       } catch (rollbackErr) {
-        console.error('Failed to rollback transaction:', rollbackErr);
+ console.error('Failed to rollback transaction:', rollbackErr);
       }
-      console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
+ console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

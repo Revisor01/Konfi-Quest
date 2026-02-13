@@ -119,7 +119,7 @@ export const getLocalNow = (): Date => {
  * Converts a UTC date string to German local time
  */
 export const parseGermanTime = (dateString: string): Date => {
-  console.warn('parseGermanTime is deprecated, use parseLocalTime instead');
+ console.warn('parseGermanTime is deprecated, use parseLocalTime instead');
   return parseLocalTime(dateString);
 };
 
@@ -128,6 +128,6 @@ export const parseGermanTime = (dateString: string): Date => {
  * Gets current time in German timezone
  */
 export const getGermanNow = (): Date => {
-  console.warn('getGermanNow is deprecated, use getLocalNow instead');
+ console.warn('getGermanNow is deprecated, use getLocalNow instead');
   return getLocalNow();
 };

@@ -59,7 +59,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
       const response = await api.get('/admin/activities');
       setActivities(response.data);
     } catch (err) {
-      console.error('Error loading activities:', err);
+ console.error('Error loading activities:', err);
     }
   };
 
@@ -77,7 +77,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
       await onSave();
       handleClose();
     } catch (err) {
-      console.error('Error saving activity:', err);
+ console.error('Error saving activity:', err);
     } finally {
       setLoading(false);
     }

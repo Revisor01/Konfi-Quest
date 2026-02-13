@@ -87,7 +87,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
       }
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
       onSuccess();
     } catch (err) {
       setError('Fehler beim Erstellen der Direktnachricht');
-      console.error('Error creating direct message:', err);
+ console.error('Error creating direct message:', err);
     } finally {
       setCreating(false);
     }
@@ -149,7 +149,7 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ isOpen, onClose, onSu
       onSuccess();
     } catch (err) {
       setError('Fehler beim Erstellen des Gruppenchats');
-      console.error('Error creating group chat:', err);
+ console.error('Error creating group chat:', err);
     } finally {
       setCreating(false);
     }

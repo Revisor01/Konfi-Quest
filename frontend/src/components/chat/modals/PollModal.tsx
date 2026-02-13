@@ -115,7 +115,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       handleClose();
     } catch (err) {
       setError('Fehler beim Erstellen der Umfrage');
-      console.error('Error creating poll:', err);
+ console.error('Error creating poll:', err);
     } finally {
       setCreating(false);
     }

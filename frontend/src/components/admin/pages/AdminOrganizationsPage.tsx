@@ -94,7 +94,7 @@ const AdminOrganizationsPage: React.FC = () => {
       setOrganizations(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Organisationen');
-      console.error('Error loading organizations:', err);
+ console.error('Error loading organizations:', err);
     } finally {
       setLoading(false);
     }

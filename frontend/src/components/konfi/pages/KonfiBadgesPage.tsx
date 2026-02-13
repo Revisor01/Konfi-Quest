@@ -52,7 +52,7 @@ const KonfiBadgesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshBadges = useCallback(() => {
-    console.log('Live Update: Refreshing badges...');
+ console.log('Live Update: Refreshing badges...');
     loadBadges();
   }, []);
 
@@ -93,7 +93,7 @@ const KonfiBadgesPage: React.FC = () => {
       if (currentGottesdienstPoints === null || currentGottesdienstPoints === undefined || 
           currentGemeindePoints === null || currentGemeindePoints === undefined) {
         
-        console.log('📊 Badge API points are null, calculating from activities + bonus');
+ console.log('Badge API points are null, calculating from activities + bonus');
         
         // Base points from activities
         const baseGottesdienstPoints = konfiData.activities
@@ -123,7 +123,7 @@ const KonfiBadgesPage: React.FC = () => {
         currentGemeindePoints = baseGemeindePoints + bonusGemeindePoints;
         currentTotalPoints = currentGottesdienstPoints + currentGemeindePoints;
         
-        console.log('📊 Badge calculated points with bonus by category:', {
+ console.log('Badge calculated points with bonus by category:', {
           baseGottesdienst: baseGottesdienstPoints,
           baseGemeinde: baseGemeindePoints,
           bonusGottesdienst: bonusGottesdienstPoints,
@@ -137,7 +137,7 @@ const KonfiBadgesPage: React.FC = () => {
       } else {
         // Use API points directly
         currentTotalPoints = currentTotalPoints || (currentGottesdienstPoints + currentGemeindePoints);
-        console.log('📊 Badge using API points:', { currentGottesdienstPoints, currentGemeindePoints, currentTotalPoints });
+ console.log('Badge using API points:', { currentGottesdienstPoints, currentGemeindePoints, currentTotalPoints });
       }
 
       // Process ALL badges (available + earned) - show ALL badges for motivation
@@ -213,13 +213,13 @@ const KonfiBadgesPage: React.FC = () => {
         try {
           await api.post('/konfi/badges/mark-seen');
         } catch (markError) {
-          console.log('Could not mark badges as seen:', markError);
+ console.log('Could not mark badges as seen:', markError);
         }
       }
 
     } catch (err) {
       setError('Fehler beim Laden der Badges');
-      console.error('Error loading badges:', err);
+ console.error('Error loading badges:', err);
     } finally {
       setLoading(false);
     }

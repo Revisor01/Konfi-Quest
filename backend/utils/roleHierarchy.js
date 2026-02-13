@@ -123,7 +123,7 @@ const checkUserHierarchy = (operation = 'manage') => {
 
       next();
     } catch (err) {
-      console.error('Database error in checkUserHierarchy middleware:', err);
+ console.error('Database error in checkUserHierarchy middleware:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   };

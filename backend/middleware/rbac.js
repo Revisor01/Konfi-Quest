@@ -105,7 +105,7 @@ const verifyTokenRBAC = (db) => {
 
       next();
     } catch (err) {
-      console.error('Database error in verifyTokenRBAC middleware:', err);
+ console.error('Database error in verifyTokenRBAC middleware:', err);
       res.status(500).json({ error: 'Database error' });
     }
   };

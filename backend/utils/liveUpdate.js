@@ -11,7 +11,7 @@
  */
 function sendToUser(userType, userId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
-    console.log('LiveUpdate: Socket.io not available');
+ console.log('LiveUpdate: Socket.io not available');
     return;
   }
 
@@ -26,7 +26,7 @@ function sendToUser(userType, userId, updateType, action = 'refresh', data = nul
   };
 
   global.io.to(userRoom).emit('liveUpdate', event);
-  console.log(`LiveUpdate: Sent ${updateType}:${action} to ${userRoom}`);
+ console.log(`LiveUpdate: Sent ${updateType}:${action} to ${userRoom}`);
 }
 
 /**
@@ -38,7 +38,7 @@ function sendToUser(userType, userId, updateType, action = 'refresh', data = nul
  */
 async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
-    console.log('LiveUpdate: Socket.io not available');
+ console.log('LiveUpdate: Socket.io not available');
     return;
   }
 
@@ -64,9 +64,9 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
       global.io.to(userRoom).emit('liveUpdate', event);
     });
 
-    console.log(`LiveUpdate: Sent ${updateType}:${action} to ${adminsResult.rows.length} admins of org ${organizationId}`);
+ console.log(`LiveUpdate: Sent ${updateType}:${action} to ${adminsResult.rows.length} admins of org ${organizationId}`);
   } catch (error) {
-    console.error('LiveUpdate: Error sending to org admins:', error);
+ console.error('LiveUpdate: Error sending to org admins:', error);
   }
 }
 
@@ -79,7 +79,7 @@ async function sendToOrgAdmins(organizationId, updateType, action = 'refresh', d
  */
 async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
-    console.log('LiveUpdate: Socket.io not available');
+ console.log('LiveUpdate: Socket.io not available');
     return;
   }
 
@@ -105,9 +105,9 @@ async function sendToOrgKonfis(organizationId, updateType, action = 'refresh', d
       global.io.to(userRoom).emit('liveUpdate', event);
     });
 
-    console.log(`LiveUpdate: Sent ${updateType}:${action} to ${konfisResult.rows.length} konfis of org ${organizationId}`);
+ console.log(`LiveUpdate: Sent ${updateType}:${action} to ${konfisResult.rows.length} konfis of org ${organizationId}`);
   } catch (error) {
-    console.error('LiveUpdate: Error sending to org konfis:', error);
+ console.error('LiveUpdate: Error sending to org konfis:', error);
   }
 }
 
@@ -124,7 +124,7 @@ async function sendToOrg(organizationId, updateType, action = 'refresh', data = 
  */
 async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data = null) {
   if (!global.io) {
-    console.log('LiveUpdate: Socket.io not available');
+ console.log('LiveUpdate: Socket.io not available');
     return;
   }
 
@@ -148,9 +148,9 @@ async function sendToJahrgang(jahrgangId, updateType, action = 'refresh', data =
       global.io.to(userRoom).emit('liveUpdate', event);
     });
 
-    console.log(`LiveUpdate: Sent ${updateType}:${action} to ${konfisResult.rows.length} konfis of jahrgang ${jahrgangId}`);
+ console.log(`LiveUpdate: Sent ${updateType}:${action} to ${konfisResult.rows.length} konfis of jahrgang ${jahrgangId}`);
   } catch (error) {
-    console.error('LiveUpdate: Error sending to jahrgang:', error);
+ console.error('LiveUpdate: Error sending to jahrgang:', error);
   }
 }
 

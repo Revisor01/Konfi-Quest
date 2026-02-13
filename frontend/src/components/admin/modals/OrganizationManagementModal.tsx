@@ -159,11 +159,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           setOrgAdmins(usersResponse.data);
         }
       } catch (err) {
-        console.log('Could not load org admins:', err);
+ console.log('Could not load org admins:', err);
       }
     } catch (err) {
       setError('Fehler beim Laden der Organisation');
-      console.error('Error loading organization:', err);
+ console.error('Error loading organization:', err);
     } finally {
       setLoading(false);
     }

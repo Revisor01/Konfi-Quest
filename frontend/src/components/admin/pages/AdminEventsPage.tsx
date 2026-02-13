@@ -87,7 +87,7 @@ const AdminEventsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshAllEvents = useCallback(() => {
-    console.log('Live Update: Refreshing events data...');
+ console.log('Live Update: Refreshing events data...');
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
@@ -100,7 +100,7 @@ const AdminEventsPage: React.FC = () => {
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
-    console.log('Page ref:', pageRef.current);
+ console.log('Page ref:', pageRef.current);
     // Event-Listener für Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
       loadEvents();
@@ -127,7 +127,7 @@ const AdminEventsPage: React.FC = () => {
       setEvents(activeEvents);
     } catch (err) {
       setError('Fehler beim Laden der Events');
-      console.error('Error loading events:', err);
+ console.error('Error loading events:', err);
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ const AdminEventsPage: React.FC = () => {
       const response = await api.get('/events/cancelled');
       setCancelledEvents(response.data);
     } catch (err) {
-      console.error('Error loading cancelled events:', err);
+ console.error('Error loading cancelled events:', err);
       // Don't show error for cancelled events as it's not critical
     }
   };
@@ -152,7 +152,7 @@ const AdminEventsPage: React.FC = () => {
       );
       setPastEvents(pastEventsFiltered);
     } catch (err) {
-      console.error('Error loading past events:', err);
+ console.error('Error loading past events:', err);
     }
   };
 

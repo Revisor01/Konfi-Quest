@@ -114,7 +114,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       const response = await api.get('/settings');
       setSettings(response.data);
     } catch (err) {
-      console.error('Error loading settings:', err);
+ console.error('Error loading settings:', err);
     }
   };
 
@@ -123,7 +123,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       const response = await api.get('/chat/rooms');
       setExistingChats(response.data);
     } catch (err) {
-      console.error('Error loading existing chats:', err);
+ console.error('Error loading existing chats:', err);
     }
   };
 
@@ -143,7 +143,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           role_description: u.role_description
         }));
 
-        console.log('Loaded users for konfi chat:', {
+ console.log('Loaded users for konfi chat:', {
           users: availableUsers.length,
           jahrgang: response.data.jahrgang,
           permissions: response.data.permissions,
@@ -170,7 +170,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         let allowedJahrgangIds: number[] = [];
         if (userJahrgangRes.data.length > 0) {
           allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
-          console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
+ console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
         }
 
         let konfis: User[] = konfisRes.data
@@ -208,11 +208,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               role_description: admin.role_title || admin.role_display_name || admin.role_name
             }));
         } catch (err) {
-          console.log('Could not load admins for chat:', err);
+ console.log('Could not load admins for chat:', err);
         }
 
         const allUsers = [...konfis, ...adminUsers];
-        console.log('Loaded users for admin chat:', {
+ console.log('Loaded users for admin chat:', {
           konfis: konfis.length,
           admins: adminUsers.length,
           total: allUsers.length,
@@ -240,7 +240,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     } finally {
       setLoading(false);
     }
@@ -287,7 +287,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       onSuccess();
     } catch (err) {
       setError('Fehler beim Erstellen der Direktnachricht');
-      console.error('Error creating direct message:', err);
+ console.error('Error creating direct message:', err);
     } finally {
       setCreating(false);
     }
@@ -321,17 +321,17 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         participants: participants
       };
 
-      console.log('Creating group chat with data:', groupData);
+ console.log('Creating group chat with data:', groupData);
       const response = await api.post('/chat/rooms', groupData);
-      console.log('Group chat created successfully:', response.data);
+ console.log('Group chat created successfully:', response.data);
 
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
       await refreshFromAPI(); // Update badge context
       handleModalClose();
       onSuccess();
     } catch (err: any) {
-      console.error('Error creating group chat:', err);
-      console.error('Error response:', err.response?.data);
+ console.error('Error creating group chat:', err);
+ console.error('Error response:', err.response?.data);
       setError(`Fehler beim Erstellen des Gruppenchats: ${err.response?.data?.error || err.message}`);
     } finally {
       setCreating(false);

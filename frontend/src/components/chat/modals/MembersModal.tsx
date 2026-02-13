@@ -99,7 +99,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       setParticipants(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Mitglieder');
-      console.error('Error loading participants:', err);
+ console.error('Error loading participants:', err);
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
       setAllUsers(allUsers);
     } catch (err) {
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     }
   };
 
@@ -202,7 +202,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       onSuccess();
     } catch (err) {
       setError('Fehler beim Hinzufuegen der Mitglieder');
-      console.error('Error adding participants:', err);
+ console.error('Error adding participants:', err);
     } finally {
       setAdding(false);
     }
@@ -225,7 +225,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       onSuccess();
     } catch (err) {
       setError('Fehler beim Entfernen des Mitglieds');
-      console.error('Error removing participant:', err);
+ console.error('Error removing participant:', err);
     }
   };
 

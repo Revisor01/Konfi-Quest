@@ -23,10 +23,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         subject: subject,
         html: html
       });
-      console.log('✅ Email sent successfully:', info.messageId);
+ console.log('Email sent successfully:', info.messageId);
       return true;
     } catch (error) {
-      console.error('❌ Email sending failed:', error);
+ console.error('Email sending failed:', error);
       return false;
     }
   };
@@ -44,7 +44,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // Unified RBAC login - works for both admins and konfis
   router.post('/login', ...loginMiddleware, async (req, res) => {
     const { username, password } = req.body;
-    console.log(`🔐 RBAC login attempt for: ${username}`);
+ console.log(`RBAC login attempt for: ${username}`);
 
     try {
       const userQuery = `
@@ -65,18 +65,18 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
-        console.log(`❌ Login failed: user '${username}' not found`);
+ console.log(`Login failed: user '${username}' not found`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
-        console.log(`❌ Login failed: wrong password for user '${username}'`);
+ console.log(`Login failed: wrong password for user '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
-      console.log(`✅ ${userType} login successful: ${username} (${user.display_name})`);
+ console.log(`${userType} login successful: ${username} (${user.display_name})`);
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
       const token = jwt.sign({
@@ -109,7 +109,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       res.json({ token, user: responseUser });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/login:', err);
+ console.error('Database error in POST /api/auth/login:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -144,11 +144,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       
       await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, userId]);
       
-      console.log(`✅ Password changed for ${req.user.type} ID ${userId}`);
+ console.log(`Password changed for ${req.user.type} ID ${userId}`);
       res.json({ message: 'Passwort erfolgreich geändert' });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/change-password:', err);
+ console.error('Database error in POST /api/auth/change-password:', err);
       res.status(500).json({ error: 'Fehler beim Ändern des Passworts' });
     }
   });
@@ -171,14 +171,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     try {
       await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [trimmedEmail, userId]);
 
-      console.log(`✅ Email updated for ${req.user.type} ID ${userId} to ${trimmedEmail || '(removed)'}`);
+ console.log(`Email updated for ${req.user.type} ID ${userId} to ${trimmedEmail || '(removed)'}`);
       res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert', email: trimmedEmail });
 
     } catch (err) {
         if (err.code === '23505') { // unique_violation for email
             return res.status(409).json({ error: 'Diese E-Mail-Adresse wird bereits verwendet.' });
         }
-        console.error('Database error in POST /api/auth/update-email:', err);
+ console.error('Database error in POST /api/auth/update-email:', err);
         res.status(500).json({ error: 'Fehler beim Aktualisieren der E-Mail-Adresse' });
     }
   });
@@ -199,14 +199,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
       await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
 
-      console.log(`✅ Role title updated for ${req.user.type} ID ${userId} to "${titleValue}"`);
+ console.log(`Role title updated for ${req.user.type} ID ${userId} to "${titleValue}"`);
       res.json({
         message: 'Funktionsbeschreibung erfolgreich aktualisiert',
         role_title: titleValue
       });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/update-role-title:', err);
+ console.error('Database error in POST /api/auth/update-role-title:', err);
       res.status(500).json({ error: 'Fehler beim Aktualisieren der Funktionsbeschreibung' });
     }
   });
@@ -231,7 +231,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       res.json(user);
 
     } catch (err) {
-      console.error('Database error in GET /api/auth/me:', err);
+ console.error('Database error in GET /api/auth/me:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Profils' });
     }
   });
@@ -289,11 +289,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       }
 
       // Always return a success message to not reveal if an email exists or not
-      console.log(`Password reset request processed for email: ${email}`);
+ console.log(`Password reset request processed for email: ${email}`);
       res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/request-password-reset:', err);
+ console.error('Database error in POST /api/auth/request-password-reset:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -336,7 +336,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         VALUES ($1, $2, $3, $4, $5)
       `, [inviteCode, organizationId, jahrgang_id, userId, expiresAt]);
 
-      console.log(`✅ Invite code ${inviteCode} created for jahrgang ${jahrgang.name} by user ${userId}`);
+ console.log(`Invite code ${inviteCode} created for jahrgang ${jahrgang.name} by user ${userId}`);
       res.json({
         invite_code: inviteCode,
         jahrgang_name: jahrgang.name,
@@ -344,7 +344,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/invite-code:', err);
+ console.error('Database error in POST /api/auth/invite-code:', err);
       res.status(500).json({ error: 'Fehler beim Erstellen des Einladungscodes' });
     }
   });
@@ -373,7 +373,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       res.json(rows);
 
     } catch (err) {
-      console.error('Database error in GET /api/auth/invite-codes:', err);
+ console.error('Database error in GET /api/auth/invite-codes:', err);
       res.status(500).json({ error: 'Fehler beim Laden der Einladungscodes' });
     }
   });
@@ -407,7 +407,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       res.json({ message: 'Einladungscode verlängert', expires_at: newExpiry });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
+ console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
       res.status(500).json({ error: 'Fehler beim Verlängern des Einladungscodes' });
     }
   });
@@ -436,7 +436,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       });
 
     } catch (err) {
-      console.error('Database error in GET /api/auth/validate-invite:', err);
+ console.error('Database error in GET /api/auth/validate-invite:', err);
       res.status(500).json({ error: 'Fehler bei der Validierung' });
     }
   });
@@ -521,7 +521,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
         await client.query('COMMIT');
 
-        console.log(`✅ New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
+ console.log(`New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
         res.json({
           message: 'Registrierung erfolgreich',
           user: {
@@ -543,7 +543,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       if (err.code === '23505') { // unique constraint
         return res.status(409).json({ error: 'Benutzername bereits vergeben' });
       }
-      console.error('Database error in POST /api/auth/register-konfi:', err);
+ console.error('Database error in POST /api/auth/register-konfi:', err);
       res.status(500).json({ error: 'Fehler bei der Registrierung' });
     }
   });
@@ -570,11 +570,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);
       await db.query('UPDATE password_resets SET used_at = NOW() WHERE id = $1', [resetRecord.id]);
       
-      console.log(`✅ Password reset successful for ${resetRecord.user_type} ID ${resetRecord.user_id}`);
+ console.log(`Password reset successful for ${resetRecord.user_type} ID ${resetRecord.user_id}`);
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {
-      console.error('Database error in POST /api/auth/reset-password:', err);
+ console.error('Database error in POST /api/auth/reset-password:', err);
       res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
     }
   });

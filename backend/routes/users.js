@@ -53,7 +53,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json(usersWithEditability);
 
     } catch (err) {
-      console.error('Database error in GET /users:', err);
+ console.error('Database error in GET /users:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -97,7 +97,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       });
 
     } catch (err) {
-      console.error(`Database error in GET /users/${id}:`, err);
+ console.error(`Database error in GET /users/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -153,7 +153,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
-      console.error('Database error in POST /users:', err);
+ console.error('Database error in POST /users:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -224,7 +224,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
-      console.error(`Database error in PUT /users/${id}:`, err);
+ console.error(`Database error in PUT /users/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -257,8 +257,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json({ message: 'Benutzer erfolgreich gelöscht' });
 
     } catch (err) {
-      await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-      console.error(`Database error in DELETE /users/${id}:`, err);
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ console.error(`Database error in DELETE /users/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -309,7 +309,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                     "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2", 
                     [chatRoom.id, userId]
                 );
-                console.log(`🚫 Removed user ${userId} from jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
+ console.log(`Removed user ${userId} from jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
             }
         }
 
@@ -362,7 +362,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                             req.user.id
                         ]);
                         chatRoom = newChatRoom;
-                        console.log(`✅ Created missing jahrgang chat room ${chatRoom.id} for Jahrgang ${jahrgang.name}`);
+ console.log(`Created missing jahrgang chat room ${chatRoom.id} for Jahrgang ${jahrgang.name}`);
                     }
                 }
                 
@@ -386,7 +386,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                             "INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) VALUES ($1, $2, $3, NOW())",
                             [chatRoom.id, userId, userType]
                         );
-                        console.log(`✅ Added user ${userId} (${userType}) to jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
+ console.log(`Added user ${userId} (${userType}) to jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
                     }
                 }
             }
@@ -399,8 +399,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         });
 
     } catch (err) {
-        await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-        console.error(`Database error in POST /users/${userId}/jahrgaenge:`, err);
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ console.error(`Database error in POST /users/${userId}/jahrgaenge:`, err);
         res.status(500).json({ error: 'Datenbankfehler beim Zuweisen der Jahrgänge' });
     }
   });
@@ -425,7 +425,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const { rows } = await db.query(query, [id, organizationId]);
       res.json(rows);
     } catch (err) {
-      console.error(`Database error in GET /users/${id}/jahrgaenge:`, err);
+ console.error(`Database error in GET /users/${id}/jahrgaenge:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -451,7 +451,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const { rows } = await db.query(query, [userId, organizationId]);
       res.json(rows);
     } catch (err) {
-      console.error('Database error in GET /me/jahrgaenge:', err);
+ console.error('Database error in GET /me/jahrgaenge:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -494,11 +494,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
 
-      console.log(`Password reset by ${req.user.role_name} (ID: ${req.user.id}) for user ID ${id}`);
+ console.log(`Password reset by ${req.user.role_name} (ID: ${req.user.id}) for user ID ${id}`);
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {
-      console.error(`Database error in PUT /users/${id}/reset-password:`, err);
+ console.error(`Database error in PUT /users/${id}/reset-password:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

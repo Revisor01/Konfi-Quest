@@ -15,9 +15,9 @@ const pool = new Pool({
 
 // Einmaliger Test beim Starten der Anwendung, um sicherzustellen, dass die DB erreichbar ist.
 pool.query('SELECT NOW()')
-  .then(res => console.log('🐘 Database connected successfully at:', res.rows[0].now))
+ .then(res => console.log('Database connected successfully at:', res.rows[0].now))
   .catch(err => {
-    console.error('❌ Database connection test failed:', err);
+ console.error('Database connection test failed:', err);
     // Beende den Prozess, wenn die DB-Verbindung beim Start fehlschlägt.
     process.exit(1);
   });

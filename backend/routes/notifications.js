@@ -10,15 +10,15 @@ module.exports = (db, verifyTokenRBAC) => {
     const userId = req.user.id;
     const userType = req.user.type;
 
-    console.log('📱 Device Token Registration Request:');
-    console.log('User ID:', userId);
-    console.log('User Type:', userType);
-    console.log('Platform:', platform);
-    console.log('Device ID:', device_id || 'NOT PROVIDED');
-    console.log('Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+ console.log('Device Token Registration Request:');
+ console.log('User ID:', userId);
+ console.log('User Type:', userType);
+ console.log('Platform:', platform);
+ console.log('Device ID:', device_id || 'NOT PROVIDED');
+ console.log('Token (first 20 chars):', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
 
     if (!token || !platform) {
-      console.log('❌ Missing token or platform');
+ console.log('Missing token or platform');
       return res.status(400).json({ error: 'Token und Plattform erforderlich' });
     }
 
@@ -37,7 +37,7 @@ module.exports = (db, verifyTokenRBAC) => {
           updated_at TIMESTAMPTZ DEFAULT NOW(),
           UNIQUE(user_id, platform, device_id)
         )`);
-      console.log('✅ push_tokens table checked/created');
+ console.log('push_tokens table checked/created');
 
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -50,7 +50,7 @@ module.exports = (db, verifyTokenRBAC) => {
         [token, userId]
       );
       if (deletedOtherUsers > 0) {
-        console.log(`🧹 Removed token from ${deletedOtherUsers} other user(s) - same device, different account`);
+ console.log(`Removed token from ${deletedOtherUsers} other user(s) - same device, different account`);
       }
 
       // Regel 5: Die Logik wird linearisiert, keine verschachtelten Callbacks mehr.
@@ -68,7 +68,7 @@ module.exports = (db, verifyTokenRBAC) => {
       
       const { rows: [upsertedToken] } = await db.query(upsertQuery, [userId, userType, token, platform, finalDeviceId]);
       
-      console.log('✅ Push token saved/updated successfully. Row ID:', upsertedToken.id);
+ console.log('Push token saved/updated successfully. Row ID:', upsertedToken.id);
       
       // Die Verifizierung nach dem Speichern ist optional, aber hier als Beispiel beibehalten.
       const { rows: [verifiedRow] } = await db.query(
@@ -77,7 +77,7 @@ module.exports = (db, verifyTokenRBAC) => {
       );
       
       if (verifiedRow) {
-        console.log('✅ Token verified in database:', {
+ console.log('Token verified in database:', {
           id: verifiedRow.id,
           user_id: verifiedRow.user_id,
           platform: verifiedRow.platform,
@@ -91,7 +91,7 @@ module.exports = (db, verifyTokenRBAC) => {
 
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
-      console.error('Database error in POST /device-token:', err);
+ console.error('Database error in POST /device-token:', err);
       // Regel 4: PostgreSQL-spezifischer Fehlercode für UNIQUE-Verletzung.
       if (err.code === '23505') { 
         return res.status(409).json({ error: 'A token for this user and device already exists.' });
@@ -105,25 +105,25 @@ module.exports = (db, verifyTokenRBAC) => {
     const userId = req.user.id;
     const { message = 'Test Push Notification' } = req.body;
 
-    console.log('🧪 Testing push notification for user:', userId);
+ console.log('Testing push notification for user:', userId);
 
     try {
       // Regel 2 & 4: `db.all` wird durch `await db.query` ersetzt, `?` durch `$1`.
       const { rows: tokens } = await db.query('SELECT * FROM push_tokens WHERE user_id = $1', [userId]);
 
       if (!tokens || tokens.length === 0) {
-        console.log('⚠️ No push tokens found for user:', userId);
+ console.log('No push tokens found for user:', userId);
         return res.json({ success: false, message: 'Keine Push-Tokens gefunden' });
       }
 
-      console.log('📱 Found', tokens.length, 'push tokens');
+ console.log('Found', tokens.length, 'push tokens');
 
       let sentCount = 0;
       let errorCount = 0;
 
       // Die Logik bleibt identisch, wird aber nun innerhalb des try-Blocks ausgeführt.
       for (const [index, token] of tokens.entries()) {
-        console.log(`📤 Sending test push ${index + 1}/${tokens.length} to token:`, token.token.substring(0, 20) + '...');
+ console.log(`Sending test push ${index + 1}/${tokens.length} to token:`, token.token.substring(0, 20) + '...');
         
         try {
           await sendFirebasePushNotification(token.token, {
@@ -134,7 +134,7 @@ module.exports = (db, verifyTokenRBAC) => {
           });
           sentCount++;
         } catch (error) {
-          console.error('❌ Error sending to token:', error.message);
+ console.error('Error sending to token:', error.message);
           errorCount++;
         }
       }
@@ -149,7 +149,7 @@ module.exports = (db, verifyTokenRBAC) => {
 
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
-      console.error('Database error in POST /test-push:', err);
+ console.error('Database error in POST /test-push:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -159,13 +159,13 @@ module.exports = (db, verifyTokenRBAC) => {
     const { device_id, platform } = req.body;
     const userId = req.user.id;
 
-    console.log('🗑️ Push Token Logout Request:');
-    console.log('User ID:', userId);
-    console.log('Device ID:', device_id);
-    console.log('Platform:', platform);
+ console.log('Push Token Logout Request:');
+ console.log('User ID:', userId);
+ console.log('Device ID:', device_id);
+ console.log('Platform:', platform);
 
     if (!device_id || !platform) {
-      console.log('❌ Missing device_id or platform');
+ console.log('Missing device_id or platform');
       return res.status(400).json({ error: 'Geräte-ID und Plattform erforderlich' });
     }
 
@@ -177,7 +177,7 @@ module.exports = (db, verifyTokenRBAC) => {
         [userId, platform, device_id]
       );
       
-      console.log('✅ Push token deleted for device:', device_id, 'Changes:', rowCount);
+ console.log('Push token deleted for device:', device_id, 'Changes:', rowCount);
       res.json({ 
         success: true, 
         message: 'Push-Token für dieses Gerät entfernt',
@@ -186,7 +186,7 @@ module.exports = (db, verifyTokenRBAC) => {
       
     } catch (err) {
       // Regel 1: Zentraler Fehler-Handler für die Route.
-      console.error('Database error in DELETE /device-token:', err);
+ console.error('Database error in DELETE /device-token:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

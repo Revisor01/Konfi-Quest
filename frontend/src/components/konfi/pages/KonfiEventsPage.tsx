@@ -66,7 +66,7 @@ const KonfiEventsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshEvents = useCallback(() => {
-    console.log('Live Update: Refreshing konfi events...');
+ console.log('Live Update: Refreshing konfi events...');
     loadEvents();
   }, []);
 
@@ -96,7 +96,7 @@ const KonfiEventsPage: React.FC = () => {
       setEvents(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Events');
-      console.error('Error loading events:', err);
+ console.error('Error loading events:', err);
     } finally {
       setLoading(false);
     }

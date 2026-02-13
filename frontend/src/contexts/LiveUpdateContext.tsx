@@ -47,7 +47,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
 
     // Main handler for all live updates
     const handleLiveUpdate = (event: LiveUpdateEvent) => {
-      console.log('Live Update received:', event);
+ console.log('Live Update received:', event);
 
       // Notify all listeners for this type
       const typeListeners = listeners.get(event.type);
@@ -56,7 +56,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
           try {
             callback(event);
           } catch (error) {
-            console.error('Error in live update listener:', error);
+ console.error('Error in live update listener:', error);
           }
         });
       }
@@ -81,7 +81,7 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     socket.on('jahrgaengeUpdate', (data: any) => handleLiveUpdate({ type: 'jahrgaenge', action: 'refresh', data }));
     socket.on('levelsUpdate', (data: any) => handleLiveUpdate({ type: 'levels', action: 'refresh', data }));
 
-    console.log('LiveUpdateContext: WebSocket listeners registered');
+ console.log('LiveUpdateContext: WebSocket listeners registered');
 
     return () => {
       socket.off('liveUpdate', handleLiveUpdate);
@@ -106,12 +106,12 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     }
     listeners.get(type)!.add(callback);
 
-    console.log(`LiveUpdate: Subscribed to ${type}`);
+ console.log(`LiveUpdate: Subscribed to ${type}`);
 
     // Return unsubscribe function
     return () => {
       listeners.get(type)?.delete(callback);
-      console.log(`LiveUpdate: Unsubscribed from ${type}`);
+ console.log(`LiveUpdate: Unsubscribed from ${type}`);
     };
   }, []);
 
@@ -154,7 +154,7 @@ export const useLiveRefresh = (
 
     typeArray.forEach(type => {
       const unsub = subscribe(type, () => {
-        console.log(`LiveRefresh: Refreshing due to ${type} update`);
+ console.log(`LiveRefresh: Refreshing due to ${type} update`);
         onRefresh();
       });
       unsubscribes.push(unsub);

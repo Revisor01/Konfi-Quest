@@ -234,17 +234,17 @@ const EventModal: React.FC<EventModalProps> = ({
       // Use all categories for events - no filtering needed
       setCategories(response.data);
     } catch (error) {
-      console.error('Error loading categories:', error);
+ console.error('Error loading categories:', error);
     }
   };
 
   const loadJahrgaenge = async () => {
     try {
       const response = await api.get('/admin/jahrgaenge');
-      console.log('Jahrgaenge response:', response.data);
+ console.log('Jahrgaenge response:', response.data);
       setJahrgaenge(response.data);
     } catch (error) {
-      console.error('Error loading jahrgaenge:', error);
+ console.error('Error loading jahrgaenge:', error);
     }
   };
 
@@ -253,7 +253,7 @@ const EventModal: React.FC<EventModalProps> = ({
       const response = await api.get(`/events/${eventId}/timeslots`);
       setTimeslots(response.data);
     } catch (error) {
-      console.error('Error loading timeslots:', error);
+ console.error('Error loading timeslots:', error);
     }
   };
 

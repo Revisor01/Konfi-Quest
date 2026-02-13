@@ -25,10 +25,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         GROUP BY a.id
         ORDER BY a.type, a.name
       `;
-      console.log("Fetching activities for org:", req.user.organization_id);
+ console.log("Fetching activities for org:", req.user.organization_id);
       
       const { rows } = await db.query(query, [req.user.organization_id]);
-      console.log("Activities found:", rows.length);
+ console.log("Activities found:", rows.length);
 
       // Parse categories from STRING_AGG result
       const activitiesWithCategories = rows.map(row => {
@@ -52,7 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       res.json(activitiesWithCategories);
 
     } catch (err) {
-      console.error('Database error in GET /api/activities/:', err);
+ console.error('Database error in GET /api/activities/:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -82,7 +82,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'create');
 
     } catch (err) {
-      console.error('Database error in POST /api/activities/:', err);
+ console.error('Database error in POST /api/activities/:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -118,7 +118,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'update');
 
     } catch (err) {
-      console.error(`Database error in PUT /api/activities/${activityId}:`, err);
+ console.error(`Database error in PUT /api/activities/${activityId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -148,7 +148,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'activities', 'delete');
 
     } catch (err) {
-      console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
+ console.error(`Database error in DELETE /api/activities/${activityId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -171,14 +171,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         WHERE a.organization_id = $1
         ORDER BY ar.created_at DESC
       `;
-      console.log("Fetching activity requests for org:", req.user.organization_id);
+ console.log("Fetching activity requests for org:", req.user.organization_id);
 
       const { rows: requests } = await db.query(query, [req.user.organization_id]);
-      console.log("Activity requests found:", requests.length);
+ console.log("Activity requests found:", requests.length);
       res.json(requests);
 
     } catch (err) {
-      console.error('Database error in GET /api/activities/requests:', err);
+ console.error('Database error in GET /api/activities/requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -204,7 +204,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // SCHRITT 1: Alte Entscheidung rückgängig machen
       if (oldStatus === 'approved') {
-        console.log(`Resetting approved request ${requestId} to pending`);
+ console.log(`Resetting approved request ${requestId} to pending`);
 
         // Punkte abziehen
         const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
@@ -222,7 +222,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           [request.konfi_id, request.activity_id]
         );
 
-        console.log(`Reset approval: removed ${request.points} points and activity entry`);
+ console.log(`Reset approval: removed ${request.points} points and activity entry`);
       }
 
       // SCHRITT 2: Status auf pending setzen, Kommentar löschen
@@ -231,11 +231,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         [requestId]
       );
 
-      console.log(`Request ${requestId} reset to pending from ${oldStatus}`);
+ console.log(`Request ${requestId} reset to pending from ${oldStatus}`);
       res.json({ message: 'Antrag auf ausstehend zurückgesetzt', oldStatus });
 
     } catch (err) {
-      console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
+ console.error(`Database error in PUT /api/activities/requests/${requestId}/reset:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -276,7 +276,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
 
-        console.log(`Approved request ${requestId}: added ${request.points} points`);
+ console.log(`Approved request ${requestId}: added ${request.points} points`);
 
         // Datenschutz: Foto löschen nach Genehmigung
         if (request.photo_filename) {
@@ -286,9 +286,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
           fs.unlink(photoPath, (err) => {
             if (err) {
-              console.error('Error deleting photo:', err);
+ console.error('Error deleting photo:', err);
             } else {
-              console.log(`Photo deleted for approved request ${requestId}: ${request.photo_filename}`);
+ console.log(`Photo deleted for approved request ${requestId}: ${request.photo_filename}`);
             }
           });
 
@@ -299,7 +299,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Send push notification to konfi
       try {
         const notificationTitle = status === 'approved' 
-          ? `Antrag genehmigt! 🎉`
+          ? `Antrag genehmigt!`
           : `Antrag abgelehnt`;
         
         const notificationBody = status === 'approved'
@@ -324,7 +324,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           ]
         );
 
-        console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
+ console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
 
         // Send push notification to konfi (mit Request ID für Navigation)
         await PushService.sendActivityRequestStatusToKonfi(
@@ -337,7 +337,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           requestId
         );
       } catch (notifErr) {
-        console.error('Error sending notification:', notifErr);
+ console.error('Error sending notification:', notifErr);
         // Don't fail the request if notification fails
       }
 
@@ -348,7 +348,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToKonfi(request.konfi_id, 'points', 'update');
       liveUpdate.sendToKonfi(request.konfi_id, 'requests', 'update');
     } catch (err) {
-      console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
+ console.error(`Database error in PUT /api/activities/requests/${requestId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -380,14 +380,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       try {
         await PushService.sendActivityAssignedToKonfi(db, konfiId, activity.name, activity.points, activity.type);
       } catch (pushErr) {
-        console.error('Error sending activity assigned push:', pushErr);
+ console.error('Error sending activity assigned push:', pushErr);
       }
 
       // Live-Update an Konfi senden
       liveUpdate.sendToKonfi(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
-      console.error('Database error in POST /api/activities/assign-activity:', err);
+ console.error('Database error in POST /api/activities/assign-activity:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -411,7 +411,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       try {
         await PushService.sendBonusPointsToKonfi(db, konfiId, points, description, type);
       } catch (pushErr) {
-        console.error('Error sending bonus points push:', pushErr);
+ console.error('Error sending bonus points push:', pushErr);
       }
 
       res.json({ message: 'Bonuspunkte erfolgreich vergeben', newBadges });
@@ -420,7 +420,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToKonfi(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
-      console.error('Database error in POST /api/activities/assign-bonus:', err);
+ console.error('Database error in POST /api/activities/assign-bonus:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -469,7 +469,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       res.setHeader('Content-Type', 'image/jpeg');
       res.sendFile(photoPath);
     } catch (err) {
-      console.error('Error serving activity request photo:', err);
+ console.error('Error serving activity request photo:', err);
       res.status(500).json({ error: 'Fehler beim Laden des Fotos' });
     }
   });

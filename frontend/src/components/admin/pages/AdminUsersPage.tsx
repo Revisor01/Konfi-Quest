@@ -88,7 +88,7 @@ const AdminUsersPage: React.FC = () => {
       setUsers(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     } finally {
       setLoading(false);
     }

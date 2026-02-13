@@ -44,7 +44,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows } = await db.query(query, params);
             res.json(rows);
         } catch (err) {
-            console.error('Database error in GET /konfis:', err);
+ console.error('Database error in GET /konfis:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -98,7 +98,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             res.json(konfi);
         } catch (err) {
-            console.error('Database error in GET /konfis/:id (first route):', err);
+ console.error('Database error in GET /konfis/:id (first route):', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -167,7 +167,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                         VALUES ($1, $2, 'konfi', NOW())
                     `;
                     await db.query(addParticipantQuery, [jahrgangChat.id, userId]);
-                    console.log(`Added konfi ${name} (${userId}) to jahrgang chat ${jahrgangChat.id}`);
+ console.log(`Added konfi ${name} (${userId}) to jahrgang chat ${jahrgangChat.id}`);
                 }
             }
 
@@ -175,12 +175,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.status(201).json({ id: userId, username, password, message: 'Konfi erfolgreich erstellt' });
 
         } catch (err) {
-            await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
 
             if (err.code === '23505') { // unique_violation
                 return res.status(409).json({ error: 'Benutzername existiert bereits' });
             }
-            console.error('Database error in POST /konfis:', err);
+ console.error('Database error in POST /konfis:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -228,7 +228,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                             DELETE FROM chat_participants 
                             WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
                         `, [oldJahrgangChat.id, req.params.id]);
-                        console.log(`Removed konfi ${name} from old jahrgang chat ${oldJahrgangChat.id}`);
+ console.log(`Removed konfi ${name} from old jahrgang chat ${oldJahrgangChat.id}`);
                     }
                 }
                 
@@ -252,7 +252,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                             INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
                             VALUES ($1, $2, 'konfi', NOW())
                         `, [newJahrgangChat.id, req.params.id]);
-                        console.log(`Added konfi ${name} to new jahrgang chat ${newJahrgangChat.id}`);
+ console.log(`Added konfi ${name} to new jahrgang chat ${newJahrgangChat.id}`);
                     }
                 }
             }
@@ -261,8 +261,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json({ message: 'Konfi erfolgreich aktualisiert' });
 
         } catch (err) {
-            await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-            console.error('Database error in PUT /konfis/:id:', err);
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ console.error('Database error in PUT /konfis/:id:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -306,8 +306,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json({ message: 'Konfi erfolgreich gelöscht' });
 
         } catch (err) {
-            await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-            console.error('Database error in DELETE /konfis/:id:', err);
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ console.error('Database error in DELETE /konfis/:id:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -337,8 +337,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             res.json({ message: 'Passwort erfolgreich neu generiert', password: newPassword });
 
         } catch (err) {
-            await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
-            console.error('Database error in POST /konfis/:id/regenerate-password:', err);
+ await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+ console.error('Database error in POST /konfis/:id/regenerate-password:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -346,7 +346,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // GET single konfi details with activities, bonusPoints, eventPoints
     router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
-        console.log('📝 Loading details for konfi:', konfiId, 'Organization:', req.user.organization_id);
+ console.log('Loading details for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
         try {
             const konfiQuery = `
@@ -395,7 +395,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             });
 
         } catch (err) {
-            console.error('Database error in GET /konfis/:id (second route):', err);
+ console.error('Database error in GET /konfis/:id (second route):', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -403,7 +403,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // GET event points for konfi
     router.get('/:id/event-points', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
-        console.log('📝 Loading event points for konfi:', konfiId, 'Organization:', req.user.organization_id);
+ console.log('Loading event points for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
         try {
             const eventPointsQuery = `
@@ -417,7 +417,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { rows: eventPoints } = await db.query(eventPointsQuery, [konfiId, req.user.organization_id]);
             res.json(eventPoints || []);
         } catch (err) {
-            console.error('Database error in GET /konfis/:id/event-points:', err);
+ console.error('Database error in GET /konfis/:id/event-points:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -446,10 +446,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
-                    console.log(`🏆 ${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Bonuspunkten vergeben`);
+ console.log(`${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Bonuspunkten vergeben`);
                 }
             } catch (badgeErr) {
-                console.error('Error checking badges after bonus points:', badgeErr);
+ console.error('Error checking badges after bonus points:', badgeErr);
                 // Don't fail the request if badge checking fails
             }
 
@@ -460,7 +460,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
-            console.error('Database error in POST /konfis/:id/bonus-points:', err);
+ console.error('Database error in POST /konfis/:id/bonus-points:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -487,7 +487,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 await checkAndAwardBadges(db, req.params.id);
             } catch (badgeErr) {
-                console.error('Error checking badges after bonus points removal:', badgeErr);
+ console.error('Error checking badges after bonus points removal:', badgeErr);
                 // Don't fail the request if badge checking fails
             }
 
@@ -498,7 +498,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
-            console.error('Database error in DELETE /konfis/:id/bonus-points/:bonusId:', err);
+ console.error('Database error in DELETE /konfis/:id/bonus-points/:bonusId:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -533,10 +533,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
-                    console.log(`🏆 ${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Aktivität vergeben`);
+ console.log(`${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Aktivität vergeben`);
                 }
             } catch (badgeErr) {
-                console.error('Error checking badges after activity:', badgeErr);
+ console.error('Error checking badges after activity:', badgeErr);
                 // Don't fail the request if badge checking fails
             }
 
@@ -547,7 +547,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
-            console.error('Database error in POST /konfis/:id/activities:', err);
+ console.error('Database error in POST /konfis/:id/activities:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });
@@ -579,7 +579,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 await checkAndAwardBadges(db, req.params.id);
             } catch (badgeErr) {
-                console.error('Error checking badges after activity removal:', badgeErr);
+ console.error('Error checking badges after activity removal:', badgeErr);
                 // Don't fail the request if badge checking fails
             }
 
@@ -590,7 +590,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
-            console.error('Database error in DELETE /konfis/:id/activities/:activityId:', err);
+ console.error('Database error in DELETE /konfis/:id/activities/:activityId:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
     });

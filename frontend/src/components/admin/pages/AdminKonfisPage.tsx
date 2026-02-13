@@ -79,7 +79,7 @@ const AdminKonfisPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshData = useCallback(() => {
-    console.log('Live Update: Refreshing konfis...');
+ console.log('Live Update: Refreshing konfis...');
     loadData();
   }, []);
 
@@ -116,7 +116,7 @@ const AdminKonfisPage: React.FC = () => {
       setSettings(settingsRes.data);
     } catch (err) {
       setError('Fehler beim Laden der Daten');
-      console.error('Error loading data:', err);
+ console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
@@ -189,9 +189,9 @@ const AdminKonfisPage: React.FC = () => {
         jahrgang_id: jahrgangId
       });
       
-      console.log(`✅ Konfi zu Jahrgangschat "${jahrgangName}" hinzugefügt`);
+ console.log(`Konfi zu Jahrgangschat "${jahrgangName}" hinzugefügt`);
     } catch (err) {
-      console.error('Fehler beim Jahrgangschat:', err);
+ console.error('Fehler beim Jahrgangschat:', err);
       // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde
     }
   };

@@ -21,7 +21,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Dismiss all active modals
       await modalController.dismiss();
     } catch (error) {
-      console.warn('Modal cleanup warning:', error);
+ console.warn('Modal cleanup warning:', error);
     }
   };
 
@@ -31,12 +31,12 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [location.pathname]);
 
   const registerPage = useCallback((tabId: string, element: HTMLElement | null) => {
-    console.log('🔥 ModalContext: registerPage called with:', { tabId, element });
+ console.log('ModalContext: registerPage called with:', { tabId, element });
     if (element) {
       setTabPresentingElements(prev => {
         const newMap = new Map(prev);
         newMap.set(tabId, element);
-        console.log('🔥 ModalContext: Updated map:', Array.from(newMap.keys()));
+ console.log('ModalContext: Updated map:', Array.from(newMap.keys()));
         return newMap;
       });
     }
@@ -70,7 +70,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/konfi/profile')) currentTabId = 'profile';
     
     const element = tabPresentingElements.get(currentTabId);
-    console.log('🔥 ModalContext: getCurrentPresentingElement:', { currentPath, currentTabId, element, allKeys: Array.from(tabPresentingElements.keys()) });
+ console.log('ModalContext: getCurrentPresentingElement:', { currentPath, currentTabId, element, allKeys: Array.from(tabPresentingElements.keys()) });
     return element;
   };
 
@@ -96,21 +96,21 @@ export const useModalPage = (tabId: string) => {
   const pageRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
-    console.log('🔥 useModalPage: useLayoutEffect triggered for tabId:', tabId);
-    console.log('🔥 useModalPage: pageRef.current:', pageRef.current);
+ console.log('useModalPage: useLayoutEffect triggered for tabId:', tabId);
+ console.log('useModalPage: pageRef.current:', pageRef.current);
     
     if (pageRef.current) {
-      console.log('🔥 useModalPage: calling registerPage immediately');
+ console.log('useModalPage: calling registerPage immediately');
       registerPage(tabId, pageRef.current);
     } else {
       // Fallback mit längerem Timeout
       const timeout = setTimeout(() => {
-        console.log('🔥 useModalPage: fallback timeout callback, pageRef.current:', pageRef.current);
+ console.log('useModalPage: fallback timeout callback, pageRef.current:', pageRef.current);
         if (pageRef.current) {
-          console.log('🔥 useModalPage: calling registerPage from fallback');
+ console.log('useModalPage: calling registerPage from fallback');
           registerPage(tabId, pageRef.current);
         } else {
-          console.log('🔥 useModalPage: pageRef.current still null after fallback');
+ console.log('useModalPage: pageRef.current still null after fallback');
         }
       }, 500);
       

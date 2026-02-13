@@ -53,12 +53,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         ORDER BY e.event_date ASC
       `;
       
-      console.log("Fetching events for org:", req.user.organization_id);
+ console.log("Fetching events for org:", req.user.organization_id);
       const { rows } = await db.query(query, [req.user.organization_id]);
       
       // Debug: Log registration status calculations
       rows.forEach(event => {
-        console.log(`Event ${event.name}: registered=${event.registered_count}/${event.max_participants}, waitlist=${event.waitlist_count}, unprocessed=${event.unprocessed_count}, status=${event.registration_status}`);
+ console.log(`Event ${event.name}: registered=${event.registered_count}/${event.max_participants}, waitlist=${event.waitlist_count}, unprocessed=${event.unprocessed_count}, status=${event.registration_status}`);
       });
       
       // Transform the data to include categories and jahrgaenge arrays
@@ -100,7 +100,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json(eventsWithRelations);
       
     } catch (err) {
-      console.error('Database error in GET /events:', err);
+ console.error('Database error in GET /events:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -170,7 +170,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json(eventsWithRelations);
       
     } catch (err) {
-      console.error('Database error in GET /events/cancelled:', err);
+ console.error('Database error in GET /events/cancelled:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -179,7 +179,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.get('/:id/timeslots', rbacVerifier, async (req, res) => {
     const eventId = req.params.id;
     try {
-      console.log("Fetching timeslots for event:", eventId, "org:", req.user.organization_id);
+ console.log("Fetching timeslots for event:", eventId, "org:", req.user.organization_id);
 
       // Verify event exists and belongs to organization
       const { rows: [event] } = await db.query("SELECT id, has_timeslots FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
@@ -205,7 +205,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json(timeslots);
 
     } catch (err) {
-      console.error(`Database error in GET /events/${req.params.id}/timeslots:`, err);
+ console.error(`Database error in GET /events/${req.params.id}/timeslots:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -215,7 +215,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     try {
       // Get event details
-      console.log("Fetching event details for event:", eventId, "org:", req.user.organization_id);
+ console.log("Fetching event details for event:", eventId, "org:", req.user.organization_id);
       const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
       
       if (!event) {
@@ -326,7 +326,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       });
       
     } catch (err) {
-      console.error(`Database error in GET /events/${req.params.id}:`, err);
+ console.error(`Database error in GET /events/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -348,7 +348,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // As per the instructions, we use db.query for everything. This is safe
     // as long as the logic is encapsulated inside a single route handler.
     try {
-      console.log("Creating event for org:", req.user.organization_id);
+ console.log("Creating event for org:", req.user.organization_id);
       
       const insertEventQuery = `
         INSERT INTO events (
@@ -401,11 +401,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       try {
         await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date);
       } catch (pushErr) {
-        console.error('Push notification failed for new event:', pushErr);
+ console.error('Push notification failed for new event:', pushErr);
       }
 
     } catch (err) {
-      console.error('Database error in POST /events:', err);
+ console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
       if (err.code === '23505') {
         return res.status(409).json({ error: 'A similar event might already exist.' });
@@ -428,7 +428,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     // Adhering to the prompt, we use `db.query` for BEGIN/COMMIT/ROLLBACK.
     await db.query('BEGIN');
     try {
-      console.log("Updating event:", id, "for org:", req.user.organization_id);
+ console.log("Updating event:", id, "for org:", req.user.organization_id);
       
       const updateQuery = `
         UPDATE events SET 
@@ -524,7 +524,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in PUT /events/${id}:`, err);
+ console.error(`Database error in PUT /events/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -535,7 +535,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     
     await db.query('BEGIN');
     try {
-      console.log("Deleting event:", id, "for org:", req.user.organization_id);
+ console.log("Deleting event:", id, "for org:", req.user.organization_id);
       
       // First, verify the event belongs to the organization
       const { rows: [event] } = await db.query("SELECT id, name FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
@@ -619,9 +619,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         try {
           const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
           await fs.unlink(fullPath);
-          console.log(`Deleted event chat file: ${fullPath}`);
+ console.log(`Deleted event chat file: ${fullPath}`);
         } catch (fileErr) {
-          console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
+ console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
         }
       }
       
@@ -641,7 +641,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in DELETE /events/${id}:`, err);
+ console.error(`Database error in DELETE /events/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -657,7 +657,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
 
     try {
-      console.log("Booking event:", eventId, "for user:", konfiId, "org:", req.user.organization_id);
+ console.log("Booking event:", eventId, "for user:", konfiId, "org:", req.user.organization_id);
 
       // Transaktion starten für Race-Condition-Schutz
       await db.query('BEGIN');
@@ -743,7 +743,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in POST /events/${eventId}/book:`, err);
+ console.error(`Database error in POST /events/${eventId}/book:`, err);
       res.status(500).json({ error: 'Datenbankfehler bei der Anmeldung' });
     }
   });
@@ -758,7 +758,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
     
     try {
-      console.log("Canceling booking for event:", eventId, "user:", konfiId, "org:", req.user.organization_id);
+ console.log("Canceling booking for event:", eventId, "user:", konfiId, "org:", req.user.organization_id);
 
       // Get booking details before deleting (need timeslot_id and status for waitlist promotion)
       const { rows: [booking] } = await db.query(
@@ -792,7 +792,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             );
 
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-            console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
+ console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
 
             // Send push notification to promoted user
             if (promotedBooking) {
@@ -800,7 +800,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             }
           } catch (promotionError) {
             // Log the error but don't fail the main cancellation request
-            console.error('Error promoting from waitlist:', promotionError);
+ console.error('Error promoting from waitlist:', promotionError);
           }
         }
       }
@@ -812,7 +812,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
 
     } catch (err) {
-      console.error(`Database error in DELETE /events/${eventId}/book:`, err);
+ console.error(`Database error in DELETE /events/${eventId}/book:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -823,7 +823,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { user_id, status = 'auto', timeslot_id = null } = req.body;
     
     try {
-      console.log("Admin adding participant:", user_id, "to event:", eventId, "org:", req.user.organization_id);
+ console.log("Admin adding participant:", user_id, "to event:", eventId, "org:", req.user.organization_id);
       
       // 1. Get event details
       const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
@@ -900,7 +900,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
 
     } catch (err) {
-      console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
+ console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Dieser Benutzer ist bereits für dieses Event angemeldet.' });
       }
@@ -913,7 +913,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { id: eventId, bookingId } = req.params;
     
     try {
-      console.log("Admin deleting booking:", bookingId, "for event:", eventId, "org:", req.user.organization_id);
+ console.log("Admin deleting booking:", bookingId, "for event:", eventId, "org:", req.user.organization_id);
       
       // Get booking details to verify ownership and status
       const { rows: [booking] } = await db.query(`
@@ -946,7 +946,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             );
 
             await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
-            console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
+ console.log(`Promoted booking ${nextInLine.id} from waitlist for event ${eventId}${booking.timeslot_id ? ` (timeslot ${booking.timeslot_id})` : ''}`);
 
             // Send push notification to promoted user
             if (promotedBooking) {
@@ -955,7 +955,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
               liveUpdate.sendToUser('konfi', promotedBooking.user_id, 'events', 'update', { eventId, action: 'promoted' });
             }
           } catch (promotionError) {
-            console.error('Error promoting from waitlist:', promotionError);
+ console.error('Error promoting from waitlist:', promotionError);
           }
         }
       }
@@ -967,7 +967,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking_removed' });
 
     } catch (err) {
-      console.error(`Database error in DELETE /events/${eventId}/bookings/${bookingId}:`, err);
+ console.error(`Database error in DELETE /events/${eventId}/bookings/${bookingId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -990,7 +990,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json(bookings);
       
     } catch (err) {
-      console.error('Database error in GET /events/user/bookings:', err);
+ console.error('Database error in GET /events/user/bookings:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1027,7 +1027,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
       let seriesId = null; // Will be set to the first event's ID
       
-      console.log(`Creating series with ${series_count} events, interval: ${series_interval}`);
+ console.log(`Creating series with ${series_count} events, interval: ${series_interval}`);
       
       for (let i = 0; i < seriesDates.length; i++) {
         const date = seriesDates[i];
@@ -1156,7 +1156,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error('Database error in POST /events/series:', err);
+ console.error('Database error in POST /events/series:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1171,7 +1171,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         return res.status(400).json({ error: 'Ungültiger Status. Muss bestätigt oder ausstehend sein' });
       }
       
-      console.log("Updating participant status:", participantId, "to:", status, "for event:", eventId);
+ console.log("Updating participant status:", participantId, "to:", status, "for event:", eventId);
       
       const { rows: [booking] } = await db.query("SELECT status FROM event_bookings WHERE id = $1 AND event_id = $2", [participantId, eventId]);
       if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
@@ -1184,7 +1184,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       res.json({ message: `Participant ${action}`, status });
       
     } catch (err) {
-      console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
+ console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/status:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1200,7 +1200,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     
     await db.query('BEGIN');
     try {
-      console.log("Updating attendance for participant:", participantId, "event:", eventId, "status:", attendance_status);
+ console.log("Updating attendance for participant:", participantId, "event:", eventId, "status:", attendance_status);
       
       const eventDataQuery = `
         SELECT e.name, e.points, e.point_type, eb.user_id
@@ -1240,10 +1240,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           try {
             const newBadges = await checkAndAwardBadges(db, eventData.user_id);
             if (newBadges > 0) {
-              console.log(`🏆 ${newBadges} neue Badge(s) für Konfi ${eventData.user_id} nach Event-Teilnahme vergeben`);
+ console.log(`${newBadges} neue Badge(s) für Konfi ${eventData.user_id} nach Event-Teilnahme vergeben`);
             }
           } catch (badgeErr) {
-            console.error('Error checking badges after event attendance:', badgeErr);
+ console.error('Error checking badges after event attendance:', badgeErr);
             // Don't fail the request if badge checking fails
           }
           
@@ -1253,7 +1253,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points);
           } catch (pushErr) {
-            console.error('Push notification failed:', pushErr);
+ console.error('Push notification failed:', pushErr);
           }
 
           // Live Update: Notify konfi about dashboard (points) and admins about event
@@ -1268,7 +1268,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0);
           } catch (pushErr) {
-            console.error('Push notification failed:', pushErr);
+ console.error('Push notification failed:', pushErr);
           }
 
           // Live Update: Notify admins about event attendance change
@@ -1292,7 +1292,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
           } catch (pushErr) {
-            console.error('Push notification failed:', pushErr);
+ console.error('Push notification failed:', pushErr);
           }
 
           // Live Update: Notify konfi about dashboard (points removed) and admins about event
@@ -1306,7 +1306,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         try {
           await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
         } catch (pushErr) {
-          console.error('Push notification failed:', pushErr);
+ console.error('Push notification failed:', pushErr);
         }
 
         // Live Update: Notify admins about event attendance change
@@ -1318,7 +1318,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/attendance:`, err);
+ console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/attendance:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1367,7 +1367,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in POST /events/${eventId}/chat:`, err);
+ console.error(`Database error in POST /events/${eventId}/chat:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1415,7 +1415,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (userIds.length > 0) {
         await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted);
       }
-      console.log(`Event "${event.name}" cancelled. Notified ${participants.length} participants.`);
+ console.log(`Event "${event.name}" cancelled. Notified ${participants.length} participants.`);
 
       await db.query('COMMIT');
       res.json({
@@ -1429,7 +1429,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
     } catch (err) {
       await db.query('ROLLBACK');
-      console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
+ console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
       res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
     }
   });

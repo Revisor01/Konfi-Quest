@@ -138,7 +138,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setRoles(rolesResponse.data);
       setJahrgaenge(jahrgaengeResponse.data);
     } catch (err) {
-      console.error('Error loading initial data:', err);
+ console.error('Error loading initial data:', err);
       setError('Fehler beim Laden der Daten');
     } finally {
       if (!isEditMode) setLoading(false);
@@ -173,7 +173,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setJahrgangAssignments(assignments);
     } catch (err) {
       setError('Fehler beim Laden des Benutzers');
-      console.error('Error loading user:', err);
+ console.error('Error loading user:', err);
     } finally {
       setLoading(false);
     }

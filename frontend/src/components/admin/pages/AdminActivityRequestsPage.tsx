@@ -68,7 +68,7 @@ const AdminActivityRequestsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshRequests = useCallback(() => {
-    console.log('Live Update: Refreshing requests...');
+ console.log('Live Update: Refreshing requests...');
     loadRequests();
   }, []);
 
@@ -97,7 +97,7 @@ const AdminActivityRequestsPage: React.FC = () => {
       setRequests(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Anträge');
-      console.error('Error loading activity requests:', err);
+ console.error('Error loading activity requests:', err);
     } finally {
       setLoading(false);
     }

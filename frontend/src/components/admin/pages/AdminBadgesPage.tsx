@@ -69,7 +69,7 @@ const AdminBadgesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshBadges = useCallback(() => {
-    console.log('Live Update: Refreshing badges...');
+ console.log('Live Update: Refreshing badges...');
     loadBadges();
   }, []);
 
@@ -98,7 +98,7 @@ const AdminBadgesPage: React.FC = () => {
       setBadges(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Badges');
-      console.error('Error loading badges:', err);
+ console.error('Error loading badges:', err);
     } finally {
       setLoading(false);
     }

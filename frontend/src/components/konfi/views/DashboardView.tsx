@@ -250,7 +250,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     
     const loadTageslosung = async () => {
       try {
-        console.log('Loading Tageslosung from backend...');
+ console.log('Loading Tageslosung from backend...');
         const response = await api.get('/konfi/tageslosung');
         
         if (response.data && response.data.success) {
@@ -261,13 +261,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             lehrtext: lehrtext?.text,
             lehrtextvers: lehrtext?.reference
           });
-          console.log('Tageslosung loaded successfully from backend');
+ console.log('Tageslosung loaded successfully from backend');
         } else {
-          console.error('Invalid response from backend:', response.data);
+ console.error('Invalid response from backend:', response.data);
           setActualDailyVerse(null);
         }
       } catch (error: any) {
-        console.error('Failed to load Tageslosung from backend:', error);
+ console.error('Failed to load Tageslosung from backend:', error);
         setActualDailyVerse(null);
       } finally {
         setLoadingVerse(false);

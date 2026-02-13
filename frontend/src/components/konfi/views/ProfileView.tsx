@@ -111,7 +111,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         const earnedCount = badges.filter((badge: any) => badge.earned || badge.is_earned).length;
         setEarnedBadgesCount(earnedCount);
       } catch (err) {
-        console.warn('Could not load badges for count:', err);
+ console.warn('Could not load badges for count:', err);
       }
     };
     loadBadges();
@@ -156,7 +156,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
               await logout();
               window.location.href = '/';
             } catch (error) {
-              console.error('Logout error:', error);
+ console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
               localStorage.removeItem('konfi_token');
               localStorage.removeItem('konfi_user');

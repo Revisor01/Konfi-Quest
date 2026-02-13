@@ -259,10 +259,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       // Load criteria types
       const criteriaResponse = await api.get('/admin/badges/criteria-types');
-      console.log('📛 Criteria Types geladen:', criteriaResponse.data);
+ console.log('Criteria Types geladen:', criteriaResponse.data);
       setCriteriaTypes(criteriaResponse.data);
     } catch (err) {
-      console.error('Error loading initial data:', err);
+ console.error('Error loading initial data:', err);
     }
   };
 
@@ -274,10 +274,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       const response = await api.get(`/admin/badges/${badgeId}`);
       const badge = response.data;
 
-      console.log('📛 Badge geladen:', badge);
-      console.log('📛 Icon:', badge.icon);
-      console.log('📛 Farbe:', badge.color);
-      console.log('📛 Kriterium Typ:', badge.criteria_type);
+ console.log('Badge geladen:', badge);
+ console.log('Icon:', badge.icon);
+ console.log('Farbe:', badge.color);
+ console.log('Kriterium Typ:', badge.criteria_type);
 
       if (badge) {
         // Parse extra criteria FIRST
@@ -287,13 +287,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             ? JSON.parse(badge.criteria_extra || '{}')
             : (badge.criteria_extra || {});
         } catch (e) {
-          console.error('Error parsing criteria_extra:', e);
+ console.error('Error parsing criteria_extra:', e);
           extra = {};
         }
 
         const newFormData = {
           name: badge.name || '',
-          icon: badge.icon || '🏆',
+          icon: badge.icon || 'trophy-outline',
           description: badge.description || '',
           criteria_type: badge.criteria_type || 'total_points',
           criteria_value: badge.criteria_value || 10,
@@ -303,13 +303,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           color: badge.color || '#667eea'
         };
 
-        console.log('📛 Form Data gesetzt:', newFormData);
+ console.log('Form Data gesetzt:', newFormData);
         setFormData(newFormData);
         setExtraCriteria(extra);
       }
     } catch (err) {
       setError('Fehler beim Laden des Badges');
-      console.error('Error loading badge:', err);
+ console.error('Error loading badge:', err);
     } finally {
       setLoading(false);
     }

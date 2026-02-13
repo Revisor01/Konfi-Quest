@@ -104,7 +104,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       setEventData(response.data);
       // Keine automatische Vorauswahl - User soll Zeitslot selbst wählen
     } catch (error) {
-      console.error('Error loading event data:', error);
+ console.error('Error loading event data:', error);
     }
   };
 

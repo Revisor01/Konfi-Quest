@@ -22,7 +22,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       res.json(settings);
     } catch (err) {
-      console.error('Database error in GET /settings:', err);
+ console.error('Database error in GET /settings:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -68,7 +68,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       res.json({ message: 'Einstellungen erfolgreich aktualisiert' });
 
     } catch (err) {
-      console.error('Database error in PUT /settings:', err);
+ console.error('Database error in PUT /settings:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

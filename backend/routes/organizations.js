@@ -29,7 +29,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { rows: organizations } = await db.query(query);
       res.json(organizations);
     } catch (err) {
-      console.error('Database error in GET /organizations:', err);
+ console.error('Database error in GET /organizations:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -84,7 +84,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       res.json(organization);
     } catch (err) {
-      console.error('Database error in GET /organizations/:id:', err);
+ console.error('Database error in GET /organizations/:id:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -122,7 +122,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       
       res.json(organization);
     } catch (err) {
-      console.error('Database error in GET /organizations/current:', err);
+ console.error('Database error in GET /organizations/current:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -187,26 +187,26 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
       // 4. Create default badges for the organization
       const defaultBadges = [
-        { name: "Erster Schritt", icon: "👶", description: "Herzlich willkommen! Du hast deine ersten Punkte gesammelt.", criteria_type: "total_points", criteria_value: 1 },
-        { name: "Auf dem Weg", icon: "🚶", description: "Du sammelst fleißig Punkte!", criteria_type: "total_points", criteria_value: 5 },
-        { name: "Fleißiger Sammler", icon: "🎯", description: "10 Punkte gesammelt - super gemacht!", criteria_type: "total_points", criteria_value: 10 },
-        { name: "Punktesammler", icon: "💎", description: "15 Punkte erreicht - du bist auf einem guten Weg!", criteria_type: "total_points", criteria_value: 15 },
-        { name: "Punkteprofi", icon: "🏆", description: "20 Punkte geschafft - großartig!", criteria_type: "total_points", criteria_value: 20 },
-        { name: "Punktemeister", icon: "👑", description: "25 Punkte erreicht - du bist spitze!", criteria_type: "total_points", criteria_value: 25 },
-        { name: "Gottesdienst-Neuling", icon: "⛪", description: "Du warst zum ersten Mal im Gottesdienst - toll!", criteria_type: "gottesdienst_points", criteria_value: 1 },
-        { name: "Gottesdienst-Fan", icon: "📖", description: "5 Gottesdienst-Punkte gesammelt!", criteria_type: "gottesdienst_points", criteria_value: 5 },
-        { name: "Gottesdienst-Profi", icon: "✨", description: "10 Gottesdienst-Punkte erreicht!", criteria_type: "gottesdienst_points", criteria_value: 10 },
-        { name: "Gottesdienst-Experte", icon: "🙏", description: "15 Gottesdienst-Punkte geschafft!", criteria_type: "gottesdienst_points", criteria_value: 15 },
-        { name: "Gemeinde-Neuling", icon: "🤝", description: "Du hast dich zum ersten Mal in der Gemeinde engagiert!", criteria_type: "gemeinde_points", criteria_value: 1 },
-        { name: "Gemeinde-Helfer", icon: "💪", description: "5 Gemeinde-Punkte gesammelt - danke für dein Engagement!", criteria_type: "gemeinde_points", criteria_value: 5 },
-        { name: "Gemeinde-Unterstützer", icon: "🌟", description: "10 Gemeinde-Punkte erreicht!", criteria_type: "gemeinde_points", criteria_value: 10 },
-        { name: "Gemeinde-Champion", icon: "🎪", description: "15 Gemeinde-Punkte geschafft - du bist eine große Hilfe!", criteria_type: "gemeinde_points", criteria_value: 15 },
-        { name: "Ausgewogen", icon: "⚖️", description: "Du sammelst in beiden Bereichen Punkte - sehr gut!", criteria_type: "both_categories", criteria_value: 3 },
-        { name: "Harmonisch", icon: "🎵", description: "5 Punkte in beiden Bereichen - perfekte Balance!", criteria_type: "both_categories", criteria_value: 5 },
-        { name: "Aktiv dabei", icon: "🏃", description: "Du hast schon 3 verschiedene Aktivitäten gemacht!", criteria_type: "activity_count", criteria_value: 3 },
-        { name: "Vielfalts-Fan", icon: "🌈", description: "5 Aktivitäten absolviert - du probierst gerne Neues!", criteria_type: "activity_count", criteria_value: 5 },
-        { name: "Aktivitäts-Sammler", icon: "📊", description: "10 Aktivitäten geschafft - beeindruckend!", criteria_type: "activity_count", criteria_value: 10 },
-        { name: "Bonuspunkte-Gewinner", icon: "💰", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 }
+        { name: "Erster Schritt", icon: "footsteps-outline", description: "Herzlich willkommen! Du hast deine ersten Punkte gesammelt.", criteria_type: "total_points", criteria_value: 1 },
+        { name: "Auf dem Weg", icon: "walk-outline", description: "Du sammelst fleissig Punkte!", criteria_type: "total_points", criteria_value: 5 },
+        { name: "Fleissiger Sammler", icon: "flag-outline", description: "10 Punkte gesammelt - super gemacht!", criteria_type: "total_points", criteria_value: 10 },
+        { name: "Punktesammler", icon: "diamond-outline", description: "15 Punkte erreicht - du bist auf einem guten Weg!", criteria_type: "total_points", criteria_value: 15 },
+        { name: "Punkteprofi", icon: "trophy-outline", description: "20 Punkte geschafft - grossartig!", criteria_type: "total_points", criteria_value: 20 },
+        { name: "Punktemeister", icon: "ribbon-outline", description: "25 Punkte erreicht - du bist spitze!", criteria_type: "total_points", criteria_value: 25 },
+        { name: "Gottesdienst-Neuling", icon: "home-outline", description: "Du warst zum ersten Mal im Gottesdienst - toll!", criteria_type: "gottesdienst_points", criteria_value: 1 },
+        { name: "Gottesdienst-Fan", icon: "book-outline", description: "5 Gottesdienst-Punkte gesammelt!", criteria_type: "gottesdienst_points", criteria_value: 5 },
+        { name: "Gottesdienst-Profi", icon: "star-outline", description: "10 Gottesdienst-Punkte erreicht!", criteria_type: "gottesdienst_points", criteria_value: 10 },
+        { name: "Gottesdienst-Experte", icon: "heart-outline", description: "15 Gottesdienst-Punkte geschafft!", criteria_type: "gottesdienst_points", criteria_value: 15 },
+        { name: "Gemeinde-Neuling", icon: "people-outline", description: "Du hast dich zum ersten Mal in der Gemeinde engagiert!", criteria_type: "gemeinde_points", criteria_value: 1 },
+        { name: "Gemeinde-Helfer", icon: "hand-left-outline", description: "5 Gemeinde-Punkte gesammelt - danke fuer dein Engagement!", criteria_type: "gemeinde_points", criteria_value: 5 },
+        { name: "Gemeinde-Unterstuetzer", icon: "sunny-outline", description: "10 Gemeinde-Punkte erreicht!", criteria_type: "gemeinde_points", criteria_value: 10 },
+        { name: "Gemeinde-Champion", icon: "medal-outline", description: "15 Gemeinde-Punkte geschafft - du bist eine grosse Hilfe!", criteria_type: "gemeinde_points", criteria_value: 15 },
+        { name: "Ausgewogen", icon: "git-compare-outline", description: "Du sammelst in beiden Bereichen Punkte - sehr gut!", criteria_type: "both_categories", criteria_value: 3 },
+        { name: "Harmonisch", icon: "musical-notes-outline", description: "5 Punkte in beiden Bereichen - perfekte Balance!", criteria_type: "both_categories", criteria_value: 5 },
+        { name: "Aktiv dabei", icon: "fitness-outline", description: "Du hast schon 3 verschiedene Aktivitaeten gemacht!", criteria_type: "activity_count", criteria_value: 3 },
+        { name: "Vielfalts-Fan", icon: "color-palette-outline", description: "5 Aktivitaeten absolviert - du probierst gerne Neues!", criteria_type: "activity_count", criteria_value: 5 },
+        { name: "Aktivitaets-Sammler", icon: "stats-chart-outline", description: "10 Aktivitaeten geschafft - beeindruckend!", criteria_type: "activity_count", criteria_value: 10 },
+        { name: "Bonuspunkte-Gewinner", icon: "gift-outline", description: "Du hast Bonuspunkte erhalten - weiter so!", criteria_type: "bonus_points", criteria_value: 1 }
       ];
 
       const badgeQuery = `INSERT INTO custom_badges (
@@ -232,7 +232,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
       }
-      console.error('Error creating organization:', err);
+ console.error('Error creating organization:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -275,7 +275,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Organisations-Slug existiert bereits' });
       }
-      console.error('Error updating organization:', err);
+ console.error('Error updating organization:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -306,7 +306,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         
       res.json({ message: 'Organisation erfolgreich gelöscht' });
     } catch (err) {
-      console.error('Error deleting organization:', err);
+ console.error('Error deleting organization:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -340,7 +340,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { rows: users } = await db.query(query, [id]);
       res.json(users);
     } catch (err) {
-      console.error('Error fetching organization users:', err);
+ console.error('Error fetching organization users:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -370,7 +370,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       const { rows: admins } = await db.query(query, [id]);
       res.json(admins);
     } catch (err) {
-      console.error('Error fetching organization admins:', err);
+ console.error('Error fetching organization admins:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -431,13 +431,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         RETURNING id, username, display_name, email, is_active, created_at
       `, [id, role.id, username, email || null, hashedPassword, display_name]);
 
-      console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id} durch ${req.user.role_name}`);
+ console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id} durch ${req.user.role_name}`);
       res.status(201).json(newAdmin);
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });
       }
-      console.error('Error creating org admin:', err);
+ console.error('Error creating org admin:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -478,7 +478,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       
       res.json(stats);
     } catch (err) {
-      console.error('Database error in GET /organizations/:id/stats:', err);
+ console.error('Database error in GET /organizations/:id/stats:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

@@ -50,7 +50,14 @@
       "Bash(wc:*)",
       "Bash(sort:*)",
       "Bash(git rebase:*)",
-      "Bash(GIT_EDITOR=true git rebase:*)"
+      "Bash(GIT_EDITOR=true git rebase:*)",
+      "Bash(gh workflow run:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh secret set:*)",
+      "Bash(gh secret:*)",
+      "mcp__plugin_claude-mem_mem-search__search",
+      "Bash(npx ionic cap sync:*)",
+      "Bash(open:*)"
     ],
     "deny": [],
     "ask": []

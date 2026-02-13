@@ -95,7 +95,7 @@ const VideoPreview: React.FC<{
   useEffect(() => {
     const loadVideoBlob = async () => {
       try {
-        console.log('🎥 Loading video:', message.file_name, 'from path:', message.file_path);
+ console.log('Loading video:', message.file_name, 'from path:', message.file_path);
         setLoading(true);
         setHasError(false);
         
@@ -105,7 +105,7 @@ const VideoPreview: React.FC<{
         });
         
         const blob = response.data;
-        console.log('✅ Video blob loaded:', blob.type, blob.size, 'bytes');
+ console.log('Video blob loaded:', blob.type, blob.size, 'bytes');
         
         // Korrekten MIME-Type basierend auf Dateiendung setzen
         const fileName = message.file_name?.toLowerCase() || '';
@@ -132,13 +132,13 @@ const VideoPreview: React.FC<{
         const correctedBlob = new Blob([blob], { type: mimeType });
         const blobUrl = URL.createObjectURL(correctedBlob);
         
-        console.log('🔗 Video URL created:', blobUrl);
-        console.log('📋 MIME-Type corrected from', blob.type, 'to', mimeType);
+ console.log('Video URL created:', blobUrl);
+ console.log('MIME-Type corrected from', blob.type, 'to', mimeType);
         
         setVideoUrl(blobUrl);
         setLoading(false);
       } catch (error) {
-        console.error('❌ Error loading video blob:', error);
+ console.error('Error loading video blob:', error);
         setHasError(true);
         setLoading(false);
         onError('Fehler beim Laden des Videos');
@@ -183,7 +183,7 @@ const VideoPreview: React.FC<{
         }
       }
     } catch (error) {
-      console.error('❌ Video play error:', error);
+ console.error('Video play error:', error);
       onError('Fehler beim Abspielen des Videos');
     }
   };
@@ -253,15 +253,15 @@ const VideoPreview: React.FC<{
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
         onError={(e) => {
-          console.error('🚫 Video element error for:', message.file_name, e);
-          console.log('Video src:', e.currentTarget.src);
-          console.log('Is MOV video:', message.file_name?.toLowerCase().includes('.mov'));
+ console.error('Video element error for:', message.file_name, e);
+ console.log('Video src:', e.currentTarget.src);
+ console.log('Is MOV video:', message.file_name?.toLowerCase().includes('.mov'));
           setHasError(true);
           onError('Video kann nicht abgespielt werden');
         }}
         onLoadedMetadata={async (e) => {
           const video = e.currentTarget;
-          console.log('✅ Video metadata loaded for:', message.file_name, {
+ console.log('Video metadata loaded for:', message.file_name, {
             duration: video.duration,
             videoWidth: video.videoWidth,
             videoHeight: video.videoHeight,
@@ -277,24 +277,24 @@ const VideoPreview: React.FC<{
             await video.play();
             video.pause();
             video.currentTime = 0; // Zurück zum Anfang
-            console.log('🖼️ Thumbnail generated for:', message.file_name);
+ console.log('Thumbnail generated for:', message.file_name);
           } catch (error) {
-            console.log('⚠️ Thumbnail generation failed for:', message.file_name, error);
+ console.log('Thumbnail generation failed for:', message.file_name, error);
           }
         }}
         onLoadedData={() => {
-          console.log('📊 Video data loaded for:', message.file_name);
+ console.log('Video data loaded for:', message.file_name);
         }}
         onCanPlay={() => {
-          console.log('▶️ Video can play for:', message.file_name);
+ console.log('▶ Video can play for:', message.file_name);
         }}
         onLoadStart={() => {
-          console.log('🎬 Video load started for:', message.file_name);
+ console.log('Video load started for:', message.file_name);
         }}
         onProgress={(e) => {
           const video = e.currentTarget;
           if (video.buffered.length > 0) {
-            console.log('📡 Video buffering progress for:', message.file_name, 
+ console.log('Video buffering progress for:', message.file_name, 
               'buffered:', video.buffered.end(0), 'of', video.duration);
           }
         }}
@@ -377,7 +377,7 @@ const LazyImage: React.FC<{
             const imageUrl = URL.createObjectURL(blob);
             setImageSrc(imageUrl);
           } catch (error) {
-            console.error('Error loading lazy image:', error);
+ console.error('Error loading lazy image:', error);
             onError();
           } finally {
             setIsLoading(false);
@@ -412,7 +412,7 @@ const LazyImage: React.FC<{
     >
       {isLoading ? (
         <div style={{ color: '#666', fontSize: '0.9rem' }}>
-          📸 Bild wird geladen...
+          Bild wird geladen...
         </div>
       ) : imageSrc ? (
         <img
@@ -427,7 +427,7 @@ const LazyImage: React.FC<{
         />
       ) : (
         <div style={{ color: '#999', fontSize: '0.8rem' }}>
-          ❌ Bild konnte nicht geladen werden
+          Bild konnte nicht geladen werden
         </div>
       )}
     </div>
@@ -588,7 +588,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         contentType: 'image/jpeg'
       });
     } catch (error) {
-      console.error('Error opening image:', error);
+ console.error('Error opening image:', error);
       setError('Fehler beim Öffnen des Bildes');
     }
   };
@@ -656,7 +656,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Listen for new messages
       socket.on('newMessage', (data: { roomId: number; message: any }) => {
         if (data.roomId === room.id) {
-          console.log('📡 WebSocket: New message received');
+ console.log('WebSocket: New message received');
           setMessages(prev => {
             // Avoid duplicates
             if (prev.some(m => m.id === data.message.id)) return prev;
@@ -668,7 +668,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Listen for deleted messages
       socket.on('messageDeleted', (data: { roomId: number; messageId: number }) => {
         if (data.roomId === room.id) {
-          console.log('📡 WebSocket: Message deleted');
+ console.log('WebSocket: Message deleted');
           setMessages(prev => prev.map(m =>
             m.id === data.messageId ? { ...m, deleted_at: new Date().toISOString() } : m
           ));
@@ -679,7 +679,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       socket.on('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
         if (data.roomId === room.id && data.userId !== user?.id) {
           // Could show typing indicator here
-          console.log(`${data.userName} is typing...`);
+ console.log(`${data.userName} is typing...`);
         }
       });
 
@@ -772,7 +772,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Don't pre-load images anymore - use lazy loading instead for better performance
     } catch (err) {
       setError('Fehler beim Laden der Nachrichten');
-      console.error('Error loading messages:', err);
+ console.error('Error loading messages:', err);
     } finally {
       // Loading wird im ChatRoomView gehandhabt
     }
@@ -788,10 +788,10 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       // Einfach: Badge Context neu laden für genaue Counts
       await refreshFromAPI();
       
-      console.log('Room marked as read:', room.id);
+ console.log('Room marked as read:', room.id);
     } catch (err) {
       // Silent fail - marking as read is not critical
-      console.error('Error marking room as read:', err);
+ console.error('Error marking room as read:', err);
     }
   };
 
@@ -807,7 +807,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
       if (selectedFile) {
         formData.append('file', selectedFile);
-        console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
+ console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       }
       // Reply-Referenz hinzufügen wenn vorhanden
       if (replyToMessage) {
@@ -815,7 +815,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }
 
       // Debug: Check what we're sending
-      console.log('FormData contents:', {
+ console.log('FormData contents:', {
         hasContent: !!messageText.trim(),
         hasFile: !!selectedFile,
         fileName: selectedFile?.name,
@@ -849,7 +849,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       }, 100);
     } catch (err) {
       setError('Fehler beim Senden der Nachricht');
-      console.error('Error sending message:', err);
+ console.error('Error sending message:', err);
     } finally {
       setUploading(false);
     }
@@ -869,7 +869,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       setTimeout(() => setShouldAutoScroll(true), 1000);
     } catch (err) {
       setError('Fehler beim Abstimmen');
-      console.error('Error voting in poll:', err);
+ console.error('Error voting in poll:', err);
       setShouldAutoScroll(true); // Re-enable on error
     }
   };
@@ -891,7 +891,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
               })
               .catch((err) => {
                 setError('Fehler beim Löschen der Nachricht');
-                console.error('Error deleting message:', err);
+ console.error('Error deleting message:', err);
               });
           }
         }
@@ -946,7 +946,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       setTimeout(() => setShouldAutoScroll(true), 500);
     } catch (err) {
       setError('Fehler beim Reagieren');
-      console.error('Error toggling reaction:', err);
+ console.error('Error toggling reaction:', err);
       setShouldAutoScroll(true);
     }
   };
@@ -959,7 +959,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    console.log('File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
+ console.log('File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         setError('Datei ist zu groß (max. 10MB)');
@@ -974,7 +974,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
       } else {
         setSelectedFilePreview(null);
       }
-      console.log('File set as selectedFile');
+ console.log('File set as selectedFile');
     }
   };
 
@@ -1057,7 +1057,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
       }
     } catch (error) {
-      console.error('Camera error:', error);
+ console.error('Camera error:', error);
       setError('Kamera-Zugriff fehlgeschlagen');
     }
   };
@@ -1085,7 +1085,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         setSelectedFilePreview(photo.dataUrl); // Set preview directly from dataUrl
       }
     } catch (error) {
-      console.error('Gallery error:', error);
+ console.error('Gallery error:', error);
       setError('Galerie-Zugriff fehlgeschlagen');
     }
   };
@@ -1121,7 +1121,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         setShowReactionPicker(false);
       }
     } catch (error) {
-      console.error('Error with long press:', error);
+ console.error('Error with long press:', error);
     }
   };
 
@@ -1173,7 +1173,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         });
       }
     } catch (error) {
-      console.error('Error sharing:', error);
+ console.error('Error sharing:', error);
       if (error instanceof Error && error.name !== 'AbortError') {
         setError('Fehler beim Teilen');
       }
@@ -1624,7 +1624,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                           contentType: 'image/jpeg'
                         });
                       } catch (error) {
-                        console.error('Error opening image:', error);
+ console.error('Error opening image:', error);
                         setError('Fehler beim Öffnen des Bildes');
                       }
                     }}
@@ -1695,7 +1695,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                             path: fileUri.uri
                           });
                         } catch (viewerError) {
-                          console.warn('Native viewer failed, using fallback:', viewerError);
+ console.warn('Native viewer failed, using fallback:', viewerError);
                           window.open(fileUrl, '_blank');
                         }
                       } else {
@@ -1703,7 +1703,7 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
                         window.open(fileUrl, '_blank');
                       }
                     } catch (error) {
-                      console.error('Error opening document:', error);
+ console.error('Error opening document:', error);
                       setError('Fehler beim Öffnen der Datei');
                     }
                   }}

@@ -12,7 +12,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const { rows: jahrgaenge } = await db.query(query, [req.user.organization_id]);
       res.json(jahrgaenge);
     } catch (err) {
-      console.error('Database error in GET /api/jahrgaenge:', err);
+ console.error('Database error in GET /api/jahrgaenge:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -29,7 +29,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const params = [name, confirmation_date, req.user.organization_id];
       const { rows: [newJahrgang] } = await db.query(query, params);
 
-      console.log(`Created Jahrgang "${name}" (ID: ${newJahrgang.id})`);
+ console.log(`Created Jahrgang "${name}" (ID: ${newJahrgang.id})`);
 
       res.status(201).json({
         id: newJahrgang.id,
@@ -43,7 +43,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits in dieser Organisation' });
       }
-      console.error('Database error in POST /api/jahrgaenge:', err);
+ console.error('Database error in POST /api/jahrgaenge:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -71,7 +71,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Jahrgang-Name existiert bereits' });
       }
-      console.error(`Database error in PUT /api/jahrgaenge/${req.params.id}:`, err);
+ console.error(`Database error in PUT /api/jahrgaenge/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -145,9 +145,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
             try {
               const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
               await fs.unlink(fullPath);
-              console.log(`Deleted file: ${fullPath}`);
+ console.log(`Deleted file: ${fullPath}`);
             } catch (fileErr) {
-              console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
+ console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
             }
           }
         }
@@ -165,7 +165,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'delete');
     } catch (err) {
-      console.error(`Database error in DELETE /api/jahrgaenge/${jahrgangId}:`, err);
+ console.error(`Database error in DELETE /api/jahrgaenge/${jahrgangId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

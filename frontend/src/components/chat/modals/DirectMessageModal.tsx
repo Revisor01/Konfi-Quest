@@ -70,7 +70,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ isOpen, onClose
       setUsers(filteredUsers);
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     } finally {
       setLoading(false);
     }
@@ -89,7 +89,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ isOpen, onClose
       handleClose();
     } catch (err) {
       setError('Fehler beim Erstellen der Direktnachricht');
-      console.error('Error creating direct message:', err);
+ console.error('Error creating direct message:', err);
     } finally {
       setCreating(false);
     }

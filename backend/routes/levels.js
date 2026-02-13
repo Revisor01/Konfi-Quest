@@ -7,23 +7,23 @@ module.exports = (db, verifyTokenRBAC, roleHelpers) => {
 
   // GET /api/levels - Alle Level für Organisation laden
   router.get('/', verifyTokenRBAC, async (req, res) => {
-  console.log('📊 GET /api/levels - Request received');
-  console.log('👤 User:', req.user);
+ console.log('GET /api/levels - Request received');
+ console.log('User:', req.user);
   try {
     const organizationId = req.user.organization_id;
-    console.log('🏢 Organization ID:', organizationId);
+ console.log('Organization ID:', organizationId);
 
-    console.log('🔍 Executing DB query...');
+ console.log('Executing DB query...');
     const result = await db.query(`
       SELECT * FROM levels
       WHERE organization_id = $1
       ORDER BY points_required ASC
     `, [organizationId]);
-    console.log('✅ Query result:', result.rows.length, 'levels found');
+ console.log('Query result:', result.rows.length, 'levels found');
 
     res.json(result.rows);
   } catch (error) {
-    console.error('❌ Fehler beim Laden der Level:', error);
+ console.error('Fehler beim Laden der Level:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Level' });
   }
 });
@@ -62,14 +62,14 @@ router.post('/', verifyTokenRBAC, async (req, res) => {
       INSERT INTO levels (organization_id, name, title, description, points_required, icon, color, reward_type, reward_value, created_by)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
-    `, [organizationId, name, title, description, points_required, icon || '🏆', color || '#3880ff', reward_type, reward_value, req.user.id]);
+    `, [organizationId, name, title, description, points_required, icon || 'trophy-outline', color || '#3880ff', reward_type, reward_value, req.user.id]);
 
     res.status(201).json(result.rows[0]);
 
     // Live-Update an alle Admins senden
     liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'create');
   } catch (error) {
-    console.error('Fehler beim Erstellen des Levels:', error);
+ console.error('Fehler beim Erstellen des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
       res.status(400).json({ error: 'Ein Level mit diesem Namen existiert bereits' });
     } else {
@@ -133,7 +133,7 @@ router.put('/:id', verifyTokenRBAC, async (req, res) => {
     // Live-Update an alle Admins senden
     liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'update');
   } catch (error) {
-    console.error('Fehler beim Bearbeiten des Levels:', error);
+ console.error('Fehler beim Bearbeiten des Levels:', error);
     if (error.code === '23505') { // Unique constraint violation
       res.status(400).json({ error: 'Ein Level mit diesem Namen existiert bereits' });
     } else {
@@ -187,7 +187,7 @@ router.delete('/:id', verifyTokenRBAC, async (req, res) => {
     // Live-Update an alle Admins senden
     liveUpdate.sendToOrgAdmins(req.user.organization_id, 'levels', 'delete');
   } catch (error) {
-    console.error('Fehler beim Löschen des Levels:', error);
+ console.error('Fehler beim Löschen des Levels:', error);
     res.status(500).json({ error: 'Fehler beim Löschen des Levels' });
   }
 });
@@ -272,7 +272,7 @@ router.get('/konfi/:userId', verifyTokenRBAC, async (req, res) => {
       all_levels: levels
     });
   } catch (error) {
-    console.error('Fehler beim Laden der Konfi-Level-Info:', error);
+ console.error('Fehler beim Laden der Konfi-Level-Info:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Level-Informationen' });
   }
 });

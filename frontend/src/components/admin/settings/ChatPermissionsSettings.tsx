@@ -29,7 +29,7 @@ const ChatPermissionsSettings: React.FC = () => {
       const settings = response.data;
       setPermissions(settings.konfi_chat_permissions || 'admins_only');
     } catch (err) {
-      console.error('Error loading settings:', err);
+ console.error('Error loading settings:', err);
       setError('Fehler beim Laden der Chat-Einstellungen');
     } finally {
       setLoading(false);
@@ -44,7 +44,7 @@ const ChatPermissionsSettings: React.FC = () => {
       });
       setSuccess('Chat-Berechtigungen erfolgreich gespeichert');
     } catch (err) {
-      console.error('Error saving chat permissions:', err);
+ console.error('Error saving chat permissions:', err);
       setError('Fehler beim Speichern der Chat-Berechtigungen');
     } finally {
       setSaving(false);

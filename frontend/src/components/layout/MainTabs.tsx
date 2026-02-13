@@ -74,7 +74,7 @@ const MainTabs: React.FC = () => {
           setPendingRequestsCount(pendingCount);
         } catch (error) {
           // Ignoriere Fehler (z.B. wenn super_admin keinen Zugriff hat)
-          console.log('Could not load pending requests:', error);
+ console.log('Could not load pending requests:', error);
         }
       }
     };
@@ -107,7 +107,7 @@ const MainTabs: React.FC = () => {
           ).length;
           setPendingEventsCount(pendingCount);
         } catch (error) {
-          console.log('Could not load pending events:', error);
+ console.log('Could not load pending events:', error);
         }
       }
     };
@@ -139,7 +139,7 @@ const MainTabs: React.FC = () => {
           const newCount = response.data.earned?.filter((badge: any) => !badge.seen)?.length || 0;
           setNewBadgesCount(newCount);
         } catch (error) {
-          console.log('Could not load badges:', error);
+ console.log('Could not load badges:', error);
         }
       }
     };

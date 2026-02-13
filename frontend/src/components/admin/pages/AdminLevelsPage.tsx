@@ -127,13 +127,13 @@ const AdminLevelsPage: React.FC = () => {
   const loadLevels = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Loading levels from API...');
+ console.log('Loading levels from API...');
       const response = await api.get('/levels');
-      console.log('✅ Levels loaded:', response.data);
+ console.log('Levels loaded:', response.data);
       setLevels(response.data);
     } catch (error: any) {
-      console.error('❌ Fehler beim Laden der Level:', error);
-      console.error('❌ Error details:', error.response);
+ console.error('Fehler beim Laden der Level:', error);
+ console.error('Error details:', error.response);
       setError(error.response?.data?.error || 'Fehler beim Laden der Level');
     } finally {
       setLoading(false);

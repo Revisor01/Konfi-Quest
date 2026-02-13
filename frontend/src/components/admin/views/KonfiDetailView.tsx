@@ -186,7 +186,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         target_gemeinde: response.data.target_gemeinde || 0
       });
     } catch (err) {
-      console.warn('Could not load settings:', err);
+ console.warn('Could not load settings:', err);
     }
   };
 
@@ -199,7 +199,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       try {
         requestsRes = await api.get('/admin/activities/requests');
       } catch (requestsError) {
-        console.warn('Could not load activity requests:', requestsError);
+ console.warn('Could not load activity requests:', requestsError);
       }
 
       const konfiData = konfiRes.data;

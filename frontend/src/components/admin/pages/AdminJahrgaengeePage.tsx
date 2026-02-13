@@ -228,7 +228,7 @@ const AdminJahrgaengeePage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshJahrgaenge = useCallback(() => {
-    console.log('Live Update: Refreshing jahrgaenge...');
+ console.log('Live Update: Refreshing jahrgaenge...');
     loadJahrgaenge();
   }, []);
 

@@ -77,7 +77,7 @@ const KonfiRequestsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshRequests = useCallback(() => {
-    console.log('Live Update: Refreshing requests...');
+ console.log('Live Update: Refreshing requests...');
     loadRequests();
   }, []);
 
@@ -95,14 +95,14 @@ const KonfiRequestsPage: React.FC = () => {
       setRequests(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');
-      console.error('Error loading requests:', err);
+ console.error('Error loading requests:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddRequest = () => {
-    console.log('Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
+ console.log('Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
     presentRequestModal({
       presentingElement: pageRef.current || presentingElement || undefined
     });

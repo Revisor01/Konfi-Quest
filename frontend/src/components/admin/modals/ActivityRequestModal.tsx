@@ -102,7 +102,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       }
     } catch (err) {
       setError('Fehler beim Laden des Antrags');
-      console.error('Error loading request:', err);
+ console.error('Error loading request:', err);
     } finally {
       setLoading(false);
     }
@@ -116,7 +116,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       const url = URL.createObjectURL(response.data);
       setPhotoUrl(url);
     } catch (err) {
-      console.error('Error loading photo:', err);
+ console.error('Error loading photo:', err);
     }
   };
 

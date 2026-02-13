@@ -50,7 +50,7 @@ const AdminProfilePage: React.FC = () => {
         const response = await api.get('/auth/me');
         setProfileData(response.data);
       } catch (err) {
-        console.error('Error loading profile:', err);
+ console.error('Error loading profile:', err);
       }
     };
     loadProfile();
@@ -72,7 +72,7 @@ const AdminProfilePage: React.FC = () => {
           setUser(updatedUser);
         }
       } catch (err) {
-        console.error('Error refreshing user:', err);
+ console.error('Error refreshing user:', err);
       }
     }
     // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
@@ -90,7 +90,7 @@ const AdminProfilePage: React.FC = () => {
     onSuccess: () => {
       dismissRoleTitleModalHook();
       // Profil neu laden
-      api.get('/auth/me').then(res => setProfileData(res.data)).catch(console.error);
+ api.get('/auth/me').then(res => setProfileData(res.data)).catch(console.error);
     },
     initialRoleTitle: profileData.role_title || ''
   });
@@ -127,7 +127,7 @@ const AdminProfilePage: React.FC = () => {
               await logout();
               window.location.href = '/';
             } catch (error) {
-              console.error('Logout error:', error);
+ console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
               localStorage.removeItem('konfi_token');
               localStorage.removeItem('konfi_user');

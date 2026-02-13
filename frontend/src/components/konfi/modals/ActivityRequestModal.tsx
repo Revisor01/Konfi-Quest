@@ -86,7 +86,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       setActivities(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');
-      console.error('Error loading activities:', err);
+ console.error('Error loading activities:', err);
     } finally {
       setLoading(false);
     }

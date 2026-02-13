@@ -43,7 +43,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.json(rows);
 
     } catch (err) {
-      console.error('Database error in GET /roles:', err);
+ console.error('Database error in GET /roles:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -83,7 +83,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       });
 
     } catch (err) {
-      console.error(`Database error in GET /roles/${id}:`, err);
+ console.error(`Database error in GET /roles/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -125,7 +125,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       res.json(rows);
 
     } catch (err) {
-      console.error('Database error in GET /roles/list/assignable:', err);
+ console.error('Database error in GET /roles/list/assignable:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

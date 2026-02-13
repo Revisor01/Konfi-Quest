@@ -74,7 +74,7 @@ const KonfiProfilePage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshProfile = useCallback(() => {
-    console.log('Live Update: Refreshing profile...');
+ console.log('Live Update: Refreshing profile...');
     loadProfile();
   }, []);
 
@@ -92,7 +92,7 @@ const KonfiProfilePage: React.FC = () => {
       setProfile(response.data);
     } catch (err) {
       setError('Fehler beim Laden des Profils');
-      console.error('Error loading profile:', err);
+ console.error('Error loading profile:', err);
     } finally {
       setLoading(false);
     }

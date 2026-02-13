@@ -23,7 +23,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
   // API refresh function - wird von AppContent aufgerufen
   const refreshFromAPI = useCallback(async () => {
     try {
-      // console.log('🔄 BadgeContext: Refreshing from API'); // DISABLED wegen Spam
+ // console.log('BadgeContext: Refreshing from API'); // DISABLED wegen Spam
       const response = await api.get('/chat/rooms');
       const rooms = response.data;
       
@@ -32,10 +32,10 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
         totalUnread += room.unread_count || 0;
       });
       
-      // console.log('📱 BadgeContext: API refresh result:', totalUnread); // DISABLED wegen Spam
+ // console.log('BadgeContext: API refresh result:', totalUnread); // DISABLED wegen Spam
       setBadgeCount(totalUnread);
     } catch (error) {
-      console.log('📱 BadgeContext: API refresh failed:', error);
+ console.log('BadgeContext: API refresh failed:', error);
     }
   }, []);
 
@@ -44,13 +44,13 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (badgeCount > 0) {
         Badge.set({ count: badgeCount });
-        console.log('📱 BadgeContext: Device badge set to:', badgeCount);
+ console.log('BadgeContext: Device badge set to:', badgeCount);
       } else {
         Badge.clear();
-        console.log('📱 BadgeContext: Device badge cleared');
+ console.log('BadgeContext: Device badge cleared');
       }
     } catch (error) {
-      console.log('📱 BadgeContext: Badge not available:', error);
+ console.log('BadgeContext: Badge not available:', error);
     }
   }, [badgeCount]);
 
@@ -63,7 +63,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     const socket = initializeWebSocket(token);
 
     const handleNewMessage = () => {
-      console.log('📱 BadgeContext: New message via WebSocket, refreshing badge');
+ console.log('BadgeContext: New message via WebSocket, refreshing badge');
       refreshFromAPI();
     };
 

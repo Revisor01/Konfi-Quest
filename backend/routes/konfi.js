@@ -252,7 +252,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
       
     } catch (err) {
-      console.error('Database error in GET /dashboard:', err);
+ console.error('Database error in GET /dashboard:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -346,7 +346,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           confirmationLocation = confirmationEvent.location;
         }
       } catch (err) {
-        console.warn('Could not fetch confirmation event date:', err);
+ console.warn('Could not fetch confirmation event date:', err);
         // Fall back to jahrgang confirmation_date if no event found
       }
 
@@ -406,7 +406,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
 
     } catch (err) {
-      console.error('Database error in GET /profile:', err);
+ console.error('Database error in GET /profile:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -507,7 +507,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
 
     } catch (err) {
-      console.error('Database error in GET /points-history:', err);
+ console.error('Database error in GET /points-history:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -530,7 +530,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: requests } = await db.query(query, [konfiId, req.user.organization_id]);
       res.json(requests);
     } catch (err) {
-      console.error('Database error in GET /requests:', err);
+ console.error('Database error in GET /requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -586,7 +586,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           ]
         );
       } catch (notifErr) {
-        console.error('Error sending notification:', notifErr);
+ console.error('Error sending notification:', notifErr);
         // Don't fail the request if notification fails
       }
 
@@ -610,7 +610,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
             "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
             [
               admin.id,
-              'Neuer Antrag eingegangen 📝',
+              'Neuer Antrag eingegangen',
               `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
               'new_activity_request',
               JSON.stringify({
@@ -625,7 +625,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           );
         }
 
-        console.log(`Notified ${admins.length} admins about new request from ${konfiData.display_name}`);
+ console.log(`Notified ${admins.length} admins about new request from ${konfiData.display_name}`);
 
         // Send push notifications to admins
         await PushService.sendNewActivityRequestToAdmins(
@@ -636,7 +636,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           activity.points
         );
       } catch (notifErr) {
-        console.error('Error sending admin notifications:', notifErr);
+ console.error('Error sending admin notifications:', notifErr);
         // Don't fail the request if notification fails
       }
 
@@ -648,7 +648,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
     } catch (err) {
-      console.error('Database error in POST /requests:', err);
+ console.error('Database error in POST /requests:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -669,7 +669,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         message: 'Foto erfolgreich hochgeladen' 
       });
     } catch (err) {
-      console.error('Error uploading photo:', err);
+ console.error('Error uploading photo:', err);
       res.status(500).json({ error: 'Fehler beim Hochladen des Fotos' });
     }
   });
@@ -713,7 +713,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.setHeader('Content-Type', 'image/jpeg');
       res.sendFile(photoPath);
     } catch (err) {
-      console.error('Error serving photo:', err);
+ console.error('Error serving photo:', err);
       res.status(500).json({ error: 'Serverfehler' });
     }
   });
@@ -753,7 +753,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'delete');
     } catch (err) {
-      console.error('Database error in DELETE /requests/:id:', err);
+ console.error('Database error in DELETE /requests/:id:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -778,7 +778,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { rows: activities } = await db.query(query, [req.user.organization_id]);
       res.json(activities);
     } catch (err) {
-      console.error('Database error in GET /activities:', err);
+ console.error('Database error in GET /activities:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -882,7 +882,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                 const extraData = JSON.parse(badge.criteria_extra || '{}');
                 specificActivityId = extraData.activity_id;
               } catch (e) {
-                console.error('Error parsing criteria_extra for specific_activity badge:', e);
+ console.error('Error parsing criteria_extra for specific_activity badge:', e);
               }
               
               if (specificActivityId) {
@@ -903,7 +903,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                 const extraData = JSON.parse(badge.criteria_extra || '{}');
                 requiredCategory = extraData.required_category;
               } catch (e) {
-                console.error('Error parsing criteria_extra for category_activities badge:', e);
+ console.error('Error parsing criteria_extra for category_activities badge:', e);
               }
               
               if (requiredCategory) {
@@ -929,7 +929,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                 const extraData = JSON.parse(badge.criteria_extra || '{}');
                 activityIds = extraData.activity_ids || [];
               } catch (e) {
-                console.error('Error parsing criteria_extra for activity_combination badge:', e);
+ console.error('Error parsing criteria_extra for activity_combination badge:', e);
               }
               
               if (activityIds.length > 0) {
@@ -968,7 +968,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           
           progress.percentage = Math.min((progress.current / progress.target) * 100, 100);
         } catch (err) {
-          console.error(`Error calculating progress for badge ${badge.id}:`, err);
+ console.error(`Error calculating progress for badge ${badge.id}:`, err);
         }
         
         badge.progress = progress;
@@ -997,7 +997,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         }
       });
     } catch (err) {
-      console.error('Database error in GET /badges:', err);
+ console.error('Database error in GET /badges:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1030,7 +1030,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         earned_badges: parseInt(stats.earned_badges, 10) || 0
       });
     } catch (err) {
-      console.error('Database error in GET /badges/stats:', err);
+ console.error('Database error in GET /badges/stats:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1049,7 +1049,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       res.json({ success: true, message: 'Alle Badges als gesehen markiert' });
     } catch (err) {
-      console.error('Database error in POST /badges/mark-seen:', err);
+ console.error('Database error in POST /badges/mark-seen:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1149,7 +1149,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       res.json(eventsWithRelations);
       
     } catch (err) {
-      console.error('Database error in GET /konfi/events:', err);
+ console.error('Database error in GET /konfi/events:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1235,7 +1235,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         waitlist_enabled: event.waitlist_enabled
       });
     } catch (err) {
-      console.error('Database error in GET /events/:id/status:', err);
+ console.error('Database error in GET /events/:id/status:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1282,7 +1282,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       res.json(anonymizedParticipants);
     } catch (err) {
-      console.error('Database error in GET /events/:id/participants:', err);
+ console.error('Database error in GET /events/:id/participants:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1312,7 +1312,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       
       if (cachedVerse) {
-        console.log(`Using cached verse for ${today} (${translation})`);
+ console.log(`Using cached verse for ${today} (${translation})`);
         return res.json({
           success: true,
           data: cachedVerse.verse_data,
@@ -1322,7 +1322,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
       
       // Not cached - fetch from external API
-      console.log(`Fetching new verse from API for ${today} (${translation})`);
+ console.log(`Fetching new verse from API for ${today} (${translation})`);
       const fetch = (await import('node-fetch')).default;
       const apiUrl = `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
       
@@ -1350,9 +1350,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           'INSERT INTO daily_verses (date, translation, verse_data) VALUES ($1, $2, $3) ON CONFLICT (date, translation) DO NOTHING',
           [today, translation, losungData.data]
         );
-        console.log(`Cached verse for ${today} (${translation})`);
+ console.log(`Cached verse for ${today} (${translation})`);
       } catch (cacheErr) {
-        console.error('Error caching verse:', cacheErr);
+ console.error('Error caching verse:', cacheErr);
         // Don't fail the request if caching fails
       }
       
@@ -1368,10 +1368,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         );
         
         if (rowCount > 0) {
-          console.log(`Cleaned up ${rowCount} old cached verses`);
+ console.log(`Cleaned up ${rowCount} old cached verses`);
         }
       } catch (cleanupErr) {
-        console.error('Error cleaning up old verses:', cleanupErr);
+ console.error('Error cleaning up old verses:', cleanupErr);
         // Don't fail the request if cleanup fails
       }
       
@@ -1383,7 +1383,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
       
     } catch (err) {
-      console.error('Error fetching Tageslosung:', err);
+ console.error('Error fetching Tageslosung:', err);
       
       // Try to get a cached verse from previous days as fallback
       try {
@@ -1393,7 +1393,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         );
         
         if (fallbackCached) {
-          console.log('Using fallback cached verse from previous days');
+ console.log('Using fallback cached verse from previous days');
           return res.json({
             success: true,
             data: fallbackCached.verse_data,
@@ -1403,7 +1403,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           });
         }
       } catch (fallbackErr) {
-        console.error('Error getting fallback cached verse:', fallbackErr);
+ console.error('Error getting fallback cached verse:', fallbackErr);
       }
       
       // Final fallback data if all else fails
@@ -1476,7 +1476,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       res.json(timeslots);
     } catch (err) {
-      console.error('Database error in GET /events/:id/timeslots:', err);
+ console.error('Database error in GET /events/:id/timeslots:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1620,14 +1620,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       try {
         await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot);
       } catch (pushErr) {
-        console.error('Error sending event registration push:', pushErr);
+ console.error('Error sending event registration push:', pushErr);
       }
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
-      console.error('Database error in POST /events/:id/register:', err);
+ console.error('Database error in POST /events/:id/register:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1699,21 +1699,21 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       try {
         await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name);
       } catch (pushErr) {
-        console.error('Error sending event unregistration push to konfi:', pushErr);
+ console.error('Error sending event unregistration push to konfi:', pushErr);
       }
 
       // Push-Notification an ALLE Admins senden
       try {
         await PushService.sendEventUnregistrationToAdmins(db, req.user.organization_id, konfiName, event.name, reason);
       } catch (pushErr) {
-        console.error('Error sending event unregistration push to admins:', pushErr);
+ console.error('Error sending event unregistration push to admins:', pushErr);
       }
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
-      console.error('Database error in DELETE /events/:id/register:', err);
+ console.error('Database error in DELETE /events/:id/register:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1750,7 +1750,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       });
       
     } catch (err) {
-      console.error('Database error in PUT /bible-translation:', err);
+ console.error('Database error in PUT /bible-translation:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

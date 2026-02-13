@@ -72,7 +72,7 @@ const AdminSettingsPage: React.FC = () => {
               await logout();
               window.location.href = '/';
             } catch (error) {
-              console.error('Logout error:', error);
+ console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
               localStorage.removeItem('konfi_token');
               localStorage.removeItem('konfi_user');

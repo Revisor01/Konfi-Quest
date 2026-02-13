@@ -101,7 +101,7 @@ const KonfiDashboardPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
-    console.log('Live Update: Refreshing dashboard data...');
+ console.log('Live Update: Refreshing dashboard data...');
     loadDashboardData();
     loadUpcomingEvents();
     loadBadgeStats();
@@ -129,7 +129,7 @@ const KonfiDashboardPage: React.FC = () => {
       setSettings(settingsResponse.data);
     } catch (err) {
       setError('Fehler beim Laden der Dashboard-Daten');
-      console.error('Error loading dashboard:', err);
+ console.error('Error loading dashboard:', err);
     } finally {
       setLoading(false);
     }
@@ -165,7 +165,7 @@ const KonfiDashboardPage: React.FC = () => {
         throw new Error('Invalid API response');
       }
     } catch (err) {
-      console.log('Could not load daily verse from API, using fallback:', err);
+ console.log('Could not load daily verse from API, using fallback:', err);
       
       // Fallback-Daten wenn API nicht funktioniert
       const fallbackVerses = [
@@ -200,7 +200,7 @@ const KonfiDashboardPage: React.FC = () => {
         );
       setUpcomingEvents(registeredEvents);
     } catch (err) {
-      console.error('Error loading events:', err);
+ console.error('Error loading events:', err);
       // Events nicht kritisch für Dashboard
     }
   };
@@ -228,7 +228,7 @@ const KonfiDashboardPage: React.FC = () => {
         secretEarned: secretEarned
       });
     } catch (err) {
-      console.error('Error loading badge stats:', err);
+ console.error('Error loading badge stats:', err);
       // Badge stats nicht kritisch für Dashboard
     }
   };

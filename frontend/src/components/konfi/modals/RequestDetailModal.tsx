@@ -85,7 +85,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       const url = URL.createObjectURL(response.data);
       setPhotoUrl(url);
     } catch (err) {
-      console.error('Error loading photo:', err);
+ console.error('Error loading photo:', err);
     } finally {
       setLoadingPhoto(false);
     }

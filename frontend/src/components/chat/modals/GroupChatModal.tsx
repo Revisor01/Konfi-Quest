@@ -75,7 +75,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
       setAdmins(adminsRes.data || []); // Fallback if admin endpoint doesn't exist
     } catch (err) {
       setError('Fehler beim Laden der Benutzer');
-      console.error('Error loading users:', err);
+ console.error('Error loading users:', err);
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
       onSuccess();
     } catch (err) {
       setError('Fehler beim Erstellen des Gruppenchats');
-      console.error('Error creating group chat:', err);
+ console.error('Error creating group chat:', err);
     } finally {
       setCreating(false);
     }

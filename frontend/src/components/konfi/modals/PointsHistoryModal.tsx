@@ -63,7 +63,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
       setHistory(response.data.history || []);
       setTotals(response.data.totals || { gottesdienst: 0, gemeinde: 0, bonus: 0, event: 0, total: 0 });
     } catch (err) {
-      console.error('Error loading points history:', err);
+ console.error('Error loading points history:', err);
     } finally {
       setLoading(false);
     }
