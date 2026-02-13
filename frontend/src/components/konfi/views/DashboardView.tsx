@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   IonProgressBar,
   IonIcon,
@@ -343,19 +343,34 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const totalCurrentPoints = gottesdienstPoints + gemeindePoints;
 
   // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
-  const myRegisteredEvents = upcomingEvents
+  const myRegisteredEvents = useMemo(() => upcomingEvents
     .filter(e => e.is_registered || (e as any).booking_status === 'waitlist')
     .filter(e => new Date(e.event_date || e.date) >= new Date())
-    .sort((a, b) => new Date(a.event_date || a.date).getTime() - new Date(b.event_date || b.date).getTime());
+    .sort((a, b) => new Date(a.event_date || a.date).getTime() - new Date(b.event_date || b.date).getTime()),
+  [upcomingEvents]);
 
-  const confirmationEvents = myRegisteredEvents
-    .filter(e => e.title?.toLowerCase().includes('konfirmation') || e.name?.toLowerCase().includes('konfirmation'));
+  const confirmationEvents = useMemo(() => myRegisteredEvents
+    .filter(e => e.title?.toLowerCase().includes('konfirmation') || e.name?.toLowerCase().includes('konfirmation')),
+  [myRegisteredEvents]);
 
-  const regularEvents = myRegisteredEvents
+  const regularEvents = useMemo(() => myRegisteredEvents
     .filter(e => !e.title?.toLowerCase().includes('konfirmation') && !e.name?.toLowerCase().includes('konfirmation'))
-    .slice(0, 3);
+    .slice(0, 3),
+  [myRegisteredEvents]);
 
   const nextConfirmationEvent = confirmationEvents.length > 0 ? confirmationEvents[0] : null;
+
+  // Badge-Berechnungen memoisiert
+  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: any) => b.id)), [allBadges.earned]);
+  const recentBadgeIds = useMemo(() => new Set(dashboardData.recent_badges?.map((b: any) => b.id) || []), [dashboardData.recent_badges]);
+
+  const visibleBadges = useMemo(() => [
+    ...allBadges.earned.filter((b: any) => !b.is_hidden),
+    ...allBadges.available.filter((b: any) => !earnedIds.has(b.id) && !b.is_hidden)
+  ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), [allBadges, earnedIds]);
+
+  const secretEarned = useMemo(() => allBadges.earned.filter((b: any) => b.is_hidden), [allBadges.earned]);
+  const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
   return (
     <div style={{ padding: '16px' }}>
@@ -1013,23 +1028,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Badge Icons Grid - wie Level Icons */}
-            {(() => {
-              // Kombiniere alle Badges: earned + available (nicht earned)
-              const earnedIds = new Set(allBadges.earned.map((b: any) => b.id));
-              const recentBadgeIds = new Set(dashboardData.recent_badges?.map((b: any) => b.id) || []);
-
-              // Sichtbare Badges (nicht hidden, ausser sie sind earned)
-              const visibleBadges = [
-                ...allBadges.earned.filter((b: any) => !b.is_hidden),
-                ...allBadges.available.filter((b: any) => !earnedIds.has(b.id) && !b.is_hidden)
-              ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-
-              // Geheime Badges (hidden) - zeige nur erreichte + Platzhalter für nicht erreichte
-              const secretEarned = allBadges.earned.filter((b: any) => b.is_hidden);
-              const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
-
-              return (
-                <>
+            <>
                   {/* Sichtbare Badges */}
                   <div style={{
                     display: 'flex',
@@ -1229,9 +1228,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                     </>
                   )}
-                </>
-              );
-            })()}
+            </>
 
             {/* Link zu allen Badges */}
             <div

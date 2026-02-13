@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   IonCard,
   IonCardContent,
@@ -93,12 +93,16 @@ const EventsView: React.FC<EventsViewProps> = ({
     });
   };
 
-  const allEvents = events.length;
-  const konfirmationEvents = events.filter(e => e.category_names?.toLowerCase().includes('konfirmation'));
-  const nonKonfirmationEvents = events.filter(e => !e.category_names?.toLowerCase().includes('konfirmation'));
+  const konfirmationEvents = useMemo(() =>
+    events.filter(e => e.category_names?.toLowerCase().includes('konfirmation')),
+  [events]);
 
-  const eventCounts = {
-    all: allEvents,
+  const nonKonfirmationEvents = useMemo(() =>
+    events.filter(e => !e.category_names?.toLowerCase().includes('konfirmation')),
+  [events]);
+
+  const eventCounts = useMemo(() => ({
+    all: events.length,
     upcoming: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
     registered: events.filter(e => e.is_registered).length,
     registeredUpcoming: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length,
@@ -106,7 +110,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     konfirmation: konfirmationEvents.length,
     konfirmationUpcoming: konfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
     konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
-  };
+  }), [events, konfirmationEvents, nonKonfirmationEvents]);
 
   const getStatLabelsAndCounts = () => {
     switch (activeTab) {
