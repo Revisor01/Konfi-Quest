@@ -1022,8 +1022,8 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
 
     // Auto-capitalize after period, question mark, exclamation mark followed by space
-    const lastTwoChars = messageText.slice(-2);
-    if ((lastTwoChars.endsWith('. ') || lastTwoChars.endsWith('? ') || lastTwoChars.endsWith('! ')) && value.length > messageText.length) {
+    const lastTwoChars = value.slice(-3, -1);
+    if ((lastTwoChars.endsWith('. ') || lastTwoChars.endsWith('? ') || lastTwoChars.endsWith('! '))) {
       const newChar = value.slice(-1);
       if (newChar !== newChar.toUpperCase() && /[a-zäöü]/.test(newChar)) {
         setMessageText(value.slice(0, -1) + newChar.toUpperCase());
@@ -1096,15 +1096,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
     setSelectedFile(null);
     setSelectedFilePreview(null);
-  };
-
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleLongPress = async (message: Message) => {

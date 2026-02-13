@@ -183,6 +183,33 @@ const registerLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Rate Limiter fuer Chat-Nachrichten (Spam-Schutz)
+const chatMessageLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 Minute
+  max: 30, // Max 30 Nachrichten pro Minute
+  message: { error: 'Zu viele Nachrichten. Bitte warte einen Moment.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate Limiter fuer Event-Buchungen
+const eventBookingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 20, // Max 20 Buchungen pro 15 Minuten
+  message: { error: 'Zu viele Buchungsanfragen. Bitte versuche es spaeter erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate Limiter fuer File-Uploads
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 30, // Max 30 Uploads pro 15 Minuten
+  message: { error: 'Zu viele Uploads. Bitte versuche es spaeter erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // ====================================================================
 // MIDDLEWARE SETUP
 // ====================================================================
@@ -373,11 +400,19 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes(db, verifyToken, transporter, SMTP_CONFIG, { authLimiter, registerLimiter }));
 app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload, requestUpload));
+
+// Chat: Nachrichten-Endpunkt mit eigenem Rate-Limiter, Upload-Endpunkt ebenfalls
+app.post('/api/chat/rooms/:roomId/messages', chatMessageLimiter, uploadLimiter);
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
 
 app.use('/api/notifications', notificationsRoutes(db, verifyToken));
 
+// Events: Buchungs-Endpunkt mit eigenem Rate-Limiter
+app.post('/api/events/:id/book', eventBookingLimiter);
 app.use('/api/events', eventsRoutes(db, rbacVerifier, roleHelpers, badgesRouter.checkAndAwardBadges));
+
+// Konfi: Foto-Upload mit Rate-Limiter
+app.post('/api/konfi/upload-photo', uploadLimiter);
 app.use('/api/settings', settingsRoutes(db, rbacVerifier, roleHelpers));
 
 app.use('/api/admin/activities', activitiesRouter);
