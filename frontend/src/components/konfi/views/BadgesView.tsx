@@ -495,7 +495,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           setPopoverEvent(null);
         }}
         className="badge-detail-popover"
-        style={{ '--width': '260px', '--background': 'white' } as any}
+        style={{ '--width': 'auto', '--min-width': '220px', '--max-width': '85vw', '--background': 'white' } as any}
       >
         {selectedBadge && (
           <div style={{ padding: '12px', background: 'white' }}>
@@ -528,7 +528,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
               {/* Text Content */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
                   {selectedBadge.name}
                 </h3>
                 <p style={{

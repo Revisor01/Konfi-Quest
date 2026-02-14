@@ -597,7 +597,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
                   <div className="app-info-row__content">
                     {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
-                    {(eventData as any).waitlist_position && ` (Du: Platz ${(eventData as any).waitlist_position})`}
+                    {(eventData as any).waitlist_position && <span style={{ fontWeight: '700' }}> (Du: Platz {(eventData as any).waitlist_position})</span>}
                   </div>
                 </div>
               )}
@@ -792,9 +792,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 height: '48px',
                 borderRadius: '12px',
                 fontWeight: '600',
-                '--background': '#1e7e34',
-                '--background-activated': '#155724',
-                '--background-hover': '#1c7430',
+                '--background': '#34c759',
+                '--background-activated': '#2da84e',
+                '--background-hover': '#30b853',
                 '--color': 'white'
               }}
               onClick={handleRegister}

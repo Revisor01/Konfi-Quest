@@ -184,6 +184,16 @@ ion-item.app-list-item:last-child {
   border-color: #2dd36f;
   background: rgba(45, 211, 111, 0.08);
 }
+/* Selected State fuer List Items - Info (Blau) */
+.app-list-item--info.app-list-item--selected {
+  border-color: #007aff;
+  background: rgba(0, 122, 255, 0.08);
+}
+/* Selected State fuer List Items - Success (Gruen) */
+.app-list-item--success.app-list-item--selected {
+  border-color: #34c759;
+  background: rgba(52, 199, 89, 0.08);
+}
 
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
 .app-reason-box {

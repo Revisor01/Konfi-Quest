@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -21,7 +21,6 @@ import {
   IonListHeader,
   IonAccordion,
   IonAccordionGroup,
-  IonSearchbar,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -35,7 +34,8 @@ import {
   starOutline,
   homeOutline,
   peopleOutline,
-  imageOutline
+  imageOutline,
+  pricetag
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -65,7 +65,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [searchText, setSearchText] = useState('');
 
   const [formData, setFormData] = useState({
     activity_id: '',
@@ -74,6 +73,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
     photo_file: null as File | null
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
 
   useEffect(() => {
     loadActivities();
@@ -205,12 +205,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const selectedActivity = activities.find(a => a.id.toString() === formData.activity_id);
 
-  // Filter activities by search text
-  const filteredActivities = activities.filter(activity =>
-    activity.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    activity.category_names?.toLowerCase().includes(searchText.toLowerCase())
-  );
-
   return (
     <IonPage>
       <IonHeader>
@@ -243,7 +237,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '0' }}>
-              <IonAccordionGroup>
+              <IonAccordionGroup ref={accordionGroupRef}>
                 <IonAccordion value="activity-picker">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
@@ -252,76 +246,72 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       </h3>
                       {selectedActivity && (
                         <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
-                          {selectedActivity.name} ({selectedActivity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})
+                          {selectedActivity.name}
                         </p>
                       )}
                     </IonLabel>
                   </IonItem>
                   <div slot="content" style={{ padding: '0 16px 16px' }}>
-                    {/* Suchfeld */}
-                    <IonSearchbar
-                      value={searchText}
-                      onIonInput={(e) => setSearchText(e.detail.value || '')}
-                      placeholder="Aktivität suchen..."
-                      style={{ '--background': '#f5f5f5', '--border-radius': '12px', padding: '0', marginBottom: '8px' }}
-                    />
-
                     {/* Aktivitäten Liste */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '300px', overflowY: 'auto' }}>
-                      {filteredActivities.length === 0 ? (
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {activities.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
                           Keine Aktivitäten gefunden
                         </div>
                       ) : (
-                        filteredActivities.map(activity => {
+                        activities.map(activity => {
                           const isSelected = formData.activity_id === activity.id.toString();
-                          const typeColor = activity.type === 'gottesdienst' ? '#3b82f6' : '#059669';
+                          const colorVariant = activity.type === 'gottesdienst' ? 'info' : 'activities';
+                          const typeColor = activity.type === 'gottesdienst' ? '#007aff' : '#059669';
 
                           return (
                             <div
                               key={activity.id}
-                              onClick={() => setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }))}
-                              className={`app-list-item ${activity.type === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--success'}`}
-                              style={{
-                                cursor: 'pointer',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                padding: '12px 14px',
-                                minHeight: '52px',
-                                background: isSelected ? `${typeColor}15` : undefined,
-                                border: isSelected ? `2px solid ${typeColor}` : undefined
+                              className={`app-list-item app-list-item--${colorVariant}${isSelected ? ' app-list-item--selected' : ''}`}
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
+                                if (accordionGroupRef.current) {
+                                  accordionGroupRef.current.value = undefined;
+                                }
                               }}
+                              style={{ cursor: 'pointer', position: 'relative' }}
                             >
-                              {/* Corner Badge für Punkte */}
-                              <div
-                                className="app-corner-badge"
-                                style={{ backgroundColor: typeColor }}
-                              >
+                              {/* Punkte Eselsohr oben rechts */}
+                              <div style={{
+                                position: 'absolute',
+                                top: '0',
+                                right: '0',
+                                background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                                borderRadius: '0 10px 0 10px',
+                                padding: '3px 8px',
+                                fontSize: '0.65rem',
+                                fontWeight: '700',
+                                color: 'white',
+                                whiteSpace: 'nowrap'
+                              }}>
                                 +{activity.points}P
                               </div>
 
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
-                                  <div className={`app-icon-circle ${activity.type === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success'}`} style={{ width: '32px', height: '32px', minWidth: '32px', fontSize: '0.85rem' }}>
+                                  {/* Icon */}
+                                  <div className={`app-icon-circle app-icon-circle--${colorVariant}`}>
                                     <IonIcon icon={activity.type === 'gottesdienst' ? homeOutline : peopleOutline} />
                                   </div>
-                                  <div className="app-list-item__content" style={{ paddingRight: '44px' }}>
-                                    <div className="app-list-item__title" style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'normal', fontSize: '0.88rem', lineHeight: '1.3' }}>
+
+                                  {/* Content */}
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
                                       {activity.name}
-                                      {isSelected && (
-                                        <IonIcon icon={checkmarkCircle} style={{ color: typeColor, fontSize: '0.9rem', flexShrink: 0 }} />
-                                      )}
                                     </div>
-                                    <div className="app-list-item__meta">
-                                      <span className="app-list-item__meta-item">
-                                        {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                                      </span>
-                                      {activity.category_names && (
+                                    {activity.category_names && (
+                                      <div className="app-list-item__meta">
                                         <span className="app-list-item__meta-item">
+                                          <IonIcon icon={pricetag} style={{ color: '#8b5cf6' }} />
                                           {activity.category_names}
                                         </span>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -401,9 +391,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 onClick={handlePhotoSelect}
                 style={{
                   padding: '16px',
-                  backgroundColor: photoPreview ? 'rgba(34, 197, 94, 0.08)' : 'transparent',
+                  backgroundColor: photoPreview ? 'rgba(5, 150, 105, 0.08)' : 'transparent',
                   borderRadius: '10px',
-                  border: photoPreview ? '1px solid rgba(34, 197, 94, 0.2)' : '1px dashed #c7c7cc',
+                  border: photoPreview ? '1px solid rgba(5, 150, 105, 0.2)' : '1px dashed #c7c7cc',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
@@ -413,9 +403,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <IonIcon
                         icon={checkmarkCircle}
-                        style={{ fontSize: '1.2rem', color: '#22c55e' }}
+                        style={{ fontSize: '1.2rem', color: '#059669' }}
                       />
-                      <span style={{ fontWeight: '600', color: '#22c55e' }}>
+                      <span style={{ fontWeight: '600', color: '#059669' }}>
                         Foto ausgewählt
                       </span>
                     </div>
@@ -435,7 +425,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
                     <IonIcon
                       icon={camera}
-                      style={{ fontSize: '1.2rem', color: '#22c55e' }}
+                      style={{ fontSize: '1.2rem', color: '#059669' }}
                     />
                     <span style={{ fontWeight: '500', color: '#666' }}>
                       Foto hinzufügen

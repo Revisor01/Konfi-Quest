@@ -250,8 +250,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                         const typeBadgeLabel = getTypeBadgeLabel(entry.source_type);
 
                         // Farbe basiert auf category (blau/grün)
-                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--success';
-                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--success';
+                        const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities';
+                        const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--activities';
 
                         return (
                           <div

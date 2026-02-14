@@ -752,9 +752,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       backdropFilter: 'blur(10px)',
                       borderRadius: '12px',
                       padding: '12px 16px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
                       border: event.cancelled
                         ? '2px dashed rgba(255,255,255,0.3)'
                         : isWaitlist
@@ -763,12 +762,37 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       cursor: 'pointer',
                       transition: 'transform 0.2s ease, background 0.2s ease'
                     }}>
-                    <div style={{ flex: 1 }}>
+                    {/* Eselsohr oben rechts */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '0',
+                      right: '0',
+                      background: event.cancelled
+                        ? 'rgba(255,255,255,0.3)'
+                        : isWaitlist
+                          ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                          : 'rgba(255,255,255,0.25)',
+                      borderRadius: '0 10px 0 10px',
+                      padding: '4px 10px',
+                      fontSize: '0.65rem',
+                      fontWeight: '600',
+                      color: 'white',
+                      whiteSpace: 'nowrap',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.3px'
+                    }}>
+                      {event.cancelled ? 'ABGESAGT' :
+                       isWaitlist ?
+                         `Warteliste #${event.waitlist_position || '?'}` :
+                         formatTimeUntil(event.event_date || event.date)}
+                    </div>
+                    <div>
                       <div style={{
                         fontSize: '1rem',
                         fontWeight: '700',
                         color: 'white',
                         marginBottom: '4px',
+                        paddingRight: '80px',
                         textDecoration: event.cancelled ? 'line-through' : 'none'
                       }}>
                         {event.title || event.name}
@@ -810,25 +834,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           </div>
                         )}
                       </div>
-                    </div>
-                    <div style={{
-                      background: event.cancelled
-                        ? 'rgba(255,255,255,0.2)'
-                        : isWaitlist
-                          ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                          : 'rgba(255,255,255,0.25)',
-                      borderRadius: '8px',
-                      padding: '6px 10px',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      color: 'white',
-                      whiteSpace: 'nowrap',
-                      boxShadow: isWaitlist ? '0 2px 8px rgba(245, 158, 11, 0.4)' : 'none'
-                    }}>
-                      {event.cancelled ? 'ABGESAGT' :
-                       isWaitlist ?
-                         `WARTELISTE #${event.waitlist_position || '?'}` :
-                         `In ${formatTimeUntil(event.event_date || event.date)}`}
                     </div>
                   </div>
                 );
@@ -1533,7 +1538,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* Level Popover - mit solidem Hintergrund */}
+      {/* Level Popover - wie Badge Popover */}
       <IonPopover
         isOpen={levelPopover.isOpen}
         event={levelPopover.event}
@@ -1541,107 +1546,105 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         side="top"
         alignment="center"
         style={{
-          '--background': '#ffffff'
-        }}
+          '--width': 'auto',
+          '--min-width': '220px',
+          '--max-width': '85vw',
+          '--background': 'white'
+        } as any}
       >
         {levelPopover.level && (
-          <div style={{
-            padding: '16px',
-            textAlign: 'center',
-            minWidth: '180px',
-            background: '#ffffff'
-          }}>
-            {/* Level Icon */}
+          <div style={{ padding: '12px', background: 'white' }}>
+            {/* Kompakte Darstellung wie Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Level Icon */}
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: levelPopover.isReached
+                  ? `linear-gradient(145deg, ${levelPopover.level.color || '#667eea'} 0%, ${levelPopover.level.color || '#667eea'}cc 100%)`
+                  : 'linear-gradient(145deg, #d0d0d0 0%, #b8b8b8 100%)',
+                boxShadow: levelPopover.isReached
+                  ? `0 2px 8px ${levelPopover.level.color || '#667eea'}40`
+                  : '0 1px 4px rgba(0,0,0,0.1)'
+              }}>
+                <IonIcon
+                  icon={getIconFromString(levelPopover.level.icon)}
+                  style={{
+                    fontSize: '1.4rem',
+                    color: levelPopover.isReached ? 'white' : '#999'
+                  }}
+                />
+              </div>
+
+              {/* Text Content */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
+                  {levelPopover.level.title}
+                </h3>
+                <p style={{
+                  margin: '0',
+                  fontSize: '0.8rem',
+                  color: '#666',
+                  lineHeight: '1.3'
+                }}>
+                  {levelPopover.level.points_required} Punkte erforderlich
+                </p>
+              </div>
+            </div>
+
+            {/* Status */}
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: levelPopover.isReached
-                ? `linear-gradient(135deg, ${levelPopover.level.color || '#667eea'} 0%, ${levelPopover.level.color || '#667eea'}dd 100%)`
-                : '#e5e7eb',
+              marginTop: '10px',
+              paddingTop: '10px',
+              borderTop: '1px solid #eee',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px auto',
-              boxShadow: levelPopover.isReached
-                ? `0 4px 12px ${levelPopover.level.color || '#667eea'}50`
-                : 'none'
+              justifyContent: 'space-between'
             }}>
-              <IonIcon
-                icon={getIconFromString(levelPopover.level.icon)}
-                style={{
-                  fontSize: '1.5rem',
-                  color: levelPopover.isReached ? 'white' : '#9ca3af'
-                }}
-              />
-            </div>
-
-            {/* Level Title */}
-            <div style={{
-              fontWeight: '700',
-              fontSize: '1.1rem',
-              color: levelPopover.level.color || '#667eea',
-              marginBottom: '8px'
-            }}>
-              {levelPopover.level.title}
-            </div>
-
-            {/* Points Required */}
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#666',
-              marginBottom: '12px'
-            }}>
-              {levelPopover.level.points_required} Punkte erforderlich
-            </div>
-
-            {/* Status Badge */}
-            <div style={{
-              display: 'inline-block',
-              padding: '6px 14px',
-              borderRadius: '12px',
-              fontSize: '0.8rem',
-              fontWeight: '600',
-              background: levelPopover.isReached ? '#dcfce7' : '#f3f4f6',
-              color: levelPopover.isReached ? '#16a34a' : '#6b7280'
-            }}>
-              {levelPopover.isReached ? 'Erreicht!' : 'Noch nicht erreicht'}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: levelPopover.isReached ? '#22c55e' : '#8e8e93',
+                color: 'white',
+                padding: '3px 8px',
+                borderRadius: '8px',
+                fontSize: '0.7rem',
+                fontWeight: '600'
+              }}>
+                {levelPopover.isReached && <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.75rem' }} />}
+                {levelPopover.isReached ? 'Erreicht' : 'Noch nicht erreicht'}
+              </div>
             </div>
           </div>
         )}
       </IonPopover>
 
-      {/* Badge Popover - kompakt wie BadgesView */}
+      {/* Badge Popover - identisch zu BadgesView */}
       <IonPopover
         isOpen={badgePopover.isOpen}
         event={badgePopover.event}
         onDidDismiss={() => setBadgePopover({ isOpen: false, event: undefined, badge: null, isEarned: false })}
         side="top"
         alignment="center"
+        className="badge-detail-popover"
         style={{
-          '--width': '260px',
+          '--width': 'auto',
+          '--min-width': '220px',
+          '--max-width': '85vw',
           '--background': 'white'
         } as any}
       >
         {badgePopover.badge && (
-          <div style={{ padding: '12px', background: 'white', position: 'relative', overflow: 'hidden' }}>
-            {/* Geheim Eselsohr */}
-            {badgePopover.badge.is_hidden && (
-              <div
-                className="app-corner-badge"
-                style={{
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)',
-                  fontSize: '0.5rem',
-                  padding: '3px 8px'
-                }}
-              >
-                GEHEIM
-              </div>
-            )}
-
+          <div style={{ padding: '12px', background: 'white' }}>
             {/* Kompakte Darstellung */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Badge Icon - kleiner */}
+              {/* Badge Icon */}
               <div style={{
                 width: '48px',
                 height: '48px',
@@ -1668,7 +1671,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
               {/* Text Content */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
                   {badgePopover.badge.name}
                 </h3>
                 <p style={{
