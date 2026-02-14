@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  IonButton,
   IonCard,
   IonCardContent,
   IonIcon,
@@ -793,26 +794,23 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         </IonCard>
       </IonList>
 
-      {/* Logout - groß und rot */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <div
-              className="app-list-item app-list-item--danger"
-              onClick={handleLogout}
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-            >
-              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                <IonIcon icon={logOutOutline} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
-                <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
-              </div>
-            </div>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      {/* Logout */}
+      <div style={{ padding: '0 16px', marginTop: '16px' }}>
+        <IonButton
+          expand="block"
+          fill="outline"
+          color="danger"
+          onClick={handleLogout}
+          style={{
+            height: '48px',
+            borderRadius: '12px',
+            fontWeight: '600'
+          }}
+        >
+          <IonIcon icon={logOutOutline} slot="start" />
+          Abmelden
+        </IonButton>
+      </div>
 
       <div style={{ height: '32px' }}></div>
     </div>

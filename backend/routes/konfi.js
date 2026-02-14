@@ -105,9 +105,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       const bonusPointsTotal = parseInt(bonusPointsResult.bonus_total, 10) || 0;
 
-      // Total points: konfi_profiles already contains gottesdienst + gemeinde (incl. event_points)
-      // Only add bonus_points separately (event_points are already added to gottesdienst/gemeinde when awarded)
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0) + bonusPointsTotal;
+      // Total points: konfi_profiles contains gottesdienst + gemeinde (inkl. Events UND Bonus)
+      // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren
+      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
       const userRankingQuery = `
         WITH MyRank AS (
           SELECT 
@@ -351,9 +351,10 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
 
       // Get ranking position
+      // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren
       const gottesdienstPoints = parseInt(konfi.gottesdienst_points || 0);
       const gemeindePoints = parseInt(konfi.gemeinde_points || 0);
-      const totalPoints = gottesdienstPoints + gemeindePoints + bonusPoints;
+      const totalPoints = gottesdienstPoints + gemeindePoints;
       const rankingQuery = `
         WITH MyRank AS (
           SELECT 
@@ -488,18 +489,21 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const bonusTotal = bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0);
       const eventTotal = eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0);
 
-      // Use konfi_profiles as source of truth for GD/Gemeinde (includes event_points already)
-      // But event_points are ALSO in konfi_profiles, so we need to subtract them to show separately
+      // konfi_profiles enthält bereits Events UND Bonus in gottesdienst_points/gemeinde_points
+      // Um "reine Aktivitäten" zu zeigen, Events und Bonus subtrahieren
       const eventGD = eventPoints.filter(e => e.category === 'gottesdienst').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
       const eventGemeinde = eventPoints.filter(e => e.category === 'gemeinde').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
+      const bonusGD = bonusPoints.filter(b => b.category === 'gottesdienst').reduce((sum, b) => sum + parseInt(b.points || 0), 0);
+      const bonusGemeinde = bonusPoints.filter(b => b.category === 'gemeinde').reduce((sum, b) => sum + parseInt(b.points || 0), 0);
 
       const totals = {
-        gottesdienst: (konfiProfile?.gottesdienst_points || 0) - eventGD,
-        gemeinde: (konfiProfile?.gemeinde_points || 0) - eventGemeinde,
+        gottesdienst: (konfiProfile?.gottesdienst_points || 0) - eventGD - bonusGD,
+        gemeinde: (konfiProfile?.gemeinde_points || 0) - eventGemeinde - bonusGemeinde,
         bonus: bonusTotal,
         event: eventTotal
       };
-      totals.total = (konfiProfile?.gottesdienst_points || 0) + (konfiProfile?.gemeinde_points || 0) + bonusTotal;
+      // konfi_profiles enthält bereits alles (Aktivitäten + Events + Bonus)
+      totals.total = (konfiProfile?.gottesdienst_points || 0) + (konfiProfile?.gemeinde_points || 0);
 
       res.json({
         history: allPoints,
