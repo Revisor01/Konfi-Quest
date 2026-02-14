@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -9,15 +8,7 @@ import {
   IonButtons,
   IonIcon,
   IonTextarea,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonAvatar,
-  IonProgressBar,
-  IonChip,
   IonFooter,
-  IonInput,
-  IonText,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
@@ -28,45 +19,20 @@ import {
   arrowBack,
   send,
   attach,
-  camera,
-  document,
-  image,
   barChart,
-  download,
-  trash,
-  trashOutline,
-  checkmark,
-  chatbubbles,
   people,
-  images,
-  folder,
-  chevronForward,
-  time,
   returnUpBack,
-  closeCircle,
-  thumbsUpOutline,
-  thumbsUp,
-  heartOutline,
-  heart,
-  happyOutline,
-  happy,
-  alertCircleOutline,
-  alertCircle,
-  sadOutline,
-  sad,
-  handLeftOutline,
-  handLeft,
-  addOutline,
-  arrowUndoOutline,
-  shareOutline
+  closeCircle
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket, joinRoom, leaveRoom, disconnectWebSocket } from '../../services/websocket';
+import { Message, Reaction, ChatRoomProps as ChatRoomComponentProps } from '../../types/chat';
+import { formatFileSize } from '../../utils/helpers';
+import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
-import LoadingSpinner from '../common/LoadingSpinner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
@@ -74,447 +40,9 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 
-// Utility function für Dateigröße
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-// VideoPreview Komponente mit Blob-URLs und korrektem MIME-Type
-const VideoPreview: React.FC<{
-  message: Message;
-  onError: (error: string) => void;
-}> = ({ message, onError }) => {
-  const [videoUrl, setVideoUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  
-  useEffect(() => {
-    const loadVideoBlob = async () => {
-      try {
- console.log('Loading video:', message.file_name, 'from path:', message.file_path);
-        setLoading(true);
-        setHasError(false);
-        
-        // Download video als Blob mit korrekter Authentication
-        const response = await api.get(`/chat/files/${message.file_path}`, {
-          responseType: 'blob'
-        });
-        
-        const blob = response.data;
- console.log('Video blob loaded:', blob.type, blob.size, 'bytes');
-        
-        // Korrekten MIME-Type basierend auf Dateiendung setzen
-        const fileName = message.file_name?.toLowerCase() || '';
-        let mimeType = blob.type;
-        
-        // Fallback für korrekte MIME-Types wenn Server "application/octet-stream" sendet
-        if (!mimeType || mimeType === 'application/octet-stream') {
-          if (fileName.endsWith('.mov')) {
-            mimeType = 'video/quicktime';
-          } else if (fileName.endsWith('.mp4')) {
-            mimeType = 'video/mp4';
-          } else if (fileName.endsWith('.webm')) {
-            mimeType = 'video/webm';
-          } else if (fileName.endsWith('.avi')) {
-            mimeType = 'video/x-msvideo';
-          } else if (fileName.endsWith('.m4v')) {
-            mimeType = 'video/x-m4v';
-          } else {
-            mimeType = 'video/mp4'; // Default fallback
-          }
-        }
-        
-        // Neue Blob mit korrektem MIME-Type erstellen
-        const correctedBlob = new Blob([blob], { type: mimeType });
-        const blobUrl = URL.createObjectURL(correctedBlob);
-        
- console.log('Video URL created:', blobUrl);
- console.log('MIME-Type corrected from', blob.type, 'to', mimeType);
-        
-        setVideoUrl(blobUrl);
-        setLoading(false);
-      } catch (error) {
- console.error('Error loading video blob:', error);
-        setHasError(true);
-        setLoading(false);
-        onError('Fehler beim Laden des Videos');
-      }
-    };
-    
-    if (message.file_path) {
-      loadVideoBlob();
-    }
-    
-    // Cleanup: Revoke object URL when component unmounts
-    return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [message.file_path]);
-  
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showControls, setShowControls] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const handleVideoClick = async () => {
-    try {
-      await Haptics.impact({ style: ImpactStyle.Light });
-      
-      if (videoRef.current) {
-        if (isPlaying) {
-          videoRef.current.pause();
-          setIsPlaying(false);
-        } else {
-          await videoRef.current.play();
-          setIsPlaying(true);
-          setShowControls(true);
-          
-          // Hide controls after 3 seconds
-          setTimeout(() => {
-            if (isPlaying) {
-              setShowControls(false);
-            }
-          }, 3000);
-        }
-      }
-    } catch (error) {
- console.error('Video play error:', error);
-      onError('Fehler beim Abspielen des Videos');
-    }
-  };
-  
-  const handleVideoEnd = () => {
-    setIsPlaying(false);
-    setShowControls(false);
-  };
-  
-  if (loading) {
-    return (
-      <div style={{ 
-        position: 'relative', 
-        maxWidth: '280px', 
-        height: '200px',
-        borderRadius: '12px', 
-        backgroundColor: '#1e1e1e',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ color: 'white', opacity: 0.7 }}>Video wird geladen...</div>
-      </div>
-    );
-  }
-  
-  if (hasError) {
-    return (
-      <div style={{ 
-        position: 'relative', 
-        maxWidth: '280px', 
-        height: '200px',
-        borderRadius: '12px', 
-        backgroundColor: '#1e1e1e',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ color: 'white', opacity: 0.7 }}>Fehler beim Laden</div>
-      </div>
-    );
-  }
-  
-  return (
-    <div style={{ position: 'relative', maxWidth: '280px', borderRadius: '12px', overflow: 'hidden' }}>
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        style={{
-          width: '100%',
-          height: 'auto',
-          maxHeight: '200px',
-          minHeight: '120px',
-          display: 'block',
-          borderRadius: '12px',
-          backgroundColor: '#000',
-          cursor: 'pointer',
-          objectFit: 'cover',
-          border: '1px solid rgba(255,255,255,0.1)'
-        }}
-        preload="metadata"
-        muted={!isPlaying}
-        playsInline
-        controls={showControls}
-        onClick={handleVideoClick}
-        onEnded={handleVideoEnd}
-        onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
-        onError={(e) => {
- console.error('Video element error for:', message.file_name, e);
- console.log('Video src:', e.currentTarget.src);
- console.log('Is MOV video:', message.file_name?.toLowerCase().includes('.mov'));
-          setHasError(true);
-          onError('Video kann nicht abgespielt werden');
-        }}
-        onLoadedMetadata={async (e) => {
-          const video = e.currentTarget;
- console.log('Video metadata loaded for:', message.file_name, {
-            duration: video.duration,
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            readyState: video.readyState,
-            networkState: video.networkState,
-            poster: video.poster,
-            currentSrc: video.currentSrc
-          });
-          
-          // Trick: Video kurz abspielen und sofort pausieren um Thumbnail zu zeigen
-          try {
-            video.currentTime = 0.1; // Gehe zu 0.1 Sekunden für ersten Frame
-            await video.play();
-            video.pause();
-            video.currentTime = 0; // Zurück zum Anfang
- console.log('Thumbnail generated for:', message.file_name);
-          } catch (error) {
- console.log('Thumbnail generation failed for:', message.file_name, error);
-          }
-        }}
-        onLoadedData={() => {
- console.log('Video data loaded for:', message.file_name);
-        }}
-        onCanPlay={() => {
- console.log('▶ Video can play for:', message.file_name);
-        }}
-        onLoadStart={() => {
- console.log('Video load started for:', message.file_name);
-        }}
-        onProgress={(e) => {
-          const video = e.currentTarget;
-          if (video.buffered.length > 0) {
- console.log('Video buffering progress for:', message.file_name, 
-              'buffered:', video.buffered.end(0), 'of', video.duration);
-          }
-        }}
-      />
-      
-      {/* Play/Pause Button Overlay - nur wenn nicht abgespielt wird */}
-      {!isPlaying && (
-        <div 
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '60px',
-            height: '60px',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            pointerEvents: 'none',
-            transition: 'all 0.3s ease',
-            zIndex: 10
-          }}
-        >
-          <div style={{
-            width: '0',
-            height: '0',
-            borderLeft: '20px solid white',
-            borderTop: '12px solid transparent',
-            borderBottom: '12px solid transparent',
-            marginLeft: '4px'
-          }} />
-        </div>
-      )}
-      
-      {/* File Size Badge */}
-      <div style={{
-        position: 'absolute',
-        bottom: '8px',
-        right: '8px',
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '4px 8px',
-        borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: '500',
-        pointerEvents: 'none',
-        zIndex: 5
-      }}>
-        {message.file_size && formatFileSize(message.file_size)}
-      </div>
-      
-    </div>
-  );
-};
-
-// Lazy Loading Image Component
-const LazyImage: React.FC<{
-  filePath: string;
-  fileName: string;
-  onError: () => void;
-  onClick: () => void;
-}> = ({ filePath, fileName, onError, onClick }) => {
-  const [imageSrc, setImageSrc] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      async (entries) => {
-        if (entries[0].isIntersecting && !imageSrc) {
-          setIsLoading(true);
-          try {
-            const response = await api.get(`/chat/files/${filePath}`, {
-              responseType: 'blob'
-            });
-            const blob = response.data;
-            const imageUrl = URL.createObjectURL(blob);
-            setImageSrc(imageUrl);
-          } catch (error) {
- console.error('Error loading lazy image:', error);
-            onError();
-          } finally {
-            setIsLoading(false);
-          }
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [filePath, imageSrc, onError]);
-
-  return (
-    <div
-      ref={imgRef}
-      style={{
-        maxWidth: '100%',
-        maxHeight: '300px',
-        borderRadius: '8px',
-        backgroundColor: '#f0f0f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: imageSrc ? 'pointer' : 'default',
-        minHeight: '100px'
-      }}
-      onClick={imageSrc ? onClick : undefined}
-    >
-      {isLoading ? (
-        <div style={{ color: '#666', fontSize: '0.9rem' }}>
-          Bild wird geladen...
-        </div>
-      ) : imageSrc ? (
-        <img
-          src={imageSrc}
-          alt={fileName}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '300px',
-            borderRadius: '8px',
-            objectFit: 'cover'
-          }}
-        />
-      ) : (
-        <div style={{ color: '#999', fontSize: '0.8rem' }}>
-          Bild konnte nicht geladen werden
-        </div>
-      )}
-    </div>
-  );
-};
 
 
-interface Reaction {
-  id: number;
-  emoji: string;
-  user_id: number;
-  user_type: 'admin' | 'konfi';
-  user_name: string;
-}
-
-interface Message {
-  id: number;
-  content: string;
-  sender_id: number;
-  sender_name: string;
-  sender_role_title?: string; // z.B. "Pastor", "Diakonin"
-  sender_role_display_name?: string; // z.B. "Admin", "Teamer"
-  sender_type: 'admin' | 'konfi';
-  created_at: string;
-  file_path?: string;
-  file_name?: string;
-  file_size?: number;
-  message_type: 'text' | 'file' | 'poll' | 'image' | 'video';
-  is_deleted?: number; // 1 if deleted, 0 if not
-  // Poll-Daten direkt in der Message
-  question?: string;
-  options?: string[];
-  votes?: any[];
-  multiple_choice?: boolean;
-  expires_at?: string;
-  poll_id?: number;
-  deleted?: boolean;
-  // Reply-Daten
-  reply_to?: number;
-  reply_to_id?: number;
-  reply_to_content?: string;
-  reply_to_file_name?: string;
-  reply_to_message_type?: string;
-  reply_to_sender_name?: string;
-  // Reaktionen
-  reactions?: Reaction[];
-}
-
-// Emoji-Mapping: Interne IDs zu Ionicons
-const REACTION_EMOJIS: { [key: string]: { outline: string; filled: string; label: string; color: string } } = {
-  like: { outline: thumbsUpOutline, filled: thumbsUp, label: 'Gefällt mir', color: '#3b82f6' },
-  heart: { outline: heartOutline, filled: heart, label: 'Liebe', color: '#ef4444' },
-  laugh: { outline: happyOutline, filled: happy, label: 'Lustig', color: '#f59e0b' },
-  wow: { outline: alertCircleOutline, filled: alertCircle, label: 'Wow', color: '#8b5cf6' },
-  sad: { outline: sadOutline, filled: sad, label: 'Traurig', color: '#6b7280' },
-  pray: { outline: handLeftOutline, filled: handLeft, label: 'Beten', color: '#10b981' }
-};
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  type: 'group' | 'direct' | 'jahrgang' | 'admin';
-  participants?: Array<{
-    user_id: number;
-    user_type: 'admin' | 'konfi';
-    name: string;
-    display_name?: string;
-  }>;
-}
-
-interface ChatRoomProps {
-  room: {
-    id: number;
-    name: string;
-    type: 'group' | 'direct' | 'jahrgang' | 'admin';
-    participants?: Array<{
-      user_id: number;
-      user_type: 'admin' | 'konfi';
-      name: string;
-      display_name?: string;
-    }>;
-  } | null;
-  onBack: () => void;
-  presentingElement: HTMLElement | undefined | null;
-}
-
-const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) => {
+const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
   const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
   const { refreshFromAPI } = useBadge();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1171,22 +699,6 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     }
   };
 
-  const formatMessageTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
-    if (isToday) {
-      return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    } else {
-      return date.toLocaleDateString('de-DE', { 
-        day: '2-digit', 
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-  };
 
   const getDisplayRoomName = () => {
       if (!room) return 'Chat wird geladen...';
@@ -1224,714 +736,53 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
     );
   }
 
-  const renderMessage = (message: Message) => {
-    const isOwnMessage = message.sender_id === user?.id && message.sender_type === user?.type;
-    
-    if (message.deleted) {
-      return (
-        <div key={message.id} style={{
-          display: 'flex',
-          justifyContent: 'center',
-          margin: '8px 16px'
-        }}>
-          <IonText color="medium" style={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
-            Diese Nachricht wurde gelöscht
-          </IonText>
-        </div>
-      );
+  const handleShareMessage = (message: Message) => {
+    setSelectedMessage(message);
+    handleShare();
+  };
+
+  const handleImageOrFileClick = async (filePath: string) => {
+    const fileName = filePath.split('/').pop() || 'file';
+    if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+      await openImageWithFileOpener(filePath);
+    } else if (fileName.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        const response = await api.get(`/chat/files/${filePath}`, {
+          responseType: 'blob'
+        });
+        const blob = response.data;
+        const base64Data = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(blob);
+        });
+        const path = `temp/${fileName}`;
+        await Filesystem.writeFile({
+          path,
+          data: base64Data,
+          directory: Directory.Documents,
+          recursive: true
+        });
+        const fileUri = await Filesystem.getUri({
+          directory: Directory.Documents,
+          path
+        });
+        await FileViewer.openDocumentFromLocalPath({
+          path: fileUri.uri
+        });
+      } catch (viewerError) {
+        console.warn('Native viewer failed, using fallback:', viewerError);
+        const fileUrl = `${api.defaults.baseURL}/chat/files/${filePath}`;
+        window.open(fileUrl, '_blank');
+      }
+    } else {
+      const fileUrl = `${api.defaults.baseURL}/chat/files/${filePath}`;
+      window.open(fileUrl, '_blank');
     }
-
-    return (
-      <div key={message.id} id={`msg-${message.id}`} style={{
-        display: 'flex',
-        flexDirection: isOwnMessage ? 'row-reverse' : 'row',
-        margin: '8px 16px',
-        alignItems: 'flex-end',
-        transition: 'background-color 0.3s ease'
-      }}>
-        {!isOwnMessage && room.type !== 'direct' && (
-          <IonAvatar style={{
-            width: '32px',
-            height: '32px',
-            marginRight: '8px',
-            backgroundColor: '#06b6d4'
-          }}>
-            <div style={{
-              color: 'white',
-              fontSize: '0.8rem',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%'
-            }}>
-              {(message.sender_name || 'U').charAt(0).toUpperCase()}
-            </div>
-          </IonAvatar>
-        )}
-        
-        <div
-          style={{
-            maxWidth: '70%',
-            backgroundColor: isOwnMessage ? '#06b6d4' : '#f8f9fa',
-            color: isOwnMessage ? 'white' : '#1a1a1a',
-            borderRadius: '18px',
-            padding: '10px 14px',
-            position: 'relative',
-            cursor: 'pointer',
-            boxShadow: isOwnMessage
-              ? '0 2px 8px rgba(6, 182, 212, 0.25)'
-              : '0 1px 4px rgba(0,0,0,0.08)'
-          }}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            handleLongPress(message);
-          }}
-          onTouchStart={(e) => {
-            const timeoutId = setTimeout(() => {
-              handleLongPress(message);
-            }, 500);
-            
-            const cleanup = () => {
-              clearTimeout(timeoutId);
-              e.target.removeEventListener('touchend', cleanup);
-              e.target.removeEventListener('touchmove', cleanup);
-              e.target.removeEventListener('touchcancel', cleanup);
-            };
-            
-            e.target.addEventListener('touchend', cleanup);
-            e.target.addEventListener('touchmove', cleanup);
-            e.target.addEventListener('touchcancel', cleanup);
-          }}
-        >
-          {!isOwnMessage && room.type !== 'direct' && (
-            <div style={{
-              fontSize: '0.75rem',
-              fontWeight: '600',
-              marginBottom: '4px',
-              color: '#06b6d4'
-            }}>
-              {message.sender_name || 'Unbekannter User'}
-              {(message.sender_role_title || message.sender_role_display_name) && (
-                <span style={{
-                  fontWeight: 'normal',
-                  color: '#8e8e93',
-                  marginLeft: '6px',
-                  fontSize: '0.7rem'
-                }}>
-                  ({message.sender_role_title || message.sender_role_display_name})
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Reply Anzeige */}
-          {message.reply_to_id && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation(); // Verhindere dass der Content-Click ausgelöst wird
-                // Scroll zur zitierten Nachricht
-                const replyElement = window.document.getElementById(`msg-${message.reply_to_id}`);
-                if (replyElement) {
-                  replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  // Kurz hervorheben
-                  replyElement.style.backgroundColor = 'rgba(6, 182, 212, 0.15)';
-                  setTimeout(() => {
-                    replyElement.style.backgroundColor = '';
-                  }, 1500);
-                }
-              }}
-              style={{
-                padding: '6px 10px',
-                marginBottom: '6px',
-                backgroundColor: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.08)',
-                borderRadius: '8px',
-                borderLeft: '3px solid #06b6d4',
-                cursor: 'pointer'
-              }}
-            >
-              <div style={{
-                fontSize: '0.7rem',
-                fontWeight: '600',
-                color: '#06b6d4',
-                marginBottom: '2px'
-              }}>
-                {message.reply_to_sender_name}
-              </div>
-              <div style={{
-                fontSize: '0.8rem',
-                color: '#666',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}>
-                {message.reply_to_message_type === 'image' || message.reply_to_message_type === 'video'
-                  ? (message.reply_to_file_name || 'Medieninhalt')
-                  : message.reply_to_message_type === 'file'
-                    ? (message.reply_to_file_name || 'Datei')
-                    : message.reply_to_message_type === 'poll'
-                      ? 'Umfrage'
-                      : (message.reply_to_content || '')}
-              </div>
-            </div>
-          )}
-
-          {message.is_deleted ? (
-            <div style={{
-              fontStyle: 'italic',
-              opacity: 0.6,
-              color: isOwnMessage ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.5)'
-            }}>
-              {message.content}
-            </div>
-          ) : message.message_type === 'poll' && message.question && message.options ? (
-            <div style={{
-              background: isOwnMessage ? 'white' : 'rgba(6, 182, 212, 0.06)',
-              borderRadius: '14px',
-              padding: '16px',
-              marginTop: '4px',
-              border: isOwnMessage ? '1px solid rgba(6, 182, 212, 0.15)' : '1px solid rgba(6, 182, 212, 0.15)',
-            }}>
-              {/* Frage mit Icon */}
-              <div style={{
-                fontWeight: '600',
-                marginBottom: '12px',
-                fontSize: '1rem',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '8px',
-                color: '#1a1a1a'
-              }}>
-                <div style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '50%',
-                  backgroundColor: '#06b6d4',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <IonIcon icon={barChart} style={{ color: 'white', fontSize: '0.8rem' }} />
-                </div>
-                <span>{message.question}</span>
-              </div>
-
-              {/* Ablaufdatum */}
-              {message.expires_at && (() => {
-                const expiresDate = new Date(message.expires_at);
-                const now = new Date();
-                const isExpired = expiresDate < now;
-                const timeRemaining = expiresDate.getTime() - now.getTime();
-                const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
-                const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-
-                return (
-                  <div style={{
-                    fontSize: '0.8rem',
-                    marginBottom: '12px',
-                    padding: '8px 12px',
-                    background: isExpired ? 'rgba(220,53,69,0.12)' : 'rgba(6, 182, 212, 0.1)',
-                    borderRadius: '8px',
-                    color: isExpired ? '#dc3545' : '#06b6d4',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
-                    {isExpired ? (
-                      <span style={{ fontWeight: '500' }}>Beendet</span>
-                    ) : (
-                      <span>
-                        Endet: {expiresDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                        {hoursRemaining < 24 && ` (${hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}${minutesRemaining}min)`}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Optionen */}
-              {message.options.map((option, index) => {
-                const optionVotes = message.votes?.filter(vote => vote.option_index === index) || [];
-                const totalVotes = message.votes?.length || 0;
-                const percentage = totalVotes > 0 ? (optionVotes.length / totalVotes) * 100 : 0;
-                const userVoted = message.votes?.some(vote =>
-                  vote.user_id === user?.id && vote.user_type === user?.type && vote.option_index === index
-                );
-
-                return (
-                  <div
-                    key={index}
-                    onClick={() => voteInPoll(message.id, index)}
-                    style={{
-                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'white',
-                      border: userVoted ? '2px solid #06b6d4' : '1px solid rgba(0,0,0,0.08)',
-                      borderRadius: '10px',
-                      padding: '12px',
-                      marginBottom: '8px',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {/* Fortschrittsbalken */}
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      height: '100%',
-                      width: `${percentage}%`,
-                      background: userVoted ? 'rgba(6, 182, 212, 0.12)' : 'rgba(6, 182, 212, 0.06)',
-                      transition: 'width 0.4s ease',
-                      borderRadius: '8px'
-                    }} />
-
-                    <div style={{
-                      position: 'relative',
-                      zIndex: 1,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {userVoted && (
-                          <div style={{
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '50%',
-                            backgroundColor: '#06b6d4',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
-                            <IonIcon icon={checkmark} style={{ color: 'white', fontSize: '0.75rem' }} />
-                          </div>
-                        )}
-                        <span style={{
-                          fontWeight: userVoted ? '600' : '500',
-                          color: '#1a1a1a',
-                          fontSize: '0.9rem'
-                        }}>
-                          {option}
-                        </span>
-                      </div>
-
-                      <div style={{
-                        fontSize: '0.8rem',
-                        fontWeight: '600',
-                        color: '#06b6d4',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <span>{optionVotes.length}</span>
-                        <span style={{ opacity: 0.7 }}>({percentage.toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Info Footer */}
-              <div style={{
-                marginTop: '8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '0.75rem',
-                color: '#8e8e93'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <IonIcon icon={message.multiple_choice ? checkmark : chatbubbles} style={{ fontSize: '0.8rem' }} />
-                  <span>{message.multiple_choice ? 'Mehrfachauswahl' : 'Einzelauswahl'}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <IonIcon icon={people} style={{ fontSize: '0.8rem' }} />
-                  <span>{message.votes?.length || 0} Stimme{(message.votes?.length || 0) !== 1 ? 'n' : ''}</span>
-                </div>
-              </div>
-            </div>
-          ) : message.file_path ? (
-            <div>
-              {message.content && (
-                <div style={{ marginBottom: '8px' }}>{message.content}</div>
-              )}
-              {message.file_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                // Inline Bild-Anzeige mit Lazy Loading
-                <div style={{ marginBottom: '8px' }}>
-                  <LazyImage 
-                    filePath={message.file_path}
-                    fileName={message.file_name}
-                    onError={() => setError('Fehler beim Laden des Bildes')}
-                    onClick={async () => {
-                      try {
-                        await Haptics.impact({ style: ImpactStyle.Light });
-                        
-                        // Download image with authentication
-                        const response = await api.get(`/chat/files/${message.file_path}`, {
-                          responseType: 'blob'
-                        });
-                        const blob = response.data;
-                        const fileName = message.file_name || 'image.jpg';
-                        
-                        // Write to Documents directory
-                        const base64Data = await new Promise<string>((resolve) => {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            const base64 = (reader.result as string).split(',')[1];
-                            resolve(base64);
-                          };
-                          reader.readAsDataURL(blob);
-                        });
-                        
-                        // Ensure temp directory exists
-                        try {
-                          await Filesystem.mkdir({
-                            path: 'temp',
-                            directory: Directory.Documents,
-                            recursive: true
-                          });
-                        } catch (e) {
-                          // Directory might already exist
-                        }
-                        
-                        const path = `temp/${fileName}`;
-                        await Filesystem.writeFile({
-                          path,
-                          data: base64Data,
-                          directory: Directory.Documents
-                        });
-                        
-                        // Get local file URI and open with native viewer
-                        const fileUri = await Filesystem.getUri({
-                          directory: Directory.Documents,
-                          path
-                        });
-                        
-                        await FileOpener.open({
-                          filePath: fileUri.uri,
-                          contentType: 'image/jpeg'
-                        });
-                      } catch (error) {
- console.error('Error opening image:', error);
-                        setError('Fehler beim Öffnen des Bildes');
-                      }
-                    }}
-                  />
-                  <div style={{ fontSize: '0.75rem', opacity: 0.7, marginTop: '4px' }}>
-                    {message.file_name} • {message.file_size && formatFileSize(message.file_size)}
-                  </div>
-                </div>
-              ) : message.file_name?.match(/\.(mp4|mov|avi|webm|m4v)$/i) ? (
-                // HTML5 Video mit Blob-URL und korrektem MIME-Type
-                <VideoPreview 
-                  message={message} 
-                  onError={(error) => setError('Fehler beim Laden des Videos: ' + error)}
-                />
-              ) : (
-                // Datei-Anhang für andere Dateitypen
-                <div 
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    borderRadius: '8px',
-                    padding: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease'
-                  }}
-                  onClick={async () => {
-                    try {
-                      await Haptics.impact({ style: ImpactStyle.Medium });
-                      const fileUrl = `${api.defaults.baseURL}/chat/files/${message.file_path}`;
-                      
-                      // Für PDF und andere Dokumente: Native File Viewer verwenden
-                      if (message.file_name?.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
-                        try {
-                          // Download file with authentication
-                          const response = await api.get(`/chat/files/${message.file_path}`, {
-                            responseType: 'blob'
-                          });
-                          const blob = response.data;
-                          const fileName = message.file_name || 'document';
-                          
-                          // Write to Documents directory (not Cache)
-                          const base64Data = await new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              const base64 = (reader.result as string).split(',')[1];
-                              resolve(base64);
-                            };
-                            reader.readAsDataURL(blob);
-                          });
-                          
-                          const path = `temp/${fileName}`;
-                          await Filesystem.writeFile({
-                            path,
-                            data: base64Data,
-                            directory: Directory.Documents,
-                            recursive: true
-                          });
-                          
-                          // Get local file URI and open with native viewer
-                          const fileUri = await Filesystem.getUri({
-                            directory: Directory.Documents,
-                            path
-                          });
-                          
-                          await FileViewer.openDocumentFromLocalPath({
-                            path: fileUri.uri
-                          });
-                        } catch (viewerError) {
- console.warn('Native viewer failed, using fallback:', viewerError);
-                          window.open(fileUrl, '_blank');
-                        }
-                      } else {
-                        // Für andere Dateien: Standard Browser-Download
-                        window.open(fileUrl, '_blank');
-                      }
-                    } catch (error) {
- console.error('Error opening document:', error);
-                      setError('Fehler beim Öffnen der Datei');
-                    }
-                  }}
-                >
-                  <IonIcon 
-                    icon={message.file_name?.includes('.pdf') ? document : attach} 
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
-                      {message.file_name}
-                    </div>
-                    {message.file_size && (
-                      <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                        {formatFileSize(message.file_size)}
-                      </div>
-                    )}
-                  </div>
-                  <IonIcon 
-                    icon={chevronForward} 
-                    style={{ 
-                      fontSize: '1.2rem',
-                      opacity: 0.7
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>{message.content}</div>
-          )}
-          
-          <div style={{
-            fontSize: '0.7rem',
-            opacity: 0.7,
-            marginTop: '4px',
-            textAlign: 'right'
-          }}>
-            {formatMessageTime(message.created_at)}
-          </div>
-
-          {/* Reaktionen Anzeige */}
-          {message.reactions && message.reactions.length > 0 && (
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '4px',
-              marginTop: '6px'
-            }}>
-              {Object.entries(
-                message.reactions.reduce((acc, r) => {
-                  if (!acc[r.emoji]) acc[r.emoji] = [];
-                  acc[r.emoji].push(r);
-                  return acc;
-                }, {} as { [key: string]: Reaction[] })
-              ).map(([emoji, reactions]) => {
-                const emojiData = REACTION_EMOJIS[emoji];
-                const userHasReacted = reactions.some(
-                  r => r.user_id === user?.id && r.user_type === user?.type
-                );
-                return (
-                  <div
-                    key={emoji}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleReaction(message.id, emoji);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px',
-                      padding: '3px 8px',
-                      borderRadius: '12px',
-                      backgroundColor: userHasReacted
-                        ? (isOwnMessage ? 'rgba(255,255,255,0.25)' : 'rgba(6, 182, 212, 0.12)')
-                        : (isOwnMessage ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.05)'),
-                      border: userHasReacted
-                        ? `1.5px solid ${emojiData?.color || '#06b6d4'}`
-                        : '1px solid transparent',
-                      cursor: 'pointer',
-                      fontSize: '0.75rem',
-                      transition: 'all 0.2s ease'
-                    }}
-                    title={reactions.map(r => r.user_name).join(', ')}
-                  >
-                    <IonIcon
-                      icon={userHasReacted ? emojiData?.filled : emojiData?.outline}
-                      style={{
-                        fontSize: '0.9rem',
-                        color: emojiData?.color || '#06b6d4'
-                      }}
-                    />
-                    <span style={{
-                      fontWeight: userHasReacted ? '600' : '500',
-                      color: isOwnMessage ? 'rgba(255,255,255,0.95)' : 'rgba(0,0,0,0.75)'
-                    }}>
-                      {reactions.length}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Inline Aktionsleiste unter ausgewählter Nachricht */}
-          {selectedMessage?.id === message.id && !showReactionPicker && (
-            <div
-              style={{
-                display: 'flex',
-                gap: '4px',
-                marginTop: '8px',
-                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div
-                onClick={() => openReactionPicker(message)}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <IonIcon icon={addOutline} style={{ fontSize: '1.1rem', color: isOwnMessage ? 'white' : '#666' }} />
-              </div>
-              <div
-                onClick={() => {
-                  setReplyToMessage(message);
-                  setSelectedMessage(null);
-                  setTimeout(() => textareaRef.current?.setFocus(), 100);
-                }}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <IonIcon icon={arrowUndoOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
-              </div>
-              <div
-                onClick={() => {
-                  setSelectedMessage(message);
-                  handleShare();
-                }}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: isOwnMessage ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <IonIcon icon={shareOutline} style={{ fontSize: '1rem', color: isOwnMessage ? 'white' : '#666' }} />
-              </div>
-              {user?.role_name && ['admin', 'org_admin', 'teamer'].includes(user.role_name) && (
-                <div
-                  onClick={() => {
-                    deleteMessage(message.id);
-                    setSelectedMessage(null);
-                  }}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(220, 53, 69, 0.15)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <IonIcon icon={trashOutline} style={{ fontSize: '1rem', color: '#dc3545' }} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Inline Reaktions-Picker */}
-          {showReactionPicker && reactionTargetMessage?.id === message.id && (
-            <div
-              style={{
-                display: 'flex',
-                gap: '2px',
-                marginTop: '8px',
-                padding: '6px 10px',
-                backgroundColor: 'white',
-                borderRadius: '20px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                justifyContent: isOwnMessage ? 'flex-end' : 'flex-start'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {Object.entries(REACTION_EMOJIS).map(([emoji, data]) => {
-                const userHasThisReaction = message.reactions?.some(
-                  r => r.user_id === user?.id && r.user_type === user?.type && r.emoji === emoji
-                );
-                return (
-                  <div
-                    key={emoji}
-                    onClick={() => toggleReaction(message.id, emoji)}
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      cursor: 'pointer',
-                      backgroundColor: userHasThisReaction ? `${data.color}18` : 'transparent',
-                      border: userHasThisReaction ? `2px solid ${data.color}` : '2px solid transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <IonIcon
-                      icon={userHasThisReaction ? data.filled : data.outline}
-                      style={{ fontSize: '1.2rem', color: data.color }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -1956,13 +807,12 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
           )}
         </IonToolbar>
       </IonHeader>
-      
+
       <IonContent
         ref={contentRef}
         className="app-gradient-background"
         fullscreen
         onClick={() => {
-          // Schließe Aktionsleiste und Reaktions-Picker bei Klick außerhalb
           if (selectedMessage || showReactionPicker) {
             setSelectedMessage(null);
             setShowReactionPicker(false);
@@ -1978,11 +828,30 @@ const ChatRoom: React.FC<ChatRoomProps> = ({ room, onBack, presentingElement }) 
         </IonRefresher>
 
         <div style={{ paddingBottom: '120px' }}>
-          {messages.map(renderMessage)}
+          {messages.map((message) => (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              room={room}
+              user={user}
+              selectedMessage={selectedMessage}
+              showReactionPicker={showReactionPicker}
+              reactionTargetMessage={reactionTargetMessage}
+              onLongPress={handleLongPress}
+              onReply={setReplyToMessage}
+              onShare={handleShareMessage}
+              onDelete={deleteMessage}
+              onToggleReaction={toggleReaction}
+              onOpenReactionPicker={openReactionPicker}
+              onVoteInPoll={voteInPoll}
+              onImageClick={handleImageOrFileClick}
+              onError={setError}
+              onDeselectMessage={() => setSelectedMessage(null)}
+              textareaRef={textareaRef}
+            />
+          ))}
         </div>
       </IonContent>
-
-
       <IonFooter style={{ backgroundColor: 'rgba(248, 249, 250, 0.95)', backdropFilter: 'blur(10px)' }}>
         {/* Reply Preview */}
         {replyToMessage && (

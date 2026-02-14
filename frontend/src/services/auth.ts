@@ -31,16 +31,17 @@ export const loginWithAutoDetection = async (username: string, password: string)
     localStorage.setItem('konfi_user', JSON.stringify(user));
     
     return user;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; statusText?: string; data?: { error?: string } }; message?: string; code?: string };
  console.error('Login fehlgeschlagen:', {
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      data: error?.response?.data,
-      message: error.message,
-      code: error.code,
+      status: err?.response?.status,
+      statusText: err?.response?.statusText,
+      data: err?.response?.data,
+      message: err.message,
+      code: err.code,
       fullError: error
     });
-    throw new Error('Login fehlgeschlagen: ' + (error?.response?.data?.error || error.message));
+    throw new Error('Login fehlgeschlagen: ' + (err?.response?.data?.error || err.message));
   }
 };
 
@@ -99,12 +100,13 @@ export const logout = async (): Promise<void> => {
     } else {
  console.warn('No device ID found - skipping push token removal');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number; statusText?: string; data?: unknown }; message?: string };
  console.error('ERROR during push token removal:', {
-      message: error.message,
-      status: error?.response?.status,
-      statusText: error?.response?.statusText,
-      data: error?.response?.data,
+      message: err.message,
+      status: err?.response?.status,
+      statusText: err?.response?.statusText,
+      data: err?.response?.data,
       fullError: error
     });
     // Logout sollte trotzdem funktionieren, auch wenn Push Token removal fehlschlägt

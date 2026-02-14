@@ -48,31 +48,10 @@ import api from '../../services/api';
 import { initializeWebSocket, getSocket } from '../../services/websocket';
 import LoadingSpinner from '../common/LoadingSpinner';
 import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
-
-interface ChatRoom {
-  id: number;
-  name: string;
-  type: 'group' | 'direct' | 'jahrgang' | 'admin';
-  participant_count?: number;
-  last_message?: {
-    content: string;
-    sender_name: string;
-    created_at: string;
-    file_name?: string;
-    message_type?: string;
-  };
-  unread_count: number;
-  jahrgang_name?: string;
-  participants?: Array<{
-    user_id: number;
-    user_type: 'admin' | 'konfi';
-    name: string;
-    display_name?: string;
-  }>;
-}
+import { ChatRoomOverview } from '../../types/chat';
 
 interface ChatOverviewProps {
-  onSelectRoom: (room: ChatRoom) => void;
+  onSelectRoom: (room: ChatRoomOverview) => void;
 }
 
 interface ChatOverviewRef {
@@ -83,7 +62,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const { refreshFromAPI, badgeCount, setBadgeCount } = useBadge();
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [rooms, setRooms] = useState<ChatRoomOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<string>('alle');
@@ -172,7 +151,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     loadChatRooms
   }));
 
-  const deleteRoom = (room: ChatRoom) => {
+  const deleteRoom = (room: ChatRoomOverview) => {
     presentAlert({
       header: 'Chat löschen?',
       message: `"${room.name}" und alle Nachrichten unwiderruflich löschen?`,
@@ -264,7 +243,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     }
   };
 
-  const getDisplayRoomName = (room: ChatRoom) => {
+  const getDisplayRoomName = (room: ChatRoomOverview) => {
     // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
     if (room.type === 'direct') {
       // Finde den Chat-Partner (nicht der aktuelle User)
@@ -284,7 +263,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     return room.name || 'Chat';
   };
 
-  const getRoomIcon = (room: ChatRoom) => {
+  const getRoomIcon = (room: ChatRoomOverview) => {
     switch (room.type) {
       case 'admin':
         return settings;
@@ -299,7 +278,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     }
   };
 
-  const getRoomSubtitle = (room: ChatRoom) => {
+  const getRoomSubtitle = (room: ChatRoomOverview) => {
     if (room.type === 'jahrgang') {
       return 'Jahrgangschat';
     }

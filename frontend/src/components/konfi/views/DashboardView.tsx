@@ -62,6 +62,7 @@ import {
   alertCircle,
   hammer
 } from 'ionicons/icons';
+import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 
 // Badge Icon Mapping
 const BADGE_ICONS: Record<string, { icon: string; name: string; category: string }> = {
@@ -120,7 +121,8 @@ const BADGE_ICONS: Record<string, { icon: string; name: string; category: string
 };
 
 // Helper function to get icon from string
-const getIconFromString = (iconName: string): string => {
+const getIconFromString = (iconName: string | undefined): string => {
+  if (!iconName) return trophy;
   return BADGE_ICONS[iconName]?.icon || trophy;
 };
 import api from '../../../services/api';
@@ -136,11 +138,11 @@ interface DashboardData {
     confirmation_location?: string;
   };
   total_points: number;
-  recent_badges: any[];
+  recent_badges: Badge[];
   badge_count: number;
-  recent_events: any[];
+  recent_events: DashboardEvent[];
   event_count: number;
-  ranking: any[];
+  ranking: RankingEntry[];
   days_to_confirmation?: number;
   confirmation_date?: string;
   rank_in_jahrgang?: number;
@@ -182,6 +184,8 @@ interface DailyVerse {
   losungsvers: string;
   lehrtext: string;
   lehrtextvers: string;
+  text?: string;
+  reference?: string;
   date?: string;
   translation?: string;
   fallback?: boolean;
@@ -196,8 +200,8 @@ interface BadgeStats {
 }
 
 interface AllBadgesData {
-  available: any[];
-  earned: any[];
+  available: Badge[];
+  earned: Badge[];
 }
 
 interface DashboardViewProps {
@@ -205,7 +209,7 @@ interface DashboardViewProps {
   dailyVerse: DailyVerse | null;
   badgeStats: BadgeStats;
   allBadges: AllBadgesData;
-  upcomingEvents: any[];
+  upcomingEvents: DashboardEvent[];
   targetGottesdienst: number;
   targetGemeinde: number;
   onOpenPointsHistory?: () => void;
@@ -223,7 +227,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const history = useHistory();
   const [presentAlert] = useIonAlert();
-  const [actualDailyVerse, setActualDailyVerse] = useState<any>(null);
+  const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
   const [showLosung, setShowLosung] = useState(true); // Wechselt bei jedem Reload
 
@@ -231,7 +235,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [levelPopover, setLevelPopover] = useState<{
     isOpen: boolean;
     event: Event | undefined;
-    level: any | null;
+    level: { id: number; name: string; title: string; icon: string; color: string; points_required: number } | null;
     isReached: boolean;
   }>({ isOpen: false, event: undefined, level: null, isReached: false });
 
@@ -239,7 +243,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const [badgePopover, setBadgePopover] = useState<{
     isOpen: boolean;
     event: Event | undefined;
-    badge: any | null;
+    badge: Badge | null;
     isEarned: boolean;
   }>({ isOpen: false, event: undefined, badge: null, isEarned: false });
 
@@ -266,7 +270,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
  console.error('Invalid response from backend:', response.data);
           setActualDailyVerse(null);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
  console.error('Failed to load Tageslosung from backend:', error);
         setActualDailyVerse(null);
       } finally {
@@ -291,7 +295,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
 
-  const formatTimeUntil = (dateString: string) => {
+  const formatTimeUntil = (dateString: string | undefined) => {
+    if (!dateString) return '';
     const targetDate = new Date(dateString);
     const now = new Date();
     const diffTime = targetDate.getTime() - now.getTime();
@@ -310,7 +315,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     return `${Math.floor(diffDays / 365)} Jahr${Math.floor(diffDays / 365) > 1 ? 'e' : ''}`;
   };
 
-  const formatEventTime = (dateString: string) => {
+  const formatEventTime = (dateString: string | undefined) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleTimeString('de-DE', {
       hour: '2-digit',
@@ -318,7 +324,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     });
   };
 
-  const formatEventDate = (dateString: string) => {
+  const formatEventDate = (dateString: string | undefined) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('de-DE', {
       weekday: 'short',
@@ -327,7 +334,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     });
   };
 
-  const getBadgeColor = (badge: any) => {
+  const getBadgeColor = (badge: Badge) => {
     if (badge.color) return badge.color;
     if (badge.criteria_type === 'total_points') {
       if (badge.criteria_value <= 5) return '#cd7f32'; // Bronze
@@ -344,9 +351,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
   const myRegisteredEvents = useMemo(() => upcomingEvents
-    .filter(e => e.is_registered || (e as any).booking_status === 'waitlist')
-    .filter(e => new Date(e.event_date || e.date) >= new Date())
-    .sort((a, b) => new Date(a.event_date || a.date).getTime() - new Date(b.event_date || b.date).getTime()),
+    .filter(e => e.is_registered || e.booking_status === 'waitlist')
+    .filter(e => new Date(e.event_date || e.date || '') >= new Date())
+    .sort((a, b) => new Date(a.event_date || a.date || '').getTime() - new Date(b.event_date || b.date || '').getTime()),
   [upcomingEvents]);
 
   const confirmationEvents = useMemo(() => myRegisteredEvents
@@ -361,15 +368,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const nextConfirmationEvent = confirmationEvents.length > 0 ? confirmationEvents[0] : null;
 
   // Badge-Berechnungen memoisiert
-  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: any) => b.id)), [allBadges.earned]);
-  const recentBadgeIds = useMemo(() => new Set(dashboardData.recent_badges?.map((b: any) => b.id) || []), [dashboardData.recent_badges]);
+  const earnedIds = useMemo(() => new Set(allBadges.earned.map((b: Badge) => b.id)), [allBadges.earned]);
+  const recentBadgeIds = useMemo(() => new Set(dashboardData.recent_badges?.map((b: Badge) => b.id) || []), [dashboardData.recent_badges]);
 
   const visibleBadges = useMemo(() => [
-    ...allBadges.earned.filter((b: any) => !b.is_hidden),
-    ...allBadges.available.filter((b: any) => !earnedIds.has(b.id) && !b.is_hidden)
+    ...allBadges.earned.filter((b: Badge) => !b.is_hidden),
+    ...allBadges.available.filter((b: Badge) => !earnedIds.has(b.id) && !b.is_hidden)
   ].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)), [allBadges, earnedIds]);
 
-  const secretEarned = useMemo(() => allBadges.earned.filter((b: any) => b.is_hidden), [allBadges.earned]);
+  const secretEarned = useMemo(() => allBadges.earned.filter((b: Badge) => b.is_hidden), [allBadges.earned]);
   const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
   return (
@@ -733,7 +740,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {regularEvents.map((event) => {
                 // Warteliste: booking_status kann 'waitlist' oder 'pending' sein
-                const isWaitlist = (event as any).booking_status === 'waitlist' || (event as any).booking_status === 'pending';
+                const isWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
                 return (
                   <div
                     key={event.id}
@@ -820,7 +827,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     }}>
                       {event.cancelled ? 'ABGESAGT' :
                        isWaitlist ?
-                         `WARTELISTE #${(event as any).waitlist_position || '?'}` :
+                         `WARTELISTE #${event.waitlist_position || '?'}` :
                          `In ${formatTimeUntil(event.event_date || event.date)}`}
                     </div>
                   </div>
@@ -1438,26 +1445,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       );
                     }
                     
-                    const isCurrentUser = item.isCurrentUser || item.id === dashboardData.konfi.id;
-                    const rank = item.actualRank;
+                    const entry = item as { id?: number | string; display_name?: string; points?: number; initials?: string; actualRank?: number; rank?: number; isCurrentUser?: boolean; isNeighbor?: boolean; separator?: boolean };
+                    const isCurrentUser = entry.isCurrentUser || entry.id === dashboardData.konfi.id;
+                    const rank = entry.actualRank ?? entry.rank ?? 0;
                     
                     return (
-                      <div key={item.id} style={{
+                      <div key={entry.id} style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: '12px',
-                        background: isCurrentUser 
-                          ? 'rgba(255, 255, 255, 0.2)' 
-                          : item.isNeighbor
+                        background: isCurrentUser
+                          ? 'rgba(255, 255, 255, 0.2)'
+                          : entry.isNeighbor
                           ? 'rgba(255, 255, 255, 0.05)'
                           : 'rgba(255, 255, 255, 0.1)',
                         backdropFilter: 'blur(10px)',
                         borderRadius: '12px',
                         padding: '12px',
-                        border: isCurrentUser 
-                          ? '2px solid rgba(255, 255, 255, 0.4)' 
+                        border: isCurrentUser
+                          ? '2px solid rgba(255, 255, 255, 0.4)'
                           : '1px solid rgba(255, 255, 255, 0.15)',
-                        opacity: item.isNeighbor ? 0.7 : 1
+                        opacity: entry.isNeighbor ? 0.7 : 1
                       }}>
                         {/* Ranking Position */}
                         <div style={{
@@ -1495,7 +1503,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           fontSize: '0.9rem',
                           backdropFilter: 'blur(10px)'
                         }}>
-                          {item.initials}
+                          {entry.initials}
                         </div>
 
                         {/* Name und Punkte */}
@@ -1506,13 +1514,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                             color: 'white',
                             marginBottom: '2px'
                           }}>
-                            {item.display_name}
+                            {entry.display_name}
                           </div>
                           <div style={{
                             fontSize: '0.75rem',
                             color: 'rgba(255, 255, 255, 0.7)'
                           }}>
-                            {item.points} Punkte
+                            {entry.points} Punkte
                           </div>
                         </div>
                       </div>
