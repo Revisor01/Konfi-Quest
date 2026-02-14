@@ -6,6 +6,10 @@ http://ionicframework.com/docs/theming/ */
 @import '@rdlabo/ionic-theme-ios26/dist/css/ionic-theme-ios26.css';
 @import '@rdlabo/ionic-theme-ios26/dist/css/md-remove-ios-class-effect.css';
 
+/* Material Design 3 Theme - fuer Android */
+@import '@rdlabo/ionic-theme-md3/dist/css/default-variables.css';
+@import '@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css';
+
 /* iOS26 Required Color Brightness Variables */
 :root {
   --ion-color-primary-brightness: #96FEFF;

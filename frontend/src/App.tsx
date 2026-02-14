@@ -26,6 +26,8 @@ import {
 import { IonReactRouter } from '@ionic/react-router';
 // iOS26 Theme Animationen
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios26';
+// Material Design 3 Animationen
+import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
 import { AppProvider, useApp } from './contexts/AppContext';
 import { BadgeProvider, useBadge } from './contexts/BadgeContext';
@@ -74,8 +76,8 @@ setupIonicReact({
   backButtonText: '',
   backButtonIcon: 'arrow-back-outline',
   innerHTMLTemplatesEnabled: true,
-  // iOS26 Theme Animationen - nur auf iOS aktivieren
-  navAnimation: isPlatform('ios') ? iosTransitionAnimation : undefined,
+  // Plattform-spezifische Theme-Animationen
+  navAnimation: isPlatform('ios') ? iosTransitionAnimation : mdTransitionAnimation,
   popoverEnter: isPlatform('ios') ? popoverEnterAnimation : undefined,
   popoverLeave: isPlatform('ios') ? popoverLeaveAnimation : undefined
 });

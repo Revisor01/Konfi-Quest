@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import api from '../../services/api';
 import { Message } from '../../types/chat';
@@ -11,13 +11,66 @@ interface VideoPreviewProps {
 
 const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
   const [videoUrl, setVideoUrl] = useState<string>('');
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showControls, setShowControls] = useState(false);
+  const [duration, setDuration] = useState<string>('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Canvas-basierte Thumbnail-Generierung (kein sichtbares play/pause)
+  const generateThumbnail = useCallback((blobUrl: string) => {
+    const offscreenVideo = document.createElement('video');
+    offscreenVideo.preload = 'metadata';
+    offscreenVideo.muted = true;
+    offscreenVideo.playsInline = true;
+    offscreenVideo.crossOrigin = 'anonymous';
+
+    offscreenVideo.addEventListener('loadedmetadata', () => {
+      // Dauer formatieren
+      const totalSeconds = Math.floor(offscreenVideo.duration);
+      if (totalSeconds > 0) {
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        setDuration(`${mins}:${secs.toString().padStart(2, '0')}`);
+      }
+      // Zum Frame bei 0.1s springen
+      offscreenVideo.currentTime = Math.min(0.1, offscreenVideo.duration);
+    });
+
+    offscreenVideo.addEventListener('seeked', () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = offscreenVideo.videoWidth || 320;
+        canvas.height = offscreenVideo.videoHeight || 240;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(offscreenVideo, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setThumbnailUrl(dataUrl);
+          console.log('Canvas-Thumbnail generiert fuer:', message.file_name);
+        }
+      } catch (error) {
+        console.log('Canvas-Thumbnail fehlgeschlagen:', message.file_name, error);
+      }
+      // Offscreen-Video aufraeumen
+      offscreenVideo.removeAttribute('src');
+      offscreenVideo.load();
+    });
+
+    offscreenVideo.addEventListener('error', () => {
+      console.log('Offscreen-Video-Fehler bei Thumbnail-Generierung:', message.file_name);
+    });
+
+    offscreenVideo.src = blobUrl;
+  }, [message.file_name]);
 
   useEffect(() => {
+    let blobUrl = '';
+
     const loadVideoBlob = async () => {
       try {
-        console.log('Loading video:', message.file_name, 'from path:', message.file_path);
         setLoading(true);
         setHasError(false);
 
@@ -26,8 +79,6 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         });
 
         const blob = response.data;
-        console.log('Video blob loaded:', blob.type, blob.size, 'bytes');
-
         const fileName = message.file_name?.toLowerCase() || '';
         let mimeType = blob.type;
 
@@ -48,15 +99,13 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
         }
 
         const correctedBlob = new Blob([blob], { type: mimeType });
-        const blobUrl = URL.createObjectURL(correctedBlob);
-
-        console.log('Video URL created:', blobUrl);
-        console.log('MIME-Type corrected from', blob.type, 'to', mimeType);
+        blobUrl = URL.createObjectURL(correctedBlob);
 
         setVideoUrl(blobUrl);
+        generateThumbnail(blobUrl);
         setLoading(false);
       } catch (error) {
-        console.error('Error loading video blob:', error);
+        console.error('Fehler beim Laden des Video-Blobs:', error);
         setHasError(true);
         setLoading(false);
         onError('Fehler beim Laden des Videos');
@@ -68,15 +117,11 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
     }
 
     return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [message.file_path]);
-
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showControls, setShowControls] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  }, [message.file_path, message.file_name, generateThumbnail, onError]);
 
   const handleVideoClick = async () => {
     try {
@@ -87,19 +132,14 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
           videoRef.current.pause();
           setIsPlaying(false);
         } else {
+          videoRef.current.muted = false;
           await videoRef.current.play();
           setIsPlaying(true);
           setShowControls(true);
-
-          setTimeout(() => {
-            if (isPlaying) {
-              setShowControls(false);
-            }
-          }, 3000);
         }
       }
     } catch (error) {
-      console.error('Video play error:', error);
+      console.error('Video-Wiedergabe-Fehler:', error);
       onError('Fehler beim Abspielen des Videos');
     }
   };
@@ -109,18 +149,20 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
     setShowControls(false);
   };
 
+  const placeholderStyle: React.CSSProperties = {
+    position: 'relative',
+    maxWidth: '280px',
+    height: '200px',
+    borderRadius: '12px',
+    backgroundColor: '#1e1e1e',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
   if (loading) {
     return (
-      <div style={{
-        position: 'relative',
-        maxWidth: '280px',
-        height: '200px',
-        borderRadius: '12px',
-        backgroundColor: '#1e1e1e',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      <div style={placeholderStyle}>
         <div style={{ color: 'white', opacity: 0.7 }}>Video wird geladen...</div>
       </div>
     );
@@ -128,16 +170,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
 
   if (hasError) {
     return (
-      <div style={{
-        position: 'relative',
-        maxWidth: '280px',
-        height: '200px',
-        borderRadius: '12px',
-        backgroundColor: '#1e1e1e',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      <div style={placeholderStyle}>
         <div style={{ color: 'white', opacity: 0.7 }}>Fehler beim Laden</div>
       </div>
     );
@@ -148,6 +181,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
       <video
         ref={videoRef}
         src={videoUrl}
+        poster={thumbnailUrl || undefined}
         style={{
           width: '100%',
           height: 'auto',
@@ -160,30 +194,18 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
           objectFit: 'cover',
           border: '1px solid rgba(255,255,255,0.1)'
         }}
-        preload="metadata"
-        muted={!isPlaying}
+        preload="none"
+        muted
         playsInline
         controls={showControls}
         onClick={handleVideoClick}
         onEnded={handleVideoEnd}
         onPause={() => setIsPlaying(false)}
         onPlay={() => setIsPlaying(true)}
-        onError={(e) => {
-          console.error('Video element error for:', message.file_name, e);
+        onError={() => {
+          console.error('Video-Element-Fehler fuer:', message.file_name);
           setHasError(true);
           onError('Video kann nicht abgespielt werden');
-        }}
-        onLoadedMetadata={async (e) => {
-          const video = e.currentTarget;
-          try {
-            video.currentTime = 0.1;
-            await video.play();
-            video.pause();
-            video.currentTime = 0;
-            console.log('Thumbnail generated for:', message.file_name);
-          } catch (error) {
-            console.log('Thumbnail generation failed for:', message.file_name, error);
-          }
         }}
       />
 
@@ -217,6 +239,29 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
           }} />
         </div>
       )}
+
+      <div style={{
+        position: 'absolute',
+        bottom: '8px',
+        left: '8px',
+        display: 'flex',
+        gap: '6px',
+        zIndex: 5
+      }}>
+        {duration && (
+          <div style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '0.75rem',
+            fontWeight: '500',
+            pointerEvents: 'none'
+          }}>
+            {duration}
+          </div>
+        )}
+      </div>
 
       <div style={{
         position: 'absolute',
