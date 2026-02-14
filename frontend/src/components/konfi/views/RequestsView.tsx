@@ -304,12 +304,11 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
-                              {/* Status Icon */}
+                              {/* Aktivitäts-Typ Icon */}
                               <div
-                                className="app-icon-circle app-icon-circle--lg"
-                                style={{ backgroundColor: statusColor }}
+                                className={`app-icon-circle app-icon-circle--lg app-icon-circle--${request.activity_type === 'gottesdienst' ? 'info' : 'activities'}`}
                               >
-                                <IonIcon icon={statusIcon} />
+                                <IonIcon icon={request.activity_type === 'gottesdienst' ? home : people} />
                               </div>
 
                               {/* Content */}
@@ -363,27 +362,19 @@ const RequestsView: React.FC<RequestsViewProps> = ({
                                 {/* Ablehnungsgrund bei rejected */}
                                 {isRejected && request.admin_comment && (
                                   <div className="app-reason-box app-reason-box--danger" style={{ marginTop: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                                      <IonIcon
-                                        icon={closeCircle}
-                                        style={{ fontSize: '1rem', color: '#dc3545', flexShrink: 0, marginTop: '2px' }}
-                                      />
-                                      <div>
-                                        <span className="app-reason-box__label" style={{
-                                          fontSize: '0.7rem',
-                                          textTransform: 'uppercase',
-                                          letterSpacing: '0.5px'
-                                        }}>
-                                          Grund der Ablehnung
-                                        </span>
-                                        <p style={{
-                                          margin: '2px 0 0 0',
-                                          fontSize: '0.8rem',
-                                          lineHeight: '1.4'
-                                        }}>
-                                          {request.admin_comment}
-                                        </p>
-                                      </div>
+                                    <div>
+                                      <span className="app-reason-box__label" style={{
+                                        fontSize: '0.7rem'
+                                      }}>
+                                        Grund der Ablehnung
+                                      </span>
+                                      <p style={{
+                                        margin: '2px 0 0 0',
+                                        fontSize: '0.8rem',
+                                        lineHeight: '1.4'
+                                      }}>
+                                        {request.admin_comment}
+                                      </p>
                                     </div>
                                   </div>
                                 )}
