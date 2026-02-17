@@ -467,7 +467,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                             )}
                           </div>
 
-                          {/* Zeile 3: Datum + Uhrzeit + Ort */}
+                          {/* Zeile 3: Datum + Uhrzeit */}
                           <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={calendar} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
@@ -477,13 +477,17 @@ const EventsView: React.FC<EventsViewProps> = ({
                               <IonIcon icon={time} style={{ color: shouldGrayOut ? '#999' : '#ff6b35' }} />
                               {formatTime(event.event_date)}
                             </span>
-                            {event.location && (
+                          </div>
+
+                          {/* Zeile 4: Ort (eigene Zeile) */}
+                          {event.location && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
                                 {event.location}
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

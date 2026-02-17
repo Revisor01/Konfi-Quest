@@ -11,10 +11,7 @@ import {
   IonItemOptions,
   IonItemOption,
   IonSegment,
-  IonSegmentButton,
-  IonGrid,
-  IonRow,
-  IonCol
+  IonSegmentButton
 } from '@ionic/react';
 import {
   checkmarkCircle,
@@ -104,130 +101,46 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
   return (
     <>
-      {/* Header - Dashboard-Style */}
+      {/* Header - Kompaktes Banner-Design */}
       <div style={{
         background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-        borderRadius: '24px',
-        padding: '0',
+        borderRadius: '20px',
+        padding: '24px',
         margin: '16px',
         marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(5, 150, 105, 0.3)',
+        boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)',
         position: 'relative',
-        overflow: 'hidden',
-        minHeight: '220px',
-        display: 'flex',
-        flexDirection: 'column'
+        overflow: 'hidden'
       }}>
-        {/* Überschrift - groß und überlappend */}
-        <div style={{
-          position: 'absolute',
-          top: '-5px',
-          left: '12px',
-          zIndex: 1
-        }}>
-          <h2 style={{
-            fontSize: '4rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            ANTRÄGE
-          </h2>
+        {/* Dekorative Kreise */}
+        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
+        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+
+        {/* Header mit Icon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IonIcon icon={documentOutline} style={{ fontSize: '1.6rem', color: 'white' }} />
+          </div>
+          <div>
+            <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Anträge</h2>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>Aktivitäts-Anträge verwalten</p>
+          </div>
         </div>
 
-        {/* Content - 3 Statistiken */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          padding: '70px 24px 24px 24px',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
-        }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={hourglass}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getPendingCount()}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Offen
-                  </div>
-                </div>
-              </IonCol>
-
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getApprovedCount()}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Genehmigt
-                  </div>
-                </div>
-              </IonCol>
-
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={closeCircle}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getRejectedCount()}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Abgelehnt
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
+        {/* Stats Row */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
+          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getPendingCount()}</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>OFFEN</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getApprovedCount()}</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GENEHMIGT</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getRejectedCount()}</div>
+            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>ABGELEHNT</div>
+          </div>
         </div>
       </div>
 

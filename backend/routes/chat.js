@@ -365,13 +365,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Admins and Konfis use the same optimized query now.
       const query = `
-      SELECT 
-          r.*, 
+      SELECT
+          r.*,
           j.name as jahrgang_name,
           (
-              SELECT COUNT(*) 
-              FROM chat_messages m 
-              WHERE m.room_id = r.id 
+              SELECT COUNT(*)
+              FROM chat_participants cp
+              WHERE cp.room_id = r.id
+          ) as participant_count,
+          (
+              SELECT COUNT(*)
+              FROM chat_messages m
+              WHERE m.room_id = r.id
               AND m.deleted_at IS NULL
               AND m.created_at > COALESCE(crs.last_read_at, '1970-01-01')
           ) as unread_count,

@@ -278,16 +278,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
 
   const getRoomSubtitle = (room: ChatRoomOverview) => {
     if (room.type === 'jahrgang') {
-      return 'Jahrgangschat';
+      return 'Jahrgang';
     }
-    if (room.type === 'admin') {
-      return 'Admin-Team Chat';
-    }
-    if (room.type === 'group') {
-      return 'Gruppenchat';
+    if (room.type === 'admin' || room.type === 'group') {
+      return 'Gruppe';
     }
     if (room.type === 'direct') {
-      return 'Direktnachricht';
+      return 'Direkt';
     }
     return '';
   };
@@ -612,10 +609,12 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                         {formatLastMessageTime(room.last_message.created_at)}
                                       </span>
                                     )}
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={people} />
-                                      {room.participant_count || 0}
-                                    </span>
+                                    {room.type !== 'direct' && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={people} />
+                                        {room.participant_count || 0}
+                                      </span>
+                                    )}
                                   </div>
                                   {/* Letzte Nachricht */}
                                   {room.last_message && (room.last_message.content || room.last_message.file_name) && (
