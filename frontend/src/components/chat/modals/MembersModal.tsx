@@ -33,7 +33,8 @@ import {
   search,
   peopleOutline,
   trash,
-  filterOutline
+  filterOutline,
+  calendarOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -250,7 +251,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const isGroupChat = roomType === 'group';
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
-  // Rolle/Funktion ermitteln
+  // Rolle/Funktion ermitteln (für Eselsohr)
   const getRoleText = (targetUser: User | Participant) => {
     const isAdmin = 'user_type' in targetUser
       ? targetUser.user_type === 'admin'
@@ -269,11 +270,18 @@ const MembersModal: React.FC<MembersModalProps> = ({
       return 'Admin';
     }
 
-    // Konfis: Jahrgang anzeigen wenn vorhanden
-    const jahrgang = 'jahrgang_name' in targetUser
-      ? targetUser.jahrgang_name
-      : ('jahrgang' in targetUser ? targetUser.jahrgang : null);
-    return jahrgang || 'Konfirmand';
+    return 'Konfirmand';
+  };
+
+  // Jahrgang ermitteln (für Meta-Zeile)
+  const getJahrgang = (targetUser: User | Participant) => {
+    if ('jahrgang_name' in targetUser && targetUser.jahrgang_name) {
+      return targetUser.jahrgang_name;
+    }
+    if ('jahrgang' in targetUser && targetUser.jahrgang) {
+      return targetUser.jahrgang;
+    }
+    return null;
   };
 
   // Render User Item - mit CSS-Klassen
@@ -289,22 +297,40 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const name = getUserDisplayName(targetUser);
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
+    const jahrgang = getJahrgang(targetUser);
+    const badgeColor = isAdmin ? '#06b6d4' : '#ff9500';
 
     return (
       <div
         key={participantId}
         className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
-        style={{ cursor: isSelectable ? 'pointer' : 'default' }}
+        style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden' }}
       >
+        {/* Eselsohr mit Rolle/Funktion */}
+        <div
+          className="app-corner-badge"
+          style={{ backgroundColor: badgeColor }}
+        >
+          {roleText}
+        </div>
+
         <div className="app-list-item__row">
           <div className="app-list-item__main">
             <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
               <IonIcon icon={person} />
             </div>
             <div className="app-list-item__content">
-              <div className="app-list-item__title">{name}</div>
-              <div className="app-list-item__subtitle">{roleText}</div>
+              <div className="app-list-item__title" style={{ paddingRight: '70px' }}>{name}</div>
+              {/* Meta-Zeile: Jahrgang (wie in KonfisView) */}
+              {!isAdmin && jahrgang && (
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={calendarOutline} style={{ color: '#5b21b6' }} />
+                    {jahrgang}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
