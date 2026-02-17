@@ -314,6 +314,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (isOnWaitlist) return '#fd7e14';
     if (eventData.is_registered && !isPastEvent) return '#007aff';
     if (isPastEvent) return '#6c757d';
+    // Voll aber Warteliste aktiv = Orange
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return '#fd7e14';
+    // Voll ohne Warteliste = Rot
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return '#dc3545';
     if (eventData.registration_status === 'open') return '#34c759';
     if (eventData.registration_status === 'upcoming') return '#fd7e14';
     return '#dc2626';
@@ -337,6 +341,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (isOnWaitlist) return `Warteliste (${eventData.waitlist_position || '?'})`;
     if (eventData.is_registered && !isPastEvent) return 'Angemeldet';
     if (isPastEvent) return 'Vergangen';
+    // Voll aber Warteliste aktiv
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return 'Warteliste';
+    // Voll ohne Warteliste
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return 'Ausgebucht';
     if (eventData.registration_status === 'open') return 'Offen';
     if (eventData.registration_status === 'upcoming') return 'Bald';
     return 'Geschlossen';

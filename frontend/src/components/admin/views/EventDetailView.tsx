@@ -216,7 +216,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       case 'upcoming': return 'Bald verfügbar';
       case 'open': return 'Anmeldung offen';
       case 'closed': {
-        // Prüfe ob ausgebucht (Event voll UND Warteliste voll/deaktiviert)
         if (event) {
           const waitlistEnabled = (event as any)?.waitlist_enabled;
           const maxWaitlistSize = (event as any)?.max_waitlist_size || 0;
@@ -224,9 +223,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           const eventFull = event.max_participants > 0 && event.registered_count >= event.max_participants;
 
           if (eventFull) {
-            if (!waitlistEnabled || pendingCount >= maxWaitlistSize) {
-              return 'Ausgebucht';
+            if (waitlistEnabled && pendingCount < maxWaitlistSize) {
+              return 'Warteliste offen';
             }
+            return 'Ausgebucht';
           }
         }
         return 'Anmeldung geschlossen';
@@ -296,8 +296,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6';
     if (hasUnprocessedBookings) return '#007aff';
     if (isPastEvent) return '#6c757d';
-    if (calculateRegistrationStatus(eventData) === 'open') return '#34c759';
-    if (calculateRegistrationStatus(eventData) === 'upcoming') return '#fd7e14';
+
+    const regStatus = calculateRegistrationStatus(eventData);
+    // Voll aber Warteliste aktiv = Orange
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return '#fd7e14';
+    // Voll ohne Warteliste = Rot
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return '#dc3545';
+    if (regStatus === 'open') return '#34c759';
+    if (regStatus === 'upcoming') return '#fd7e14';
     return '#dc2626';
   };
 
@@ -317,8 +323,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
     if (hasUnprocessedBookings) return 'Verbuchen';
     if (isPastEvent && !hasUnprocessedBookings) return 'Verbucht';
-    if (calculateRegistrationStatus(eventData) === 'open') return 'Offen';
-    if (calculateRegistrationStatus(eventData) === 'upcoming') return 'Bald';
+
+    const regStatus = calculateRegistrationStatus(eventData);
+    // Voll aber Warteliste aktiv
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return 'Warteliste';
+    // Voll ohne Warteliste
+    if (regStatus === 'closed' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return 'Ausgebucht';
+    if (regStatus === 'open') return 'Offen';
+    if (regStatus === 'upcoming') return 'Bald';
     return 'Geschlossen';
   };
 
