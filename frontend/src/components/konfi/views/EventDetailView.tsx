@@ -263,7 +263,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     const hasTimeslots = (eventData as any).has_timeslots && timeslots.length > 0;
     if (hasTimeslots) {
       const timeslotButtons = timeslots.map((slot) => {
-        const isFull = parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
+        const isFull = slot.max_participants > 0 && parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
         const startTime = formatTime(slot.start_time);
         const endTime = formatTime(slot.end_time);
         const spotsLeft = slot.max_participants - (slot.registered_count || 0);
@@ -766,7 +766,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonIcon icon={warning} slot="start" />
               Konfirmationstermin bereits gebucht
             </IonButton>
-          ) : eventData.can_register && eventData.registration_status === 'open' && eventData.registered_count < eventData.max_participants ? (
+          ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || eventData.registered_count < eventData.max_participants) ? (
             <IonButton
               expand="block"
               style={{
@@ -783,7 +783,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonIcon icon={checkmarkCircle} slot="start" />
               Anmelden ({eventData.registered_count}/{eventData.max_participants})
             </IonButton>
-          ) : eventData.waitlist_enabled && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
+          ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton
               expand="block"
               style={{

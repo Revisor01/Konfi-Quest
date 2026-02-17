@@ -165,6 +165,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isOnWaitlist) statusColor = '#fd7e14'; // Orange - Warteliste
     else if (event.is_registered && !isPastEvent) statusColor = '#007aff'; // Blau - Angemeldet
     else if (isPastEvent) statusColor = '#6c757d'; // Grau - Vergangen
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) statusColor = '#fd7e14'; // Orange - Warteliste
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusColor = '#dc3545'; // Rot - Ausgebucht
     else if (event.registration_status === 'open') statusColor = '#34c759'; // Grün - Offen
     else if (event.registration_status === 'upcoming') statusColor = '#fd7e14'; // Orange - Bald
     else statusColor = '#dc3545'; // Rot - Geschlossen
@@ -178,7 +180,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isAusstehend) statusText = 'Ausstehend';
     else if (isOnWaitlist) statusText = `Warteliste (${event.waitlist_position || '?'})`;
     else if (event.is_registered && !isPastEvent) statusText = 'Angemeldet';
-    else if (event.registration_status === 'open' && event.registered_count >= event.max_participants && event.waitlist_enabled) statusText = 'Warteliste';
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) statusText = 'Warteliste';
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusText = 'Ausgebucht';
     else if (event.registration_status === 'open') statusText = 'Offen';
     else if (event.registration_status === 'upcoming') statusText = 'Bald';
     else if (isPastEvent) statusText = 'Vergangen';
@@ -193,6 +196,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isOnWaitlist) statusIcon = hourglass;
     else if (event.is_registered) statusIcon = checkmarkCircle;
     else if (isPastEvent) statusIcon = hourglass;
+    else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusIcon = event.waitlist_enabled ? hourglass : close;
     else if (event.registration_status === 'open') statusIcon = lockOpenOutline;
     else statusIcon = time;
 

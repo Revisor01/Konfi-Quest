@@ -188,7 +188,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       for (const konfiId of selectedKonfis) {
         const requestData: any = {
           user_id: konfiId,
-          status: 'auto' // Let backend determine status based on capacity
+          status: 'confirmed' // Admin fügt direkt als bestätigt hinzu (übersteuert Kapazität)
         };
         
         // Add timeslot_id if event has timeslots

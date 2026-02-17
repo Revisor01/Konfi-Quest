@@ -221,7 +221,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           const waitlistEnabled = (event as any)?.waitlist_enabled;
           const maxWaitlistSize = (event as any)?.max_waitlist_size || 0;
           const pendingCount = participants.filter(p => p.status === 'pending').length;
-          const eventFull = event.registered_count >= event.max_participants;
+          const eventFull = event.max_participants > 0 && event.registered_count >= event.max_participants;
 
           if (eventFull) {
             if (!waitlistEnabled || pendingCount >= maxWaitlistSize) {
@@ -265,8 +265,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       }
     }
     
-    // If event is full
-    if (event.registered_count >= event.max_participants) {
+    // If event is full (nur wenn max_participants > 0, sonst unbegrenzt)
+    if (event.max_participants > 0 && event.registered_count >= event.max_participants) {
  console.log('EventDetailView - Status: closed (event full)');
       return 'closed';
     }

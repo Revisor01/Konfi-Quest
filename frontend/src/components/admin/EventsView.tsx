@@ -356,6 +356,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';
+                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return '#fd7e14'; // Orange - Warteliste
+                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return '#dc3545'; // Rot - Ausgebucht
                 if (calculateRegistrationStatus(event) === 'open') return '#34c759';
                 if (calculateRegistrationStatus(event) === 'upcoming') return '#fd7e14'; // Orange für Bald
                 return '#dc3545';
@@ -368,6 +370,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isFullyProcessed) return 'Verbucht';
                 if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
                 const status = calculateRegistrationStatus(event);
+                if (status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) return 'Warteliste';
+                if (status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return 'Ausgebucht';
                 if (status === 'open') return 'Offen';
                 if (status === 'upcoming') return 'Bald';
                 return 'Geschlossen';
@@ -379,6 +383,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (isFullyProcessed) return checkmarkCircle;
                 if (hasUnprocessedBookings) return flash; // Blitz-Icon für "Verbuchen"
                 if (isPastEvent) return checkmarkCircle;
+                if (calculateRegistrationStatus(event) === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return event.waitlist_enabled ? hourglass : close;
                 if (calculateRegistrationStatus(event) === 'open') return lockOpenOutline; // Offen = Schloss offen
                 return time; // "Bald" = Uhr-Icon
               })();
