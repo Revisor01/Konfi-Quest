@@ -193,6 +193,25 @@ interface BadgeManagementModalProps {
   onSuccess: () => void;
 }
 
+// Standardfarben pro Badge-Kategorie (criteria_type)
+const CATEGORY_COLORS: Record<string, string> = {
+  total_points: '#ffd700',
+  gottesdienst_points: '#ff9500',
+  gemeinde_points: '#059669',
+  bonus_points: '#ff6b9d',
+  both_categories: '#5856d6',
+  activity_count: '#3880ff',
+  unique_activities: '#10dc60',
+  activity_combination: '#7044ff',
+  category_activities: '#0cd1e8',
+  specific_activity: '#ffce00',
+  streak: '#eb445a',
+  time_based: '#8e8e93',
+  event_count: '#e63946'
+};
+
+const getCategoryColor = (criteriaType: string) => CATEGORY_COLORS[criteriaType] || '#667eea';
+
 const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   badgeId,
   onClose,
@@ -200,7 +219,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 }) => {
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     name: '',
@@ -211,7 +230,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     criteria_extra: '{}',
     is_active: true,
     is_hidden: false,
-    color: '#667eea'
+    color: getCategoryColor('total_points')
   });
 
   // Available data for dropdowns
@@ -799,19 +818,50 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
               <IonItem lines="none">
                 <IonLabel position="stacked">Badge-Farbe</IonLabel>
                 <div style={{ marginTop: '8px', width: '100%' }}>
-                  <input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      height: '60px',
-                      border: '2px solid #e0e0e0',
-                      borderRadius: '12px',
-                      cursor: 'pointer'
-                    }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+                    <input
+                      type="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        height: '60px',
+                        border: '2px solid #e0e0e0',
+                        borderRadius: '12px',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    {formData.color !== getCategoryColor(formData.criteria_type) && (
+                      <button
+                        onClick={() => setFormData({ ...formData, color: getCategoryColor(formData.criteria_type) })}
+                        disabled={loading}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: '12px',
+                          border: `2px solid ${getCategoryColor(formData.criteria_type)}`,
+                          backgroundColor: 'transparent',
+                          color: getCategoryColor(formData.criteria_type),
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <div style={{
+                          width: '16px',
+                          height: '16px',
+                          borderRadius: '50%',
+                          backgroundColor: getCategoryColor(formData.criteria_type),
+                          flexShrink: 0
+                        }} />
+                        Standard
+                      </button>
+                    )}
+                  </div>
                 </div>
               </IonItem>
             </IonList>
@@ -872,7 +922,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                               } else if (value === 'streak') {
                                 defaultValue = 4;
                               }
-                              setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue });
+                              // Farbe automatisch anpassen, wenn sie noch der alten Kategorie-Farbe entspricht
+                              const currentCategoryColor = getCategoryColor(formData.criteria_type);
+                              const newColor = (formData.color === currentCategoryColor || formData.color === '#667eea')
+                                ? getCategoryColor(value)
+                                : formData.color;
+                              setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue, color: newColor });
                               setExtraCriteria({});
                             }
                           }}

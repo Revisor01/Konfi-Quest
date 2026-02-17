@@ -605,13 +605,13 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   <div className="app-list-item__meta">
                                     {room.last_message?.created_at && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={time} />
+                                        <IonIcon icon={time} style={{ color: '#dc2626' }} />
                                         {formatLastMessageTime(room.last_message.created_at)}
                                       </span>
                                     )}
                                     {room.type !== 'direct' && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={people} />
+                                        <IonIcon icon={people} style={{ color: '#34c759' }} />
                                         {room.participant_count || 0}
                                       </span>
                                     )}

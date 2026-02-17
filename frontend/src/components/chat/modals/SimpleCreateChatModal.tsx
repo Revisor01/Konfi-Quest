@@ -33,7 +33,7 @@ import {
   chatbubbles,
   peopleOutline,
   filterOutline,
-  calendarOutline
+  calendar
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
@@ -511,7 +511,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               {isAdmin && availableJahrgaenge.length > 0 && (
                 <IonItem>
                   <IonIcon
-                    icon={calendarOutline}
+                    icon={calendar}
                     slot="start"
                     style={{ color: '#8e8e93', fontSize: '1rem' }}
                   />
@@ -578,43 +578,51 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                           style={{
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
                             marginBottom: '0',
-                            borderLeftColor: isAdmin ? '#06b6d4' : '#ff9500'
+                            borderLeftColor: isAdmin ? '#06b6d4' : '#ff9500',
+                            position: 'relative',
+                            overflow: 'hidden'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                            <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
-                              <IonIcon icon={person} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div className="app-list-item__title">
-                                {getUserDisplayName(targetUser)}
+                          {/* Eselsohr mit Rolle/Funktion */}
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: isAdmin ? '#06b6d4' : '#ff9500' }}
+                          >
+                            {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
+                          </div>
+
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
+                                <IonIcon icon={person} />
                               </div>
-                              <div className="app-list-item__subtitle" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`}>
-                                  {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
-                                </span>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
+                                  {getUserDisplayName(targetUser)}
+                                </div>
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
-                                  <span style={{ color: '#666' }}>
-                                    {targetUser.jahrgang_name || targetUser.jahrgang}
-                                  </span>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
+                                      {targetUser.jahrgang_name || targetUser.jahrgang}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             </div>
+
+                            {chatType === 'group' && (
+                              <IonCheckbox
+                                checked={isSelected}
+                                style={{
+                                  '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
+                                  '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
+                                  '--checkmark-color': 'white'
+                                }}
+                              />
+                            )}
                           </div>
-                          {chatType === 'group' && (
-                            <IonCheckbox
-                              checked={isSelected}
-                              style={{
-                                '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                '--checkmark-color': 'white'
-                              }}
-                            />
-                          )}
                         </div>
                       );
                     })}

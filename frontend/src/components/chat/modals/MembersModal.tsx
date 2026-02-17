@@ -34,7 +34,7 @@ import {
   peopleOutline,
   trash,
   filterOutline,
-  calendarOutline
+  calendar
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -270,7 +270,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       return 'Admin';
     }
 
-    return 'Konfirmand';
+    return 'Konfi';
   };
 
   // Jahrgang ermitteln (für Meta-Zeile)
@@ -305,7 +305,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
         key={participantId}
         className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
-        style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden' }}
+        style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
         {/* Eselsohr mit Rolle/Funktion */}
         <div
@@ -326,7 +326,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {!isAdmin && jahrgang && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={calendarOutline} style={{ color: '#5b21b6' }} />
+                    <IonIcon icon={calendar} style={{ color: '#5b21b6' }} />
                     {jahrgang}
                   </span>
                 </div>
