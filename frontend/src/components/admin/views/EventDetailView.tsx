@@ -16,9 +16,6 @@ import {
   IonListHeader,
   IonRefresher,
   IonRefresherContent,
-  IonText,
-  IonChip,
-  IonAvatar,
   useIonModal,
   IonItemSliding,
   IonItemOptions,
@@ -697,16 +694,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               </div>
 
-              {/* Kategorien als Tags */}
+              {/* Kategorien */}
               {eventData?.categories && eventData.categories.length > 0 && (
-                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
-                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                    {eventData.categories.map(c => (
-                      <span key={c.id} className="app-tag app-tag--purple">
-                        {c.name}
-                      </span>
-                    ))}
+                <div className="app-info-row">
+                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                  <div className="app-info-row__content">
+                    {eventData.categories.map(c => c.name).join(', ')}
                   </div>
                 </div>
               )}

@@ -591,13 +591,13 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                           </div>
 
-                          <div className="app-list-item__row">
+                          <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: '8px' } : undefined}>
                             <div className="app-list-item__main">
                               <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
                                 <IonIcon icon={person} />
                               </div>
                               <div className="app-list-item__content">
-                                <div className="app-list-item__title" style={{ paddingRight: '70px' }}>
+                                <div className="app-list-item__title" style={{ paddingRight: chatType === 'group' ? '90px' : '70px' }}>
                                   {getUserDisplayName(targetUser)}
                                 </div>
                                 {!isAdmin && (targetUser.jahrgang_name || targetUser.jahrgang) && (
@@ -617,7 +617,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 style={{
                                   '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
                                   '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                  '--checkmark-color': 'white'
+                                  '--checkmark-color': 'white',
+                                  marginRight: '4px'
                                 }}
                               />
                             )}

@@ -15,7 +15,6 @@ import {
   IonListHeader,
   IonRefresher,
   IonRefresherContent,
-  IonChip,
   useIonAlert,
   useIonModal,
   useIonActionSheet
@@ -622,16 +621,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               </div>
 
-              {/* Kategorien als Tags */}
+              {/* Kategorien */}
               {eventData.categories && eventData.categories.length > 0 && (
-                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6', marginTop: '4px' }} />
-                  <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                    {eventData.categories.map(c => (
-                      <span key={c.id} className="app-tag app-tag--purple">
-                        {c.name}
-                      </span>
-                    ))}
+                <div className="app-info-row">
+                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                  <div className="app-info-row__content">
+                    {eventData.categories.map(c => c.name).join(', ')}
                   </div>
                 </div>
               )}
@@ -707,26 +702,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Teilnehmer:innen ({participants.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '8px'
-                }}>
-                  {participants.map((participant) => (
-                    <IonChip
-                      key={participant.id}
-                      style={{
-                        margin: 0,
-                        backgroundColor: 'rgba(52, 199, 89, 0.1)',
-                        border: '1px solid rgba(52, 199, 89, 0.3)'
-                      }}
-                    >
-                      <IonLabel style={{ color: '#2d7d46', fontWeight: '500' }}>
-                        {participant.display_name}
-                      </IonLabel>
-                    </IonChip>
-                  ))}
+              <IonCardContent>
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                  <div className="app-info-row__content">
+                    {participants.map(p => p.display_name).join(', ')}
+                  </div>
                 </div>
               </IonCardContent>
             </IonCard>
