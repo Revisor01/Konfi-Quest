@@ -436,11 +436,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
           {/* Gruppenname Input für Group Chat - iOS26 Pattern */}
           {chatType === 'group' && (
-            <IonList inset={true}>
+            <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--chat">
                   <IonIcon icon={peopleOutline} />
@@ -462,7 +461,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           )}
 
           {/* Filter mit Suche - iOS26 Pattern */}
-          <IonList inset={true}>
+          <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
                 <IonIcon icon={filterOutline} />
@@ -533,7 +532,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           </IonList>
 
           {/* Users List - IonListHeader ueber der Card */}
-          <IonList inset={true}>
+          <IonList inset={true} style={{ margin: '16px' }}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
                 <IonIcon icon={peopleOutline} />
@@ -541,7 +540,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               <IonLabel>Personen ({filteredUsers.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 {loading ? (
                   <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                     <IonSpinner name="crescent" />
@@ -631,7 +630,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               </IonCardContent>
             </IonCard>
           </IonList>
-        </div>
       </IonContent>
 
       {/* Duplicate Alert */}

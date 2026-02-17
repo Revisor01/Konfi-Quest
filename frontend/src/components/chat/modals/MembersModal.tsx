@@ -392,11 +392,10 @@ const MembersModal: React.FC<MembersModalProps> = ({
           <IonRefresherContent />
         </IonRefresher>
 
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {showAddMode ? (
             <>
               {/* Suche - iOS26 Pattern */}
-              <IonList inset={true}>
+              <IonList inset={true} style={{ margin: '16px' }}>
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--chat">
                     <IonIcon icon={filterOutline} />
@@ -423,7 +422,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               </IonList>
 
               {/* Verfügbare Personen - IonListHeader über der Card */}
-              <IonList inset={true}>
+              <IonList inset={true} style={{ margin: '16px' }}>
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--chat">
                     <IonIcon icon={peopleOutline} />
@@ -431,7 +430,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                   <IonLabel>Verfügbare Personen ({filteredAvailableUsers.length})</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
-                  <IonCardContent style={{ padding: '16px' }}>
+                  <IonCardContent>
                     {filteredAvailableUsers.length === 0 ? (
                       <div style={{
                         padding: '40px 20px',
@@ -463,7 +462,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <IonList inset={true}>
+                <IonList inset={true} style={{ margin: '16px' }}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--chat">
                       <IonIcon icon={peopleOutline} />
@@ -471,7 +470,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     <IonLabel>Mitglieder ({sortedParticipants.length})</IonLabel>
                   </IonListHeader>
                   <IonCard className="app-card">
-                    <IonCardContent style={{ padding: '16px' }}>
+                    <IonCardContent>
                       {sortedParticipants.length === 0 ? (
                         <div style={{
                           padding: '40px 20px',
@@ -522,7 +521,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
               )}
             </>
           )}
-        </div>
       </IonContent>
 
       {/* Remove Confirmation Alert */}

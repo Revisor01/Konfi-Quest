@@ -23,9 +23,6 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonGrid,
-  IonRow,
-  IonCol,
   useIonActionSheet
 } from '@ionic/react';
 import {
@@ -286,6 +283,50 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     onBack();
   };
 
+  // Header-Farbe basierend auf Event-Status (wie Konfi EventDetailView)
+  const getHeaderColor = () => {
+    if (!eventData) return '#dc2626';
+
+    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isKonfirmationEvent = eventData.categories?.some(cat =>
+      cat.name.toLowerCase().includes('konfirmation')
+    );
+    const isCancelled = eventData.registration_status === 'cancelled' as string;
+    const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
+      participants.some(p => p.status === 'confirmed' && !p.attendance_status);
+
+    if (isCancelled) return '#dc3545';
+    if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6';
+    if (hasUnprocessedBookings) return '#007aff';
+    if (isPastEvent) return '#6c757d';
+    if (calculateRegistrationStatus(eventData) === 'open') return '#34c759';
+    if (calculateRegistrationStatus(eventData) === 'upcoming') return '#fd7e14';
+    return '#dc2626';
+  };
+
+  // Status-Text für Header
+  const getStatusText = () => {
+    if (!eventData) return 'Event';
+
+    const isPastEvent = new Date(eventData.event_date) < new Date();
+    const isKonfirmationEvent = eventData.categories?.some(cat =>
+      cat.name.toLowerCase().includes('konfirmation')
+    );
+    const isCancelled = eventData.registration_status === 'cancelled' as string;
+    const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
+      participants.some(p => p.status === 'confirmed' && !p.attendance_status);
+
+    if (isCancelled) return 'Abgesagt';
+    if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
+    if (hasUnprocessedBookings) return 'Verbuchen';
+    if (isPastEvent && !hasUnprocessedBookings) return 'Verbucht';
+    if (calculateRegistrationStatus(eventData) === 'open') return 'Offen';
+    if (calculateRegistrationStatus(eventData) === 'upcoming') return 'Bald';
+    return 'Geschlossen';
+  };
+
+  const headerColor = getHeaderColor();
+
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
     try {
       // Update attendance status using new API
@@ -452,109 +493,130 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Event Header - Dashboard-Style */}
+        {/* Event Header - Kompaktes Banner-Design wie Konfi EventDetailView */}
         <div style={{
-          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-          borderRadius: '24px',
-          padding: '0',
+          background: `linear-gradient(135deg, ${headerColor} 0%, ${headerColor}cc 100%)`,
+          borderRadius: '20px',
+          padding: '24px',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: '0 20px 40px rgba(220, 38, 38, 0.3)',
+          boxShadow: `0 8px 32px ${headerColor}40`,
           position: 'relative',
-          overflow: 'hidden',
-          minHeight: '220px',
-          display: 'flex',
-          flexDirection: 'column'
+          overflow: 'hidden'
         }}>
-          {/* Überschrift - groß und überlappend */}
+          {/* Dekorative Kreise im Hintergrund */}
           <div style={{
             position: 'absolute',
-            top: '-5px',
-            left: '12px',
+            top: '-30px',
+            right: '-30px',
+            width: '120px',
+            height: '120px',
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.1)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-20px',
+            left: '-20px',
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            background: 'rgba(255, 255, 255, 0.08)'
+          }} />
+
+          {/* Header mit Icon und Event-Name */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '20px',
+            position: 'relative',
             zIndex: 1
           }}>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.1)',
-              margin: '0',
-              lineHeight: '0.8',
-              letterSpacing: '-2px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '280px'
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
+              background: 'rgba(255, 255, 255, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              {(eventData?.name || 'EVENT').toUpperCase()}
-            </h2>
+              <IonIcon icon={calendar} style={{ fontSize: '1.6rem', color: 'white' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h2 style={{
+                margin: '0',
+                fontSize: '1.3rem',
+                fontWeight: '700',
+                color: 'white',
+                lineHeight: '1.2'
+              }}>
+                {eventData?.name || 'Event'}
+              </h2>
+              <p style={{
+                margin: '2px 0 0 0',
+                fontSize: '0.85rem',
+                color: 'rgba(255, 255, 255, 0.8)'
+              }}>
+                {getStatusText()}
+              </p>
+            </div>
           </div>
 
-          {/* Content */}
+          {/* Stats Row - 3 Boxen */}
           <div style={{
-            position: 'relative',
-            zIndex: 2,
-            padding: '60px 24px 24px 24px',
-            flex: 1,
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            gap: '8px',
+            position: 'relative',
+            zIndex: 1
           }}>
-            {/* Event Info */}
-            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-              <IonRow>
-                <IonCol size="4" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 12px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={people} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.status === 'confirmed').length}/{(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'}</span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                      TN
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol size="4" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 12px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={flash} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{eventData?.points || 0}</span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                      Punkte
-                    </div>
-                  </div>
-                </IonCol>
-                <IonCol size="4" style={{ padding: '0 4px' }}>
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px 12px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.5rem', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '8px', display: 'block', margin: '0 auto 8px auto' }} />
-                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: '1.5rem' }}>{participants.filter(p => p.attendance_status === 'present').length}</span>
-                    </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                      Anwesend
-                    </div>
-                  </div>
-                </IonCol>
-              </IonRow>
-            </IonGrid>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              textAlign: 'center',
+              flex: '1 1 0',
+              maxWidth: '100px'
+            }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
+                {participants.filter(p => p.status === 'confirmed').length}/{(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'}
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
+                TN
+              </div>
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              textAlign: 'center',
+              flex: '1 1 0',
+              maxWidth: '100px'
+            }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
+                {eventData?.points || 0}
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
+                PUNKTE
+              </div>
+            </div>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              textAlign: 'center',
+              flex: '1 1 0',
+              maxWidth: '100px'
+            }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
+                {participants.filter(p => p.attendance_status === 'present').length}
+              </div>
+              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
+                ANWESEND
+              </div>
+            </div>
           </div>
         </div>
 
