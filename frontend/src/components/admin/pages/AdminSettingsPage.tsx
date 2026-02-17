@@ -12,9 +12,10 @@ import {
   IonList,
   IonListHeader,
   IonButton,
-  IonNote,
-  useIonAlert
+  useIonAlert,
+  useIonModal
 } from '@ionic/react';
+import AdminGoalsPage from './AdminGoalsPage';
 import {
   people,
   shield,
@@ -26,7 +27,6 @@ import {
   logOut,
   flash,
   notifications,
-  chevronForward,
   statsChart,
   qrCode
 } from 'ionicons/icons';
@@ -41,22 +41,11 @@ const AdminSettingsPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
   const history = useHistory();
 
-  const getPushPermissionText = () => {
-    switch (pushNotificationsPermission) {
-      case 'granted': return 'Aktiviert';
-      case 'denied': return 'Deaktiviert';
-      case 'prompt': return 'Nicht gefragt';
-      default: return 'Unbekannt';
-    }
-  };
-
-  const getPushPermissionColor = () => {
-    switch (pushNotificationsPermission) {
-      case 'granted': return '#34c759';
-      case 'denied': return '#dc3545';
-      default: return '#ff9500';
-    }
-  };
+  const [presentGoalsModal, dismissGoalsModal] = useIonModal(AdminGoalsPage, {
+    onClose: () => dismissGoalsModal(),
+    onSuccess: () => dismissGoalsModal(),
+    dismiss: () => dismissGoalsModal()
+  });
 
   const handleLogout = () => {
     presentAlert({
@@ -122,12 +111,11 @@ const AdminSettingsPage: React.FC = () => {
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Benutzer:innen</h2>
                       <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Admins, Teamer:innen und Rollen verwalten</p>
                     </div>
-                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                   </div>
 
                   <div
                     className="app-list-item app-list-item--activities"
-                    onClick={() => history.push('/admin/settings/goals')}
+                    onClick={() => presentGoalsModal({ presentingElement: presentingElement })}
                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
@@ -137,7 +125,6 @@ const AdminSettingsPage: React.FC = () => {
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Punkte-Ziele</h2>
                       <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Ziel-Punkte für Gottesdienst und Gemeinde</p>
                     </div>
-                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                   </div>
 
                   <div
@@ -152,7 +139,6 @@ const AdminSettingsPage: React.FC = () => {
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Konfis einladen</h2>
                       <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>QR-Code für Selbstregistrierung</p>
                     </div>
-                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                   </div>
                 </div>
               </IonCardContent>
@@ -184,7 +170,6 @@ const AdminSettingsPage: React.FC = () => {
                       <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Organisationen</h2>
                       <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Gemeinden und Organisationen verwalten</p>
                     </div>
-                    <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                   </div>
                 </div>
               </IonCardContent>
@@ -215,7 +200,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Aktivitäten</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Aktivitäten und Punkte verwalten</p>
                   </div>
-                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                 </div>
 
                 <div
@@ -230,7 +214,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Kategorien</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Kategorien für Aktivitäten und Events</p>
                   </div>
-                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                 </div>
 
                 <div
@@ -245,7 +228,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Jahrgänge</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Konfirmand:innen verwalten</p>
                   </div>
-                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                 </div>
 
                 <div
@@ -260,7 +242,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Level-System</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Punkte-Level und Belohnungen</p>
                   </div>
-                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                 </div>
               </div>
             </IonCardContent>
@@ -290,7 +271,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Profil</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Passwort und E-Mail ändern</p>
                   </div>
-                  <IonIcon icon={chevronForward} style={{ color: '#c7c7cc', fontSize: '1.2rem' }} />
                 </div>
 
                 <div
@@ -300,9 +280,19 @@ const AdminSettingsPage: React.FC = () => {
                     cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px'
+                    gap: '12px',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
                 >
+                  {pushNotificationsPermission === 'granted' && (
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: '#059669' }}
+                    >
+                      Aktiviert
+                    </div>
+                  )}
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                     <IonIcon icon={notifications} />
                   </div>
@@ -310,16 +300,6 @@ const AdminSettingsPage: React.FC = () => {
                     <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Push-Benachrichtigungen</h2>
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Chat-Nachrichten und Updates</p>
                   </div>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    color: getPushPermissionColor(),
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    background: `${getPushPermissionColor()}15`
-                  }}>
-                    {getPushPermissionText()}
-                  </span>
                 </div>
 
                 <div

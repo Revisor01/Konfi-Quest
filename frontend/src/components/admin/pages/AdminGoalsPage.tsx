@@ -16,8 +16,7 @@ import {
   IonSpinner
 } from '@ionic/react';
 import {
-  arrowBack,
-  statsChart,
+  closeOutline,
   checkmarkOutline,
   sunnyOutline,
   peopleOutline,
@@ -25,11 +24,15 @@ import {
   removeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 
-const AdminGoalsPage: React.FC = () => {
-  const { pageRef } = useModalPage('admin-goals');
+interface AdminGoalsModalProps {
+  onClose: () => void;
+  onSuccess?: () => void;
+  dismiss?: () => void;
+}
+
+const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,6 +40,14 @@ const AdminGoalsPage: React.FC = () => {
     target_gottesdienst: 10,
     target_gemeinde: 10
   });
+
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
 
   useEffect(() => {
     loadSettings();
@@ -50,7 +61,7 @@ const AdminGoalsPage: React.FC = () => {
         target_gottesdienst: response.data.target_gottesdienst || 10,
         target_gemeinde: response.data.target_gemeinde || 10
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError('Fehler beim Laden der Einstellungen');
     } finally {
       setLoading(false);
@@ -62,38 +73,33 @@ const AdminGoalsPage: React.FC = () => {
       setSaving(true);
       await api.put('/settings', formData);
       setSuccess('Punkte-Ziele gespeichert');
-    } catch (error: any) {
-      setError(error.response?.data?.error || 'Fehler beim Speichern');
+      handleClose();
+    } catch (error: unknown) {
+      setError((error as any)?.response?.data?.error || 'Fehler beim Speichern');
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
+    <IonPage>
+      <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+            <IonButton onClick={handleClose} disabled={saving}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Punkte-Ziele</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || loading} color="success">
-              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
+            <IonButton onClick={handleSave} disabled={saving || loading}>
+              {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Punkte-Ziele</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-
+      <IonContent className="app-gradient-background">
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
             <IonSpinner name="crescent" />
