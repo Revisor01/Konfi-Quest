@@ -621,12 +621,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                     <div className="app-list-item__subtitle" style={{
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
-                                      whiteSpace: 'nowrap'
+                                      whiteSpace: 'nowrap',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
                                     }}>
+                                      <IonIcon icon={chatbubbles} style={{ fontSize: '0.75rem', color: '#8e8e93', flexShrink: 0 }} />
                                       <span style={{ fontWeight: '600', color: '#333' }}>
                                         {room.last_message.sender_name}:
                                       </span>{' '}
-                                      {room.last_message.content || room.last_message.file_name || 'Datei'}
+                                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {room.last_message.content || room.last_message.file_name || 'Datei'}
+                                      </span>
                                     </div>
                                   )}
                                 </div>

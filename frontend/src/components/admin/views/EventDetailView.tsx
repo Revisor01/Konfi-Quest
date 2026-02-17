@@ -697,7 +697,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Typ */}
               <div className="app-info-row">
                 <IonIcon
-                  icon={home}
+                  icon={eventData?.point_type === 'gottesdienst' ? home : people}
                   className="app-info-row__icon"
                   style={{ color: eventData?.point_type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
                 />
