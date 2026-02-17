@@ -38,7 +38,8 @@ import {
   add,
   time,
   trash,
-  search
+  search,
+  filterOutline
 } from 'ionicons/icons';
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
@@ -325,146 +326,139 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Chat Header - Kompaktes Banner-Design */}
+        {/* Chat Header - Dashboard-Style wie KonfisView */}
         <div style={{
           background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-          borderRadius: '20px',
-          padding: '24px',
+          borderRadius: '24px',
+          padding: '0',
           margin: '16px',
           marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(6, 182, 212, 0.25)',
+          boxShadow: '0 20px 40px rgba(6, 182, 212, 0.3)',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          minHeight: '220px',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
-          {/* Dekorative Kreise im Hintergrund */}
+          {/* Überschrift - groß und überlappend */}
           <div style={{
             position: 'absolute',
-            top: '-30px',
-            right: '-30px',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-20px',
-            left: '-20px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.08)'
-          }} />
-
-          {/* Header mit Icon */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
-            position: 'relative',
+            top: '-5px',
+            left: '12px',
             zIndex: 1
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+            <h2 style={{
+              fontSize: '4rem',
+              fontWeight: '900',
+              color: 'rgba(255, 255, 255, 0.1)',
+              margin: '0',
+              lineHeight: '0.8',
+              letterSpacing: '-2px'
             }}>
-              <IonIcon icon={chatbubbles} style={{ fontSize: '1.6rem', color: 'white' }} />
-            </div>
-            <div>
-              <h2 style={{
-                margin: '0',
-                fontSize: '1.4rem',
-                fontWeight: '700',
-                color: 'white'
-              }}>
-                Deine Chats
-              </h2>
-              <p style={{
-                margin: '2px 0 0 0',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                Nachrichten und Gruppen
-              </p>
-            </div>
+              CHATS
+            </h2>
           </div>
 
-          {/* Stats Row - immer einzeilig */}
+          {/* Content */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
             position: 'relative',
-            zIndex: 1
+            zIndex: 2,
+            padding: '70px 24px 24px 24px',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.length}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                CHATS
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.reduce((sum, room) => sum + room.unread_count, 0)}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                UNGELESEN
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                AKTIV
-              </div>
-            </div>
+            <IonGrid style={{ padding: '0', margin: '0 4px' }}>
+              <IonRow>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={chatbubbles}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{rooms.length}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Chats
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={chatbubblesOutline}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{rooms.reduce((sum, room) => sum + room.unread_count, 0)}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Ungelesen
+                    </div>
+                  </div>
+                </IonCol>
+                <IonCol size="4" style={{ padding: '0 4px' }}>
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '16px 12px',
+                    color: 'white',
+                    textAlign: 'center'
+                  }}>
+                    <IonIcon
+                      icon={people}
+                      style={{
+                        fontSize: '1.5rem',
+                        color: 'rgba(255, 255, 255, 0.9)',
+                        marginBottom: '8px',
+                        display: 'block',
+                        margin: '0 auto 8px auto'
+                      }}
+                    />
+                    <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '1.5rem' }}>{rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+                      Aktiv
+                    </div>
+                  </div>
+                </IonCol>
+              </IonRow>
+            </IonGrid>
           </div>
         </div>
 
         {/* Suche & Filter - iOS26 Pattern wie im Modal */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#06b6d4',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={search} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--chat">
+              <IonIcon icon={filterOutline} />
             </div>
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
@@ -511,17 +505,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div style={{
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#06b6d4',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: '8px'
-            }}>
-              <IonIcon icon={chatbubbles} style={{ color: 'white', fontSize: '0.8rem' }} />
+            <div className="app-section-icon app-section-icon--chat">
+              <IonIcon icon={chatbubblesOutline} />
             </div>
             <IonLabel>Chats ({filteredRooms.length})</IonLabel>
           </IonListHeader>
@@ -559,116 +544,98 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                           lines="none"
                           detail={false}
                           style={{
-                            '--background': 'white',
+                            '--background': 'transparent',
                             '--padding-start': '0',
                             '--padding-end': '0',
                             '--inner-padding-end': '0',
                             '--inner-border-width': '0',
                             '--border-style': 'none',
-                            '--min-height': 'auto',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                            border: '1px solid rgba(0,0,0,0.06)',
-                            borderLeft: `3px solid ${color}`,
-                            borderRadius: '10px'
+                            '--min-height': 'auto'
                           }}
                         >
-                          <div style={{ padding: '12px 16px', width: '100%' }}>
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '12px'
-                            }}>
-                              {/* Icon mit Unread-Badge */}
-                              <div style={{ position: 'relative', flexShrink: 0 }}>
-                                <div style={{
-                                  width: '40px',
-                                  height: '40px',
-                                  backgroundColor: color,
-                                  borderRadius: '50%',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}>
-                                  <IonIcon
-                                    icon={getRoomIcon(room)}
-                                    style={{ fontSize: '1.2rem', color: 'white' }}
-                                  />
-                                </div>
-                                {room.unread_count > 0 && (
-                                  <span style={{
-                                    position: 'absolute',
-                                    top: '-4px',
-                                    right: '-4px',
-                                    fontSize: '0.55rem',
-                                    color: 'white',
-                                    fontWeight: '700',
-                                    backgroundColor: '#dc3545',
-                                    width: room.unread_count > 9 ? '18px' : '16px',
-                                    height: '16px',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                                  }}>
-                                    {room.unread_count > 9 ? '9+' : room.unread_count}
-                                  </span>
-                                )}
-                              </div>
+                          <div
+                            className="app-list-item"
+                            style={{
+                              width: '100%',
+                              borderLeftColor: color,
+                              position: 'relative',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {/* Eselsohr-Style Corner Badge - Chat-Typ */}
+                            <div
+                              className="app-corner-badge"
+                              style={{ backgroundColor: color }}
+                            >
+                              {getRoomSubtitle(room)}
+                            </div>
 
-                              {/* Content */}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                  fontWeight: '600',
-                                  fontSize: '0.95rem',
-                                  color: '#333',
-                                  marginBottom: '4px',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
-                                }}>
-                                  {getDisplayRoomName(room)}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                  <span style={{
-                                    fontSize: '0.7rem',
-                                    fontWeight: '600',
-                                    padding: '2px 8px',
-                                    borderRadius: '10px',
-                                    backgroundColor: `${color}20`,
-                                    color: color
-                                  }}>
-                                    {getRoomSubtitle(room)}
-                                  </span>
-                                  {room.last_message?.created_at && (
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                {/* Icon mit Unread-Badge */}
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                  <div
+                                    className="app-icon-circle app-icon-circle--lg"
+                                    style={{ backgroundColor: color }}
+                                  >
+                                    <IonIcon icon={getRoomIcon(room)} />
+                                  </div>
+                                  {room.unread_count > 0 && (
                                     <span style={{
-                                      fontSize: '0.75rem',
-                                      color: '#666',
+                                      position: 'absolute',
+                                      top: '-4px',
+                                      right: '-4px',
+                                      fontSize: '0.55rem',
+                                      color: 'white',
+                                      fontWeight: '700',
+                                      backgroundColor: '#dc3545',
+                                      width: room.unread_count > 9 ? '18px' : '16px',
+                                      height: '16px',
+                                      borderRadius: '50%',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      gap: '4px'
+                                      justifyContent: 'center',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
                                     }}>
-                                      <IonIcon icon={time} style={{ fontSize: '0.75rem' }} />
-                                      {formatLastMessageTime(room.last_message.created_at)}
+                                      {room.unread_count > 9 ? '9+' : room.unread_count}
                                     </span>
                                   )}
                                 </div>
-                                {/* Letzte Nachricht */}
-                                {room.last_message && (room.last_message.content || room.last_message.file_name) && (
-                                  <div style={{
-                                    marginTop: '4px',
-                                    fontSize: '0.8rem',
-                                    color: '#666',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                  }}>
-                                    <span style={{ fontWeight: '600', color: '#333' }}>
-                                      {room.last_message.sender_name}:
-                                    </span>{' '}
-                                    {room.last_message.content || room.last_message.file_name || 'Datei'}
+
+                                {/* Content */}
+                                <div className="app-list-item__content">
+                                  <div
+                                    className="app-list-item__title"
+                                    style={{ paddingRight: '90px' }}
+                                  >
+                                    {getDisplayRoomName(room)}
                                   </div>
-                                )}
+                                  <div className="app-list-item__meta">
+                                    {room.last_message?.created_at && (
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={time} />
+                                        {formatLastMessageTime(room.last_message.created_at)}
+                                      </span>
+                                    )}
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={people} />
+                                      {room.participant_count || 0}
+                                    </span>
+                                  </div>
+                                  {/* Letzte Nachricht */}
+                                  {room.last_message && (room.last_message.content || room.last_message.file_name) && (
+                                    <div className="app-list-item__subtitle" style={{
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}>
+                                      <span style={{ fontWeight: '600', color: '#333' }}>
+                                        {room.last_message.sender_name}:
+                                      </span>{' '}
+                                      {room.last_message.content || room.last_message.file_name || 'Datei'}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

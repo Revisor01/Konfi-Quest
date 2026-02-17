@@ -60,7 +60,9 @@ const LoginView: React.FC = () => {
       const errorMessage = err.response?.data?.error || err.message;
       let displayError: string;
 
-      if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials')) {
+      if (errorMessage.includes('Zu viele') || errorMessage.includes('warte') || errorMessage.includes('429')) {
+        displayError = 'Zu viele Fehlversuche. Bitte warte 15 Minuten.';
+      } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ungültige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';
       } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {
         displayError = 'Nutzername nicht gefunden. Bitte überprüfe deine Eingabe.';

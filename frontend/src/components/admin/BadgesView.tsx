@@ -429,18 +429,13 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                       const badgeColor = badge.color || '#667eea';
                       const isInactive = !badge.is_active;
 
-                      // Status-Farbe und Text
-                      const statusColor = (() => {
-                        if (!badge.is_active) return '#dc3545';
-                        if (badge.is_hidden) return '#fd7e14';
-                        return '#34c759';
-                      })();
+                      // Status-Farbe und Text (Aktiv/Inaktiv)
+                      const activeColor = badge.is_active ? '#34c759' : '#dc3545';
+                      const activeText = badge.is_active ? 'Aktiv' : 'Inaktiv';
 
-                      const statusText = (() => {
-                        if (!badge.is_active) return 'Inaktiv';
-                        if (badge.is_hidden) return 'Geheim';
-                        return 'Aktiv';
-                      })();
+                      // Sichtbarkeits-Farbe und Text (Sichtbar/Geheim)
+                      const visibilityColor = badge.is_hidden ? '#fd7e14' : '#007aff';
+                      const visibilityText = badge.is_hidden ? 'Geheim' : 'Sichtbar';
 
                       return (
                         <IonItemSliding key={badge.id} style={{ marginBottom: index < typeBadges.length - 1 ? '8px' : '0' }}>
@@ -469,12 +464,39 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                 overflow: 'hidden'
                               }}
                             >
-                              {/* Eselsohr-Style Corner Badge */}
-                              <div
-                                className="app-corner-badge"
-                                style={{ backgroundColor: statusColor }}
-                              >
-                                {statusText}
+                              {/* Dual Corner Badges - Aktivität + Sichtbarkeit */}
+                              <div style={{
+                                position: 'absolute',
+                                top: '0',
+                                right: '0',
+                                display: 'flex',
+                                flexDirection: 'row',
+                                zIndex: 10
+                              }}>
+                                {/* Sichtbarkeits-Badge */}
+                                <div style={{
+                                  backgroundColor: visibilityColor,
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '700',
+                                  padding: '4px 8px',
+                                  borderRadius: '0 0 8px 8px'
+                                }}>
+                                  {visibilityText}
+                                </div>
+                                {/* Weißer Abstand */}
+                                <div style={{ width: '2px', background: 'white' }} />
+                                {/* Aktiv/Inaktiv-Badge */}
+                                <div style={{
+                                  backgroundColor: activeColor,
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '700',
+                                  padding: '4px 8px',
+                                  borderRadius: '0 8px 0 8px'
+                                }}>
+                                  {activeText}
+                                </div>
                               </div>
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
@@ -493,7 +515,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                       className="app-list-item__title"
                                       style={{
                                         color: isInactive ? '#999' : undefined,
-                                        paddingRight: '70px'
+                                        paddingRight: '120px'
                                       }}
                                     >
                                       {badge.name}

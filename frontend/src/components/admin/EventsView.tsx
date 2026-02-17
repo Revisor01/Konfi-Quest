@@ -553,7 +553,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                 <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
                 <p style={{ color: '#999', margin: '0' }}>
                   {activeTab === 'konfirmation'
-                    ? 'Keine Konfirmationstermine verfuegbar'
+                    ? 'Keine Konfirmationstermine verfügbar'
                     : activeTab === 'all'
                     ? 'Noch keine Events erstellt'
                     : 'Keine anstehenden Events'
