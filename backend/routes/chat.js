@@ -823,16 +823,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Get participants with their details
       const query = `
-      SELECT 
+      SELECT
         cp.user_id,
         cp.user_type,
         cp.joined_at,
         u.display_name as name,
-        CASE 
+        u.role_title,
+        r.display_name as role_display_name,
+        CASE
           WHEN cp.user_type = 'admin' THEN NULL
           ELSE kp.jahrgang_id
         END as jahrgang_id,
-        CASE 
+        CASE
           WHEN cp.user_type = 'admin' THEN NULL
           ELSE j.name
         END as jahrgang_name

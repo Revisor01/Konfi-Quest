@@ -20,7 +20,10 @@ import {
   IonInput,
   IonItem,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption
 } from '@ionic/react';
 import {
   closeOutline,
@@ -29,7 +32,7 @@ import {
   checkmarkOutline,
   search,
   peopleOutline,
-  trashOutline,
+  trash,
   filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -195,13 +198,13 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
       await Promise.all(promises);
 
-      setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefuegt`);
+      setSuccess(`${selectedUsers.size} Mitglied${selectedUsers.size > 1 ? 'er' : ''} hinzugefügt`);
       setSelectedUsers(new Set());
       setShowAddMode(false);
       await loadParticipants();
       onSuccess();
     } catch (err) {
-      setError('Fehler beim Hinzufuegen der Mitglieder');
+      setError('Fehler beim Hinzufügen der Mitglieder');
  console.error('Error adding participants:', err);
     } finally {
       setAdding(false);
@@ -247,42 +250,45 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const isGroupChat = roomType === 'group';
   const canManageMembers = user?.type === 'admin' && isGroupChat;
 
+  // Rolle/Funktion ermitteln
+  const getRoleText = (targetUser: User | Participant) => {
+    const isAdmin = 'user_type' in targetUser
+      ? targetUser.user_type === 'admin'
+      : targetUser.type === 'admin';
+
+    if (isAdmin) {
+      if ('role_title' in targetUser && targetUser.role_title) {
+        return targetUser.role_title;
+      }
+      if ('role_display_name' in targetUser && targetUser.role_display_name) {
+        return targetUser.role_display_name;
+      }
+      if ('role_description' in targetUser && targetUser.role_description) {
+        return targetUser.role_description;
+      }
+      return 'Admin';
+    }
+
+    // Konfis: Jahrgang anzeigen wenn vorhanden
+    const jahrgang = 'jahrgang_name' in targetUser
+      ? targetUser.jahrgang_name
+      : ('jahrgang' in targetUser ? targetUser.jahrgang : null);
+    return jahrgang || 'Konfirmand';
+  };
+
   // Render User Item - mit CSS-Klassen
   const renderUserItem = (
     targetUser: User | Participant,
     isSelectable: boolean,
     isSelected: boolean,
-    onToggle?: () => void,
-    onRemove?: () => void
+    onToggle?: () => void
   ) => {
     const isAdmin = 'user_type' in targetUser
       ? targetUser.user_type === 'admin'
       : targetUser.type === 'admin';
     const name = getUserDisplayName(targetUser);
     const participantId = `${isAdmin ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
-
-    // Rolle/Funktion ermitteln
-    let roleText = '';
-    if (isAdmin) {
-      if ('role_title' in targetUser && targetUser.role_title) {
-        roleText = targetUser.role_title;
-      } else if ('role_display_name' in targetUser && targetUser.role_display_name) {
-        roleText = targetUser.role_display_name;
-      } else if ('role_description' in targetUser && targetUser.role_description) {
-        roleText = targetUser.role_description;
-      } else {
-        roleText = 'Admin';
-      }
-    } else {
-      roleText = 'Konfi';
-    }
-
-    // Jahrgang ermitteln (nur für Konfis)
-    const jahrgang = !isAdmin ? (
-      'jahrgang_name' in targetUser
-        ? targetUser.jahrgang_name
-        : ('jahrgang' in targetUser ? targetUser.jahrgang : null)
-    ) : null;
+    const roleText = getRoleText(targetUser);
 
     return (
       <div
@@ -298,12 +304,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
             </div>
             <div className="app-list-item__content">
               <div className="app-list-item__title">{name}</div>
-              <div className="app-list-item__subtitle">
-                <span className={`app-chip ${isAdmin ? 'app-chip--chat' : 'app-chip--warning'}`} style={{ marginRight: '8px' }}>
-                  {roleText}
-                </span>
-                {jahrgang && <span style={{ color: '#666' }}>{jahrgang}</span>}
-              </div>
+              <div className="app-list-item__subtitle">{roleText}</div>
             </div>
           </div>
 
@@ -317,21 +318,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 '--checkmark-color': 'white'
               }}
             />
-          )}
-
-          {/* Löschen-Button für Mitglieder-Ansicht */}
-          {onRemove && canManageMembers && (
-            <IonButton
-              fill="clear"
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-              style={{ '--color': '#dc3545' }}
-            >
-              <IonIcon icon={trashOutline} />
-            </IonButton>
           )}
         </div>
       </div>
@@ -410,13 +396,13 @@ const MembersModal: React.FC<MembersModalProps> = ({
                 </IonItemGroup>
               </IonList>
 
-              {/* Verfuegbare Personen - IonListHeader ueber der Card */}
+              {/* Verfügbare Personen - IonListHeader über der Card */}
               <IonList inset={true}>
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--chat">
                     <IonIcon icon={peopleOutline} />
                   </div>
-                  <IonLabel>Verfuegbare Personen ({filteredAvailableUsers.length})</IonLabel>
+                  <IonLabel>Verfügbare Personen ({filteredAvailableUsers.length})</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent style={{ padding: '16px' }}>
@@ -427,7 +413,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
                         color: '#666'
                       }}>
                         <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                        <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfuegbaren Personen gefunden</p>
+                        <p style={{ margin: '0', fontSize: '1rem' }}>Keine verfügbaren Personen gefunden</p>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -470,17 +456,39 @@ const MembersModal: React.FC<MembersModalProps> = ({
                           <p style={{ margin: '0', fontSize: '1rem' }}>Keine Mitglieder</p>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          {sortedParticipants.map((p) =>
-                            renderUserItem(
-                              p,
-                              false,
-                              false,
-                              undefined,
-                              canManageMembers ? () => confirmRemoveUser(p) : undefined
-                            )
-                          )}
-                        </div>
+                        <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                          {sortedParticipants.map((p, index) => (
+                            <IonItemSliding key={`${p.user_type}-${p.user_id}`} disabled={!canManageMembers} style={{ marginBottom: index < sortedParticipants.length - 1 ? '8px' : '0' }}>
+                              <IonItem
+                                detail={false}
+                                lines="none"
+                                style={{
+                                  '--background': 'transparent',
+                                  '--padding-start': '0',
+                                  '--padding-end': '0',
+                                  '--inner-padding-end': '0',
+                                  '--inner-border-width': '0',
+                                  '--border-style': 'none',
+                                  '--min-height': 'auto'
+                                }}
+                              >
+                                {renderUserItem(p, false, false)}
+                              </IonItem>
+                              {canManageMembers && (
+                                <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' }}>
+                                  <IonItemOption
+                                    onClick={() => confirmRemoveUser(p)}
+                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                                  >
+                                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                      <IonIcon icon={trash} />
+                                    </div>
+                                  </IonItemOption>
+                                </IonItemOptions>
+                              )}
+                            </IonItemSliding>
+                          ))}
+                        </IonList>
                       )}
                     </IonCardContent>
                   </IonCard>

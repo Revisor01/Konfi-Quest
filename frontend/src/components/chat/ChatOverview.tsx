@@ -525,7 +525,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                     // Gruppen/Jahrgang türkis, Direkt orange
                     const color = room.type === 'admin' ? '#06b6d4' :
                                   room.type === 'jahrgang' ? '#06b6d4' :
-                                  room.type === 'group' ? '#06b6d4' : '#f97316';
+                                  room.type === 'group' ? '#8b5cf6' : '#f97316';
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 
