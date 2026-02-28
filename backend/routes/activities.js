@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+const { getPointField } = require('../middleware/validation');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -207,7 +208,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
  console.log(`Resetting approved request ${requestId} to pending`);
 
         // Punkte abziehen
-        const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+        const pointField = getPointField(request.type);
         await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} - $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
 
         // konfi_activity Eintrag löschen
@@ -271,7 +272,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       if (status === 'approved') {
         await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
-        const pointField = request.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+        const pointField = getPointField(request.type);
         await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
 
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
@@ -370,9 +371,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   
       await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
       
-      const pointField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+      const pointField = getPointField(activity.type);
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
-      
+
       const badgeResult = await checkAndAwardBadges(db, konfiId);
       res.json({ message: 'Aktivität erfolgreich zugewiesen', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
 
@@ -400,11 +401,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const date = completed_date || new Date().toISOString().split('T')[0];
   
     try {
+      const pointField = getPointField(type);
+
       await db.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", [konfiId, points, type, description, req.user.id, date, req.user.organization_id]);
 
-      const pointField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
       await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
-      
+
       const newBadges = await checkAndAwardBadges(db, konfiId);
 
       // Send push notification for bonus points
@@ -420,6 +422,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToKonfi(konfiId, 'points', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
+      if (err.message === 'Ungueltiger Punktetyp') {
+        return res.status(400).json({ error: 'Ungueltiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
+      }
  console.error('Database error in POST /api/activities/assign-bonus:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }

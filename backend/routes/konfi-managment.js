@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
+const { getPointField } = require('../middleware/validation');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -430,15 +431,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
 
         try {
+            const updateField = getPointField(type);
+
             const query = `
                 INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
                 VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
             await db.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
 
-            const updateField = type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
             const updateQuery = `
-                UPDATE konfi_profiles 
-                SET ${updateField} = ${updateField} + $1 
+                UPDATE konfi_profiles
+                SET ${updateField} = ${updateField} + $1
                 WHERE user_id = $2`;
             await db.query(updateQuery, [points, req.params.id]);
 
@@ -460,6 +462,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
+            if (err.message === 'Ungueltiger Punktetyp') {
+                return res.status(400).json({ error: 'Ungueltiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
+            }
  console.error('Database error in POST /konfis/:id/bonus-points:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
         }
@@ -475,11 +480,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
             
             await db.query('DELETE FROM bonus_points WHERE id = $1', [req.params.bonusId]);
-            
-            const updateField = bonus.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+
+            const updateField = getPointField(bonus.type);
             const updateQuery = `
-                UPDATE konfi_profiles 
-                SET ${updateField} = ${updateField} - $1 
+                UPDATE konfi_profiles
+                SET ${updateField} = ${updateField} - $1
                 WHERE user_id = $2`;
             await db.query(updateQuery, [bonus.points, req.params.id]);
 
@@ -521,11 +526,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 INSERT INTO konfi_activities (konfi_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
                 VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
             await db.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
-            
-            const updateField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+
+            const updateField = getPointField(activity.type);
             const updateQuery = `
-                UPDATE konfi_profiles 
-                SET ${updateField} = ${updateField} + $1 
+                UPDATE konfi_profiles
+                SET ${updateField} = ${updateField} + $1
                 WHERE user_id = $2`;
             await db.query(updateQuery, [activity.points, req.params.id]);
 
@@ -567,11 +572,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
             
             await db.query('DELETE FROM konfi_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
-            
-            const updateField = activity.type === 'gottesdienst' ? 'gottesdienst_points' : 'gemeinde_points';
+
+            const updateField = getPointField(activity.type);
             const updateQuery = `
-                UPDATE konfi_profiles 
-                SET ${updateField} = ${updateField} - $1 
+                UPDATE konfi_profiles
+                SET ${updateField} = ${updateField} - $1
                 WHERE user_id = $2`;
             await db.query(updateQuery, [activity.points, req.params.id]);
 
