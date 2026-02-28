@@ -11,6 +11,7 @@ const nodemailer = require('nodemailer');
 const http = require('http');
 const { Server } = require('socket.io');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
 // ====================================================================
 // SERVER CONFIGURATION
@@ -218,6 +219,12 @@ console.log('Setting up middleware...');
 
 // CORS wird komplett von Apache gehandelt
 // app.use(cors()); // DEAKTIVIERT - Apache macht das
+
+// Security Headers
+app.use(helmet({
+  contentSecurityPolicy: false,
+  strictTransportSecurity: false
+}));
 
 // Allgemeiner Rate Limiter
 app.use(generalLimiter);
