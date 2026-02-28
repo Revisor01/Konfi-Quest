@@ -1,9 +1,32 @@
 const express = require('express');
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 const liveUpdate = require('../utils/liveUpdate');
 
 // Levels: Verwendet bereits direkte Rollen-Checks
 module.exports = (db, verifyTokenRBAC, roleHelpers) => {
   const router = express.Router();
+
+  // Validierungsregeln
+  const validateCreateLevel = [
+    body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+    body('title').trim().notEmpty().withMessage('Titel ist erforderlich'),
+    body('points_required').isInt({ min: 0 }).withMessage('Punkte müssen eine nicht-negative Ganzzahl sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateLevel = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+    body('title').trim().notEmpty().withMessage('Titel ist erforderlich'),
+    body('points_required').isInt({ min: 0 }).withMessage('Punkte müssen eine nicht-negative Ganzzahl sein'),
+    handleValidationErrors
+  ];
+
+  const validateLevelId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
 
   // GET /api/levels - Alle Level für Organisation laden
   router.get('/', verifyTokenRBAC, async (req, res) => {
@@ -29,7 +52,7 @@ module.exports = (db, verifyTokenRBAC, roleHelpers) => {
 });
 
 // POST /api/levels - Neues Level erstellen (nur org_admin und admin)
-router.post('/', verifyTokenRBAC, async (req, res) => {
+router.post('/', verifyTokenRBAC, validateCreateLevel, async (req, res) => {
   try {
     // Nur org_admin und admin können Level verwalten
     if (!['org_admin', 'admin'].includes(req.user.role_name)) {
@@ -79,7 +102,7 @@ router.post('/', verifyTokenRBAC, async (req, res) => {
 });
 
 // PUT /api/levels/:id - Level bearbeiten
-router.put('/:id', verifyTokenRBAC, async (req, res) => {
+router.put('/:id', verifyTokenRBAC, validateUpdateLevel, async (req, res) => {
   try {
     // Nur org_admin und admin können Level verwalten
     if (!['org_admin', 'admin'].includes(req.user.role_name)) {
@@ -143,7 +166,7 @@ router.put('/:id', verifyTokenRBAC, async (req, res) => {
 });
 
 // DELETE /api/levels/:id - Level löschen
-router.delete('/:id', verifyTokenRBAC, async (req, res) => {
+router.delete('/:id', verifyTokenRBAC, validateLevelId, async (req, res) => {
   try {
     // Nur org_admin und admin können Level verwalten
     if (!['org_admin', 'admin'].includes(req.user.role_name)) {

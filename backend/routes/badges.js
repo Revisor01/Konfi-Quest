@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -321,6 +323,28 @@ const checkAndAwardBadges = async (db, konfiId) => {
 // Badges: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
+  // Validierungsregeln
+  const validateCreateBadge = [
+    commonValidations.name,
+    body('icon').trim().notEmpty().withMessage('Icon ist erforderlich'),
+    body('criteria_type').notEmpty().withMessage('Kriterientyp ist erforderlich'),
+    body('criteria_value').isInt({ min: 0 }).withMessage('Kriterienwert muss eine nicht-negative Ganzzahl sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateBadge = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    commonValidations.name,
+    body('icon').trim().notEmpty().withMessage('Icon ist erforderlich'),
+    body('criteria_type').notEmpty().withMessage('Kriterientyp ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateBadgeId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
+
   router.get('/criteria-types', rbacVerifier, requireTeamer, (req, res) => {
     res.json(CRITERIA_TYPES);
   });
@@ -377,7 +401,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
   });
   
-  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateBadge, async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color } = req.body;
     
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
@@ -406,7 +430,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
   });
   
-  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateBadge, async (req, res) => {
     const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_active, is_hidden, color } = req.body;
     
     try {
@@ -434,7 +458,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
   });
   
-  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, validateBadgeId, async (req, res) => {
     try {
       await db.query('BEGIN');
       

@@ -1,9 +1,32 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const liveUpdate = require('../utils/liveUpdate');
 
 // Kategorien: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
+
+  // Validierungsregeln
+  const validateCreateCategory = [
+    commonValidations.name,
+    commonValidations.description,
+    body('type').optional().isIn(['gottesdienst', 'gemeinde', 'both']).withMessage('Typ muss "gottesdienst", "gemeinde" oder "both" sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateCategory = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    commonValidations.name,
+    commonValidations.description,
+    body('type').optional().isIn(['gottesdienst', 'gemeinde', 'both']).withMessage('Typ muss "gottesdienst", "gemeinde" oder "both" sein'),
+    handleValidationErrors
+  ];
+
+  const validateCategoryId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
 
   // GET all categories for the admin's organization
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
@@ -18,7 +41,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // POST a new category
-  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateCategory, async (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
@@ -43,7 +66,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // PUT (update) a category
-  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateCategory, async (req, res) => {
     const { name, description, type } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
@@ -71,7 +94,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // DELETE a category
-  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, validateCategoryId, async (req, res) => {
     const categoryId = req.params.id;
 
     try {

@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHierarchy');
 
 // User management routes
@@ -8,6 +10,39 @@ const { checkUserHierarchy, filterUsersByHierarchy } = require('../utils/roleHie
 // Transaktionen werden direkt über db.query('BEGIN'/'COMMIT'/'ROLLBACK') verwaltet.
 // Users: Nur org_admin darf verwalten
 module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
+
+  // Validierungsregeln
+  const validateCreateUser = [
+    commonValidations.username,
+    body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
+    commonValidations.password,
+    body('role_id').isInt({ min: 1 }).withMessage('Ungültige Rollen-ID'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateUser = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('username').optional().trim().isLength({ min: 3 }).withMessage('Benutzername muss mindestens 3 Zeichen lang sein'),
+    body('display_name').optional().trim().notEmpty().withMessage('Anzeigename darf nicht leer sein'),
+    handleValidationErrors
+  ];
+
+  const validateUserId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
+
+  const validateResetPassword = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
+    handleValidationErrors
+  ];
+
+  const validateJahrgangAssignments = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('jahrgang_assignments').isArray().withMessage('jahrgang_assignments muss ein Array sein'),
+    handleValidationErrors
+  ];
 
   // Hierarchie-Middleware mit DB-Zugriff
   // Diese Middleware erfordert eine Modifikation in der checkUserHierarchy-Funktion,
@@ -103,7 +138,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // Create new user
-  router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), async (req, res) => {
+  router.post('/', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('create'), validateCreateUser, async (req, res) => {
     const organizationId = req.user.organization_id;
     const { username, email, display_name, role_title, password, role_id } = req.body;
 
@@ -159,7 +194,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // Update user
-  router.put('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('update'), async (req, res) => {
+  router.put('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('update'), validateUpdateUser, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
     const { username, email, display_name, role_title, role_id, is_active, password } = req.body;
@@ -230,7 +265,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // Delete user
-  router.delete('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('delete'), async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireOrgAdmin, userHierarchyMiddleware('delete'), validateUserId, async (req, res) => {
     const { id } = req.params;
     const organizationId = req.user.organization_id;
 
@@ -264,7 +299,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // Assign jahrgaenge to user
-  router.post('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.post('/:id/jahrgaenge', rbacVerifier, requireOrgAdmin, validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
     const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
@@ -457,7 +492,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // Reset password for a user (super_admin or org_admin of same org)
-  router.put('/:id/reset-password', rbacVerifier, async (req, res) => {
+  router.put('/:id/reset-password', rbacVerifier, validateResetPassword, async (req, res) => {
     const { id } = req.params;
     const { password } = req.body;
 

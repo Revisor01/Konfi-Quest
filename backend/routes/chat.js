@@ -4,11 +4,33 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const jwt = require('jsonwebtoken');
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
   // Using passed-in encrypted chatUpload from server.js
+
+  // Validierungsregeln
+  const validateCreateRoom = [
+    body('name').optional().trim(),
+    body('type').isIn(['group', 'direct', 'jahrgang']).withMessage('Ungültiger Chat-Typ'),
+    handleValidationErrors
+  ];
+
+  const validateSendMessage = [
+    param('roomId').isInt({ min: 1 }).withMessage('Ungültige Raum-ID'),
+    body('content').optional().trim(),
+    handleValidationErrors
+  ];
+
+  const validateCreatePoll = [
+    param('roomId').isInt({ min: 1 }).withMessage('Ungültige Raum-ID'),
+    body('question').trim().notEmpty().withMessage('Frage ist erforderlich'),
+    body('options').isArray({ min: 2 }).withMessage('Mindestens 2 Antwortoptionen erforderlich'),
+    handleValidationErrors
+  ];
   
   // === UTILITY FUNCTIONS ===
   
@@ -273,7 +295,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   });
   
   // Create new chat room
-  router.post('/rooms', verifyTokenRBAC, async (req, res) => {
+  router.post('/rooms', verifyTokenRBAC, validateCreateRoom, async (req, res) => {
     try {
       const { type, name, participants, jahrgang_id } = req.body;
       const createdBy = req.user.id;
@@ -607,7 +629,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   });
   
   // Send message
-  router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), async (req, res) => {
+  router.post('/rooms/:roomId/messages', verifyTokenRBAC, chatUpload.single('file'), validateSendMessage, async (req, res) => {
     try {
       const roomId = req.params.roomId;
       const { content, message_type = 'text', reply_to } = req.body;
@@ -1050,7 +1072,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
   });
 
   // Create poll for a room
-  router.post('/rooms/:roomId/polls', verifyTokenRBAC, async (req, res) => {
+  router.post('/rooms/:roomId/polls', verifyTokenRBAC, validateCreatePoll, async (req, res) => {
     const roomId = req.params.roomId;
     const { question, options, multiple_choice = false, expires_in_hours } = req.body;
     const userId = req.user.id;

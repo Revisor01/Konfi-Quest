@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -13,6 +15,18 @@ if (!JWT_SECRET) {
 // Konfi-specific routes
 module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   const { verifyTokenRBAC } = rbacMiddleware;
+
+  // Validierungsregeln
+  const validateCreateRequest = [
+    body('activity_id').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
+    body('requested_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateBibleTranslation = [
+    body('bible_translation').trim().notEmpty().withMessage('Bibelübersetzung ist erforderlich'),
+    handleValidationErrors
+  ];
 
   // Get konfi dashboard data
   router.get('/dashboard', verifyTokenRBAC, async (req, res) => {
@@ -540,7 +554,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   });
 
   // Submit new activity request
-  router.post('/requests', verifyTokenRBAC, async (req, res) => {
+  router.post('/requests', verifyTokenRBAC, validateCreateRequest, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
@@ -1723,7 +1737,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   });
 
   // Update bible translation preference
-  router.put('/bible-translation', verifyTokenRBAC, async (req, res) => {
+  router.put('/bible-translation', verifyTokenRBAC, validateBibleTranslation, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }

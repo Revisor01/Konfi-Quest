@@ -1,12 +1,33 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
 module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
-  
+
+  // Validierungsregeln
+  const validateCreateEvent = [
+    body('title').trim().notEmpty().withMessage('Titel ist erforderlich')
+      .isLength({ max: 200 }).withMessage('Titel darf maximal 200 Zeichen lang sein'),
+    body('date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateEvent = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('title').trim().notEmpty().withMessage('Titel ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateEventId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
+
   // Get all events (read-only, accessible to all authenticated users)
   router.get('/', rbacVerifier, async (req, res) => {
     try {
@@ -332,7 +353,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   });
   
   // Create new event
-  router.post('/', rbacVerifier, requireTeamer, async (req, res) => {
+  router.post('/', rbacVerifier, requireTeamer, validateCreateEvent, async (req, res) => {
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
@@ -415,7 +436,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   });
   
   // Update event
-  router.put('/:id', rbacVerifier, requireTeamer, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireTeamer, validateUpdateEvent, async (req, res) => {
     const { id } = req.params;
     const {
       name, description, event_date, event_end_time, location, location_maps_url,
@@ -530,7 +551,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   });
   
   // Delete event
-  router.delete('/:id', rbacVerifier, requireTeamer, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireTeamer, validateEventId, async (req, res) => {
     const { id } = req.params;
     
     await db.query('BEGIN');

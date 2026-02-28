@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 
 // ============================================
 // VEREINFACHTE ROLLEN-ROUTES
@@ -49,7 +51,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   });
 
   // GET /api/roles/:id - Einzelne Rolle anzeigen
-  router.get('/:id', rbacVerifier, async (req, res) => {
+  router.get('/:id', rbacVerifier, [param('id').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors], async (req, res) => {
     if (!['super_admin', 'org_admin'].includes(req.user.role_name)) {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }

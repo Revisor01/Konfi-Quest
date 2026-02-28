@@ -1,11 +1,26 @@
 const express = require('express');
+const { body } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 const { sendFirebasePushNotification } = require('../push/firebase');
 
 module.exports = (db, verifyTokenRBAC) => {
   const router = express.Router();
 
+  // Validierungsregeln
+  const validateDeviceToken = [
+    body('token').notEmpty().withMessage('Push-Token ist erforderlich'),
+    body('platform').isIn(['ios', 'android', 'web']).withMessage('Ungültige Plattform'),
+    handleValidationErrors
+  ];
+
+  const validateDeleteToken = [
+    body('device_id').notEmpty().withMessage('Geräte-ID ist erforderlich'),
+    body('platform').notEmpty().withMessage('Plattform ist erforderlich'),
+    handleValidationErrors
+  ];
+
   // Speichert oder aktualisiert einen Geräte-Token für Push-Benachrichtigungen
-  router.post('/device-token', verifyTokenRBAC, async (req, res) => {
+  router.post('/device-token', verifyTokenRBAC, validateDeviceToken, async (req, res) => {
     const { token, platform, device_id } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
@@ -115,7 +130,7 @@ module.exports = (db, verifyTokenRBAC) => {
   });
 
   // Entfernt einen Geräte-Token beim Logout
-  router.delete('/device-token', verifyTokenRBAC, async (req, res) => {
+  router.delete('/device-token', verifyTokenRBAC, validateDeleteToken, async (req, res) => {
     const { device_id, platform } = req.body;
     const userId = req.user.id;
 

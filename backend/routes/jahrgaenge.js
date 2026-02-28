@@ -1,9 +1,30 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const liveUpdate = require('../utils/liveUpdate');
 
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
+
+  // Validierungsregeln
+  const validateCreateJahrgang = [
+    commonValidations.name,
+    body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateJahrgang = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    commonValidations.name,
+    body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    handleValidationErrors
+  ];
+
+  const validateJahrgangId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
 
   // GET all jahrgaenge for the admin's organization
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
@@ -18,7 +39,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // POST a new jahrgang
-  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateJahrgang, async (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
@@ -49,7 +70,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // PUT (update) a jahrgang
-  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateJahrgang, async (req, res) => {
     const { name, confirmation_date } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
@@ -77,7 +98,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
 
   // DELETE a jahrgang
-  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, validateJahrgangId, async (req, res) => {
     const jahrgangId = req.params.id;
     const forceDelete = req.query.force === 'true';
 

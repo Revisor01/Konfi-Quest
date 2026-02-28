@@ -1,12 +1,47 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
-const { getPointField } = require('../middleware/validation');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJahrgangAccess, checkAndAwardBadges) => {
+
+    // Validierungsregeln
+    const validateCreateKonfi = [
+        body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+        body('jahrgang_id').isInt({ min: 1 }).withMessage('Ungültige Jahrgangs-ID'),
+        handleValidationErrors
+    ];
+
+    const validateUpdateKonfi = [
+        param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+        body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+        body('jahrgang_id').isInt({ min: 1 }).withMessage('Ungültige Jahrgangs-ID'),
+        handleValidationErrors
+    ];
+
+    const validateBonusPoints = [
+        param('id').isInt({ min: 1 }).withMessage('Ungültige Konfi-ID'),
+        commonValidations.points,
+        commonValidations.type,
+        body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
+        handleValidationErrors
+    ];
+
+    const validateAddActivity = [
+        param('id').isInt({ min: 1 }).withMessage('Ungültige Konfi-ID'),
+        body('activity_id').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
+        body('completed_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+        handleValidationErrors
+    ];
+
+    const validateParamId = [
+        param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+        handleValidationErrors
+    ];
 
     // GET all konfis for the admin's organization (with jahrgang filtering)
     router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
@@ -105,7 +140,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // POST (create) a new konfi
-    router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
+    router.post('/', rbacVerifier, requireAdmin, validateCreateKonfi, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
@@ -187,7 +222,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // PUT (update) a konfi
-    router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+    router.put('/:id', rbacVerifier, requireAdmin, validateUpdateKonfi, async (req, res) => {
         const { name, jahrgang_id } = req.body;
         if (!name || !jahrgang_id) {
             return res.status(400).json({ error: 'Name und Jahrgang sind erforderlich' });
@@ -269,7 +304,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // DELETE a konfi
-    router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+    router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
         try {
             await db.query('BEGIN');
@@ -314,7 +349,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // Regenerate password for a konfi
-    router.post('/:id/regenerate-password', rbacVerifier, requireAdmin, async (req, res) => {
+    router.post('/:id/regenerate-password', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
@@ -424,7 +459,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // POST bonus points for a konfi
-    router.post('/:id/bonus-points', rbacVerifier, requireAdmin, async (req, res) => {
+    router.post('/:id/bonus-points', rbacVerifier, requireAdmin, validateBonusPoints, async (req, res) => {
         const { points, type, description } = req.body;
         if (!points || !type || !description) {
             return res.status(400).json({ error: 'Punkte, Typ und Beschreibung sind erforderlich' });
@@ -509,7 +544,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // POST activity for a konfi
-    router.post('/:id/activities', rbacVerifier, requireAdmin, async (req, res) => {
+    router.post('/:id/activities', rbacVerifier, requireAdmin, validateAddActivity, async (req, res) => {
         const { activity_id, completed_date, comment } = req.body;
         if (!activity_id || !completed_date) {
             return res.status(400).json({ error: 'Aktivitäts-ID und Datum sind erforderlich' });

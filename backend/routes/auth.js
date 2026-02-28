@@ -2,6 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
 const router = express.Router();
 
@@ -41,8 +43,50 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // Rate Limiter Middleware für Login (falls vorhanden)
   const loginMiddleware = authLimiter ? [authLimiter] : [];
 
+  // Validierungsregeln
+  const validateLogin = [
+    body('username').trim().notEmpty().withMessage('Benutzername ist erforderlich'),
+    body('password').notEmpty().withMessage('Passwort ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateChangePassword = [
+    body('currentPassword').notEmpty().withMessage('Aktuelles Passwort ist erforderlich'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Neues Passwort muss mindestens 6 Zeichen lang sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateEmail = [
+    body('email').optional({ values: 'null' }).trim().isEmail().withMessage('Ungültige E-Mail-Adresse'),
+    handleValidationErrors
+  ];
+
+  const validateRequestPasswordReset = [
+    body('email').trim().isEmail().withMessage('Gültige E-Mail-Adresse erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateInviteCode = [
+    body('jahrgang_id').isInt({ min: 1 }).withMessage('Ungültige Jahrgangs-ID'),
+    handleValidationErrors
+  ];
+
+  const validateRegisterKonfi = [
+    body('invite_code').trim().notEmpty().withMessage('Einladungscode ist erforderlich'),
+    body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
+    commonValidations.username,
+    commonValidations.password,
+    handleValidationErrors
+  ];
+
+  const validateResetPassword = [
+    body('token').notEmpty().withMessage('Token ist erforderlich'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Neues Passwort muss mindestens 6 Zeichen lang sein'),
+    handleValidationErrors
+  ];
+
   // Unified RBAC login - works for both admins and konfis
-  router.post('/login', ...loginMiddleware, async (req, res) => {
+  router.post('/login', ...loginMiddleware, validateLogin, async (req, res) => {
     const { username, password } = req.body;
  console.log(`RBAC login attempt for: ${username}`);
 
@@ -117,7 +161,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // ===== PASSWORD MANAGEMENT =====
 
   // Change password (for authenticated users)
-  router.post('/change-password', verifyToken, async (req, res) => {
+  router.post('/change-password', verifyToken, validateChangePassword, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
     
@@ -154,7 +198,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Update email address (for authenticated users)
-  router.post('/update-email', verifyToken, async (req, res) => {
+  router.post('/update-email', verifyToken, validateUpdateEmail, async (req, res) => {
     const { email } = req.body;
     const userId = req.user.id;
 
@@ -237,7 +281,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Request password reset (mit Rate Limiting gegen Spam)
-  router.post('/request-password-reset', ...loginMiddleware, async (req, res) => {
+  router.post('/request-password-reset', ...loginMiddleware, validateRequestPasswordReset, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     
@@ -301,7 +345,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // ===== INVITE CODE SYSTEM =====
 
   // Generate invite code for Konfi registration (org_admin only)
-  router.post('/invite-code', verifyToken, async (req, res) => {
+  router.post('/invite-code', verifyToken, validateInviteCode, async (req, res) => {
     const { jahrgang_id } = req.body;
     const userId = req.user.id;
     const organizationId = req.user.organization_id;
@@ -442,7 +486,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Register new Konfi with invite code (public endpoint)
-  router.post('/register-konfi', async (req, res) => {
+  router.post('/register-konfi', validateRegisterKonfi, async (req, res) => {
     const { invite_code, display_name, username, password, email } = req.body;
 
     if (!invite_code || !display_name || !username || !password) {
@@ -549,7 +593,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   });
 
   // Reset password with token
-  router.post('/reset-password', async (req, res) => {
+  router.post('/reset-password', validateResetPassword, async (req, res) => {
     const { token, newPassword } = req.body;
     
     if (!token || !newPassword) return res.status(400).json({ error: 'Token und neues Passwort sind erforderlich' });

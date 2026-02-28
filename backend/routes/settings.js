@@ -1,8 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const { body } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 
 // Settings: Nur org_admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
+
+  // Validierungsregeln
+  const validateSettings = [
+    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('Zielpunkte müssen eine nicht-negative Ganzzahl sein'),
+    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('Zielpunkte müssen eine nicht-negative Ganzzahl sein'),
+    body('max_waitlist_size').optional().isInt({ min: 0 }).withMessage('Wartelistengröße muss eine nicht-negative Ganzzahl sein'),
+    handleValidationErrors
+  ];
 
   // Sicherstellen, dass settings-Tabelle organization_id-Spalte hat
   // (Migration: idempotent, läuft bei jedem Start)
@@ -77,7 +87,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
   });
 
   // PUT settings (nur org_admin der eigenen Org)
-  router.put('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.put('/', rbacVerifier, requireOrgAdmin, validateSettings, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
       const {

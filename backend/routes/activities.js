@@ -1,12 +1,57 @@
 const express = require('express');
 const router = express.Router();
+const { body, param } = require('express-validator');
+const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { getPointField } = require('../middleware/validation');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwardBadges, upload) => {
+
+  // Validierungsregeln
+  const validateCreateActivity = [
+    commonValidations.name,
+    commonValidations.points,
+    commonValidations.type,
+    body('category_ids').optional().isArray().withMessage('Kategorie-IDs müssen ein Array sein'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateActivity = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    commonValidations.name,
+    commonValidations.points,
+    commonValidations.type,
+    handleValidationErrors
+  ];
+
+  const validateDeleteActivity = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
+
+  const validateAssignActivity = [
+    body('konfiId').isInt({ min: 1 }).withMessage('Ungültige Konfi-ID'),
+    body('activityId').isInt({ min: 1 }).withMessage('Ungültige Aktivitäts-ID'),
+    commonValidations.date,
+    handleValidationErrors
+  ];
+
+  const validateAssignBonus = [
+    body('konfiId').isInt({ min: 1 }).withMessage('Ungültige Konfi-ID'),
+    commonValidations.points,
+    commonValidations.type,
+    body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
+    commonValidations.date,
+    handleValidationErrors
+  ];
+
+  const validateRequestUpdate = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('status').isIn(['approved', 'rejected']).withMessage('Status muss "approved" oder "rejected" sein'),
+    handleValidationErrors
+  ];
 
   // ====================================================================
   // ACTIVITIES MANAGEMENT (Masterliste)
@@ -60,7 +105,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // POST a new activity
   // Pfad: POST /api/activities/
-  router.post('/', rbacVerifier, requireAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireAdmin, validateCreateActivity, async (req, res) => {
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
     if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Typ muss gottesdienst oder gemeinde sein' });
@@ -90,7 +135,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // PUT (update) an activity
   // Pfad: PUT /api/activities/:id
-  router.put('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/:id', rbacVerifier, requireAdmin, validateUpdateActivity, async (req, res) => {
     const activityId = req.params.id;
     const { name, points, type, category_ids } = req.body;
     if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
@@ -126,7 +171,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // DELETE an activity
   // Pfad: DELETE /api/activities/:id
-  router.delete('/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireAdmin, validateDeleteActivity, async (req, res) => {
     const activityId = req.params.id;
     try {
       const checkUsageQuery = `SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.activity_id = $1 AND a.organization_id = $2`;
@@ -186,7 +231,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // PUT (update) an activity request status - zurück zu pending
   // Pfad: PUT /api/activities/requests/:id/reset
-  router.put('/requests/:id/reset', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/requests/:id/reset', rbacVerifier, requireAdmin, [param('id').isInt({ min: 1 }).withMessage('Ungültige ID'), handleValidationErrors], async (req, res) => {
     const requestId = req.params.id;
 
     try {
@@ -243,7 +288,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // PUT (update) an activity request status
   // Pfad: PUT /api/activities/requests/:id
-  router.put('/requests/:id', rbacVerifier, requireAdmin, async (req, res) => {
+  router.put('/requests/:id', rbacVerifier, requireAdmin, validateRequestUpdate, async (req, res) => {
     const requestId = req.params.id;
     const { status, admin_comment } = req.body;
     if (!['approved', 'rejected'].includes(status)) return res.status(400).json({ error: 'Ungültiger Status' });
@@ -360,7 +405,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   
   // Assign activity to a konfi
   // Pfad: POST /api/activities/assign-activity
-  router.post('/assign-activity', rbacVerifier, requireTeamer, async (req, res) => {
+  router.post('/assign-activity', rbacVerifier, requireTeamer, validateAssignActivity, async (req, res) => {
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi-ID und Aktivitäts-ID sind erforderlich' });
     const date = completed_date || new Date().toISOString().split('T')[0];
@@ -395,7 +440,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
   // Assign bonus points to a konfi
   // Pfad: POST /api/activities/assign-bonus
-  router.post('/assign-bonus', rbacVerifier, requireTeamer, async (req, res) => {
+  router.post('/assign-bonus', rbacVerifier, requireTeamer, validateAssignBonus, async (req, res) => {
     const { konfiId, points, type, description, completed_date } = req.body;
     if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
     const date = completed_date || new Date().toISOString().split('T')[0];

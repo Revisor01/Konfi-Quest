@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const { body, param } = require('express-validator');
+const { handleValidationErrors } = require('../middleware/validation');
 
 // Organizations routes
 // ============================================
@@ -8,6 +10,38 @@ const bcrypt = require('bcrypt');
 // org_admin: Kann NUR eigene Org sehen und bearbeiten
 // ============================================
 module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
+
+  // Validierungsregeln
+  const validateCreateOrg = [
+    body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+    body('slug').trim().notEmpty().withMessage('Slug ist erforderlich'),
+    body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
+    body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
+    body('admin_password').isLength({ min: 6 }).withMessage('Admin-Passwort muss mindestens 6 Zeichen lang sein'),
+    body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateUpdateOrg = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
+    body('slug').trim().notEmpty().withMessage('Slug ist erforderlich'),
+    body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
+    handleValidationErrors
+  ];
+
+  const validateOrgId = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors
+  ];
+
+  const validateCreateOrgAdmin = [
+    param('id').isInt({ min: 1 }).withMessage('Ungültige Organisations-ID'),
+    body('username').trim().notEmpty().withMessage('Benutzername ist erforderlich'),
+    body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
+    body('password').isLength({ min: 6 }).withMessage('Passwort muss mindestens 6 Zeichen lang sein'),
+    handleValidationErrors
+  ];
 
   // Get all organizations - NUR super_admin
   router.get('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
@@ -128,7 +162,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   });
 
   // Create new organization (super admin only)
-  router.post('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
+  router.post('/', rbacVerifier, requireSuperAdmin, validateCreateOrg, async (req, res) => {
     try {
       const {
         name, slug, display_name, description, contact_email, 
@@ -239,7 +273,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Update organization
   // super_admin: alle, org_admin: nur eigene
-  router.put('/:id', rbacVerifier, async (req, res) => {
+  router.put('/:id', rbacVerifier, validateUpdateOrg, async (req, res) => {
     try {
       const { id } = req.params;
       const {
@@ -281,7 +315,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   });
 
   // Delete organization (super admin only)
-  router.delete('/:id', rbacVerifier, requireSuperAdmin, async (req, res) => {
+  router.delete('/:id', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -376,7 +410,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   });
 
   // Add new org_admin to organization - super_admin oder org_admin der eigenen Org
-  router.post('/:id/admins', rbacVerifier, async (req, res) => {
+  router.post('/:id/admins', rbacVerifier, validateCreateOrgAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const { username, display_name, password, email } = req.body;
