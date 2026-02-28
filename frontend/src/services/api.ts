@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle auth errors
+// Handle auth errors and rate limiting
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -32,6 +32,18 @@ api.interceptors.response.use(
         window.location.href = '/';
       }
     }
+
+    // Rate-Limit: Benutzerfreundliche Meldung bereitstellen
+    if (error.response?.status === 429) {
+      const retryAfter = error.response.headers['retry-after'];
+      const minutes = retryAfter ? Math.ceil(parseInt(retryAfter) / 60) : 15;
+      error.rateLimitMessage = `Zu viele Versuche. Bitte warte ${minutes} Minuten.`;
+      // Falls Backend bereits eine Message hat, diese bevorzugen
+      if (error.response.data?.error) {
+        error.rateLimitMessage = error.response.data.error;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
