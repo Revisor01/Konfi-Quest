@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-02-28T07:48:07.539Z"
+status: phase-complete
+last_updated: "2026-02-28T08:01:00Z"
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -22,28 +22,28 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 1 of 7 (Security Hardening)
-Plan: 2 of 3 in current phase
-Status: Executing phase 1
-Last activity: 2026-02-28 -- Plan 01-01 abgeschlossen (Helmet + SQL-Injection Fix)
+Phase: 1 of 7 (Security Hardening) -- COMPLETE
+Plan: 3 of 3 in current phase (all done)
+Status: Phase 1 complete
+Last activity: 2026-02-28 -- Plan 01-03 abgeschlossen (Input-Validierung + 429-Interceptor)
 
-Progress: [==........] 9%
+Progress: [==........] 14%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 2.5min
-- Total execution time: 5min
+- Total plans completed: 3
+- Average duration: 5min
+- Total execution time: 15min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01 | 2/3 | 5min | 2.5min |
+| 01 | 3/3 | 15min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (2min)
+- Last 5 plans: 01-01 (3min), 01-02 (2min), 01-03 (10min)
 - Trend: Starting
 
 *Updated after each plan completion*
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - 01-02: Notifications braucht keinen Superadmin-Bypass (Push-Tokens sind pro User)
 - 01-02: Settings-Migration idempotent via information_schema statt Migrations-Framework
 - 01-02: Settings GET: Superadmin sieht alle Orgs, normale User nur eigene
+- 01-03: Echte Umlaute in Validierungsmeldungen (per CLAUDE.md Projektregeln)
+- 01-03: Bestehende manuelle Validierung als Fallback belassen
+- 01-03: rateLimitMessage als Error-Property statt globalem Toast
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-01-PLAN.md (Helmet + SQL-Injection Fix)
+Stopped at: Completed 01-03-PLAN.md (Input-Validierung + 429-Interceptor) -- Phase 01 complete
 Resume file: None
