@@ -412,7 +412,7 @@ app.use('/api/konfi', konfiRoutes(db, { verifyTokenRBAC: rbacVerifier }, upload,
 app.post('/api/chat/rooms/:roomId/messages', chatMessageLimiter, uploadLimiter);
 app.use('/api/chat', chatRoutes(db, { verifyTokenRBAC: rbacVerifier }, uploadsDir, chatUpload));
 
-app.use('/api/notifications', notificationsRoutes(db, verifyToken));
+app.use('/api/notifications', notificationsRoutes(db, rbacVerifier));
 
 // Events: Buchungs-Endpunkt mit eigenem Rate-Limiter
 app.post('/api/events/:id/book', eventBookingLimiter);
