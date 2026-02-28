@@ -31,11 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Ein Nutzer aus Organisation A kann keine Daten von Organisation B abrufen -- auch nicht ueber notifications.js oder andere bisher ungefilterte Routes
   3. Manipulierte Eingaben (SQL-Injection-Versuche, fehlende Felder, ungueltige Typen) werden vom Backend mit verstaendlichen Fehlermeldungen abgelehnt
   4. Bei Rate-Limiting sieht der Nutzer eine klare deutschsprachige Meldung mit Hinweis auf die Wartezeit, nicht nur einen technischen 429-Fehler
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01: Helmet + SQL-Injection Fix (SEC-01, SEC-06) [Wave 1]
+- [ ] 01-02: Org-Isolation Audit + Fix (SEC-02, SEC-03) [Wave 1]
+- [ ] 01-03: Input-Validierung + Rate-Limiter UX (SEC-04, SEC-05) [Wave 2, depends on 01-01]
 
 ### Phase 2: Bug-Fixes und Theme-Stabilisierung
 **Goal**: Die bekannten Bugs sind behoben und die Theme-Konfiguration funktioniert plattformkorrekt -- iOS bekommt iOS 26 Theme, Android bekommt MD3 Theme, ohne Kollisionen
@@ -131,7 +132,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 0/0 | Not started | - |
+| 1. Security Hardening | 0/3 | Planned | - |
 | 2. Bug-Fixes und Theme-Stabilisierung | 0/0 | Not started | - |
 | 3. Design-System Grundlagen | 0/0 | Not started | - |
 | 4. Admin-Views Kern | 0/0 | Not started | - |

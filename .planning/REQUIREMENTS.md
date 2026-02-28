@@ -10,8 +10,8 @@ Requirements fuer den aktuellen Milestone: Design-Konsistenz + Security Hardenin
 ### Security
 
 - [ ] **SEC-01**: Backend nutzt helmet fuer HTTP Security Headers (Dependency existiert, aber ist nicht aktiviert)
-- [ ] **SEC-02**: Alle Backend-Routes filtern Queries konsistent nach organization_id (Multi-Tenant-Isolation)
-- [ ] **SEC-03**: notifications.js Route hat organization_id-Filterung (aktuell komplett fehlend)
+- [x] **SEC-02**: Alle Backend-Routes filtern Queries konsistent nach organization_id (Multi-Tenant-Isolation)
+- [x] **SEC-03**: notifications.js Route hat organization_id-Filterung (aktuell komplett fehlend)
 - [ ] **SEC-04**: Backend nutzt express-validator fuer systematische Input-Validierung auf allen Endpoints
 - [ ] **SEC-05**: Rate-Limiter zeigt dem User eine verstaendliche Meldung bei Blockierung (nicht nur 429 Error)
 - [ ] **SEC-06**: SQL-Injection-Risiko in activities.js durch sichere Query-Patterns ersetzt (kein Template-Literal fuer Spaltennamen)
@@ -98,8 +98,8 @@ Deferred fuer zukuenftigen Release. Nicht im aktuellen Roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SEC-01 | Phase 1 | Pending |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Complete |
+| SEC-03 | Phase 1 | Complete |
 | SEC-04 | Phase 1 | Pending |
 | SEC-05 | Phase 1 | Pending |
 | SEC-06 | Phase 1 | Pending |
