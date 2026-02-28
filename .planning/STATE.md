@@ -79,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-02-PLAN.md (Notifications & Settings Org-Isolation)
+Stopped at: Completed 01-01-PLAN.md (Helmet + SQL-Injection Fix)
 Resume file: None
