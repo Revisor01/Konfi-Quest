@@ -25,7 +25,7 @@ Phase 2: Frontend Stabilisierung + Bug-Fixes (2 plans, complete)
 - Integer phases (3, 4, 5, 6, 7): Planned milestone work
 - Decimal phases (3.1, 4.1): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 3: Design-System Grundlagen** - Shared Components und CSS-Klassen als Fundament fuer alle weiteren Phasen
+- [x] **Phase 3: Design-System Grundlagen** - Shared Components und CSS-Klassen als Fundament fuer alle weiteren Phasen
 - [ ] **Phase 4: Admin-Views Core** - Die 6 meistgenutzten Admin-Views ans Konfi-Referenz-Design anpassen
 - [ ] **Phase 5: Admin-Views Erweitert** - Restliche 6 Admin-Views konsistent gestalten
 - [ ] **Phase 6: Modal-Konsistenz** - Alle Modale auf useIonModal und einheitliches Design migrieren
@@ -45,9 +45,9 @@ Phase 2: Frontend Stabilisierung + Bug-Fixes (2 plans, complete)
 **Plans**: 3
 
 Plans:
-- [ ] 03-01: CSS-Klassen und Shared Components erstellen (SectionHeader, EmptyState, ListSection) [Wave 1]
-- [ ] 03-02: 8 Haupt-Views (Konfi + Admin-Core) auf Shared Components umstellen [Wave 2]
-- [ ] 03-03: 8 restliche Views (Admin-Pages, Konfi-Views, Chat) auf Shared Components umstellen [Wave 2]
+- [x] 03-01: CSS-Klassen und Shared Components erstellen (SectionHeader, EmptyState, ListSection) [Wave 1]
+- [x] 03-02: 8 Haupt-Views (Konfi + Admin-Core) auf Shared Components umstellen [Wave 2]
+- [x] 03-03: 8 restliche Views (Admin-Pages, Konfi-Views, Chat) auf Shared Components umstellen [Wave 2]
 
 ### Phase 4: Admin-Views Core
 **Goal**: Die 6 meistgenutzten Admin-Seiten auf die neuen Shared Components umstellen. Die Seiten haben BEREITS eigene Farben und Header-Pattern -- hier wird das bestehende Inline-Styling durch die Shared Components aus Phase 3 ersetzt, ohne Farben oder Logik zu aendern.
