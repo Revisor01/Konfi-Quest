@@ -76,6 +76,7 @@ ion-card.app-card ion-item ion-label h2 {
    WIEDERVERWENDBARE APP KOMPONENTEN
    ============================================ */
 
+/* === List Items === */
 /* App List Item - Basis-Klasse fuer alle Listenelemente mit farbiger Border */
 .app-list-item {
   border-top: 1px solid rgba(0,0,0,0.06);
@@ -195,6 +196,7 @@ ion-item.app-list-item:last-child {
   background: rgba(52, 199, 89, 0.08);
 }
 
+/* === Reason Boxes === */
 /* App Reason Box - fuer Abmeldungen, Ablehnungen, etc. */
 .app-reason-box {
   margin-top: 8px;
@@ -227,6 +229,7 @@ ion-item.app-list-item:last-child {
 .app-reason-box--warning .app-reason-box__label { color: #ff9500; }
 .app-reason-box--info .app-reason-box__label { color: #007aff; }
 
+/* === Status Chips === */
 /* App Status Chip - fuer Status-Anzeigen */
 .app-chip {
   font-size: 0.7rem;
@@ -266,6 +269,7 @@ ion-item.app-list-item:last-child {
   color: #5b21b6;
 }
 
+/* === Corner Badges === */
 /* App Corner Badge - Eselsohr-Style Badge oben rechts */
 .app-corner-badge {
   position: absolute;
@@ -287,6 +291,7 @@ ion-item.app-list-item:last-child {
 .app-corner-badge--chat { background-color: #06b6d4; }
 .app-corner-badge--purple { background-color: #5b21b6; }
 
+/* === Section Header Icons === */
 /* App Section Header Icon - runder farbiger Icon-Container */
 .app-section-icon {
   width: 24px;
@@ -318,6 +323,7 @@ ion-item.app-list-item:last-child {
   font-size: 0.8rem;
 }
 
+/* === Info Rows === */
 /* App Info Row - fuer Info-Zeilen mit Icon */
 .app-info-row {
   display: flex;
@@ -341,6 +347,7 @@ ion-item.app-list-item:last-child {
   color: #666;
 }
 
+/* === Icon Circles === */
 /* App Icon Circle - runder Icon-Container fuer Listen-Items */
 .app-icon-circle {
   width: 28px;
@@ -379,6 +386,7 @@ ion-item.app-list-item:last-child {
   font-size: 1.2rem;
 }
 
+/* === Tags === */
 /* App Tag - kleine Kategorie/Label Tags */
 .app-tag {
   display: inline-flex;
@@ -416,6 +424,7 @@ ion-item.app-list-item:last-child {
   color: #ff9500;
 }
 
+/* === List Item Layout === */
 /* App List Item Layout - mit Chip rechts */
 .app-list-item__row {
   display: flex;
@@ -464,7 +473,7 @@ ion-item.app-list-item:last-child {
   gap: 4px;
 }
 
-/* App Farbvariablen */
+/* === App Farbvariablen === */
 :root {
   --app-color-events: #dc2626;
   --app-color-events-rgb: 220, 38, 38;
@@ -481,6 +490,22 @@ ion-item.app-list-item:last-child {
   --app-color-purple: #5b21b6;
   --app-color-purple-rgb: 91, 33, 182;
   --app-color-trophy: #ff9500;
+  --app-color-activities: #059669;
+  --app-color-activities-rgb: 5, 150, 105;
+  --app-color-users: #667eea;
+  --app-color-users-rgb: 102, 126, 234;
+  --app-color-organizations: #2dd36f;
+  --app-color-organizations-rgb: 45, 211, 111;
+  --app-color-badges: #f59e0b;
+  --app-color-badges-rgb: 245, 158, 11;
+  --app-color-requests: #5b21b6;
+  --app-color-requests-rgb: 91, 33, 182;
+  --app-color-jahrgang: #007aff;
+  --app-color-jahrgang-rgb: 0, 122, 255;
+  --app-color-konfis: #5b21b6;
+  --app-color-konfis-rgb: 91, 33, 182;
+  --app-color-bonus: #f97316;
+  --app-color-bonus-rgb: 249, 115, 22;
 }
 
 /* iOS 26 TabBar: Verstärkter Blur-Effekt (näher am nativen iOS 26 Look) */
@@ -527,6 +552,132 @@ ion-popover ion-select-popover ion-item {
   --background: #ffffff;
   --background-hover: rgba(6, 182, 212, 0.08);
   --background-activated: rgba(6, 182, 212, 0.12);
+}
+
+/* === Header Banner === */
+.app-header-banner {
+  border-radius: 20px;
+  padding: 24px;
+  margin: 16px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-header-banner__circle-top {
+  position: absolute;
+  top: -30px;
+  right: -30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.app-header-banner__circle-bottom {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.app-header-banner__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.app-header-banner__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-header-banner__icon ion-icon {
+  font-size: 1.6rem;
+  color: white;
+}
+
+.app-header-banner__title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+}
+
+.app-header-banner__subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* === Stats Row === */
+.app-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.app-stats-row__item {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+  flex: 1 1 0;
+  max-width: 100px;
+}
+
+.app-stats-row__value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: white;
+}
+
+.app-stats-row__label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* === Empty States === */
+.app-empty-state {
+  text-align: center;
+  padding: 32px;
+}
+
+.app-empty-state__icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.app-empty-state__title {
+  color: #666;
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.app-empty-state__text {
+  color: #999;
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 /* Dark Mode Support - DISABLED
