@@ -20,7 +20,7 @@ import {
   IonText
 } from '@ionic/react';
 import {
-  arrowBack,
+  closeOutline,
   qrCodeOutline,
   school,
   refreshOutline,
@@ -31,7 +31,6 @@ import {
   checkmarkCircleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import QRCode from 'qrcode';
 
@@ -49,9 +48,20 @@ interface ExistingInvite {
   used_count: number;
 }
 
-const AdminInvitePage: React.FC = () => {
-  const { pageRef } = useModalPage('admin-invite');
+interface AdminInviteModalProps {
+  onClose: () => void;
+  dismiss?: () => void;
+}
+
+const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) => {
   const { setSuccess, setError } = useApp();
+  const handleClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
@@ -189,24 +199,19 @@ const AdminInvitePage: React.FC = () => {
   };
 
   return (
-    <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
+    <IonPage>
+      <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+            <IonButton onClick={handleClose}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Konfis einladen</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Konfis einladen</IonTitle>
-          </IonToolbar>
-        </IonHeader>
+      <IonContent className="app-gradient-background">
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
@@ -257,7 +262,7 @@ const AdminInvitePage: React.FC = () => {
                     ) : (
                       <>
                         <IonIcon icon={add} slot="start" />
-                        Neuen Einladungscode generieren
+                        Einladungslink generieren
                       </>
                     )}
                   </IonButton>
@@ -379,11 +384,7 @@ const AdminInvitePage: React.FC = () => {
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                       }}
                     />
-                    <p style={{
-                      fontSize: '0.9rem',
-                      color: '#666',
-                      margin: '0 0 8px 0'
-                    }}>
+                    <p className="app-settings-item__subtitle" style={{ fontSize: '0.9rem', margin: '0 0 8px 0' }}>
                       Konfis scannen diesen Code, um sich selbst zu registrieren.
                     </p>
                     <div style={{
@@ -431,9 +432,9 @@ const AdminInvitePage: React.FC = () => {
 
             {/* Info */}
             <IonList inset={true} style={{ margin: '16px' }}>
-              <IonCard className="app-card" style={{ background: 'rgba(0, 122, 255, 0.08)', border: '1px solid rgba(0, 122, 255, 0.2)' }}>
-                <IonCardContent style={{ padding: '16px' }}>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#007aff', lineHeight: '1.5' }}>
+              <IonCard className="app-card app-info-box--blue">
+                <IonCardContent className="app-info-box">
+                  <p style={{ margin: 0 }}>
                     Einladungscodes sind 7 Tage gültig. Konfis können sich mit dem Code selbst einen Account erstellen und werden automatisch dem gewählten Jahrgang zugeordnet.
                   </p>
                 </IonCardContent>

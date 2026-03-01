@@ -18,8 +18,8 @@ import {
 import {
   closeOutline,
   checkmarkOutline,
-  sunnyOutline,
-  peopleOutline,
+  home,
+  people,
   addOutline,
   removeOutline
 } from 'ionicons/icons';
@@ -109,8 +109,8 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             {/* Gottesdienst-Ziel */}
             <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: '#3b82f6' }}>
-                  <IonIcon icon={sunnyOutline} />
+                <div className="app-section-icon app-section-icon--activities">
+                  <IonIcon icon={home} />
                 </div>
                 <IonLabel>Gottesdienst-Punkte</IonLabel>
               </IonListHeader>
@@ -126,18 +126,14 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                     <IonButton
                       fill="clear"
                       onClick={() => setFormData({ ...formData, target_gottesdienst: Math.max(0, formData.target_gottesdienst - 1) })}
-                      style={{
-                        '--color': '#3b82f6',
-                        width: '48px',
-                        height: '48px'
-                      }}
+                      style={{ width: '48px', height: '48px' }}
                     >
                       <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
                     </IonButton>
                     <div style={{
                       fontSize: '2.5rem',
                       fontWeight: '700',
-                      color: '#3b82f6',
+                      color: '#333',
                       minWidth: '80px',
                       textAlign: 'center'
                     }}>
@@ -146,16 +142,12 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                     <IonButton
                       fill="clear"
                       onClick={() => setFormData({ ...formData, target_gottesdienst: formData.target_gottesdienst + 1 })}
-                      style={{
-                        '--color': '#3b82f6',
-                        width: '48px',
-                        height: '48px'
-                      }}
+                      style={{ width: '48px', height: '48px' }}
                     >
                       <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
                     </IonButton>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0', textAlign: 'center' }}>
+                  <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
                     Ziel-Punkte für Gottesdienste
                   </p>
                 </IonCardContent>
@@ -165,8 +157,8 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             {/* Gemeinde-Ziel */}
             <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: '#059669' }}>
-                  <IonIcon icon={peopleOutline} />
+                <div className="app-section-icon app-section-icon--activities">
+                  <IonIcon icon={people} />
                 </div>
                 <IonLabel>Gemeinde-Punkte</IonLabel>
               </IonListHeader>
@@ -182,18 +174,14 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                     <IonButton
                       fill="clear"
                       onClick={() => setFormData({ ...formData, target_gemeinde: Math.max(0, formData.target_gemeinde - 1) })}
-                      style={{
-                        '--color': '#059669',
-                        width: '48px',
-                        height: '48px'
-                      }}
+                      style={{ width: '48px', height: '48px' }}
                     >
                       <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
                     </IonButton>
                     <div style={{
                       fontSize: '2.5rem',
                       fontWeight: '700',
-                      color: '#059669',
+                      color: '#333',
                       minWidth: '80px',
                       textAlign: 'center'
                     }}>
@@ -202,16 +190,12 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                     <IonButton
                       fill="clear"
                       onClick={() => setFormData({ ...formData, target_gemeinde: formData.target_gemeinde + 1 })}
-                      style={{
-                        '--color': '#059669',
-                        width: '48px',
-                        height: '48px'
-                      }}
+                      style={{ width: '48px', height: '48px' }}
                     >
                       <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
                     </IonButton>
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: '#8e8e93', margin: '8px 0 0 0', textAlign: 'center' }}>
+                  <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
                     Ziel-Punkte für Gemeindeaktivitäten
                   </p>
                 </IonCardContent>
@@ -220,9 +204,9 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
 
             {/* Info */}
             <IonList inset={true} style={{ margin: '16px' }}>
-              <IonCard className="app-card" style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <IonCardContent style={{ padding: '16px' }}>
-                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#3b82f6', lineHeight: '1.5' }}>
+              <IonCard className="app-card app-info-box--neutral">
+                <IonCardContent className="app-info-box">
+                  <p style={{ margin: 0 }}>
                     Diese Ziele werden in den Activity Rings der Konfi-Details angezeigt.
                     Bei Erreichen des Ziels füllt sich der Ring zu 100%.
                   </p>
