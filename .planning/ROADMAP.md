@@ -59,12 +59,13 @@ Plans:
   3. EventsPage nutzt das Header-Banner-Pattern der Konfi-Referenz, wobei Admin-Bearbeitungsfunktionen (Edit, Delete) erhalten bleiben
   4. BadgesPage und JahrgaengePage folgen dem kompakten Header-Pattern mit Stats-Row
   5. Beim Wechsel zwischen Konfi- und Admin-Bereich ist der visuelle Stil erkennbar einheitlich
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01: CSS-Klassen erweitern, TabBar auf 5 Tabs reduzieren, Badges nach Settings [Wave 1]
+- [ ] 04-02: EventDetailView (Admin+Konfi) und AdminProfilePage auf SectionHeader/CSS-Klassen [Wave 2]
+- [ ] 04-03: Inline-Styles bereinigen in Admin-Pages und Admin-Views [Wave 2]
+- [ ] 04-04: Inline-Styles bereinigen in Konfi-Modals, Chat-Modals, Admin-Modals [Wave 2]
 
 ### Phase 5: Admin-Views Erweitert
 **Goal**: Restliche 6 Admin-Seiten auf Shared Components umstellen. Auch hier: bestehende Farben und Funktionalitaet beibehalten, nur Inline-Styling durch Components ersetzen und ggf. kleinere Inkonsistenzen angleichen.

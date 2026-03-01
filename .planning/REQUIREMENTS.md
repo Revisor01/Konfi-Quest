@@ -70,11 +70,11 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | DES-02 | Phase 3 | Complete |
 | DES-03 | Phase 3 | Complete |
 | DES-04 | Phase 3 | Complete |
-| ADM-01 | Phase 4 | Pending |
+| ADM-01 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-02 | Phase 4 | Pending |
 | ADM-03 | Phase 4 | Pending |
-| ADM-04 | Phase 4 | Pending |
-| ADM-05 | Phase 4 | Pending |
+| ADM-04 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
+| ADM-05 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-06 | Phase 4 | Pending |
 | ADM-07 | Phase 5 | Pending |
 | ADM-08 | Phase 5 | Pending |
