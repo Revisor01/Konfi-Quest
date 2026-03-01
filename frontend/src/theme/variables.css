@@ -122,16 +122,16 @@ ion-item.app-list-item:last-child {
 .app-list-item--warning, ion-item.app-list-item--warning { border-left-color: #ff9500; }
 .app-list-item--danger, ion-item.app-list-item--danger { border-left-color: #dc3545; }
 .app-list-item--info, ion-item.app-list-item--info { border-left-color: #007aff; }
-.app-list-item--purple, ion-item.app-list-item--purple { border-left-color: #8b5cf6; }
+.app-list-item--purple, ion-item.app-list-item--purple { border-left-color: #5b21b6; }
 .app-list-item--booked, ion-item.app-list-item--booked { border-left-color: #007aff; }
 .app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
 .app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #059669; }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
-.app-list-item--level, ion-item.app-list-item--level { border-left-color: #9b59b6; }
+.app-list-item--level, ion-item.app-list-item--level { border-left-color: #5b21b6; }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #2dd36f; }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
-.app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #8b5cf6; }
+.app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
 .app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
 
 /* Selected State fuer List Items - Events (Rot) */
@@ -176,8 +176,8 @@ ion-item.app-list-item:last-child {
 }
 /* Selected State fuer List Items - Level (Lila) */
 .app-list-item--level.app-list-item--selected {
-  border-color: #9b59b6;
-  background: rgba(155, 89, 182, 0.08);
+  border-color: #5b21b6;
+  background: rgba(91, 33, 182, 0.08);
 }
 /* Selected State fuer List Items - Organizations (Gruen) */
 .app-list-item--organizations.app-list-item--selected {
@@ -262,8 +262,8 @@ ion-item.app-list-item:last-child {
   color: #06b6d4;
 }
 .app-chip--purple {
-  background-color: rgba(139, 92, 246, 0.15);
-  color: #8b5cf6;
+  background-color: rgba(91, 33, 182, 0.15);
+  color: #5b21b6;
 }
 
 /* App Corner Badge - Eselsohr-Style Badge oben rechts */
@@ -285,7 +285,7 @@ ion-item.app-list-item:last-child {
 .app-corner-badge--danger { background-color: #dc3545; }
 .app-corner-badge--info { background-color: #007aff; }
 .app-corner-badge--chat { background-color: #06b6d4; }
-.app-corner-badge--purple { background-color: #8b5cf6; }
+.app-corner-badge--purple { background-color: #5b21b6; }
 
 /* App Section Header Icon - runder farbiger Icon-Container */
 .app-section-icon {
@@ -303,12 +303,12 @@ ion-item.app-list-item:last-child {
 .app-section-icon--warning { background-color: #ff9500; }
 .app-section-icon--danger { background-color: #dc3545; }
 .app-section-icon--info { background-color: #007aff; }
-.app-section-icon--purple { background-color: #8b5cf6; }
+.app-section-icon--purple { background-color: #5b21b6; }
 .app-section-icon--primary { background-color: #5b21b6; }
 .app-section-icon--bonus { background-color: #f97316; }
 .app-section-icon--activities { background-color: #059669; }
 .app-section-icon--users { background-color: #667eea; }
-.app-section-icon--level { background-color: #9b59b6; }
+.app-section-icon--level { background-color: #5b21b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
 .app-section-icon--badges { background-color: #f59e0b; }
 .app-section-icon--requests { background-color: #059669; }
@@ -361,13 +361,13 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--warning { background-color: #ff9500; }
 .app-icon-circle--danger { background-color: #dc3545; }
 .app-icon-circle--info { background-color: #007aff; }
-.app-icon-circle--purple { background-color: #8b5cf6; }
+.app-icon-circle--purple { background-color: #5b21b6; }
 .app-icon-circle--trophy { background-color: #ff9500; }
 .app-icon-circle--primary { background-color: #5b21b6; }
 .app-icon-circle--bonus { background-color: #f97316; }
 .app-icon-circle--activities { background-color: #059669; }
 .app-icon-circle--users { background-color: #667eea; }
-.app-icon-circle--level { background-color: #9b59b6; }
+.app-icon-circle--level { background-color: #5b21b6; }
 .app-icon-circle--organizations { background-color: #2dd36f; }
 .app-icon-circle--badges { background-color: #f59e0b; }
 .app-icon-circle--jahrgang { background-color: #007aff; }
@@ -400,8 +400,8 @@ ion-item.app-list-item:last-child {
   color: #06b6d4;
 }
 .app-tag--purple {
-  background-color: rgba(139, 92, 246, 0.12);
-  color: #8b5cf6;
+  background-color: rgba(91, 33, 182, 0.12);
+  color: #5b21b6;
 }
 .app-tag--info {
   background-color: rgba(0, 122, 255, 0.12);
@@ -478,9 +478,16 @@ ion-item.app-list-item:last-child {
   --app-color-danger-rgb: 220, 53, 69;
   --app-color-info: #007aff;
   --app-color-info-rgb: 0, 122, 255;
-  --app-color-purple: #8b5cf6;
-  --app-color-purple-rgb: 139, 92, 246;
+  --app-color-purple: #5b21b6;
+  --app-color-purple-rgb: 91, 33, 182;
   --app-color-trophy: #ff9500;
+}
+
+/* iOS 26 TabBar: Verstärkter Blur-Effekt (näher am nativen iOS 26 Look) */
+/* Die Library setzt blur(2px) saturate(360%) -- wir erhöhen für realistischeren Glass-Effekt */
+ion-tab-bar.ios:not(.ios26-disabled) {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
 /* Solideres Popover Styling für IonSelect */

@@ -1,5 +1,5 @@
 // MainTabs.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Redirect, Route, useLocation } from 'react-router-dom'; // useLocation importieren!
 import {
   IonIcon,
@@ -26,7 +26,6 @@ import {
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
-import { registerTabBarEffect } from '@rdlabo/ionic-theme-ios26';
 import api from '../../services/api';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 import AdminKonfisPage from '../admin/pages/AdminKonfisPage';
@@ -152,21 +151,6 @@ const MainTabs: React.FC = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  // iOS 26 Tab-Bar Animation Effect
-  const tabBarEffectRef = useRef<ReturnType<typeof registerTabBarEffect>>(undefined);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      tabBarEffectRef.current?.destroy();
-      const tabBar = document.querySelector<HTMLElement>('ion-tab-bar');
-      if (tabBar) {
-        tabBarEffectRef.current = registerTabBarEffect(tabBar);
-      }
-    }, 100);
-    return () => {
-      clearTimeout(timer);
-      tabBarEffectRef.current?.destroy();
-    };
-  }, [location.pathname]);
 
   if (!user) {
     return null;
