@@ -18,8 +18,7 @@ import {
   IonList,
   IonListHeader,
   IonAccordion,
-  IonAccordionGroup,
-  IonText
+  IonAccordionGroup
 } from '@ionic/react';
 import {
   checkmarkOutline,
@@ -185,7 +184,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
     description: '',
     points_required: 0,
     icon: 'trophy',
-    color: '#9b59b6',
+    color: '#5b21b6',
     is_active: true
   });
   const [loading, setLoading] = useState(false);
@@ -220,7 +219,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         description: formData.description?.trim() || '',
         points_required: formData.points_required,
         icon: formData.icon || 'trophy',
-        color: formData.color || '#9b59b6',
+        color: formData.color || '#5b21b6',
         reward_type: formData.reward_type || null,
         reward_value: formData.reward_value || null,
         is_active: formData.is_active !== false
@@ -272,7 +271,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Grunddaten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--level">
               <IonIcon icon={create} />
@@ -321,14 +320,11 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                 <IonAccordionGroup>
                   <IonAccordion value="icon-picker">
                     <IonItem slot="header" lines="none" style={{ '--background': 'transparent' }}>
-                      <div style={{
-                        width: '50px',
-                        height: '50px',
+                      <div className="app-icon-circle app-icon-circle--lg" style={{
                         backgroundColor: formData.color,
                         borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        width: '50px',
+                        height: '50px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                         marginRight: '12px'
                       }}>
@@ -338,11 +334,11 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                         />
                       </div>
                       <IonLabel>
-                        <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                        <h3 className="app-settings-item__subtitle" style={{ margin: '0 0 4px 0' }}>
                           Icon *
                         </h3>
                         {formData.icon && LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS] && (
-                          <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                          <p className="app-settings-item__title" style={{ margin: '0' }}>
                             {LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS].name} ({LEVEL_ICONS[formData.icon as keyof typeof LEVEL_ICONS].category})
                           </p>
                         )}
@@ -359,9 +355,9 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                         return acc;
                       }, [] as any[]).map((group: any) => (
                         <div key={group.category} style={{ marginBottom: '16px' }}>
-                          <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                          <span className="app-settings-item__subtitle" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>
                             {group.category}
-                          </IonText>
+                          </span>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
                             {group.icons.map(({ key, data }: any) => (
                               <div
@@ -422,7 +418,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
           </IonCardContent>
         </IonCard>
       </IonList>
-      {/* Abstand unten für bessere Sichtbarkeit */}
+      {/* Abstand unten */}
       <div style={{ height: '32px' }} />
       </IonContent>
     </IonPage>

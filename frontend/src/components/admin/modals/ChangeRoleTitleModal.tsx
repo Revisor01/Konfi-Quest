@@ -15,8 +15,7 @@ import {
   IonInput,
   IonList,
   IonListHeader,
-  IonSpinner,
-  IonText
+  IonSpinner
 } from '@ionic/react';
 import {
   closeOutline,
@@ -77,7 +76,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* Funktionsbeschreibung Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px', marginTop: '8px' }}>
+        <IonList inset={true} className="app-segment-wrapper" style={{ marginTop: '8px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={briefcaseOutline} />
@@ -85,7 +84,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             <IonLabel>Deine Funktion</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-info-box">
               <IonList style={{ background: 'transparent' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked">Funktionsbeschreibung</IonLabel>
@@ -103,24 +102,22 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         </IonList>
 
         {/* Hinweis Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card" style={{ background: 'rgba(139, 92, 246, 0.08)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonText style={{ color: '#8b5cf6' }}>
-                <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                  Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
-                  Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergänzt sie.
-                </p>
-                <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                  Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
-                </p>
-              </IonText>
+          <IonCard className="app-card app-info-box--purple">
+            <IonCardContent className="app-info-box">
+              <p style={{ margin: 0 }}>
+                Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
+                Sie ersetzt nicht deine Rolle (Admin, Teamer), sondern ergänzt sie.
+              </p>
+              <p style={{ margin: '12px 0 0 0', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
+              </p>
             </IonCardContent>
           </IonCard>
         </IonList>
