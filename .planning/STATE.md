@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T08:06:50.010Z"
+last_updated: "2026-03-01T12:50:45Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,33 +18,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Konsistente, sichere App fuer den produktiven Einsatz mit einheitlichem Design ueber alle Rollen
-**Current focus:** Phase 1: Security Hardening
+**Current focus:** Phase 2: Bug-Fixes und Theme-Stabilisierung
 
 ## Current Position
 
-Phase: 1 of 7 (Security Hardening) -- COMPLETE
-Plan: 3 of 3 in current phase (all done)
-Status: Phase 1 complete
-Last activity: 2026-02-28 -- Plan 01-03 abgeschlossen (Input-Validierung + 429-Interceptor)
+Phase: 2 of 7 (Bug-Fixes und Theme-Stabilisierung)
+Plan: 1 of 2 in current phase (02-01 done)
+Status: Executing Phase 2
+Last activity: 2026-03-01 -- Plan 02-01 abgeschlossen (TabBar-Fix + Theme-Isolation)
 
-Progress: [==........] 14%
+Progress: [===.......] 29%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 5min
-- Total execution time: 15min
+- Total plans completed: 4
+- Average duration: 4min
+- Total execution time: 17min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3/3 | 15min | 5min |
+| 02 | 1/2 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (2min), 01-03 (10min)
-- Trend: Starting
+- Last 5 plans: 01-01 (3min), 01-02 (2min), 01-03 (10min), 02-01 (2min)
+- Trend: Accelerating
 
 *Updated after each plan completion*
 
@@ -68,6 +69,10 @@ Recent decisions affecting current work:
 - 01-03: Echte Umlaute in Validierungsmeldungen (per CLAUDE.md Projektregeln)
 - 01-03: Bestehende manuelle Validierung als Fallback belassen
 - 01-03: rateLimitMessage als Error-Property statt globalem Toast
+- 02-01: registerTabBarEffect komplett entfernt -- CSS-only Ansatz funktioniert fuer 6+ Tabs
+- 02-01: backdrop-filter auf blur(20px) saturate(180%) verstaerkt fuer nativen iOS-26-Look
+- 02-01: Android-Gradient-Fix mit !important fuer Library-Regel-Deaktivierung auf falscher Plattform
+- 02-01: Theme-Variable-Namespaces verifiziert (--ios26-* vs --token-*, kein Konflikt)
 
 ### Pending Todos
 
@@ -75,12 +80,12 @@ None yet.
 
 ### Blockers/Concerns
 
-- Research: Theme-Kollision iOS26/MD3 muss experimentell getestet werden (Phase 2)
-- Research: registerTabBarEffect-Alternativen fuer 6+ Tabs evaluieren (Phase 2)
+- ~~Research: Theme-Kollision iOS26/MD3 muss experimentell getestet werden (Phase 2)~~ -- ERLEDIGT in 02-01
+- ~~Research: registerTabBarEffect-Alternativen fuer 6+ Tabs evaluieren (Phase 2)~~ -- ERLEDIGT in 02-01 (CSS-only)
 - Hinweis: badges.js PostgreSQL-Migration noch nicht abgeschlossen (relevant ab Phase 4)
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Completed 01-03-PLAN.md (Input-Validierung + 429-Interceptor) -- Phase 01 complete
+Last session: 2026-03-01
+Stopped at: Completed 02-01-PLAN.md (TabBar-Fix + Theme-Isolation)
 Resume file: None

@@ -51,7 +51,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: TBD
+- [x] 02-01: TabBar-Fix + Theme-Isolation (BUG-01, THM-01, THM-02, THM-03, THM-04) [Wave 1]
 - [ ] 02-02: TBD
 
 ### Phase 3: Design-System Grundlagen
@@ -132,8 +132,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Security Hardening | 0/3 | Planned | - |
-| 2. Bug-Fixes und Theme-Stabilisierung | 0/0 | Not started | - |
+| 1. Security Hardening | 3/3 | Complete | 2026-02-28 |
+| 2. Bug-Fixes und Theme-Stabilisierung | 1/2 | In Progress | - |
 | 3. Design-System Grundlagen | 0/0 | Not started | - |
 | 4. Admin-Views Kern | 0/0 | Not started | - |
 | 5. Admin-Views Verwaltung | 0/0 | Not started | - |

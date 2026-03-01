@@ -47,14 +47,14 @@ Requirements fuer den aktuellen Milestone: Design-Konsistenz + Security Hardenin
 
 ### Theme-Konfiguration
 
-- [ ] **THM-01**: iOS 26 Theme (@rdlabo/ionic-theme-ios26) korrekt und konsistent angewandt
-- [ ] **THM-02**: MD3 Theme (@rdlabo/ionic-theme-md3) fuer Android geprueft und korrekt konfiguriert
-- [ ] **THM-03**: Theme-Kollision zwischen iOS26 und MD3 geloest (aktuell werden beide bedingungslos geladen)
-- [ ] **THM-04**: registerTabBarEffect Bug mit 6+ Tabs geloest oder Workaround implementiert
+- [x] **THM-01**: iOS 26 Theme (@rdlabo/ionic-theme-ios26) korrekt und konsistent angewandt
+- [x] **THM-02**: MD3 Theme (@rdlabo/ionic-theme-md3) fuer Android geprueft und korrekt konfiguriert
+- [x] **THM-03**: Theme-Kollision zwischen iOS26 und MD3 geloest (aktuell werden beide bedingungslos geladen)
+- [x] **THM-04**: registerTabBarEffect Bug mit 6+ Tabs geloest oder Workaround implementiert
 
 ### Bug-Fixes
 
-- [ ] **BUG-01**: TabBar-Rendering mit 6+ Tabs auf iOS stabil (registerTabBarEffect Workaround)
+- [x] **BUG-01**: TabBar-Rendering mit 6+ Tabs auf iOS stabil (registerTabBarEffect Workaround)
 - [ ] **BUG-02**: Badge Double-Count Risiko eliminiert (klare Trennung activity-points vs bonus-points)
 - [ ] **BUG-03**: Deprecated dateUtils (parseLocalTime, getLocalNow) durch aktuelle Implementierungen ersetzt
 - [ ] **BUG-04**: UI-Fehler auf einzelnen Seiten identifiziert und behoben (systematischer Durchgang)
@@ -103,14 +103,14 @@ Deferred fuer zukuenftigen Release. Nicht im aktuellen Roadmap.
 | SEC-04 | Phase 1 | Complete |
 | SEC-05 | Phase 1 | Complete |
 | SEC-06 | Phase 1 | Complete |
-| BUG-01 | Phase 2 | Pending |
+| BUG-01 | Phase 2 | Complete |
 | BUG-02 | Phase 2 | Pending |
 | BUG-03 | Phase 2 | Pending |
 | BUG-04 | Phase 2 | Pending |
-| THM-01 | Phase 2 | Pending |
-| THM-02 | Phase 2 | Pending |
-| THM-03 | Phase 2 | Pending |
-| THM-04 | Phase 2 | Pending |
+| THM-01 | Phase 2 | Complete |
+| THM-02 | Phase 2 | Complete |
+| THM-03 | Phase 2 | Complete |
+| THM-04 | Phase 2 | Complete |
 | DES-01 | Phase 3 | Pending |
 | DES-02 | Phase 3 | Pending |
 | DES-03 | Phase 3 | Pending |
