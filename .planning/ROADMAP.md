@@ -42,11 +42,12 @@ Phase 2: Frontend Stabilisierung + Bug-Fixes (2 plans, complete)
   2. Leere Listen zeigen ueberall den gleichen EmptyState mit Icon und erklaerenden Text
   3. ListSection rendert einheitliche Listen-Darstellungen unter Nutzung der bestehenden app-list-item Klassen
   4. Die CSS-Klassen in variables.css sind dokumentiert (Kommentare) und um app-header-banner und app-stats-row ergaenzt
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01: CSS-Klassen und Shared Components erstellen (SectionHeader, EmptyState, ListSection) [Wave 1]
+- [ ] 03-02: 8 Haupt-Views (Konfi + Admin-Core) auf Shared Components umstellen [Wave 2]
+- [ ] 03-03: 8 restliche Views (Admin-Pages, Konfi-Views, Chat) auf Shared Components umstellen [Wave 2]
 
 ### Phase 4: Admin-Views Core
 **Goal**: Die 6 meistgenutzten Admin-Seiten auf die neuen Shared Components umstellen. Die Seiten haben BEREITS eigene Farben und Header-Pattern -- hier wird das bestehende Inline-Styling durch die Shared Components aus Phase 3 ersetzt, ohne Farben oder Logik zu aendern.
