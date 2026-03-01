@@ -9,10 +9,10 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 ### Design-System
 
-- [ ] **DES-01**: SectionHeader-Komponente existiert und rendert kompakte Header mit Icon + Titel inline und optionaler Stats-Row -- identisch zum Konfi-Referenz-Design
-- [ ] **DES-02**: EmptyState-Komponente existiert und zeigt in leeren Listen einen konsistenten Leerzustand mit Icon und Text
-- [ ] **DES-03**: ListSection-Komponente existiert und rendert einheitliche Listen-Darstellungen mit den bestehenden app-list-item CSS-Klassen
-- [ ] **DES-04**: Die bestehenden CSS-Klassen aus variables.css sind dokumentiert und um fehlende Klassen (app-header-banner, app-stats-row) ergaenzt
+- [x] **DES-01**: SectionHeader-Komponente existiert und rendert kompakte Header mit Icon + Titel inline und optionaler Stats-Row -- identisch zum Konfi-Referenz-Design
+- [x] **DES-02**: EmptyState-Komponente existiert und zeigt in leeren Listen einen konsistenten Leerzustand mit Icon und Text
+- [x] **DES-03**: ListSection-Komponente existiert und rendert einheitliche Listen-Darstellungen mit den bestehenden app-list-item CSS-Klassen
+- [x] **DES-04**: Die bestehenden CSS-Klassen aus variables.css sind dokumentiert und um fehlende Klassen (app-header-banner, app-stats-row) ergaenzt
 
 ### Admin-Views
 
@@ -66,10 +66,10 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DES-01 | Phase 3 | Pending |
-| DES-02 | Phase 3 | Pending |
-| DES-03 | Phase 3 | Pending |
-| DES-04 | Phase 3 | Pending |
+| DES-01 | Phase 3 | Complete |
+| DES-02 | Phase 3 | Complete |
+| DES-03 | Phase 3 | Complete |
+| DES-04 | Phase 3 | Complete |
 | ADM-01 | Phase 4 | Pending |
 | ADM-02 | Phase 4 | Pending |
 | ADM-03 | Phase 4 | Pending |
