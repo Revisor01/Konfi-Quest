@@ -21,7 +21,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 - [ ] **ADM-03**: EventsPage nutzt das gleiche Header-Banner-Pattern wie die Konfi-Referenz, wobei erweiterte Admin-Bearbeitungsfunktionen erhalten bleiben
 - [ ] **ADM-04**: BadgesPage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
 - [ ] **ADM-05**: JahrgaengePage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
-- [ ] **ADM-06**: CategoriesPage zeigt Kategorien in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
+- [x] **ADM-06**: CategoriesPage zeigt Kategorien in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
 - [ ] **ADM-07**: UsersPage zeigt Benutzer in einheitlichen Listen mit SectionHeader und korrekten Abstaenden
 - [ ] **ADM-08**: OrganizationsPage zeigt Organisationen in einheitlichen Listen mit SectionHeader
 - [ ] **ADM-09**: LevelsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
@@ -75,7 +75,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ADM-03 | Phase 4 | Pending |
 | ADM-04 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-05 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
-| ADM-06 | Phase 4 | Pending |
+| ADM-06 | Phase 4 | Complete |
 | ADM-07 | Phase 5 | Pending |
 | ADM-08 | Phase 5 | Pending |
 | ADM-09 | Phase 5 | Pending |
