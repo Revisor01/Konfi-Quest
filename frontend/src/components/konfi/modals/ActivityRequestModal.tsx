@@ -227,8 +227,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
-        {/* Aktivität Sektion - iOS26 Pattern mit Akkordeon */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={starOutline} />
@@ -241,21 +241,21 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 <IonAccordion value="activity-picker">
                   <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
                     <IonLabel>
-                      <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                      <h3 className="app-settings-item__subtitle" style={{ margin: '0 0 4px 0' }}>
                         Aktivität auswählen
                       </h3>
                       {selectedActivity && (
-                        <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                        <p className="app-settings-item__title" style={{ margin: '0' }}>
                           {selectedActivity.name}
                         </p>
                       )}
                     </IonLabel>
                   </IonItem>
                   <div slot="content" style={{ padding: '0 16px 16px' }}>
-                    {/* Aktivitäten Liste */}
+                    {/* Aktivitaeten Liste */}
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {activities.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '16px', color: '#888' }}>
+                        <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
                           Keine Aktivitäten gefunden
                         </div>
                       ) : (
@@ -277,18 +277,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                               style={{ cursor: 'pointer', position: 'relative' }}
                             >
                               {/* Punkte Eselsohr oben rechts */}
-                              <div style={{
-                                position: 'absolute',
-                                top: '0',
-                                right: '0',
-                                background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
-                                borderRadius: '0 10px 0 10px',
-                                padding: '3px 8px',
-                                fontSize: '0.65rem',
-                                fontWeight: '700',
-                                color: 'white',
-                                whiteSpace: 'nowrap'
-                              }}>
+                              <div
+                                className="app-corner-badge"
+                                style={{
+                                  background: `linear-gradient(135deg, ${typeColor} 0%, ${typeColor}dd 100%)`,
+                                  fontWeight: '700',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
                                 +{activity.points}P
                               </div>
 
@@ -307,7 +303,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                                     {activity.category_names && (
                                       <div className="app-list-item__meta">
                                         <span className="app-list-item__meta-item">
-                                          <IonIcon icon={pricetag} style={{ color: '#8b5cf6' }} />
+                                          <IonIcon icon={pricetag} style={{ color: '#5b21b6' }} />
                                           {activity.category_names}
                                         </span>
                                       </div>
@@ -328,7 +324,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         </IonList>
 
         {/* Datum Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={calendarOutline} />
@@ -355,7 +351,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         </IonList>
 
         {/* Anmerkungen Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={textOutline} />
@@ -378,7 +374,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         </IonList>
 
         {/* Foto Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--success">
               <IonIcon icon={imageOutline} />
@@ -399,8 +395,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 }}
               >
                 {photoPreview ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div className="app-settings-item" style={{ justifyContent: 'space-between' }}>
+                    <div className="app-settings-item" style={{ gap: '8px' }}>
                       <IonIcon
                         icon={checkmarkCircle}
                         style={{ fontSize: '1.2rem', color: '#059669' }}
@@ -422,7 +418,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                     </IonButton>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+                  <div className="app-settings-item" style={{ justifyContent: 'center' }}>
                     <IonIcon
                       icon={camera}
                       style={{ fontSize: '1.2rem', color: '#059669' }}

@@ -279,24 +279,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             </div>
 
                             {/* Punkte rechts */}
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'flex-end',
-                              justifyContent: 'center',
-                              minWidth: '50px'
-                            }}>
-                              <div style={{
-                                fontSize: '1.4rem',
-                                fontWeight: '800',
-                                color: statusColor
-                              }}>
+                            <div className="app-points-display">
+                              <div className="app-points-display__value" style={{ color: statusColor }}>
                                 {totalPoints}
                               </div>
-                              <div style={{
-                                fontSize: '0.7rem',
-                                color: '#999'
-                              }}>
+                              <div className="app-points-display__target">
                                 /{targetTotal}
                               </div>
                             </div>
@@ -312,19 +299,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
                                   <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGottesdienst}</span>
                                 </div>
-                                <div style={{
-                                  height: '4px',
-                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                  borderRadius: '2px',
-                                  overflow: 'hidden'
-                                }}>
-                                  <div style={{
-                                    width: `${Math.min(100, percentGodi)}%`,
-                                    height: '100%',
-                                    backgroundColor: '#3b82f6',
-                                    borderRadius: '2px',
-                                    transition: 'width 0.3s ease'
-                                  }} />
+                                <div className="app-progress-bar">
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                                  </div>
                                 </div>
                               </div>
 
@@ -334,19 +312,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   <span style={{ fontSize: '0.65rem', color: '#22c55e', fontWeight: '600' }}>Gemeinde</span>
                                   <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGemeinde}</span>
                                 </div>
-                                <div style={{
-                                  height: '4px',
-                                  backgroundColor: 'rgba(34, 197, 94, 0.15)',
-                                  borderRadius: '2px',
-                                  overflow: 'hidden'
-                                }}>
-                                  <div style={{
-                                    width: `${Math.min(100, percentGem)}%`,
-                                    height: '100%',
-                                    backgroundColor: '#22c55e',
-                                    borderRadius: '2px',
-                                    transition: 'width 0.3s ease'
-                                  }} />
+                                <div className="app-progress-bar">
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#22c55e' }} />
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -360,19 +329,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                   {percentTotal > 100 && <span style={{ color: '#10b981', marginLeft: '4px' }}>({percentTotal}%)</span>}
                                 </span>
                               </div>
-                              <div style={{
-                                height: '6px',
-                                backgroundColor: 'rgba(91, 33, 182, 0.12)',
-                                borderRadius: '3px',
-                                overflow: 'hidden'
-                              }}>
-                                <div style={{
-                                  width: `${Math.min(100, percentTotal)}%`,
-                                  height: '100%',
-                                  backgroundColor: '#5b21b6',
-                                  borderRadius: '3px',
-                                  transition: 'width 0.3s ease'
-                                }} />
+                              <div className="app-progress-bar app-progress-bar--thick">
+                                <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
+                                  <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
+                                </div>
                               </div>
                             </div>
                           </div>

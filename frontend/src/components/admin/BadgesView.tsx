@@ -213,7 +213,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       />
 
       {/* Tab Navigation - einfaches IonSegment */}
-      <div style={{ margin: '16px' }}>
+      <div className="app-segment-wrapper">
         <IonSegment
           value={selectedFilter}
           onIonChange={(e) => setSelectedFilter(e.detail.value as string)}

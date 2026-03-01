@@ -149,17 +149,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
           {/* Frage */}
           <IonList inset={true}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={helpCircleOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={helpCircleOutline} />
               </div>
               <IonLabel>Frage</IonLabel>
             </IonListHeader>
@@ -173,25 +164,18 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                   maxlength={500}
                   label="Frage"
                   labelPlacement="stacked"
+                  autocapitalize="sentences"
+                  autoCorrect="on"
                 />
               </IonItem>
             </IonItemGroup>
           </IonList>
 
-          {/* Antwortmöglichkeiten */}
+          {/* Antwortmoeglichkeiten */}
           <IonList inset={true}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={listOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={listOutline} />
               </div>
               <IonLabel>Antwortmöglichkeiten</IonLabel>
             </IonListHeader>
@@ -205,6 +189,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                     maxlength={200}
                     label={`Option ${index + 1}`}
                     labelPlacement="stacked"
+                    autocapitalize="sentences"
+                    autoCorrect="on"
                   />
                   {options.length > 2 && (
                     <IonButton
@@ -232,17 +218,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
           {/* Einstellungen */}
           <IonList inset={true}>
             <IonListHeader>
-              <div style={{
-                width: '24px',
-                height: '24px',
-                backgroundColor: '#06b6d4',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: '8px'
-              }}>
-                <IonIcon icon={settingsOutline} style={{ color: 'white', fontSize: '0.8rem' }} />
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={settingsOutline} />
               </div>
               <IonLabel>Einstellungen</IonLabel>
             </IonListHeader>
@@ -257,7 +234,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 >
                   <IonLabel>
                     <h3>Mehrfachauswahl</h3>
-                    <p style={{ fontSize: '0.8rem', color: '#8e8e93' }}>
+                    <p className="app-settings-item__subtitle">
                       Mehrere Antworten erlauben
                     </p>
                   </IonLabel>
@@ -274,7 +251,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 >
                   <IonLabel>
                     <h3>Ablaufdatum</h3>
-                    <p style={{ fontSize: '0.8rem', color: '#8e8e93' }}>
+                    <p className="app-settings-item__subtitle">
                       Umfrage automatisch schließen
                     </p>
                   </IonLabel>

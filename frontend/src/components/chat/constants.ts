@@ -12,7 +12,7 @@ export const REACTION_EMOJIS: Record<string, ReactionEmojiData> = {
   like: { outline: thumbsUpOutline, filled: thumbsUp, label: 'Gefaellt mir', color: '#3b82f6' },
   heart: { outline: heartOutline, filled: heart, label: 'Liebe', color: '#ef4444' },
   laugh: { outline: happyOutline, filled: happy, label: 'Lustig', color: '#f59e0b' },
-  wow: { outline: alertCircleOutline, filled: alertCircle, label: 'Wow', color: '#8b5cf6' },
+  wow: { outline: alertCircleOutline, filled: alertCircle, label: 'Wow', color: '#5b21b6' },
   sad: { outline: sadOutline, filled: sad, label: 'Traurig', color: '#6b7280' },
   pray: { outline: handLeftOutline, filled: handLeft, label: 'Beten', color: '#10b981' }
 };

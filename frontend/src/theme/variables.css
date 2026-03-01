@@ -752,6 +752,11 @@ ion-popover ion-select-popover ion-item {
   border: 1px solid rgba(142, 142, 147, 0.2);
   color: #8e8e93;
 }
+.app-info-box--purple {
+  background: rgba(91, 33, 182, 0.08);
+  border: 1px solid rgba(91, 33, 182, 0.2);
+  color: #5b21b6;
+}
 
 /* === Progress Bars === */
 .app-progress-bar {

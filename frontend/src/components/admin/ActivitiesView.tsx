@@ -136,7 +136,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       />
 
       {/* Tab Navigation - einfaches IonSegment */}
-      <div style={{ margin: '16px' }}>
+      <div className="app-segment-wrapper">
         <IonSegment
           value={selectedType}
           onIonChange={(e) => setSelectedType(e.detail.value as string)}
@@ -157,8 +157,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonCard className="app-card">
           <IonCardContent style={{ padding: '8px 16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <IonIcon icon={search} style={{ color: '#8e8e93', fontSize: '1.2rem', flexShrink: 0 }} />
+            <div className="app-search-bar" style={{ padding: 0 }}>
+              <IonIcon icon={search} className="app-search-bar__icon" />
               <IonInput
                 value={searchTerm}
                 onIonInput={(e) => setSearchTerm(e.detail.value!)}

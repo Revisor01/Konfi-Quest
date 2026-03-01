@@ -230,7 +230,7 @@ const EventsView: React.FC<EventsViewProps> = ({
       />
 
       {/* Tab Navigation - wie Admin */}
-      <div style={{ margin: '16px' }}>
+      <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}

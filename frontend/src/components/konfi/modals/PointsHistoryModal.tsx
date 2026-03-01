@@ -85,7 +85,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     switch (category) {
       case 'gottesdienst': return '#3b82f6';
       case 'gemeinde': return '#059669';
-      default: return '#8b5cf6';
+      default: return '#5b21b6';
     }
   };
 
@@ -174,62 +174,51 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
 
       <IonContent className="app-gradient-background">
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+          <div className="app-settings-item" style={{ justifyContent: 'center', padding: '40px' }}>
             <IonSpinner name="crescent" />
           </div>
         ) : (
           <>
             {/* Header - Kompakter Style wie BadgesView */}
-            <div style={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            <div className="app-detail-header" style={{
+              background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
               borderRadius: '20px',
               padding: '24px',
-              margin: '16px',
-              marginBottom: '16px',
-              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.25)',
-              position: 'relative',
-              overflow: 'hidden'
+              boxShadow: '0 8px 32px rgba(91, 33, 182, 0.25)',
+              minHeight: 'auto'
             }}>
               <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
               <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="app-settings-item" style={{ marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+                <div className="app-icon-circle app-icon-circle--lg" style={{ background: 'rgba(255, 255, 255, 0.25)', borderRadius: '14px' }}>
                   <IonIcon icon={trophyOutline} style={{ fontSize: '1.6rem', color: 'white' }} />
                 </div>
                 <div>
-                  <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Deine Punkte</h2>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Übersicht aller gesammelten Punkte</p>
+                  <h2 className="app-detail-header__title" style={{ fontSize: '1.4rem', fontWeight: '700' }}>Deine Punkte</h2>
+                  <p className="app-detail-header__subtitle">Übersicht aller gesammelten Punkte</p>
                 </div>
               </div>
 
               {/* Stats Boxen - 5 nebeneinander */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', position: 'relative', zIndex: 1 }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.total}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-                </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.gottesdienst}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GD</div>
-                </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.gemeinde}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEM</div>
-                </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.eventCount}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>EVENTS</div>
-                </div>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 8px', textAlign: 'center', flex: '1 1 0', maxWidth: '70px' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{calculatedTotals.bonusCount}</div>
-                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>BONUS</div>
-                </div>
+              <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '6px', position: 'relative', zIndex: 1 }}>
+                {[
+                  { value: calculatedTotals.total, label: 'GESAMT' },
+                  { value: calculatedTotals.gottesdienst, label: 'GD' },
+                  { value: calculatedTotals.gemeinde, label: 'GEM' },
+                  { value: calculatedTotals.eventCount, label: 'EVENTS' },
+                  { value: calculatedTotals.bonusCount, label: 'BONUS' }
+                ].map((stat) => (
+                  <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', maxWidth: '70px', padding: '10px 8px' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
+                    <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
             {/* Verlauf Sektion - iOS26 Pattern */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={timeOutline} />
@@ -239,7 +228,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
               <IonCard className="app-card">
                 <IonCardContent style={{ padding: history.length === 0 ? '16px' : '8px' }}>
                   {history.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '24px', color: '#666' }}>
+                    <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
                       Noch keine Einträge vorhanden
                     </div>
                   ) : (
@@ -249,7 +238,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
                         const typeBadgeLabel = getTypeBadgeLabel(entry.source_type);
 
-                        // Farbe basiert auf category (blau/grün)
+                        // Farbe basiert auf category (blau/gruen)
                         const listItemClass = entry.category === 'gottesdienst' ? 'app-list-item--info' : 'app-list-item--activities';
                         const iconCircleClass = entry.category === 'gottesdienst' ? 'app-icon-circle--info' : 'app-icon-circle--activities';
 
@@ -268,7 +257,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               flexDirection: 'row',
                               zIndex: 10
                             }}>
-                              {/* Typ-Badge zuerst (Bonus/Event) - unten links und rechts abgerundet */}
+                              {/* Typ-Badge (Bonus/Event) */}
                               {typeBadgeColor && typeBadgeLabel && (
                                 <div style={{
                                   backgroundColor: typeBadgeColor,
@@ -281,19 +270,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                                   {typeBadgeLabel}
                                 </div>
                               )}
-                              {/* Weißer Abstand */}
                               {typeBadgeColor && (
                                 <div style={{ width: '2px', background: 'white' }} />
                               )}
-                              {/* Punkte-Badge - unten links und oben rechts abgerundet */}
-                              <div style={{
-                                backgroundColor: categoryColor,
-                                color: 'white',
-                                fontSize: '0.65rem',
-                                fontWeight: '700',
-                                padding: '4px 8px',
-                                borderRadius: '0 8px 0 8px'
-                              }}>
+                              {/* Punkte-Badge */}
+                              <div className="app-corner-badge" style={{ backgroundColor: categoryColor, position: 'static' }}>
                                 +{entry.points}
                               </div>
                             </div>
