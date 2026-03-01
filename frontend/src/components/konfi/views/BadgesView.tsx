@@ -10,6 +10,7 @@ import {
   IonList,
   IonListHeader
 } from '@ionic/react';
+import { SectionHeader, EmptyState } from '../../shared';
 import {
   trophy,
   trophyOutline,
@@ -218,47 +219,17 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   return (
     <div>
-      {/* Achievements Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
-        borderRadius: '20px',
-        padding: '24px',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IonIcon icon={trophy} style={{ fontSize: '1.6rem', color: 'white' }} />
-          </div>
-          <div>
-            <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Deine Badges</h2>
-            <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Sammle alle Erfolge!</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{badges.filter(b => b.is_earned && !b.is_hidden).length}/{badgeStats.totalVisible}</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>SICHTBAR</div>
-          </div>
-          {badgeStats.totalSecret > 0 && (
-            <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{earnedSecretCount}/{badgeStats.totalSecret}</div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEHEIM</div>
-            </div>
-          )}
-          <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0}%</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-          </div>
-        </div>
-      </div>
+      <SectionHeader
+        title="Deine Badges"
+        subtitle="Sammle alle Erfolge!"
+        icon={trophy}
+        preset="badges"
+        stats={[
+          { value: badges.filter(b => b.is_earned && !b.is_hidden).length, label: 'ERREICHT' },
+          ...(badgeStats.totalSecret > 0 ? [{ value: earnedSecretCount, label: 'GEHEIM' }] : []),
+          { value: Math.round((badges.filter(b => b.is_earned).length / (badgeStats.totalVisible + badgeStats.totalSecret)) * 100) || 0, label: 'PROZENT' }
+        ]}
+      />
 
       {/* Filter */}
       <div style={{ margin: '16px' }}>
@@ -280,11 +251,12 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         {badgeCategories.length === 0 ? (
           <IonCard className="app-card">
             <IonCardContent>
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon icon={trophyOutline} style={{ fontSize: '3rem', color: '#ff9500', marginBottom: '16px', display: 'block', margin: '0 auto 16px auto' }} />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Badges gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Sammle Punkte für deine ersten Badges!</p>
-              </div>
+              <EmptyState
+                icon={trophyOutline}
+                title="Keine Badges gefunden"
+                message="Sammle Punkte für deine ersten Badges!"
+                iconColor="#f59e0b"
+              />
             </IonCardContent>
           </IonCard>
         ) : (

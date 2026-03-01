@@ -41,6 +41,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
+import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
 import api from '../../services/api';
 import { initializeWebSocket, getSocket } from '../../services/websocket';
@@ -320,131 +321,17 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Chat Header - Kompaktes Banner-Design */}
-        <div style={{
-          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-          borderRadius: '20px',
-          padding: '24px',
-          margin: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(6, 182, 212, 0.25)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Dekorative Kreise im Hintergrund */}
-          <div style={{
-            position: 'absolute',
-            top: '-30px',
-            right: '-30px',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-20px',
-            left: '-20px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.08)'
-          }} />
-
-          {/* Header mit Icon */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <IonIcon icon={chatbubbles} style={{ fontSize: '1.6rem', color: 'white' }} />
-            </div>
-            <div>
-              <h2 style={{
-                margin: '0',
-                fontSize: '1.4rem',
-                fontWeight: '700',
-                color: 'white'
-              }}>
-                Deine Chats
-              </h2>
-              <p style={{
-                margin: '2px 0 0 0',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                Nachrichten und Gruppen
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Row - immer einzeilig */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.length}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                CHATS
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.reduce((sum, room) => sum + room.unread_count, 0)}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                UNGELESEN
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                AKTIV
-              </div>
-            </div>
-          </div>
-        </div>
+        <SectionHeader
+          title="Deine Chats"
+          subtitle="Nachrichten und Gruppen"
+          icon={chatbubbles}
+          colors={{ primary: '#06b6d4', secondary: '#0891b2' }}
+          stats={[
+            { value: rooms.length, label: 'CHATS' },
+            { value: rooms.reduce((sum, room) => sum + room.unread_count, 0), label: 'UNGELESEN' },
+            { value: rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length, label: 'AKTIV' }
+          ]}
+        />
 
         {/* Suche & Filter - iOS26 Pattern wie im Modal */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -505,27 +392,19 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
               {filteredRooms.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px' }}>
-                  <IonIcon
-                    icon={chatbubbles}
-                    style={{
-                      fontSize: '3rem',
-                      color: '#06b6d4',
-                      marginBottom: '16px',
-                      display: 'block',
-                      margin: '0 auto 16px auto'
-                    }}
-                  />
-                  <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Chaträume gefunden</h3>
-                  <p style={{ color: '#999', margin: '0' }}>Erstelle deinen ersten Chat!</p>
-                </div>
+                <EmptyState
+                  icon={chatbubbles}
+                  title="Keine Chaträume gefunden"
+                  message="Erstelle deinen ersten Chat!"
+                  iconColor="#06b6d4"
+                />
               ) : (
                 <IonList lines="none" style={{ background: 'transparent', padding: '0' }}>
                   {filteredRooms.map((room, index) => {
                     // Gruppen/Jahrgang türkis, Direkt orange
                     const color = room.type === 'admin' ? '#06b6d4' :
                                   room.type === 'jahrgang' ? '#06b6d4' :
-                                  room.type === 'group' ? '#8b5cf6' : '#f97316';
+                                  room.type === 'group' ? '#5b21b6' : '#f97316';
                     // Nur Admins dürfen direct/group Chats löschen
                     const canDelete = isAdmin && (room.type === 'direct' || room.type === 'group');
 

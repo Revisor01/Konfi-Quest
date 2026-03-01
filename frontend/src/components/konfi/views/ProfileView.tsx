@@ -30,6 +30,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { logout } from '../../../services/auth';
+import { SectionHeader } from '../../shared';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
@@ -247,187 +248,17 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   return (
     <div>
-      {/* Profile Header - Kompaktes Banner-Design mit integrierten Infos */}
-      <div style={{
-        background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-        borderRadius: '20px',
-        padding: '24px',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 8px 32px rgba(139, 92, 246, 0.25)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Dekorative Kreise im Hintergrund */}
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          right: '-30px',
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-20px',
-          left: '-20px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)'
-        }} />
-
-        {/* Header mit Avatar und Name */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '16px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            background: 'rgba(255, 255, 255, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: '700',
-            fontSize: '1.3rem',
-            color: 'white'
-          }}>
-            {getInitials(profile.display_name)}
-          </div>
-          <div style={{ flex: 1 }}>
-            <h2 style={{
-              margin: '0',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              color: 'white'
-            }}>
-              {profile.display_name}
-            </h2>
-            <p style={{
-              margin: '2px 0 0 0',
-              fontSize: '0.85rem',
-              color: 'rgba(255, 255, 255, 0.9)'
-            }}>
-              @{profile.username}
-            </p>
-          </div>
-        </div>
-
-        {/* Info-Zeile: Jahrgang, E-Mail, Mitglied seit */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          gap: '8px',
-          marginBottom: '16px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            borderRadius: '8px',
-            padding: '6px 10px',
-            fontSize: '0.75rem',
-            color: 'rgba(255, 255, 255, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
-            {profile.jahrgang_name}
-          </div>
-          {profile.email && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              fontSize: '0.75rem',
-              color: 'rgba(255, 255, 255, 0.95)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}>
-              <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
-              {profile.email}
-            </div>
-          )}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            borderRadius: '8px',
-            padding: '6px 10px',
-            fontSize: '0.75rem',
-            color: 'rgba(255, 255, 255, 0.95)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}>
-            <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
-            Seit {formatDate(profile.created_at)}
-          </div>
-        </div>
-
-        {/* Stats Row - immer einzeilig */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {profile.total_points || 0}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              PUNKTE
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {earnedBadgesCount}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              BADGES
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {(profile.event_count || 0) + (profile.activity_count || 0)}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              AKTIONEN
-            </div>
-          </div>
-        </div>
-      </div>
+      <SectionHeader
+        title={profile.display_name}
+        subtitle={`@${profile.username}`}
+        icon={personOutline}
+        preset="konfis"
+        stats={[
+          { value: profile.total_points || 0, label: 'PUNKTE' },
+          { value: earnedBadgesCount, label: 'BADGES' },
+          { value: (profile.event_count || 0) + (profile.activity_count || 0), label: 'AKTIONEN' }
+        ]}
+      />
 
       {/* Konfirmationstermin Card - Dashboard Blau Style mit Background Header */}
       <div style={{ 
