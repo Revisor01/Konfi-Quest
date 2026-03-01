@@ -28,6 +28,7 @@ import {
   calendarOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
+import { SectionHeader, ListSection } from '../shared';
 
 interface Konfi {
   id: number;
@@ -134,131 +135,17 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
   return (
     <>
-      {/* Header - Kompaktes Banner-Design */}
-      <div style={{
-        background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-        borderRadius: '20px',
-        padding: '24px',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 8px 32px rgba(91, 33, 182, 0.25)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Dekorative Kreise im Hintergrund */}
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          right: '-30px',
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-20px',
-          left: '-20px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)'
-        }} />
-
-        {/* Header mit Icon */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '20px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: 'rgba(255, 255, 255, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <IonIcon icon={people} style={{ fontSize: '1.6rem', color: 'white' }} />
-          </div>
-          <div>
-            <h2 style={{
-              margin: '0',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              color: 'white'
-            }}>
-              Konfis
-            </h2>
-            <p style={{
-              margin: '2px 0 0 0',
-              fontSize: '0.85rem',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              Konfirmanden verwalten
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Row - immer einzeilig */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {konfis.length}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              KONFIS
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {konfis.reduce((sum, k) => sum + getTotalPoints(k), 0)}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              PUNKTE
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {jahrgaenge.length}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              JAHRGÄNGE
-            </div>
-          </div>
-        </div>
-      </div>
+      <SectionHeader
+        title="Konfis"
+        subtitle="Konfirmanden verwalten"
+        icon={people}
+        preset="konfis"
+        stats={[
+          { value: konfis.length, label: 'Konfis' },
+          { value: konfis.reduce((sum, k) => sum + getTotalPoints(k), 0), label: 'Punkte' },
+          { value: jahrgaenge.length, label: 'Jahrgänge' }
+        ]}
+      />
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -311,36 +198,19 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Konfis Liste - iOS26 Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--primary">
-            <IonIcon icon={peopleOutline} />
-          </div>
-          <IonLabel>Konfirmanden ({filteredAndSortedKonfis.length})</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            {filteredAndSortedKonfis.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={peopleOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#5b21b6',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Konfirmanden gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>
-                  {searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Konfis angelegt'}
-                </p>
-              </div>
-            ) : (
-              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-                {filteredAndSortedKonfis.map((konfi, index) => {
+      {/* Konfis Liste */}
+      <ListSection
+        icon={peopleOutline}
+        title="Konfirmanden"
+        count={filteredAndSortedKonfis.length}
+        iconColorClass="primary"
+        isEmpty={filteredAndSortedKonfis.length === 0}
+        emptyIcon={peopleOutline}
+        emptyTitle="Keine Konfirmanden gefunden"
+        emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Konfis angelegt'}
+        emptyIconColor="#5b21b6"
+      >
+        {filteredAndSortedKonfis.map((konfi, index) => {
                   const statusColor = getStatusColor(konfi);
                   const totalPoints = getTotalPoints(konfi);
                   const godiPoints = getGottesdienstPoints(konfi);
@@ -522,11 +392,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                     </IonItemSliding>
                   );
                 })}
-              </IonList>
-            )}
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      </ListSection>
     </>
   );
 };

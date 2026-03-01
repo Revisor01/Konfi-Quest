@@ -1,29 +1,15 @@
 import React, { useState, useRef } from 'react';
 import {
-  IonCard,
-  IonCardContent,
-  IonButton,
   IonIcon,
   IonItem,
   IonLabel,
-  IonBadge,
-  IonList,
-  IonListHeader,
-  IonChip,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonInput,
-  IonSelect,
-  IonSelectOption,
   IonSegment,
   IonSegmentButton
 } from '@ionic/react';
 import {
-  add,
-  trash,
-  search,
-  swapVertical,
   flash,
   people,
   calendar,
@@ -32,18 +18,18 @@ import {
   hourglass,
   copy,
   ban,
-  list,
+  trash,
   checkmarkCircle,
   close,
   trophy,
   listOutline,
   calendarOutline,
-  filterOutline,
   lockOpenOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { parseLocalTime, getLocalNow } from '../../utils/dateUtils';
+import { SectionHeader, ListSection } from '../shared';
 
 interface Category {
   id: number;
@@ -182,131 +168,17 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   return (
     <>
-      {/* Header - Kompaktes Banner-Design */}
-      <div style={{
-        background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-        borderRadius: '20px',
-        padding: '24px',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Dekorative Kreise im Hintergrund */}
-        <div style={{
-          position: 'absolute',
-          top: '-30px',
-          right: '-30px',
-          width: '120px',
-          height: '120px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-20px',
-          left: '-20px',
-          width: '80px',
-          height: '80px',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.08)'
-        }} />
-
-        {/* Header mit Icon */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          marginBottom: '20px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '14px',
-            background: 'rgba(255, 255, 255, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <IonIcon icon={calendar} style={{ fontSize: '1.6rem', color: 'white' }} />
-          </div>
-          <div>
-            <h2 style={{
-              margin: '0',
-              fontSize: '1.4rem',
-              fontWeight: '700',
-              color: 'white'
-            }}>
-              Events
-            </h2>
-            <p style={{
-              margin: '2px 0 0 0',
-              fontSize: '0.85rem',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              Termine und Veranstaltungen
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Row - immer einzeilig */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          gap: '8px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {events.length}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              GESAMT
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {getUpcomingEvents().length}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              ANSTEHEND
-            </div>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            borderRadius: '12px',
-            padding: '10px 12px',
-            textAlign: 'center',
-            flex: '1 1 0',
-            maxWidth: '100px'
-          }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-              {events.reduce((sum, e) => sum + e.registered_count, 0)}
-            </div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-              GEBUCHT
-            </div>
-          </div>
-        </div>
-      </div>
+      <SectionHeader
+        title="Events"
+        subtitle="Termine und Veranstaltungen"
+        icon={calendar}
+        preset="events"
+        stats={[
+          { value: events.length, label: 'Gesamt' },
+          { value: getUpcomingEvents().length, label: 'Anstehend' },
+          { value: events.reduce((sum, e) => sum + e.registered_count, 0), label: 'Gebucht' }
+        ]}
+      />
 
 
       {/* Tab Navigation - einfaches IonSegment */}
@@ -329,19 +201,25 @@ const EventsView: React.FC<EventsViewProps> = ({
         </div>
       )}
 
-      {/* Events Liste - IonListHeader Pattern */}
-      {filteredAndSortedEvents.length > 0 && (
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--events">
-            <IonIcon icon={calendarOutline} />
-          </div>
-          <IonLabel>Events ({filteredAndSortedEvents.length})</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-        <IonCardContent style={{ padding: '16px' }}>
-          <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-            {filteredAndSortedEvents.map((event, index) => {
+      {/* Events Liste */}
+      <ListSection
+        icon={calendarOutline}
+        title="Events"
+        count={filteredAndSortedEvents.length}
+        iconColorClass="events"
+        isEmpty={filteredAndSortedEvents.length === 0}
+        emptyIcon={calendarOutline}
+        emptyTitle="Keine Events gefunden"
+        emptyMessage={
+          activeTab === 'konfirmation'
+            ? 'Keine Konfirmationstermine verfügbar'
+            : activeTab === 'all'
+            ? 'Noch keine Events erstellt'
+            : 'Keine anstehenden Events'
+        }
+        emptyIconColor="#dc2626"
+      >
+        {filteredAndSortedEvents.map((event, index) => {
               const isPastEvent = new Date(event.event_date) < new Date();
               const isCancelled = event.registration_status === 'cancelled';
               const isKonfirmationEvent = event.category_names?.toLowerCase().includes('konfirmation');
@@ -352,7 +230,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               // Farbe basierend auf Status - Konfirmation in Lila!
               const statusColor = (() => {
                 if (isCancelled) return '#dc3545';
-                if (isKonfirmationEvent && !isPastEvent) return '#8b5cf6'; // Lila für Konfirmation
+                if (isKonfirmationEvent && !isPastEvent) return '#5b21b6'; // Lila für Konfirmation
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
                 if (isPastEvent) return '#6c757d';
@@ -526,48 +404,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               </IonItemSliding>
               );
             })}
-          </IonList>
-        </IonCardContent>
-        </IonCard>
-      </IonList>
-      )}
-
-      {/* Keine Events gefunden */}
-      {filteredAndSortedEvents.length === 0 && (
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={calendarOutline} />
-            </div>
-            <IonLabel>Events (0)</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={calendarOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#dc2626',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Events gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>
-                  {activeTab === 'konfirmation'
-                    ? 'Keine Konfirmationstermine verfügbar'
-                    : activeTab === 'all'
-                    ? 'Noch keine Events erstellt'
-                    : 'Keine anstehenden Events'
-                  }
-                </p>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-      )}
+      </ListSection>
     </>
   );
 };

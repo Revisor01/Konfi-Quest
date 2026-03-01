@@ -1,8 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonItem,
   IonItemGroup,
@@ -34,6 +31,7 @@ import {
   search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
+import { SectionHeader, ListSection } from '../shared';
 
 interface User {
   id: number;
@@ -142,130 +140,17 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   return (
     <>
-      {/* Header - Dashboard-Style wie EventsView */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '24px',
-        padding: '0',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: '220px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Überschrift - groß und überlappend */}
-        <div style={{
-          position: 'absolute',
-          top: '-5px',
-          left: '12px',
-          zIndex: 1
-        }}>
-          <h2 style={{
-            fontSize: '2.8rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            BENUTZER:INNEN
-          </h2>
-        </div>
-
-        {/* Content */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          padding: '70px 24px 24px 24px',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
-        }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={people}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{users.length}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={shield}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{getAdminUsers().length}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Admins
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={person}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', whiteSpace: 'nowrap' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{getTeamerUsers().length}</span>
-                  </div>
-                  <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-                    Team
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </div>
-      </div>
+      <SectionHeader
+        title="Benutzer:innen"
+        subtitle="Admins, Teamer:innen und Rollen"
+        icon={people}
+        colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
+        stats={[
+          { value: users.length, label: 'Gesamt' },
+          { value: getAdminUsers().length, label: 'Admins' },
+          { value: getTeamerUsers().length, label: 'Team' }
+        ]}
+      />
 
       {/* Tab Navigation - einfaches IonSegment */}
       <div style={{ margin: '16px' }}>
@@ -308,18 +193,19 @@ const UsersView: React.FC<UsersViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Benutzer-Liste - iOS26 Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--users">
-            <IonIcon icon={peopleOutline} />
-          </div>
-          <IonLabel>Benutzer:innen ({filteredAndSortedUsers.length})</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-            {filteredAndSortedUsers.map((user, index) => {
+      {/* Benutzer-Liste */}
+      <ListSection
+        icon={peopleOutline}
+        title="Benutzer:innen"
+        count={filteredAndSortedUsers.length}
+        iconColorClass="users"
+        isEmpty={filteredAndSortedUsers.length === 0}
+        emptyIcon={personOutline}
+        emptyTitle="Keine Benutzer:innen gefunden"
+        emptyMessage="Noch keine Teammitglieder angelegt"
+        emptyIconColor="#667eea"
+      >
+        {filteredAndSortedUsers.map((user, index) => {
               const roleColor = getRoleColor(user.role_name);
 
               return (
@@ -456,26 +342,7 @@ const UsersView: React.FC<UsersViewProps> = ({
               );
             })}
 
-            {filteredAndSortedUsers.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={personOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#667eea',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Benutzer:innen gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Noch keine Teammitglieder angelegt</p>
-              </div>
-            )}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      </ListSection>
     </>
   );
 };

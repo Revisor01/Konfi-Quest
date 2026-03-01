@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import {
-  IonCard,
-  IonCardContent,
   IonIcon,
   IonItem,
   IonLabel,
-  IonList,
-  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -25,6 +21,7 @@ import {
   trophy,
   returnUpBack
 } from 'ionicons/icons';
+import { SectionHeader, ListSection } from '../shared';
 
 interface ActivityRequest {
   id: number;
@@ -101,48 +98,17 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
   return (
     <>
-      {/* Header - Kompaktes Banner-Design */}
-      <div style={{
-        background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-        borderRadius: '20px',
-        padding: '24px',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 8px 32px rgba(5, 150, 105, 0.25)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Dekorative Kreise */}
-        <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }} />
-        <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-
-        {/* Header mit Icon */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <IonIcon icon={documentOutline} style={{ fontSize: '1.6rem', color: 'white' }} />
-          </div>
-          <div>
-            <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Anträge</h2>
-            <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>Aktivitäts-Anträge verwalten</p>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getPendingCount()}</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>OFFEN</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getApprovedCount()}</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GENEHMIGT</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{getRejectedCount()}</div>
-            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>ABGELEHNT</div>
-          </div>
-        </div>
-      </div>
+      <SectionHeader
+        title="Anträge"
+        subtitle="Aktivitäts-Anträge verwalten"
+        icon={documentOutline}
+        colors={{ primary: '#059669', secondary: '#047857' }}
+        stats={[
+          { value: getPendingCount(), label: 'Offen' },
+          { value: getApprovedCount(), label: 'Genehmigt' },
+          { value: getRejectedCount(), label: 'Abgelehnt' }
+        ]}
+      />
 
       {/* Tab Filter - wie bei Events */}
       <div style={{ margin: '16px' }}>
@@ -162,34 +128,19 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         </IonSegment>
       </div>
 
-      {/* Anträge Liste - iOS26 Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--success">
-            <IonIcon icon={documentOutline} />
-          </div>
-          <IonLabel>Anträge ({filteredAndSortedRequests.length})</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            {filteredAndSortedRequests.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={documentOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#059669',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Anträge vorhanden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Konfirmand:innen können Aktivitäten beantragen</p>
-              </div>
-            ) : (
-              <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-                {filteredAndSortedRequests.map((request, index) => {
+      {/* Anträge Liste */}
+      <ListSection
+        icon={documentOutline}
+        title="Anträge"
+        count={filteredAndSortedRequests.length}
+        iconColorClass="success"
+        isEmpty={filteredAndSortedRequests.length === 0}
+        emptyIcon={documentOutline}
+        emptyTitle="Keine Anträge vorhanden"
+        emptyMessage="Konfirmand:innen können Aktivitäten beantragen"
+        emptyIconColor="#059669"
+      >
+        {filteredAndSortedRequests.map((request, index) => {
                   const isPending = request.status === 'pending';
                   const isApproved = request.status === 'approved';
                   const isRejected = request.status === 'rejected';
@@ -318,11 +269,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
                     </IonItemSliding>
                   );
                 })}
-              </IonList>
-            )}
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      </ListSection>
     </>
   );
 };

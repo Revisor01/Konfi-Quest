@@ -2,9 +2,6 @@ import React, { useState, useRef } from 'react';
 import {
   IonCard,
   IonCardContent,
-  IonGrid,
-  IonRow,
-  IonCol,
   IonIcon,
   IonItem,
   IonLabel,
@@ -30,6 +27,7 @@ import {
   filterOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
+import { SectionHeader, ListSection } from '../shared';
 
 interface Organization {
   id: number;
@@ -105,130 +103,17 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
   return (
     <>
-      {/* Header - Dashboard-Style wie UsersView */}
-      <div style={{
-        background: 'linear-gradient(135deg, #2dd36f 0%, #16a34a 100%)',
-        borderRadius: '24px',
-        padding: '0',
-        margin: '16px',
-        marginBottom: '16px',
-        boxShadow: '0 20px 40px rgba(45, 211, 111, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: '220px',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {/* Überschrift - groß und überlappend */}
-        <div style={{
-          position: 'absolute',
-          top: '-5px',
-          left: '12px',
-          zIndex: 1
-        }}>
-          <h2 style={{
-            fontSize: '4rem',
-            fontWeight: '900',
-            color: 'rgba(255, 255, 255, 0.1)',
-            margin: '0',
-            lineHeight: '0.8',
-            letterSpacing: '-2px'
-          }}>
-            ORGS
-          </h2>
-        </div>
-
-        {/* Content */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          padding: '70px 24px 24px 24px',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
-        }}>
-          <IonGrid style={{ padding: '0', margin: '0 4px' }}>
-            <IonRow>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={business}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {organizations.length}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Gesamt
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={people}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getTotalKonfis()}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Konfis
-                  </div>
-                </div>
-              </IonCol>
-              <IonCol size="4" style={{ padding: '0 4px' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '12px',
-                  padding: '16px 12px',
-                  color: 'white',
-                  textAlign: 'center'
-                }}>
-                  <IonIcon
-                    icon={personOutline}
-                    style={{
-                      fontSize: '1.5rem',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      display: 'block',
-                      margin: '0 auto 8px auto'
-                    }}
-                  />
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>
-                    {getTotalUsers()}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
-                    Team
-                  </div>
-                </div>
-              </IonCol>
-            </IonRow>
-          </IonGrid>
-        </div>
-      </div>
+      <SectionHeader
+        title="Organisationen"
+        subtitle="Gemeinden verwalten"
+        icon={business}
+        preset="organizations"
+        stats={[
+          { value: organizations.length, label: 'Gesamt' },
+          { value: getTotalKonfis(), label: 'Konfis' },
+          { value: getTotalUsers(), label: 'Team' }
+        ]}
+      />
 
       {/* Suche & Filter - iOS26 Pattern */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -278,18 +163,19 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         </IonCard>
       </IonList>
 
-      {/* Organisationen-Liste - iOS26 Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonListHeader>
-          <div className="app-section-icon app-section-icon--success">
-            <IonIcon icon={businessOutline} />
-          </div>
-          <IonLabel>Organisationen ({filteredAndSortedOrganizations.length})</IonLabel>
-        </IonListHeader>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
-            {filteredAndSortedOrganizations.map((organization) => (
+      {/* Organisationen-Liste */}
+      <ListSection
+        icon={businessOutline}
+        title="Organisationen"
+        count={filteredAndSortedOrganizations.length}
+        iconColorClass="success"
+        isEmpty={filteredAndSortedOrganizations.length === 0}
+        emptyIcon={businessOutline}
+        emptyTitle="Keine Organisationen gefunden"
+        emptyMessage="Noch keine Gemeinden angelegt"
+        emptyIconColor="#2dd36f"
+      >
+        {filteredAndSortedOrganizations.map((organization) => (
               <IonItemSliding
                 key={organization.id}
                 ref={(ref) => {
@@ -483,26 +369,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
               </IonItemSliding>
             ))}
 
-            {filteredAndSortedOrganizations.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <IonIcon
-                  icon={businessOutline}
-                  style={{
-                    fontSize: '3rem',
-                    color: '#2dd36f',
-                    marginBottom: '16px',
-                    display: 'block',
-                    margin: '0 auto 16px auto'
-                  }}
-                />
-                <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Organisationen gefunden</h3>
-                <p style={{ color: '#999', margin: '0' }}>Noch keine Gemeinden angelegt</p>
-              </div>
-            )}
-            </IonList>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
+      </ListSection>
     </>
   );
 };
