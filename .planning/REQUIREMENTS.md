@@ -17,7 +17,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 ### Admin-Views
 
 - [ ] **ADM-01**: KonfiPage/KonfiListView nutzt SectionHeader, ListSection und die Konfi-Farblogiken -- visuell konsistent mit dem Konfi-Bereich
-- [ ] **ADM-02**: ActivitiesPage zeigt Aktivitaeten in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
+- [x] **ADM-02**: ActivitiesPage zeigt Aktivitaeten in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
 - [x] **ADM-03**: EventsPage nutzt das gleiche Header-Banner-Pattern wie die Konfi-Referenz, wobei erweiterte Admin-Bearbeitungsfunktionen erhalten bleiben
 - [ ] **ADM-04**: BadgesPage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
 - [ ] **ADM-05**: JahrgaengePage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
@@ -71,7 +71,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | DES-03 | Phase 3 | Complete |
 | DES-04 | Phase 3 | Complete |
 | ADM-01 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
-| ADM-02 | Phase 4 | Pending |
+| ADM-02 | Phase 4 | Complete |
 | ADM-03 | Phase 4 | Complete |
 | ADM-04 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-05 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |

@@ -67,6 +67,8 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 04-01]: ribbon-Icon fuer Badge-Eintrag in Settings gewaehlt
 - [Phase 04-02]: AdminProfilePage nutzt app-detail-header CSS-Klassen statt SectionHeader (stats passen nicht fuer E-Mail/Datum)
 - [Phase 04-02]: getStatusColors() liefert {primary, secondary} fuer SectionHeader colors-Prop statt einzelner Farbe
+- [Phase 04-03]: Verbleibende Inline-Styles in Admin-Dateien alle legitimiert (Ionic Custom Properties, dynamische Werte, flex: 1)
+- [Phase 04-03]: flex-column Wrapper-Divs in AdminSettingsPage entfernt (app-list-item hat margin-bottom)
 
 ### Pending Todos
 
@@ -80,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 04-02-PLAN.md (Detail-Views und AdminProfilePage SectionHeader)
-Resume file: .planning/phases/04-admin-views-core/04-03-PLAN.md next
+Stopped at: Completed 04-03-PLAN.md (Admin-Pages und Views Inline-Styles bereinigen)
+Resume file: .planning/phases/04-admin-views-core/04-04-PLAN.md next
