@@ -5,10 +5,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonList,
-  IonListHeader,
   IonItem,
-  IonLabel,
   IonButton,
   IonButtons,
   IonIcon,
@@ -17,9 +14,7 @@ import {
   IonItemOption,
   useIonModal,
   IonRefresher,
-  IonRefresherContent,
-  IonCard,
-  IonCardContent
+  IonRefresherContent
 } from '@ionic/react';
 import {
   add,
@@ -83,6 +78,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import LevelManagementModal from '../modals/LevelManagementModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader, ListSection } from '../../shared';
 
 // Icon Mapping (same as in LevelManagementModal)
 const LEVEL_ICONS: Record<string, any> = {
@@ -219,65 +215,27 @@ const AdminLevelsPage: React.FC = () => {
           <LoadingSpinner message="Level werden geladen..." />
         ) : (
           <>
-            {/* Header - Kompaktes Banner-Design */}
-            <div style={{
-              background: 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)',
-              borderRadius: '20px',
-              padding: '24px',
-              margin: '16px',
-              marginBottom: '16px',
-              boxShadow: '0 8px 32px rgba(155, 89, 182, 0.25)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-              <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
+            <SectionHeader
+              title="Level-System"
+              subtitle="Punkte-Level und Belohnungen"
+              icon={trophy}
+              preset="konfis"
+              stats={[
+                { value: levels.length, label: 'GESAMT' }
+              ]}
+            />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IonIcon icon={trophy} style={{ fontSize: '1.6rem', color: 'white' }} />
-                </div>
-                <div>
-                  <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Level-System</h2>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Punkte-Level und Belohnungen</p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{levels.length}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Level List - iOS26 Pattern */}
-            <IonList inset={true} style={{ margin: '16px' }}>
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--level">
-                  <IonIcon icon={trophy} />
-                </div>
-                <IonLabel>Level ({levels.length})</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent style={{ padding: '16px' }}>
-                  {levels.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '32px' }}>
-                      <IonIcon
-                        icon={trophy}
-                        style={{
-                          fontSize: '3rem',
-                          color: '#9b59b6',
-                          marginBottom: '16px',
-                          display: 'block',
-                          margin: '0 auto 16px auto'
-                        }}
-                      />
-                      <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Level gefunden</h3>
-                      <p style={{ color: '#999', margin: '0' }}>Noch keine Level angelegt</p>
-                    </div>
-                  ) : (
-                    <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+            {/* Level List */}
+            <ListSection
+              icon={trophy}
+              title="Level"
+              count={levels.length}
+              iconColorClass="level"
+              emptyIcon={trophy}
+              emptyTitle="Keine Level gefunden"
+              emptyMessage="Noch keine Level angelegt"
+              emptyIconColor="#5b21b6"
+            >
                       {levels.map((level, index) => (
                         <IonItemSliding
                           key={level.id}
@@ -311,13 +269,13 @@ const AdminLevelsPage: React.FC = () => {
                                 width: '100%',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                borderLeftColor: level.color || '#9b59b6'
+                                borderLeftColor: level.color || '#5b21b6'
                               }}
                             >
                               {/* Corner Badge für Punkte */}
                               <div
                                 className="app-corner-badge"
-                                style={{ backgroundColor: level.color || '#9b59b6' }}
+                                style={{ backgroundColor: level.color || '#5b21b6' }}
                               >
                                 {level.points_required}P
                               </div>
@@ -325,7 +283,7 @@ const AdminLevelsPage: React.FC = () => {
                                 <div className="app-list-item__main">
                                   <div
                                     className="app-icon-circle app-icon-circle--lg"
-                                    style={{ backgroundColor: level.color || '#9b59b6' }}
+                                    style={{ backgroundColor: level.color || '#5b21b6' }}
                                   >
                                     <IonIcon icon={getIconFromString(level.icon || 'trophy')} />
                                   </div>
@@ -358,11 +316,7 @@ const AdminLevelsPage: React.FC = () => {
                           </IonItemOptions>
                         </IonItemSliding>
                       ))}
-                    </IonList>
-                  )}
-                </IonCardContent>
-              </IonCard>
-            </IonList>
+            </ListSection>
           </>
         )}
       </IonContent>

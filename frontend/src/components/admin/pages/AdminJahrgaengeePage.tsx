@@ -42,6 +42,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader, ListSection } from '../../shared';
 
 interface Jahrgang {
   id: number;
@@ -359,65 +360,27 @@ const AdminJahrgaengeePage: React.FC = () => {
           <LoadingSpinner message="Jahrgänge werden geladen..." />
         ) : (
           <>
-            {/* Header - Kompaktes Banner-Design */}
-            <div style={{
-              background: 'linear-gradient(135deg, #007aff 0%, #5856d6 100%)',
-              borderRadius: '20px',
-              padding: '24px',
-              margin: '16px',
-              marginBottom: '16px',
-              boxShadow: '0 8px 32px rgba(0, 122, 255, 0.25)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-              <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
+            <SectionHeader
+              title="Jahrgänge"
+              subtitle="Konfirmand:innen verwalten"
+              icon={school}
+              preset="jahrgang"
+              stats={[
+                { value: jahrgaenge.length, label: 'GESAMT' }
+              ]}
+            />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IonIcon icon={school} style={{ fontSize: '1.6rem', color: 'white' }} />
-                </div>
-                <div>
-                  <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Jahrgänge</h2>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Konfirmand:innen verwalten</p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
-                <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{jahrgaenge.length}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-                </div>
-              </div>
-            </div>
-
-        {/* Jahrgaenge List - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--jahrgang">
-              <IonIcon icon={schoolOutline} />
-            </div>
-            <IonLabel>Jahrgänge ({jahrgaenge.length})</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              {jahrgaenge.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px' }}>
-                  <IonIcon
-                    icon={school}
-                    style={{
-                      fontSize: '3rem',
-                      color: '#007aff',
-                      marginBottom: '16px',
-                      display: 'block',
-                      margin: '0 auto 16px auto'
-                    }}
-                  />
-                  <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Jahrgänge gefunden</h3>
-                  <p style={{ color: '#999', margin: '0' }}>Noch keine Jahrgänge angelegt</p>
-                </div>
-              ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+        {/* Jahrgaenge List */}
+        <ListSection
+          icon={schoolOutline}
+          title="Jahrgänge"
+          count={jahrgaenge.length}
+          iconColorClass="jahrgang"
+          emptyIcon={school}
+          emptyTitle="Keine Jahrgänge gefunden"
+          emptyMessage="Noch keine Jahrgänge angelegt"
+          emptyIconColor="#007aff"
+        >
                   {jahrgaenge.map((jahrgang, index) => (
                     <IonItemSliding
                       key={jahrgang.id}
@@ -486,11 +449,7 @@ const AdminJahrgaengeePage: React.FC = () => {
                       )}
                     </IonItemSliding>
                   ))}
-                </IonList>
-              )}
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+        </ListSection>
           </>
         )}
 

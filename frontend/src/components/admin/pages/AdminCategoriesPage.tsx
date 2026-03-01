@@ -40,6 +40,7 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader, ListSection } from '../../shared';
 
 interface Category {
   id: number;
@@ -334,65 +335,27 @@ const AdminCategoriesPage: React.FC = () => {
           <IonRefresherContent refreshingSpinner="crescent" />
         </IonRefresher>
 
-        {/* Header - Kompaktes Banner-Design */}
-        <div style={{
-          background: 'linear-gradient(135deg, #ff9500 0%, #ff6b35 100%)',
-          borderRadius: '20px',
-          padding: '24px',
-          margin: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '120px', height: '120px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.1)' }} />
-          <div style={{ position: 'absolute', bottom: '-20px', left: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.08)' }} />
+        <SectionHeader
+          title="Kategorien"
+          subtitle="Aktivitäten und Events"
+          icon={pricetag}
+          preset="activities"
+          stats={[
+            { value: categories.length, label: 'GESAMT' }
+          ]}
+        />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(255, 255, 255, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <IonIcon icon={pricetag} style={{ fontSize: '1.6rem', color: 'white' }} />
-            </div>
-            <div>
-              <h2 style={{ margin: '0', fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>Kategorien</h2>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>Aktivitäten und Events</p>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', position: 'relative', zIndex: 1 }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '10px 12px', textAlign: 'center', flex: '1 1 0', maxWidth: '100px' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>{categories.length}</div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Categories List - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--badges">
-              <IonIcon icon={pricetagOutline} />
-            </div>
-            <IonLabel>Kategorien ({categories.length})</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              {categories.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px' }}>
-                  <IonIcon
-                    icon={pricetag}
-                    style={{
-                      fontSize: '3rem',
-                      color: '#f59e0b',
-                      marginBottom: '16px',
-                      display: 'block',
-                      margin: '0 auto 16px auto'
-                    }}
-                  />
-                  <h3 style={{ color: '#666', margin: '0 0 8px 0' }}>Keine Kategorien gefunden</h3>
-                  <p style={{ color: '#999', margin: '0' }}>Noch keine Kategorien angelegt</p>
-                </div>
-              ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+        {/* Categories List */}
+        <ListSection
+          icon={pricetagOutline}
+          title="Kategorien"
+          count={categories.length}
+          iconColorClass="badges"
+          emptyIcon={pricetag}
+          emptyTitle="Keine Kategorien gefunden"
+          emptyMessage="Noch keine Kategorien angelegt"
+          emptyIconColor="#f59e0b"
+        >
                   {categories.map((category, index) => (
                     <IonItemSliding
                       key={category.id}
@@ -460,11 +423,7 @@ const AdminCategoriesPage: React.FC = () => {
                       )}
                     </IonItemSliding>
                   ))}
-                </IonList>
-              )}
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+        </ListSection>
 
       </IonContent>
     </IonPage>
