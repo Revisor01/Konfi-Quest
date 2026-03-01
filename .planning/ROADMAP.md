@@ -13,7 +13,7 @@ Konfi Quest ist eine produktive Ionic 8 App zur Konfirmandenpunkteverwaltung. Da
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Security Hardening** - Backend absichern: Helmet, organization_id-Audit, Input-Validierung, SQL-Injection-Fix
-- [ ] **Phase 2: Bug-Fixes und Theme-Stabilisierung** - Bekannte Bugs beheben und Theme-Konfiguration plattformkorrekt einrichten
+- [x] **Phase 2: Bug-Fixes und Theme-Stabilisierung** - Bekannte Bugs beheben und Theme-Konfiguration plattformkorrekt einrichten
 - [ ] **Phase 3: Design-System Grundlagen** - Shared Components und CSS-Klassen als Bausteine fuer alle Views erstellen
 - [ ] **Phase 4: Admin-Views Kern** - Die sechs meistgenutzten Admin-Seiten ans Konfi-Design-Pattern anpassen
 - [ ] **Phase 5: Admin-Views Verwaltung** - Restliche sechs Admin-Seiten ans Konfi-Design-Pattern anpassen
@@ -52,7 +52,7 @@ Plans:
 
 Plans:
 - [x] 02-01: TabBar-Fix + Theme-Isolation (BUG-01, THM-01, THM-02, THM-03, THM-04) [Wave 1]
-- [ ] 02-02: TBD
+- [x] 02-02: Deprecated-Cleanup + Badge-Absicherung + UI-Review (BUG-02, BUG-03, BUG-04) [Wave 1]
 
 ### Phase 3: Design-System Grundlagen
 **Goal**: Wiederverwendbare UI-Bausteine (Shared Components und CSS-Klassen) existieren, sodass Admin-Views durch Komposition statt Copy-Paste ans Konfi-Design angeglichen werden koennen
@@ -133,7 +133,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Security Hardening | 3/3 | Complete | 2026-02-28 |
-| 2. Bug-Fixes und Theme-Stabilisierung | 1/2 | In Progress | - |
+| 2. Bug-Fixes und Theme-Stabilisierung | 2/2 | Complete | 2026-03-01 |
 | 3. Design-System Grundlagen | 0/0 | Not started | - |
 | 4. Admin-Views Kern | 0/0 | Not started | - |
 | 5. Admin-Views Verwaltung | 0/0 | Not started | - |

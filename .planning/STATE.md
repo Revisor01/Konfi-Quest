@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-01T12:50:45Z"
+status: phase-complete
+last_updated: "2026-03-01T12:58:02Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,34 +18,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** Konsistente, sichere App fuer den produktiven Einsatz mit einheitlichem Design ueber alle Rollen
-**Current focus:** Phase 2: Bug-Fixes und Theme-Stabilisierung
+**Current focus:** Phase 2 complete -- bereit fuer Phase 3: Design-System Grundlagen
 
 ## Current Position
 
-Phase: 2 of 7 (Bug-Fixes und Theme-Stabilisierung)
-Plan: 1 of 2 in current phase (02-01 done)
-Status: Executing Phase 2
-Last activity: 2026-03-01 -- Plan 02-01 abgeschlossen (TabBar-Fix + Theme-Isolation)
+Phase: 2 of 7 (Bug-Fixes und Theme-Stabilisierung) -- COMPLETE
+Plan: 2 of 2 in current phase (02-02 done)
+Status: Phase 2 complete
+Last activity: 2026-03-01 -- Plan 02-02 abgeschlossen (Deprecated-Cleanup + Badge-Absicherung + UI-Review)
 
-Progress: [===.......] 29%
+Progress: [=====.....] 36%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4min
-- Total execution time: 17min
+- Total execution time: 22min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01 | 3/3 | 15min | 5min |
-| 02 | 1/2 | 2min | 2min |
+| 02 | 2/2 | 7min | 3.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (3min), 01-02 (2min), 01-03 (10min), 02-01 (2min)
-- Trend: Accelerating
+- Last 5 plans: 01-02 (2min), 01-03 (10min), 02-01 (2min), 02-02 (5min)
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - 02-01: backdrop-filter auf blur(20px) saturate(180%) verstaerkt fuer nativen iOS-26-Look
 - 02-01: Android-Gradient-Fix mit !important fuer Library-Regel-Deaktivierung auf falscher Plattform
 - 02-01: Theme-Variable-Namespaces verifiziert (--ios26-* vs --token-*, kein Konflikt)
+- 02-02: Badge-Punkte-Fallback komplett entfernt -- Backend liefert per COALESCE immer Werte, Fallback war toter Code mit Double-Count-Risiko
+- 02-02: UI-Code-Review ohne Findings -- safe-area, overflow, hardcodierte Hoehen und Tab-Bar-Overlap sind korrekt
+- 02-02: Live-Daten-Verifikation: alle 28 Konfis haben konsistente Punkte in konfi_profiles
 
 ### Pending Todos
 
@@ -87,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 02-01-PLAN.md (TabBar-Fix + Theme-Isolation)
+Stopped at: Completed 02-02-PLAN.md (Phase 2 complete)
 Resume file: None

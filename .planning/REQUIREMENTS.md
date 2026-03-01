@@ -55,9 +55,9 @@ Requirements fuer den aktuellen Milestone: Design-Konsistenz + Security Hardenin
 ### Bug-Fixes
 
 - [x] **BUG-01**: TabBar-Rendering mit 6+ Tabs auf iOS stabil (registerTabBarEffect Workaround)
-- [ ] **BUG-02**: Badge Double-Count Risiko eliminiert (klare Trennung activity-points vs bonus-points)
-- [ ] **BUG-03**: Deprecated dateUtils (parseLocalTime, getLocalNow) durch aktuelle Implementierungen ersetzt
-- [ ] **BUG-04**: UI-Fehler auf einzelnen Seiten identifiziert und behoben (systematischer Durchgang)
+- [x] **BUG-02**: Badge Double-Count Risiko eliminiert (klare Trennung activity-points vs bonus-points)
+- [x] **BUG-03**: Deprecated dateUtils (parseLocalTime, getLocalNow) durch aktuelle Implementierungen ersetzt
+- [x] **BUG-04**: UI-Fehler auf einzelnen Seiten identifiziert und behoben (systematischer Durchgang)
 
 ### Onboarding
 
@@ -104,9 +104,9 @@ Deferred fuer zukuenftigen Release. Nicht im aktuellen Roadmap.
 | SEC-05 | Phase 1 | Complete |
 | SEC-06 | Phase 1 | Complete |
 | BUG-01 | Phase 2 | Complete |
-| BUG-02 | Phase 2 | Pending |
-| BUG-03 | Phase 2 | Pending |
-| BUG-04 | Phase 2 | Pending |
+| BUG-02 | Phase 2 | Complete |
+| BUG-03 | Phase 2 | Complete |
+| BUG-04 | Phase 2 | Complete |
 | THM-01 | Phase 2 | Complete |
 | THM-02 | Phase 2 | Complete |
 | THM-03 | Phase 2 | Complete |
