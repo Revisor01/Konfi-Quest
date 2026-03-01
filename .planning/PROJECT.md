@@ -53,10 +53,22 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Komplettes Backend-Refactoring (Route-Splitting) -- Funktioniert, nur kritische Fixes
 - API-Dokumentation (Swagger/OpenAPI) -- Kein externer Zugriff geplant
 
+## Current Milestone: v1.1 Design-Konsistenz
+
+**Goal:** Admin- und Teamer-Bereiche an das fertige Konfi-Design-Pattern anpassen, alle Modale konsistent machen und Shared Components einfuehren.
+
+**Target features:**
+- Design-System Grundlagen (Shared Components, CSS-Konsolidierung)
+- Admin-Views Design-Konsistenz (kompakte Header, Farblogiken, Abstande)
+- Teamer-Views Design-Konsistenz
+- Modal-Konsistenz (useIonModal Pattern, einheitliches Design)
+- QR-Code Onboarding-Validierung
+
 ## Context
 
 - App ist im Beta/Test-Stadium, laeuft produktiv mit PostgreSQL auf Docker (server.godsapp.de)
 - v1.0 shipped: Backend Security Hardening + Bug-Fixes + Theme-Stabilisierung (2 Phasen, 5 Plans)
+- v1.1 Focus: Design-Konsistenz ueber alle Rollen und Bereiche
 - Konfi-UI ist fertig designt und dient als Referenz fuer alle anderen Bereiche
 - Chat nutzt bereits ein globales Layout
 - Events-Bereich hat Sonderrolle: Admin kann Events bearbeiten (erweitertes UI), daher kein 1:1 globales Layout moeglich
@@ -90,4 +102,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Badge-Punkte nur aus konfi_profiles | Backend COALESCE garantiert nie-null Werte, Fallback war toter Code | Bestaetigt v1.0 |
 
 ---
-*Last updated: 2026-03-01 after v1.0 milestone*
+*Last updated: 2026-03-01 after v1.1 milestone start*
