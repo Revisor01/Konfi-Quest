@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-01T16:14:54Z"
+last_updated: "2026-03-01T16:16:29Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 4 of 7 (Admin-Views Core)
-Plan: 3 of 4 complete
-Status: Phase 4 in progress
-Last activity: 2026-03-01 -- Plan 04-03 complete (Admin-Pages und Views Inline-Styles bereinigen)
+Plan: 4 of 4 complete
+Status: Phase 4 complete
+Last activity: 2026-03-01 -- Plan 04-04 complete (Modal Inline-Styles Bereinigung)
 
-Progress: [###############.....] 75% (v1.1 Phase 4: 3/4 plans)
+Progress: [####################] 100% (v1.1 Phase 4: 4/4 plans)
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [###############.....] 75% (v1.1 Phase 4: 3/4 plans)
 | 2 (v1.0) | 2 | -- | -- |
 
 | 3 (v1.1) | 3 | 14min | 4.7min |
-| 4 (v1.1) | 3/4 | 15min | 5min |
+| 4 (v1.1) | 4/4 | 23min | 5.8min |
 
 *Updated after each plan completion*
 
@@ -69,6 +69,8 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 04-02]: getStatusColors() liefert {primary, secondary} fuer SectionHeader colors-Prop statt einzelner Farbe
 - [Phase 04-03]: Verbleibende Inline-Styles in Admin-Dateien alle legitimiert (Ionic Custom Properties, dynamische Werte, flex: 1)
 - [Phase 04-03]: flex-column Wrapper-Divs in AdminSettingsPage entfernt (app-list-item hat margin-bottom)
+- [Phase 04-04]: app-info-box--purple als neue CSS-Klasse fuer lila Info-Boxen in Modals
+- [Phase 04-04]: IonText in 4 Modals durch direkte p-Tags mit app-info-box CSS-Klassen ersetzt
 
 ### Pending Todos
 
@@ -82,5 +84,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 04-03-PLAN.md (Admin-Pages und Views Inline-Styles bereinigen)
-Resume file: .planning/phases/04-admin-views-core/04-04-PLAN.md next
+Stopped at: Completed 04-04-PLAN.md (Modal Inline-Styles Bereinigung) -- Phase 4 complete
+Resume file: Phase 5 next
