@@ -16,6 +16,7 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminGoalsPage from './AdminGoalsPage';
+import AdminInvitePage from './AdminInvitePage';
 import {
   people,
   shield,
@@ -24,6 +25,7 @@ import {
   school,
   person,
   trophy,
+  ribbon,
   logOut,
   flash,
   notifications,
@@ -45,6 +47,11 @@ const AdminSettingsPage: React.FC = () => {
     onClose: () => dismissGoalsModal(),
     onSuccess: () => dismissGoalsModal(),
     dismiss: () => dismissGoalsModal()
+  });
+
+  const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
+    onClose: () => dismissInviteModal(),
+    dismiss: () => dismissInviteModal()
   });
 
   const handleLogout = () => {
@@ -129,7 +136,7 @@ const AdminSettingsPage: React.FC = () => {
 
                   <div
                     className="app-list-item app-list-item--jahrgang"
-                    onClick={() => history.push('/admin/settings/invite')}
+                    onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                     style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
                   >
                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
@@ -243,6 +250,20 @@ const AdminSettingsPage: React.FC = () => {
                     <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Punkte-Level und Belohnungen</p>
                   </div>
                 </div>
+
+                <div
+                  className="app-list-item app-list-item--badges"
+                  onClick={() => history.push('/admin/badges')}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                    <IonIcon icon={ribbon} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#333' }}>Badges</h2>
+                    <p style={{ fontSize: '0.75rem', color: '#8e8e93', margin: '2px 0 0 0' }}>Auszeichnungen und Erfolge verwalten</p>
+                  </div>
+                </div>
               </div>
             </IonCardContent>
           </IonCard>
@@ -302,23 +323,27 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div
-                  className="app-list-item app-list-item--danger"
-                  onClick={handleLogout}
-                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                    <IonIcon icon={logOut} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <h2 style={{ fontWeight: '500', fontSize: '0.95rem', margin: 0, color: '#dc3545' }}>Abmelden</h2>
-                    <p style={{ fontSize: '0.75rem', color: '#dc3545', margin: '2px 0 0 0', opacity: 0.7 }}>Von diesem Gerät abmelden</p>
-                  </div>
-                </div>
               </div>
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+          <IonButton
+            expand="block"
+            fill="outline"
+            color="danger"
+            onClick={handleLogout}
+            style={{
+              height: '48px',
+              borderRadius: '12px',
+              fontWeight: '600'
+            }}
+          >
+            <IonIcon icon={logOut} slot="start" />
+            Abmelden
+          </IonButton>
+        </div>
 
         <div style={{ height: '16px' }}></div>
       </IonContent>

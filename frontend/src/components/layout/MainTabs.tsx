@@ -230,10 +230,6 @@ const MainTabs: React.FC = () => {
                 </IonBadge>
               )}
             </IonTabButton>
-            <IonTabButton tab="admin-badges" href="/admin/badges">
-              <IonIcon icon={star} />
-              <IonLabel>Badges</IonLabel>
-            </IonTabButton>
             <IonTabButton tab="admin-requests" href="/admin/requests">
               <IonIcon icon={documentIcon} />
               <IonLabel>Anträge</IonLabel>
