@@ -96,6 +96,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | MD3 Theme fuer Android aktiv | Beide Themes koexistieren mit Platform-Scoping | Bestaetigt v1.0 |
 | Sicherheit vor neuen Features | Bestehende Concerns muessen vor Go-Live behoben werden | Bestaetigt v1.0 |
 | Admin-Seiten UX anpassen statt neu bauen | Alle Admin-Seiten existieren funktional, brauchen nur Design-Update | -- Pending |
+| Bestehende Seiten-Farben und Header-Pattern erhalten | Jede Admin-View hat bereits eigene Farbgradients (Lila=Konfis, Gruen=Aktivitaeten, Rot=Events, Orange=Badges, Blau=Jahrgaenge, etc.), Header-Banner mit Icon+Titel+Stats-Row, und CSS-Klassen in variables.css. Phase 3-5 extrahieren in Shared Components, verwerfen NICHTS. | Bestaetigt v1.1 |
 | helmet CSP deaktiviert | Reines API-Backend, kein HTML served | Bestaetigt v1.0 |
 | getPointField wirft Error statt stillem Fallback | Explizite Fehler sind sicherer als stille Defaults | Bestaetigt v1.0 |
 | registerTabBarEffect entfernt | CSS-only Ansatz funktioniert zuverlaessig fuer 6+ Tabs | Bestaetigt v1.0 |
