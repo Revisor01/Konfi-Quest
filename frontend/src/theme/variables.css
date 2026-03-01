@@ -490,6 +490,13 @@ ion-tab-bar.ios:not(.ios26-disabled) {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
+/* Android: iOS26 unscoped Content-Gradient neutralisieren */
+/* Die iOS26-Library hat 3 Regeln ohne .ios Scoping die auf Android sichtbar wären */
+.md ion-content::part(background)::before,
+.md ion-content::part(background)::after {
+  content: none !important;
+}
+
 /* Solideres Popover Styling für IonSelect */
 ion-popover {
   --background: #ffffff;
