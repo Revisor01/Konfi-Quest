@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-01T16:04:22Z"
+last_updated: "2026-03-01T16:14:54Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 4 of 7 (Admin-Views Core)
-Plan: 1 of 4 complete
+Plan: 3 of 4 complete
 Status: Phase 4 in progress
-Last activity: 2026-03-01 -- Plan 04-01 complete (CSS-Erweiterung und TabBar-Reduktion)
+Last activity: 2026-03-01 -- Plan 04-03 complete (Admin-Pages und Views Inline-Styles bereinigen)
 
-Progress: [#####...............] 25% (v1.1 Phase 4: 1/4 plans)
+Progress: [###############.....] 75% (v1.1 Phase 4: 3/4 plans)
 
 ## Performance Metrics
 
@@ -44,7 +44,7 @@ Progress: [#####...............] 25% (v1.1 Phase 4: 1/4 plans)
 | 2 (v1.0) | 2 | -- | -- |
 
 | 3 (v1.1) | 3 | 14min | 4.7min |
-| 4 (v1.1) | 1/4 | 3min | 3min |
+| 4 (v1.1) | 3/4 | 15min | 5min |
 
 *Updated after each plan completion*
 
@@ -65,6 +65,8 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 03]: ChatOverview nutzt colors-Prop statt Preset fuer SectionHeader
 - [Phase 04-01]: star-Import in MainTabs.tsx beibehalten da Konfi-TabBar ihn nutzt
 - [Phase 04-01]: ribbon-Icon fuer Badge-Eintrag in Settings gewaehlt
+- [Phase 04-02]: AdminProfilePage nutzt app-detail-header CSS-Klassen statt SectionHeader (stats passen nicht fuer E-Mail/Datum)
+- [Phase 04-02]: getStatusColors() liefert {primary, secondary} fuer SectionHeader colors-Prop statt einzelner Farbe
 
 ### Pending Todos
 
@@ -78,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 04-01-PLAN.md (CSS-Erweiterung und TabBar-Reduktion)
-Resume file: .planning/phases/04-admin-views-core/04-02-PLAN.md next
+Stopped at: Completed 04-02-PLAN.md (Detail-Views und AdminProfilePage SectionHeader)
+Resume file: .planning/phases/04-admin-views-core/04-03-PLAN.md next
