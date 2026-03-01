@@ -14,7 +14,6 @@ import {
   IonButtons,
   IonList,
   IonListHeader,
-  useIonAlert,
   useIonModal
 } from '@ionic/react';
 import {
@@ -22,7 +21,6 @@ import {
   keyOutline,
   mailOutline,
   arrowBack,
-  logOutOutline,
   informationCircleOutline,
   briefcaseOutline,
   settingsOutline,
@@ -32,7 +30,6 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
-import { logout } from '../../../services/auth';
 import ChangeEmailModal from '../modals/ChangeEmailModal';
 import ChangePasswordModal from '../modals/ChangePasswordModal';
 import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
@@ -40,7 +37,6 @@ import ChangeRoleTitleModal from '../modals/ChangeRoleTitleModal';
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setUser, setSuccess, setError } = useApp();
-  const [presentAlert] = useIonAlert();
   const [profileData, setProfileData] = useState<{ role_title?: string; email?: string; created_at?: string }>({});
 
   // Profildaten laden
@@ -113,32 +109,6 @@ const AdminProfilePage: React.FC = () => {
     });
   };
 
-  const handleLogout = () => {
-    presentAlert({
-      header: 'Abmelden',
-      message: 'Möchten Sie sich wirklich abmelden?',
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Abmelden',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              await logout();
-              window.location.href = '/';
-            } catch (error) {
- console.error('Logout error:', error);
-              // Fallback: direct logout even if token removal fails
-              localStorage.removeItem('konfi_token');
-              localStorage.removeItem('konfi_user');
-              window.location.href = '/';
-            }
-          }
-        }
-      ]
-    });
-  };
-
   return (
     <IonPage ref={pageRef}>
       <IonHeader>
@@ -153,119 +123,37 @@ const AdminProfilePage: React.FC = () => {
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
-        {/* Header - Dashboard-Style */}
-        <div style={{
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-          borderRadius: '24px',
-          padding: '0',
-          margin: '16px',
-          marginBottom: '16px',
-          boxShadow: '0 20px 40px rgba(139, 92, 246, 0.3)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '200px',
-          display: 'flex',
-          flexDirection: 'column'
+        {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
+        <div className="app-detail-header" style={{
+          background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
+          boxShadow: '0 20px 40px rgba(91, 33, 182, 0.3)'
         }}>
-          {/* Überschrift - groß und überlappend */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '12px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '4rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.1)',
-              margin: '0',
-              lineHeight: '0.8',
-              letterSpacing: '-2px'
-            }}>
-              PROFIL
-            </h2>
-          </div>
-
-          {/* Content */}
-          <div style={{
-            position: 'relative',
-            zIndex: 2,
-            padding: '70px 24px 24px 24px',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}>
+          <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center' }}>
             {/* Avatar */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
+            <div className="app-icon-circle" style={{
+              width: '80px', height: '80px',
               background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               marginBottom: '16px',
-              color: 'white',
-              fontSize: '2rem',
-              fontWeight: '600',
+              color: 'white', fontSize: '2rem', fontWeight: '600',
               border: '3px solid rgba(255, 255, 255, 0.3)'
             }}>
               {user?.display_name?.charAt(0)?.toUpperCase() || 'A'}
             </div>
-            <h1 style={{
-              margin: '0 0 8px 0',
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              color: 'white'
-            }}>
-              {user?.display_name || 'Administrator'}
-            </h1>
-            <p style={{
-              margin: '0',
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.9rem'
-            }}>
+            <h1 className="app-detail-header__title">{user?.display_name || 'Administrator'}</h1>
+            <p className="app-detail-header__subtitle">
               {profileData.role_title
                 ? `Administrator - ${profileData.role_title}`
                 : 'Administrator'}
             </p>
-
-            {/* Info-Zeile: E-Mail und Mitglied seit */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '8px',
-              marginTop: '12px'
-            }}>
+            <div className="app-detail-header__info-row" style={{ justifyContent: 'center' }}>
               {(profileData.email || user?.email) && (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  borderRadius: '8px',
-                  padding: '6px 10px',
-                  fontSize: '0.75rem',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
+                <div className="app-detail-header__info-chip">
                   <IonIcon icon={mailOutline} style={{ fontSize: '0.85rem' }} />
                   {profileData.email || user?.email}
                 </div>
               )}
               {profileData.created_at && (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.15)',
-                  borderRadius: '8px',
-                  padding: '6px 10px',
-                  fontSize: '0.75rem',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
+                <div className="app-detail-header__info-chip">
                   <IonIcon icon={calendarOutline} style={{ fontSize: '0.85rem' }} />
                   Seit {new Date(profileData.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </div>
@@ -428,23 +316,6 @@ const AdminProfilePage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
-
-        {/* Logout - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px 16px 16px 16px' }}>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <IonButton
-                expand="block"
-                color="danger"
-                fill="outline"
-                onClick={handleLogout}
-              >
-                <IonIcon icon={logOutOutline} slot="start" />
-                Abmelden
-              </IonButton>
             </IonCardContent>
           </IonCard>
         </IonList>

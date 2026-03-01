@@ -38,6 +38,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 
 interface Category {
@@ -297,33 +298,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     doRegister();
   };
 
-  // Header-Farbe basierend auf Status
-  const getHeaderColor = () => {
-    if (!eventData) return '#dc2626';
+  // Status-Farben fuer SectionHeader (dynamisch basierend auf Event-Zustand)
+  const getStatusColors = (): { primary: string; secondary: string } => {
+    if (!eventData) return { primary: '#dc2626', secondary: '#b91c1c' };
 
     const isPastEvent = new Date(eventData.event_date) < new Date();
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = (eventData as any).booking_status === 'waitlist' || (eventData as any).booking_status === 'pending';
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
-    if (eventData.cancelled) return '#dc3545';
-    if (isKonfi && !isPastEvent) return '#8b5cf6'; // Lila für Konfirmation
-    if (isPastEvent && eventData.attendance_status === 'present') return '#34c759';
-    if (isPastEvent && eventData.attendance_status === 'absent') return '#dc3545';
-    if (isAusstehend) return '#fd7e14';
-    if (isOnWaitlist) return '#fd7e14';
-    if (eventData.is_registered && !isPastEvent) return '#007aff';
-    if (isPastEvent) return '#6c757d';
-    // Voll aber Warteliste aktiv = Orange
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return '#fd7e14';
-    // Voll ohne Warteliste = Rot
-    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return '#dc3545';
-    if (eventData.registration_status === 'open') return '#34c759';
-    if (eventData.registration_status === 'upcoming') return '#fd7e14';
-    return '#dc2626';
+    if (eventData.cancelled) return { primary: '#dc3545', secondary: '#c82333' };
+    if (isKonfi && !isPastEvent) return { primary: '#5b21b6', secondary: '#4c1d95' };
+    if (isPastEvent && eventData.attendance_status === 'present') return { primary: '#34c759', secondary: '#2db84d' };
+    if (isPastEvent && eventData.attendance_status === 'absent') return { primary: '#dc3545', secondary: '#c82333' };
+    if (isAusstehend) return { primary: '#fd7e14', secondary: '#e8650e' };
+    if (isOnWaitlist) return { primary: '#fd7e14', secondary: '#e8650e' };
+    if (eventData.is_registered && !isPastEvent) return { primary: '#007aff', secondary: '#0066d6' };
+    if (isPastEvent) return { primary: '#6c757d', secondary: '#5a6268' };
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && (eventData as any).waitlist_enabled) return { primary: '#fd7e14', secondary: '#e8650e' };
+    if (eventData.registration_status === 'open' && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants) return { primary: '#dc3545', secondary: '#c82333' };
+    if (eventData.registration_status === 'open') return { primary: '#34c759', secondary: '#2db84d' };
+    if (eventData.registration_status === 'upcoming') return { primary: '#fd7e14', secondary: '#e8650e' };
+    return { primary: '#dc2626', secondary: '#b91c1c' };
   };
-
-  const headerColor = getHeaderColor();
 
   // Status-Text für Header
   const getStatusText = () => {
@@ -417,132 +414,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Event Header - Kompaktes Banner-Design wie EventsView */}
-        <div style={{
-          background: `linear-gradient(135deg, ${headerColor} 0%, ${headerColor}cc 100%)`,
-          borderRadius: '20px',
-          padding: '24px',
-          margin: '16px',
-          marginBottom: '16px',
-          boxShadow: `0 8px 32px ${headerColor}40`,
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Dekorative Kreise im Hintergrund */}
-          <div style={{
-            position: 'absolute',
-            top: '-30px',
-            right: '-30px',
-            width: '120px',
-            height: '120px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.1)'
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '-20px',
-            left: '-20px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.08)'
-          }} />
-
-          {/* Header mit Icon und Event-Name */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            marginBottom: '20px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
-              background: 'rgba(255, 255, 255, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <IonIcon icon={calendar} style={{ fontSize: '1.6rem', color: 'white' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <h2 style={{
-                margin: '0',
-                fontSize: '1.3rem',
-                fontWeight: '700',
-                color: 'white',
-                lineHeight: '1.2'
-              }}>
-                {eventData.name}
-              </h2>
-              <p style={{
-                margin: '2px 0 0 0',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.8)'
-              }}>
-                {getStatusText()}
-              </p>
-            </div>
-          </div>
-
-          {/* Stats Row - 3 Boxen */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '8px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {spotsLeft > 0 ? spotsLeft : 0}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                FREI
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {eventData.points}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                PUNKTE
-              </div>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '10px 12px',
-              textAlign: 'center',
-              flex: '1 1 0',
-              maxWidth: '100px'
-            }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'white' }}>
-                {eventData.registered_count}
-              </div>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>
-                DABEI
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Event Header - SectionHeader mit status-basierten Farben */}
+        <SectionHeader
+          title={eventData.name}
+          subtitle={getStatusText()}
+          icon={calendar}
+          colors={getStatusColors()}
+          stats={[
+            { value: spotsLeft > 0 ? spotsLeft : 0, label: 'Frei' },
+            { value: eventData.points, label: 'Punkte' },
+            { value: eventData.registered_count, label: 'Dabei' }
+          ]}
+        />
 
         {/* Event Details - 1:1 wie Admin */}
         <IonList inset={true} style={{ margin: '16px' }}>
@@ -632,7 +515,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Kategorien */}
               {eventData.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row">
-                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                   <div className="app-info-row__content">
                     {eventData.categories.map(c => c.name).join(', ')}
                   </div>
