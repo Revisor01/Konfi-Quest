@@ -84,61 +84,12 @@ const KonfiBadgesPage: React.FC = () => {
       }
       const konfiData = konfiResponse.data;
       
-      // Check if API has calculated points or if we need to calculate from activities
-      let currentGottesdienstPoints = konfiData.gottesdienst_points;
-      let currentGemeindePoints = konfiData.gemeinde_points;
-      let currentTotalPoints = konfiData.total_points;
-      
-      // If points are null/undefined, calculate from activities + bonus
-      if (currentGottesdienstPoints === null || currentGottesdienstPoints === undefined || 
-          currentGemeindePoints === null || currentGemeindePoints === undefined) {
-        
- console.log('Badge API points are null, calculating from activities + bonus');
-        
-        // Base points from activities
-        const baseGottesdienstPoints = konfiData.activities
-          ?.filter((activity: any) => activity.type === 'gottesdienst')
-          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
-        
-        const baseGemeindePoints = konfiData.activities
-          ?.filter((activity: any) => activity.type === 'gemeinde')
-          ?.reduce((sum: number, activity: any) => sum + (activity.points || 0), 0) || 0;
-        
-        // Bonus points categorized by type - use bonusPoints (not bonus_points!)
-        let bonusGottesdienstPoints = 0;
-        let bonusGemeindePoints = 0;
-        
-        if (konfiData.bonusPoints && Array.isArray(konfiData.bonusPoints)) {
-          bonusGottesdienstPoints = konfiData.bonusPoints
-            .filter((bonus: any) => bonus.type === 'gottesdienst')
-            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
-          
-          bonusGemeindePoints = konfiData.bonusPoints
-            .filter((bonus: any) => bonus.type === 'gemeinde')
-            .reduce((sum: number, bonus: any) => sum + (bonus.points || 0), 0);
-        }
-        
-        // Total per category (activities + bonus)
-        currentGottesdienstPoints = baseGottesdienstPoints + bonusGottesdienstPoints;
-        currentGemeindePoints = baseGemeindePoints + bonusGemeindePoints;
-        currentTotalPoints = currentGottesdienstPoints + currentGemeindePoints;
-        
- console.log('Badge calculated points with bonus by category:', {
-          baseGottesdienst: baseGottesdienstPoints,
-          baseGemeinde: baseGemeindePoints,
-          bonusGottesdienst: bonusGottesdienstPoints,
-          bonusGemeinde: bonusGemeindePoints,
-          finalGottesdienst: currentGottesdienstPoints,
-          finalGemeinde: currentGemeindePoints,
-          total: currentTotalPoints,
-          activities: konfiData.activities?.length || 0,
-          bonusEntries: konfiData.bonus_points?.length || 0
-        });
-      } else {
-        // Use API points directly
-        currentTotalPoints = currentTotalPoints || (currentGottesdienstPoints + currentGemeindePoints);
- console.log('Badge using API points:', { currentGottesdienstPoints, currentGemeindePoints, currentTotalPoints });
-      }
+      // Punkte direkt aus konfi_profiles verwenden
+      // Backend liefert per COALESCE immer Werte (nie null)
+      // konfi_profiles enthält bereits Aktivitäts- + Event- + Bonus-Punkte (akkumuliert)
+      const currentGottesdienstPoints = konfiData.gottesdienst_points || 0;
+      const currentGemeindePoints = konfiData.gemeinde_points || 0;
+      const currentTotalPoints = konfiData.total_points || (currentGottesdienstPoints + currentGemeindePoints);
 
       // Process ALL badges (available + earned) - show ALL badges for motivation
       const allBadges = [...badgeData.available, ...badgeData.earned];

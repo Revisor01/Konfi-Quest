@@ -114,20 +114,3 @@ export const getLocalNow = (): Date => {
   return new Date();
 };
 
-/**
- * DEPRECATED - use parseLocalTime instead
- * Converts a UTC date string to German local time
- */
-export const parseGermanTime = (dateString: string): Date => {
- console.warn('parseGermanTime is deprecated, use parseLocalTime instead');
-  return parseLocalTime(dateString);
-};
-
-/**
- * DEPRECATED - use getLocalNow instead
- * Gets current time in German timezone
- */
-export const getGermanNow = (): Date => {
- console.warn('getGermanNow is deprecated, use getLocalNow instead');
-  return getLocalNow();
-};
