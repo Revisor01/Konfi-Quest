@@ -131,7 +131,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         organization_id: user.organization_id,
         role_name: user.role_name,
         is_super_admin: user.is_super_admin || false
-      }, JWT_SECRET, { expiresIn: '24h' });
+      }, JWT_SECRET, { expiresIn: '90d' });
 
       const responseUser = {
         id: user.id,
@@ -440,6 +440,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         return res.status(404).json({ error: 'Einladungscode nicht gefunden' });
       }
 
+      // Prüfen ob Code bereits abgelaufen ist
+      if (new Date(invite.expires_at) < new Date()) {
+        return res.status(400).json({ error: 'Abgelaufene Codes können nicht verlängert werden' });
+      }
+
       // Add 7 days to current expiry
       const newExpiry = new Date(invite.expires_at);
       newExpiry.setDate(newExpiry.getDate() + 7);
@@ -456,21 +461,55 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
   });
 
+  // Check username availability (public endpoint)
+  router.get('/check-username/:username', async (req, res) => {
+    const { username } = req.params;
+    const trimmed = username.trim().toLowerCase();
+
+    // Validation: mindestens 3 Zeichen, nur alphanumerisch + Unterstrich
+    if (trimmed.length < 3) {
+      return res.status(400).json({ available: false, message: 'Benutzername muss mindestens 3 Zeichen lang sein' });
+    }
+    if (!/^[a-z0-9_]+$/.test(trimmed)) {
+      return res.status(400).json({ available: false, message: 'Benutzername darf nur Buchstaben, Zahlen und Unterstriche enthalten' });
+    }
+
+    try {
+      const { rows } = await db.query('SELECT id FROM users WHERE username = $1', [trimmed]);
+
+      if (rows.length > 0) {
+        return res.json({ available: false, message: 'Benutzername bereits vergeben' });
+      }
+
+      res.json({ available: true, message: 'Benutzername verfügbar' });
+
+    } catch (err) {
+      console.error('Database error in GET /api/auth/check-username:', err);
+      res.status(500).json({ error: 'Fehler bei der Prüfung' });
+    }
+  });
+
   // Validate invite code (public endpoint)
   router.get('/validate-invite/:code', async (req, res) => {
     const { code } = req.params;
 
     try {
+      // Zuerst Code suchen (ohne expires_at/used_at Filter)
       const { rows: [invite] } = await db.query(`
         SELECT ic.*, j.name as jahrgang_name, COALESCE(o.display_name, o.name) as organization_name
         FROM invite_codes ic
         JOIN jahrgaenge j ON ic.jahrgang_id = j.id
         JOIN organizations o ON ic.organization_id = o.id
-        WHERE ic.code = $1 AND ic.expires_at > NOW() AND ic.used_at IS NULL
+        WHERE ic.code = $1
       `, [code.toUpperCase()]);
 
       if (!invite) {
-        return res.status(400).json({ error: 'Ungültiger oder abgelaufener Einladungscode' });
+        return res.status(404).json({ error: 'Dieser Einladungscode existiert nicht', error_code: 'not_found' });
+      }
+
+      // Prüfen ob abgelaufen
+      if (new Date(invite.expires_at) <= new Date()) {
+        return res.status(410).json({ error: 'Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.', error_code: 'expired' });
       }
 
       res.json({
@@ -480,7 +519,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       });
 
     } catch (err) {
- console.error('Database error in GET /api/auth/validate-invite:', err);
+      console.error('Database error in GET /api/auth/validate-invite:', err);
       res.status(500).json({ error: 'Fehler bei der Validierung' });
     }
   });
@@ -511,16 +550,21 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
 
     try {
-      // Validate invite code
+      // Validate invite code - zuerst Code suchen (ohne expires_at Filter)
       const { rows: [invite] } = await db.query(`
         SELECT ic.*, j.name as jahrgang_name
         FROM invite_codes ic
         JOIN jahrgaenge j ON ic.jahrgang_id = j.id
-        WHERE ic.code = $1 AND ic.expires_at > NOW() AND ic.used_at IS NULL
+        WHERE ic.code = $1
       `, [invite_code.toUpperCase()]);
 
       if (!invite) {
-        return res.status(400).json({ error: 'Ungültiger oder abgelaufener Einladungscode' });
+        return res.status(404).json({ error: 'Dieser Einladungscode existiert nicht', error_code: 'not_found' });
+      }
+
+      // Prüfen ob abgelaufen
+      if (new Date(invite.expires_at) <= new Date()) {
+        return res.status(410).json({ error: 'Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.', error_code: 'expired' });
       }
 
       // Check if username already exists
@@ -554,25 +598,36 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
           RETURNING id
         `, [username.toLowerCase(), display_name, passwordHash, konfiRole.id, invite.organization_id, email?.trim() || null]);
 
-        // Create konfi profile
+        // Create konfi profile mit invite_code_id
         await client.query(`
-          INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points)
-          VALUES ($1, $2, 0, 0)
-        `, [newUser.id, invite.jahrgang_id]);
-
-        // Mark invite code as used (optional - can be reused)
-        // await client.query('UPDATE invite_codes SET used_at = NOW() WHERE id = $1', [invite.id]);
+          INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, invite_code_id)
+          VALUES ($1, $2, 0, 0, $3)
+        `, [newUser.id, invite.jahrgang_id, invite.id]);
 
         await client.query('COMMIT');
 
- console.log(`New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
+        // Auto-Login: JWT Token generieren
+        const token = jwt.sign({
+          id: newUser.id,
+          type: 'konfi',
+          display_name: display_name,
+          email: email?.trim() || null,
+          organization_id: invite.organization_id,
+          role_name: 'konfi',
+          is_super_admin: false
+        }, JWT_SECRET, { expiresIn: '90d' });
+
+        console.log(`New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
         res.json({
           message: 'Registrierung erfolgreich',
+          token,
           user: {
             id: newUser.id,
             display_name: display_name,
             username: username,
-            jahrgang: invite.jahrgang_name
+            type: 'konfi',
+            jahrgang: invite.jahrgang_name,
+            role_name: 'konfi'
           }
         });
 
@@ -587,7 +642,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       if (err.code === '23505') { // unique constraint
         return res.status(409).json({ error: 'Benutzername bereits vergeben' });
       }
- console.error('Database error in POST /api/auth/register-konfi:', err);
+      console.error('Database error in POST /api/auth/register-konfi:', err);
       res.status(500).json({ error: 'Fehler bei der Registrierung' });
     }
   });
