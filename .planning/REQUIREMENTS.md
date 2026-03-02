@@ -9,8 +9,8 @@ Requirements fuer Milestone v1.2 Polishing + Tech Debt.
 
 ### Super-Admin UI
 
-- [ ] **SUI-01**: Super-Admin sieht nach Login nur Organisations-Verwaltung und Profil/Settings (keine Konfis, Chat, Events, Antraege Tabs)
-- [ ] **SUI-02**: Super-Admin hat Zugriff auf eigenes Profil und App-Einstellungen
+- [x] **SUI-01**: Super-Admin sieht nach Login nur Organisations-Verwaltung und Profil/Settings (keine Konfis, Chat, Events, Antraege Tabs)
+- [x] **SUI-02**: Super-Admin hat Zugriff auf eigenes Profil und App-Einstellungen
 
 ### Dashboard
 
@@ -72,8 +72,8 @@ Geplante Milestones nach v1.2:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SUI-01 | Phase 8 | Pending |
-| SUI-02 | Phase 8 | Pending |
+| SUI-01 | Phase 8 | Complete |
+| SUI-02 | Phase 8 | Complete |
 | DASH-01 | Phase 9 | Pending |
 | DASH-02 | Phase 9 | Pending |
 | DASH-03 | Phase 9 | Pending |
