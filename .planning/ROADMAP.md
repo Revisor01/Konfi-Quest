@@ -5,6 +5,7 @@
 - Shipped **v1.0 Security + Stabilisierung** - Phases 1-2 (shipped 2026-03-01)
 - Shipped **v1.1 Design-Konsistenz** - Phases 3-7 (shipped 2026-03-02)
 - Shipped **v1.2 Polishing + Tech Debt** - Phases 8-11 (shipped 2026-03-02)
+- Active **v1.3 Layout-Polishing** - Phases 12-19 (in progress)
 
 ## Phases
 
@@ -43,6 +44,113 @@ Phase 11: Dokumentation (1 plan, complete)
 
 </details>
 
+### v1.3 Layout-Polishing (In Progress)
+
+**Milestone Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
+
+- [ ] **Phase 12: Bug-Fixes + Sicherheit** - Funktionale Bugs in Modals und Auth-Seiten beheben, Passwort-Sicherheit erhoehen
+- [ ] **Phase 13: Globale UI-Anpassungen** - Querschnittliche visuelle Fixes die alle Views betreffen
+- [ ] **Phase 14: Konfi Views -- Dashboard, Events, Badges** - Konfi-Hauptansichten polieren
+- [ ] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen
+- [ ] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen
+- [ ] **Phase 17: Admin Views Polishing** - Admin-spezifische Detail-Views und Modals vereinheitlichen
+- [ ] **Phase 18: Settings-Bereich** - Settings-Seite Struktur, Farben und Modal-Konsistenz
+- [ ] **Phase 19: Super-Admin Ueberarbeitung** - Super-Admin komplett neu aufgebaut (keine TabBar, Design-System)
+
+## Phase Details
+
+### Phase 12: Bug-Fixes + Sicherheit
+**Goal**: Alle funktionalen Bugs sind behoben und Konfi-Passwoerter werden sicher verwaltet
+**Depends on**: Nothing (erste Phase in v1.3)
+**Requirements**: BUG-01, BUG-02, BUG-03, BUG-04, BUG-05, BUG-06, SEC-01
+**Success Criteria** (what must be TRUE):
+  1. ParticipantManagementModal zeigt alle gebuchten User korrekt an
+  2. BadgeManagementModal laedt Kategorien und Aktivitaeten aus der Datenbank
+  3. Invite-Modal QR-Code bleibt nach Schliessen und erneutem Oeffnen erhalten
+  4. ForgotPassword-Mail wird erfolgreich versendet und ResetPassword-Seite zeigt korrekte Umlaute und funktionierenden Zurueck-Button
+  5. Admin kann fuer Konfis ein Einmalpasswort generieren und per Kopier-Button weitergeben (kein Klartext-Passwort sichtbar)
+**Plans**: TBD
+
+### Phase 13: Globale UI-Anpassungen
+**Goal**: App-weite visuelle Konsistenz bei Icons, Auswahl-Rahmen und Farben hergestellt
+**Depends on**: Phase 12
+**Requirements**: GUI-01, GUI-02, GUI-03, GUI-04, GUI-05
+**Success Criteria** (what must be TRUE):
+  1. Listen-Icons in allen Views sind kleiner und am oberen Rand des Listeneintrags positioniert
+  2. Keine sichtbaren Auswahl-Rahmen (orange/tuerkis/rot) beim Fokussieren oder Selektieren in Modals und Listen
+  3. Auswahl-Hervorhebungen und Haekchen sind konsistent: Orange fuer Konfis, Tuerkis fuer alle anderen Rollen
+  4. Gruen-Toene in Aktivitaeten- und Antraege-Headers sind kraeftig und gut lesbar
+  5. Auth-Seiten (Login, Register, ForgotPassword) haben durchgehende Hintergrundfarbe ohne weissen Bereich unten
+**Plans**: TBD
+
+### Phase 14: Konfi Views -- Dashboard, Events, Badges
+**Goal**: Konfi-Hauptansichten (Start-Tab, Events, Badges, Punkte-Historie) sind visuell poliert
+**Depends on**: Phase 13
+**Requirements**: KUI-01, KUI-02, KUI-03, KUI-05
+**Success Criteria** (what must be TRUE):
+  1. Erster Tab heisst "Start" statt "Dashboard"
+  2. EventDetailView-Teilnehmer:innen-Anzeige passt zum Design-System (kein Fremdkoerper)
+  3. BadgesView zeigt EmptyState-Komponenten fuer leere "Offen"- und "In Arbeit"-Sektionen
+  4. PointsHistoryModal "Gesamt"-Text ist nicht abgeschnitten und Layout zeigt 3+2 statt 4+1
+**Plans**: TBD
+
+### Phase 15: Konfi Views -- Antraege
+**Goal**: Konfi-Antraege-Bereich ist farblich und strukturell an den Admin-Antraege-Bereich angeglichen
+**Depends on**: Phase 13
+**Requirements**: KUI-07, KUI-08, KUI-09
+**Success Criteria** (what must be TRUE):
+  1. RequestsView Header-Gruen ist dunkler und entspricht dem Admin-Antraege-Header
+  2. ActivityRequestModal Icons sind Gruen statt Lila
+  3. Konfi RequestDetailModal hat gleiches Layout und gleiche Struktur wie das Admin-Pendant
+**Plans**: TBD
+
+### Phase 16: Konfi Views -- Profil + Verlinkungen
+**Goal**: Konfi-Profil hat die richtige Farbe und alle Einstellungs-Actions sind erreichbar
+**Depends on**: Phase 13
+**Requirements**: KUI-04, KUI-06, KUI-10, KUI-11
+**Success Criteria** (what must be TRUE):
+  1. KonfiProfileView verwendet Lila statt Blau als Hauptfarbe
+  2. Bibeluebersetzung-Aendern-Action oeffnet ein funktionierendes Modal oder Auswahlmenue
+  3. UnregisterModal ist von einer sichtbaren Stelle aus erreichbar (z.B. Profil oder Settings)
+  4. EditProfileModal ist entweder verlinkt und funktional oder sauber entfernt
+**Plans**: TBD
+
+### Phase 17: Admin Views Polishing
+**Goal**: Admin-Detail-Views und -Modals sind visuell konsistent mit dem Design-System
+**Depends on**: Phase 13
+**Requirements**: AUI-01, AUI-02, AUI-03, AUI-04, AUI-05, AUI-06, AUI-07
+**Success Criteria** (what must be TRUE):
+  1. KonfiDetailView zeigt Corner-Badges fuer Bonus- und Event-Eintraege (wie bei Aktivitaeten)
+  2. KonfiDetailView zeigt ein Icon vor dem Approved-Namen
+  3. Benutzer:innen-Liste verwendet Solid-Icons statt Line-Icons fuer Funktionsanzeige
+  4. GoalsPage und PunkteZiel-Modal verwenden Standard-Stepper-Pattern ohne Sonderdesign
+  5. Admin EventDetailView zeigt Beschreibung als eigene Card und hat gleiche Detail-Reihenfolge wie Konfi-Ansicht
+**Plans**: TBD
+
+### Phase 18: Settings-Bereich
+**Goal**: Settings-Seite hat klare Struktur, konsistente Farben und alle Modals passen zum Design-System
+**Depends on**: Phase 13
+**Requirements**: SET-01, SET-02, SET-03, SET-04, SET-05, SET-06, SET-07, SET-08, SET-09
+**Success Criteria** (what must be TRUE):
+  1. Settings-Seite zeigt Sektionen in der Reihenfolge: Konto oben, Verwaltung, Inhalt (Profil raus)
+  2. Einladen-Bereich ist mattes Blau, Gottesdienst-Aktivitaeten sind Blau, Kategorien haben eigene Farbe (nicht Orange wie Badges)
+  3. Level-Modal hat Lila Icon-Farbe und iOS Backdrop-Effekt
+  4. Profil-Modals zeigen Icons und Funktionsbeschreibung in Lila
+  5. AdminBadgesPage hat Zurueck-Button oben links und Badges-Sektionen zeigen Oberkategorie-Icons in Zwischenueberschriften
+**Plans**: TBD
+
+### Phase 19: Super-Admin Ueberarbeitung
+**Goal**: Super-Admin-Bereich ist komplett ueberarbeitet mit eigenem Design ohne TabBar
+**Depends on**: Phase 13
+**Requirements**: SUA-01, SUA-02, SUA-03, SUA-04, SUA-05, SUA-06, SUA-07
+**Success Criteria** (what must be TRUE):
+  1. Super-Admin hat keine TabBar mehr, nur eine einzelne Organisationen-View
+  2. Nach Login wird direkt auf Organisationen weitergeleitet (keine weisse Seite)
+  3. Durchgehend mattes Blau als Farbschema, alle Listen-Elemente passen zum Design-System
+  4. Statistik wird als SectionHeader oben angezeigt und OrganizationManagementModal ist ans Design-System angepasst
+  5. Super-Admin kann sich ueber einen sichtbaren Logout-Button abmelden
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -58,3 +166,11 @@ Phase 11: Dokumentation (1 plan, complete)
 | 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 11. Dokumentation | v1.2 | 1/1 | Complete | 2026-03-02 |
+| 12. Bug-Fixes + Sicherheit | v1.3 | 0/? | Not started | - |
+| 13. Globale UI-Anpassungen | v1.3 | 0/? | Not started | - |
+| 14. Konfi Views -- Dashboard, Events, Badges | v1.3 | 0/? | Not started | - |
+| 15. Konfi Views -- Antraege | v1.3 | 0/? | Not started | - |
+| 16. Konfi Views -- Profil + Verlinkungen | v1.3 | 0/? | Not started | - |
+| 17. Admin Views Polishing | v1.3 | 0/? | Not started | - |
+| 18. Settings-Bereich | v1.3 | 0/? | Not started | - |
+| 19. Super-Admin Ueberarbeitung | v1.3 | 0/? | Not started | - |

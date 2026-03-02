@@ -107,58 +107,58 @@ Geplante Milestones nach v1.3:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GUI-01 | TBD | Pending |
-| GUI-02 | TBD | Pending |
-| GUI-03 | TBD | Pending |
-| GUI-04 | TBD | Pending |
-| GUI-05 | TBD | Pending |
-| KUI-01 | TBD | Pending |
-| KUI-02 | TBD | Pending |
-| KUI-03 | TBD | Pending |
-| KUI-04 | TBD | Pending |
-| KUI-05 | TBD | Pending |
-| KUI-06 | TBD | Pending |
-| KUI-07 | TBD | Pending |
-| KUI-08 | TBD | Pending |
-| KUI-09 | TBD | Pending |
-| KUI-10 | TBD | Pending |
-| KUI-11 | TBD | Pending |
-| AUI-01 | TBD | Pending |
-| AUI-02 | TBD | Pending |
-| AUI-03 | TBD | Pending |
-| AUI-04 | TBD | Pending |
-| AUI-05 | TBD | Pending |
-| AUI-06 | TBD | Pending |
-| AUI-07 | TBD | Pending |
-| SET-01 | TBD | Pending |
-| SET-02 | TBD | Pending |
-| SET-03 | TBD | Pending |
-| SET-04 | TBD | Pending |
-| SET-05 | TBD | Pending |
-| SET-06 | TBD | Pending |
-| SET-07 | TBD | Pending |
-| SET-08 | TBD | Pending |
-| SET-09 | TBD | Pending |
-| SUA-01 | TBD | Pending |
-| SUA-02 | TBD | Pending |
-| SUA-03 | TBD | Pending |
-| SUA-04 | TBD | Pending |
-| SUA-05 | TBD | Pending |
-| SUA-06 | TBD | Pending |
-| SUA-07 | TBD | Pending |
-| BUG-01 | TBD | Pending |
-| BUG-02 | TBD | Pending |
-| BUG-03 | TBD | Pending |
-| BUG-04 | TBD | Pending |
-| BUG-05 | TBD | Pending |
-| BUG-06 | TBD | Pending |
-| SEC-01 | TBD | Pending |
+| GUI-01 | Phase 13 | Pending |
+| GUI-02 | Phase 13 | Pending |
+| GUI-03 | Phase 13 | Pending |
+| GUI-04 | Phase 13 | Pending |
+| GUI-05 | Phase 13 | Pending |
+| KUI-01 | Phase 14 | Pending |
+| KUI-02 | Phase 14 | Pending |
+| KUI-03 | Phase 14 | Pending |
+| KUI-04 | Phase 16 | Pending |
+| KUI-05 | Phase 14 | Pending |
+| KUI-06 | Phase 16 | Pending |
+| KUI-07 | Phase 15 | Pending |
+| KUI-08 | Phase 15 | Pending |
+| KUI-09 | Phase 15 | Pending |
+| KUI-10 | Phase 16 | Pending |
+| KUI-11 | Phase 16 | Pending |
+| AUI-01 | Phase 17 | Pending |
+| AUI-02 | Phase 17 | Pending |
+| AUI-03 | Phase 17 | Pending |
+| AUI-04 | Phase 17 | Pending |
+| AUI-05 | Phase 17 | Pending |
+| AUI-06 | Phase 17 | Pending |
+| AUI-07 | Phase 17 | Pending |
+| SET-01 | Phase 18 | Pending |
+| SET-02 | Phase 18 | Pending |
+| SET-03 | Phase 18 | Pending |
+| SET-04 | Phase 18 | Pending |
+| SET-05 | Phase 18 | Pending |
+| SET-06 | Phase 18 | Pending |
+| SET-07 | Phase 18 | Pending |
+| SET-08 | Phase 18 | Pending |
+| SET-09 | Phase 18 | Pending |
+| SUA-01 | Phase 19 | Pending |
+| SUA-02 | Phase 19 | Pending |
+| SUA-03 | Phase 19 | Pending |
+| SUA-04 | Phase 19 | Pending |
+| SUA-05 | Phase 19 | Pending |
+| SUA-06 | Phase 19 | Pending |
+| SUA-07 | Phase 19 | Pending |
+| BUG-01 | Phase 12 | Pending |
+| BUG-02 | Phase 12 | Pending |
+| BUG-03 | Phase 12 | Pending |
+| BUG-04 | Phase 12 | Pending |
+| BUG-05 | Phase 12 | Pending |
+| BUG-06 | Phase 12 | Pending |
+| SEC-01 | Phase 12 | Pending |
 
 **Coverage:**
-- v1.3 requirements: 45 total
-- Mapped to phases: 0 (TBD by roadmapper)
-- Unmapped: 45
+- v1.3 requirements: 46 total
+- Mapped to phases: 46/46
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-03*
-*Last updated: 2026-03-03 after milestone definition*
+*Last updated: 2026-03-03 after roadmap creation*

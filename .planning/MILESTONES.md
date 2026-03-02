@@ -1,5 +1,23 @@
 # Milestones
 
+## v1.3 Layout-Polishing (In Progress)
+
+**Phases planned:** 8 Phasen (12-19), Plans TBD
+**Requirements:** 46 (GUI: 5, KUI: 11, AUI: 7, SET: 9, SUA: 7, BUG: 6, SEC: 1)
+**Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
+
+**Phase-Struktur:**
+- Phase 12: Bug-Fixes + Sicherheit (7 reqs)
+- Phase 13: Globale UI-Anpassungen (5 reqs)
+- Phase 14: Konfi Views -- Dashboard, Events, Badges (4 reqs)
+- Phase 15: Konfi Views -- Antraege (3 reqs)
+- Phase 16: Konfi Views -- Profil + Verlinkungen (4 reqs)
+- Phase 17: Admin Views Polishing (7 reqs)
+- Phase 18: Settings-Bereich (9 reqs)
+- Phase 19: Super-Admin Ueberarbeitung (7 reqs)
+
+---
+
 ## v1.2 Polishing + Tech Debt (Shipped: 2026-03-02)
 
 **Phases completed:** 4 Phasen (8-11), 6 Plans
@@ -24,7 +42,6 @@
 
 ## Geplante Milestones
 
-- **v1.3 Repo Hygiene** -- Git Repo aufraeuemen, Lizenzen, README
 - **v1.4 Push-Benachrichtigungen** -- Systematischer Durchgang aller Push-Flows
 - **v1.5 Event-Logik Debug** -- Anmeldung, Warteliste, Zeitsteuerung
 - **v2.0 Teamer + Neue Features** -- Teamer-Design, Teamer-Badges, Konfi Wrapped
@@ -78,4 +95,3 @@
 - iOS Glass-Effekt und Android Theme-Isolation visuell ausstehend
 
 ---
-
