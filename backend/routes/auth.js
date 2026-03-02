@@ -15,23 +15,7 @@ if (!JWT_SECRET) {
 // Unified auth routes - combines all login functionality
 module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) => {
   const { authLimiter, registerLimiter } = rateLimiters;
-  
-  // Helper function to send email
-  const sendEmail = async (to, subject, html) => {
-    try {
-      const info = await transporter.sendMail({
-        from: `"Konfi Quest" <${SMTP_CONFIG.auth.user}>`,
-        to: to,
-        subject: subject,
-        html: html
-      });
- console.log('Email sent successfully:', info.messageId);
-      return true;
-    } catch (error) {
- console.error('Email sending failed:', error);
-      return false;
-    }
-  };
+  const emailService = require('../services/emailService');
 
   // Generate password reset token
   const generateResetToken = () => {
@@ -298,37 +282,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
         const token = generateResetToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-        
+
         await db.query('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES ($1, $2, $3, $4)',
           [user.id, userType, token, expiresAt]);
-          
+
         const resetUrl = `https://konfi-quest.de/reset-password?token=${token}`;
-        const emailHtml = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #667eea;">Konfi Quest - Passwort zurücksetzen</h2>
-                <p>Hallo ${user.name},</p>
-                <p>du hast eine Passwort-Zurücksetzung für dein Konfi Quest Konto angefordert.</p>
-                <p>Klicke auf den folgenden Link um dein Passwort zurückzusetzen:</p>
-                <p style="margin: 20px 0;">
-                  <a href="${resetUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block;">
-                    Passwort zurücksetzen
-                  </a>
-                </p>
-                <p><strong>Dieser Link ist 24 Stunden gültig.</strong></p>
-                <p>Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>
-                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="color: #666; font-size: 0.9rem;">
-                  Mit freundlichen Grüßen,<br>
-                  Das Konfi Quest Team
-                </p>
-              </div>
-            `;
-        
-        const emailSent = await sendEmail(email, 'Konfi Quest - Passwort zurücksetzen', emailHtml);
-        
-        if (!emailSent) {
-          // The error is already logged in sendEmail, but we should inform the client
-          return res.status(500).json({ error: 'Fehler beim Senden der E-Mail' });
+
+        try {
+          await emailService.sendPasswordResetEmail(email, user.name, token, resetUrl);
+        } catch (emailError) {
+          console.error('E-Mail-Versand fehlgeschlagen:', emailError);
+          return res.status(500).json({ error: 'Fehler beim Senden der E-Mail. Bitte versuche es später erneut.' });
         }
       }
 

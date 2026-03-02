@@ -10,7 +10,7 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'server.godsapp.de',
     port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: process.env.SMTP_SECURE === 'true', // true für Port 465
+    secure: process.env.SMTP_SECURE !== 'false', // Default: true (Port 465 mit TLS)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
