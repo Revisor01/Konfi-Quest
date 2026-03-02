@@ -67,20 +67,23 @@ Plans:
 - [ ] 04-03: Inline-Styles bereinigen in Admin-Pages und Admin-Views [Wave 2]
 - [ ] 04-04: Inline-Styles bereinigen in Konfi-Modals, Chat-Modals, Admin-Modals [Wave 2]
 
-### Phase 5: Admin-Views Erweitert
-**Goal**: Restliche 6 Admin-Seiten auf Shared Components umstellen. Auch hier: bestehende Farben und Funktionalitaet beibehalten, nur Inline-Styling durch Components ersetzen und ggf. kleinere Inkonsistenzen angleichen.
+### Phase 5: Admin-Views Erweitert + Detail-Views + Icon-Konsistenz
+**Goal**: Restliche 6 Admin-Seiten auf Shared Components umstellen, Detail-Views (Admin-EventDetailView, Konfi-EventDetailView, KonfiDetailView) nachtraeglich bereinigen und app-weite Icon-Farb-Konsistenz durch CSS-Klassen herstellen. Bestehende Farben und Funktionalitaet beibehalten.
 **Depends on**: Phase 4
-**Requirements**: ADM-07, ADM-08, ADM-09, ADM-10, ADM-11, ADM-12
+**Requirements**: ADM-07, ADM-08, ADM-09, ADM-10, ADM-11, ADM-12, DET-01, DET-02, DET-03, ICO-01
 **Success Criteria** (what must be TRUE):
   1. UsersPage und OrganizationsPage zeigen ihre Listen mit SectionHeader und einheitlichen Abstaenden
   2. LevelsPage und GoalsPage nutzen das kompakte Header-Pattern mit Farblogiken
   3. InvitesPage und SettingsPage fuegen sich nahtlos in die visuelle Sprache der uebrigen Admin-Oberflaeche ein
   4. Jede Admin-Seite im Codebase nutzt mindestens eine Shared Component aus Phase 3
+  5. Admin-EventDetailView, Konfi-EventDetailView und KonfiDetailView nutzen Icon-Farb-CSS-Klassen statt Inline-Farben
+  6. Icon-Farb-Mapping ist als CSS-Klassen in variables.css definiert und wird ueberall konsistent genutzt
 **Plans**: TBD
 
 Plans:
 - [ ] 05-01: TBD
 - [ ] 05-02: TBD
+- [ ] 05-03: TBD
 
 ### Phase 6: Modal-Konsistenz
 **Goal**: Jedes Modal in der App nutzt useIonModal, hat konsistente Formular-Inputs und zeigt auf iOS den korrekten Card-Modal-Backdrop-Effekt

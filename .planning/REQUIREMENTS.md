@@ -29,6 +29,16 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 - [ ] **ADM-11**: InvitesPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
 - [ ] **ADM-12**: SettingsPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
 
+### Detail-Views Bereinigung
+
+- [ ] **DET-01**: Admin-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
+- [ ] **DET-02**: Konfi-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
+- [ ] **DET-03**: KonfiDetailView Info-Rows und Listen nutzen CSS-Klassen (ActivityRings-Header bleibt unberuehrt)
+
+### Icon-Konsistenz
+
+- [ ] **ICO-01**: Icon-Farb-Mapping ist als CSS-Klassen (app-icon-color--*) in variables.css definiert und wird in allen Views konsistent genutzt (gleiches Konzept = gleiches Icon solid = gleiche Farbe)
+
 ### Modal-Konsistenz
 
 - [ ] **MOD-01**: Kein einziges Modal im Codebase nutzt mehr das isOpen-Pattern -- alle verwenden useIonModal
@@ -82,6 +92,10 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ADM-10 | Phase 5 | Pending |
 | ADM-11 | Phase 5 | Pending |
 | ADM-12 | Phase 5 | Pending |
+| DET-01 | Phase 5 | Pending |
+| DET-02 | Phase 5 | Pending |
+| DET-03 | Phase 5 | Pending |
+| ICO-01 | Phase 5 | Pending |
 | MOD-01 | Phase 6 | Pending |
 | MOD-02 | Phase 6 | Pending |
 | MOD-03 | Phase 6 | Pending |
