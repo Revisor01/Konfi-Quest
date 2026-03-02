@@ -38,7 +38,7 @@ Phase 7: Onboarding-Validierung (3 plans, complete)
 - [x] **Phase 8: Super-Admin UI** - Super-Admin sieht nur Organisations-Verwaltung und Profil/Settings (completed 2026-03-02)
 - [x] **Phase 9: Dashboard Bug-Fix + Design-Review** - ActivityRings 3. Runde Fix und Design-Konsistenz aller Dashboard-Sektionen (completed 2026-03-02)
 - [x] **Phase 10: Tech Debt Cleanup** - rateLimitMessage Wiring, console.log Cleanup, condense-toolbar, Inline Styles (completed 2026-03-02)
-- [ ] **Phase 11: Dokumentation** - CLAUDE.md PostgreSQL-Status korrigieren
+- [x] **Phase 11: Dokumentation** - CLAUDE.md PostgreSQL-Status korrigieren (completed 2026-03-02)
 
 ## Phase Details
 
@@ -114,4 +114,4 @@ Phases 8-11 sind unabhaengig voneinander und koennen in beliebiger Reihenfolge a
 | 8. Super-Admin UI | 1/1 | Complete   | 2026-03-02 | - |
 | 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 10. Tech Debt Cleanup | 2/2 | Complete    | 2026-03-02 | - |
-| 11. Dokumentation | v1.2 | 0/1 | Not started | - |
+| 11. Dokumentation | 1/1 | Complete   | 2026-03-02 | - |

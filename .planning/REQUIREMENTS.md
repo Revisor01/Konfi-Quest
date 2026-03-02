@@ -31,7 +31,7 @@ Requirements fuer Milestone v1.2 Polishing + Tech Debt.
 
 ### Dokumentation
 
-- [ ] **DOC-01**: CLAUDE.md PostgreSQL-Migrationsstatus korrigiert (alle Migrationen abgeschlossen)
+- [x] **DOC-01**: CLAUDE.md PostgreSQL-Migrationsstatus korrigiert (alle Migrationen abgeschlossen)
 
 ## Future Requirements
 
@@ -85,7 +85,7 @@ Geplante Milestones nach v1.2:
 | DEBT-02 | Phase 10 | Complete |
 | DEBT-03 | Phase 10 | Complete |
 | DEBT-04 | Phase 10 | Complete |
-| DOC-01 | Phase 11 | Pending |
+| DOC-01 | Phase 11 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 14 total
