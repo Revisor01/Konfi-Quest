@@ -111,10 +111,12 @@ Plans:
   2. Ein abgelaufener QR-Code zeigt eine deutschsprachige Fehlermeldung statt eines technischen Fehlers
   3. Ein bereits verwendeter Code wird erkannt und mit einer verstaendlichen Meldung abgelehnt
   4. Fehlende Pflichtfelder im Registrierungsformular werden mit deutschsprachigen Validierungsmeldungen angezeigt
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md -- Backend auth.js: Differenzierte Fehler, Username-Check, JWT 90d, Auto-Login, E-Mail-Fix [Wave 1]
+- [ ] 07-02-PLAN.md -- Frontend Login + Register: CSS-Klassen, Username-Check, Auto-Login, Netzwerk-Retry [Wave 2]
+- [ ] 07-03-PLAN.md -- Frontend ForgotPassword + ResetPassword + AdminInvitePage Verbesserungen [Wave 2]
 
 ## Progress
 
@@ -129,4 +131,4 @@ Phases execute in numeric order: 3 -> 3.x -> 4 -> 4.x -> 5 -> 5.x -> 6 -> 6.x ->
 | 4. Admin-Views Core | v1.1 | 4/4 | Complete | 2026-03-01 |
 | 5. Admin-Views Erweitert | v1.1 | 3/3 | Complete | 2026-03-01 |
 | 6. Modal-Konsistenz | v1.1 | 4/4 | Complete | 2026-03-02 |
-| 7. Onboarding-Validierung | v1.1 | 0/? | Not started | - |
+| 7. Onboarding-Validierung | v1.1 | 0/3 | Not started | - |
