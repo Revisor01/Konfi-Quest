@@ -203,83 +203,85 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* BLOCK 2: Inhalt */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
-              <IonIcon icon={pricetag} />
-            </div>
-            <IonLabel>Inhalt</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div
-                className="app-list-item app-list-item--activities app-settings-item"
-                onClick={() => history.push('/admin/activities')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
-                  <IonIcon icon={flash} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Aktivitäten</h2>
-                  <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
-                </div>
+        {/* BLOCK 2: Inhalt -- nur für org_admin/teamer, NICHT für super_admin */}
+        {user?.role_name !== 'super_admin' && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--users">
+                <IonIcon icon={pricetag} />
               </div>
+              <IonLabel>Inhalt</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent>
+                <div
+                  className="app-list-item app-list-item--activities app-settings-item"
+                  onClick={() => history.push('/admin/activities')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                    <IonIcon icon={flash} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Aktivitäten</h2>
+                    <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
+                  </div>
+                </div>
 
-              <div
-                className="app-list-item app-list-item--badges app-settings-item"
-                onClick={() => history.push('/admin/settings/categories')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
-                  <IonIcon icon={pricetag} />
+                <div
+                  className="app-list-item app-list-item--badges app-settings-item"
+                  onClick={() => history.push('/admin/settings/categories')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                    <IonIcon icon={pricetag} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Kategorien</h2>
+                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
+                  </div>
                 </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Kategorien</h2>
-                  <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
-                </div>
-              </div>
 
-              <div
-                className="app-list-item app-list-item--jahrgang app-settings-item"
-                onClick={() => history.push('/admin/settings/jahrgaenge')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
-                  <IonIcon icon={school} />
+                <div
+                  className="app-list-item app-list-item--jahrgang app-settings-item"
+                  onClick={() => history.push('/admin/settings/jahrgaenge')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
+                    <IonIcon icon={school} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Jahrgänge</h2>
+                    <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
+                  </div>
                 </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Jahrgänge</h2>
-                  <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
-                </div>
-              </div>
 
-              <div
-                className="app-list-item app-list-item--level app-settings-item"
-                onClick={() => history.push('/admin/settings/levels')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
-                  <IonIcon icon={trophy} />
+                <div
+                  className="app-list-item app-list-item--level app-settings-item"
+                  onClick={() => history.push('/admin/settings/levels')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
+                    <IonIcon icon={trophy} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Level-System</h2>
+                    <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
+                  </div>
                 </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Level-System</h2>
-                  <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
-                </div>
-              </div>
 
-              <div
-                className="app-list-item app-list-item--badges app-settings-item"
-                onClick={() => history.push('/admin/badges')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
-                  <IonIcon icon={ribbon} />
+                <div
+                  className="app-list-item app-list-item--badges app-settings-item"
+                  onClick={() => history.push('/admin/badges')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                    <IonIcon icon={ribbon} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Badges</h2>
+                    <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
+                  </div>
                 </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Badges</h2>
-                  <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* Konto */}
         <IonList inset={true} className="app-segment-wrapper">
