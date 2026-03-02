@@ -454,17 +454,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
               {eventData.has_timeslots && timeslots.length > 0 && (
                 <div className="app-info-row app-info-row--top">
-                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '4px' }} />
-                  <div style={{ flex: 1 }}>
+                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <div className="app-event-detail__timeslot-list">
                     <div className="app-list-item__title">Zeitfenster:</div>
                     {timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} className="app-info-row__sublabel" style={{ marginBottom: '4px' }}>
+                      <div key={slot.id || idx} className="app-info-row__sublabel app-event-detail__timeslot-entry">
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
                     {/* Gebuchter Timeslot hervorheben wenn angemeldet */}
                     {eventData.is_registered && eventData.booked_timeslot_start && (
-                      <div className="app-icon-color--success" style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '8px' }}>
+                      <div className="app-icon-color--success app-event-detail__booked-slot">
                         Dein Slot: {formatTime(eventData.booked_timeslot_start)}
                         {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
                       </div>
@@ -527,8 +527,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
                   <div
-                    className="app-info-row__content"
-                    style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
+                    className="app-info-row__content app-event-detail__location-link"
                     onClick={() => {
                       if (eventData.location_maps_url) {
                         window.open(eventData.location_maps_url, '_blank');
@@ -545,7 +544,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Anmeldezeitraum */}
               <div className="app-info-row app-info-row--top">
-                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '2px' }} />
+                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
                 <div className="app-info-row__content">
                   {eventData.registration_opens_at ? (
                     <>
@@ -606,7 +605,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         )}
 
         {/* Action Buttons */}
-        <div style={{ padding: '16px', paddingBottom: '32px' }}>
+        <div className="app-event-detail__action-area">
           {eventData.is_registered ? (
             <div>
               {canUnregister(eventData) ? (

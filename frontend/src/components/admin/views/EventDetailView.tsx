@@ -524,11 +524,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Zeitslots anzeigen wenn vorhanden */}
               {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
                 <div className="app-info-row app-info-row--top">
-                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '4px' }} />
-                  <div style={{ flex: 1 }}>
+                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top" />
+                  <div className="app-event-detail__timeslot-list">
                     <div className="app-list-item__title">Zeitfenster:</div>
                     {eventData.timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} className="app-info-row__sublabel" style={{ marginBottom: '4px' }}>
+                      <div key={slot.id || idx} className="app-info-row__sublabel app-event-detail__timeslot-entry">
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
@@ -589,8 +589,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
                   <div
-                    className="app-info-row__content"
-                    style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
+                    className="app-info-row__content app-event-detail__location-link"
                     onClick={() => {
                       if (eventData.location_maps_url) {
                         window.open(eventData.location_maps_url, '_blank');
@@ -607,7 +606,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Anmeldezeitraum */}
               <div className="app-info-row app-info-row--top">
-                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '2px' }} />
+                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
                 <div className="app-info-row__content">
                   {eventData?.registration_opens_at ? (
                     <>
@@ -634,7 +633,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Beschreibung */}
               {eventData?.description && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
+                <div className="app-event-detail__description-divider">
                   <h3 className="app-list-item__title">
                     Beschreibung
                   </h3>
@@ -678,7 +677,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   const isFull = (timeslot.registered_count || 0) >= timeslot.max_participants;
 
                   return (
-                    <div key={timeslot.id} style={{ marginBottom: slotIndex < eventData.timeslots!.length - 1 ? '20px' : '0' }}>
+                    <div key={timeslot.id} className="app-event-detail__slot-group">
                       {/* Slot Header */}
                       <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} >
                         {/* Corner Badge für Verfügbar/Voll */}
@@ -704,7 +703,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
                       {/* Teilnehmer dieses Slots */}
                       {slotParticipants.length > 0 && (
-                        <div style={{ marginLeft: '16px', marginTop: '8px' }}>
+                        <div className="app-event-detail__slot-participants">
                           {slotParticipants.map((participant, pIndex) => {
                             const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
                                                participant.attendance_status === 'absent' ? 'Abwesend' : 'Gebucht';
@@ -713,7 +712,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             return (
                               <IonItemSliding
                                 key={participant.id}
-                                style={{ marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
+                                className="app-event-detail__sliding-item"
                               >
                                 <IonItem
                                   className="app-item-transparent"
@@ -722,7 +721,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                   lines="none"
                                   onClick={() => showAttendanceActionSheet(participant)}
                                 >
-                                  <div className="app-list-item app-list-item--booked" style={{ marginBottom: '0' }}>
+                                  <div className="app-list-item app-list-item--booked app-event-detail__list-item-flush">
                                     {/* Eselsohr-Style Status Badge */}
                                     <div className={`app-corner-badge ${cornerBadgeClass}`}>
                                       {statusText}
@@ -793,8 +792,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   return (
                     <div
                       key={seriesEvent.id}
-                      className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
-                      style={{ cursor: 'pointer' }}
+                      className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'} app-event-detail__series-link`}
                       onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
                       {/* Eselsohr-Style Status Badge */}
@@ -854,7 +852,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       fill="outline"
                       onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
                     >
-                      <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
+                      <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                       Teilnehmer:in hinzufügen
                     </IonButton>
                   </IonCardContent>
@@ -916,7 +914,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           slidingRefs.current.delete(participant.id);
                         }
                       }}
-                      style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
+                      className="app-event-detail__sliding-item"
                     >
                       <IonItem
                         className="app-item-transparent"
@@ -931,7 +929,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           }
                         }}
                       >
-                        <div className={`app-list-item ${listItemClass}`} style={{ marginBottom: '0' }}>
+                        <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
                           {/* Eselsohr-Style Status Badge */}
                           <div className={`app-corner-badge ${cornerBadgeClass}`}>
                             {statusText}
@@ -979,13 +977,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </IonItemSliding>
                   );
                 })}
-                <div style={{ marginTop: '16px' }}>
+                <div className="app-event-detail__add-button-wrapper">
                   <IonButton
                     expand="block"
                     fill="outline"
                     onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
                   >
-                    <IonIcon icon={personAdd} style={{ marginRight: '8px' }} />
+                    <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                     Teilnehmer:in hinzufügen
                   </IonButton>
                 </div>
@@ -1011,7 +1009,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <div key={unreg.id} className="app-list-item app-list-item--danger">
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <IonIcon icon={closeCircle} className="app-icon-color--danger" style={{ fontSize: '1.2rem' }} />
+                        <IonIcon icon={closeCircle} className="app-icon-color--danger app-event-detail__icon-lg" />
                         <div className="app-list-item__content">
                           <div className="app-list-item__title">
                             {unreg.konfi_name}
@@ -1029,7 +1027,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       </div>
                     </div>
                     {unreg.reason && (
-                      <div className="app-reason-box app-reason-box--danger" style={{ marginLeft: '32px' }}>
+                      <div className="app-reason-box app-reason-box--danger app-event-detail__reason-indent">
                         <span className="app-reason-box__label">Grund:</span> {unreg.reason}
                       </div>
                     )}

@@ -956,6 +956,81 @@ ion-button.app-action-button {
 .app-icon-color--success { color: #34c759; }
 .app-icon-color--danger { color: #dc3545; }
 
+/* === EventDetailView Helper-Klassen === */
+/* Icon mit leichtem Top-Offset fuer vertikale Ausrichtung */
+.app-event-detail__icon--align-top { margin-top: 4px; }
+.app-event-detail__icon--align-top-sm { margin-top: 2px; }
+
+/* Flex-Container fuer Zeitslot-Spalte */
+.app-event-detail__timeslot-list { flex: 1; }
+
+/* Zeitslot-Eintrag Abstand */
+.app-event-detail__timeslot-entry { margin-bottom: 4px; }
+.app-event-detail__timeslot-entry:last-child { margin-bottom: 0; }
+
+/* Hervorgehobener gebuchter Zeitslot */
+.app-event-detail__booked-slot {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* Klickbarer Ort-Link */
+.app-event-detail__location-link {
+  color: #007aff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Beschreibung-Sektion mit Trennlinie */
+.app-event-detail__description-divider {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Timeslot-Gruppe Abstand */
+.app-event-detail__slot-group { margin-bottom: 20px; }
+.app-event-detail__slot-group:last-child { margin-bottom: 0; }
+
+/* Eingerueckte Teilnehmer-Liste (unter Timeslots) */
+.app-event-detail__slot-participants {
+  margin-left: 16px;
+  margin-top: 8px;
+}
+
+/* Item-Sliding Reset (kein Border, nur Spacing) */
+.app-event-detail__sliding-item {
+  margin-bottom: 8px;
+  --border-width: 0;
+  --inner-border-width: 0;
+}
+.app-event-detail__sliding-item:last-child { margin-bottom: 0; }
+
+/* List-Item ohne Bottom-Margin (innerhalb Sliding) */
+.app-event-detail__list-item-flush { margin-bottom: 0; }
+
+/* Klickbarer Serien-Eintrag */
+.app-event-detail__series-link { cursor: pointer; }
+
+/* Icon mit rechtem Abstand (z.B. vor Button-Text) */
+.app-event-detail__icon-gap { margin-right: 8px; }
+
+/* Button-Abstand oben (z.B. TN-hinzufuegen unter Liste) */
+.app-event-detail__add-button-wrapper { margin-top: 16px; }
+
+/* Icon etwas groesser (z.B. Abmeldungs-Icon) */
+.app-event-detail__icon-lg { font-size: 1.2rem; }
+
+/* Reason-Box Einrueckung */
+.app-event-detail__reason-indent { margin-left: 32px; }
+
+/* Action-Buttons Bereich */
+.app-event-detail__action-area {
+  padding: 16px;
+  padding-bottom: 32px;
+}
+
 /* === Stepper === */
 /* Plus/Minus-Stepper fuer Punkte-Eingabe */
 .app-stepper {
