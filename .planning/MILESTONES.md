@@ -1,5 +1,20 @@
 # Milestones
 
+## v1.2 Polishing + Tech Debt (In Progress)
+
+**Phases:** 4 (8-11), 6 Plans
+**Goal:** Super-Admin UI einschraenken, Dashboard Rings debuggen + Design-Review, Tech Debt aufraeuemen, Doku korrigieren
+**Requirements:** 14 (SUI-01/02, DASH-01-07, DEBT-01-04, DOC-01)
+
+## Geplante Milestones
+
+- **v1.3 Repo Hygiene** -- Git Repo aufraeuemen, Lizenzen, README
+- **v1.4 Push-Benachrichtigungen** -- Systematischer Durchgang aller Push-Flows
+- **v1.5 Event-Logik Debug** -- Anmeldung, Warteliste, Zeitsteuerung
+- **v2.0 Teamer + Neue Features** -- Teamer-Design, Teamer-Badges, Konfi Wrapped
+
+---
+
 ## v1.1 Design-Konsistenz (Shipped: 2026-03-02)
 
 **Phases completed:** 5 Phasen (3-7), 17 Plans
