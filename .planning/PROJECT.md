@@ -2,17 +2,11 @@
 
 ## What This Is
 
-Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1).
+Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.2 Polishing + Tech Debt
+## Current State
 
-**Goal:** Super-Admin UI einschraenken, Konfi Dashboard Rings debuggen, Tech Debt aufraeuemen
-
-**Target features:**
-- Super-Admin sieht nur Organisations-Verwaltung
-- Konfi Dashboard ActivityRings 3. Runde Fix + Design-Review
-- rateLimitMessage Wiring, console.log Cleanup, condense-toolbar, Inline Styles
-- CLAUDE.md Korrektur (PostgreSQL-Status)
+v1.0, v1.1 und v1.2 shipped. App ist funktional komplett mit gehärtetem Backend, konsistentem Design-System und bereinigtem Tech Debt. Naechster Schritt: neuer Milestone definieren (v1.3 Repo Hygiene, v1.4 Push-Notifications, oder v2.0 Teamer).
 
 ## Core Value
 
@@ -53,13 +47,18 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - QR-Code Onboarding mit Auto-Login und differenzierten Fehlermeldungen -- v1.1
 - Username-Verfuegbarkeitspruefung bei Registrierung -- v1.1
 - JWT 90-Tage-Laufzeit fuer Konfi-Sessions -- v1.1
+- Super-Admin TabBar auf 2 Tabs (Organisationen + Profil) eingeschraenkt -- v1.2
+- ActivityRings 3. Runde korrekte Strichstaerke und Bright-Farbvarianten -- v1.2
+- Dashboard Design-Review mit tageszeitabhaengiger Begruessing und Glass-Chips -- v1.2
+- rateLimitMessage UI-Wiring ueber Custom Event Pattern -- v1.2
+- console.log Cleanup (148 Frontend + 177 Backend) -- v1.2
+- app-condense-toolbar auf alle 20 collapsible Headers -- v1.2
+- EventDetailView Inline-Styles durch 17 BEM CSS-Klassen ersetzt -- v1.2
+- CLAUDE.md komplett neu geschrieben mit aktuellem Projektstatus -- v1.2
 
 ### Active
 
-- [ ] Super-Admin UI: Nur Organisations-Verwaltung anzeigen statt alle Admin-Tabs
-- [ ] Konfi Dashboard: ActivityRings 3. Runde Debug + Design-Review
-- [ ] Tech Debt: rateLimitMessage Wiring, console.log Cleanup, condense-toolbar Konsistenz, Inline Styles
-- [ ] CLAUDE.md PostgreSQL-Status korrigieren (alle Migrationen bereits abgeschlossen)
+(Kein aktiver Milestone -- naechsten mit /gsd:new-milestone starten)
 
 ### Out of Scope
 
@@ -74,15 +73,14 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 ## Context
 
 - App ist im Beta/Test-Stadium, laeuft produktiv mit PostgreSQL auf Docker (server.godsapp.de)
-- v1.0 shipped: Backend Security Hardening + Bug-Fixes + Theme-Stabilisierung (2 Phasen, 5 Plans)
-- v1.1 shipped: Design-Konsistenz ueber alle Admin- und Konfi-Bereiche (5 Phasen, 17 Plans)
-  - 66 Dateien geaendert, 4426 Einfuegungen, 5653 Loeschungen (Netto: -1227 Zeilen weniger Code)
-  - Shared Components in 17 Views, 28 Modale migriert, 100+ CSS-Klassen
+- v1.0 shipped: Backend Security Hardening + Theme-Stabilisierung (2 Phasen, 5 Plans)
+- v1.1 shipped: Design-Konsistenz ueber alle Admin- und Konfi-Bereiche (5 Phasen, 17 Plans, -1227 Netto-Zeilen)
+- v1.2 shipped: Polishing + Tech Debt (4 Phasen, 6 Plans, 78 Dateien geaendert)
+- Gesamt: 11 Phasen, 28 Plans ueber 3 Milestones shipped
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
-- PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert (badges.js, organizations.js, auth.js waren bereits fertig)
-- statistics.js existiert nicht und wurde nie benoetigt
-- Mail-Service (emailService.js) konfiguriert mit Nodemailer, SMTP-Envs in docker-compose.yml gesetzt
+- PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
+- Mail-Service (emailService.js) konfiguriert mit Nodemailer, SMTP-Envs in docker-compose.yml
 
 ## Constraints
 
@@ -113,6 +111,11 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Pragmatischer canDismiss | Close-Button-Schutz mit isDirtyRef, Swipe-to-Dismiss akzeptiert | Bestaetigt v1.1 |
 | PostgreSQL-Migration vollstaendig | Alle 15 Routes bereits migriert, statistics.js nie noetig | Bestaetigt v1.2-Recherche |
 | Mail-Service konfiguriert | emailService.js mit Nodemailer, SMTP-Envs in docker-compose.yml | Bestaetigt v1.2-Recherche |
+| Super-Admin 2-Tab Layout | Nur Organisationen + Profil, reduzierte Oberflaeche | Bestaetigt v1.2 |
+| ActivityRings 3. Runde gleiche Strichstaerke | 0.7 statt 0.35, Bright-Farbvarianten statt Opacity | Bestaetigt v1.2 |
+| Custom Event fuer Rate-Limit Alerts | Globaler 429-Handler ueber Axios-Interceptor und Custom Event | Bestaetigt v1.2 |
+| BEM-Klassen fuer EventDetailView | 17 app-event-detail__* Klassen statt Inline-Styles | Bestaetigt v1.2 |
+| CLAUDE.md als kompaktes Arbeitsdokument | Nur aktuell relevante Infos, keine historischen Details | Bestaetigt v1.2 |
 
 ---
-*Last updated: 2026-03-02 after v1.2 milestone start*
+*Last updated: 2026-03-02 after v1.2 milestone complete*

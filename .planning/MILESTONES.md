@@ -1,10 +1,26 @@
 # Milestones
 
-## v1.2 Polishing + Tech Debt (In Progress)
+## v1.2 Polishing + Tech Debt (Shipped: 2026-03-02)
 
-**Phases:** 4 (8-11), 6 Plans
-**Goal:** Super-Admin UI einschraenken, Dashboard Rings debuggen + Design-Review, Tech Debt aufraeuemen, Doku korrigieren
-**Requirements:** 14 (SUI-01/02, DASH-01-07, DEBT-01-04, DOC-01)
+**Phases completed:** 4 Phasen (8-11), 6 Plans
+**Timeline:** 2026-03-02 (1 Tag)
+**Stats:** 78 files changed, 3210 insertions, 1177 deletions
+**Git range:** Phase 08 bis Phase 11 (15 Commits)
+**Requirements:** 14/14 (SUI-01/02, DASH-01-07, DEBT-01-04, DOC-01)
+
+**Key accomplishments:**
+- Super-Admin TabBar auf 2 Tabs reduziert (Organisationen + Profil), alle anderen Admin-Tabs ausgeblendet
+- ActivityRings 3. Runde Strichstaerke von 0.35 auf 0.7 korrigiert, hellere Bright-Farbvarianten, Maximum 300%
+- Dashboard Design-Review: tageszeitabhaengige Begruessing, Badge-Stats als Glass-Chips, Tageslosung Zitat-Style
+- rateLimitMessage UI-Wiring ueber Custom Event Pattern, generischer 429-Handler via Axios-Interceptor
+- console.log Cleanup: 148 Frontend + 177 Backend Statements bereinigt, strukturierter Server-Start
+- app-condense-toolbar CSS-Klasse auf alle 20 collapsible Headers, 17 BEM-Klassen fuer EventDetailView
+- CLAUDE.md komplett neu geschrieben (202 auf 127 Zeilen), alle 15 Routes als migriert dokumentiert
+
+**v1.1 Tech Debt aufgeloest:**
+- EventDetailView Inline-Styles von 20 auf 1 (Admin) bzw. 11 auf 3 (Konfi) reduziert
+- app-condense-toolbar von 2/19 auf 20/20 Stellen migriert
+- rateLimitMessage Wiring-Gap aus v1.0 behoben
 
 ## Geplante Milestones
 
