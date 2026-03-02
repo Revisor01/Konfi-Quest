@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
-status: in-progress
-last_updated: "2026-03-02T11:18:00Z"
+status: unknown
+last_updated: "2026-03-02T11:25:29.732Z"
 progress:
   total_phases: 3
   completed_phases: 3
