@@ -20,8 +20,6 @@ import {
   IonCardTitle,
   IonAvatar,
   IonChip,
-  IonText,
-  IonModal,
   IonSpinner
 } from '@ionic/react';
 import { close, checkmarkOutline, people, person } from 'ionicons/icons';
@@ -41,12 +39,12 @@ interface Admin {
 }
 
 interface GroupChatModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  dismiss?: () => void;
 }
 
-const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { setError, setSuccess } = useApp();
   const pageRef = useRef<HTMLElement>(null);
   const [groupName, setGroupName] = useState('');
@@ -58,10 +56,8 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen]);
+    loadData();
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -70,7 +66,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
         api.get('/admin/konfis'),
         api.get('/admin/users') // Assuming this endpoint exists
       ]);
-      
+
       setKonfis(konfisRes.data);
       setAdmins(adminsRes.data || []); // Fallback if admin endpoint doesn't exist
     } catch (err) {
@@ -112,7 +108,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
       };
 
       await api.post('/chat/rooms', groupData);
-      
+
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
       resetForm();
       onSuccess();
@@ -132,7 +128,11 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
 
   const handleClose = () => {
     resetForm();
-    onClose();
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
   };
 
   const filteredKonfis = konfis.filter(konfi =>
@@ -145,242 +145,234 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, onSucc
   );
 
   return (
-    <IonModal 
-      isOpen={isOpen} 
-      onDidDismiss={handleClose}
-      presentingElement={pageRef.current || undefined}
-      canDismiss={true}
-      backdropDismiss={true}
-    >
-      <IonPage ref={pageRef}>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Gruppenchat erstellen</IonTitle>
-            <IonButtons slot="start">
-              <IonButton onClick={handleClose}>
-                <IonIcon icon={close} />
-              </IonButton>
-            </IonButtons>
-            <IonButtons slot="end">
-              <IonButton
-                onClick={createGroupChat}
-                disabled={!groupName.trim() || selectedParticipants.size === 0 || creating}
-                color="primary"
-                style={{
-                  '--background': 'transparent',
-                  '--background-hover': 'transparent',
-                  '--border-radius': '8px'
-                }}
-              >
-                {creating ? (
-                  <IonSpinner name="crescent" />
-                ) : (
-                  <IonIcon icon={checkmarkOutline} />
-                )}
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        
-        <IonContent>
-          {loading ? (
-            <LoadingSpinner message="Benutzer werden geladen..." />
-          ) : (
-            <>
-              {/* Group Name Input */}
+    <IonPage ref={pageRef}>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Gruppenchat erstellen</IonTitle>
+          <IonButtons slot="start">
+            <IonButton onClick={handleClose}>
+              <IonIcon icon={close} />
+            </IonButton>
+          </IonButtons>
+          <IonButtons slot="end">
+            <IonButton
+              onClick={createGroupChat}
+              disabled={!groupName.trim() || selectedParticipants.size === 0 || creating}
+              color="primary"
+              style={{
+                '--background': 'transparent',
+                '--background-hover': 'transparent',
+                '--border-radius': '8px'
+              }}
+            >
+              {creating ? (
+                <IonSpinner name="crescent" />
+              ) : (
+                <IonIcon icon={checkmarkOutline} />
+              )}
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent>
+        {loading ? (
+          <LoadingSpinner message="Benutzer werden geladen..." />
+        ) : (
+          <>
+            {/* Group Name Input */}
+            <IonCard className="app-card" style={{ margin: '16px' }}>
+              <IonCardHeader>
+                <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <IonItem>
+                  <IonLabel position="stacked">Gruppenname *</IonLabel>
+                  <IonInput
+                    value={groupName}
+                    onIonInput={(e) => setGroupName(e.detail.value!)}
+                    placeholder="z.B. Konfi 2025 Projektgruppe"
+                    clearInput={true}
+                  />
+                </IonItem>
+              </IonCardContent>
+            </IonCard>
+
+            {/* Selected Participants Display */}
+            {selectedParticipants.size > 0 && (
               <IonCard className="app-card" style={{ margin: '16px' }}>
                 <IonCardHeader>
-                  <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
+                  <IonCardTitle style={{ fontSize: '1rem' }}>
+                    Ausgewählte Teilnehmer ({selectedParticipants.size})
+                  </IonCardTitle>
                 </IonCardHeader>
                 <IonCardContent>
-                  <IonItem>
-                    <IonLabel position="stacked">Gruppenname *</IonLabel>
-                    <IonInput
-                      value={groupName}
-                      onIonInput={(e) => setGroupName(e.detail.value!)}
-                      placeholder="z.B. Konfi 2025 Projektgruppe"
-                      clearInput={true}
-                    />
-                  </IonItem>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {Array.from(selectedParticipants).map(participantId => {
+                      const [type, id] = participantId.split('-');
+                      let name = '';
+
+                      if (type === 'konfi') {
+                        const konfi = konfis.find(k => k.id.toString() === id);
+                        name = konfi?.name || 'Unbekannt';
+                      } else if (type === 'admin') {
+                        const admin = admins.find(a => a.id.toString() === id);
+                        name = admin?.display_name || 'Unbekannt';
+                      }
+
+                      return (
+                        <IonChip
+                          key={participantId}
+                          color={type === 'admin' ? 'tertiary' : 'primary'}
+                          onClick={() => handleParticipantToggle(participantId)}
+                        >
+                          <IonIcon icon={type === 'admin' ? person : people} />
+                          <IonLabel>{name}</IonLabel>
+                          <IonIcon icon={close} />
+                        </IonChip>
+                      );
+                    })}
+                  </div>
                 </IonCardContent>
               </IonCard>
+            )}
 
-              {/* Selected Participants Display */}
-              {selectedParticipants.size > 0 && (
-                <IonCard className="app-card" style={{ margin: '16px' }}>
-                  <IonCardHeader>
-                    <IonCardTitle style={{ fontSize: '1rem' }}>
-                      Ausgewählte Teilnehmer ({selectedParticipants.size})
-                    </IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {Array.from(selectedParticipants).map(participantId => {
-                        const [type, id] = participantId.split('-');
-                        let name = '';
-                        
-                        if (type === 'konfi') {
-                          const konfi = konfis.find(k => k.id.toString() === id);
-                          name = konfi?.name || 'Unbekannt';
-                        } else if (type === 'admin') {
-                          const admin = admins.find(a => a.id.toString() === id);
-                          name = admin?.display_name || 'Unbekannt';
-                        }
-                        
-                        return (
-                          <IonChip
-                            key={participantId}
-                            color={type === 'admin' ? 'tertiary' : 'primary'}
-                            onClick={() => handleParticipantToggle(participantId)}
-                          >
-                            <IonIcon icon={type === 'admin' ? person : people} />
-                            <IonLabel>{name}</IonLabel>
-                            <IonIcon icon={close} />
-                          </IonChip>
-                        );
-                      })}
-                    </div>
-                  </IonCardContent>
-                </IonCard>
-              )}
+            {/* Search */}
+            <div style={{ padding: '0 16px' }}>
+              <IonSearchbar
+                value={searchText}
+                onIonInput={(e) => setSearchText(e.detail.value!)}
+                placeholder="Teilnehmer suchen..."
+                style={{
+                  '--background': '#f8f9fa',
+                  '--border-radius': '12px'
+                }}
+              />
+            </div>
 
-              {/* Search */}
-              <div style={{ padding: '0 16px' }}>
-                <IonSearchbar
-                  value={searchText}
-                  onIonInput={(e) => setSearchText(e.detail.value!)}
-                  placeholder="Teilnehmer suchen..."
-                  style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px'
-                  }}
-                />
-              </div>
-
-              {/* Admins List */}
-              {admins.length > 0 && (
-                <IonCard className="app-card" style={{ margin: '16px' }}>
-                  <IonCardHeader>
-                    <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <IonIcon icon={person} color="tertiary" />
-                      Admins
-                    </IonCardTitle>
-                  </IonCardHeader>
-                  <IonCardContent style={{ padding: '0' }}>
-                    <IonList>
-                      {filteredAdmins.map((admin) => {
-                        const participantId = `admin-${admin.id}`;
-                        const isSelected = selectedParticipants.has(participantId);
-                        
-                        return (
-                          <IonItem 
-                            key={admin.id} 
-                            button 
-                            onClick={() => handleParticipantToggle(participantId)}
-                          >
-                            <IonAvatar slot="start" style={{
-                              width: '40px',
-                              height: '40px',
-                              backgroundColor: '#17a2b8'
-                            }}>
-                              <div style={{ 
-                                color: 'white', 
-                                fontSize: '1rem', 
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%'
-                              }}>
-                                {admin.display_name.charAt(0).toUpperCase()}
-                              </div>
-                            </IonAvatar>
-                            
-                            <IonLabel>
-                              <h3>{admin.display_name}</h3>
-                              <p>Admin</p>
-                            </IonLabel>
-                            
-                            <IonCheckbox 
-                              slot="end" 
-                              checked={isSelected}
-                              color="tertiary"
-                            />
-                          </IonItem>
-                        );
-                      })}
-                    </IonList>
-                  </IonCardContent>
-                </IonCard>
-              )}
-
-              {/* Konfis List */}
+            {/* Admins List */}
+            {admins.length > 0 && (
               <IonCard className="app-card" style={{ margin: '16px' }}>
                 <IonCardHeader>
                   <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={people} color="primary" />
-                    Konfirmanden ({filteredKonfis.length})
+                    <IonIcon icon={person} color="tertiary" />
+                    Admins
                   </IonCardTitle>
                 </IonCardHeader>
                 <IonCardContent style={{ padding: '0' }}>
-                  {filteredKonfis.length === 0 ? (
-                    <IonItem>
-                      <IonLabel style={{ textAlign: 'center', color: '#666' }}>
-                        <p>Keine Konfirmanden gefunden</p>
-                      </IonLabel>
-                    </IonItem>
-                  ) : (
-                    <IonList>
-                      {filteredKonfis.map((konfi) => {
-                        const participantId = `konfi-${konfi.id}`;
-                        const isSelected = selectedParticipants.has(participantId);
-                        
-                        return (
-                          <IonItem 
-                            key={konfi.id} 
-                            button 
-                            onClick={() => handleParticipantToggle(participantId)}
-                          >
-                            <IonAvatar slot="start" style={{ 
-                              width: '40px', 
-                              height: '40px',
-                              backgroundColor: '#17a2b8'
+                  <IonList>
+                    {filteredAdmins.map((admin) => {
+                      const participantId = `admin-${admin.id}`;
+                      const isSelected = selectedParticipants.has(participantId);
+
+                      return (
+                        <IonItem
+                          key={admin.id}
+                          button
+                          onClick={() => handleParticipantToggle(participantId)}
+                        >
+                          <IonAvatar slot="start" style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#17a2b8'
+                          }}>
+                            <div style={{
+                              color: 'white',
+                              fontSize: '1rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: '100%'
                             }}>
-                              <div style={{ 
-                                color: 'white', 
-                                fontSize: '1rem', 
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                height: '100%'
-                              }}>
-                                {konfi.name.charAt(0).toUpperCase()}
-                              </div>
-                            </IonAvatar>
-                            
-                            <IonLabel>
-                              <h3>{konfi.name}</h3>
-                              <p>{konfi.jahrgang || 'Kein Jahrgang'}</p>
-                            </IonLabel>
-                            
-                            <IonCheckbox 
-                              slot="end" 
-                              checked={isSelected}
-                              color="primary"
-                            />
-                          </IonItem>
-                        );
-                      })}
-                    </IonList>
-                  )}
+                              {admin.display_name.charAt(0).toUpperCase()}
+                            </div>
+                          </IonAvatar>
+
+                          <IonLabel>
+                            <h3>{admin.display_name}</h3>
+                            <p>Admin</p>
+                          </IonLabel>
+
+                          <IonCheckbox
+                            slot="end"
+                            checked={isSelected}
+                            color="tertiary"
+                          />
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
                 </IonCardContent>
               </IonCard>
-            </>
-          )}
-        </IonContent>
-      </IonPage>
-    </IonModal>
+            )}
+
+            {/* Konfis List */}
+            <IonCard className="app-card" style={{ margin: '16px' }}>
+              <IonCardHeader>
+                <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <IonIcon icon={people} color="primary" />
+                  Konfirmanden ({filteredKonfis.length})
+                </IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent style={{ padding: '0' }}>
+                {filteredKonfis.length === 0 ? (
+                  <IonItem>
+                    <IonLabel style={{ textAlign: 'center', color: '#666' }}>
+                      <p>Keine Konfirmanden gefunden</p>
+                    </IonLabel>
+                  </IonItem>
+                ) : (
+                  <IonList>
+                    {filteredKonfis.map((konfi) => {
+                      const participantId = `konfi-${konfi.id}`;
+                      const isSelected = selectedParticipants.has(participantId);
+
+                      return (
+                        <IonItem
+                          key={konfi.id}
+                          button
+                          onClick={() => handleParticipantToggle(participantId)}
+                        >
+                          <IonAvatar slot="start" style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: '#17a2b8'
+                          }}>
+                            <div style={{
+                              color: 'white',
+                              fontSize: '1rem',
+                              fontWeight: 'bold',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              height: '100%'
+                            }}>
+                              {konfi.name.charAt(0).toUpperCase()}
+                            </div>
+                          </IonAvatar>
+
+                          <IonLabel>
+                            <h3>{konfi.name}</h3>
+                            <p>{konfi.jahrgang || 'Kein Jahrgang'}</p>
+                          </IonLabel>
+
+                          <IonCheckbox
+                            slot="end"
+                            checked={isSelected}
+                            color="primary"
+                          />
+                        </IonItem>
+                      );
+                    })}
+                  </IonList>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </>
+        )}
+      </IonContent>
+    </IonPage>
   );
 };
 

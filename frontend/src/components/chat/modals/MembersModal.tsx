@@ -13,7 +13,6 @@ import {
   IonItemGroup,
   IonListHeader,
   IonCheckbox,
-  IonAlert,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
@@ -23,7 +22,8 @@ import {
   IonCardContent,
   IonItemSliding,
   IonItemOptions,
-  IonItemOption
+  IonItemOption,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
@@ -77,6 +77,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
   roomType
 }) => {
   const { user, setError, setSuccess } = useApp();
+  const [presentRemoveAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
 
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -86,8 +87,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
   const [showAddMode, setShowAddMode] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
-  const [showRemoveAlert, setShowRemoveAlert] = useState(false);
-  const [userToRemove, setUserToRemove] = useState<Participant | null>(null);
 
   useEffect(() => {
     if (roomId) {
@@ -213,31 +212,34 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const confirmRemoveUser = (participant: Participant) => {
-    setUserToRemove(participant);
-    setShowRemoveAlert(true);
-  };
-
-  const removeUser = async () => {
-    if (!userToRemove) return;
-
-    try {
-      await api.delete(`/chat/rooms/${roomId}/participants/${userToRemove.user_id}/${userToRemove.user_type}`);
-
-      setSuccess(`${userToRemove.name} wurde entfernt`);
-      setUserToRemove(null);
-      await loadParticipants();
-      onSuccess();
-    } catch (err) {
-      setError('Fehler beim Entfernen des Mitglieds');
+    presentRemoveAlert({
+      header: 'Mitglied entfernen',
+      message: `${participant.name} wirklich aus dem Chat entfernen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Entfernen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/chat/rooms/${roomId}/participants/${participant.user_id}/${participant.user_type}`);
+              setSuccess(`${participant.name} wurde entfernt`);
+              await loadParticipants();
+              onSuccess();
+            } catch (err) {
+              setError('Fehler beim Entfernen des Mitglieds');
  console.error('Error removing participant:', err);
-    }
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handleClose = () => {
     setShowAddMode(false);
     setSelectedUsers(new Set());
     setSearchText('');
-    setUserToRemove(null);
     onClose();
   };
 
@@ -523,17 +525,6 @@ const MembersModal: React.FC<MembersModalProps> = ({
           )}
       </IonContent>
 
-      {/* Remove Confirmation Alert */}
-      <IonAlert
-        isOpen={showRemoveAlert}
-        onDidDismiss={() => setShowRemoveAlert(false)}
-        header="Mitglied entfernen"
-        message={`${userToRemove?.name} wirklich aus dem Chat entfernen?`}
-        buttons={[
-          { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Entfernen', role: 'destructive', handler: removeUser }
-        ]}
-      />
     </IonPage>
   );
 };

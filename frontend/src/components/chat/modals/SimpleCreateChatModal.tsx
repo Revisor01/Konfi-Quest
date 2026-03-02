@@ -13,7 +13,6 @@ import {
   IonSelectOption,
   IonCheckbox,
   IonInput,
-  IonAlert,
   IonSpinner,
   IonSegment,
   IonSegmentButton,
@@ -22,7 +21,8 @@ import {
   IonItemGroup,
   IonListHeader,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
@@ -63,6 +63,7 @@ interface Settings {
 const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, onSuccess, dismiss }) => {
   const { user, setError, setSuccess } = useApp();
   const { refreshFromAPI } = useBadge();
+  const [presentDuplicateAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
 
   // State
@@ -81,8 +82,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [showDuplicateAlert, setShowDuplicateAlert] = useState(false);
-  const [duplicateMessage, setDuplicateMessage] = useState('');
 
   // Filter states
   const [selectedRole, setSelectedRole] = useState<string>('alle');
@@ -269,8 +268,11 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const createDirectMessage = async (targetUser: User) => {
     // Check if chat already exists
     if (checkDirectChatExists(targetUser)) {
-      setDuplicateMessage(`Ein Chat mit ${targetUser.name || targetUser.display_name} existiert bereits.`);
-      setShowDuplicateAlert(true);
+      presentDuplicateAlert({
+        header: 'Chat existiert bereits',
+        message: `Ein Chat mit ${targetUser.name || targetUser.display_name} existiert bereits.`,
+        buttons: ['OK']
+      });
       return;
     }
 
@@ -635,14 +637,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           </IonList>
       </IonContent>
 
-      {/* Duplicate Alert */}
-      <IonAlert
-        isOpen={showDuplicateAlert}
-        onDidDismiss={() => setShowDuplicateAlert(false)}
-        header="Chat existiert bereits"
-        message={duplicateMessage}
-        buttons={['OK']}
-      />
     </IonPage>
   );
 };

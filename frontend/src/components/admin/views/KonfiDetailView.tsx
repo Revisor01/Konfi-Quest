@@ -16,7 +16,6 @@ import {
   IonItem,
   IonRefresher,
   IonRefresherContent,
-  IonAlert,
   useIonActionSheet,
   useIonModal,
   IonItemSliding,
@@ -95,7 +94,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [eventPoints, setEventPoints] = useState<any[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPasswordAlert, setShowPasswordAlert] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [loadedPassword, setLoadedPassword] = useState<string | null>(null);
   const [settings, setSettings] = useState<{ target_gottesdienst: number; target_gemeinde: number }>({
@@ -280,7 +278,16 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
     presentActionSheet({
       header: 'Passwort Optionen',
       buttons: [
-        { text: 'Passwort anzeigen', handler: () => setShowPasswordAlert(true) },
+        {
+          text: 'Passwort anzeigen',
+          handler: () => {
+            presentAlert({
+              header: 'Passwort',
+              message: `Aktuelles Passwort: ${loadedPassword || currentKonfi?.password || 'Nicht verfügbar'}`,
+              buttons: ['OK']
+            });
+          }
+        },
         { text: 'Neues Passwort generieren', handler: () => handlePasswordReset() },
         { text: 'Abbrechen', role: 'cancel' }
       ]
@@ -786,14 +793,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         </IonList>
       </IonContent>
 
-      {/* Password Alert */}
-      <IonAlert
-        isOpen={showPasswordAlert}
-        onDidDismiss={() => setShowPasswordAlert(false)}
-        header="Passwort"
-        message={`Aktuelles Passwort: ${loadedPassword || currentKonfi?.password || 'Nicht verfügbar'}`}
-        buttons={['OK']}
-      />
     </IonPage>
   );
 };
