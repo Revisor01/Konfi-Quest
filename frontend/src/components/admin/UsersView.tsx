@@ -155,7 +155,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         title="Benutzer:innen"
         subtitle="Admins, Teamer:innen und Rollen"
         icon={people}
-        colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
+        preset="users"
         stats={[
           { value: users.length, label: 'Gesamt' },
           { value: getAdminUsers().length, label: 'Admins' },
