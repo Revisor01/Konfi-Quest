@@ -44,15 +44,64 @@
 
 ---
 
+## Milestone: v1.1 -- Design-Konsistenz
+
+**Shipped:** 2026-03-02
+**Phases:** 5 | **Plans:** 17 | **Sessions:** ~8
+
+### What Was Built
+- Shared Components (SectionHeader, EmptyState, ListSection) mit Preset-Farbsystem in 17 Views
+- 100+ CSS-Utility-Klassen in variables.css (app-header-banner, app-stats-row, app-modal-*, app-icon-color--*, app-auth-*)
+- Alle 22 Admin- und Konfi-Views auf konsistentes Design-System umgestellt
+- 28 Modale von isOpen-Pattern auf useIonModal migriert
+- iOS Card-Modal Backdrop-Effekt und Unsaved-Changes-Schutz (isDirtyRef)
+- QR-Code Onboarding: Auto-Login, differenzierte Fehlermeldungen, Username-Verfuegbarkeitspruefung, JWT 90d
+
+### What Worked
+- Wave-basierte Parallelisierung: Plans 03-02/03-03, 04-02/03/04, 05-02/05-03, 06-02/06-03 liefen parallel
+- CSS-Klassen-First-Ansatz: Klassen in Wave 1 definieren, in Wave 2 anwenden -- keine Abhaengigkeits-Konflikte
+- Domain-Farb-Zuordnung frueh festgelegt (Phase 6): Events=Rot, Activities=Gruen, etc. -- konsistente Anwendung danach
+- Audit-Workflow am Ende: 22/22 Requirements automatisch verifiziert, nur 1 minor CSS-Gap gefunden
+- Verification-Reports pro Phase: Automatische Must-Have-Checks + Human-Verification-Items getrennt
+
+### What Was Inefficient
+- Phase 4/5 Inline-Style-Ziele (unter 5/unter 40) zu ambitioniert -- viele Inline-Styles sind Ionic-Patterns (Custom Properties, dynamische Werte)
+- console.log Debug-Statements in 4 Dateien erst im Audit entdeckt -- sollte in Plan-Completion-Checkliste
+- Emoji-Violation in ActivityManagementModal erst im Audit -- Pre-Commit-Hook waere besser
+- Phase 7 ROADMAP.md zeigte 0/3 Plans obwohl alle fertig -- Phase-Completion-Update fehlte
+
+### Patterns Established
+- app-section-icon--{domain} Pattern fuer Section-Icons in Modals (14 Varianten)
+- useIonPopover mit Ref-Pattern fuer dynamische Popover-Inhalte
+- canDismiss mit isDirtyRef fuer pragmatischen Unsaved-Changes-Schutz
+- app-auth-* CSS-Prefix fuer Auth-Seiten-spezifische Styles
+- Domain-Farbe hat Vorrang ueber technische Zuordnung (z.B. UnregisterModal = Konfi-Lila, nicht Events-Rot)
+
+### Key Lessons
+1. CSS-Klassen-Ziele lieber konservativ setzen -- Ionic Custom Properties und dynamische Werte MUESSEN inline bleiben
+2. Debug-Log-Bereinigung in Phase-Completion-Checkliste aufnehmen, nicht erst im Audit finden
+3. Orphan-Code (ungenutzte Modals) bewusst akzeptieren statt Loeschen, wenn Migration spaeter moeglich
+4. Quick-Fix fuer Audit-Gaps (1-Zeilen-CSS-Fixes, Debug-Logs) effizienter als eigene Phase
+
+### Cost Observations
+- Model mix: ~80% opus (execution), ~20% sonnet/haiku (verification, search)
+- Sessions: ~8 Sessions ueber 2 Tage
+- Notable: 17 Plans in ~125min aktiver Ausfuehrung (Durchschnitt 7.4min/Plan), -1227 Netto-Zeilen
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
-| Milestone | Sessions | Phases | Key Change |
-|-----------|----------|--------|------------|
-| v1.0 | ~5 | 2 | Erstes Milestone -- GSD Workflow etabliert |
+| Milestone | Sessions | Phases | Plans | Avg/Plan | Key Change |
+|-----------|----------|--------|-------|----------|------------|
+| v1.0 | ~5 | 2 | 5 | ~4min | GSD Workflow etabliert |
+| v1.1 | ~8 | 5 | 17 | ~7.4min | CSS-First + Wave-Parallelisierung skaliert |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. Wave-Parallelisierung spart signifikant Zeit bei unabhaengigen Plans
-2. Research vor Planung fuehrt zu praeziseren, ausfuehrbaren Plans
+1. Wave-Parallelisierung spart signifikant Zeit bei unabhaengigen Plans (v1.0 + v1.1)
+2. Research vor Planung fuehrt zu praeziseren Plans (v1.0), CSS-Klassen-First ebenso (v1.1)
+3. Integration-Checks und Audits am Ende finden Gaps die Phase-Verifikation uebersieht (v1.0 + v1.1)
+4. Quick-Fixes fuer Minor-Gaps effizienter als eigene Phase erstellen (v1.1)

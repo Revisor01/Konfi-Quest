@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0).
+Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1).
 
 ## Core Value
 
@@ -33,17 +33,23 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - TabBar CSS-only Rendering fuer 6+ Tabs -- v1.0
 - Theme-Isolation iOS26/MD3 ohne Kollisionen -- v1.0
 - Badge-Punkte ohne Double-Count-Risiko -- v1.0
-- Deprecated dateUtils (parseGermanTime, getGermanNow) entfernt -- v1.0
+- Deprecated dateUtils entfernt -- v1.0
+- SectionHeader, EmptyState, ListSection als wiederverwendbare Shared Components -- v1.1
+- 100+ CSS-Utility-Klassen (Header, Stats, Modal, Icon-Farben, Auth) in variables.css -- v1.1
+- Alle 22 Admin-Views auf Shared Components und CSS-Klassen umgestellt -- v1.1
+- 13 Icon-Farb-CSS-Klassen fuer konsistente app-weite Farbgebung -- v1.1
+- Alle 28 Modale auf useIonModal migriert, isOpen-Pattern eliminiert -- v1.1
+- iOS Card-Modal Backdrop-Effekt und Unsaved-Changes-Schutz -- v1.1
+- QR-Code Onboarding mit Auto-Login und differenzierten Fehlermeldungen -- v1.1
+- Username-Verfuegbarkeitspruefung bei Registrierung -- v1.1
+- JWT 90-Tage-Laufzeit fuer Konfi-Sessions -- v1.1
 
 ### Active
 
-- [ ] Design-Konsistenz: Admin-Bereich ans Konfi-Design-Pattern anpassen (kompakte Header, Farblogiken, konsistente Abstaende, gleiche Ionic-Komponenten)
 - [ ] Design-Konsistenz: Teamer-Bereich ans gleiche Design-Pattern anpassen
-- [ ] Alle Modale auf konsistentes Design pruefen (Referenz: Event-Erstellen-Modal mit Farblogiken, konsistenten Inputs, korrekten Abstaenden)
-- [ ] Modal-Routing/Backdrop-Effekt auf iOS sicherstellen (useIonModal Pattern ueberall)
-- [ ] QR-Code Onboarding-System validieren und sicherstellen dass es korrekt funktioniert
-- [ ] Shared Components erstellen (SectionHeader, EmptyState, ListSection)
-- [ ] CSS-Klassen dokumentieren und konsolidieren
+- [ ] badges.js PostgreSQL-Migration abschliessen
+- [ ] Statistics System PostgreSQL-Migration
+- [ ] Organizations System PostgreSQL-Migration
 
 ### Out of Scope
 
@@ -53,30 +59,16 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Komplettes Backend-Refactoring (Route-Splitting) -- Funktioniert, nur kritische Fixes
 - API-Dokumentation (Swagger/OpenAPI) -- Kein externer Zugriff geplant
 
-## Current Milestone: v1.1 Design-Konsistenz
-
-**Goal:** Admin- und Teamer-Bereiche an das fertige Konfi-Design-Pattern anpassen, alle Modale konsistent machen und Shared Components einfuehren.
-
-**Target features:**
-- Design-System Grundlagen (Shared Components, CSS-Konsolidierung)
-- Admin-Views Design-Konsistenz (kompakte Header, Farblogiken, Abstande)
-- Teamer-Views Design-Konsistenz
-- Modal-Konsistenz (useIonModal Pattern, einheitliches Design)
-- QR-Code Onboarding-Validierung
-
 ## Context
 
 - App ist im Beta/Test-Stadium, laeuft produktiv mit PostgreSQL auf Docker (server.godsapp.de)
 - v1.0 shipped: Backend Security Hardening + Bug-Fixes + Theme-Stabilisierung (2 Phasen, 5 Plans)
-- v1.1 Focus: Design-Konsistenz ueber alle Rollen und Bereiche
-- Konfi-UI ist fertig designt und dient als Referenz fuer alle anderen Bereiche
-- Chat nutzt bereits ein globales Layout
-- Events-Bereich hat Sonderrolle: Admin kann Events bearbeiten (erweitertes UI), daher kein 1:1 globales Layout moeglich
-- Das Event-Erstellen-Modal ist die Design-Referenz fuer Modale (Farblogiken, Inputs, Abstaende)
+- v1.1 shipped: Design-Konsistenz ueber alle Admin- und Konfi-Bereiche (5 Phasen, 17 Plans)
+  - 66 Dateien geaendert, 4426 Einfuegungen, 5653 Loeschungen (Netto: -1227 Zeilen weniger Code)
+  - Shared Components in 17 Views, 28 Modale migriert, 100+ CSS-Klassen
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
-- Es gibt 20+ Modale im Frontend, die alle dem useIonModal-Pattern folgen sollen
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
-- badges.js PostgreSQL-Migration noch nicht abgeschlossen (relevant fuer Admin-Views)
+- badges.js PostgreSQL-Migration noch nicht abgeschlossen
 
 ## Constraints
 
@@ -90,17 +82,21 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Konfi-UI als Design-Referenz | Bereits fertig und vom User abgenommen | -- Pending |
-| Event-Erstellen-Modal als Modal-Referenz | Beste Umsetzung von Farblogiken und konsistenten Inputs | -- Pending |
+| Konfi-UI als Design-Referenz | Bereits fertig und vom User abgenommen | Bestaetigt v1.1 |
+| Event-Erstellen-Modal als Modal-Referenz | Beste Umsetzung von Farblogiken und konsistenten Inputs | Bestaetigt v1.1 |
 | iOS 26 Theme beibehalten | Bereits integriert, funktioniert | Bestaetigt v1.0 |
 | MD3 Theme fuer Android aktiv | Beide Themes koexistieren mit Platform-Scoping | Bestaetigt v1.0 |
 | Sicherheit vor neuen Features | Bestehende Concerns muessen vor Go-Live behoben werden | Bestaetigt v1.0 |
-| Admin-Seiten UX anpassen statt neu bauen | Alle Admin-Seiten existieren funktional, brauchen nur Design-Update | -- Pending |
-| Bestehende Seiten-Farben und Header-Pattern erhalten | Jede Admin-View hat bereits eigene Farbgradients (Lila=Konfis, Gruen=Aktivitaeten, Rot=Events, Orange=Badges, Blau=Jahrgaenge, etc.), Header-Banner mit Icon+Titel+Stats-Row, und CSS-Klassen in variables.css. Phase 3-5 extrahieren in Shared Components, verwerfen NICHTS. | Bestaetigt v1.1 |
+| Admin-Seiten UX anpassen statt neu bauen | Alle Admin-Seiten existieren funktional, brauchen nur Design-Update | Bestaetigt v1.1 |
+| Bestehende Seiten-Farben erhalten | Jede View hat eigene Farbgradients, werden nicht verworfen | Bestaetigt v1.1 |
 | helmet CSP deaktiviert | Reines API-Backend, kein HTML served | Bestaetigt v1.0 |
 | getPointField wirft Error statt stillem Fallback | Explizite Fehler sind sicherer als stille Defaults | Bestaetigt v1.0 |
 | registerTabBarEffect entfernt | CSS-only Ansatz funktioniert zuverlaessig fuer 6+ Tabs | Bestaetigt v1.0 |
-| Badge-Punkte nur aus konfi_profiles | Backend COALESCE garantiert nie-null Werte, Fallback war toter Code | Bestaetigt v1.0 |
+| Badge-Punkte nur aus konfi_profiles | Backend COALESCE garantiert nie-null Werte | Bestaetigt v1.0 |
+| Domain-Farb-Zuordnung fuer Modals | Events=Rot, Activities=Gruen, Badges=Orange, Konfi=Lila, Settings=Blau | Bestaetigt v1.1 |
+| Multi-Use Invite Codes | Codes unbegrenzt wiederverwendbar statt single-use | Bestaetigt v1.1 |
+| DashboardView custom Layout | ActivityRings-Layout bleibt unberuehrt von SectionHeader-Migration | Bestaetigt v1.1 |
+| Pragmatischer canDismiss | Close-Button-Schutz mit isDirtyRef, Swipe-to-Dismiss akzeptiert | Bestaetigt v1.1 |
 
 ---
-*Last updated: 2026-03-01 after v1.1 milestone start*
+*Last updated: 2026-03-02 after v1.1 milestone completion*

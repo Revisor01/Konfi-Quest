@@ -1,5 +1,27 @@
 # Milestones
 
+## v1.1 Design-Konsistenz (Shipped: 2026-03-02)
+
+**Phases completed:** 5 Phasen (3-7), 17 Plans
+**Timeline:** 2026-03-01 bis 2026-03-02 (2 Tage)
+**Stats:** 66 files changed, 4426 insertions, 5653 deletions (Netto: -1227 Zeilen)
+**Git range:** Phase 03 bis Phase 07 (47 Commits)
+
+**Key accomplishments:**
+- Shared Components (SectionHeader, EmptyState, ListSection) mit Preset-Farbsystem in 17 Views eingebaut
+- 100+ CSS-Utility-Klassen in variables.css (Header, Stats, Modal, Icon-Farben, Auth-Seiten)
+- Admin-TabBar auf 5 Tabs reduziert, Badges unter Settings verschoben
+- Alle 28 Modale auf useIonModal migriert, isOpen-Pattern komplett eliminiert
+- iOS Card-Modal Backdrop-Effekt und Unsaved-Changes-Schutz implementiert
+- QR-Code Onboarding mit Auto-Login, differenzierten Fehlermeldungen und Username-Verfuegbarkeitspruefung
+
+**Tech Debt (akzeptiert):**
+- Einige Admin-Views haben mehr Inline-Styles als angepeilt (EventDetailView 63, AdminSettings 26)
+- 3 Chat-Modals (GroupChat, DirectMessage, CreateChat) Props-migriert aber ohne aktive Aufrufer
+- app-condense-toolbar nur 2/19 Stellen migriert
+
+---
+
 ## v1.0 Security + Stabilisierung (Shipped: 2026-03-01)
 
 **Phases completed:** 2 phases, 5 plans
