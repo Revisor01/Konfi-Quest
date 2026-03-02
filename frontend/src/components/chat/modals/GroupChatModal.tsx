@@ -21,7 +21,8 @@ import {
   IonAvatar,
   IonChip,
   IonSpinner,
-  IonListHeader
+  IonListHeader,
+  useIonAlert
 } from '@ionic/react';
 import { close, checkmarkOutline, people, person, chatbubblesOutline, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -55,6 +56,23 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+
+  // isDirty bei relevanten Aenderungen setzen
+  useEffect(() => {
+    if (groupName.trim() || selectedParticipants.size > 0) {
+      setIsDirty(true);
+    }
+  }, [groupName, selectedParticipants]);
+
+  const doClose = () => {
+    if (dismiss) {
+      dismiss();
+    } else {
+      onClose();
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -111,6 +129,7 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
       await api.post('/chat/rooms', groupData);
 
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
+      setIsDirty(false);
       resetForm();
       onSuccess();
     } catch (err) {
@@ -128,11 +147,18 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
   };
 
   const handleClose = () => {
-    resetForm();
-    if (dismiss) {
-      dismiss();
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => { resetForm(); doClose(); } }
+        ]
+      });
     } else {
-      onClose();
+      resetForm();
+      doClose();
     }
   };
 

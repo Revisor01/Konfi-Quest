@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -23,7 +23,8 @@ import {
   IonCardContent,
   IonModal,
   IonDatetimeButton,
-  IonCheckbox
+  IonCheckbox,
+  useIonAlert
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -84,12 +85,29 @@ const EventModal: React.FC<EventModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
 
-  const handleClose = () => {
+  const doClose = () => {
     if (dismiss) {
       dismiss();
     } else {
       onClose();
+    }
+  };
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
     }
   };
   
@@ -116,6 +134,14 @@ const EventModal: React.FC<EventModalProps> = ({
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const initializedRef = useRef(false);
+
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
 
   const formatTime = (dateString: string) => {
     if (!dateString) return '';
@@ -226,6 +252,8 @@ const EventModal: React.FC<EventModalProps> = ({
       });
       setTimeslots([]);
     }
+    // Nach Initialisierung isDirty-Tracking aktivieren
+    setTimeout(() => { initializedRef.current = true; }, 100);
   }, [event]);
 
   const loadCategories = async () => {
@@ -357,8 +385,9 @@ const EventModal: React.FC<EventModalProps> = ({
         }
       }
       
+      setIsDirty(false);
       onSuccess();
-      handleClose();
+      doClose();
     } catch (error: any) {
       if (error.response?.data?.error) {
         setError(error.response.data.error);

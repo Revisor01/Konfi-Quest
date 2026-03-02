@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -17,7 +17,8 @@ import {
   IonCardContent,
   IonList,
   IonListHeader,
-  IonSpinner
+  IonSpinner,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
@@ -41,6 +42,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onSuccess
 }) => {
   const { setSuccess, setError } = useApp();
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
 
   const [formData, setFormData] = useState({
     display_name: '',
@@ -50,6 +54,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const [saving, setSaving] = useState(false);
 
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
+
   useEffect(() => {
     if (konfi) {
       setFormData({
@@ -58,7 +69,25 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         bible_translation: konfi.bible_translation || 'LUT'
       });
     }
+    setTimeout(() => { initializedRef.current = true; }, 100);
   }, [konfi]);
+
+  const doClose = () => onClose();
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
+    }
+  };
 
   const handleSave = async () => {
     if (!formData.display_name.trim()) {
@@ -69,6 +98,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setSaving(true);
     try {
       await api.put('/konfi/profile', formData);
+      setIsDirty(false);
       setSuccess('Profil erfolgreich aktualisiert');
       onSuccess();
     } catch (err: any) {
@@ -84,7 +114,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <IonToolbar>
           <IonTitle>Profil bearbeiten</IonTitle>
           <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={saving}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={saving}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

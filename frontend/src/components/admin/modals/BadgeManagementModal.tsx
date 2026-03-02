@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -28,7 +28,8 @@ import {
   IonList,
   IonListHeader,
   IonAccordion,
-  IonAccordionGroup
+  IonAccordionGroup,
+  useIonAlert
 } from '@ionic/react';
 import {
   checkmarkOutline,
@@ -219,6 +220,26 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 }) => {
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
+
+  const doClose = () => onClose();
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
+    }
+  };
 
   // Form data
   const [formData, setFormData] = useState({
@@ -232,6 +253,13 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     is_hidden: false,
     color: getCategoryColor('total_points')
   });
+
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
 
   // Available data for dropdowns
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -260,10 +288,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   };
 
   useEffect(() => {
-    loadInitialData();
-    if (isEditMode) {
-      loadBadge();
-    }
+    const init = async () => {
+      await loadInitialData();
+      if (isEditMode) {
+        await loadBadge();
+      }
+      setTimeout(() => { initializedRef.current = true; }, 100);
+    };
+    init();
   }, [badgeId]);
 
   const loadInitialData = async () => {
@@ -381,6 +413,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         setSuccess('Badge erfolgreich erstellt');
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Speichern des Badges');
@@ -678,7 +711,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} className="app-modal-close-btn">
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

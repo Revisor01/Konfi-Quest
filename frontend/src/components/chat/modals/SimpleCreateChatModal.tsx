@@ -64,17 +64,34 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   const { user, setError, setSuccess } = useApp();
   const { refreshFromAPI } = useBadge();
   const [presentDuplicateAlert] = useIonAlert();
+  const [presentUnsavedAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
+  const [isDirty, setIsDirty] = useState(false);
 
   // State
   const [settings, setSettings] = useState<Settings>({});
   const [chatType, setChatType] = useState<'direct' | 'group'>('direct');
 
-  const handleClose = () => {
+  const doClose = () => {
     if (dismiss) {
       dismiss();
     } else {
       onClose();
+    }
+  };
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentUnsavedAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
     }
   };
   const [users, setUsers] = useState<User[]>([]);
@@ -91,6 +108,13 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
   // Group chat specific
   const [groupName, setGroupName] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<Set<string>>(new Set());
+
+  // isDirty bei relevanten Aenderungen setzen
+  useEffect(() => {
+    if (groupName.trim() || selectedParticipants.size > 0) {
+      setIsDirty(true);
+    }
+  }, [groupName, selectedParticipants]);
 
   useEffect(() => {
     loadSettings();
@@ -346,7 +370,8 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
     setSearchText('');
     setSelectedParticipants(new Set());
     setUsers([]);
-    handleClose();
+    setIsDirty(false);
+    doClose();
   };
 
   const filteredUsers = users.filter(user => {

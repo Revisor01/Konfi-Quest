@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -17,7 +17,8 @@ import {
   IonList,
   IonListHeader,
   IonSpinner,
-  IonTextarea
+  IonTextarea,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
@@ -77,6 +78,26 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const { setSuccess, setError } = useApp();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
+
+  const doClose = () => onClose();
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
+    }
+  };
 
   // Form data - Systemname wird automatisch generiert
   const [formData, setFormData] = useState({
@@ -92,6 +113,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
     admin_username: '',    // Login-Name (z.B. "pmueller")
     admin_password: ''
   });
+
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
 
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [orgAdmins, setOrgAdmins] = useState<OrgAdmin[]>([]);
@@ -126,7 +154,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
   useEffect(() => {
     if (isEditMode) {
-      loadOrganization();
+      loadOrganization().then(() => {
+        setTimeout(() => { initializedRef.current = true; }, 100);
+      });
+    } else {
+      setTimeout(() => { initializedRef.current = true; }, 100);
     }
   }, [organizationId]);
 
@@ -226,6 +258,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         setSuccess('Organisation und Administrator erfolgreich erstellt');
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Speichern');
@@ -294,7 +327,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
+              <IonButton onClick={handleClose} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>

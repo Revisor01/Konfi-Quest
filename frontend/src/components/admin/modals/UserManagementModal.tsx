@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -17,7 +17,8 @@ import {
   IonCheckbox,
   IonList,
   IonListHeader,
-  IonSpinner
+  IonSpinner,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
@@ -84,6 +85,26 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const { setSuccess, setError, user: currentUser } = useApp();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
+
+  const doClose = () => onClose();
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
+    }
+  };
 
   // Form data
   const [formData, setFormData] = useState({
@@ -95,6 +116,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     role_id: 0,
     is_active: true
   });
+
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
 
   // Available data
   const [roles, setRoles] = useState<Role[]>([]);
@@ -122,10 +150,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   };
 
   useEffect(() => {
-    loadInitialData();
-    if (isEditMode) {
-      loadUser();
-    }
+    const init = async () => {
+      await loadInitialData();
+      if (isEditMode) {
+        await loadUser();
+      }
+      setTimeout(() => { initializedRef.current = true; }, 100);
+    };
+    init();
   }, [userId]);
 
   const loadInitialData = async () => {
@@ -230,6 +262,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         });
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Fehler beim Speichern des Benutzers');
@@ -280,7 +313,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose} className="app-modal-close-btn">
+              <IonButton onClick={handleClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>

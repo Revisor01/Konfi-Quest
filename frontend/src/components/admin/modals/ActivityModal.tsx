@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -16,7 +16,8 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
-  IonCheckbox
+  IonCheckbox,
+  useIonAlert
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, flash, calendar, home, people } from 'ionicons/icons';
 import api from '../../../services/api';
@@ -41,12 +42,41 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const [comment, setComment] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
 
-  const handleClose = () => {
+  // isDirty nach Initialisierung tracken
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [selectedActivity, comment, selectedDate]);
+
+  useEffect(() => {
+    setTimeout(() => { initializedRef.current = true; }, 100);
+  }, []);
+
+  const doClose = () => {
     if (dismiss) {
       dismiss();
     } else {
       onClose();
+    }
+  };
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
     }
   };
 
@@ -74,8 +104,9 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         comment: comment
       });
 
+      setIsDirty(false);
       await onSave();
-      handleClose();
+      doClose();
     } catch (err) {
  console.error('Error saving activity:', err);
     } finally {

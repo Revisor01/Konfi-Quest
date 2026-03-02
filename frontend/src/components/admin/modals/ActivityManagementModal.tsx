@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -16,7 +16,8 @@ import {
   IonList,
   IonListHeader,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  useIonAlert
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -57,12 +58,30 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   const [initializing, setInitializing] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentActivity, setCurrentActivity] = useState<Activity | null>(activity || null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [presentAlert] = useIonAlert();
+  const initializedRef = useRef(false);
 
-  const handleClose = () => {
+  const doClose = () => {
     if (dismiss) {
       dismiss();
     } else {
       onClose();
+    }
+  };
+
+  const handleClose = () => {
+    if (isDirty) {
+      presentAlert({
+        header: 'Ungespeicherte Änderungen',
+        message: 'Möchtest du die Änderungen verwerfen?',
+        buttons: [
+          { text: 'Abbrechen', role: 'cancel' },
+          { text: 'Verwerfen', role: 'destructive', handler: () => doClose() }
+        ]
+      });
+    } else {
+      doClose();
     }
   };
 
@@ -73,6 +92,12 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     category_ids: [] as number[]
   });
 
+  // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
+  useEffect(() => {
+    if (initializedRef.current) {
+      setIsDirty(true);
+    }
+  }, [formData]);
 
   // Load activity by ID from all activities
   const loadActivity = async (id: number) => {
@@ -145,7 +170,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       }
     };
 
-    initializeModal();
+    initializeModal().then(() => {
+      setTimeout(() => { initializedRef.current = true; }, 100);
+    });
   }, [activityId, activity]);
 
   const loadCategories = async () => {
@@ -187,6 +214,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         setSuccess('Aktivität erstellt');
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (error: any) {
       if (error.response?.data?.error) {
