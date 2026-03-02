@@ -845,6 +845,32 @@ ion-popover ion-select-popover ion-item {
   gap: 4px;
 }
 
+/* === Transparentes IonItem Wrapper === */
+/* IonItem das nur als Container fuer app-list-item dient */
+ion-item.app-item-transparent {
+  --background: transparent;
+  --padding-start: 0;
+  --padding-end: 0;
+  --inner-padding-end: 0;
+  --inner-border-width: 0;
+  --border-style: none;
+  --min-height: auto;
+}
+
+/* Transparente Swipe-Action-Buttons */
+ion-item-options.app-swipe-actions {
+  --ion-item-background: transparent;
+  border: none;
+  gap: 0;
+}
+ion-item-option.app-swipe-action {
+  --background: transparent;
+  --color: transparent;
+  --border-width: 0;
+  padding: 0;
+  min-width: auto;
+}
+
 /* === Icon-Farb-Klassen === */
 /* Gleiches Konzept = gleiches Icon = gleiche Farbe ueberall */
 .app-icon-color--events { color: #dc2626; }

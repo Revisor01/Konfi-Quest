@@ -12,7 +12,9 @@ import {
   IonItemOption,
   IonInput,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonRefresher,
+  IonRefresherContent
 } from '@ionic/react';
 import {
   trash,
@@ -101,8 +103,17 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
     slidingRefs.current.forEach(ref => ref?.close());
   };
 
+  const handleRefresh = (event: CustomEvent) => {
+    onUpdate();
+    setTimeout(() => event.detail.complete(), 500);
+  };
+
   return (
     <>
+      <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresherContent />
+      </IonRefresher>
+
       <SectionHeader
         title="Organisationen"
         subtitle="Gemeinden verwalten"
@@ -115,8 +126,8 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         ]}
       />
 
-      {/* Suche & Filter - iOS26 Pattern */}
-      <IonList inset={true} style={{ margin: '16px' }}>
+      {/* Suche & Filter */}
+      <IonList inset={true} className="app-segment-wrapper">
         <IonListHeader>
           <div className="app-section-icon app-section-icon--success">
             <IonIcon icon={filterOutline} />
@@ -124,10 +135,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
           <IonLabel>Suche & Filter</IonLabel>
         </IonListHeader>
         <IonCard className="app-card">
-          <IonCardContent style={{ padding: '16px' }}>
-            <IonList style={{ background: 'transparent' }}>
+          <IonCardContent>
+            <IonList>
               {/* Suchfeld */}
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+              <IonItem lines="full">
                 <IonLabel position="stacked">Organisation suchen</IonLabel>
                 <IonInput
                   value={searchTerm}
@@ -137,24 +148,23 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                 />
               </IonItem>
               {/* Filter */}
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
+              <IonItem lines="none">
                 <IonLabel position="stacked">Status</IonLabel>
                 <IonSegment
                   value={selectedFilter}
                   onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-                  style={{ marginTop: '8px' }}
                 >
                   <IonSegmentButton value="alle">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Alle</IonLabel>
+                    <IonLabel>Alle</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="aktiv">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Aktiv</IonLabel>
+                    <IonLabel>Aktiv</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="gross">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Gross</IonLabel>
+                    <IonLabel>Gross</IonLabel>
                   </IonSegmentButton>
                   <IonSegmentButton value="klein">
-                    <IonLabel style={{ fontSize: '0.75rem' }}>Klein</IonLabel>
+                    <IonLabel>Klein</IonLabel>
                   </IonSegmentButton>
                 </IonSegment>
               </IonItem>
@@ -189,98 +199,58 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                     closeAllSlidingItems();
                     onSelectOrganization(organization);
                   }}
+                  className="app-list-item app-list-item--organizations"
                   style={{
-                    '--min-height': '88px',
                     '--padding-start': '16px',
                     '--padding-top': '12px',
                     '--padding-bottom': '12px',
-                    '--background': '#fbfbfb',
-                    '--border-radius': '12px',
-                    margin: '4px 8px',
-                    boxShadow: !organization.is_active
-                      ? '0 2px 8px rgba(239, 68, 68, 0.15)'
-                      : '0 2px 8px rgba(0,0,0,0.06)',
-                    border: !organization.is_active
-                      ? '1px solid #fca5a5'
-                      : '1px solid #e0e0e0',
-                    borderRadius: '12px',
                     opacity: organization.is_active ? 1 : 0.7
                   }}
                 >
                   <IonLabel>
                     {/* Header mit Initialen-Icon */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '8px'
-                    }}>
-                      {/* Initialen-Icon - 36px */}
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        backgroundColor: organization.is_active ? '#2dd36f' : '#6b7280',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: organization.is_active
-                          ? '0 2px 8px rgba(45, 211, 111, 0.4)'
-                          : '0 2px 8px rgba(107, 114, 128, 0.4)',
-                        flexShrink: 0,
-                        color: 'white',
-                        fontWeight: '700',
-                        fontSize: '0.85rem'
-                      }}>
+                    <div className="app-list-item__main">
+                      {/* Initialen-Icon */}
+                      <div
+                        className="app-avatar-initials app-avatar-initials--sm"
+                        style={{ backgroundColor: organization.is_active ? '#2dd36f' : '#6b7280' }}
+                      >
                         {getInitials(organization.display_name)}
                       </div>
 
                       {/* Name */}
-                      <h2 style={{
-                        fontWeight: '600',
-                        fontSize: 'clamp(0.95rem, 2.5vw, 1.05rem)',
-                        margin: '0',
-                        color: organization.is_active ? '#333' : '#999',
-                        lineHeight: '1.3',
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {organization.display_name}
-                      </h2>
+                      <div className="app-list-item__content">
+                        <div
+                          className="app-list-item__title"
+                          style={!organization.is_active ? { color: '#999' } : undefined}
+                        >
+                          {organization.display_name}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Details Row mit Icons */}
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      marginLeft: '48px',
-                      fontSize: '0.8rem',
-                      color: organization.is_active ? '#666' : '#999'
-                    }}>
+                    <div className="app-list-item__meta" style={!organization.is_active ? { color: '#999' } : undefined}>
                       {/* Konfis */}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={people} style={{ fontSize: '0.85rem', color: '#34c759' }} />
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={people} className="app-icon-color--participants" />
                         {organization.konfi_count} Konfis
                       </span>
                       {/* Team */}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={personOutline} style={{ fontSize: '0.85rem', color: '#f59e0b' }} />
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={personOutline} className="app-icon-color--badges" />
                         {organization.user_count} Team
                       </span>
                       {/* Events */}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <IonIcon icon={flash} style={{ fontSize: '0.85rem', color: '#dc2626' }} />
+                      <span className="app-list-item__meta-item">
+                        <IonIcon icon={flash} className="app-icon-color--events" />
                         {organization.event_count} Events
                       </span>
                       {/* Status */}
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="app-list-item__meta-item">
                         <IonIcon
                           icon={organization.is_active ? checkmarkCircle : closeCircle}
-                          style={{ fontSize: '0.85rem', color: organization.is_active ? '#34c759' : '#dc3545' }}
+                          className={organization.is_active ? 'app-icon-color--success' : 'app-icon-color--danger'}
                         />
                         {organization.is_active ? 'Aktiv' : 'Inaktiv'}
                       </span>
@@ -288,50 +258,23 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
                     {/* Beschreibung falls vorhanden */}
                     {organization.description && (
-                      <div style={{
-                        marginLeft: '48px',
-                        marginTop: '6px',
-                        fontSize: '0.75rem',
-                        color: '#999',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
+                      <div className="app-list-item__subtitle">
                         {organization.description}
                       </div>
                     )}
                   </IonLabel>
                 </IonItem>
 
-                <IonItemOptions side="end" style={{ gap: '4px', '--ion-item-background': 'transparent' }}>
+                <IonItemOptions side="end" className="app-swipe-actions">
                   <IonItemOption
                     onClick={() => {
                       closeAllSlidingItems();
                       onSelectOrganization(organization);
                     }}
-                    style={{
-                      '--background': 'transparent',
-                      '--background-activated': 'transparent',
-                      '--background-focused': 'transparent',
-                      '--background-hover': 'transparent',
-                      '--color': 'transparent',
-                      '--ripple-color': 'transparent',
-                      padding: '0 2px',
-                      minWidth: '48px',
-                      maxWidth: '48px'
-                    }}
+                    className="app-swipe-action"
                   >
-                    <div style={{
-                      width: '44px',
-                      height: '44px',
-                      backgroundColor: '#2dd36f',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(45, 211, 111, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                    }}>
-                      <IonIcon icon={createOutline} style={{ fontSize: '1.2rem', color: 'white' }} />
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
+                      <IonIcon icon={createOutline} />
                     </div>
                   </IonItemOption>
                   <IonItemOption
@@ -339,30 +282,10 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       closeAllSlidingItems();
                       onDeleteOrganization(organization);
                     }}
-                    style={{
-                      '--background': 'transparent',
-                      '--background-activated': 'transparent',
-                      '--background-focused': 'transparent',
-                      '--background-hover': 'transparent',
-                      '--color': 'transparent',
-                      '--ripple-color': 'transparent',
-                      padding: '0 2px',
-                      paddingRight: '12px',
-                      minWidth: '48px',
-                      maxWidth: '60px'
-                    }}
+                    className="app-swipe-action"
                   >
-                    <div style={{
-                      width: '44px',
-                      height: '44px',
-                      backgroundColor: '#dc3545',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(220, 53, 69, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3)'
-                    }}>
-                      <IonIcon icon={trash} style={{ fontSize: '1.2rem', color: 'white' }} />
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                      <IonIcon icon={trash} />
                     </div>
                   </IonItemOption>
                 </IonItemOptions>

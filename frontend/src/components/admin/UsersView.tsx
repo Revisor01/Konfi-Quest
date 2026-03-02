@@ -13,7 +13,9 @@ import {
   IonSegment,
   IonSegmentButton,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonRefresher,
+  IonRefresherContent
 } from '@ionic/react';
 import {
   trash,
@@ -138,8 +140,17 @@ const UsersView: React.FC<UsersViewProps> = ({
     slidingRefs.current.forEach(ref => ref?.close());
   };
 
+  const handleRefresh = (event: CustomEvent) => {
+    onUpdate();
+    setTimeout(() => event.detail.complete(), 500);
+  };
+
   return (
     <>
+      <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+        <IonRefresherContent />
+      </IonRefresher>
+
       <SectionHeader
         title="Benutzer:innen"
         subtitle="Admins, Teamer:innen und Rollen"
@@ -153,7 +164,7 @@ const UsersView: React.FC<UsersViewProps> = ({
       />
 
       {/* Tab Navigation - einfaches IonSegment */}
-      <div style={{ margin: '16px' }}>
+      <div className="app-segment-wrapper">
         <IonSegment
           value={selectedFilter}
           onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
@@ -174,7 +185,7 @@ const UsersView: React.FC<UsersViewProps> = ({
       </div>
 
       {/* Suche */}
-      <IonList inset={true} style={{ margin: '16px' }}>
+      <IonList inset={true} className="app-segment-wrapper">
         <IonListHeader>
           <div className="app-section-icon app-section-icon--users">
             <IonIcon icon={filterOutline} />
@@ -183,7 +194,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
-            <IonIcon icon={search} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+            <IonIcon icon={search} slot="start" className="app-search-bar__icon" />
             <IonInput
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
@@ -214,7 +225,6 @@ const UsersView: React.FC<UsersViewProps> = ({
                 ref={(ref) => {
                   if (ref) slidingRefs.current.set(user.id, ref);
                 }}
-                style={{ marginBottom: index < filteredAndSortedUsers.length - 1 ? '8px' : '0' }}
               >
                 <IonItem
                   button={user.can_edit !== false}
@@ -226,25 +236,11 @@ const UsersView: React.FC<UsersViewProps> = ({
                     }
                   }}
                   lines="none"
-                  style={{
-                    '--background': 'transparent',
-                    '--padding-start': '0',
-                    '--padding-end': '0',
-                    '--inner-padding-end': '0',
-                    '--inner-border-width': '0',
-                    '--border-style': 'none',
-                    '--min-height': 'auto'
-                  }}
+                  className="app-item-transparent"
                 >
                   <div
                     className="app-list-item app-list-item--users"
-                    style={{
-                      width: '100%',
-                      borderLeftColor: roleColor,
-                      opacity: user.is_active ? 1 : 0.6,
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
+                    style={{ borderLeftColor: roleColor, opacity: user.is_active ? 1 : 0.6 }}
                   >
                     {/* Eselsohr-Style Corner Badge */}
                     <div
@@ -269,10 +265,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                           {/* Zeile 1: Name */}
                           <div
                             className="app-list-item__title"
-                            style={{
-                              color: user.is_active ? '#333' : '#999',
-                              paddingRight: '70px'
-                            }}
+                            style={!user.is_active ? { color: '#999', paddingRight: '70px' } : { paddingRight: '70px' }}
                           >
                             {user.display_name}
                           </div>
@@ -280,28 +273,28 @@ const UsersView: React.FC<UsersViewProps> = ({
                           {/* Zeile 2: Username + Titel */}
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
-                              <IonIcon icon={at} style={{ color: user.is_active ? '#007aff' : '#999' }} />
+                              <IonIcon icon={at} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
                               {user.username}
                             </span>
                             {user.role_title && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={briefcaseOutline} style={{ color: user.is_active ? '#f59e0b' : '#999' }} />
+                                <IonIcon icon={briefcaseOutline} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
                                 {user.role_title}
                               </span>
                             )}
                           </div>
 
                           {/* Zeile 3: Jahrgänge + Login */}
-                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                          <div className="app-list-item__meta">
                             {user.assigned_jahrgaenge_count > 0 && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={school} style={{ color: user.is_active ? '#007aff' : '#999' }} />
+                                <IonIcon icon={school} className={user.is_active ? 'app-icon-color--jahrgang' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
                                 {user.assigned_jahrgaenge_count} Jg.
                               </span>
                             )}
                             {user.last_login_at && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={time} style={{ color: user.is_active ? '#34c759' : '#999' }} />
+                                <IonIcon icon={time} className={user.is_active ? 'app-icon-color--success' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
                                 {formatDate(user.last_login_at)}
                               </span>
                             )}
@@ -313,13 +306,13 @@ const UsersView: React.FC<UsersViewProps> = ({
                 </IonItem>
 
                 {user.can_edit !== false && (
-                  <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
+                  <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
                       onClick={() => {
                         closeAllSlidingItems();
                         onSelectUser(user);
                       }}
-                      style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                      className="app-swipe-action"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                         <IonIcon icon={createOutline} />
@@ -330,7 +323,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                         closeAllSlidingItems();
                         onDeleteUser(user);
                       }}
-                      style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                      className="app-swipe-action"
                     >
                       <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                         <IonIcon icon={trash} />
