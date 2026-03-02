@@ -400,6 +400,19 @@ interface DashboardViewProps {
   onOpenPointsHistory?: () => void;
 }
 
+const getGreeting = (name: string): string => {
+  const hour = new Date().getHours();
+  let greeting: string;
+  if (hour < 12) {
+    greeting = 'Guten Morgen';
+  } else if (hour < 18) {
+    greeting = 'Guten Tag';
+  } else {
+    greeting = 'Guten Abend';
+  }
+  return `${greeting}, ${name}!`;
+};
+
 const DashboardView: React.FC<DashboardViewProps> = ({
   dashboardData,
   dailyVerse,
@@ -566,70 +579,40 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     <div style={{ padding: '16px' }}>
       
       {/* Header Card mit ActivityRings */}
-      <div style={{
-        background: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%)',
-        borderRadius: '24px',
-        padding: '24px',
-        marginBottom: '16px',
-        boxShadow: '0 10px 40px rgba(91, 33, 182, 0.35)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
+      <div className="app-dashboard-header">
         {/* Dekorative Kreise im Hintergrund */}
-        <div style={{
-          position: 'absolute',
+        <div className="app-dashboard-header__circle" style={{
           top: '-40px',
           right: '-40px',
           width: '140px',
           height: '140px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          borderRadius: '50%'
+          background: 'rgba(255, 255, 255, 0.08)'
         }}/>
-        <div style={{
-          position: 'absolute',
+        <div className="app-dashboard-header__circle" style={{
           top: '60px',
           right: '30px',
           width: '60px',
-          height: '60px',
-          background: 'rgba(255, 255, 255, 0.06)',
-          borderRadius: '50%'
+          height: '60px'
         }}/>
-        <div style={{
-          position: 'absolute',
+        <div className="app-dashboard-header__circle" style={{
           bottom: '-30px',
           left: '-30px',
           width: '100px',
-          height: '100px',
-          background: 'rgba(255, 255, 255, 0.06)',
-          borderRadius: '50%'
+          height: '100px'
         }}/>
-        <div style={{
-          position: 'absolute',
+        <div className="app-dashboard-header__circle" style={{
           bottom: '40px',
           left: '40px',
           width: '40px',
-          height: '40px',
-          background: 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '50%'
+          height: '40px'
         }}/>
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          {/* Begrüßung */}
-          <h2 style={{
-            fontSize: '1.8rem',
-            fontWeight: '800',
-            margin: '0 0 4px 0',
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            Hey {getFirstName(dashboardData.konfi.display_name)}!
+          {/* Begruessing */}
+          <h2 className="app-dashboard-greeting">
+            {getGreeting(getFirstName(dashboardData.konfi.display_name))}
           </h2>
-          <p style={{
-            fontSize: '1rem',
-            margin: '0 0 20px 0',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textAlign: 'center'
-          }}>
+          <p className="app-dashboard-subtitle">
             {dashboardData.konfi.jahrgang_name}
           </p>
 
@@ -655,17 +638,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Level Badge + Icons */}
           {dashboardData.level_info?.current_level && (
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <div style={{
-                display: 'inline-block',
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '8px',
-                padding: '6px 16px',
-                fontSize: '0.9rem',
-                color: 'white',
-                fontWeight: '600',
-                marginBottom: '12px'
-              }}>
+              <div className="app-dashboard-glass-chip" style={{ marginBottom: '12px' }}>
                 {dashboardData.level_info.current_level.title}
               </div>
 
@@ -763,51 +736,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Konfirmation Card */}
       {(dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent ? (
-        <div style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(30, 58, 138, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '160px'
-        }}>
+        <div className="app-dashboard-section app-dashboard-section--konfirmation">
           {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '2.9rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+          <div className="app-dashboard-section__bg-text">
+            <h2 className="app-dashboard-section__bg-label">
               DEINE
             </h2>
-            <h2 style={{
-              fontSize: '2.9rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+            <h2 className="app-dashboard-section__bg-label">
               KONFIRMATION
             </h2>
           </div>
 
-          <div style={{ 
-            position: 'relative', 
-            zIndex: 2, 
-            padding: '60px 24px 24px 24px',
-            textAlign: 'center'
-          }}>
+          <div className="app-dashboard-section__content" style={{ textAlign: 'center' }}>
             {dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined ? (
               <>
                 <div style={{ fontSize: '3.5rem', fontWeight: '900', color: 'white', lineHeight: '1', marginBottom: '8px' }}>
@@ -831,30 +771,21 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </>
             ) : null}
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+            <div className="app-dashboard-meta" style={{ justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
               {nextConfirmationEvent && (
-                <div style={{ 
-                  fontSize: '0.85rem', 
-                  color: 'rgba(255, 255, 255, 0.8)', 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
+                <>
                   <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
-                  {formatEventDate(nextConfirmationEvent.event_date || nextConfirmationEvent.date)} um {formatEventTime(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}
-                </div>
+                  <span>{formatEventDate(nextConfirmationEvent.event_date || nextConfirmationEvent.date)} um {formatEventTime(nextConfirmationEvent.event_date || nextConfirmationEvent.date)}</span>
+                </>
+              )}
+              {nextConfirmationEvent && (dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
+                <span className="app-dashboard-dot" />
               )}
               {(dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location) && (
-                <div style={{ 
-                  fontSize: '0.85rem', 
-                  color: 'rgba(255, 255, 255, 0.75)', 
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
+                <>
                   <IonIcon icon={location} style={{ fontSize: '0.85rem' }} />
-                  {dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location}
-                </div>
+                  <span>{dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location}</span>
+                </>
               )}
             </div>
           </div>
@@ -863,63 +794,30 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Events Section - direkt nach Konfirmation */}
       {regularEvents && regularEvents.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(220, 38, 38, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '180px'
-        }}>
+        <div className="app-dashboard-section app-dashboard-section--events">
           {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+          <div className="app-dashboard-section__bg-text">
+            <h2 className="app-dashboard-section__bg-label">
               DEINE
             </h2>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+            <h2 className="app-dashboard-section__bg-label">
               EVENTS
             </h2>
           </div>
 
-          {/* Zusätzlicher Indikator */}
-          <div style={{
+          {/* Zusaetzlicher Indikator */}
+          <div className="app-dashboard-glass-chip" style={{
             position: 'absolute',
             top: '20px',
             right: '20px',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '8px',
-            padding: '6px 10px',
             fontSize: '0.7rem',
-            color: 'white',
             fontWeight: '700',
             zIndex: 3
           }}>
             {regularEvents.length === 1 ? 'DEIN EVENT' : `DEINE ${regularEvents.length} EVENTS`}
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
+          <div className="app-dashboard-section__content app-dashboard-section__content--compact">
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {regularEvents.map((event) => {
                 // Warteliste: booking_status kann 'waitlist' oder 'pending' sein
@@ -928,13 +826,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     key={event.id}
                     onClick={() => history.push(`/konfi/events/${event.id}`)}
+                    className="app-dashboard-glass-card"
                     style={{
                       background: isWaitlist
                         ? 'rgba(251, 191, 36, 0.25)'
-                        : 'rgba(255, 255, 255, 0.15)',
-                      backdropFilter: 'blur(10px)',
-                      borderRadius: '12px',
-                      padding: '12px 16px',
+                        : undefined,
                       position: 'relative',
                       overflow: 'hidden',
                       border: event.cancelled
@@ -980,41 +876,23 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       }}>
                         {event.title || event.name}
                       </div>
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.8rem',
-                          color: 'rgba(255, 255, 255, 0.8)'
-                        }}>
-                          <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
-                          {formatEventDate(event.event_date || event.date)}
-                        </div>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.8rem',
-                          color: 'rgba(255, 255, 255, 0.8)'
-                        }}>
-                          <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                      <div className="app-dashboard-meta" style={{ flexWrap: 'wrap' }}>
+                        <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
+                        <span>{formatEventDate(event.event_date || event.date)}</span>
+                        <span className="app-dashboard-dot" />
+                        <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                        <span>
                           {event.booked_timeslot_start
                             ? `${formatEventTime(event.booked_timeslot_start)}${event.booked_timeslot_end ? ` - ${formatEventTime(event.booked_timeslot_end)}` : ''}`
                             : formatEventTime(event.event_date || event.date)
                           }
-                        </div>
+                        </span>
                         {event.location && (
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.8rem',
-                            color: 'rgba(255, 255, 255, 0.8)'
-                          }}>
+                          <>
+                            <span className="app-dashboard-dot" />
                             <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
-                            {event.location}
-                          </div>
+                            <span>{event.location}</span>
+                          </>
                         )}
                       </div>
                     </div>
@@ -1028,46 +906,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Tageslosung - nur wenn echte API-Daten verfügbar */}
       {!loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
-        <div style={{
-          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(6, 182, 212, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '160px'
-        }}>
+        <div className="app-dashboard-section app-dashboard-section--tageslosung">
           {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+          <div className="app-dashboard-section__bg-text">
+            <h2 className="app-dashboard-section__bg-label">
               TAGES
             </h2>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+            <h2 className="app-dashboard-section__bg-label">
               LOSUNG
             </h2>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 24px 24px 24px' }}>
+          <div className="app-dashboard-section__content">
 {(() => {
               // Wähle nur einen Text aus - wechselnd zwischen AT und NT
               const hasLosung = actualDailyVerse.losungstext;
@@ -1088,27 +938,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               
               return (
                 <div>
-                  <blockquote style={{ 
-                    fontSize: '1.25rem', 
-                    lineHeight: '1.5',
-                    fontStyle: 'italic',
-                    marginBottom: '16px',
-                    color: 'white',
-                    fontWeight: '400',
-                    margin: '0 0 16px 0',
-                    textAlign: 'center',
-                    fontFamily: 'Georgia, serif'
-                  }}>
+                  <blockquote className="app-dashboard-quote">
                     "{text}"
                   </blockquote>
-                  <cite style={{ 
-                    fontSize: '0.9rem',
-                    color: 'rgba(255, 255, 255, 0.85)',
-                    textAlign: 'center',
-                    fontWeight: '500',
-                    display: 'block',
-                    fontStyle: 'normal'
-                  }}>
+                  <cite className="app-dashboard-cite">
                     {reference}
                   </cite>
                 </div>
@@ -1120,45 +953,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Badges Section - Level-artiges Design mit Icons */}
       {(allBadges.available.length > 0 || allBadges.earned.length > 0) && (
-        <div style={{
-          background: 'linear-gradient(135deg, #ff9500 0%, #e63946 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          marginBottom: '16px',
-          boxShadow: '0 8px 32px rgba(255, 149, 0, 0.25)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
+        <div className="app-dashboard-section app-dashboard-section--badges">
           {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+          <div className="app-dashboard-section__bg-text">
+            <h2 className="app-dashboard-section__bg-label">
               DEINE
             </h2>
-            <h2 style={{
-              fontSize: '2.8rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+            <h2 className="app-dashboard-section__bg-label">
               BADGES
             </h2>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 24px 20px' }}>
+          <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
             {/* Badge Stats Row */}
             <div style={{
               display: 'flex',
@@ -1462,49 +1268,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Ranking Section */}
       {dashboardData.ranking && dashboardData.ranking.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(135deg, #28a745 0%, #155724 100%)',
-          borderRadius: '20px',
-          padding: '0',
-          boxShadow: '0 8px 32px rgba(40, 167, 69, 0.25)',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: '180px'
-        }}>
+        <div className="app-dashboard-section app-dashboard-section--ranking">
           {/* Background Text */}
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            left: '10px',
-            zIndex: 1
-          }}>
-            <h2 style={{
-              fontSize: '2.9rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+          <div className="app-dashboard-section__bg-text">
+            <h2 className="app-dashboard-section__bg-label">
               DEIN
             </h2>
-            <h2 style={{
-              fontSize: '2.9rem',
-              fontWeight: '900',
-              color: 'rgba(255, 255, 255, 0.08)',
-              margin: '0',
-              lineHeight: '0.9',
-              letterSpacing: '-2px'
-            }}>
+            <h2 className="app-dashboard-section__bg-label">
               RANKING
             </h2>
           </div>
 
-          <div style={{ position: 'relative', zIndex: 2, padding: '60px 20px 20px 20px' }}>
+          <div className="app-dashboard-section__content app-dashboard-section__content--compact">
             {/* Platzierung Header - wie Punkte-Display */}
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(10px)',
+            <div className="app-dashboard-glass-card" style={{
               borderRadius: '16px',
               padding: '16px',
               marginBottom: '20px'
@@ -1531,23 +1308,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
               
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}>
-                <IonIcon icon={trophy} style={{ 
-                  fontSize: '0.9rem', 
-                  color: 'rgba(255, 255, 255, 0.8)' 
-                }} />
-                <span style={{
-                  fontSize: '0.9rem',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  textAlign: 'center'
-                }}>
-                  Deine Platzierung im Jahrgang
-                </span>
+              <div className="app-dashboard-meta" style={{ justifyContent: 'center', fontSize: '0.9rem' }}>
+                <IonIcon icon={trophy} style={{ fontSize: '0.9rem' }} />
+                <span>Platz {dashboardData.rank_in_jahrgang || 1}</span>
+                <span className="app-dashboard-dot" />
+                <span>{dashboardData.konfi.jahrgang_name}</span>
               </div>
             </div>
 

@@ -1471,6 +1471,172 @@ ion-button.app-modal-submit-btn--chat {
   margin-top: 1px;
 }
 
+/* === Dashboard Sektionen === */
+/* Gemeinsame Sektion-Basis */
+.app-dashboard-section {
+  border-radius: 20px;
+  padding: 0;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  min-height: 160px;
+}
+
+/* Sektion Background-Text (grosse Schrift im Hintergrund) */
+.app-dashboard-section__bg-text {
+  position: absolute;
+  top: -5px;
+  left: 10px;
+  z-index: 1;
+}
+
+.app-dashboard-section__bg-label {
+  font-size: 2.9rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.08);
+  margin: 0;
+  line-height: 0.9;
+  letter-spacing: -2px;
+}
+
+/* Sektion Inhalt */
+.app-dashboard-section__content {
+  position: relative;
+  z-index: 2;
+  padding: 60px 24px 24px 24px;
+}
+
+.app-dashboard-section__content--compact {
+  padding: 60px 20px 20px 20px;
+}
+
+/* Sektion-Farben als Box-Shadow */
+.app-dashboard-section--konfirmation {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  box-shadow: 0 8px 32px rgba(30, 58, 138, 0.25);
+}
+
+.app-dashboard-section--events {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25);
+  min-height: 180px;
+}
+
+.app-dashboard-section--tageslosung {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  box-shadow: 0 8px 32px rgba(6, 182, 212, 0.25);
+}
+
+.app-dashboard-section--badges {
+  background: linear-gradient(135deg, #ff9500 0%, #e63946 100%);
+  box-shadow: 0 8px 32px rgba(255, 149, 0, 0.25);
+}
+
+.app-dashboard-section--ranking {
+  background: linear-gradient(135deg, #28a745 0%, #155724 100%);
+  box-shadow: 0 8px 32px rgba(40, 167, 69, 0.25);
+  min-height: 180px;
+}
+
+/* Dashboard Header Card */
+.app-dashboard-header {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 50%, #4c1d95 100%);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 10px 40px rgba(91, 33, 182, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dekorative Kreise im Header */
+.app-dashboard-header__circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Dashboard Begruessing */
+.app-dashboard-greeting {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  color: white;
+  text-align: center;
+}
+
+.app-dashboard-subtitle {
+  font-size: 1rem;
+  margin: 0 0 20px 0;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+/* Glass-Chip (Level-Badge, Event-Count) */
+.app-dashboard-glass-chip {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  color: white;
+  font-weight: 600;
+}
+
+/* Glass-Card fuer innere Elemente (Ranking-Header, Event-Items) */
+.app-dashboard-glass-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+/* Tageslosung Zitat */
+.app-dashboard-quote {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  font-style: italic;
+  color: white;
+  font-weight: 400;
+  margin: 0 0 16px 0;
+  font-family: Georgia, serif;
+  padding-left: 16px;
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.app-dashboard-cite {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  display: block;
+  font-style: normal;
+  padding-left: 16px;
+}
+
+/* Meta-Info Zeile (Datum, Ort, Zeit) */
+.app-dashboard-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.app-dashboard-meta--light {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Detail-Punkt (dunkle Punkte als Design-Element) */
+.app-dashboard-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  display: inline-block;
+  margin: 0 6px;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {
