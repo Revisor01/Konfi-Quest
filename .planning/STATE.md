@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-02T15:48:22.000Z"
+last_updated: "2026-03-02T16:00:05.000Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 17
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 7 of 7 (Onboarding-Validierung)
-Plan: 2 of 3 complete
-Status: Phase 7 in progress
-Last activity: 2026-03-02 -- Plan 07-03 complete (ForgotPassword/ResetPassword/AdminInvite)
+Plan: 3 of 3 complete
+Status: Phase 7 complete -- v1.1 Milestone complete
+Last activity: 2026-03-02 -- Plan 07-02 complete (Auth-Seiten Ueberarbeitung)
 
-Progress: [#############       ] 67% (v1.1 Phase 7: 2/3 plans)
+Progress: [####################] 100% (v1.1 Phase 7: 3/3 plans)
 
 ## Performance Metrics
 
@@ -47,7 +47,7 @@ Progress: [#############       ] 67% (v1.1 Phase 7: 2/3 plans)
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
 | 6 (v1.1) | 4/4 | 45min | 11.3min |
-| 7 (v1.1) | 2/3 | 7min | 3.5min |
+| 7 (v1.1) | 3/3 | 15min | 5min |
 
 *Updated after each plan completion*
 
@@ -101,6 +101,9 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 07-03]: Auth-CSS-Klassen vorgezogen aus Plan 07-02 (Rule 3 blocking dependency)
 - [Phase 07-03]: Kein-Token-Screen in ResetPasswordPage behaelt Inline-Styles (spezielles Rot-Design)
 - [Phase 07-03]: formatExpiryDate behaelt Abgelaufen-Fallback als Sicherheitsnetz
+- [Phase 07-02]: app-auth-* CSS-Klassen-Prefix fuer alle Auth-Seiten-spezifischen Styles
+- [Phase 07-02]: 300ms Debounce fuer Username-Check mit sofort-Pruefung bei Blur
+- [Phase 07-02]: Netzwerkfehler-Erkennung via !err.response || err.code === ERR_NETWORK
 
 ### Pending Todos
 
@@ -114,5 +117,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 07-03-PLAN.md (ForgotPassword/ResetPassword/AdminInvite)
-Resume file: 07-02-PLAN.md next
+Stopped at: Completed 07-02-PLAN.md (Auth-Seiten Ueberarbeitung) -- v1.1 Milestone complete
+Resume file: None -- all plans complete
