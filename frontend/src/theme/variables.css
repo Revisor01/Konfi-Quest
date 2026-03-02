@@ -996,6 +996,93 @@ ion-button.app-action-button {
 .app-avatar-initials--sm { width: 32px; height: 32px; font-size: 0.9rem; }
 .app-avatar-initials--lg { width: 48px; height: 48px; font-size: 1.3rem; }
 
+/* ============================================
+   MODAL KOMPONENTEN
+   ============================================ */
+
+/* === Modal Section === */
+/* Container fuer eine Formular-Sektion in einem Modal */
+.app-modal-section {
+  margin: 16px;
+}
+
+/* === Modal Section Header === */
+/* Flexbox-Container fuer Section-Header in Modals */
+.app-modal-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+.app-modal-section-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+
+/* === Modal Footer === */
+/* Footer-Bereich fuer Modal-Buttons */
+.app-modal-footer {
+  padding: 16px;
+  background: var(--ion-background-color, #f4f5f8);
+}
+.app-modal-footer ion-button {
+  --border-radius: 12px;
+  font-weight: 600;
+}
+
+/* === Modal Close Button === */
+/* Einheitlicher X-Button Style */
+ion-button.app-modal-close-btn {
+  --background: #f8f9fa;
+  --background-hover: #e9ecef;
+  --color: #6c757d;
+  --border-radius: 8px;
+}
+
+/* === Modal Submit Button === */
+/* Basis-Submit-Button (Farbe wird per Variante gesetzt) */
+ion-button.app-modal-submit-btn {
+  --color: white;
+  --border-radius: 8px;
+}
+/* Farb-Varianten passend zu Domain-Farben */
+ion-button.app-modal-submit-btn--events {
+  --background: #dc2626;
+  --background-hover: #b91c1c;
+}
+ion-button.app-modal-submit-btn--activities {
+  --background: #059669;
+  --background-hover: #047857;
+}
+ion-button.app-modal-submit-btn--badges {
+  --background: #f59e0b;
+  --background-hover: #d97706;
+}
+ion-button.app-modal-submit-btn--konfi {
+  --background: #5b21b6;
+  --background-hover: #4c1d95;
+}
+ion-button.app-modal-submit-btn--settings {
+  --background: #667eea;
+  --background-hover: #5a6fd6;
+}
+ion-button.app-modal-submit-btn--chat {
+  --background: #06b6d4;
+  --background-hover: #0891b2;
+}
+
+/* === Modal Info Text === */
+/* Info-Text innerhalb von Modal-Sektionen */
+.app-modal-info-text {
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {
