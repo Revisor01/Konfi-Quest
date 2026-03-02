@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   IonPage,
   IonContent,
@@ -9,8 +9,7 @@ import {
   IonInput,
   IonButton,
   IonSpinner,
-  IonIcon,
-  IonText
+  IonIcon
 } from '@ionic/react';
 import {
   person,
@@ -25,10 +24,12 @@ import {
   eyeOff,
   checkmarkCircle,
   school,
-  arrowBack
+  arrowBack,
+  refreshOutline
 } from 'ionicons/icons';
 import { useLocation, useHistory } from 'react-router-dom';
 import api from '../../services/api';
+import { useApp } from '../../contexts/AppContext';
 
 interface PasswordCheck {
   minLength: boolean;
@@ -41,12 +42,14 @@ interface PasswordCheck {
 const KonfiRegisterPage: React.FC = () => {
   const location = useLocation();
   const history = useHistory();
+  const { setUser, setSuccess: setAppSuccess } = useApp();
 
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [shakeError, setShakeError] = useState(false);
+  const [isNetworkError, setIsNetworkError] = useState(false);
 
   const [inviteCode, setInviteCode] = useState<string>('');
   const [manualCode, setManualCode] = useState<string>('');
@@ -66,6 +69,10 @@ const KonfiRegisterPage: React.FC = () => {
     password_confirm: ''
   });
 
+  // Username-Verfuegbarkeitspruefung
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
+  const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Passwort-Checks
   const [passwordChecks, setPasswordChecks] = useState<PasswordCheck>({
     minLength: false,
@@ -78,6 +85,42 @@ const KonfiRegisterPage: React.FC = () => {
   const triggerShake = () => {
     setShakeError(true);
     setTimeout(() => setShakeError(false), 600);
+  };
+
+  const checkUsername = async (name: string) => {
+    if (name.length < 3) { setUsernameStatus('idle'); return; }
+    setUsernameStatus('checking');
+    try {
+      const res = await api.get(`/auth/check-username/${encodeURIComponent(name.toLowerCase().trim())}`);
+      setUsernameStatus(res.data.available ? 'available' : 'taken');
+    } catch {
+      setUsernameStatus('idle');
+    }
+  };
+
+  const handleUsernameInput = (value: string) => {
+    setFormData(prev => ({ ...prev, username: value }));
+    // Timer clearen und neuen setzen (300ms Debounce)
+    if (usernameCheckTimer.current) {
+      clearTimeout(usernameCheckTimer.current);
+    }
+    if (value.length >= 3) {
+      usernameCheckTimer.current = setTimeout(() => {
+        checkUsername(value);
+      }, 300);
+    } else {
+      setUsernameStatus('idle');
+    }
+  };
+
+  const handleUsernameBlur = () => {
+    // Sofort pruefen falls noch nicht geprueft
+    if (formData.username.length >= 3 && usernameStatus === 'idle') {
+      if (usernameCheckTimer.current) {
+        clearTimeout(usernameCheckTimer.current);
+      }
+      checkUsername(formData.username);
+    }
   };
 
   useEffect(() => {
@@ -94,7 +137,7 @@ const KonfiRegisterPage: React.FC = () => {
     }
   }, [location]);
 
-  // Passwort-Check bei jeder Änderung
+  // Passwort-Check bei jeder Aenderung
   useEffect(() => {
     const pw = formData.password;
     setPasswordChecks({
@@ -110,6 +153,7 @@ const KonfiRegisterPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setIsNetworkError(false);
       const response = await api.get(`/auth/validate-invite/${code}`);
       setInviteInfo({
         jahrgang_name: response.data.jahrgang_name,
@@ -117,7 +161,21 @@ const KonfiRegisterPage: React.FC = () => {
       });
       setInviteCode(code);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Ungültiger Einladungscode');
+      // Netzwerkfehler erkennen
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        setIsNetworkError(true);
+        setError('Verbindung fehlgeschlagen. Bitte pr\u00fcfe deine Internetverbindung.');
+      } else {
+        // Differenzierte Fehlermeldungen
+        const errorCode = err.response?.data?.error_code;
+        if (errorCode === 'not_found') {
+          setError('Dieser Einladungscode existiert nicht. Bitte pr\u00fcfe deine Eingabe.');
+        } else if (errorCode === 'expired') {
+          setError('Dieser Einladungscode ist abgelaufen. Bitte frage deinen Konfi-Leiter nach einem neuen Code.');
+        } else {
+          setError(err.response?.data?.error || 'Fehler bei der Code-Validierung');
+        }
+      }
       setInviteInfo(null);
     } finally {
       setLoading(false);
@@ -134,6 +192,7 @@ const KonfiRegisterPage: React.FC = () => {
 
   const handleSubmit = async () => {
     setError(null);
+    setIsNetworkError(false);
 
     // Validation
     if (!formData.display_name.trim()) {
@@ -147,12 +206,12 @@ const KonfiRegisterPage: React.FC = () => {
       return;
     }
     if (!isPasswordValid) {
-      setError('Passwort erfüllt nicht alle Anforderungen');
+      setError('Passwort erf\u00fcllt nicht alle Anforderungen');
       triggerShake();
       return;
     }
     if (formData.password !== formData.password_confirm) {
-      setError('Passwörter stimmen nicht überein');
+      setError('Passw\u00f6rter stimmen nicht \u00fcberein');
       triggerShake();
       return;
     }
@@ -161,7 +220,7 @@ const KonfiRegisterPage: React.FC = () => {
       setRegistering(true);
       setError(null);
 
-      await api.post('/auth/register-konfi', {
+      const response = await api.post('/auth/register-konfi', {
         invite_code: inviteCode,
         display_name: formData.display_name.trim(),
         username: formData.username.toLowerCase().trim(),
@@ -171,13 +230,27 @@ const KonfiRegisterPage: React.FC = () => {
 
       setSuccess(true);
 
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        history.push('/login');
-      }, 3000);
+      // Auto-Login nach Registrierung
+      const { token, user } = response.data;
+      if (token && user) {
+        localStorage.setItem('konfi_token', token);
+        localStorage.setItem('konfi_user', JSON.stringify(user));
+        setUser(user);
+        setAppSuccess('Willkommen bei Konfi Quest!');
+        // Kurz warten fuer visuelles Feedback, dann zum Dashboard
+        setTimeout(() => {
+          history.replace('/konfi/dashboard');
+        }, 1500);
+      }
 
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Fehler bei der Registrierung');
+      // Netzwerkfehler erkennen
+      if (!err.response || err.code === 'ERR_NETWORK') {
+        setIsNetworkError(true);
+        setError('Verbindung fehlgeschlagen. Bitte pr\u00fcfe deine Internetverbindung.');
+      } else {
+        setError(err.response?.data?.error || 'Fehler bei der Registrierung');
+      }
       triggerShake();
     } finally {
       setRegistering(false);
@@ -188,30 +261,10 @@ const KonfiRegisterPage: React.FC = () => {
   if (success) {
     return (
       <IonPage>
-        <IonContent style={{
-          '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #34c759 0%, #30d158 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '24px',
-              boxShadow: '0 8px 24px rgba(52, 199, 89, 0.4)'
-            }}>
-              <IonIcon icon={checkmarkCircle} style={{ fontSize: '3.5rem', color: 'white' }} />
+        <IonContent className="app-auth-background">
+          <div className="app-auth-container" style={{ textAlign: 'center' }}>
+            <div className="app-auth-success-circle">
+              <IonIcon icon={checkmarkCircle} className="app-auth-success-circle__icon" />
             </div>
             <h1 style={{
               margin: '0 0 12px 0',
@@ -227,7 +280,7 @@ const KonfiRegisterPage: React.FC = () => {
               color: 'rgba(255,255,255,0.9)',
               fontSize: '1.1rem'
             }}>
-              Du wirst gleich zur Anmeldung weitergeleitet...
+              Du wirst zum Dashboard weitergeleitet...
             </p>
             <IonSpinner name="dots" style={{ '--color': 'white' }} />
           </div>
@@ -238,144 +291,93 @@ const KonfiRegisterPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent style={{
-        '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          padding: '20px'
-        }}>
+      <IonContent className="app-auth-background">
+        <div className="app-auth-container">
 
           {/* Hero Section */}
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '30px',
-            marginTop: '40px',
-            color: 'white'
-          }}>
-            <div style={{
-              fontSize: '3.5rem',
-              marginBottom: '12px',
-              display: 'flex',
-              gap: '8px',
-              justifyContent: 'center'
-            }}>
+          <div className="app-auth-hero" style={{ marginTop: '40px' }}>
+            <div className="app-auth-hero__icons app-auth-hero__icons--small">
               <IonIcon icon={trophy} style={{ color: '#FFD700' }} />
               <IonIcon icon={star} style={{ color: '#FF6B6B' }} />
               <IonIcon icon={sparkles} style={{ color: '#4ECDC4' }} />
             </div>
 
-            <h1 style={{
-              fontSize: '3rem',
-              fontFamily: "'Bebas Neue', sans-serif",
-              fontWeight: '400',
-              margin: '0 0 8px 0',
-              textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-              letterSpacing: '2px'
-            }}>
+            <h1 className="app-auth-hero__title app-auth-hero__title--small">
               KONFI QUEST
             </h1>
 
-            <p style={{
-              fontSize: '1rem',
-              opacity: 0.9,
-              margin: '0',
-              textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-            }}>
+            <p className="app-auth-hero__subtitle app-auth-hero__subtitle--small">
               Erstelle deinen Account
             </p>
           </div>
 
           {/* Main Card */}
-          <IonCard style={{
-            width: '100%',
-            maxWidth: '420px',
-            borderRadius: '20px',
-            boxShadow: error ? '0 20px 40px rgba(220,53,69,0.2)' : '0 20px 40px rgba(0,0,0,0.1)',
-            overflow: 'hidden',
-            animation: shakeError ? 'shake 0.6s ease-in-out' : 'none',
-            border: error ? '2px solid rgba(220,53,69,0.3)' : 'none',
-            transition: 'box-shadow 0.3s ease, border 0.3s ease'
-          }}>
-            <IonCardContent style={{ padding: '24px' }}>
+          <IonCard className={`app-auth-card ${error ? 'app-auth-card--error' : ''} ${shakeError ? 'app-auth-card--shaking' : ''}`}
+            style={{ transition: 'box-shadow 0.3s ease, border 0.3s ease' }}
+          >
+            <IonCardContent className="app-auth-card__content--compact">
 
               {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
                   <IonSpinner name="crescent" />
                 </div>
               ) : !inviteInfo ? (
-                /* Code Eingabe wenn kein gültiger Code */
+                /* Code Eingabe wenn kein gueltiger Code */
                 <>
-                  <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '1.3rem', fontWeight: '600', margin: '0', color: '#2c3e50' }}>
-                      Einladungscode eingeben
-                    </h2>
-                    <p style={{ color: '#7f8c8d', margin: '8px 0 0 0', fontSize: '0.85rem' }}>
-                      Du hast einen Code von deiner Gemeinde erhalten
-                    </p>
+                  <div className="app-auth-card__heading" style={{ marginBottom: '24px' }}>
+                    <h2 style={{ fontSize: '1.3rem' }}>Einladungscode eingeben</h2>
+                    <p style={{ fontSize: '0.85rem' }}>Du hast einen Code von deiner Gemeinde erhalten</p>
                   </div>
 
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '16px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input">
                     <IonIcon icon={key} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       Einladungscode
                     </IonLabel>
                     <IonInput
                       value={manualCode}
                       onIonInput={(e) => setManualCode(e.detail.value!.toUpperCase())}
                       placeholder="z.B. ABC12345"
-                      style={{ '--color': '#2c3e50', textTransform: 'uppercase', letterSpacing: '2px' }}
+                      className="app-auth-input__value"
+                      style={{ textTransform: 'uppercase', letterSpacing: '2px' }}
                     />
                   </IonItem>
 
                   {error && (
-                    <div style={{
-                      marginBottom: '16px',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
-                      border: '1px solid #f87171',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <IonIcon icon={alertCircle} style={{ fontSize: '1.2rem', color: '#dc2626' }} />
-                      <span style={{ fontSize: '0.85rem', color: '#991b1b' }}>{error}</span>
+                    <div className="app-auth-error">
+                      <IonIcon icon={alertCircle} className="app-auth-error__icon" />
+                      <span className="app-auth-error__text">{error}</span>
                     </div>
+                  )}
+
+                  {isNetworkError && (
+                    <IonButton
+                      expand="full"
+                      className="app-auth-retry-button"
+                      onClick={() => validateCode(manualCode.trim() || inviteCode)}
+                    >
+                      <IonIcon icon={refreshOutline} slot="start" />
+                      Erneut versuchen
+                    </IonButton>
                   )}
 
                   <IonButton
                     expand="full"
                     onClick={handleManualCodeSubmit}
                     disabled={manualCode.trim().length < 6}
-                    style={{
-                      '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '--color': 'white',
-                      '--border-radius': '12px',
-                      height: '48px',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      margin: '0 0 16px 0'
-                    }}
+                    className="app-auth-button"
+                    style={{ marginBottom: '16px' }}
                   >
-                    Code prüfen
+                    Code pr\u00fcfen
                   </IonButton>
 
-                  <div style={{ textAlign: 'center' }}>
+                  <div className="app-auth-footer">
                     <span
                       onClick={() => history.push('/login')}
-                      style={{ color: '#667eea', cursor: 'pointer', fontSize: '0.9rem' }}
+                      className="app-auth-link"
                     >
                       <IonIcon icon={arrowBack} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                      Zurück zur Anmeldung
+                      Zur\u00fcck zur Anmeldung
                     </span>
                   </div>
                 </>
@@ -383,31 +385,20 @@ const KonfiRegisterPage: React.FC = () => {
                 /* Registrierungsformular */
                 <>
                   {/* Einladungs-Info */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    marginBottom: '20px',
-                    color: 'white',
-                    textAlign: 'center'
-                  }}>
-                    <IonIcon icon={school} style={{ fontSize: '2rem', marginBottom: '8px' }} />
-                    <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
+                  <div className="app-auth-invite-info">
+                    <IonIcon icon={school} className="app-auth-invite-info__icon" />
+                    <div className="app-auth-invite-info__title">
                       {inviteInfo.jahrgang_name}
                     </div>
-                    <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                    <div className="app-auth-invite-info__subtitle">
                       {inviteInfo.organization_name}
                     </div>
                   </div>
 
                   {/* Name */}
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '12px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input app-auth-input--compact">
                     <IonIcon icon={person} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       Dein Name *
                     </IonLabel>
                     <IonInput
@@ -415,38 +406,51 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, display_name: e.detail.value! })}
                       placeholder="Vor- und Nachname"
                       disabled={registering}
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                   </IonItem>
 
                   {/* Benutzername */}
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '12px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input app-auth-input--compact">
                     <IonIcon icon={person} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       Benutzername *
                     </IonLabel>
                     <IonInput
                       value={formData.username}
-                      onIonInput={(e) => setFormData({ ...formData, username: e.detail.value! })}
+                      onIonInput={(e) => handleUsernameInput(e.detail.value!)}
+                      onIonBlur={handleUsernameBlur}
                       placeholder="z.B. max123"
                       disabled={registering}
                       autocapitalize="off"
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                   </IonItem>
 
+                  {/* Username-Verfuegbarkeits-Status */}
+                  {usernameStatus === 'checking' && (
+                    <div className="app-auth-username-status app-auth-username-status--checking">
+                      <IonSpinner name="dots" style={{ width: '16px', height: '16px' }} />
+                      <span>Wird gepr\u00fcft...</span>
+                    </div>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <div className="app-auth-username-status app-auth-username-status--available">
+                      <IonIcon icon={checkmarkCircle} />
+                      <span>Benutzername verf\u00fcgbar</span>
+                    </div>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <div className="app-auth-username-status app-auth-username-status--taken">
+                      <IonIcon icon={alertCircle} />
+                      <span>Benutzername bereits vergeben</span>
+                    </div>
+                  )}
+
                   {/* E-Mail (optional) */}
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '12px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input app-auth-input--compact">
                     <IonIcon icon={mail} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       E-Mail (optional)
                     </IonLabel>
                     <IonInput
@@ -455,18 +459,14 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, email: e.detail.value! })}
                       placeholder="deine@email.de"
                       disabled={registering}
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                   </IonItem>
 
                   {/* Passwort */}
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '8px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input app-auth-input--compact" style={{ marginBottom: '8px' }}>
                     <IonIcon icon={key} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       Passwort *
                     </IonLabel>
                     <IonInput
@@ -475,28 +475,22 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
                       placeholder="Sicheres Passwort"
                       disabled={registering}
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                     <IonIcon
                       icon={showPassword ? eyeOff : eye}
                       slot="end"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{ cursor: 'pointer', fontSize: '1.2rem', color: '#667eea', marginTop: '20px' }}
+                      className="app-auth-input__toggle"
                     />
                   </IonItem>
 
-                  {/* Passwort-Anforderungen - ausblenden wenn alle erfüllt */}
+                  {/* Passwort-Anforderungen - ausblenden wenn alle erfuellt */}
                   {!isPasswordValid && formData.password.length > 0 && (
-                    <div style={{
-                      background: '#f8f9fa',
-                      borderRadius: '10px',
-                      padding: '12px',
-                      marginBottom: '12px',
-                      fontSize: '0.8rem'
-                    }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <div className="app-auth-password-checks">
+                      <div className="app-auth-password-checks__grid">
                         <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
-                        <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
+                        <PasswordCheckItem label="Gro\u00dfbuchstabe" checked={passwordChecks.hasUppercase} />
                         <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
                         <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
                         <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
@@ -504,15 +498,11 @@ const KonfiRegisterPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Passwort bestätigen */}
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '16px'
-                  }}>
+                  {/* Passwort bestaetigen */}
+                  <IonItem lines="none" className="app-auth-input" style={{ marginBottom: '16px' }}>
                     <IonIcon icon={key} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
-                      Passwort bestätigen *
+                    <IonLabel position="stacked" className="app-auth-input__label">
+                      Passwort best\u00e4tigen *
                     </IonLabel>
                     <IonInput
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -520,70 +510,54 @@ const KonfiRegisterPage: React.FC = () => {
                       onIonInput={(e) => setFormData({ ...formData, password_confirm: e.detail.value! })}
                       placeholder="Passwort wiederholen"
                       disabled={registering}
-                      style={{ '--color': '#2c3e50' }}
+                      className="app-auth-input__value"
                     />
                     <IonIcon
                       icon={showConfirmPassword ? eyeOff : eye}
                       slot="end"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      style={{ cursor: 'pointer', fontSize: '1.2rem', color: '#667eea', marginTop: '20px' }}
+                      className="app-auth-input__toggle"
                     />
                   </IonItem>
 
-                  {/* Passwörter stimmen nicht überein */}
+                  {/* Passwoerter stimmen nicht ueberein */}
                   {formData.password && formData.password_confirm && formData.password !== formData.password_confirm && (
-                    <div style={{
-                      marginBottom: '12px',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      background: '#fee2e2',
-                      border: '1px solid #f87171',
-                      fontSize: '0.85rem',
-                      color: '#991b1b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
+                    <div className="app-auth-password-match-error">
                       <IonIcon icon={alertCircle} />
-                      Passwörter stimmen nicht überein
+                      Passw\u00f6rter stimmen nicht \u00fcberein
                     </div>
                   )}
 
                   {/* Fehler */}
                   {error && (
-                    <div style={{
-                      marginBottom: '16px',
-                      padding: '12px 14px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
-                      border: '1px solid #f87171',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <IonIcon icon={alertCircle} style={{ fontSize: '1.2rem', color: '#dc2626', flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.85rem', color: '#991b1b', flex: 1 }}>{error}</span>
+                    <div className="app-auth-error">
+                      <IonIcon icon={alertCircle} className="app-auth-error__icon" />
+                      <span className="app-auth-error__text">{error}</span>
                       <IonIcon
                         icon={closeCircle}
-                        onClick={() => setError(null)}
-                        style={{ fontSize: '1.1rem', color: '#b91c1c', cursor: 'pointer' }}
+                        onClick={() => { setError(null); setIsNetworkError(false); }}
+                        className="app-auth-error__close"
                       />
                     </div>
+                  )}
+
+                  {isNetworkError && (
+                    <IonButton
+                      expand="full"
+                      className="app-auth-retry-button"
+                      onClick={handleSubmit}
+                    >
+                      <IonIcon icon={refreshOutline} slot="start" />
+                      Erneut versuchen
+                    </IonButton>
                   )}
 
                   <IonButton
                     expand="full"
                     onClick={handleSubmit}
-                    disabled={registering || !isPasswordValid}
-                    style={{
-                      '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '--color': 'white',
-                      '--border-radius': '12px',
-                      height: '48px',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      margin: '0 0 16px 0'
-                    }}
+                    disabled={registering || !isPasswordValid || usernameStatus === 'taken'}
+                    className="app-auth-button"
+                    style={{ marginBottom: '16px' }}
                   >
                     {registering ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
@@ -595,12 +569,12 @@ const KonfiRegisterPage: React.FC = () => {
                     )}
                   </IonButton>
 
-                  <div style={{ textAlign: 'center' }}>
+                  <div className="app-auth-footer">
                     <span style={{ color: '#7f8c8d', fontSize: '0.9rem' }}>
                       Schon einen Account?{' '}
                       <span
                         onClick={() => history.push('/login')}
-                        style={{ color: '#667eea', cursor: 'pointer', fontWeight: '500' }}
+                        className="app-auth-link app-auth-link--strong"
                       >
                         Anmelden
                       </span>
@@ -611,15 +585,6 @@ const KonfiRegisterPage: React.FC = () => {
             </IonCardContent>
           </IonCard>
         </div>
-
-        {/* CSS Animation für Shake */}
-        <style>{`
-          @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-          }
-        `}</style>
       </IonContent>
     </IonPage>
   );
