@@ -48,8 +48,8 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 ### Onboarding
 
-- [ ] **ONB-01**: Ein Admin kann einen Einladungs-QR-Code generieren, ein neuer Konfi kann diesen scannen und die Registrierung erfolgreich abschliessen
-- [ ] **ONB-02**: Fehlerfaelle im Onboarding-Flow (abgelaufener Code, bereits verwendeter Code, fehlende Felder) werden mit verstaendlichen deutschsprachigen Meldungen behandelt
+- [x] **ONB-01**: Ein Admin kann einen Einladungs-QR-Code generieren, ein neuer Konfi kann diesen scannen und die Registrierung erfolgreich abschliessen
+- [x] **ONB-02**: Fehlerfaelle im Onboarding-Flow (abgelaufener Code, bereits verwendeter Code, fehlende Felder) werden mit verstaendlichen deutschsprachigen Meldungen behandelt
 
 ## Future Requirements
 
@@ -100,8 +100,8 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | MOD-02 | Phase 6 | Complete |
 | MOD-03 | Phase 6 | Complete |
 | MOD-04 | Phase 6 | Complete |
-| ONB-01 | Phase 7 | Pending |
-| ONB-02 | Phase 7 | Pending |
+| ONB-01 | Phase 7 | Complete |
+| ONB-02 | Phase 7 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 22 total

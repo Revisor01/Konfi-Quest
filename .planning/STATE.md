@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
-status: unknown
-last_updated: "2026-03-02T14:48:17.780Z"
+status: in-progress
+last_updated: "2026-03-02T15:48:22.000Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 17
+  completed_plans: 15
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Konsistente, sichere App fuer den produktiven Einsatz mit einheitlichem Design ueber alle Rollen
-**Current focus:** v1.1 Design-Konsistenz -- Phase 6 in progress
+**Current focus:** v1.1 Design-Konsistenz -- Phase 7 in progress
 
 ## Current Position
 
-Phase: 6 of 7 (Modal-Konsistenz)
-Plan: 4 of 4 complete
-Status: Phase 6 complete
-Last activity: 2026-03-02 -- Plan 06-04 complete (iOS Card-Modal + Unsaved-Changes-Schutz)
+Phase: 7 of 7 (Onboarding-Validierung)
+Plan: 1 of 3 complete
+Status: Phase 7 in progress
+Last activity: 2026-03-02 -- Plan 07-01 complete (Backend Auth Ueberarbeitung)
 
-Progress: [####################] 100% (v1.1 Phase 6: 4/4 plans)
+Progress: [######              ] 33% (v1.1 Phase 7: 1/3 plans)
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [####################] 100% (v1.1 Phase 6: 4/4 plans)
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
 | 6 (v1.1) | 4/4 | 45min | 11.3min |
+| 7 (v1.1) | 1/3 | 3min | 3min |
 
 *Updated after each plan completion*
 
@@ -94,6 +95,9 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 06-04]: Gottesdienst immer Blau (#3b82f6), Gemeinde immer Gruen (#059669) auch in fachfremden Modals
 - [Phase 06-04]: UsersView SectionHeader auf preset users (Blau) statt custom Lila
 - [Phase 06-04]: AdminCategoriesPage Domain-Farbe auf activities (Gruen) statt badges (Orange)
+- [Phase 07-01]: SMTP_SECURE Default auf true (statt false) damit Port 465 ohne Env-Variable funktioniert
+- [Phase 07-01]: JWT 90d fuer Login UND Registrierung (Konfis bleiben ein Konfi-Jahr eingeloggt)
+- [Phase 07-01]: transporter Parameter in auth.js Signatur beibehalten (kein Breaking Change)
 
 ### Pending Todos
 
@@ -107,5 +111,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 06-04-PLAN.md (iOS Card-Modal + Unsaved-Changes-Schutz) -- Phase 6 complete
-Resume file: Phase 7 next
+Stopped at: Completed 07-01-PLAN.md (Backend Auth Ueberarbeitung)
+Resume file: 07-02-PLAN.md next
