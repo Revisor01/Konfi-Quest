@@ -628,18 +628,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const { content, message_type = 'text', reply_to } = req.body;
       const userId = req.user.id;
       const userType = req.user.type;
-      
-        roomId,
-        userId,
-        userType,
-        hasContent: !!content,
-        hasFile: !!req.file,
-        fileName: req.file?.originalname,
-        fileSize: req.file?.size,
-        contentType: req.get('Content-Type'),
-        body: Object.keys(req.body)
-      });
-      
+
       if (!content && !req.file) {
         return res.status(400).json({ error: 'Inhalt oder Datei erforderlich' });
       }
