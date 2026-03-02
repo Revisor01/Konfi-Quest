@@ -114,4 +114,4 @@ Phases 8-11 sind unabhaengig voneinander und koennen in beliebiger Reihenfolge a
 | 8. Super-Admin UI | 1/1 | Complete   | 2026-03-02 | - |
 | 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 10. Tech Debt Cleanup | 2/2 | Complete    | 2026-03-02 | - |
-| 11. Dokumentation | 1/1 | Complete   | 2026-03-02 | - |
+| 11. Dokumentation | 1/1 | Complete    | 2026-03-02 | - |
