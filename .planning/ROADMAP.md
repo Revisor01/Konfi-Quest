@@ -64,11 +64,11 @@ Plans:
   2. Dashboard-Header (ActivityRings, Level, Greeting) nutzt konsistente Spacing, Typografie und Farben gemaess Design-System
   3. Alle 6 Dashboard-Sektionen (Konfirmation, Events, Badges, Tageslosung, Ranking) bestehen Design-Konsistenz-Check
   4. Keine visuellen Regressionen in bestehenden Dashboard-Elementen
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 09-01: ActivityRings 3. Runde Bug-Fix
-- [ ] 09-02: Dashboard-Sektionen Design-Review und Korrekturen
+- [ ] 09-01-PLAN.md -- ActivityRings 3. Runde Bug-Fix (Strichstaerke, Farbe, Maximum 300%)
+- [ ] 09-02-PLAN.md -- Dashboard-Sektionen Design-Review (CSS-Klassen, Begruessing, Tageslosung-Zitat)
 
 ### Phase 10: Tech Debt Cleanup
 **Goal**: Bekannte Code-Qualitaetsprobleme sind behoben und der Produktionscode ist sauber
