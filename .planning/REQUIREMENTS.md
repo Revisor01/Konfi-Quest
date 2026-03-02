@@ -24,10 +24,10 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 - [x] **ADM-06**: CategoriesPage zeigt Kategorien in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
 - [x] **ADM-07**: UsersPage zeigt Benutzer in einheitlichen Listen mit SectionHeader und korrekten Abstaenden
 - [x] **ADM-08**: OrganizationsPage zeigt Organisationen in einheitlichen Listen mit SectionHeader
-- [ ] **ADM-09**: LevelsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
-- [ ] **ADM-10**: GoalsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
-- [ ] **ADM-11**: InvitesPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
-- [ ] **ADM-12**: SettingsPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
+- [x] **ADM-09**: LevelsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
+- [x] **ADM-10**: GoalsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
+- [x] **ADM-11**: InvitesPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
+- [x] **ADM-12**: SettingsPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
 
 ### Detail-Views Bereinigung
 
@@ -88,10 +88,10 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ADM-06 | Phase 4 | Complete |
 | ADM-07 | Phase 5 | Complete |
 | ADM-08 | Phase 5 | Complete |
-| ADM-09 | Phase 5 | Pending |
-| ADM-10 | Phase 5 | Pending |
-| ADM-11 | Phase 5 | Pending |
-| ADM-12 | Phase 5 | Pending |
+| ADM-09 | Phase 5 | Complete |
+| ADM-10 | Phase 5 | Complete |
+| ADM-11 | Phase 5 | Complete |
+| ADM-12 | Phase 5 | Complete |
 | DET-01 | Phase 5 | Pending |
 | DET-02 | Phase 5 | Pending |
 | DET-03 | Phase 5 | Pending |

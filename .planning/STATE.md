@@ -8,7 +8,7 @@ progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 5 of 7 (Admin-Views Erweitert)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: Phase 5 in progress
-Last activity: 2026-03-02 -- Plan 05-01 complete (CSS Icon-Farb-Klassen und Views Bereinigung)
+Last activity: 2026-03-02 -- Plan 05-02 complete (GoalsPage, InvitePage, SettingsPage, LevelsPage Inline-Styles)
 
-Progress: [#############.......] 67% (v1.1 Phase 5: 1/3 plans)
+Progress: [###############.....] 75% (v1.1 Phase 5: 2/3 plans)
 
 ## Performance Metrics
 
@@ -45,7 +45,7 @@ Progress: [#############.......] 67% (v1.1 Phase 5: 1/3 plans)
 
 | 3 (v1.1) | 3 | 14min | 4.7min |
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
-| 5 (v1.1) | 1/3 | 5min | 5min |
+| 5 (v1.1) | 2/3 | 14min | 7min |
 
 *Updated after each plan completion*
 
@@ -75,6 +75,9 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 05-01]: app-icon-color--* Klassen setzen nur color (nicht background) fuer flexible IonIcon-Nutzung
 - [Phase 05-01]: app-item-transparent und app-swipe-actions als wiederverwendbare Utility-Klassen fuer IonItemSliding-Views
 - [Phase 05-01]: Dynamische Farben (roleColor, is_active) bleiben inline, nur statische Werte zu CSS-Klassen
+- [Phase 05-02]: app-condense-toolbar als wiederverwendbare Klasse fuer transparente Large-Title Toolbars (19 Vorkommen)
+- [Phase 05-02]: app-list-item Basisklasse um position:relative und width:100% erweitert fuer Corner-Badge-Kompatibilitaet
+- [Phase 05-02]: SettingsPage Profil-Block mit app-avatar-initials statt app-detail-header (zu gross)
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 05-01-PLAN.md (CSS Icon-Farb-Klassen und Views Bereinigung)
-Resume file: 05-02-PLAN.md next
+Stopped at: Completed 05-02-PLAN.md (GoalsPage, InvitePage, SettingsPage, LevelsPage Bereinigung)
+Resume file: 05-03-PLAN.md next
