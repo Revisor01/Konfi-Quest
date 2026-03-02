@@ -22,8 +22,8 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 - [ ] **ADM-04**: BadgesPage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
 - [ ] **ADM-05**: JahrgaengePage folgt dem kompakten Header-Pattern mit Stats-Row und einheitlichen Listen-Items
 - [x] **ADM-06**: CategoriesPage zeigt Kategorien in einheitlichen Listen mit korrekten Abstaenden und Farbcodierung
-- [ ] **ADM-07**: UsersPage zeigt Benutzer in einheitlichen Listen mit SectionHeader und korrekten Abstaenden
-- [ ] **ADM-08**: OrganizationsPage zeigt Organisationen in einheitlichen Listen mit SectionHeader
+- [x] **ADM-07**: UsersPage zeigt Benutzer in einheitlichen Listen mit SectionHeader und korrekten Abstaenden
+- [x] **ADM-08**: OrganizationsPage zeigt Organisationen in einheitlichen Listen mit SectionHeader
 - [ ] **ADM-09**: LevelsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
 - [ ] **ADM-10**: GoalsPage nutzt kompaktes Header-Pattern und Farblogiken wie alle anderen Admin-Views
 - [ ] **ADM-11**: InvitesPage ist visuell konsistent mit dem Rest der Admin-Oberflaeche
@@ -37,7 +37,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 ### Icon-Konsistenz
 
-- [ ] **ICO-01**: Icon-Farb-Mapping ist als CSS-Klassen (app-icon-color--*) in variables.css definiert und wird in allen Views konsistent genutzt (gleiches Konzept = gleiches Icon solid = gleiche Farbe)
+- [x] **ICO-01**: Icon-Farb-Mapping ist als CSS-Klassen (app-icon-color--*) in variables.css definiert und wird in allen Views konsistent genutzt (gleiches Konzept = gleiches Icon solid = gleiche Farbe)
 
 ### Modal-Konsistenz
 
@@ -86,8 +86,8 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ADM-04 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-05 | Phase 3 (SectionHeader/ListSection) + Phase 4 (CSS-Bereinigung) | Partial (SectionHeader done in Phase 3) |
 | ADM-06 | Phase 4 | Complete |
-| ADM-07 | Phase 5 | Pending |
-| ADM-08 | Phase 5 | Pending |
+| ADM-07 | Phase 5 | Complete |
+| ADM-08 | Phase 5 | Complete |
 | ADM-09 | Phase 5 | Pending |
 | ADM-10 | Phase 5 | Pending |
 | ADM-11 | Phase 5 | Pending |
@@ -95,7 +95,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | DET-01 | Phase 5 | Pending |
 | DET-02 | Phase 5 | Pending |
 | DET-03 | Phase 5 | Pending |
-| ICO-01 | Phase 5 | Pending |
+| ICO-01 | Phase 5 | Complete |
 | MOD-01 | Phase 6 | Pending |
 | MOD-02 | Phase 6 | Pending |
 | MOD-03 | Phase 6 | Pending |
