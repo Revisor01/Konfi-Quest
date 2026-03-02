@@ -60,7 +60,8 @@ import {
   informationCircle,
   helpCircle,
   alertCircle,
-  hammer
+  hammer,
+  chevronForward
 } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 
@@ -575,6 +576,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const secretEarned = useMemo(() => allBadges.earned.filter((b: Badge) => b.is_hidden), [allBadges.earned]);
   const secretNotEarnedCount = badgeStats.secretAvailable - badgeStats.secretEarned;
 
+  const recentSecretCount = useMemo(() =>
+    secretEarned.filter((b: Badge) => recentBadgeIds.has(b.id)).length,
+    [secretEarned, recentBadgeIds]
+  );
+  const recentVisibleCount = useMemo(() =>
+    (dashboardData.recent_badges || []).length - recentSecretCount,
+    [dashboardData.recent_badges, recentSecretCount]
+  );
+
   return (
     <div style={{ padding: '16px' }}>
       
@@ -965,67 +975,28 @@ const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
-            {/* Badge Stats Row */}
+            {/* Badge Stats Chips */}
             <div style={{
               display: 'flex',
               justifyContent: 'center',
-              gap: '12px',
+              gap: '10px',
               marginBottom: '20px',
               flexWrap: 'wrap'
             }}>
-              {/* Sichtbare Badges */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '12px',
-                padding: '8px 14px',
-                textAlign: 'center'
+              <div className="app-dashboard-glass-chip" style={{
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: '0.9rem'
               }}>
-                <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>
-                  {badgeStats.totalEarned}/{badgeStats.totalAvailable}
-                </div>
-                <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600' }}>
-                  SICHTBAR
-                </div>
+                <span style={{ fontWeight: '800' }}>{badgeStats.totalEarned}/{badgeStats.totalAvailable}</span>
+                <span style={{ opacity: 0.8, marginLeft: '4px' }}>sichtbar</span>
+                {recentVisibleCount > 0 && (
+                  <>
+                    <span className="app-dashboard-dot" />
+                    <span style={{ fontWeight: '800' }}>{recentVisibleCount} {recentVisibleCount === 1 ? 'neuer' : 'neue'}</span>
+                  </>
+                )}
               </div>
-
-              {/* Geheime Badges */}
-              {badgeStats.secretAvailable > 0 && (
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.4)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: '12px',
-                  padding: '8px 14px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(139, 92, 246, 0.5)'
-                }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>
-                    {badgeStats.secretEarned}/{badgeStats.secretAvailable}
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600' }}>
-                    GEHEIM
-                  </div>
-                </div>
-              )}
-
-              {/* Neue Badges Indikator */}
-              {dashboardData.recent_badges && dashboardData.recent_badges.length > 0 && (
-                <div style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  borderRadius: '12px',
-                  padding: '8px 14px',
-                  textAlign: 'center',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                  animation: 'newBadgePulse 2s ease-in-out infinite'
-                }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>
-                    +{dashboardData.recent_badges.length}
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.9)', fontWeight: '600' }}>
-                    NEU
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Badge Icons Grid - wie Level Icons */}
@@ -1119,16 +1090,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     <>
                       <div style={{
                         display: 'flex',
-                        alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
                         marginBottom: '12px'
                       }}>
-                        <div style={{ height: '1px', flex: 1, maxWidth: '60px', background: 'rgba(255, 255, 255, 0.3)' }} />
-                        <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '600' }}>
-                          GEHEIM
-                        </span>
-                        <div style={{ height: '1px', flex: 1, maxWidth: '60px', background: 'rgba(255, 255, 255, 0.3)' }} />
+                        <div className="app-dashboard-glass-chip" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center' }}>
+                          <span style={{ fontWeight: '800' }}>{badgeStats.secretEarned}/{badgeStats.secretAvailable}</span>
+                          <span style={{ opacity: 0.8, marginLeft: '4px' }}>geheim</span>
+                          {recentSecretCount > 0 && (
+                            <>
+                              <span className="app-dashboard-dot" />
+                              <span style={{ fontWeight: '800' }}>{recentSecretCount} {recentSecretCount === 1 ? 'neuer' : 'neue'}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       <div style={{
@@ -1167,7 +1141,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                   : `0 4px 12px ${badgeColor}50`,
                                 border: isRecent
                                   ? '3px solid #10b981'
-                                  : '2px solid rgba(139, 92, 246, 0.5)',
+                                  : '2px solid rgba(255, 255, 255, 0.3)',
                                 cursor: 'pointer',
                                 position: 'relative',
                                 animation: isRecent ? 'badgePulse 2s ease-in-out infinite' : 'none'
@@ -1211,19 +1185,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                               width: '44px',
                               height: '44px',
                               borderRadius: '50%',
-                              background: 'rgba(168, 85, 247, 0.15)',
+                              background: 'rgba(255, 255, 255, 0.15)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              border: '2px dashed rgba(168, 85, 247, 0.5)',
-                              opacity: 0.7
+                              border: '2px dashed rgba(255, 255, 255, 0.35)',
+                              opacity: 0.6
                             }}
                           >
                             <IonIcon
                               icon={helpCircle}
                               style={{
                                 fontSize: '1.2rem',
-                                color: 'rgba(168, 85, 247, 0.7)'
+                                color: 'rgba(255, 255, 255, 0.5)'
                               }}
                             />
                           </div>
@@ -1234,33 +1208,28 @@ const DashboardView: React.FC<DashboardViewProps> = ({
             </>
 
             {/* Link zu allen Badges */}
-            <div
-              onClick={() => history.push('/konfi/badges')}
-              style={{
-                marginTop: '16px',
-                textAlign: 'center',
-                cursor: 'pointer'
-              }}
-            >
-              <span style={{
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.9)',
-                textDecoration: 'underline'
-              }}>
-                Alle Badges anzeigen
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+              <div
+                className="app-dashboard-glass-chip"
+                onClick={() => history.push('/konfi/badges')}
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>Alle Badges anzeigen</span>
+                <IonIcon icon={chevronForward} style={{ fontSize: '0.9rem' }} />
+              </div>
             </div>
           </div>
 
-          {/* CSS Animation für neue Badges */}
+          {/* CSS Animation für Badges */}
           <style>{`
             @keyframes badgePulse {
               0%, 100% { transform: scale(1); }
               50% { transform: scale(1.08); }
-            }
-            @keyframes newBadgePulse {
-              0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); }
-              50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6); }
             }
           `}</style>
         </div>
