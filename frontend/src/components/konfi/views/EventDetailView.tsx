@@ -403,7 +403,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>{eventData.name}</IonTitle>
+            <IonTitle size="large">{eventData.name}</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -428,7 +428,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         />
 
         {/* Event Details - 1:1 wie Admin */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={calendar} />
@@ -436,12 +436,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonLabel>Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-card-content">
               {/* Datum */}
               <div className="app-info-row">
-                <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
                 <div>
-                  <div className="app-info-row__content" style={{ fontWeight: '600' }}>
+                  <div className="app-info-row__content app-list-item__title">
                     {formatDate(eventData.event_date)}
                   </div>
                   <div className="app-info-row__sublabel">
@@ -453,18 +453,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
               {eventData.has_timeslots && timeslots.length > 0 && (
-                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '4px' }} />
+                <div className="app-info-row app-info-row--top">
+                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '4px' }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '500', marginBottom: '6px' }}>Zeitfenster:</div>
+                    <div className="app-list-item__title">Zeitfenster:</div>
                     {timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} style={{ fontSize: '0.9rem', color: '#666', marginBottom: '4px' }}>
+                      <div key={slot.id || idx} className="app-info-row__sublabel" style={{ marginBottom: '4px' }}>
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
                     {/* Gebuchter Timeslot hervorheben wenn angemeldet */}
                     {eventData.is_registered && eventData.booked_timeslot_start && (
-                      <div style={{ fontSize: '0.9rem', color: '#34c759', fontWeight: '600', marginTop: '8px' }}>
+                      <div className="app-icon-color--success" style={{ fontSize: '0.9rem', fontWeight: '600', marginTop: '8px' }}>
                         Dein Slot: {formatTime(eventData.booked_timeslot_start)}
                         {eventData.booked_timeslot_end && ` - ${formatTime(eventData.booked_timeslot_end)}`}
                       </div>
@@ -475,7 +475,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* TN gesamt */}
               <div className="app-info-row">
-                <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div className="app-info-row__content">
                   {eventData.registered_count} / {eventData.max_participants > 0 ? eventData.max_participants : '∞'} Teilnehmer:innen
                 </div>
@@ -484,17 +484,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Warteliste */}
               {eventData.waitlist_enabled && (
                 <div className="app-info-row">
-                  <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
+                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
                   <div className="app-info-row__content">
                     {(eventData as any).waitlist_count || 0} / {eventData.max_waitlist_size || 10} auf Warteliste
-                    {(eventData as any).waitlist_position && <span style={{ fontWeight: '700' }}> (Du: Platz {(eventData as any).waitlist_position})</span>}
+                    {(eventData as any).waitlist_position && <strong> (Du: Platz {(eventData as any).waitlist_position})</strong>}
                   </div>
                 </div>
               )}
 
               {/* Punkte */}
               <div className="app-info-row">
-                <IonIcon icon={trophy} className="app-info-row__icon" style={{ color: '#ff9500' }} />
+                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
                 <div className="app-info-row__content">
                   {eventData.points} Punkte
                 </div>
@@ -515,7 +515,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Kategorien */}
               {eventData.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row">
-                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                  <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
                   <div className="app-info-row__content">
                     {eventData.categories.map(c => c.name).join(', ')}
                   </div>
@@ -525,7 +525,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Ort */}
               {eventData.location && (
                 <div className="app-info-row">
-                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
                   <div
                     className="app-info-row__content"
                     style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
@@ -544,8 +544,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               )}
 
               {/* Anmeldezeitraum */}
-              <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
+              <div className="app-info-row app-info-row--top">
+                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '2px' }} />
                 <div className="app-info-row__content">
                   {eventData.registration_opens_at ? (
                     <>
@@ -566,7 +566,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Beschreibung - eigene Card mit rotem Icon */}
         {eventData.description && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={informationCircle} />
@@ -574,8 +574,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Beschreibung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
+              <IonCardContent className="app-card-content">
+                <p className="app-info-row__sublabel">
                   {eventData.description}
                 </p>
               </IonCardContent>
@@ -585,7 +585,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Teilnehmer-Liste */}
         {participants.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--success">
                 <IonIcon icon={people} />
@@ -595,7 +595,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonCard className="app-card">
               <IonCardContent>
                 <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                   <div className="app-info-row__content">
                     {participants.map(p => p.display_name).join(', ')}
                   </div>
@@ -611,32 +611,24 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <div>
               {canUnregister(eventData) ? (
                 <IonButton
+                  className="app-action-button"
                   expand="block"
                   fill="outline"
                   color="danger"
                   onClick={() => presentUnregisterModal({
                     presentingElement: pageRef.current || undefined
                   })}
-                  style={{
-                    height: '48px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}
                 >
                   <IonIcon icon={closeCircle} slot="start" />
                   Abmelden
                 </IonButton>
               ) : (
                 <IonButton
+                  className="app-action-button"
                   expand="block"
                   fill="outline"
                   color="medium"
                   disabled
-                  style={{
-                    height: '48px',
-                    borderRadius: '12px',
-                    fontWeight: '600'
-                  }}
                 >
                   <IonIcon icon={warning} slot="start" />
                   Abmeldung nicht mehr möglich
@@ -645,25 +637,19 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </div>
           ) : (isKonfirmationEvent(eventData) && hasExistingKonfirmation) ? (
             <IonButton
+              className="app-action-button"
               expand="block"
               disabled
               color="medium"
-              style={{
-                height: '48px',
-                borderRadius: '12px',
-                fontWeight: '600'
-              }}
             >
               <IonIcon icon={warning} slot="start" />
               Konfirmationstermin bereits gebucht
             </IonButton>
           ) : eventData.can_register && eventData.registration_status === 'open' && (eventData.max_participants === 0 || eventData.registered_count < eventData.max_participants) ? (
             <IonButton
+              className="app-action-button"
               expand="block"
               style={{
-                height: '48px',
-                borderRadius: '12px',
-                fontWeight: '600',
                 '--background': '#34c759',
                 '--background-activated': '#2da84e',
                 '--background-hover': '#30b853',
@@ -676,11 +662,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </IonButton>
           ) : eventData.waitlist_enabled && eventData.max_participants > 0 && eventData.registered_count >= eventData.max_participants && eventData.registration_status === 'open' ? (
             <IonButton
+              className="app-action-button"
               expand="block"
               style={{
-                height: '48px',
-                borderRadius: '12px',
-                fontWeight: '600',
                 '--background': '#fd7e14',
                 '--background-activated': '#e8650e',
                 '--background-hover': '#f4720b',
@@ -693,14 +677,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             </IonButton>
           ) : (
             <IonButton
+              className="app-action-button"
               expand="block"
               disabled
               color="medium"
-              style={{
-                height: '48px',
-                borderRadius: '12px',
-                fontWeight: '600'
-              }}
             >
               <IonIcon icon={informationCircle} slot="start" />
               {eventData.registration_status === 'closed' ? 'Anmeldung geschlossen' : 'Nicht verfügbar'}

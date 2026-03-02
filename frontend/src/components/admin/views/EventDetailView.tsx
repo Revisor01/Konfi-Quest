@@ -489,7 +489,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>{eventData?.name || 'Event Details'}</IonTitle>
+            <IonTitle size="large">{eventData?.name || 'Event Details'}</IonTitle>
           </IonToolbar>
         </IonHeader>
         
@@ -511,7 +511,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         />
 
         {/* Event Details */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={calendar} />
@@ -519,12 +519,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             <IonLabel>Details</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-card-content">
               {/* Datum */}
               <div className="app-info-row">
-                <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                <IonIcon icon={calendar} className="app-info-row__icon app-icon-color--events" />
                 <div>
-                  <div className="app-info-row__content" style={{ fontWeight: '600' }}>
+                  <div className="app-info-row__content app-list-item__title">
                     {formatDate(eventData?.event_date || '')}
                   </div>
                   <div className="app-info-row__sublabel">
@@ -536,12 +536,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Zeitslots anzeigen wenn vorhanden */}
               {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-                <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                  <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '4px' }} />
+                <div className="app-info-row app-info-row--top">
+                  <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '4px' }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '500', marginBottom: '6px' }}>Zeitfenster:</div>
+                    <div className="app-list-item__title">Zeitfenster:</div>
                     {eventData.timeslots.map((slot, idx) => (
-                      <div key={slot.id || idx} style={{ fontSize: '0.9rem', color: '#666', marginBottom: '4px' }}>
+                      <div key={slot.id || idx} className="app-info-row__sublabel" style={{ marginBottom: '4px' }}>
                         {formatTime(slot.start_time)} - {formatTime(slot.end_time)} ({slot.registered_count || 0}/{slot.max_participants} TN)
                       </div>
                     ))}
@@ -551,7 +551,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* TN gesamt */}
               <div className="app-info-row">
-                <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#34c759' }} />
+                <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div className="app-info-row__content">
                   {eventData?.registered_count || 0} / {(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'} Teilnehmer:innen
                 </div>
@@ -560,7 +560,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Warteliste */}
               {(eventData as any)?.waitlist_enabled && (
                 <div className="app-info-row">
-                  <IonIcon icon={listOutline} className="app-info-row__icon" style={{ color: '#fd7e14' }} />
+                  <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
                   <div className="app-info-row__content">
                     {participants.filter(p => p.status === 'pending').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
                   </div>
@@ -569,7 +569,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
               {/* Punkte */}
               <div className="app-info-row">
-                <IonIcon icon={trophy} className="app-info-row__icon" style={{ color: '#ff9500' }} />
+                <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
                 <div className="app-info-row__content">
                   {eventData?.points || 0} Punkte
                 </div>
@@ -590,7 +590,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Kategorien */}
               {eventData?.categories && eventData.categories.length > 0 && (
                 <div className="app-info-row">
-                  <IonIcon icon={pricetag} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                  <IonIcon icon={pricetag} className="app-info-row__icon app-icon-color--category" />
                   <div className="app-info-row__content">
                     {eventData.categories.map(c => c.name).join(', ')}
                   </div>
@@ -600,7 +600,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Ort */}
               {eventData?.location && (
                 <div className="app-info-row">
-                  <IonIcon icon={location} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <IonIcon icon={location} className="app-info-row__icon app-icon-color--events" />
                   <div
                     className="app-info-row__content"
                     style={{ color: '#007aff', textDecoration: 'underline', cursor: 'pointer' }}
@@ -619,8 +619,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               )}
 
               {/* Anmeldezeitraum */}
-              <div className="app-info-row" style={{ alignItems: 'flex-start' }}>
-                <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#dc2626', marginTop: '2px' }} />
+              <div className="app-info-row app-info-row--top">
+                <IonIcon icon={time} className="app-info-row__icon app-icon-color--events" style={{ marginTop: '2px' }} />
                 <div className="app-info-row__content">
                   {eventData?.registration_opens_at ? (
                     <>
@@ -638,7 +638,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Jahrgang */}
               {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
                 <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#007aff' }} />
+                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--jahrgang" />
                   <div className="app-info-row__content">
                     {eventData.jahrgaenge.map(j => j.name).join(', ')}
                   </div>
@@ -648,10 +648,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {/* Beschreibung */}
               {eventData?.description && (
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e0e0e0' }}>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', fontWeight: '600', color: '#333' }}>
+                  <h3 className="app-list-item__title">
                     Beschreibung
                   </h3>
-                  <p style={{ margin: '0', fontSize: '0.95rem', color: '#666', lineHeight: '1.5' }}>
+                  <p className="app-info-row__sublabel">
                     {eventData.description}
                   </p>
                 </div>
@@ -662,7 +662,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Timeslots mit Teilnehmern */}
         {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={time} />
@@ -670,7 +670,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Zeitslots ({eventData.timeslots.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent className="app-card-content">
                 {eventData.timeslots.map((timeslot, slotIndex) => {
                   // Vergleiche über timeslot_id (primär) oder formatierte Zeiten (fallback)
                   const slotStartFormatted = formatTime(timeslot.start_time);
@@ -729,18 +729,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                 style={{ marginBottom: pIndex < slotParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
                               >
                                 <IonItem
+                                  className="app-item-transparent"
                                   button
                                   detail={false}
                                   lines="none"
                                   onClick={() => showAttendanceActionSheet(participant)}
-                                  style={{
-                                    '--background': 'transparent',
-                                    '--padding-start': '0',
-                                    '--padding-end': '0',
-                                    '--inner-padding-end': '0',
-                                    '--inner-border-width': '0',
-                                    '--border-width': '0'
-                                  }}
                                 >
                                   <div className="app-list-item app-list-item--booked" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
                                     {/* Eselsohr-Style Status Badge */}
@@ -766,18 +759,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                     </div>
                                   </div>
                                 </IonItem>
-                                <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
+                                <IonItemOptions className="app-swipe-actions" side="end">
                                   <IonItemOption
+                                    className="app-swipe-action"
                                     onClick={() => handleDemoteParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                                       <IonIcon icon={returnUpBack} />
                                     </div>
                                   </IonItemOption>
                                   <IonItemOption
+                                    className="app-swipe-action"
                                     onClick={() => handleRemoveParticipant(participant)}
-                                    style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                                   >
                                     <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                                       <IonIcon icon={trash} />
@@ -799,7 +792,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Series Events */}
         {eventData?.is_series && eventData?.series_events && eventData.series_events.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--info">
                 <IonIcon icon={calendar} />
@@ -807,7 +800,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Weitere Termine dieser Serie</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent className="app-card-content">
                 {eventData.series_events.map((seriesEvent) => {
                   const isFull = (seriesEvent.registered_count || 0) >= seriesEvent.max_participants;
                   return (
@@ -866,9 +859,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           // Wenn keine Teilnehmer und keine Warteliste, nur Button zeigen
           if (displayParticipants.length === 0) {
             return (
-              <IonList inset={true} style={{ margin: '16px' }}>
+              <IonList className="app-section-inset" inset={true}>
                 <IonCard className="app-card">
-                  <IonCardContent style={{ padding: '16px' }}>
+                  <IonCardContent className="app-card-content">
                     <IonButton
                       expand="block"
                       fill="outline"
@@ -898,7 +891,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           }
 
           return (
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList className="app-section-inset" inset={true}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--events">
                   <IonIcon icon={people} />
@@ -907,7 +900,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               </IonListHeader>
               <IonCard className="app-card">
               {(
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent className="app-card-content">
                 {displayParticipants.map((participant, index) => {
                   const isWaitlist = participant.status === 'pending';
                   // Strich-Farbe matcht Status-Farbe
@@ -939,6 +932,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       style={{ marginBottom: index < displayParticipants.length - 1 ? '8px' : '0', '--border-width': '0', '--inner-border-width': '0' } as any}
                     >
                       <IonItem
+                        className="app-item-transparent"
                         button
                         detail={false}
                         lines="none"
@@ -948,14 +942,6 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           } else if (participant.status === 'pending') {
                             showWaitlistActionSheet(participant);
                           }
-                        }}
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--border-width': '0'
                         }}
                       >
                         <div className={`app-list-item ${listItemClass}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
@@ -983,11 +969,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           </div>
                         </div>
                       </IonItem>
-                      <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
+                      <IonItemOptions className="app-swipe-actions" side="end">
                         {participant.status === 'confirmed' && (
                           <IonItemOption
+                            className="app-swipe-action"
                             onClick={() => handleDemoteParticipant(participant)}
-                            style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                               <IonIcon icon={returnUpBack} />
@@ -995,8 +981,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           </IonItemOption>
                         )}
                         <IonItemOption
+                          className="app-swipe-action"
                           onClick={() => handleRemoveParticipant(participant)}
-                          style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />
@@ -1025,7 +1011,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Abmeldungen (Unregistrations) */}
         {unregistrations.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--danger">
                 <IonIcon icon={closeCircle} />
@@ -1033,23 +1019,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonLabel>Abmeldungen ({unregistrations.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent className="app-card-content">
                 {unregistrations.map((unreg) => (
                   <div key={unreg.id} className="app-list-item app-list-item--danger">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <IonIcon icon={closeCircle} style={{ fontSize: '1.2rem', color: '#dc3545' }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '600', fontSize: '0.95rem', color: '#333' }}>
-                          {unreg.konfi_name}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                          Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <IonIcon icon={closeCircle} className="app-icon-color--danger" style={{ fontSize: '1.2rem' }} />
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">
+                            {unreg.konfi_name}
+                          </div>
+                          <div className="app-list-item__subtitle">
+                            Abgemeldet am {new Date(unreg.unregistered_at).toLocaleString('de-DE', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
                         </div>
                       </div>
                     </div>

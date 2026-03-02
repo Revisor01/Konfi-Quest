@@ -89,6 +89,8 @@ ion-card.app-card ion-item ion-label h2 {
   background: white;
   margin-bottom: 8px;
   overflow: hidden;
+  position: relative;
+  width: 100%;
 }
 
 /* IonItem mit app-list-item - Klick-Feedback auf ganze Zeile */
@@ -871,11 +873,31 @@ ion-item-option.app-swipe-action {
   min-width: auto;
 }
 
+/* === Info-Row Modifier === */
+.app-info-row--top {
+  align-items: flex-start;
+}
+
+/* === Section-Inset (margin: 16px fuer IonList inset) === */
+ion-list.app-section-inset {
+  margin: 16px;
+}
+ion-card-content.app-card-content {
+  padding: 16px;
+}
+
 /* === Innere IonList (transparent, kein Padding) === */
 ion-list.app-list-inner {
   background: transparent;
   padding: 0;
   margin: 0;
+}
+
+/* === Action-Button (48px, abgerundet, fett) === */
+ion-button.app-action-button {
+  height: 48px;
+  --border-radius: 12px;
+  font-weight: 600;
 }
 
 /* === Button-Reihe (flex, gleiche Breite) === */
@@ -884,6 +906,11 @@ ion-list.app-list-inner {
   gap: 8px;
 }
 .app-button-row ion-button {
+  flex: 1;
+}
+
+/* === Flex-Fill (flex: 1) === */
+.app-flex-fill {
   flex: 1;
 }
 
