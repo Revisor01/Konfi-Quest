@@ -62,8 +62,8 @@ const LoginView: React.FC = () => {
       if (!err.response || err.code === 'ERR_NETWORK') {
         displayError = 'Keine Verbindung zum Server. Bitte pr\u00fcfe deine Internetverbindung.';
         setIsNetworkError(true);
-      } else if (errorMessage.includes('Zu viele') || errorMessage.includes('warte') || errorMessage.includes('429')) {
-        displayError = 'Zu viele Fehlversuche. Bitte warte 15 Minuten.';
+      } else if (err.rateLimitMessage) {
+        displayError = err.rateLimitMessage;
       } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ung\u00fcltige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';
       } else if (errorMessage.includes('not found') || errorMessage.includes('nicht gefunden') || errorMessage.includes('User not found')) {

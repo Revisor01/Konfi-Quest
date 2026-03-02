@@ -42,6 +42,13 @@ api.interceptors.response.use(
       if (error.response.data?.error) {
         error.rateLimitMessage = error.response.data.error;
       }
+      // Generisches Rate-Limit Event fuer nicht-Login Requests
+      const isLoginRequest = error.config?.url?.includes('/login');
+      if (!isLoginRequest) {
+        window.dispatchEvent(new CustomEvent('rate-limit', {
+          detail: { message: error.rateLimitMessage }
+        }));
+      }
     }
 
     return Promise.reject(error);

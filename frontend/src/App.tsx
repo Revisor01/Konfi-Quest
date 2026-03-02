@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
@@ -21,7 +21,8 @@ import {
   IonItem,
   IonBadge,
   setupIonicReact,
-  isPlatform
+  isPlatform,
+  useIonAlert
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 // iOS26 Theme Animationen
@@ -141,6 +142,25 @@ const AppContent: React.FC = () => {
     };
 
   }, [user, setBadgeCount, refreshFromAPI]);
+
+  // Generischer 429 Rate-Limit Alert-Handler
+  const [presentAlert] = useIonAlert();
+
+  const handleRateLimit = useCallback((event: Event) => {
+    const detail = (event as CustomEvent).detail;
+    presentAlert({
+      header: 'Zu viele Anfragen',
+      message: detail?.message || 'Bitte warte einen Moment und versuche es erneut.',
+      buttons: ['OK']
+    });
+  }, [presentAlert]);
+
+  useEffect(() => {
+    window.addEventListener('rate-limit', handleRateLimit);
+    return () => {
+      window.removeEventListener('rate-limit', handleRateLimit);
+    };
+  }, [handleRateLimit]);
 
   // Auto-refresh every 30 seconds - DISABLED wegen Spam
   // useEffect(() => {
