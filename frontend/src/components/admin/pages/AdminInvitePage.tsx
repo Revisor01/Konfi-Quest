@@ -28,7 +28,8 @@ import {
   shareOutline,
   add,
   timeOutline,
-  checkmarkCircleOutline
+  checkmarkCircleOutline,
+  peopleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -282,9 +283,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                 <IonCard className="app-card">
                   <IonCardContent>
                     <IonList lines="none" className="app-list-inner">
-                      {existingInvites.map((invite, index) => {
-                        const isExpired = new Date(invite.expires_at) < new Date();
-                        return (
+                      {existingInvites.map((invite, index) => (
                           <div
                             key={invite.id}
                             className="app-list-item"
@@ -292,7 +291,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               marginBottom: index < existingInvites.length - 1 ? '8px' : '0',
                               position: 'relative',
                               overflow: 'hidden',
-                              borderLeftColor: isExpired ? '#ef4444' : '#22c55e',
+                              borderLeftColor: '#22c55e',
                               cursor: 'pointer'
                             }}
                             onClick={() => showExistingInviteQR(invite)}
@@ -300,7 +299,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                             {/* Corner Badge */}
                             <div
                               className="app-corner-badge"
-                              style={{ backgroundColor: isExpired ? '#ef4444' : '#22c55e' }}
+                              style={{ backgroundColor: '#22c55e' }}
                             >
                               {invite.used_count || 0}x
                             </div>
@@ -308,7 +307,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                               <div className="app-list-item__main">
                                 <div
                                   className="app-icon-circle"
-                                  style={{ backgroundColor: isExpired ? '#ef4444' : '#22c55e' }}
+                                  style={{ backgroundColor: '#22c55e' }}
                                 >
                                   <IonIcon icon={qrCodeOutline} />
                                 </div>
@@ -321,40 +320,41 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                       {invite.invite_code}
                                     </span>
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={timeOutline} style={{ color: isExpired ? '#ef4444' : '#666' }} />
+                                      <IonIcon icon={timeOutline} />
                                       {formatExpiryDate(invite.expires_at)}
+                                    </span>
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={peopleOutline} />
+                                      {invite.used_count || 0} {(invite.used_count || 0) === 1 ? 'Registrierung' : 'Registrierungen'}
                                     </span>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            {!isExpired && (
-                              <IonButton
-                                fill="clear"
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  extendInvite(invite.id);
-                                }}
-                                disabled={extendingInvite === invite.id}
-                                style={{
-                                  position: 'absolute',
-                                  bottom: '4px',
-                                  right: '8px',
-                                  '--color': '#22c55e',
-                                  fontSize: '0.75rem'
-                                }}
-                              >
-                                {extendingInvite === invite.id ? (
-                                  <IonSpinner name="crescent" style={{ width: '14px', height: '14px' }} />
-                                ) : (
-                                  '+7 Tage'
-                                )}
-                              </IonButton>
-                            )}
+                            <IonButton
+                              fill="clear"
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                extendInvite(invite.id);
+                              }}
+                              disabled={extendingInvite === invite.id}
+                              style={{
+                                position: 'absolute',
+                                bottom: '4px',
+                                right: '8px',
+                                '--color': '#22c55e',
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              {extendingInvite === invite.id ? (
+                                <IonSpinner name="crescent" style={{ width: '14px', height: '14px' }} />
+                              ) : (
+                                '+7 Tage'
+                              )}
+                            </IonButton>
                           </div>
-                        );
-                      })}
+                      ))}
                     </IonList>
                   </IonCardContent>
                 </IonCard>
@@ -433,7 +433,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
               <IonCard className="app-card app-info-box--blue">
                 <IonCardContent className="app-info-box">
                   <p style={{ margin: 0 }}>
-                    Einladungscodes sind 7 Tage gültig. Konfis können sich mit dem Code selbst einen Account erstellen und werden automatisch dem gewählten Jahrgang zugeordnet.
+                    Einladungscodes sind 7 Tage gültig und können von beliebig vielen Konfis verwendet werden. Konfis werden automatisch dem gewählten Jahrgang zugeordnet.
                   </p>
                 </IonCardContent>
               </IonCard>
