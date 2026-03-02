@@ -873,6 +873,17 @@ ion-item-option.app-swipe-action {
   min-width: auto;
 }
 
+/* === List-Item Title mit Corner-Badge Platz === */
+.app-list-item__title--badge-space {
+  padding-right: 50px;
+}
+.app-list-item__title--badge-space-md {
+  padding-right: 60px;
+}
+.app-list-item__title--badge-space-lg {
+  padding-right: 80px;
+}
+
 /* === Info-Row Modifier === */
 .app-info-row--top {
   align-items: flex-start;

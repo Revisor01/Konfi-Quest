@@ -693,7 +693,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   return (
                     <div key={timeslot.id} style={{ marginBottom: slotIndex < eventData.timeslots!.length - 1 ? '20px' : '0' }}>
                       {/* Slot Header */}
-                      <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} style={{ position: 'relative', overflow: 'hidden' }}>
+                      <div className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`} >
                         {/* Corner Badge für Verfügbar/Voll */}
                         <div className={`app-corner-badge ${isFull ? 'app-corner-badge--danger' : 'app-corner-badge--success'}`}>
                           {isFull ? 'Voll' : 'Frei'}
@@ -704,7 +704,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                               <IonIcon icon={time} />
                             </div>
                             <div className="app-list-item__content">
-                              <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                              <div className="app-list-item__title app-list-item__title--badge-space">
                                 {slotStartFormatted} - {slotEndFormatted}
                               </div>
                               <div className="app-list-item__subtitle">
@@ -735,7 +735,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                   lines="none"
                                   onClick={() => showAttendanceActionSheet(participant)}
                                 >
-                                  <div className="app-list-item app-list-item--booked" style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                                  <div className="app-list-item app-list-item--booked" style={{ marginBottom: '0' }}>
                                     {/* Eselsohr-Style Status Badge */}
                                     <div className={`app-corner-badge ${cornerBadgeClass}`}>
                                       {statusText}
@@ -750,7 +750,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                                 participant.attendance_status === 'absent' ? closeCircle : people} />
                                         </div>
                                         <div className="app-list-item__content">
-                                          <div className="app-list-item__title" style={{ paddingRight: '80px' }}>{participant.participant_name}</div>
+                                          <div className="app-list-item__title app-list-item__title--badge-space-lg">{participant.participant_name}</div>
                                           <div className="app-list-item__subtitle">
                                             {participant.jahrgang_name || ''}
                                           </div>
@@ -807,7 +807,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <div
                       key={seriesEvent.id}
                       className={`app-list-item ${isFull ? 'app-list-item--danger' : 'app-list-item--success'}`}
-                      style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
+                      style={{ cursor: 'pointer' }}
                       onClick={() => window.location.href = `/admin/events/${seriesEvent.id}`}
                     >
                       {/* Eselsohr-Style Status Badge */}
@@ -820,7 +820,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                             <IonIcon icon={calendar} />
                           </div>
                           <div className="app-list-item__content">
-                            <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                            <div className="app-list-item__title app-list-item__title--badge-space-md">
                               {seriesEvent.name}
                             </div>
                             <div className="app-list-item__subtitle">
@@ -944,7 +944,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           }
                         }}
                       >
-                        <div className={`app-list-item ${listItemClass}`} style={{ width: '100%', marginBottom: '0', position: 'relative', overflow: 'hidden' }}>
+                        <div className={`app-list-item ${listItemClass}`} style={{ marginBottom: '0' }}>
                           {/* Eselsohr-Style Status Badge */}
                           <div className={`app-corner-badge ${cornerBadgeClass}`}>
                             {statusText}
@@ -955,7 +955,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                 <IonIcon icon={statusIcon} />
                               </div>
                               <div className="app-list-item__content">
-                                <div className="app-list-item__title" style={{ paddingRight: '80px' }}>
+                                <div className="app-list-item__title app-list-item__title--badge-space-lg">
                                   {participant.participant_name}
                                 </div>
                                 <div className="app-list-item__subtitle">

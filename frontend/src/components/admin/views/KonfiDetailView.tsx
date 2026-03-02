@@ -493,14 +493,14 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 gap: '8px'
               }}
             >
-              <IonIcon icon={trophy} style={{ color: '#fbbf24', fontSize: '1.2rem' }} />
+              <IonIcon icon={trophy} className="app-icon-color--badges" style={{ fontSize: '1.2rem' }} />
               <span style={{ color: 'white', fontWeight: '600' }}>{currentKonfi?.badgeCount || 0} Badges</span>
             </div>
           </div>
         </div>
 
         {/* Bonuspunkte - iOS26 Pattern - Orange als Hauptfarbe */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={gift} />
@@ -508,34 +508,23 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             <IonLabel>Bonus ({getBonusPoints()})</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-card-content">
               {bonusEntries.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem' }}>Noch keine Bonuspunkte erhalten</p>
+                <div className="app-empty-state">
+                  <p className="app-empty-state__text">Noch keine Bonuspunkte erhalten</p>
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0 0 16px 0' }}>
+                <IonList className="app-list-inner" lines="none">
                   {bonusEntries.map((bonus: any, index: number) => (
                     <IonItemSliding key={bonus.id || index} style={{ marginBottom: index < bonusEntries.length - 1 ? '8px' : '0' }}>
                       <IonItem
+                        className="app-item-transparent"
                         detail={false}
                         lines="none"
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--border-style': 'none',
-                          '--min-height': 'auto'
-                        }}
                       >
                         <div
                           className="app-list-item app-list-item--bonus"
                           style={{
-                            width: '100%',
-                            position: 'relative',
-                            overflow: 'hidden',
                             borderLeftColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
                           }}
                         >
@@ -559,12 +548,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                                 <IonIcon icon={gift} />
                               </div>
                               <div className="app-list-item__content">
-                                <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                <div className="app-list-item__title app-list-item__title--badge-space">
                                   {bonus.description || 'Bonuspunkte'}
                                 </div>
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: '#666' }} />
+                                    <IonIcon icon={calendar} className="app-icon-color--events" />
                                     {formatDate(bonus.completed_date || bonus.date)}
                                   </span>
                                   <span className="app-list-item__meta-item">{bonus.admin || 'Admin'}</span>
@@ -574,19 +563,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           </div>
                         </div>
                       </IonItem>
-                      <IonItemOptions
-                        side="end"
-                        style={{ '--ion-item-background': 'transparent', border: 'none' }}
-                      >
+                      <IonItemOptions className="app-swipe-actions" side="end">
                         <IonItemOption
+                          className="app-swipe-action"
                           onClick={() => handleDeleteBonus(bonus)}
-                          style={{
-                            '--background': 'transparent',
-                            '--color': 'transparent',
-                            padding: '0',
-                            minWidth: 'auto',
-                            '--border-width': '0'
-                          }}
                         >
                           <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                             <IonIcon icon={trash} />
@@ -614,7 +594,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         </IonList>
 
         {/* Event Points - iOS26 Pattern - Rot als Hauptfarbe */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={podium} />
@@ -622,20 +602,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             <IonLabel>Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-card-content">
               {eventPoints.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
-                  <p style={{ margin: '0', fontSize: '0.9rem' }}>Noch keine Event-Punkte erhalten</p>
+                <div className="app-empty-state">
+                  <p className="app-empty-state__text">Noch keine Event-Punkte erhalten</p>
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                <IonList className="app-list-inner" lines="none">
                   {eventPoints.map((eventPoint: any, index: number) => (
                     <div
                       key={eventPoint.id || index}
                       className="app-list-item app-list-item--events"
                       style={{
-                        position: 'relative',
-                        overflow: 'hidden',
                         marginBottom: index < eventPoints.length - 1 ? '8px' : '0',
                         borderLeftColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
                       }}
@@ -660,12 +638,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             <IonIcon icon={podium} />
                           </div>
                           <div className="app-list-item__content">
-                            <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                            <div className="app-list-item__title app-list-item__title--badge-space">
                               {eventPoint.event_name || 'Event'}
                             </div>
                             <div className="app-list-item__meta">
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={calendar} style={{ color: '#666' }} />
+                                <IonIcon icon={calendar} className="app-icon-color--events" />
                                 {eventPoint.awarded_date &&
                                   new Date(eventPoint.awarded_date).toLocaleDateString('de-DE', {
                                     day: '2-digit',
@@ -686,7 +664,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         </IonList>
 
         {/* Aktivitäten - iOS26 Pattern - Grün als Hauptfarbe */}
-        <IonList inset={true} style={{ margin: '16px 16px 32px 16px' }}>
+        <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={flash} />
@@ -694,36 +672,25 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             <IonLabel>Aktivitäten ({activities.filter((a) => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent className="app-card-content">
               {activities.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '16px', color: '#666' }}>
-                  <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem' }}>Noch keine Aktivitäten vorhanden</p>
+                <div className="app-empty-state">
+                  <p className="app-empty-state__text">Noch keine Aktivitäten vorhanden</p>
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0 0 16px 0' }}>
+                <IonList className="app-list-inner" lines="none">
                   {activities.slice(0, 10).map((activity, index) => (
                     <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
                       <IonItem
+                        className="app-item-transparent"
                         button={activity.hasPhoto}
                         onClick={() => handlePhotoClick(activity)}
                         detail={false}
                         lines="none"
-                        style={{
-                          '--background': 'transparent',
-                          '--padding-start': '0',
-                          '--padding-end': '0',
-                          '--inner-padding-end': '0',
-                          '--inner-border-width': '0',
-                          '--border-style': 'none',
-                          '--min-height': 'auto'
-                        }}
                       >
                         <div
                           className={`app-list-item ${activity.isPending ? 'app-list-item--warning' : ''}`}
                           style={{
-                            width: '100%',
-                            position: 'relative',
-                            overflow: 'hidden',
                             borderLeftColor: activity.isPending
                               ? '#f59e0b'
                               : activity.type === 'gottesdienst'
@@ -761,23 +728,22 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               </div>
                               <div className="app-list-item__content">
                                 <div
-                                  className="app-list-item__title"
+                                  className="app-list-item__title app-list-item__title--badge-space"
                                   style={{
                                     color: activity.isPending ? '#f59e0b' : undefined,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '6px',
-                                    paddingRight: '50px'
+                                    gap: '6px'
                                   }}
                                 >
                                   {activity.name}
                                   {activity.hasPhoto && (
-                                    <IonIcon icon={image} style={{ fontSize: '0.8rem', color: '#5b21b6', opacity: 0.7 }} />
+                                    <IonIcon icon={image} className="app-icon-color--category" style={{ fontSize: '0.8rem', opacity: 0.7 }} />
                                   )}
                                 </div>
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: '#666' }} />
+                                    <IonIcon icon={calendar} className="app-icon-color--events" />
                                     {formatDate(activity.date)}
                                   </span>
                                   <span className="app-list-item__meta-item">{activity.admin}</span>
@@ -788,19 +754,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         </div>
                       </IonItem>
                       {!activity.isPending && (
-                        <IonItemOptions
-                          side="end"
-                          style={{ '--ion-item-background': 'transparent', border: 'none' }}
-                        >
+                        <IonItemOptions className="app-swipe-actions" side="end">
                           <IonItemOption
+                            className="app-swipe-action"
                             onClick={() => handleDeleteActivity(activity)}
-                            style={{
-                              '--background': 'transparent',
-                              '--color': 'transparent',
-                              padding: '0',
-                              minWidth: 'auto',
-                              '--border-width': '0'
-                            }}
                           >
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={trash} />
