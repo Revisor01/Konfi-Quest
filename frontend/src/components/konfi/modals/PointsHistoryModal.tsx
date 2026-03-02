@@ -165,7 +165,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
         <IonToolbar>
           <IonTitle>Punkte-Übersicht</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

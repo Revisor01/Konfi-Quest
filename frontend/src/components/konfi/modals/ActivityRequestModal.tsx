@@ -211,12 +211,12 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Neuer Antrag</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={submitting}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={submitting}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSubmit} disabled={submitting || loading}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={submitting || loading}>
               <IonIcon icon={checkmark} />
             </IonButton>
           </IonButtons>
@@ -230,7 +230,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={starOutline} />
             </div>
             <IonLabel>Aktivität wählen</IonLabel>
@@ -326,7 +326,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Datum Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={calendarOutline} />
             </div>
             <IonLabel>Datum wählen</IonLabel>
@@ -353,7 +353,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Anmerkungen Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={textOutline} />
             </div>
             <IonLabel>Anmerkungen (optional)</IonLabel>
@@ -376,7 +376,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Foto Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={imageOutline} />
             </div>
             <IonLabel>Foto als Nachweis (optional)</IonLabel>

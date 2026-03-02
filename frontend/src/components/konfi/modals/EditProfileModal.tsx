@@ -84,12 +84,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <IonToolbar>
           <IonTitle>Profil bearbeiten</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}>
+            <IonButton className="app-modal-close-btn" onClick={onClose} disabled={saving}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSave} disabled={saving}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -98,9 +98,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* Name Sektion */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={personOutline} />
             </div>
             <IonLabel>Name</IonLabel>
@@ -126,9 +126,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </IonList>
 
         {/* E-Mail Sektion */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>E-Mail (optional)</IonLabel>
@@ -155,9 +155,9 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </IonList>
 
         {/* Bibel-Übersetzung Sektion */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--info">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={bookOutline} />
             </div>
             <IonLabel>Bibel-Übersetzung</IonLabel>

@@ -56,12 +56,12 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
         <IonToolbar>
           <IonTitle>Abmeldung</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSubmit} disabled={!reason.trim()}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!reason.trim()}>
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -70,9 +70,9 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* Event Info */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={calendarOutline} />
             </div>
             <IonLabel>Abmeldung von</IonLabel>
@@ -87,9 +87,9 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
         </IonList>
 
         {/* Grund Sektion */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--events">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={chatbubbleOutline} />
             </div>
             <IonLabel>Grund für die Abmeldung</IonLabel>

@@ -116,7 +116,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           <IonToolbar>
             <IonTitle>Antrag laden...</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose}>
+              <IonButton className="app-modal-close-btn" onClick={onClose}>
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -141,7 +141,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         <IonToolbar>
           <IonTitle>Antragsdetails</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -150,9 +150,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Antragsdaten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--requests">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={documentTextOutline} />
             </div>
             <IonLabel>Antragsdaten</IonLabel>
@@ -217,9 +217,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 
         {/* SEKTION: Foto - nur bei pending anzeigen */}
         {isPending && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--requests">
+              <div className="app-section-icon app-section-icon--purple">
                 <IonIcon icon={imageOutline} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
@@ -271,7 +271,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         )}
 
         {/* SEKTION: Status */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div
               className="app-section-icon"
