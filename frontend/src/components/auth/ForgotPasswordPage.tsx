@@ -12,7 +12,7 @@ import {
   IonSpinner,
   IonIcon
 } from '@ionic/react';
-import { mailOutline, arrowBack, checkmarkCircle, alertCircle } from 'ionicons/icons';
+import { mailOutline, arrowBack, checkmarkCircle, alertCircle, informationCircleOutline, refreshOutline } from 'ionicons/icons';
 import api from '../../services/api';
 
 const ForgotPasswordPage: React.FC = () => {
@@ -21,6 +21,7 @@ const ForgotPasswordPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isNetworkError, setIsNetworkError] = useState(false);
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -36,13 +37,23 @@ const ForgotPasswordPage: React.FC = () => {
 
     setLoading(true);
     setError(null);
+    setIsNetworkError(false);
 
     try {
       await api.post('/auth/request-password-reset', { email: email.trim() });
       setSent(true);
     } catch (err: any) {
-      // Auch bei Fehlern zeigen wir Erfolg an (Sicherheit)
-      setSent(true);
+      const status = err.response?.status;
+      if (status === 500) {
+        setError('E-Mail konnte nicht gesendet werden. Bitte versuche es später erneut.');
+      } else if (!err.response) {
+        setError('Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.');
+        setIsNetworkError(true);
+      } else {
+        // Für alle anderen Fälle (inkl. 200 bei unbekannter E-Mail)
+        // zeigen wir weiterhin "gesendet" an (Privacy)
+        setSent(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -50,35 +61,13 @@ const ForgotPasswordPage: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent style={{
-        '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          padding: '20px'
-        }}>
+      <IonContent className="app-auth-background">
+        <div className="app-auth-container">
 
           {/* Header */}
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '40px',
-            color: 'white'
-          }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px auto'
-            }}>
-              <IonIcon icon={mailOutline} style={{ fontSize: '2.5rem', color: 'white' }} />
+          <div className="app-auth-hero">
+            <div className="app-auth-hero__circle">
+              <IonIcon icon={mailOutline} className="app-auth-hero__circle-icon" />
             </div>
 
             <h1 style={{
@@ -101,30 +90,14 @@ const ForgotPasswordPage: React.FC = () => {
           </div>
 
           {/* Card */}
-          <IonCard style={{
-            width: '100%',
-            maxWidth: '400px',
-            borderRadius: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }}>
-            <IonCardContent style={{ padding: '32px' }}>
+          <IonCard className="app-auth-card app-auth-card--narrow">
+            <IonCardContent className="app-auth-card__content">
 
               {sent ? (
                 // Erfolgsmeldung
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 20px auto',
-                    boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)'
-                  }}>
-                    <IonIcon icon={checkmarkCircle} style={{ fontSize: '2rem', color: 'white' }} />
+                  <div className="app-auth-success-circle--small">
+                    <IonIcon icon={checkmarkCircle} className="app-auth-success-circle__icon--small" />
                   </div>
 
                   <h2 style={{
@@ -148,12 +121,7 @@ const ForgotPasswordPage: React.FC = () => {
                   <IonButton
                     expand="full"
                     onClick={() => history.push('/login')}
-                    style={{
-                      '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '--border-radius': '12px',
-                      height: '48px',
-                      fontWeight: '600'
-                    }}
+                    className="app-auth-button"
                   >
                     Zurück zum Login
                   </IonButton>
@@ -161,13 +129,9 @@ const ForgotPasswordPage: React.FC = () => {
               ) : (
                 // Formular
                 <>
-                  <IonItem lines="none" style={{
-                    '--background': '#f8f9fa',
-                    '--border-radius': '12px',
-                    marginBottom: '16px'
-                  }}>
+                  <IonItem lines="none" className="app-auth-input">
                     <IonIcon icon={mailOutline} slot="start" color="medium" />
-                    <IonLabel position="stacked" style={{ color: '#667eea', fontWeight: '500' }}>
+                    <IonLabel position="stacked" className="app-auth-input__label">
                       E-Mail-Adresse
                     </IonLabel>
                     <IonInput
@@ -179,33 +143,37 @@ const ForgotPasswordPage: React.FC = () => {
                     />
                   </IonItem>
 
+                  {/* Konfi-Hinweis */}
+                  <div className="app-auth-konfi-hint">
+                    <IonIcon icon={informationCircleOutline} />
+                    <span>Keine E-Mail-Adresse hinterlegt? Frag deinen Konfi-Leiter -- er kann dein Passwort direkt zurücksetzen.</span>
+                  </div>
+
                   {error && (
-                    <div style={{
-                      marginBottom: '16px',
-                      padding: '12px 16px',
-                      borderRadius: '12px',
-                      background: '#fee2e2',
-                      border: '1px solid #f87171',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <IonIcon icon={alertCircle} style={{ fontSize: '1.2rem', color: '#dc2626' }} />
-                      <span style={{ fontSize: '0.85rem', color: '#991b1b' }}>{error}</span>
+                    <div className="app-auth-error">
+                      <IonIcon icon={alertCircle} className="app-auth-error__icon" />
+                      <span className="app-auth-error__text">{error}</span>
                     </div>
+                  )}
+
+                  {isNetworkError && (
+                    <IonButton
+                      expand="full"
+                      fill="outline"
+                      onClick={() => handleSubmit()}
+                      style={{ marginBottom: '12px', '--border-radius': '8px', height: '36px', fontSize: '0.85rem' }}
+                    >
+                      <IonIcon icon={refreshOutline} slot="start" />
+                      Erneut versuchen
+                    </IonButton>
                   )}
 
                   <IonButton
                     expand="full"
                     onClick={handleSubmit}
                     disabled={loading}
-                    style={{
-                      '--background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '--border-radius': '12px',
-                      height: '48px',
-                      fontWeight: '600',
-                      marginBottom: '16px'
-                    }}
+                    className="app-auth-button"
+                    style={{ marginBottom: '16px' }}
                   >
                     {loading ? (
                       <IonSpinner name="crescent" style={{ '--color': 'white' }} />
@@ -214,17 +182,10 @@ const ForgotPasswordPage: React.FC = () => {
                     )}
                   </IonButton>
 
-                  <div style={{ textAlign: 'center' }}>
+                  <div className="app-auth-footer">
                     <span
                       onClick={() => history.push('/login')}
-                      style={{
-                        color: '#667eea',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
+                      className="app-auth-link"
                     >
                       <IonIcon icon={arrowBack} />
                       Zurück zum Login
