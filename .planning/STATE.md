@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
-status: unknown
-last_updated: "2026-03-02T11:25:29.732Z"
+status: in-progress
+last_updated: "2026-03-02T12:14:19Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 14
+  completed_plans: 11
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Konsistente, sichere App fuer den produktiven Einsatz mit einheitlichem Design ueber alle Rollen
-**Current focus:** v1.1 Design-Konsistenz -- Phase 5 in progress
+**Current focus:** v1.1 Design-Konsistenz -- Phase 6 in progress
 
 ## Current Position
 
-Phase: 5 of 7 (Admin-Views Erweitert)
-Plan: 3 of 3 complete
-Status: Phase 5 complete
-Last activity: 2026-03-02 -- Plan 05-03 complete (Detail-Views Icon-Farb-Konsistenz und Inline-Style Bereinigung)
+Phase: 6 of 7 (Modal-Konsistenz)
+Plan: 1 of 4 complete
+Status: Plan 06-01 complete
+Last activity: 2026-03-02 -- Plan 06-01 complete (Modal-Grundlage und isOpen-Migration)
 
-Progress: [####################] 100% (v1.1 Phase 5: 3/3 plans)
+Progress: [#####               ] 25% (v1.1 Phase 6: 1/4 plans)
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [####################] 100% (v1.1 Phase 5: 3/3 plans)
 | 3 (v1.1) | 3 | 14min | 4.7min |
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
+| 6 (v1.1) | 1/4 | 8min | 8min |
 
 *Updated after each plan completion*
 
@@ -82,6 +83,8 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 05-03]: app-action-button Klasse fuer wiederkehrendes Button-Pattern (48px, abgerundet, fett)
 - [Phase 05-03]: calendar-Icons in Meta-Items nutzen app-icon-color--events statt neutralem Grau fuer Konsistenz
 - [Phase 05-03]: KonfiDetailView ActivityRings-Header (12 Inline-Styles) bleibt unberuehrt -- nur Listen-Bereiche bereinigt
+- [Phase 06-01]: useIonPopover mit Ref-Pattern fuer dynamische Badge/Level-Popover-Inhalte in BadgesView und DashboardView
+- [Phase 06-01]: GroupChatModal, DirectMessageModal, CreateChatModal nicht als Hooks in ChatOverview registriert (nicht in Verwendung, nur Props migriert)
 
 ### Pending Todos
 
@@ -95,5 +98,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 05-03-PLAN.md (Detail-Views Icon-Farb-Konsistenz und Inline-Style Bereinigung) -- Phase 5 complete
-Resume file: Phase 6 next
+Stopped at: Completed 06-01-PLAN.md (Modal-Grundlage und isOpen-Migration)
+Resume file: 06-02-PLAN.md next
