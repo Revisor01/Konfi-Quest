@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: between_milestones
-last_updated: "2026-03-02T17:35:00.000Z"
+milestone: v1.2
+milestone_name: Polishing + Tech Debt
+status: defining_requirements
+last_updated: "2026-03-02T18:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,13 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-02)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Planning next milestone (v1.0 + v1.1 shipped)
+**Current focus:** Milestone v1.2 Polishing + Tech Debt
 
 ## Current Position
 
-Status: Between milestones
-Last milestone: v1.1 Design-Konsistenz (shipped 2026-03-02)
-Next: /gsd:new-milestone
+Phase: Not started (defining requirements)
+Plan: --
+Status: Defining requirements
+Last activity: 2026-03-02 -- Milestone v1.2 started
 
 ## Performance Metrics
 

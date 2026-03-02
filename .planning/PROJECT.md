@@ -4,6 +4,16 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1).
 
+## Current Milestone: v1.2 Polishing + Tech Debt
+
+**Goal:** Super-Admin UI einschraenken, Konfi Dashboard Rings debuggen, Tech Debt aufraeuemen
+
+**Target features:**
+- Super-Admin sieht nur Organisations-Verwaltung
+- Konfi Dashboard ActivityRings 3. Runde Fix + Design-Review
+- rateLimitMessage Wiring, console.log Cleanup, condense-toolbar, Inline Styles
+- CLAUDE.md Korrektur (PostgreSQL-Status)
+
 ## Core Value
 
 Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung mit zwei getrennten Punktearten (Gottesdienst und Gemeinde), die jeweils eigene Mindestanforderungen haben.
@@ -46,18 +56,20 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] Design-Konsistenz: Teamer-Bereich ans gleiche Design-Pattern anpassen
-- [ ] badges.js PostgreSQL-Migration abschliessen
-- [ ] Statistics System PostgreSQL-Migration
-- [ ] Organizations System PostgreSQL-Migration
+- [ ] Super-Admin UI: Nur Organisations-Verwaltung anzeigen statt alle Admin-Tabs
+- [ ] Konfi Dashboard: ActivityRings 3. Runde Debug + Design-Review
+- [ ] Tech Debt: rateLimitMessage Wiring, console.log Cleanup, condense-toolbar Konsistenz, Inline Styles
+- [ ] CLAUDE.md PostgreSQL-Status korrigieren (alle Migrationen bereits abgeschlossen)
 
 ### Out of Scope
 
-- Neue Features/Funktionen hinzufuegen -- Fokus liegt auf Konsistenz und Stabilitaet
-- Offline-Support -- Komplexitaet zu hoch fuer aktuellen Milestone
-- App Store Submission -- Erst nach Design-Konsistenz und Stabilisierung
-- Komplettes Backend-Refactoring (Route-Splitting) -- Funktioniert, nur kritische Fixes
-- API-Dokumentation (Swagger/OpenAPI) -- Kein externer Zugriff geplant
+- Teamer-Bereich Design -- eigener Milestone v2.0
+- Teamer-Badges -- eigener Milestone v2.0
+- Konfi Wrapped -- eigener Milestone v2.0
+- Offline-Support -- Komplexitaet zu hoch
+- App Store Submission -- erst nach Stabilisierung
+- Komplettes Backend-Refactoring (Route-Splitting) -- funktioniert, nur kritische Fixes
+- API-Dokumentation (Swagger/OpenAPI) -- kein externer Zugriff geplant
 
 ## Context
 
@@ -68,7 +80,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
   - Shared Components in 17 Views, 28 Modale migriert, 100+ CSS-Klassen
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
-- badges.js PostgreSQL-Migration noch nicht abgeschlossen
+- PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert (badges.js, organizations.js, auth.js waren bereits fertig)
+- statistics.js existiert nicht und wurde nie benoetigt
+- Mail-Service (emailService.js) konfiguriert mit Nodemailer, SMTP-Envs in docker-compose.yml gesetzt
 
 ## Constraints
 
@@ -97,6 +111,8 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Multi-Use Invite Codes | Codes unbegrenzt wiederverwendbar statt single-use | Bestaetigt v1.1 |
 | DashboardView custom Layout | ActivityRings-Layout bleibt unberuehrt von SectionHeader-Migration | Bestaetigt v1.1 |
 | Pragmatischer canDismiss | Close-Button-Schutz mit isDirtyRef, Swipe-to-Dismiss akzeptiert | Bestaetigt v1.1 |
+| PostgreSQL-Migration vollstaendig | Alle 15 Routes bereits migriert, statistics.js nie noetig | Bestaetigt v1.2-Recherche |
+| Mail-Service konfiguriert | emailService.js mit Nodemailer, SMTP-Envs in docker-compose.yml | Bestaetigt v1.2-Recherche |
 
 ---
-*Last updated: 2026-03-02 after v1.1 milestone completion*
+*Last updated: 2026-03-02 after v1.2 milestone start*
