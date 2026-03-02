@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-02T11:01:28Z"
+last_updated: "2026-03-02T11:18:00Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 5 of 7 (Admin-Views Erweitert)
-Plan: 2 of 3 complete
-Status: Phase 5 in progress
-Last activity: 2026-03-02 -- Plan 05-02 complete (GoalsPage, InvitePage, SettingsPage, LevelsPage Inline-Styles)
+Plan: 3 of 3 complete
+Status: Phase 5 complete
+Last activity: 2026-03-02 -- Plan 05-03 complete (Detail-Views Icon-Farb-Konsistenz und Inline-Style Bereinigung)
 
-Progress: [###############.....] 75% (v1.1 Phase 5: 2/3 plans)
+Progress: [####################] 100% (v1.1 Phase 5: 3/3 plans)
 
 ## Performance Metrics
 
@@ -45,7 +45,7 @@ Progress: [###############.....] 75% (v1.1 Phase 5: 2/3 plans)
 
 | 3 (v1.1) | 3 | 14min | 4.7min |
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
-| 5 (v1.1) | 2/3 | 14min | 7min |
+| 5 (v1.1) | 3/3 | 28min | 9.3min |
 
 *Updated after each plan completion*
 
@@ -78,6 +78,10 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 05-02]: app-condense-toolbar als wiederverwendbare Klasse fuer transparente Large-Title Toolbars (19 Vorkommen)
 - [Phase 05-02]: app-list-item Basisklasse um position:relative und width:100% erweitert fuer Corner-Badge-Kompatibilitaet
 - [Phase 05-02]: SettingsPage Profil-Block mit app-avatar-initials statt app-detail-header (zu gross)
+- [Phase 05-03]: app-section-inset und app-card-content als wiederverwendbare Klassen fuer IonList/IonCardContent
+- [Phase 05-03]: app-action-button Klasse fuer wiederkehrendes Button-Pattern (48px, abgerundet, fett)
+- [Phase 05-03]: calendar-Icons in Meta-Items nutzen app-icon-color--events statt neutralem Grau fuer Konsistenz
+- [Phase 05-03]: KonfiDetailView ActivityRings-Header (12 Inline-Styles) bleibt unberuehrt -- nur Listen-Bereiche bereinigt
 
 ### Pending Todos
 
@@ -91,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 05-02-PLAN.md (GoalsPage, InvitePage, SettingsPage, LevelsPage Bereinigung)
-Resume file: 05-03-PLAN.md next
+Stopped at: Completed 05-03-PLAN.md (Detail-Views Icon-Farb-Konsistenz und Inline-Style Bereinigung) -- Phase 5 complete
+Resume file: Phase 6 next

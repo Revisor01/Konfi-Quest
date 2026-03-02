@@ -31,9 +31,9 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 ### Detail-Views Bereinigung
 
-- [ ] **DET-01**: Admin-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
-- [ ] **DET-02**: Konfi-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
-- [ ] **DET-03**: KonfiDetailView Info-Rows und Listen nutzen CSS-Klassen (ActivityRings-Header bleibt unberuehrt)
+- [x] **DET-01**: Admin-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
+- [x] **DET-02**: Konfi-EventDetailView nutzt Icon-Farb-CSS-Klassen statt Inline-Farben und hat deutlich weniger Inline-Styles
+- [x] **DET-03**: KonfiDetailView Info-Rows und Listen nutzen CSS-Klassen (ActivityRings-Header bleibt unberuehrt)
 
 ### Icon-Konsistenz
 
@@ -92,9 +92,9 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ADM-10 | Phase 5 | Complete |
 | ADM-11 | Phase 5 | Complete |
 | ADM-12 | Phase 5 | Complete |
-| DET-01 | Phase 5 | Pending |
-| DET-02 | Phase 5 | Pending |
-| DET-03 | Phase 5 | Pending |
+| DET-01 | Phase 5 | Complete |
+| DET-02 | Phase 5 | Complete |
+| DET-03 | Phase 5 | Complete |
 | ICO-01 | Phase 5 | Complete |
 | MOD-01 | Phase 6 | Pending |
 | MOD-02 | Phase 6 | Pending |
