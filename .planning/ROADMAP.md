@@ -50,10 +50,10 @@ Phase 7: Onboarding-Validierung (3 plans, complete)
   1. Super-Admin sieht nach Login nur 2 Tabs: Organisationen und Profil/Settings
   2. Super-Admin sieht NICHT die Tabs Konfis, Chat, Events oder Antraege
   3. Super-Admin kann sein eigenes Profil aufrufen und App-Einstellungen aendern
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 08-01: Super-Admin TabBar und Routing einschraenken
+- [ ] 08-01-PLAN.md -- Super-Admin TabBar und Routing einschraenken (MainTabs + AdminSettingsPage)
 
 ### Phase 9: Dashboard Bug-Fix + Design-Review
 **Goal**: Konfi Dashboard zeigt alle Runden korrekt an und alle Sektionen folgen dem Design-System
