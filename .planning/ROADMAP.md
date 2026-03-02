@@ -36,7 +36,7 @@ Phase 7: Onboarding-Validierung (3 plans, complete)
 **Milestone Goal:** Super-Admin UI einschraenken, Konfi Dashboard Rings debuggen und Design-Review, Tech Debt aufraeumen, Dokumentation korrigieren
 
 - [x] **Phase 8: Super-Admin UI** - Super-Admin sieht nur Organisations-Verwaltung und Profil/Settings (completed 2026-03-02)
-- [ ] **Phase 9: Dashboard Bug-Fix + Design-Review** - ActivityRings 3. Runde Fix und Design-Konsistenz aller Dashboard-Sektionen
+- [x] **Phase 9: Dashboard Bug-Fix + Design-Review** - ActivityRings 3. Runde Fix und Design-Konsistenz aller Dashboard-Sektionen (completed 2026-03-02)
 - [ ] **Phase 10: Tech Debt Cleanup** - rateLimitMessage Wiring, console.log Cleanup, condense-toolbar, Inline Styles
 - [ ] **Phase 11: Dokumentation** - CLAUDE.md PostgreSQL-Status korrigieren
 
@@ -112,6 +112,6 @@ Phases 8-11 sind unabhaengig voneinander und koennen in beliebiger Reihenfolge a
 | 6. Modal-Konsistenz | v1.1 | 4/4 | Complete | 2026-03-02 |
 | 7. Onboarding-Validierung | v1.1 | 3/3 | Complete | 2026-03-02 |
 | 8. Super-Admin UI | 1/1 | Complete   | 2026-03-02 | - |
-| 9. Dashboard Bug-Fix + Design-Review | v1.2 | 0/2 | Not started | - |
+| 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 10. Tech Debt Cleanup | v1.2 | 0/2 | Not started | - |
 | 11. Dokumentation | v1.2 | 0/1 | Not started | - |
