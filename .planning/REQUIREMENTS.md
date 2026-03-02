@@ -24,8 +24,8 @@ Requirements fuer Milestone v1.2 Polishing + Tech Debt.
 
 ### Tech Debt
 
-- [ ] **DEBT-01**: rateLimitMessage wird in Error-Handlern korrekt angezeigt
-- [ ] **DEBT-02**: Unnoetige console.log Statements aus Produktionscode entfernt
+- [x] **DEBT-01**: rateLimitMessage wird in Error-Handlern korrekt angezeigt
+- [x] **DEBT-02**: Unnoetige console.log Statements aus Produktionscode entfernt
 - [ ] **DEBT-03**: app-condense-toolbar CSS-Klasse auf alle 19 collapsible Headers angewendet
 - [ ] **DEBT-04**: Inline Styles in EventDetailView durch CSS-Klassen ersetzt
 
@@ -81,8 +81,8 @@ Geplante Milestones nach v1.2:
 | DASH-05 | Phase 9 | Pending |
 | DASH-06 | Phase 9 | Pending |
 | DASH-07 | Phase 9 | Pending |
-| DEBT-01 | Phase 10 | Pending |
-| DEBT-02 | Phase 10 | Pending |
+| DEBT-01 | Phase 10 | Complete |
+| DEBT-02 | Phase 10 | Complete |
 | DEBT-03 | Phase 10 | Pending |
 | DEBT-04 | Phase 10 | Pending |
 | DOC-01 | Phase 11 | Pending |

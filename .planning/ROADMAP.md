@@ -113,5 +113,5 @@ Phases 8-11 sind unabhaengig voneinander und koennen in beliebiger Reihenfolge a
 | 7. Onboarding-Validierung | v1.1 | 3/3 | Complete | 2026-03-02 |
 | 8. Super-Admin UI | 1/1 | Complete   | 2026-03-02 | - |
 | 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
-| 10. Tech Debt Cleanup | v1.2 | 0/2 | Not started | - |
+| 10. Tech Debt Cleanup | 1/2 | In Progress|  | - |
 | 11. Dokumentation | v1.2 | 0/1 | Not started | - |
