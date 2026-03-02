@@ -107,7 +107,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
         ) : (
           <>
             {/* Gottesdienst-Ziel */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--activities">
                   <IonIcon icon={home} />
@@ -116,35 +116,23 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '16px',
-                    padding: '8px 0'
-                  }}>
+                  <div className="app-stepper">
                     <IonButton
                       fill="clear"
+                      className="app-stepper__button"
                       onClick={() => setFormData({ ...formData, target_gottesdienst: Math.max(0, formData.target_gottesdienst - 1) })}
-                      style={{ width: '48px', height: '48px' }}
                     >
-                      <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
+                      <IonIcon icon={removeOutline} />
                     </IonButton>
-                    <div style={{
-                      fontSize: '2.5rem',
-                      fontWeight: '700',
-                      color: '#333',
-                      minWidth: '80px',
-                      textAlign: 'center'
-                    }}>
+                    <div className="app-stepper__value">
                       {formData.target_gottesdienst}
                     </div>
                     <IonButton
                       fill="clear"
+                      className="app-stepper__button"
                       onClick={() => setFormData({ ...formData, target_gottesdienst: formData.target_gottesdienst + 1 })}
-                      style={{ width: '48px', height: '48px' }}
                     >
-                      <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
+                      <IonIcon icon={addOutline} />
                     </IonButton>
                   </div>
                   <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
@@ -155,7 +143,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             </IonList>
 
             {/* Gemeinde-Ziel */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--activities">
                   <IonIcon icon={people} />
@@ -164,35 +152,23 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '16px',
-                    padding: '8px 0'
-                  }}>
+                  <div className="app-stepper">
                     <IonButton
                       fill="clear"
+                      className="app-stepper__button"
                       onClick={() => setFormData({ ...formData, target_gemeinde: Math.max(0, formData.target_gemeinde - 1) })}
-                      style={{ width: '48px', height: '48px' }}
                     >
-                      <IonIcon icon={removeOutline} style={{ fontSize: '1.5rem' }} />
+                      <IonIcon icon={removeOutline} />
                     </IonButton>
-                    <div style={{
-                      fontSize: '2.5rem',
-                      fontWeight: '700',
-                      color: '#333',
-                      minWidth: '80px',
-                      textAlign: 'center'
-                    }}>
+                    <div className="app-stepper__value">
                       {formData.target_gemeinde}
                     </div>
                     <IonButton
                       fill="clear"
+                      className="app-stepper__button"
                       onClick={() => setFormData({ ...formData, target_gemeinde: formData.target_gemeinde + 1 })}
-                      style={{ width: '48px', height: '48px' }}
                     >
-                      <IonIcon icon={addOutline} style={{ fontSize: '1.5rem' }} />
+                      <IonIcon icon={addOutline} />
                     </IonButton>
                   </div>
                   <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
@@ -203,7 +179,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             </IonList>
 
             {/* Info */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonCard className="app-card app-info-box--neutral">
                 <IonCardContent className="app-info-box">
                   <p style={{ margin: 0 }}>

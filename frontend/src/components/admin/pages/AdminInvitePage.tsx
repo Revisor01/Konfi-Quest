@@ -220,7 +220,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
         ) : (
           <>
             {/* Jahrgang Auswahl */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--jahrgang">
                   <IonIcon icon={school} />
@@ -229,8 +229,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  <IonList style={{ background: 'transparent', padding: '0' }}>
-                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                  <IonList className="app-list-inner">
+                    <IonItem lines="none" className="app-item-transparent">
                       <IonLabel position="stacked">Jahrgang *</IonLabel>
                       <IonSelect
                         value={selectedJahrgang}
@@ -272,7 +272,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
 
             {/* Bestehende Einladungscodes */}
             {existingInvites.length > 0 && (
-              <IonList inset={true} style={{ margin: '16px' }}>
+              <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--jahrgang">
                     <IonIcon icon={checkmarkCircleOutline} />
@@ -280,8 +280,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                   <IonLabel>Aktive Einladungscodes</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
-                  <IonCardContent style={{ padding: '16px' }}>
-                    <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
+                  <IonCardContent>
+                    <IonList lines="none" className="app-list-inner">
                       {existingInvites.map((invite, index) => {
                         const isExpired = new Date(invite.expires_at) < new Date();
                         return (
@@ -363,7 +363,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
 
             {/* QR Code Anzeige */}
             {qrCodeDataUrl && inviteCode && (
-              <IonList inset={true} style={{ margin: '16px' }}>
+              <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--jahrgang">
                     <IonIcon icon={qrCodeOutline} />
@@ -406,12 +406,11 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                         {inviteCode}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="app-button-row">
                       <IonButton
                         expand="block"
                         fill="outline"
                         onClick={copyInviteLink}
-                        style={{ flex: 1 }}
                       >
                         <IonIcon icon={copyOutline} slot="start" />
                         Link kopieren
@@ -419,7 +418,6 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                       <IonButton
                         expand="block"
                         onClick={shareInvite}
-                        style={{ flex: 1 }}
                       >
                         <IonIcon icon={shareOutline} slot="start" />
                         Teilen
@@ -431,7 +429,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             )}
 
             {/* Info */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-segment-wrapper">
               <IonCard className="app-card app-info-box--blue">
                 <IonCardContent className="app-info-box">
                   <p style={{ margin: 0 }}>
