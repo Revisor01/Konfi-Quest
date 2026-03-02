@@ -1104,6 +1104,43 @@ ion-button.app-modal-submit-btn--chat {
   color: white;
 }
 
+.app-auth-hero__icons {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.app-auth-hero__icons--small {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.app-auth-hero__title {
+  font-size: 3.5rem;
+  font-family: 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  letter-spacing: 2px;
+}
+
+.app-auth-hero__title--small {
+  font-size: 3rem;
+}
+
+.app-auth-hero__subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.app-auth-hero__subtitle--small {
+  font-size: 1rem;
+}
+
 .app-auth-hero__circle {
   width: 80px;
   height: 80px;
@@ -1128,12 +1165,39 @@ ion-button.app-modal-submit-btn--chat {
   overflow: hidden;
 }
 
+.app-auth-card--error {
+  box-shadow: 0 20px 40px rgba(220,53,69,0.2);
+  border: 2px solid rgba(220,53,69,0.3);
+}
+
 .app-auth-card--narrow {
   max-width: 400px;
 }
 
 .app-auth-card__content {
   padding: 32px;
+}
+
+.app-auth-card__content--compact {
+  padding: 24px;
+}
+
+.app-auth-card__heading {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.app-auth-card__heading h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.app-auth-card__heading p {
+  color: #7f8c8d;
+  margin: 8px 0 0 0;
+  font-size: 0.9rem;
 }
 
 .app-auth-input {
@@ -1151,11 +1215,14 @@ ion-button.app-modal-submit-btn--chat {
   font-weight: 500;
 }
 
+.app-auth-input__value {
+  --color: #2c3e50;
+}
+
 .app-auth-input__toggle {
   cursor: pointer;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   color: #667eea;
-  padding: 8px;
   margin-top: 20px;
 }
 
@@ -1171,9 +1238,9 @@ ion-button.app-modal-submit-btn--chat {
 
 .app-auth-error {
   margin-bottom: 16px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-radius: 12px;
-  background: #fee2e2;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   border: 1px solid #f87171;
   display: flex;
   align-items: center;
@@ -1192,34 +1259,92 @@ ion-button.app-modal-submit-btn--chat {
   flex: 1;
 }
 
+.app-auth-error__close {
+  font-size: 1.1rem;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.app-auth-error--with-badge {
+  margin-top: 16px;
+}
+
+.app-auth-error__badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.app-auth-error__badge-icon {
+  font-size: 1.3rem;
+  color: white;
+}
+
+.app-auth-error__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 2px;
+}
+
+.app-auth-error__detail {
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
 .app-auth-link {
   color: #667eea;
   cursor: pointer;
   font-size: 0.9rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+}
+
+.app-auth-link--muted {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+}
+
+.app-auth-link--strong {
+  font-weight: 500;
 }
 
 .app-auth-footer {
   text-align: center;
+  margin-top: 16px;
 }
 
-.app-auth-success-circle--small {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px auto;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+.app-auth-footer--separator {
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
-.app-auth-success-circle__icon--small {
-  font-size: 2rem;
+.app-auth-invite-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
   color: white;
+  text-align: center;
+}
+
+.app-auth-invite-info__icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.app-auth-invite-info__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.app-auth-invite-info__subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
 }
 
 .app-auth-password-checks {
@@ -1227,6 +1352,7 @@ ion-button.app-modal-submit-btn--chat {
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 12px;
+  font-size: 0.8rem;
 }
 
 .app-auth-password-checks__grid {
@@ -1236,14 +1362,93 @@ ion-button.app-modal-submit-btn--chat {
 }
 
 .app-auth-password-match-error {
-  margin-bottom: 16px;
-  padding: 10px 14px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
   border-radius: 10px;
   background: #fee2e2;
-  border: 1px solid #fecaca;
+  border: 1px solid #f87171;
+  font-size: 0.85rem;
+  color: #991b1b;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.app-auth-username-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+
+.app-auth-username-status--available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.app-auth-username-status--taken {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.app-auth-username-status--checking {
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.app-auth-retry-button {
+  --background: transparent;
+  --color: #667eea;
+  --border-color: #667eea;
+  --border-radius: 8px;
+  --border-width: 1px;
+  --border-style: solid;
+  height: 36px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
+.app-auth-success-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px auto;
+  box-shadow: 0 8px 24px rgba(52, 199, 89, 0.4);
+}
+
+.app-auth-success-circle--small {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
+
+.app-auth-success-circle__icon {
+  font-size: 3.5rem;
+  color: white;
+}
+
+.app-auth-success-circle__icon--small {
+  font-size: 2rem;
+}
+
+/* Shake Animation fuer Auth-Seiten */
+@keyframes app-auth-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.app-auth-card--shaking {
+  animation: app-auth-shake 0.6s ease-in-out;
 }
 
 .app-auth-konfi-hint {
