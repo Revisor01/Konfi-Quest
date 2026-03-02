@@ -1,47 +1,82 @@
 # Requirements: Konfi Quest
 
-**Defined:** 2026-03-02
+**Defined:** 2026-03-03
 **Core Value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
 
-## v1.2 Requirements
+## v1.3 Requirements
 
-Requirements fuer Milestone v1.2 Polishing + Tech Debt.
+Requirements fuer Milestone v1.3 Layout-Polishing.
 
-### Super-Admin UI
+### Global UI
 
-- [x] **SUI-01**: Super-Admin sieht nach Login nur Organisations-Verwaltung und Profil/Settings (keine Konfis, Chat, Events, Antraege Tabs)
-- [x] **SUI-02**: Super-Admin hat Zugriff auf eigenes Profil und App-Einstellungen
+- [ ] **GUI-01**: Listen-Icons in allen Views kleiner und oben positioniert (statt gross und zentriert)
+- [ ] **GUI-02**: Auswahl-Rahmen (orange/tuerkis/rot) bei Fokus/Select in allen Modals und Listen entfernt
+- [ ] **GUI-03**: Auswahl-Farben konsistent: Konfis=Orange, alle anderen=Tuerkis (Haekchen, Hervorhebung)
+- [ ] **GUI-04**: Gruen in Headers kraeftiger (Aktivitaeten, Antraege -- zu matt)
+- [ ] **GUI-05**: Auth-Seiten durchgehende Hintergrundfarbe (weisser Bereich unten entfernt)
 
-### Dashboard
+### Konfi Views
 
-- [x] **DASH-01**: ActivityRings zeigen 3. Runde korrekt und sichtbar an (Bug-Fix)
-- [x] **DASH-02**: Dashboard-Header (ActivityRings, Level, Greeting) auf Design-Konsistenz geprueft
-- [x] **DASH-03**: Konfirmation-Sektion auf Design-Konsistenz geprueft
-- [x] **DASH-04**: Events-Sektion auf Design-Konsistenz geprueft
-- [x] **DASH-05**: Badges-Sektion auf Design-Konsistenz geprueft
-- [x] **DASH-06**: Tageslosung-Sektion auf Design-Konsistenz geprueft
-- [x] **DASH-07**: Ranking-Sektion auf Design-Konsistenz geprueft
+- [ ] **KUI-01**: Tab "Dashboard" in "Start" umbenannt
+- [ ] **KUI-02**: Konfi EventDetailView Teilnehmer:innen-Anzeige redesignt (passt zum Design-System)
+- [ ] **KUI-03**: BadgesView EmptyState fuer "Offen" und "In Arbeit" Sektionen wenn leer
+- [ ] **KUI-04**: KonfiProfileView Farbe von Blau auf Lila geaendert
+- [ ] **KUI-05**: PointsHistoryModal "Gesamt" Textüberlauf behoben, Layout 3+2 statt 4+1
+- [ ] **KUI-06**: Bibeluebersetzung-Aendern Action funktioniert (aktuell ohne Funktion)
+- [ ] **KUI-07**: RequestsView Header-Gruen dunkler (wie Admin-Antraege)
+- [ ] **KUI-08**: Konfi ActivityRequestModal Icons von Lila auf Gruen geaendert
+- [ ] **KUI-09**: Konfi RequestDetailModal an Admin-Modal angeglichen
+- [ ] **KUI-10**: UnregisterModal erreichbar/verlinkt
+- [ ] **KUI-11**: EditProfileModal pruefen und verlinken oder entfernen
 
-### Tech Debt
+### Admin Views
 
-- [x] **DEBT-01**: rateLimitMessage wird in Error-Handlern korrekt angezeigt
-- [x] **DEBT-02**: Unnoetige console.log Statements aus Produktionscode entfernt
-- [x] **DEBT-03**: app-condense-toolbar CSS-Klasse auf alle 19 collapsible Headers angewendet
-- [x] **DEBT-04**: Inline Styles in EventDetailView durch CSS-Klassen ersetzt
+- [ ] **AUI-01**: KonfiDetailView Corner-Badge fuer Bonus- und Event-Eintraege (Konsistenz)
+- [ ] **AUI-02**: KonfiDetailView Icon vor Approved-Namen
+- [ ] **AUI-03**: Benutzer:innen-Liste Funktions-Icon von Line auf Solid
+- [ ] **AUI-04**: GoalsPage/PunkteZiel-Modal Standard-Stepper-Pattern (kein Sonderdesign)
+- [ ] **AUI-05**: Admin EventDetailView Beschreibung als eigene Card (wie Konfi-Ansicht)
+- [ ] **AUI-06**: Admin vs Konfi EventDetailView Detail-Reihenfolge angeglichen
+- [ ] **AUI-07**: ActivityModal Haekchen-Position wie andere Modals (nicht oben rechts)
 
-### Dokumentation
+### Settings-Bereich
 
-- [x] **DOC-01**: CLAUDE.md PostgreSQL-Migrationsstatus korrigiert (alle Migrationen abgeschlossen)
+- [ ] **SET-01**: Settings-Seite Struktur: Profil raus, Konto oben, Verwaltung, Inhalt
+- [ ] **SET-02**: Benutzer + Konfis einladen Farbe auf mattes Blau
+- [ ] **SET-03**: Aktivitaeten Gottesdienst-Aktivitaeten in Blau
+- [ ] **SET-04**: Kategorien durchgehend Orange (nicht Gruen im Inneren)
+- [ ] **SET-05**: Kategorien eigene Farbe zur Abgrenzung von Badges
+- [ ] **SET-06**: Level-Modal Icon-Farbe Lila + iOS Backdrop-Effekt
+- [ ] **SET-07**: Profil-Modals Icons und Funktionsbeschreibung auf Lila
+- [ ] **SET-08**: AdminBadgesPage Zurueck-Button oben links
+- [ ] **SET-09**: Badges-Sektionen Oberkategorie-Icons in Zwischenueberschriften
+
+### Super-Admin
+
+- [ ] **SUA-01**: Keine TabBar, nur Organisationen-View (kein Profil-Tab)
+- [ ] **SUA-02**: Direkter Redirect nach Login auf Organisationen (keine weisse Seite)
+- [ ] **SUA-03**: Farbe mattes Blau durchgehend
+- [ ] **SUA-04**: Listen-Elemente an CSS-Variablen/Design-System angepasst
+- [ ] **SUA-05**: Statistik als SectionHeader oben (wie andere Views)
+- [ ] **SUA-06**: OrganizationManagementModal ans Design-System angepasst
+- [ ] **SUA-07**: Logout-Moeglichkeit eingebaut
+
+### Bugs
+
+- [ ] **BUG-01**: ParticipantManagementModal zeigt keine User
+- [ ] **BUG-02**: BadgeManagementModal Kategorien und Aktivitaeten nicht aus DB geladen
+- [ ] **BUG-03**: Invite-Modal QR-Code nicht persistiert nach Schliessen/Oeffnen
+- [ ] **BUG-04**: ForgotPassword Mail wird nicht gesendet
+- [ ] **BUG-05**: ResetPasswordPage Unicode-Encoding "pr\u00fen" statt "pruefen"
+- [ ] **BUG-06**: ResetPasswordPage Zurueck-Button Layout
+
+### Sicherheit
+
+- [ ] **SEC-01**: Konfi-Passwort-Management: Einmalpasswort generieren statt Klartext-Anzeige, mit Kopier-Button
 
 ## Future Requirements
 
-Geplante Milestones nach v1.2:
-
-### v1.3 Repo Hygiene
-- **REPO-01**: Git Repo aufgeraeumt (unnoetige Dateien, alte Branches)
-- **REPO-02**: Lizenzen geprueft und hinzugefuegt
-- **REPO-03**: README erstellt
-- **REPO-04**: Allgemeine Code-Sauberkeit
+Geplante Milestones nach v1.3:
 
 ### v1.4 Push-Benachrichtigungen
 - **PUSH-01**: Systematischer Durchgang aller Push-Notification-Flows
@@ -61,37 +96,69 @@ Geplante Milestones nach v1.2:
 
 | Feature | Reason |
 |---------|--------|
-| Neue Features/Funktionen | Fokus v1.2 liegt auf Polishing und Tech Debt |
+| Neue Features/Funktionen | Fokus v1.3 liegt auf Layout-Polishing |
+| Teamer-Bereich | Eigener Milestone v2.0 |
 | Offline-Support | Komplexitaet zu hoch |
 | App Store Submission | Erst nach Stabilisierung |
 | Backend-Refactoring | Funktioniert, nur kritische Fixes |
-| PostgreSQL-Migration | Bereits vollstaendig abgeschlossen (alle 15 Routes) |
-| Statistics System | Wurde nie benoetigt, Datei existiert nicht |
+| Repo Hygiene (README, Lizenzen) | Verschoben, Layout hat Prioritaet |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SUI-01 | Phase 8 | Complete |
-| SUI-02 | Phase 8 | Complete |
-| DASH-01 | Phase 9 | Complete |
-| DASH-02 | Phase 9 | Complete |
-| DASH-03 | Phase 9 | Complete |
-| DASH-04 | Phase 9 | Complete |
-| DASH-05 | Phase 9 | Complete |
-| DASH-06 | Phase 9 | Complete |
-| DASH-07 | Phase 9 | Complete |
-| DEBT-01 | Phase 10 | Complete |
-| DEBT-02 | Phase 10 | Complete |
-| DEBT-03 | Phase 10 | Complete |
-| DEBT-04 | Phase 10 | Complete |
-| DOC-01 | Phase 11 | Complete |
+| GUI-01 | TBD | Pending |
+| GUI-02 | TBD | Pending |
+| GUI-03 | TBD | Pending |
+| GUI-04 | TBD | Pending |
+| GUI-05 | TBD | Pending |
+| KUI-01 | TBD | Pending |
+| KUI-02 | TBD | Pending |
+| KUI-03 | TBD | Pending |
+| KUI-04 | TBD | Pending |
+| KUI-05 | TBD | Pending |
+| KUI-06 | TBD | Pending |
+| KUI-07 | TBD | Pending |
+| KUI-08 | TBD | Pending |
+| KUI-09 | TBD | Pending |
+| KUI-10 | TBD | Pending |
+| KUI-11 | TBD | Pending |
+| AUI-01 | TBD | Pending |
+| AUI-02 | TBD | Pending |
+| AUI-03 | TBD | Pending |
+| AUI-04 | TBD | Pending |
+| AUI-05 | TBD | Pending |
+| AUI-06 | TBD | Pending |
+| AUI-07 | TBD | Pending |
+| SET-01 | TBD | Pending |
+| SET-02 | TBD | Pending |
+| SET-03 | TBD | Pending |
+| SET-04 | TBD | Pending |
+| SET-05 | TBD | Pending |
+| SET-06 | TBD | Pending |
+| SET-07 | TBD | Pending |
+| SET-08 | TBD | Pending |
+| SET-09 | TBD | Pending |
+| SUA-01 | TBD | Pending |
+| SUA-02 | TBD | Pending |
+| SUA-03 | TBD | Pending |
+| SUA-04 | TBD | Pending |
+| SUA-05 | TBD | Pending |
+| SUA-06 | TBD | Pending |
+| SUA-07 | TBD | Pending |
+| BUG-01 | TBD | Pending |
+| BUG-02 | TBD | Pending |
+| BUG-03 | TBD | Pending |
+| BUG-04 | TBD | Pending |
+| BUG-05 | TBD | Pending |
+| BUG-06 | TBD | Pending |
+| SEC-01 | TBD | Pending |
 
 **Coverage:**
-- v1.2 requirements: 14 total
-- Mapped to phases: 14
-- Unmapped: 0
+- v1.3 requirements: 45 total
+- Mapped to phases: 0 (TBD by roadmapper)
+- Unmapped: 45
 
 ---
-*Requirements defined: 2026-03-02*
-*Last updated: 2026-03-02 after roadmap creation*
+*Requirements defined: 2026-03-03*
+*Last updated: 2026-03-03 after milestone definition*

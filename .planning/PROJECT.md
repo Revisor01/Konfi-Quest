@@ -4,9 +4,11 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current State
+## Current Milestone: v1.3 Layout-Polishing
 
-v1.0, v1.1 und v1.2 shipped. App ist funktional komplett mit gehärtetem Backend, konsistentem Design-System und bereinigtem Tech Debt. Naechster Schritt: neuer Milestone definieren (v1.3 Repo Hygiene, v1.4 Push-Notifications, oder v2.0 Teamer).
+**Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
+
+**Current State:** v1.0, v1.1 und v1.2 shipped. App ist funktional komplett. v1.3 raeaumt die letzten visuellen Inkonsistenzen auf bevor weitere Features kommen.
 
 ## Core Value
 
@@ -58,7 +60,14 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Kein aktiver Milestone -- naechsten mit /gsd:new-milestone starten)
+- [ ] Globale Listen-Icons kleiner und oben positioniert
+- [ ] Auswahl-Rahmen (Fokus-Border) in allen Modals/Listen entfernt
+- [ ] Farbkonsistenz in allen Views und Modals
+- [ ] Super-Admin komplett ueberarbeitet (keine TabBar, nur Organisationen)
+- [ ] Konfi-Passwort-Management sicher (Einmalpasswort statt Klartext-Anzeige)
+- [ ] Settings-Seite Struktur und Farben ueberarbeitet
+- [ ] Auth-Seiten Bugs behoben (Mail, Unicode, Layout)
+- [ ] Fehlende EmptyStates, Back-Links und Verlinkungen ergaenzt
 
 ### Out of Scope
 
@@ -76,6 +85,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.0 shipped: Backend Security Hardening + Theme-Stabilisierung (2 Phasen, 5 Plans)
 - v1.1 shipped: Design-Konsistenz ueber alle Admin- und Konfi-Bereiche (5 Phasen, 17 Plans, -1227 Netto-Zeilen)
 - v1.2 shipped: Polishing + Tech Debt (4 Phasen, 6 Plans, 78 Dateien geaendert)
+- v1.3 in Arbeit: Layout-Polishing (45 Issues aus systematischem View-fuer-View Durchgang)
 - Gesamt: 11 Phasen, 28 Plans ueber 3 Milestones shipped
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
@@ -118,4 +128,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | CLAUDE.md als kompaktes Arbeitsdokument | Nur aktuell relevante Infos, keine historischen Details | Bestaetigt v1.2 |
 
 ---
-*Last updated: 2026-03-02 after v1.2 milestone complete*
+*Last updated: 2026-03-03 after v1.3 milestone start*
