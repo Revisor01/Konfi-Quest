@@ -8,7 +8,7 @@ progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 7 of 7 (Onboarding-Validierung)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: Phase 7 in progress
-Last activity: 2026-03-02 -- Plan 07-01 complete (Backend Auth Ueberarbeitung)
+Last activity: 2026-03-02 -- Plan 07-03 complete (ForgotPassword/ResetPassword/AdminInvite)
 
-Progress: [######              ] 33% (v1.1 Phase 7: 1/3 plans)
+Progress: [#############       ] 67% (v1.1 Phase 7: 2/3 plans)
 
 ## Performance Metrics
 
@@ -47,7 +47,7 @@ Progress: [######              ] 33% (v1.1 Phase 7: 1/3 plans)
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
 | 6 (v1.1) | 4/4 | 45min | 11.3min |
-| 7 (v1.1) | 1/3 | 3min | 3min |
+| 7 (v1.1) | 2/3 | 7min | 3.5min |
 
 *Updated after each plan completion*
 
@@ -98,6 +98,9 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 07-01]: SMTP_SECURE Default auf true (statt false) damit Port 465 ohne Env-Variable funktioniert
 - [Phase 07-01]: JWT 90d fuer Login UND Registrierung (Konfis bleiben ein Konfi-Jahr eingeloggt)
 - [Phase 07-01]: transporter Parameter in auth.js Signatur beibehalten (kein Breaking Change)
+- [Phase 07-03]: Auth-CSS-Klassen vorgezogen aus Plan 07-02 (Rule 3 blocking dependency)
+- [Phase 07-03]: Kein-Token-Screen in ResetPasswordPage behaelt Inline-Styles (spezielles Rot-Design)
+- [Phase 07-03]: formatExpiryDate behaelt Abgelaufen-Fallback als Sicherheitsnetz
 
 ### Pending Todos
 
@@ -111,5 +114,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 07-01-PLAN.md (Backend Auth Ueberarbeitung)
+Stopped at: Completed 07-03-PLAN.md (ForgotPassword/ResetPassword/AdminInvite)
 Resume file: 07-02-PLAN.md next
