@@ -276,8 +276,8 @@ const KonfiDashboardPage: React.FC = () => {
         }}
       >
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black', fontWeight: '700' }}>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">
               Konfi Quest
             </IonTitle>
           </IonToolbar>

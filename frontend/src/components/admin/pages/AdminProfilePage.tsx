@@ -111,7 +111,7 @@ const AdminProfilePage: React.FC = () => {
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader>
+      <IonHeader translucent={true}>
         <IonToolbar>
         <IonButtons slot="start">
           <IonButton onClick={() => window.history.back()}>
@@ -123,6 +123,11 @@ const AdminProfilePage: React.FC = () => {
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
+        <IonHeader collapse="condense">
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Admin-Profil</IonTitle>
+          </IonToolbar>
+        </IonHeader>
         {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
         <div className="app-detail-header" style={{
           background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',

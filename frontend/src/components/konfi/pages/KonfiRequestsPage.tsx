@@ -207,8 +207,8 @@ const KonfiRequestsPage: React.FC = () => {
       
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">
               Aktivitäten
             </IonTitle>
           </IonToolbar>

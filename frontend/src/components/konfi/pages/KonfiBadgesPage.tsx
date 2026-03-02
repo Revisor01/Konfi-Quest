@@ -193,8 +193,8 @@ const KonfiBadgesPage: React.FC = () => {
       
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Badges</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Badges</IonTitle>
           </IonToolbar>
         </IonHeader>
         

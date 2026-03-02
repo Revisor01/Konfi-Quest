@@ -158,8 +158,8 @@ const AdminUsersPage: React.FC = () => {
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Benutzer:innen</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Benutzer:innen</IonTitle>
           </IonToolbar>
         </IonHeader>
         

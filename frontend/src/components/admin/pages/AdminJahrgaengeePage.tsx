@@ -346,8 +346,8 @@ const AdminJahrgaengeePage: React.FC = () => {
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Jahrgänge</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Jahrgänge</IonTitle>
           </IonToolbar>
         </IonHeader>
         

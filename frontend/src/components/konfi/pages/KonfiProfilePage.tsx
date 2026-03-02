@@ -123,8 +123,8 @@ const KonfiProfilePage: React.FC = () => {
       
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Profil</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Profil</IonTitle>
           </IonToolbar>
         </IonHeader>
 

@@ -210,8 +210,8 @@ const AdminKonfisPage: React.FC = () => {
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Konfirmand:innen</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Konfirmand:innen</IonTitle>
           </IonToolbar>
         </IonHeader>
         

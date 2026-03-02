@@ -173,8 +173,8 @@ const AdminActivityRequestsPage: React.FC = () => {
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Anträge</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Anträge</IonTitle>
           </IonToolbar>
         </IonHeader>
         

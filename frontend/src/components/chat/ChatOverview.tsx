@@ -306,8 +306,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Chat</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Chat</IonTitle>
           </IonToolbar>
         </IonHeader>
 

@@ -475,7 +475,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
+          <IonToolbar className="app-condense-toolbar">
             <IonTitle size="large">{eventData?.name || 'Event Details'}</IonTitle>
           </IonToolbar>
         </IonHeader>
