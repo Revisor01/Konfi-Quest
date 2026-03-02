@@ -72,24 +72,26 @@ Geplante Milestones nach v1.2:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SUI-01 | TBD | Pending |
-| SUI-02 | TBD | Pending |
-| DASH-01 | TBD | Pending |
-| DASH-02 | TBD | Pending |
-| DASH-03 | TBD | Pending |
-| DASH-04 | TBD | Pending |
-| DASH-05 | TBD | Pending |
-| DEBT-01 | TBD | Pending |
-| DEBT-02 | TBD | Pending |
-| DEBT-03 | TBD | Pending |
-| DEBT-04 | TBD | Pending |
-| DOC-01 | TBD | Pending |
+| SUI-01 | Phase 8 | Pending |
+| SUI-02 | Phase 8 | Pending |
+| DASH-01 | Phase 9 | Pending |
+| DASH-02 | Phase 9 | Pending |
+| DASH-03 | Phase 9 | Pending |
+| DASH-04 | Phase 9 | Pending |
+| DASH-05 | Phase 9 | Pending |
+| DASH-06 | Phase 9 | Pending |
+| DASH-07 | Phase 9 | Pending |
+| DEBT-01 | Phase 10 | Pending |
+| DEBT-02 | Phase 10 | Pending |
+| DEBT-03 | Phase 10 | Pending |
+| DEBT-04 | Phase 10 | Pending |
+| DOC-01 | Phase 11 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12
+- v1.2 requirements: 14 total
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-02*
-*Last updated: 2026-03-02 after initial definition*
+*Last updated: 2026-03-02 after roadmap creation*
