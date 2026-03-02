@@ -94,11 +94,13 @@ Plans:
   2. Alle Chat-Modals (CreateChat, GroupChat, DirectMessage, SimpleCreateChat) oeffnen und schliessen korrekt ueber useIonModal
   3. Formular-Inputs in Modalen haben einheitliche Farblogiken und Abstaende gemaess der Event-Erstellen-Modal-Referenz
   4. Auf einem iOS-Geraet zeigt jedes Modal den Card-Modal-Backdrop-Effekt (presenting element korrekt gesetzt)
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01: CSS-Klassen (app-modal-*) erstellen + alle isOpen-Patterns (IonModal/IonAlert/IonPopover) auf Hooks migrieren [Wave 1]
+- [ ] 06-02: Admin-Modals (14) Layout mit Section-Headern und Domain-Farben angleichen [Wave 2]
+- [ ] 06-03: Konfi-Modals (7) + Chat-Modals (7) Layout mit Domain-Farben angleichen [Wave 2]
+- [ ] 06-04: iOS Card-Modal presentingElement + Unsaved-Changes-Schutz + visuelle Verifikation [Wave 3]
 
 ### Phase 7: Onboarding-Validierung
 **Goal**: Der QR-Code-basierte Einladungs- und Registrierungsflow funktioniert zuverlaessig mit verstaendlichen Fehlermeldungen
