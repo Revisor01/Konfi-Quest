@@ -79,11 +79,11 @@ Plans:
   2. Keine console.log Statements mehr im Produktionscode (ausser bewusste console.error/warn)
   3. Alle 19 collapsible Headers haben die app-condense-toolbar CSS-Klasse
   4. EventDetailView hat keine Inline-Styles mehr, alle durch CSS-Klassen ersetzt
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 10-01: rateLimitMessage Wiring und console.log Cleanup
-- [ ] 10-02: condense-toolbar Konsistenz und EventDetailView Inline Styles
+- [ ] 10-01-PLAN.md -- rateLimitMessage UI-Wiring in Login + generischer 429-Handler + console.log Cleanup (Frontend 148 + Backend 177) + strukturierter Server-Start
+- [ ] 10-02-PLAN.md -- app-condense-toolbar auf alle 19+ collapsible Headers + EventDetailView Inline-Styles durch CSS-Klassen ersetzen
 
 ### Phase 11: Dokumentation
 **Goal**: CLAUDE.md spiegelt den tatsaechlichen Projektstatus korrekt wider
