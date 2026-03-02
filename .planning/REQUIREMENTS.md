@@ -14,7 +14,7 @@ Requirements fuer Milestone v1.2 Polishing + Tech Debt.
 
 ### Dashboard
 
-- [ ] **DASH-01**: ActivityRings zeigen 3. Runde korrekt und sichtbar an (Bug-Fix)
+- [x] **DASH-01**: ActivityRings zeigen 3. Runde korrekt und sichtbar an (Bug-Fix)
 - [ ] **DASH-02**: Dashboard-Header (ActivityRings, Level, Greeting) auf Design-Konsistenz geprueft
 - [ ] **DASH-03**: Konfirmation-Sektion auf Design-Konsistenz geprueft
 - [ ] **DASH-04**: Events-Sektion auf Design-Konsistenz geprueft
@@ -74,7 +74,7 @@ Geplante Milestones nach v1.2:
 |-------------|-------|--------|
 | SUI-01 | Phase 8 | Complete |
 | SUI-02 | Phase 8 | Complete |
-| DASH-01 | Phase 9 | Pending |
+| DASH-01 | Phase 9 | Complete |
 | DASH-02 | Phase 9 | Pending |
 | DASH-03 | Phase 9 | Pending |
 | DASH-04 | Phase 9 | Pending |
