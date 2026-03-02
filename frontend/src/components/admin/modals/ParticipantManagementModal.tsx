@@ -227,13 +227,13 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>Teilnehmer verwalten</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             {selectedKonfis.length > 0 && (
-              <IonButton onClick={handleAddParticipants} disabled={loading}>
+              <IonButton onClick={handleAddParticipants} disabled={loading} className="app-modal-submit-btn app-modal-submit-btn--events">
                 <IonIcon icon={checkmarkOutline} slot="icon-only" />
               </IonButton>
             )}
@@ -244,7 +244,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       <IonContent className="app-gradient-background">
 
           {/* Suche & Filter - iOS26 Pattern */}
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={filterOutline} />
@@ -327,7 +327,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
           </IonList>
 
           {/* Personen Liste - iOS26 Pattern */}
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={personAdd} />

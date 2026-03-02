@@ -71,12 +71,12 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
         <IonToolbar>
           <IonTitle>Konfi erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || loading}>
+            <IonButton onClick={handleSave} disabled={!isValid || loading} className="app-modal-submit-btn app-modal-submit-btn--konfi">
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -85,9 +85,9 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
 
       <IonContent className="app-gradient-background">
         {/* Name Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={personOutline} />
             </div>
             <IonLabel>Konfi Daten</IonLabel>
@@ -128,9 +128,9 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
         </IonList>
 
         {/* Hinweis Sektion - iOS26 Pattern in Lila */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--primary">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>

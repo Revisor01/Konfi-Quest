@@ -212,12 +212,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonButton
               onClick={handleClose}
               disabled={loading}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
+              className="app-modal-close-btn"
             >
               <IonIcon icon={closeOutline} />
             </IonButton>
@@ -226,6 +221,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonButton
               onClick={handleSubmit}
               disabled={!isFormValid || loading}
+              className="app-modal-submit-btn app-modal-submit-btn--activities"
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -239,9 +235,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Grunddaten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={create} />
             </div>
             <IonLabel>Grunddaten</IonLabel>
@@ -372,9 +368,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       </IonList>
 
         {/* SEKTION: Kategorien */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--success">
+            <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={pricetag} />
             </div>
             <IonLabel>Kategorien</IonLabel>

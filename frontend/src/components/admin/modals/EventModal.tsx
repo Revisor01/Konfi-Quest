@@ -380,30 +380,19 @@ const EventModal: React.FC<EventModalProps> = ({
             {event ? 'Event bearbeiten' : 'Neues Event'}
           </IonTitle>
           <IonButtons slot="start">
-            <IonButton 
-              onClick={handleClose} 
+            <IonButton
+              onClick={handleClose}
               disabled={loading}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
+              className="app-modal-close-btn"
             >
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton 
-              onClick={handleSubmit} 
+            <IonButton
+              onClick={handleSubmit}
               disabled={!isFormValid || loading}
-              color="primary"
-              style={{
-                '--background': '#dc2626',
-                '--background-hover': '#b91c1c',
-                '--color': 'white',
-                '--border-radius': '8px'
-              }}
+              className="app-modal-submit-btn app-modal-submit-btn--events"
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -417,7 +406,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* EVENT GRUNDDATEN */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={create} />
@@ -465,7 +454,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* DATUM & ZEIT */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={calendar} />
@@ -500,7 +489,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* ZEITFENSTER - VOR Punkte & Teilnehmer */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={time} />
@@ -547,7 +536,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
         {/* ZEITFENSTER DETAILS - direkt nach Toggle */}
         {formData.has_timeslots && timeslots.map((timeslot, index) => (
-          <IonList key={index} inset={true} style={{ margin: '16px' }}>
+          <IonList key={index} inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: 'white' }}>
@@ -667,7 +656,7 @@ const EventModal: React.FC<EventModalProps> = ({
         ))}
 
         {/* PUNKTE & TEILNEHMER */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={people} />
@@ -838,7 +827,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* KATEGORIEN & ZIELGRUPPE */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={people} />
@@ -975,7 +964,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* WARTELISTE */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={people} />
@@ -1048,7 +1037,7 @@ const EventModal: React.FC<EventModalProps> = ({
 
         {/* SERIEN-EVENT - Nur beim Erstellen anzeigen, nicht beim Bearbeiten */}
         {!event && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={copy} />

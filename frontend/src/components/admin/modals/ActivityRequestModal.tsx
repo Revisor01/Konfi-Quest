@@ -174,7 +174,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           <IonToolbar>
             <IonTitle>Antrag laden...</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose}>
+              <IonButton onClick={onClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -195,13 +195,13 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         <IonToolbar>
           <IonTitle>Antrag prüfen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={loading}>
+            <IonButton onClick={onClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           {isPending && selectedAction && (
             <IonButtons slot="end">
-              <IonButton onClick={handleSubmit} disabled={loading || (selectedAction === 'reject' && !adminComment.trim())}>
+              <IonButton onClick={handleSubmit} disabled={loading || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
                 {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkCircle} />}
               </IonButton>
             </IonButtons>
@@ -211,7 +211,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Antragsdaten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={documentTextOutline} />
@@ -296,7 +296,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
         {/* SEKTION: Foto - nur bei pending anzeigen */}
         {isPending && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={imageOutline} />
@@ -351,7 +351,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
         {/* SEKTION: Bearbeitungsstatus für approved/rejected */}
         {!isPending && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div
                 className="app-section-icon"
@@ -402,7 +402,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
         {/* SEKTION: Aktion - NUR bei pending */}
         {isPending && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={checkmarkCircle} />

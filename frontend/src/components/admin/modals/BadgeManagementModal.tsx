@@ -678,12 +678,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Badge bearbeiten' : 'Neues Badge'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} style={{
-              '--background': '#f8f9fa',
-              '--background-hover': '#e9ecef',
-              '--color': '#6c757d',
-              '--border-radius': '8px'
-            }}>
+            <IonButton onClick={onClose} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
@@ -691,6 +686,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
             <IonButton
               onClick={handleSave}
               disabled={loading || !formData.name.trim()}
+              className="app-modal-submit-btn app-modal-submit-btn--badges"
             >
               {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
@@ -700,9 +696,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Badge-Informationen */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Badge-Informationen</IonLabel>
@@ -870,9 +866,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         </IonList>
 
         {/* SEKTION: Badge-Kriterien */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={settings} />
             </div>
             <IonLabel>Badge-Kriterien</IonLabel>
@@ -1018,9 +1014,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         </IonList>
 
         {/* SEKTION: Badge-Status */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--warning">
+            <div className="app-section-icon app-section-icon--badges">
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Badge-Status</IonLabel>

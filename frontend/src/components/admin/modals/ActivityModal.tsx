@@ -93,12 +93,12 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         <IonToolbar>
           <IonTitle>Aktivität hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!selectedActivity || loading}>
+            <IonButton onClick={handleSave} disabled={!selectedActivity || loading} className="app-modal-submit-btn app-modal-submit-btn--activities">
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -107,7 +107,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
 
       <IonContent className="app-gradient-background">
         {/* Datum & Kommentar */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={calendar} />
@@ -143,7 +143,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
         </IonList>
 
         {/* Aktivität auswählen */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={flash} />
