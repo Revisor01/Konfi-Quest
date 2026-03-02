@@ -22,7 +22,7 @@ import {
 } from '@ionic/react';
 import {
   people, chatbubbles, star, ellipsisHorizontal,
-  person, home, flash, document as documentIcon, calendar
+  person, home, flash, document as documentIcon, calendar, business
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -59,15 +59,17 @@ import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 const MainTabs: React.FC = () => {
   const { user } = useApp();
   const { badgeCount } = useBadge();
+  // super_admin bekommt eine eigene, reduzierte Navigation
+  const isSuperAdmin = user?.role_name === 'super_admin';
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
 
-  // Load pending requests count for admin
+  // Load pending requests count for admin (nicht für super_admin)
   useEffect(() => {
     const loadPendingRequestsCount = async () => {
-      if (user?.type === 'admin') {
+      if (user?.type === 'admin' && !isSuperAdmin) {
         try {
           const response = await api.get('/admin/activities/requests');
           const pendingCount = response.data.filter((req: any) => req.status === 'pending').length;
@@ -94,12 +96,12 @@ const MainTabs: React.FC = () => {
       clearInterval(interval);
       window.removeEventListener('requestStatusChanged', handleRequestStatusChanged);
     };
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
-  // Load pending events count for admin (events that need attendance processing)
+  // Load pending events count for admin (nicht für super_admin)
   useEffect(() => {
     const loadPendingEventsCount = async () => {
-      if (user?.type === 'admin') {
+      if (user?.type === 'admin' && !isSuperAdmin) {
         try {
           const response = await api.get('/events');
           const pendingCount = response.data.filter((event: any) =>
@@ -127,7 +129,7 @@ const MainTabs: React.FC = () => {
       clearInterval(interval);
       window.removeEventListener('events-updated', handleEventsUpdated);
     };
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
   // Load new badges count for konfi (badges not yet seen)
   useEffect(() => {
@@ -162,16 +164,37 @@ const MainTabs: React.FC = () => {
     return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/');
   };
 
-  // super_admin bekommt eine eigene, reduzierte Navigation
-  const isSuperAdmin = user.role_name === 'super_admin';
-
-  return user.type === 'admin' ? (
-    // Admin Tabs
+  return isSuperAdmin ? (
+    // Super-Admin Tabs: Nur Organisationen + Profil/Settings
     <ModalProvider>
       <IonTabs>
         <IonRouterOutlet>
-          {/* super_admin wird zu Organizations weitergeleitet, andere zu Konfis */}
-          <Route exact path="/admin" render={() => <Redirect to={isSuperAdmin ? "/admin/organizations" : "/admin/konfis"} />} />
+          <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
+          <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
+          <Route exact path="/admin/settings" component={AdminSettingsPage} />
+          <Route exact path="/admin/profile" component={AdminProfilePage} />
+          <Route exact path="/admin/users" component={AdminUsersPage} />
+          <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
+        </IonRouterOutlet>
+
+        <IonTabBar slot="bottom">
+          <IonTabButton tab="super-organizations" href="/admin/organizations">
+            <IonIcon icon={business} />
+            <IonLabel>Organisationen</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="super-settings" href="/admin/settings">
+            <IonIcon icon={person} />
+            <IonLabel>Profil</IonLabel>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+    </ModalProvider>
+  ) : user.type === 'admin' ? (
+    // Admin Tabs (org_admin / teamer)
+    <ModalProvider>
+      <IonTabs>
+        <IonRouterOutlet>
+          <Route exact path="/admin" render={() => <Redirect to="/admin/konfis" />} />
           <Route exact path="/admin/konfis" component={AdminKonfisPage} />
           <Route path="/admin/konfis/:id" render={(props) => {
             const konfiId = parseInt(props.match.params.id);
@@ -202,7 +225,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
-          <Route exact path="/" render={() => <Redirect to={isSuperAdmin ? "/admin/organizations" : "/admin/konfis"} />} />
+          <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
         </IonRouterOutlet>
 
         {/* Die IonTabBar wird bedingt gerendert (nur in Chat-Räumen versteckt) */}
