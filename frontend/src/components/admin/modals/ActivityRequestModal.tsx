@@ -20,19 +20,10 @@ import {
 } from '@ionic/react';
 import {
   closeOutline,
-  personOutline,
-  calendarOutline,
   documentTextOutline,
   imageOutline,
-  chatbubbleEllipsesOutline,
-  timeOutline,
-  home,
-  people,
   checkmarkCircle,
-  closeCircle,
-  hourglass,
-  trophyOutline,
-  alertCircleOutline
+  closeCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -223,7 +214,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonList>
                 {/* Konfi */}
                 <IonItem lines="inset">
-                  <IonIcon icon={personOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Konfi</p>
                     <h2>
@@ -239,11 +229,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Aktivität */}
                 <IonItem lines="inset">
-                  <IonIcon
-                    icon={request.activity_type === 'gottesdienst' ? home : people}
-                    slot="start"
-                    style={{ color: '#8e8e93', fontSize: '1rem' }}
-                  />
                   <IonLabel>
                     <p>Aktivität ({request.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'})</p>
                     <h2>{request.activity_name}</h2>
@@ -253,7 +238,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {/* Punkte */}
                 {request.activity_points && (
                   <IonItem lines="inset">
-                    <IonIcon icon={trophyOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel>
                       <p>Punkte</p>
                       <h2>{request.activity_points} {request.activity_points === 1 ? 'Punkt' : 'Punkte'}</h2>
@@ -263,7 +247,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Teilnahmedatum */}
                 <IonItem lines="inset">
-                  <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Teilnahmedatum</p>
                     <h2>{formatDate(request.requested_date)}</h2>
@@ -272,7 +255,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
                 {/* Eingereicht */}
                 <IonItem lines="inset">
-                  <IonIcon icon={timeOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                   <IonLabel>
                     <p>Eingereicht</p>
                     <h2>{formatDateTime(request.created_at)}</h2>
@@ -282,7 +264,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 {/* Kommentar */}
                 {request.comment && (
                   <IonItem lines="none">
-                    <IonIcon icon={chatbubbleEllipsesOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
                     <IonLabel className="ion-text-wrap">
                       <p>Kommentar vom Konfi</p>
                       <h2 style={{ whiteSpace: 'pre-wrap' }}>{request.comment}</h2>
@@ -365,11 +346,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonCardContent>
                 <IonList>
                   <IonItem lines="inset">
-                    <IonIcon
-                      icon={isApproved ? checkmarkCircle : closeCircle}
-                      slot="start"
-                      style={{ color: isApproved ? '#059669' : '#dc3545', fontSize: '1rem' }}
-                    />
                     <IonLabel className="ion-text-wrap">
                       <p>Status</p>
                       <h2 style={{ color: isApproved ? '#059669' : '#dc3545' }}>
@@ -381,11 +357,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   {/* Begründung */}
                   {request.admin_comment && (
                     <IonItem lines="none">
-                      <IonIcon
-                        icon={isApproved ? chatbubbleEllipsesOutline : alertCircleOutline}
-                        slot="start"
-                        style={{ color: isApproved ? '#8e8e93' : '#dc3545', fontSize: '1rem' }}
-                      />
                       <IonLabel className="ion-text-wrap">
                         <p>{isApproved ? 'Kommentar' : 'Begründung'}</p>
                         <h2 style={{ color: isApproved ? '#333' : '#dc3545', whiteSpace: 'pre-wrap' }}>

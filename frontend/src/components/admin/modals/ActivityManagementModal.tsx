@@ -345,8 +345,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     borderTop: '1px solid rgba(0,0,0,0.06)',
                     borderRight: '1px solid rgba(0,0,0,0.06)',
                     borderBottom: '1px solid rgba(0,0,0,0.06)',
-                    borderLeft: '3px solid #007aff',
-                    background: formData.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.1)' : 'white'
+                    borderLeft: '3px solid #3b82f6',
+                    background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : 'white'
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
@@ -354,9 +354,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     checked={formData.type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#007aff',
-                      '--border-color-checked': '#007aff',
-                      '--border-color': '#007aff',
+                      '--checkbox-background-checked': '#3b82f6',
+                      '--border-color-checked': '#3b82f6',
+                      '--border-color': '#3b82f6',
                       '--checkmark-color': 'white'
                     }}
                   />

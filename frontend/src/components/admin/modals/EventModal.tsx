@@ -493,17 +493,17 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonCard className="app-card">
           <IonCardContent>
             <IonList>
-              <IonItem lines="none" >
+              <IonItem lines="full" >
                 <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
 
-              <IonItem lines="none" >
+              <IonItem lines="full" >
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
 
-              <IonItem lines="none" >
+              <IonItem lines="full" >
                 <IonLabel position="stacked">Anmeldung ab</IonLabel>
                 <IonDatetimeButton datetime="registration-opens-picker" />
               </IonItem>
@@ -804,7 +804,7 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonItem>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
-                  className={`app-list-item app-list-item--events ${formData.point_type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
+                  className={`app-list-item ${formData.point_type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -812,7 +812,9 @@ const EventModal: React.FC<EventModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: '0'
+                    marginBottom: '0',
+                    borderLeftColor: '#059669',
+                    backgroundColor: formData.point_type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
@@ -820,14 +822,14 @@ const EventModal: React.FC<EventModalProps> = ({
                     checked={formData.point_type === 'gemeinde'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#dc2626',
-                      '--border-color-checked': '#dc2626',
+                      '--checkbox-background-checked': '#059669',
+                      '--border-color-checked': '#059669',
                       '--checkmark-color': 'white'
                     }}
                   />
                 </div>
                 <div
-                  className={`app-list-item app-list-item--events ${formData.point_type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
+                  className={`app-list-item ${formData.point_type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
                   onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -835,7 +837,9 @@ const EventModal: React.FC<EventModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: '0'
+                    marginBottom: '0',
+                    borderLeftColor: '#3b82f6',
+                    backgroundColor: formData.point_type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
@@ -843,8 +847,8 @@ const EventModal: React.FC<EventModalProps> = ({
                     checked={formData.point_type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#dc2626',
-                      '--border-color-checked': '#dc2626',
+                      '--checkbox-background-checked': '#3b82f6',
+                      '--border-color-checked': '#3b82f6',
                       '--checkmark-color': 'white'
                     }}
                   />

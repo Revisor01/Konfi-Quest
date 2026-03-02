@@ -174,8 +174,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     marginBottom: '0',
-                    borderLeftColor: '#f97316',
-                    backgroundColor: type === 'gemeinde' ? 'rgba(249, 115, 22, 0.1)' : undefined
+                    borderLeftColor: '#059669',
+                    backgroundColor: type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
@@ -183,8 +183,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     checked={type === 'gemeinde'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#f97316',
-                      '--border-color-checked': '#f97316',
+                      '--checkbox-background-checked': '#059669',
+                      '--border-color-checked': '#059669',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -199,8 +199,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     marginBottom: '0',
-                    borderLeftColor: '#f97316',
-                    backgroundColor: type === 'gottesdienst' ? 'rgba(249, 115, 22, 0.1)' : undefined
+                    borderLeftColor: '#3b82f6',
+                    backgroundColor: type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
@@ -208,8 +208,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     checked={type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#f97316',
-                      '--border-color-checked': '#f97316',
+                      '--checkbox-background-checked': '#3b82f6',
+                      '--border-color-checked': '#3b82f6',
                       '--checkmark-color': 'white'
                     }}
                   />
