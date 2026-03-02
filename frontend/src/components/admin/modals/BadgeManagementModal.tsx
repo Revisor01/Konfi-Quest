@@ -310,7 +310,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       // Load criteria types
       const criteriaResponse = await api.get('/admin/badges/criteria-types');
- console.log('Criteria Types geladen:', criteriaResponse.data);
       setCriteriaTypes(criteriaResponse.data);
     } catch (err) {
  console.error('Error loading initial data:', err);
@@ -324,11 +323,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     try {
       const response = await api.get(`/admin/badges/${badgeId}`);
       const badge = response.data;
-
- console.log('Badge geladen:', badge);
- console.log('Icon:', badge.icon);
- console.log('Farbe:', badge.color);
- console.log('Kriterium Typ:', badge.criteria_type);
 
       if (badge) {
         // Parse extra criteria FIRST
@@ -354,7 +348,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           color: badge.color || '#667eea'
         };
 
- console.log('Form Data gesetzt:', newFormData);
         setFormData(newFormData);
         setExtraCriteria(extra);
       }

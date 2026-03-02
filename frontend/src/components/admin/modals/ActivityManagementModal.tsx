@@ -102,17 +102,13 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   // Load activity by ID from all activities
   const loadActivity = async (id: number) => {
     try {
- console.log('Loading activity with ID:', id);
       const response = await api.get('/admin/activities');
       const activities = response.data;
       const activityData = activities.find((act: Activity) => act.id === id);
 
       if (activityData) {
- console.log('Activity data found:', activityData);
- console.log('Activity categories:', activityData.categories);
         setCurrentActivity(activityData);
         const categoryIds = activityData.categories?.map((cat: Category) => cat.id) || [];
- console.log('Category IDs to set:', categoryIds);
         setFormData({
           name: activityData.name,
           points: activityData.points,
@@ -132,8 +128,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   useEffect(() => {
     const initializeModal = async () => {
       setInitializing(true);
- console.log('Starting modal initialization...');
-
       try {
         // First load categories
         await loadCategories();
@@ -142,7 +136,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         if (activityId) {
           await loadActivity(activityId);
         } else if (activity) {
- console.log('Using provided activity:', activity);
           setCurrentActivity(activity);
           setFormData({
             name: activity.name,
@@ -152,7 +145,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           });
         } else {
           // Reset form for new activity
- console.log('🆕 Initializing for new activity');
           setCurrentActivity(null);
           setFormData({
             name: '',
@@ -166,7 +158,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
         setError('Fehler beim Initialisieren des Modals');
       } finally {
         setInitializing(false);
- console.log('Modal initialization completed');
       }
     };
 
@@ -177,14 +168,11 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
   const loadCategories = async () => {
     try {
- console.log('Loading categories...');
       const response = await api.get('/admin/categories');
- console.log('Categories received:', response.data);
 
       // Don't filter - show ALL categories for activities
       // Categories with type=null should also be available for activities
       const allCategories = response.data;
- console.log('Using ALL categories (no filtering):', allCategories);
       setCategories(allCategories);
       return allCategories;
     } catch (error) {

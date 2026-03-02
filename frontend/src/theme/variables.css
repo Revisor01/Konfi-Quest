@@ -320,6 +320,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--badges { background-color: #f59e0b; }
 .app-section-icon--requests { background-color: #059669; }
 .app-section-icon--jahrgang { background-color: #007aff; }
+.app-section-icon--settings { background-color: #667eea; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;

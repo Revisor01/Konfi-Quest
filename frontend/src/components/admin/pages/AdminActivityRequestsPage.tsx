@@ -68,7 +68,6 @@ const AdminActivityRequestsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshRequests = useCallback(() => {
- console.log('Live Update: Refreshing requests...');
     loadRequests();
   }, []);
 

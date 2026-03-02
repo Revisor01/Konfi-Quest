@@ -269,7 +269,6 @@ const EventModal: React.FC<EventModalProps> = ({
   const loadJahrgaenge = async () => {
     try {
       const response = await api.get('/admin/jahrgaenge');
- console.log('Jahrgaenge response:', response.data);
       setJahrgaenge(response.data);
     } catch (error) {
  console.error('Error loading jahrgaenge:', error);
