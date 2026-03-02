@@ -43,7 +43,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 
 - [x] **MOD-01**: Kein einziges Modal im Codebase nutzt mehr das isOpen-Pattern -- alle verwenden useIonModal
 - [x] **MOD-02**: Alle Chat-Modals (CreateChatModal, GroupChatModal, DirectMessageModal, SimpleCreateChatModal) oeffnen und schliessen korrekt ueber useIonModal
-- [ ] **MOD-03**: Jedes Modal hat konsistente Formular-Inputs, Farblogiken und Abstaende gemaess der Event-Erstellen-Modal-Referenz
+- [x] **MOD-03**: Jedes Modal hat konsistente Formular-Inputs, Farblogiken und Abstaende gemaess der Event-Erstellen-Modal-Referenz
 - [x] **MOD-04**: Auf iOS zeigt jedes Modal den korrekten Card-Modal-Backdrop-Effekt (presenting element korrekt gesetzt)
 
 ### Onboarding
@@ -98,7 +98,7 @@ Requirements fuer Milestone v1.1 Design-Konsistenz. Jede Requirement ist einer R
 | ICO-01 | Phase 5 | Complete |
 | MOD-01 | Phase 6 | Complete |
 | MOD-02 | Phase 6 | Complete |
-| MOD-03 | Phase 6 | Pending |
+| MOD-03 | Phase 6 | Complete |
 | MOD-04 | Phase 6 | Complete |
 | ONB-01 | Phase 7 | Pending |
 | ONB-02 | Phase 7 | Pending |

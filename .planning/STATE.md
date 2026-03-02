@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-02T12:14:19Z"
+last_updated: "2026-03-02T12:22:33Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 12
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 6 of 7 (Modal-Konsistenz)
-Plan: 1 of 4 complete
-Status: Plan 06-01 complete
-Last activity: 2026-03-02 -- Plan 06-01 complete (Modal-Grundlage und isOpen-Migration)
+Plan: 2 of 4 complete
+Status: Plan 06-02 complete
+Last activity: 2026-03-02 -- Plan 06-02 complete (Admin-Modals Layout-Angleichung)
 
-Progress: [#####               ] 25% (v1.1 Phase 6: 1/4 plans)
+Progress: [##########          ] 50% (v1.1 Phase 6: 2/4 plans)
 
 ## Performance Metrics
 
@@ -46,7 +46,7 @@ Progress: [#####               ] 25% (v1.1 Phase 6: 1/4 plans)
 | 3 (v1.1) | 3 | 14min | 4.7min |
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
-| 6 (v1.1) | 1/4 | 8min | 8min |
+| 6 (v1.1) | 2/4 | 14min | 7min |
 
 *Updated after each plan completion*
 
@@ -85,6 +85,9 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 05-03]: KonfiDetailView ActivityRings-Header (12 Inline-Styles) bleibt unberuehrt -- nur Listen-Bereiche bereinigt
 - [Phase 06-01]: useIonPopover mit Ref-Pattern fuer dynamische Badge/Level-Popover-Inhalte in BadgesView und DashboardView
 - [Phase 06-01]: GroupChatModal, DirectMessageModal, CreateChatModal nicht als Hooks in ChatOverview registriert (nicht in Verwendung, nur Props migriert)
+- [Phase 06-02]: Domain-Farb-Zuordnung fuer Admin-Modals: Events=Rot, Activities=Gruen, Badges=Orange, Konfi=Lila, Settings/Users=Blau
+- [Phase 06-02]: BonusModal gehoert zur Konfi-Domain (Lila), nicht zu Settings (Blau)
+- [Phase 06-02]: OrganizationManagement und LevelManagement Section-Icons auf --users (Settings-Konsistenz)
 
 ### Pending Todos
 
@@ -98,5 +101,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 06-01-PLAN.md (Modal-Grundlage und isOpen-Migration)
-Resume file: 06-02-PLAN.md next
+Stopped at: Completed 06-02-PLAN.md (Admin-Modals Layout-Angleichung)
+Resume file: 06-03-PLAN.md next
