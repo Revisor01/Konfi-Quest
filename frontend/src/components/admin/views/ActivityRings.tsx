@@ -38,9 +38,9 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
 
   const targetPercents = {
-    total: (totalPoints / effectiveTotalGoal) * 100,
-    gottesdienst: (gottesdienstPoints / effectiveGottesdienstGoal) * 100,
-    gemeinde: (gemeindePoints / effectiveGemeindeGoal) * 100
+    total: Math.min((totalPoints / effectiveTotalGoal) * 100, 300),
+    gottesdienst: Math.min((gottesdienstPoints / effectiveGottesdienstGoal) * 100, 300),
+    gemeinde: Math.min((gemeindePoints / effectiveGemeindeGoal) * 100, 300)
   };
 
   // Animation starten wenn Werte sich ändern
@@ -101,10 +101,13 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   const colors = {
     total: '#f59e0b',
     totalDark: '#b45309',
+    totalBright: '#fbbf24',
     gottesdienst: '#3b82f6',
     gottesdienstDark: '#1d4ed8',
+    gottesdienstBright: '#60a5fa',
     gemeinde: '#059669',
     gemeindeDark: '#047857',
+    gemeindeBright: '#34d399',
     background: 'rgba(255, 255, 255, 0.12)'
   };
 
@@ -114,7 +117,8 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     percent: number;
     color: string;
     colorDark: string;
-  }> = ({ radius, percent, color, colorDark }) => {
+    colorBright: string;
+  }> = ({ radius, percent, color, colorDark, colorBright }) => {
     const circumference = 2 * Math.PI * radius;
 
     // Erste Runde (max 100%)
@@ -184,23 +188,22 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           />
         )}
 
-        {/* Dritte Runde - noch hellere/sichtbarere Farbe */}
+        {/* Dritte Runde - hellere/leuchtendere Farbvariante */}
         {hasThirdRound && (
           <circle
             cx={center}
             cy={center}
-            r={radius - strokeWidth * 0.35}
+            r={radius - strokeWidth * 0.3}
             fill="none"
-            stroke={color}
-            strokeWidth={strokeWidth * 0.35}
+            stroke={colorBright}
+            strokeWidth={strokeWidth * 0.7}
             strokeLinecap="round"
             strokeDasharray={thirdCircumference}
             strokeDashoffset={thirdOffset}
             style={{
               transform: 'rotate(-90deg)',
               transformOrigin: 'center',
-              filter: `drop-shadow(0 0 3px ${color}90)`,
-              opacity: 0.95
+              filter: `drop-shadow(0 0 6px ${colorBright}90)`
             }}
           />
         )}
@@ -231,6 +234,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             percent={animatedValues.total}
             color={colors.total}
             colorDark={colors.totalDark}
+            colorBright={colors.totalBright}
           />
 
           {/* Mittlerer Ring - Gottesdienst */}
@@ -239,6 +243,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             percent={animatedValues.gottesdienst}
             color={colors.gottesdienst}
             colorDark={colors.gottesdienstDark}
+            colorBright={colors.gottesdienstBright}
           />
 
           {/* Innenring - Gemeinde */}
@@ -247,6 +252,7 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
             percent={animatedValues.gemeinde}
             color={colors.gemeinde}
             colorDark={colors.gemeindeDark}
+            colorBright={colors.gemeindeBright}
           />
         </svg>
 
