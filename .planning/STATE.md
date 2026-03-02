@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Polishing + Tech Debt
 status: unknown
-last_updated: "2026-03-02T20:47:15.754Z"
+last_updated: "2026-03-02T22:18:57.824Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-02)
 
 ## Current Position
 
-Phase: 10 of 11 (Tech Debt Cleanup)
-Plan: 1 of 2 (in progress)
-Status: Plan 10-01 complete, ready for Plan 10-02
-Last activity: 2026-03-02 -- Rate-Limit UI + console.log Cleanup
+Phase: 10 of 11 (Tech Debt Cleanup) -- COMPLETE
+Plan: 2 of 2 (complete)
+Status: Phase 10 complete, ready for Phase 11
+Last activity: 2026-03-02 -- Condense-Toolbar + EventDetailView CSS-Bereinigung
 
-Progress: [======░░░░] 60%
+Progress: [=======░░░] 70%
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [======░░░░] 60%
 | Phase 09 P01 | 2min | 1 tasks | 1 files |
 | Phase 09 P02 | 15min | 2 tasks | 2 files |
 | Phase 10 P01 | 14min | 2 tasks | 48 files |
+| Phase 10 P02 | 5min | 2 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ All v1.0 + v1.1 decisions archived in PROJECT.md Key Decisions table.
 - Phase 10: Custom Event Pattern fuer globale 429-Alerts statt Toast
 - Phase 10: Login-Fehlversuche als console.warn beibehalten (Security Monitoring)
 - Phase 10: Catch-Block Logs zu console.error/warn umgewandelt statt entfernt
+- Phase 10: Modal-Seiten (GoalsPage, InvitePage) erhalten keinen collapsible Header - nur eigenstaendige Pages
+- Phase 10: 17 BEM-Klassen app-event-detail__* fuer EventDetailView-spezifische Styles
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 10-01-PLAN.md
-Resume file: .planning/phases/10-tech-debt-cleanup/10-02-PLAN.md
+Stopped at: Completed 10-02-PLAN.md (Phase 10 complete)
+Resume file: .planning/phases/11-*/11-01-PLAN.md
