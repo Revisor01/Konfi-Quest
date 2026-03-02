@@ -22,9 +22,10 @@ import {
   IonCardContent,
   IonCardHeader,
   IonCardTitle,
-  IonChip
+  IonChip,
+  IonListHeader
 } from '@ionic/react';
-import { close, checkmark, person, people, chevronForward, chatbubblesOutline } from 'ionicons/icons';
+import { close, checkmark, person, people, chevronForward, chatbubblesOutline, peopleOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -190,16 +191,16 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
         <IonToolbar>
           <IonTitle>Neuen Chat erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           {chatType === 'group' && (
             <IonButtons slot="end">
               <IonButton
+                className="app-modal-submit-btn app-modal-submit-btn--chat"
                 onClick={createGroupChat}
                 disabled={!canCreate() || creating}
-                color="primary"
               >
                 <IonIcon icon={checkmark} />
               </IonButton>
@@ -209,11 +210,15 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
       </IonHeader>
 
       <IonContent>
-        {/* Chat Type Selection */}
-        <IonCard className="app-card" style={{ margin: '16px' }}>
-          <IonCardHeader>
-            <IonCardTitle style={{ fontSize: '1.1rem' }}>Chat-Art wählen</IonCardTitle>
-          </IonCardHeader>
+        {/* Chat-Art wählen */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--chat">
+              <IonIcon icon={chatbubblesOutline} />
+            </div>
+            <IonLabel>Chat-Art wählen</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
           <IonCardContent>
             <IonItem>
               <IonIcon
@@ -233,14 +238,19 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
               </IonSelect>
             </IonItem>
           </IonCardContent>
-        </IonCard>
+          </IonCard>
+        </IonList>
 
         {/* Group Name Input (only for group chats) */}
         {chatType === 'group' && (
-          <IonCard className="app-card" style={{ margin: '16px' }}>
-            <IonCardHeader>
-              <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
-            </IonCardHeader>
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={peopleOutline} />
+              </div>
+              <IonLabel>Gruppendetails</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
             <IonCardContent>
               <IonItem>
                 <IonLabel position="stacked">Gruppenname *</IonLabel>
@@ -252,17 +262,20 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
                 />
               </IonItem>
             </IonCardContent>
-          </IonCard>
+            </IonCard>
+          </IonList>
         )}
 
         {/* Selected Participants Display (only for group chats) */}
         {chatType === 'group' && selectedParticipants.size > 0 && (
-          <IonCard className="app-card" style={{ margin: '16px' }}>
-            <IonCardHeader>
-              <IonCardTitle style={{ fontSize: '1rem' }}>
-                Ausgewählte Teilnehmer ({selectedParticipants.size})
-              </IonCardTitle>
-            </IonCardHeader>
+          <IonList inset={true} className="app-modal-section">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--chat">
+                <IonIcon icon={peopleOutline} />
+              </div>
+              <IonLabel>Ausgewählte Teilnehmer ({selectedParticipants.size})</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
             <IonCardContent>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {Array.from(selectedParticipants).map(participantId => {
@@ -291,7 +304,8 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
                 })}
               </div>
             </IonCardContent>
-          </IonCard>
+            </IonCard>
+          </IonList>
         )}
 
         {/* User Selection */}
@@ -393,26 +407,25 @@ const CreateChatModal: React.FC<CreateChatModalProps> = ({ onClose, onSuccess, d
               )}
             </div>
 
-            {/* Info */}
-            <div style={{
-              margin: '24px 16px 0 16px',
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '12px'
-            }}>
-              <IonText color="medium">
-                <p style={{
-                  margin: '0',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.4'
-                }}>
-                  {chatType === 'direct'
-                    ? 'Wählen Sie eine Person aus, um eine private Unterhaltung zu starten.'
-                    : 'Wählen Sie Teilnehmer für den Gruppenchat aus. Jahrgangschats werden automatisch erstellt.'
-                  }
-                </p>
-              </IonText>
-            </div>
+            {/* Hinweis */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={informationCircleOutline} />
+                </div>
+                <IonLabel>Hinweis</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    {chatType === 'direct'
+                      ? 'Wähle eine Person aus, um eine private Unterhaltung zu starten.'
+                      : 'Wähle Teilnehmer für den Gruppenchat aus. Jahrgangschats werden automatisch erstellt.'
+                    }
+                  </p>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
           </>
         )}
       </IonContent>

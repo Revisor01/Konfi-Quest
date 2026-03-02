@@ -13,9 +13,12 @@ import {
   IonList,
   IonSearchbar,
   IonAvatar,
-  IonText
+  IonText,
+  IonListHeader,
+  IonCard,
+  IonCardContent
 } from '@ionic/react';
-import { close, person, people, chevronForward } from 'ionicons/icons';
+import { close, person, people, chevronForward, searchOutline, peopleOutline, informationCircleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -117,7 +120,7 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
         <IonToolbar>
           <IonTitle>Direktnachricht</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
@@ -129,8 +132,14 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
           <LoadingSpinner message="Benutzer werden geladen..." />
         ) : (
           <>
-            {/* Search */}
-            <div style={{ padding: '16px', paddingBottom: '8px' }}>
+            {/* Suche */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={searchOutline} />
+                </div>
+                <IonLabel>Suche</IonLabel>
+              </IonListHeader>
               <IonSearchbar
                 value={searchText}
                 onIonInput={(e) => setSearchText(e.detail.value!)}
@@ -140,18 +149,22 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                   '--border-radius': '12px'
                 }}
               />
-            </div>
+            </IonList>
 
-            {/* Users List */}
-            <div style={{ padding: '0 16px' }}>
+            {/* Kontakte */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={peopleOutline} />
+                </div>
+                <IonLabel>Kontakte ({filteredUsers.length})</IonLabel>
+              </IonListHeader>
               {filteredUsers.length === 0 ? (
-                <IonText color="medium" style={{
-                  display: 'block',
-                  textAlign: 'center',
-                  padding: '32px 16px'
-                }}>
-                  <p>Keine Personen gefunden</p>
-                </IonText>
+                <IonCard className="app-card">
+                  <IonCardContent style={{ textAlign: 'center', padding: '32px 16px' }}>
+                    <p style={{ margin: 0, color: '#666' }}>Keine Personen gefunden</p>
+                  </IonCardContent>
+                </IonCard>
               ) : (
                 <IonList>
                   {filteredUsers.map((targetUser) => (
@@ -202,25 +215,24 @@ const DirectMessageModal: React.FC<DirectMessageModalProps> = ({ onClose, onSucc
                   ))}
                 </IonList>
               )}
-            </div>
+            </IonList>
 
-            {/* Info */}
-            <div style={{
-              margin: '24px 16px 0 16px',
-              padding: '16px',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '12px'
-            }}>
-              <IonText color="medium">
-                <p style={{
-                  margin: '0',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.4'
-                }}>
-                  Wählen Sie eine Person aus, um eine private Unterhaltung zu starten.
-                </p>
-              </IonText>
-            </div>
+            {/* Hinweis */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={informationCircleOutline} />
+                </div>
+                <IonLabel>Hinweis</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#666', lineHeight: '1.4' }}>
+                    Wähle eine Person aus, um eine private Unterhaltung zu starten.
+                  </p>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
           </>
         )}
       </IonContent>

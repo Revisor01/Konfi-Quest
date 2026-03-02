@@ -12,7 +12,8 @@ import {
   IonItem,
   IonLabel,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonListHeader
 } from '@ionic/react';
 import {
   closeOutline,
@@ -60,53 +61,24 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
         <IonToolbar>
           <IonTitle>Neuen Chat erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton
-              onClick={handleClose}
-              style={{
-                '--background': '#f8f9fa',
-                '--background-hover': '#e9ecef',
-                '--color': '#6c757d',
-                '--border-radius': '8px'
-              }}
-            >
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent style={{ '--padding-top': '16px' }}>
-        {/* SEKTION: Chat-Optionen */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '16px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#17a2b8',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={chatbubbles} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Chat-Optionen
-          </h2>
-        </div>
+      <IonContent className="app-gradient-background">
+        {/* Chat-Optionen */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--chat">
+              <IonIcon icon={chatbubbles} />
+            </div>
+            <IonLabel>Chat-Optionen</IonLabel>
+          </IonListHeader>
 
-        <IonCard className="app-card" style={{ margin: '0 16px 16px 16px' }}>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '8px 0' }}>
             <IonList lines="none" style={{ background: 'transparent' }}>
               {chatOptions.map((option) => (
@@ -167,38 +139,18 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
             </IonList>
           </IonCardContent>
         </IonCard>
+        </IonList>
 
-        {/* SEKTION: Hinweis */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          margin: '24px 16px 12px 16px'
-        }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#17a2b8',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(23, 162, 184, 0.3)',
-            flexShrink: 0
-          }}>
-            <IonIcon icon={informationCircle} style={{ fontSize: '1rem', color: 'white' }} />
-          </div>
-          <h2 style={{
-            fontWeight: '600',
-            fontSize: '1.1rem',
-            margin: '0',
-            color: '#333'
-          }}>
-            Jahrgangschats
-          </h2>
-        </div>
+        {/* Hinweis */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--chat">
+              <IonIcon icon={informationCircle} />
+            </div>
+            <IonLabel>Jahrgangschats</IonLabel>
+          </IonListHeader>
 
-        <IonCard className="app-card" style={{ margin: '0 16px 16px 16px' }}>
+        <IonCard className="app-card">
           <IonCardContent style={{ padding: '16px' }}>
             <p style={{
               margin: '0',
@@ -210,6 +162,7 @@ const ChatOptionsModal: React.FC<ChatOptionsModalProps> = ({ onClose, onSelectOp
             </p>
           </IonCardContent>
         </IonCard>
+        </IonList>
       </IonContent>
     </IonPage>
   );

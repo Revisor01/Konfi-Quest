@@ -20,9 +20,10 @@ import {
   IonCardTitle,
   IonAvatar,
   IonChip,
-  IonSpinner
+  IonSpinner,
+  IonListHeader
 } from '@ionic/react';
-import { close, checkmarkOutline, people, person } from 'ionicons/icons';
+import { close, checkmarkOutline, people, person, chatbubblesOutline, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -150,20 +151,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
         <IonToolbar>
           <IonTitle>Gruppenchat erstellen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={close} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
+              className="app-modal-submit-btn app-modal-submit-btn--chat"
               onClick={createGroupChat}
               disabled={!groupName.trim() || selectedParticipants.size === 0 || creating}
-              color="primary"
-              style={{
-                '--background': 'transparent',
-                '--background-hover': 'transparent',
-                '--border-radius': '8px'
-              }}
             >
               {creating ? (
                 <IonSpinner name="crescent" />
@@ -180,11 +176,15 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
           <LoadingSpinner message="Benutzer werden geladen..." />
         ) : (
           <>
-            {/* Group Name Input */}
-            <IonCard className="app-card" style={{ margin: '16px' }}>
-              <IonCardHeader>
-                <IonCardTitle style={{ fontSize: '1.1rem' }}>Gruppendetails</IonCardTitle>
-              </IonCardHeader>
+            {/* Gruppenname */}
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={chatbubblesOutline} />
+                </div>
+                <IonLabel>Gruppenname</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
               <IonCardContent>
                 <IonItem>
                   <IonLabel position="stacked">Gruppenname *</IonLabel>
@@ -196,16 +196,19 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                   />
                 </IonItem>
               </IonCardContent>
-            </IonCard>
+              </IonCard>
+            </IonList>
 
             {/* Selected Participants Display */}
             {selectedParticipants.size > 0 && (
-              <IonCard className="app-card" style={{ margin: '16px' }}>
-                <IonCardHeader>
-                  <IonCardTitle style={{ fontSize: '1rem' }}>
-                    Ausgewählte Teilnehmer ({selectedParticipants.size})
-                  </IonCardTitle>
-                </IonCardHeader>
+              <IonList inset={true} className="app-modal-section">
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--chat">
+                    <IonIcon icon={peopleOutline} />
+                  </div>
+                  <IonLabel>Ausgewählte Teilnehmer ({selectedParticipants.size})</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
                 <IonCardContent>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {Array.from(selectedParticipants).map(participantId => {
@@ -234,7 +237,8 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                     })}
                   </div>
                 </IonCardContent>
-              </IonCard>
+                </IonCard>
+              </IonList>
             )}
 
             {/* Search */}
@@ -252,13 +256,14 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
 
             {/* Admins List */}
             {admins.length > 0 && (
-              <IonCard className="app-card" style={{ margin: '16px' }}>
-                <IonCardHeader>
-                  <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <IonIcon icon={person} color="tertiary" />
-                    Admins
-                  </IonCardTitle>
-                </IonCardHeader>
+              <IonList inset={true} className="app-modal-section">
+                <IonListHeader>
+                  <div className="app-section-icon app-section-icon--chat">
+                    <IonIcon icon={person} />
+                  </div>
+                  <IonLabel>Admins</IonLabel>
+                </IonListHeader>
+                <IonCard className="app-card">
                 <IonCardContent style={{ padding: '0' }}>
                   <IonList>
                     {filteredAdmins.map((admin) => {
@@ -304,17 +309,19 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                     })}
                   </IonList>
                 </IonCardContent>
-              </IonCard>
+                </IonCard>
+              </IonList>
             )}
 
             {/* Konfis List */}
-            <IonCard className="app-card" style={{ margin: '16px' }}>
-              <IonCardHeader>
-                <IonCardTitle style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <IonIcon icon={people} color="primary" />
-                  Konfirmanden ({filteredKonfis.length})
-                </IonCardTitle>
-              </IonCardHeader>
+            <IonList inset={true} className="app-modal-section">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--chat">
+                  <IonIcon icon={people} />
+                </div>
+                <IonLabel>Konfirmanden ({filteredKonfis.length})</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
               <IonCardContent style={{ padding: '0' }}>
                 {filteredKonfis.length === 0 ? (
                   <IonItem>
@@ -368,7 +375,8 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                   </IonList>
                 )}
               </IonCardContent>
-            </IonCard>
+              </IonCard>
+            </IonList>
           </>
         )}
       </IonContent>

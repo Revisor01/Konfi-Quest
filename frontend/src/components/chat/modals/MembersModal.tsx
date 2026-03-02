@@ -357,7 +357,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -370,6 +370,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
             <IonButtons slot="end">
               {showAddMode ? (
                 <IonButton
+                  className="app-modal-submit-btn app-modal-submit-btn--chat"
                   onClick={addSelectedUsers}
                   disabled={selectedUsers.size === 0 || adding}
                 >
@@ -397,7 +398,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
           {showAddMode ? (
             <>
               {/* Suche - iOS26 Pattern */}
-              <IonList inset={true} style={{ margin: '16px' }}>
+              <IonList inset={true} className="app-modal-section">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--chat">
                     <IonIcon icon={filterOutline} />
@@ -424,7 +425,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               </IonList>
 
               {/* Verfügbare Personen - IonListHeader über der Card */}
-              <IonList inset={true} style={{ margin: '16px' }}>
+              <IonList inset={true} className="app-modal-section">
                 <IonListHeader>
                   <div className="app-section-icon app-section-icon--chat">
                     <IonIcon icon={peopleOutline} />
@@ -464,7 +465,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {loading ? (
                 <LoadingSpinner message="Mitglieder werden geladen..." />
               ) : (
-                <IonList inset={true} style={{ margin: '16px' }}>
+                <IonList inset={true} className="app-modal-section">
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--chat">
                       <IonIcon icon={peopleOutline} />

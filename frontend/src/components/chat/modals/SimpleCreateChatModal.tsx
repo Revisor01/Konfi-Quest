@@ -406,14 +406,14 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={creating}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={creating}>
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{chatType === 'direct' ? 'Neue Direktnachricht' : 'Neuer Gruppenchat'}</IonTitle>
           {chatType === 'group' && (
             <IonButtons slot="end">
-              <IonButton onClick={createGroupChat} disabled={!isFormValid || creating}>
+              <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createGroupChat} disabled={!isFormValid || creating}>
                 {creating ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
               </IonButton>
             </IonButtons>
@@ -441,7 +441,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
           {/* Gruppenname Input für Group Chat - iOS26 Pattern */}
           {chatType === 'group' && (
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} className="app-modal-section">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--chat">
                   <IonIcon icon={peopleOutline} />
@@ -463,7 +463,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           )}
 
           {/* Filter mit Suche - iOS26 Pattern */}
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
                 <IonIcon icon={filterOutline} />
@@ -534,7 +534,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           </IonList>
 
           {/* Users List - IonListHeader ueber der Card */}
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--chat">
                 <IonIcon icon={peopleOutline} />
