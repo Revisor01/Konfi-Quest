@@ -313,7 +313,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
                                   <IonIcon icon={qrCodeOutline} />
                                 </div>
                                 <div className="app-list-item__content">
-                                  <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                  <div className="app-list-item__title app-list-item__title--with-badge">
                                     {invite.jahrgang_name}
                                   </div>
                                   <div className="app-list-item__meta">

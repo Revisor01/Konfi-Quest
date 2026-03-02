@@ -202,8 +202,8 @@ const AdminLevelsPage: React.FC = () => {
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Level</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Level</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -253,24 +253,11 @@ const AdminLevelsPage: React.FC = () => {
                             onClick={() => handleEdit(level)}
                             detail={false}
                             lines="none"
-                            style={{
-                              '--background': 'transparent',
-                              '--padding-start': '0',
-                              '--padding-end': '0',
-                              '--inner-padding-end': '0',
-                              '--inner-border-width': '0',
-                              '--border-style': 'none',
-                              '--min-height': 'auto'
-                            }}
+                            className="app-item-transparent"
                           >
                             <div
                               className="app-list-item app-list-item--level"
-                              style={{
-                                width: '100%',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                borderLeftColor: level.color || '#5b21b6'
-                              }}
+                              style={{ borderLeftColor: level.color || '#5b21b6' }}
                             >
                               {/* Corner Badge für Punkte */}
                               <div
@@ -288,7 +275,7 @@ const AdminLevelsPage: React.FC = () => {
                                     <IonIcon icon={getIconFromString(level.icon || 'trophy')} />
                                   </div>
                                   <div className="app-list-item__content">
-                                    <div className="app-list-item__title" style={{ paddingRight: '50px' }}>
+                                    <div className="app-list-item__title app-list-item__title--with-badge">
                                       {level.title}
                                     </div>
                                     {level.description && (
@@ -304,10 +291,10 @@ const AdminLevelsPage: React.FC = () => {
                             </div>
                           </IonItem>
 
-                          <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none' }}>
+                          <IonItemOptions side="end" className="app-swipe-actions">
                             <IonItemOption
                               onClick={() => handleDelete(level)}
-                              style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                              className="app-swipe-action"
                             >
                               <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                                 <IonIcon icon={trash} />

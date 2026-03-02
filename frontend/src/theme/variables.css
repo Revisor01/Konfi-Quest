@@ -886,6 +886,20 @@ ion-card-content.app-card-content {
   padding: 16px;
 }
 
+/* === Titel mit Corner-Badge Platz (paddingRight fuer app-corner-badge) === */
+.app-list-item__title--with-badge {
+  padding-right: 50px;
+}
+
+/* === Condense-Toolbar (transparenter Large-Title Header) === */
+ion-toolbar.app-condense-toolbar {
+  --background: transparent;
+  --color: black;
+}
+ion-toolbar.app-condense-toolbar ion-title {
+  color: black;
+}
+
 /* === Innere IonList (transparent, kein Padding) === */
 ion-list.app-list-inner {
   background: transparent;

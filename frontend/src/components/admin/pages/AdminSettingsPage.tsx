@@ -89,14 +89,41 @@ const AdminSettingsPage: React.FC = () => {
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
-          <IonToolbar style={{ '--background': 'transparent', '--color': 'black' }}>
-            <IonTitle size="large" style={{ color: 'black' }}>Mehr</IonTitle>
+          <IonToolbar className="app-condense-toolbar">
+            <IonTitle size="large">Mehr</IonTitle>
           </IonToolbar>
         </IonHeader>
 
+        {/* Profil-Block */}
+        {user && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonCard className="app-card">
+              <IonCardContent>
+                <div className="app-settings-item" style={{ cursor: 'default' }}>
+                  <div
+                    className="app-avatar-initials app-avatar-initials--lg"
+                    style={{ backgroundColor: '#667eea' }}
+                  >
+                    {(user.display_name || user.username || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">{user.display_name || user.username}</h2>
+                    <p className="app-settings-item__subtitle">
+                      {user.role_name === 'super_admin' ? 'Super-Admin' :
+                       user.role_name === 'org_admin' ? 'Admin' :
+                       user.role_name === 'teamer' ? 'Teamer:in' : user.role_name}
+                      {user.organization ? ` - ${user.organization}` : ''}
+                    </p>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={shield} />
@@ -104,7 +131,7 @@ const AdminSettingsPage: React.FC = () => {
               <IonLabel>Verwaltung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 <div
                   className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => history.push('/admin/users')}
@@ -112,7 +139,7 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={people} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Benutzer:innen</h2>
                     <p className="app-settings-item__subtitle">Admins, Teamer:innen und Rollen verwalten</p>
                   </div>
@@ -125,7 +152,7 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                     <IonIcon icon={statsChart} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Punkte-Ziele</h2>
                     <p className="app-settings-item__subtitle">Ziel-Punkte für Gottesdienst und Gemeinde</p>
                   </div>
@@ -138,7 +165,7 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                     <IonIcon icon={qrCode} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Konfis einladen</h2>
                     <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
                   </div>
@@ -150,7 +177,7 @@ const AdminSettingsPage: React.FC = () => {
 
         {/* System-Administration - NUR für super_admin */}
         {user?.role_name === 'super_admin' && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={business} />
@@ -158,7 +185,7 @@ const AdminSettingsPage: React.FC = () => {
               <IonLabel>System-Administration</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
+              <IonCardContent>
                 <div
                   className="app-list-item app-list-item--success app-settings-item"
                   onClick={() => history.push('/admin/organizations')}
@@ -166,7 +193,7 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-icon-circle app-icon-circle--lg app-icon-circle--success">
                     <IonIcon icon={business} />
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Organisationen</h2>
                     <p className="app-settings-item__subtitle">Gemeinden und Organisationen verwalten</p>
                   </div>
@@ -177,7 +204,7 @@ const AdminSettingsPage: React.FC = () => {
         )}
 
         {/* BLOCK 2: Inhalt */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={pricetag} />
@@ -185,7 +212,7 @@ const AdminSettingsPage: React.FC = () => {
             <IonLabel>Inhalt</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <div
                 className="app-list-item app-list-item--activities app-settings-item"
                 onClick={() => history.push('/admin/activities')}
@@ -193,7 +220,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
                   <IonIcon icon={flash} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Aktivitäten</h2>
                   <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
                 </div>
@@ -206,7 +233,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                   <IonIcon icon={pricetag} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Kategorien</h2>
                   <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
                 </div>
@@ -219,7 +246,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
                   <IonIcon icon={school} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Jahrgänge</h2>
                   <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
                 </div>
@@ -232,7 +259,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                   <IonIcon icon={trophy} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Level-System</h2>
                   <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                 </div>
@@ -245,7 +272,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
                   <IonIcon icon={ribbon} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Badges</h2>
                   <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
                 </div>
@@ -255,7 +282,7 @@ const AdminSettingsPage: React.FC = () => {
         </IonList>
 
         {/* Konto */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={person} />
@@ -263,7 +290,7 @@ const AdminSettingsPage: React.FC = () => {
             <IonLabel>Konto</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
+            <IonCardContent>
               <div
                 className="app-list-item app-list-item--primary app-settings-item"
                 onClick={() => history.push('/admin/profile')}
@@ -271,7 +298,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
                   <IonIcon icon={person} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Profil</h2>
                   <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
                 </div>
@@ -297,7 +324,7 @@ const AdminSettingsPage: React.FC = () => {
                 <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                   <IonIcon icon={notifications} />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Push-Benachrichtigungen</h2>
                   <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
                 </div>
@@ -307,24 +334,20 @@ const AdminSettingsPage: React.FC = () => {
           </IonCard>
         </IonList>
 
-        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+        <div className="app-segment-wrapper">
           <IonButton
             expand="block"
             fill="outline"
             color="danger"
             onClick={handleLogout}
-            style={{
-              height: '48px',
-              borderRadius: '12px',
-              fontWeight: '600'
-            }}
+            className="app-action-button"
           >
             <IonIcon icon={logOut} slot="start" />
             Abmelden
           </IonButton>
         </div>
 
-        <div style={{ height: '16px' }}></div>
+        <div className="ion-padding-bottom"></div>
       </IonContent>
     </IonPage>
   );
