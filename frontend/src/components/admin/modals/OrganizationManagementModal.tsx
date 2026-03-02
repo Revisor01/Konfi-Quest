@@ -294,7 +294,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose}><IonIcon icon={closeOutline} /></IonButton>
+              <IonButton onClick={onClose} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
             </IonButtons>
           </IonToolbar>
         </IonHeader>
@@ -313,10 +313,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Organisation bearbeiten' : 'Neue Organisation'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}><IonIcon icon={closeOutline} /></IonButton>
+            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn"><IonIcon icon={closeOutline} /></IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || saving}>
+            <IonButton onClick={handleSave} disabled={!isValid || saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -325,9 +325,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Organisations-Daten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--organizations">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={businessOutline} />
             </div>
             <IonLabel>Organisation</IonLabel>
@@ -362,9 +362,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         </IonList>
 
         {/* SEKTION: Kontakt */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--organizations">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>Kontakt</IonLabel>
@@ -401,9 +401,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         </IonList>
 
         {/* SEKTION: Status */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--organizations">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={shieldOutline} />
             </div>
             <IonLabel>Status</IonLabel>
@@ -431,9 +431,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
         {/* SEKTION: Administrator erstellen (nur bei neuer Organisation) */}
         {!isEditMode && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--organizations">
+              <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={personOutline} />
               </div>
               <IonLabel>Organisations-Administrator</IonLabel>
@@ -470,9 +470,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
         {/* SEKTION: Organisations-Administratoren verwalten (nur im Edit-Modus) */}
         {isEditMode && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--organizations">
+              <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={personOutline} />
               </div>
               <IonLabel>Organisations-Administratoren</IonLabel>
@@ -621,9 +621,9 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
         {/* SEKTION: Statistiken (nur im Edit-Modus) */}
         {isEditMode && organization && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--organizations">
+              <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={businessOutline} />
               </div>
               <IonLabel>Statistiken</IonLabel>

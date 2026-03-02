@@ -138,12 +138,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         <IonToolbar>
           <IonTitle>Passwort ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}>
+            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || !isValid}>
+            <IonButton onClick={handleSave} disabled={saving || !isValid} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -152,9 +152,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
 
       <IonContent className="app-gradient-background">
         {/* Aktuelles Passwort Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={lockClosedOutline} />
             </div>
             <IonLabel>Aktuelles Passwort</IonLabel>
@@ -185,9 +185,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         </IonList>
 
         {/* Neues Passwort Sektion - iOS26 Pattern */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={keyOutline} />
             </div>
             <IonLabel>Neues Passwort</IonLabel>
@@ -236,9 +236,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         </IonList>
 
         {/* Passwort-Anforderungen Sektion */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={shieldCheckmarkOutline} />
             </div>
             <IonLabel>Passwort-Anforderungen</IonLabel>
@@ -258,7 +258,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
 
         {/* Validation Feedback - Passwörter stimmen nicht überein */}
         {passwordData.new_password && passwordData.confirm_password && !passwordsMatch && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonCard className="app-card" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
               <IonCardContent style={{ padding: '12px 16px' }}>
                 <IonText color="danger">
@@ -273,7 +273,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
 
         {/* Bestätigung wenn alles passt */}
         {isValid && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonCard className="app-card" style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
               <IonCardContent style={{ padding: '12px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981' }}>

@@ -280,7 +280,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <IonToolbar>
             <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
             <IonButtons slot="start">
-              <IonButton onClick={onClose}>
+              <IonButton onClick={onClose} className="app-modal-close-btn">
                 <IonIcon icon={closeOutline} />
               </IonButton>
             </IonButtons>
@@ -301,12 +301,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : 'Neuer Benutzer'}</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}>
+            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || saving}>
+            <IonButton onClick={handleSave} disabled={!isValid || saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -315,7 +315,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
       <IonContent className="app-gradient-background">
         {/* SEKTION: Persönliche Daten */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={personOutline} />
@@ -384,7 +384,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         </IonList>
 
         {/* SEKTION: Rolle und Status */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={shieldOutline} />
@@ -481,7 +481,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         </IonList>
 
         {/* SEKTION: Jahrgang-Zuweisungen */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={schoolOutline} />
@@ -536,7 +536,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         {/* Bestehende Zuweisungen im Edit-Modus - als eigene Sektion */}
         {isEditMode && user?.assigned_jahrgaenge && user.assigned_jahrgaenge.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
+          <IonList inset={true} className="app-modal-section">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--users">
                 <IonIcon icon={checkmarkCircle} />

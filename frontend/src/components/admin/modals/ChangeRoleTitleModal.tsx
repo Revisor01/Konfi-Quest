@@ -62,12 +62,12 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         <IonToolbar>
           <IonTitle>Funktionsbeschreibung</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}>
+            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving}>
+            <IonButton onClick={handleSave} disabled={saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -78,7 +78,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         {/* Funktionsbeschreibung Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper" style={{ marginTop: '8px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={briefcaseOutline} />
             </div>
             <IonLabel>Deine Funktion</IonLabel>
@@ -104,7 +104,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>

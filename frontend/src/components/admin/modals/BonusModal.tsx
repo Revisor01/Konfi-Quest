@@ -71,12 +71,12 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         <IonToolbar>
           <IonTitle>Bonuspunkte hinzufügen</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={loading}>
+            <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={!isValid || loading}>
+            <IonButton onClick={handleSave} disabled={!isValid || loading} className="app-modal-submit-btn app-modal-submit-btn--konfi">
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -85,9 +85,9 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
 
       <IonContent className="app-gradient-background">
         {/* Bonuspunkt Detail */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--bonus">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={gift} />
             </div>
             <IonLabel>Bonuspunkt Detail</IonLabel>
@@ -220,9 +220,9 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
         </IonList>
 
         {/* Begründung (optional) */}
-        <IonList inset={true} style={{ margin: '16px' }}>
+        <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--bonus">
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={chatbubbleOutline} />
             </div>
             <IonLabel>Begründung (optional)</IonLabel>

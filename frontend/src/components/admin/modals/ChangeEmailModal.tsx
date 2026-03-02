@@ -94,12 +94,12 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         <IonToolbar>
           <IonTitle>E-Mail ändern</IonTitle>
           <IonButtons slot="start">
-            <IonButton onClick={onClose} disabled={saving}>
+            <IonButton onClick={onClose} disabled={saving} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || loading}>
+            <IonButton onClick={handleSave} disabled={saving || loading} className="app-modal-submit-btn app-modal-submit-btn--settings">
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -110,7 +110,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* E-Mail-Adresse Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>E-Mail-Adresse</IonLabel>
@@ -143,7 +143,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
