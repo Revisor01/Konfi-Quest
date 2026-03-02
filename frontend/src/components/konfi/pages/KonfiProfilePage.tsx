@@ -74,7 +74,6 @@ const KonfiProfilePage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshProfile = useCallback(() => {
- console.log('Live Update: Refreshing profile...');
     loadProfile();
   }, []);
 

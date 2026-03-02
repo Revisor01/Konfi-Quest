@@ -60,7 +60,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         const removeParams = [adminId, ...assignedJahrgangIds];
         const { rowCount } = await db.query(removeQuery, removeParams);
         if (rowCount > 0) {
- console.log(`Removed admin ${adminId} from ${rowCount} unassigned jahrgang chat(s)`);
         }
       }
       
@@ -85,7 +84,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           VALUES ($1, $2, 'admin', NOW())
         `;
         await db.query(insertQuery, [chatRoom.id, adminId]);
- console.log(`Added admin ${adminId} to jahrgang chat ${chatRoom.id} (${assignment.jahrgang_name})`);
       }
     } catch (err) {
  console.error('Error ensuring admin chat membership:', err);
@@ -114,7 +112,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         `;
         const { rowCount } = await db.query(removeQuery, [konfiId, jahrgang.jahrgang_id]);
         if (rowCount > 0) {
- console.log(`Removed konfi ${konfiId} from ${rowCount} wrong jahrgang chat(s)`);
         }
       } else {
         const removeAllQuery = `
@@ -125,7 +122,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         `;
         const { rowCount } = await db.query(removeAllQuery, [konfiId]);
         if (rowCount > 0) {
- console.log(`Removed konfi ${konfiId} from all jahrgang chats (no assignment)`);
         }
         return;
       }
@@ -144,7 +140,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         const chatName = `Jahrgang ${jahrgang.jahrgang_name}`;
         const { rows: [newChatRoom] } = await db.query(createChatQuery, [chatName, jahrgang.jahrgang_id]);
         
- console.log(`Created jahrgang chat ${newChatRoom.id} for ${jahrgang.jahrgang_name}`);
         chatRoom = newChatRoom;
         
         // Add this konfi and all other konfis from the jahrgang to the new chat
@@ -174,7 +169,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         VALUES ($1, $2, 'konfi', NOW())
       `;
       await db.query(insertQuery, [roomId, konfiId]);
- console.log(`Added konfi ${konfiId} to jahrgang chat ${roomId} (${jahrgangName})`);
     } catch (err) {
       // Ignore unique constraint violation if a race condition occurs
       if (err.code !== '23505') {
@@ -199,7 +193,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           VALUES ($1, $2, 'konfi', NOW())
         `;
         await db.query(insertQuery, [roomId, konfi.user_id]);
- console.log(`Added konfi ${konfi.user_id} to jahrgang chat ${roomId}`);
       }
     } catch (err) {
  console.error(`Error adding all konfis to chat ${roomId}:`, err);
@@ -636,7 +629,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       const userId = req.user.id;
       const userType = req.user.type;
       
- console.log('Chat message received:', {
         roomId,
         userId,
         userType,
@@ -649,7 +641,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       });
       
       if (!content && !req.file) {
- console.log('Rejecting: No content and no file');
         return res.status(400).json({ error: 'Inhalt oder Datei erforderlich' });
       }
       
@@ -718,7 +709,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           roomId: parseInt(roomId),
           message: message
         });
- console.log(`WebSocket: Broadcasted message to room_${roomId}`);
 
         // ZUSÄTZLICH: Benachrichtige alle Teilnehmer über ihren persönlichen Room
         // (für Badge-Updates in ChatOverview und TabBar, auch wenn sie nicht im Chat sind)
@@ -734,7 +724,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
             message: message
           });
         }
- console.log(`WebSocket: Notified ${allParticipants.length} participants via personal rooms`);
       }
 
       // Asynchronously send push notifications
@@ -769,7 +758,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           `;
             const { rows: [badgeResult] } = await db.query(badgeQuery, [p.user_id, p.user_type]);
             const badgeCount = parseInt(badgeResult?.total_unread || '0', 10);
- console.log(`Badge count for user ${p.user_id}: ${badgeCount} (including new message)`);
             
             await PushService.sendChatNotification(db, p.user_id, {
               title: pushTitle,
@@ -816,7 +804,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       const { rowCount } = await db.query(query, [roomId, userId, userType]);
       
- console.log(`Room ${roomId} marked as read for user ${userId} (${userType})`);
       res.json({ message: 'Raum als gelesen markiert', affected: rowCount });
       
     } catch (err) {
@@ -1078,7 +1065,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const userId = req.user.id;
     const userType = req.user.type;
     
- console.log('Poll creation request:', { question, options, multiple_choice, expires_in_hours });
     
     // Only admins can create polls
     if (userType !== 'admin') {
@@ -1165,7 +1151,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const userId = req.user.id;
     const userType = req.user.type;
     
- console.log(`Poll voting request: pollId=${pollId}, option=${option_index}, user=${userId} (${userType})`);
     
     if (option_index === undefined || option_index === null) {
       return res.status(400).json({ error: 'Option-Index ist erforderlich' });
@@ -1182,7 +1167,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // If not found by poll_id, try by message_id (frontend might be sending message_id)
       if (!poll) {
- console.log(`Poll not found by ID ${pollId}, trying as message_id...`);
         getPollQuery = `
           SELECT p.*, m.room_id FROM chat_polls p
           JOIN chat_messages m ON p.message_id = m.id
@@ -1321,7 +1305,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           roomId: message.room_id,
           messageId: parseInt(messageId)
         });
- console.log(`WebSocket: Broadcasted message deletion to room_${message.room_id}`);
       }
 
       res.json({ message: 'Nachricht erfolgreich gelöscht' });
@@ -1339,7 +1322,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
     const userId = req.user.id;
     const userType = req.user.type;
     
- console.log(`Poll voting by messageId: messageId=${messageId}, option=${option_index}, user=${userId} (${userType})`);
     
     if (option_index === undefined || option_index === null) {
       return res.status(400).json({ error: 'Option-Index ist erforderlich' });
@@ -1515,7 +1497,6 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           try {
             const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
             await fs.unlink(fullPath);
- console.log(`Deleted file: ${fullPath}`);
           } catch (fileErr) {
  console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
             // Don't fail the whole operation if file deletion fails

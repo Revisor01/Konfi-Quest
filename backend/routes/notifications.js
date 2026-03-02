@@ -51,7 +51,6 @@ module.exports = (db, verifyTokenRBAC) => {
         [token, userId]
       );
       if (deletedOtherUsers > 0) {
-        console.log(`Removed token from ${deletedOtherUsers} other user(s) - same device, different account`);
       }
 
       // Upsert: Token speichern oder aktualisieren
@@ -66,7 +65,6 @@ module.exports = (db, verifyTokenRBAC) => {
         [userId, userType, token, platform, finalDeviceId]
       );
 
-      console.log('Device token registered for user:', userId);
 
       res.json({ success: true, message: 'Token erfolgreich gespeichert' });
 
@@ -151,7 +149,6 @@ module.exports = (db, verifyTokenRBAC) => {
         [userId, platform, device_id, req.user.organization_id]
       );
 
-      console.log('Device token removed for user:', userId, 'device:', device_id);
       res.json({
         success: true,
         message: 'Push-Token für dieses Gerät entfernt',

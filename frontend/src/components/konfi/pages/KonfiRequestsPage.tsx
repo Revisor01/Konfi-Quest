@@ -77,7 +77,6 @@ const KonfiRequestsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshRequests = useCallback(() => {
- console.log('Live Update: Refreshing requests...');
     loadRequests();
   }, []);
 
@@ -102,7 +101,6 @@ const KonfiRequestsPage: React.FC = () => {
   };
 
   const handleAddRequest = () => {
- console.log('Request Modal: Opening modal with presentingElement:', pageRef.current, 'presentingElement:', presentingElement);
     presentRequestModal({
       presentingElement: pageRef.current || presentingElement || undefined
     });

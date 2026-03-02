@@ -217,7 +217,6 @@ const AdminCategoriesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshCategories = useCallback(() => {
- console.log('Live Update: Refreshing categories...');
     loadCategories();
   }, []);
 

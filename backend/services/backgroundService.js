@@ -6,22 +6,19 @@ class BackgroundService {
   static pendingEventsInterval = null;
 
   /**
-   * Startet regelmäßige Badge Updates für alle User (alle 5 Minuten)
+   * Startet regelmaessige Badge Updates fuer alle User (alle 5 Minuten)
    */
   static startBadgeUpdateService(db) {
     if (this.badgeUpdateInterval) {
- console.log('Badge update service already running');
       return;
     }
-
- console.log('Starting background badge update service (every 5 minutes)');
 
     const FIVE_MINUTES = 5 * 60 * 1000;
     this.badgeUpdateInterval = setInterval(async () => {
       try {
         await this.updateAllUserBadges(db);
       } catch (error) {
- console.error('Background badge update failed:', error);
+        console.error('Background badge update failed:', error);
       }
     }, FIVE_MINUTES);
   }
@@ -33,12 +30,11 @@ class BackgroundService {
     if (this.badgeUpdateInterval) {
       clearInterval(this.badgeUpdateInterval);
       this.badgeUpdateInterval = null;
- console.log('Background badge update service stopped');
     }
   }
 
   /**
-   * Aktualisiert Badge Counts für alle User mit Push Tokens
+   * Aktualisiert Badge Counts fuer alle User mit Push Tokens
    */
   static async updateAllUserBadges(db) {
     try {
@@ -51,22 +47,20 @@ class BackgroundService {
       const { rows: users } = await db.query(usersQuery, []);
 
       if (!users || users.length === 0) {
- console.log('No users with push tokens found for badge update');
         return { updated: 0 };
       }
 
- console.log(`Updating badges for ${users.length} users...`);
       let updatedCount = 0;
 
       for (const user of users) {
         try {
-          // Badge Count für User berechnen
+          // Badge Count fuer User berechnen
           const badgeQuery = `
             SELECT COUNT(DISTINCT cm.id)::int as total_unread
             FROM chat_messages cm
             JOIN chat_participants cp ON cm.room_id = cp.room_id
             WHERE cp.user_id = $1
-            AND cp.user_type = $2 
+            AND cp.user_type = $2
             AND cm.created_at > cp.last_read_at
             AND cm.sender_id != $3
           `;
@@ -80,15 +74,14 @@ class BackgroundService {
             updatedCount++;
           }
         } catch (error) {
- console.error(`Badge update failed for user ${user.user_id}:`, error);
+          console.error(`Badge update failed for user ${user.user_id}:`, error);
         }
       }
 
- console.log(`Badge update completed: ${updatedCount}/${users.length} users updated`);
       return { updated: updatedCount, total: users.length };
 
     } catch (error) {
- console.error('Error in updateAllUserBadges:', error);
+      console.error('Error in updateAllUserBadges:', error);
       throw error;
     }
   }
@@ -102,13 +95,10 @@ class BackgroundService {
    */
   static startEventReminderService(db) {
     if (this.eventReminderInterval) {
- console.log('Event reminder service already running');
       return;
     }
 
- console.log('Event-Erinnerungs-Service gestartet (alle 15 Minuten)');
-
-    // Sofort einmal ausführen, dann alle 15 Minuten
+    // Sofort einmal ausfuehren, dann alle 15 Minuten
     this.sendEventReminders(db);
 
     const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -116,7 +106,7 @@ class BackgroundService {
       try {
         await this.sendEventReminders(db);
       } catch (error) {
- console.error('Event reminder service failed:', error);
+        console.error('Event reminder service failed:', error);
       }
     }, FIFTEEN_MINUTES);
   }
@@ -128,7 +118,6 @@ class BackgroundService {
     if (this.eventReminderInterval) {
       clearInterval(this.eventReminderInterval);
       this.eventReminderInterval = null;
- console.log('Event reminder service stopped');
     }
   }
 
@@ -180,7 +169,7 @@ class BackgroundService {
             [event.id, event.user_id]
           );
         } catch (err) {
- console.error(`1-day reminder failed for event ${event.id}, user ${event.user_id}:`, err);
+          console.error(`1-day reminder failed for event ${event.id}, user ${event.user_id}:`, err);
         }
       }
 
@@ -222,16 +211,12 @@ class BackgroundService {
             [event.id, event.user_id]
           );
         } catch (err) {
- console.error(`1-hour reminder failed for event ${event.id}, user ${event.user_id}:`, err);
+          console.error(`1-hour reminder failed for event ${event.id}, user ${event.user_id}:`, err);
         }
       }
 
-      if (oneDayEvents.length > 0 || oneHourEvents.length > 0) {
- console.log(`Event reminders sent: ${oneDayEvents.length} (1 day), ${oneHourEvents.length} (1 hour)`);
-      }
-
     } catch (error) {
- console.error('Error in sendEventReminders:', error);
+      console.error('Error in sendEventReminders:', error);
       throw error;
     }
   }
@@ -241,22 +226,19 @@ class BackgroundService {
   // ====================================================================
 
   /**
-   * Startet den Service für Admin-Erinnerungen (alle 4 Stunden)
+   * Startet den Service fuer Admin-Erinnerungen (alle 4 Stunden)
    */
   static startPendingEventsService(db) {
     if (this.pendingEventsInterval) {
- console.log('Pending events service already running');
       return;
     }
-
- console.log('Pending events service gestartet (alle 4 Stunden)');
 
     const FOUR_HOURS = 4 * 60 * 60 * 1000;
     this.pendingEventsInterval = setInterval(async () => {
       try {
         await this.checkPendingEvents(db);
       } catch (error) {
- console.error('Pending events check failed:', error);
+        console.error('Pending events check failed:', error);
       }
     }, FOUR_HOURS);
   }
@@ -268,12 +250,11 @@ class BackgroundService {
     if (this.pendingEventsInterval) {
       clearInterval(this.pendingEventsInterval);
       this.pendingEventsInterval = null;
- console.log('Pending events service stopped');
     }
   }
 
   /**
-   * Prüft ob es Events gibt die verbucht werden müssen
+   * Prueft ob es Events gibt die verbucht werden muessen
    */
   static async checkPendingEvents(db) {
     try {
@@ -295,16 +276,12 @@ class BackgroundService {
         try {
           await PushService.sendEventsPendingApprovalToAdmins(db, org.organization_id, org.pending_count);
         } catch (err) {
- console.error(`Pending events reminder failed for org ${org.organization_id}:`, err);
+          console.error(`Pending events reminder failed for org ${org.organization_id}:`, err);
         }
       }
 
-      if (pendingOrgs.length > 0) {
- console.log(`Pending events reminders sent to ${pendingOrgs.length} organizations`);
-      }
-
     } catch (error) {
- console.error('Error in checkPendingEvents:', error);
+      console.error('Error in checkPendingEvents:', error);
       throw error;
     }
   }
@@ -320,7 +297,6 @@ class BackgroundService {
     this.startBadgeUpdateService(db);
     this.startEventReminderService(db);
     this.startPendingEventsService(db);
- console.log('Alle Background Services gestartet');
   }
 
   /**
@@ -330,7 +306,6 @@ class BackgroundService {
     this.stopBadgeUpdateService();
     this.stopEventReminderService();
     this.stopPendingEventsService();
- console.log('Alle Background Services gestoppt');
   }
 }
 

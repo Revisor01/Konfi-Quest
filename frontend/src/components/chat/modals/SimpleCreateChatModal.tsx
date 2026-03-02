@@ -166,12 +166,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           role_description: u.role_description
         }));
 
- console.log('Loaded users for konfi chat:', {
-          users: availableUsers.length,
-          jahrgang: response.data.jahrgang,
-          permissions: response.data.permissions,
-          chatType
-        });
 
         // Verfügbare Jahrgänge ermitteln
         const jahrgaenge = [...new Set(availableUsers
@@ -193,7 +187,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         let allowedJahrgangIds: number[] = [];
         if (userJahrgangRes.data.length > 0) {
           allowedJahrgangIds = userJahrgangRes.data.map((j: any) => j.jahrgang_id);
- console.log('Admin allowed jahrgang IDs:', allowedJahrgangIds);
         }
 
         let konfis: User[] = konfisRes.data
@@ -231,16 +224,10 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
               role_description: admin.role_title || admin.role_display_name || admin.role_name
             }));
         } catch (err) {
- console.log('Could not load admins for chat:', err);
+ console.warn('Admins fuer Chat konnten nicht geladen werden:', err);
         }
 
         const allUsers = [...konfis, ...adminUsers];
- console.log('Loaded users for admin chat:', {
-          konfis: konfis.length,
-          admins: adminUsers.length,
-          total: allUsers.length,
-          chatType
-        });
 
         // Extrahiere verfügbare Jahrgänge (nur von gefilterten Konfis)
         const jahrgaenge = [...new Set(
@@ -347,9 +334,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
         participants: participants
       };
 
- console.log('Creating group chat with data:', groupData);
       const response = await api.post('/chat/rooms', groupData);
- console.log('Group chat created successfully:', response.data);
 
       setSuccess(`Gruppenchat "${groupName}" erstellt`);
       await refreshFromAPI(); // Update badge context

@@ -29,7 +29,7 @@ class PushService {
       const tokens = await this.getTokensForUser(db, userId);
 
       if (tokens.length === 0) {
- console.log(`No push tokens found for user ${userId}`);
+ console.warn(`Keine Push-Tokens fuer User ${userId} gefunden`);
         return { success: false, message: 'No tokens found' };
       }
 
@@ -52,7 +52,6 @@ class PushService {
         }
       }
 
- console.log(`Push sent to user ${userId}: ${successCount}/${tokens.length}`);
       return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
     } catch (error) {
  console.error('PushService.sendToUser error:', error);
@@ -77,7 +76,6 @@ class PushService {
    */
   static async sendChatNotification(db, userId, notificationData) {
     try {
- console.log('Sending chat notification to user:', userId);
 
       // Hole zuerst die Tokens des Senders um sie auszuschließen
       const senderTokensQuery = `SELECT token FROM push_tokens WHERE user_id = $1`;
@@ -108,7 +106,7 @@ class PushService {
       const { rows: tokens } = await db.query(query, queryParams);
 
       if (!tokens || tokens.length === 0) {
- console.log('No push tokens found for user:', userId);
+ console.warn('Keine Push-Tokens fuer User gefunden:', userId);
         return { success: false, message: 'No tokens found' };
       }
 
@@ -139,7 +137,6 @@ class PushService {
         }
       }
 
- console.log(`Chat notification sent: ${successCount} success, ${errorCount} errors`);
       return {
         success: true,
         sent: successCount,
@@ -158,7 +155,6 @@ class PushService {
    */
   static async sendBadgeUpdate(db, userId, badgeCount) {
     try {
- console.log(`Sending badge update to user ${userId}: ${badgeCount}`);
 
       const tokens = await this.getTokensForUser(db, userId);
 
@@ -182,7 +178,6 @@ class PushService {
         }
       }
 
- console.log(`Badge update sent: ${successCount}/${tokens.length}`);
       return { success: true, sent: successCount, total: tokens.length };
 
     } catch (error) {
@@ -200,7 +195,6 @@ class PushService {
    */
   static async sendNewActivityRequestToAdmins(db, organizationId, konfiName, activityName, points) {
     try {
- console.log(`Sending new request notification to admins of org ${organizationId}`);
 
       // Hole alle Admins der Organisation
       const { rows: admins } = await db.query(
@@ -211,7 +205,7 @@ class PushService {
       );
 
       if (admins.length === 0) {
- console.log('No admins found for organization');
+ console.warn('Keine Admins fuer Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
@@ -237,7 +231,6 @@ class PushService {
    */
   static async sendActivityRequestStatusToKonfi(db, konfiId, activityName, points, status, adminComment = null, requestId = null) {
     try {
- console.log(`Sending request ${status} notification to konfi ${konfiId}`);
 
       const isApproved = status === 'approved';
       const notification = {
@@ -270,7 +263,6 @@ class PushService {
    */
   static async sendBadgeEarnedToKonfi(db, konfiId, badgeName, badgeIcon, badgeDescription, badgeId = null) {
     try {
- console.log(`Sending badge earned notification to konfi ${konfiId}`);
 
       const notification = {
         title: `Neues Badge erhalten! ${badgeIcon}`,
@@ -299,7 +291,6 @@ class PushService {
    */
   static async sendActivityAssignedToKonfi(db, konfiId, activityName, points, type) {
     try {
- console.log(`Sending activity assigned notification to konfi ${konfiId}`);
 
       const typeText = type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
       const notification = {
@@ -325,7 +316,6 @@ class PushService {
    */
   static async sendBonusPointsToKonfi(db, konfiId, points, description, type) {
     try {
- console.log(`Sending bonus points notification to konfi ${konfiId}`);
 
       const typeText = type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
       const notification = {
@@ -355,7 +345,6 @@ class PushService {
    */
   static async sendEventRegisteredToKonfi(db, konfiId, eventName, eventDate, status, eventId = null, timeslot = null) {
     try {
- console.log(`Sending event registration confirmation to konfi ${konfiId}`);
 
       const dateFormatted = new Date(eventDate).toLocaleDateString('de-DE', {
         weekday: 'long',
@@ -402,7 +391,6 @@ class PushService {
    */
   static async sendEventUnregisteredToKonfi(db, konfiId, eventName) {
     try {
- console.log(`Sending event unregistration confirmation to konfi ${konfiId}`);
 
       const notification = {
         title: 'Abmeldung bestätigt',
@@ -425,7 +413,6 @@ class PushService {
    */
   static async sendEventUnregistrationToAdmins(db, organizationId, konfiName, eventName, reason = null) {
     try {
- console.log(`Sending event unregistration notification to admins of org ${organizationId}`);
 
       // Hole alle Admins der Organisation
       const { rows: admins } = await db.query(
@@ -436,7 +423,7 @@ class PushService {
       );
 
       if (admins.length === 0) {
- console.log('No admins found for organization');
+ console.warn('Keine Admins fuer Organisation gefunden');
         return { success: false, message: 'No admins found' };
       }
 
@@ -465,7 +452,6 @@ class PushService {
    */
   static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null) {
     try {
- console.log(`Sending level up notification to konfi ${konfiId}`);
 
       const notification = {
         title: `Level Up! ${levelIcon || ''}`,
@@ -490,7 +476,6 @@ class PushService {
    */
   static async sendEventReminderToKonfi(db, konfiId, eventName, eventDate, eventTime, reminderType) {
     try {
- console.log(`⏰ Sending event reminder (${reminderType}) to konfi ${konfiId}`);
 
       const isOneDay = reminderType === '1_day';
       const notification = {
@@ -517,7 +502,6 @@ class PushService {
    */
   static async sendWaitlistPromotionToKonfi(db, konfiId, eventName, eventDate = null, eventId = null) {
     try {
- console.log(`Sending waitlist promotion notification to konfi ${konfiId}`);
 
       let dateInfo = '';
       if (eventDate) {
@@ -547,7 +531,6 @@ class PushService {
    */
   static async sendEventCancellationToKonfis(db, userIds, eventName, eventDate) {
     try {
- console.log(`Sending event cancellation to ${userIds.length} users`);
 
       let dateInfo = eventDate;
       if (eventDate) {
@@ -576,7 +559,6 @@ class PushService {
    */
   static async sendNewEventToOrgKonfis(db, organizationId, eventName, eventDate, eventId = null) {
     try {
- console.log(`Sending new event notification to org ${organizationId}`);
 
       // Hole alle Konfi-IDs der Organisation
       const konfisQuery = `
@@ -588,7 +570,7 @@ class PushService {
       const konfiIds = konfis.map(k => k.id);
 
       if (konfiIds.length === 0) {
- console.log('No konfis found for org', organizationId);
+ console.warn('Keine Konfis fuer Organisation gefunden:', organizationId);
         return { success: true, sent: 0 };
       }
 
@@ -620,7 +602,6 @@ class PushService {
    */
   static async sendEventAttendanceToKonfi(db, konfiId, eventName, status, points = 0, eventId = null) {
     try {
- console.log(`Sending attendance notification to konfi ${konfiId}`);
 
       const isPresent = status === 'present';
       const notification = {
@@ -649,7 +630,6 @@ class PushService {
    */
   static async sendEventsPendingApprovalToAdmins(db, organizationId, eventCount) {
     try {
- console.log(`Sending pending events reminder to admins of org ${organizationId}`);
 
       const { rows: admins } = await db.query(
         `SELECT u.id FROM users u

@@ -59,7 +59,6 @@ const AdminActivitiesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshActivities = useCallback(() => {
- console.log('Live Update: Refreshing activities...');
     loadActivities();
   }, []);
 
@@ -120,8 +119,6 @@ const AdminActivitiesPage: React.FC = () => {
   };
 
   const handleSelectActivity = (activity: Activity) => {
- console.log('AdminActivitiesPage: Opening edit modal with presentingElement:', presentingElement);
- console.log('AdminActivitiesPage: pageRef.current:', pageRef.current);
     setSelectedActivity(activity);
     presentActivityModalHook({ 
       presentingElement: presentingElement || pageRef.current || undefined 
@@ -129,8 +126,6 @@ const AdminActivitiesPage: React.FC = () => {
   };
 
   const presentActivityModal = () => {
- console.log('AdminActivitiesPage: Opening create modal with presentingElement:', presentingElement);
- console.log('AdminActivitiesPage: pageRef.current:', pageRef.current);
     setSelectedActivity(null);
     presentActivityModalHook({ 
       presentingElement: presentingElement || pageRef.current || undefined 

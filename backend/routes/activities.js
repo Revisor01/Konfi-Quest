@@ -71,10 +71,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         GROUP BY a.id
         ORDER BY a.type, a.name
       `;
- console.log("Fetching activities for org:", req.user.organization_id);
       
       const { rows } = await db.query(query, [req.user.organization_id]);
- console.log("Activities found:", rows.length);
 
       // Parse categories from STRING_AGG result
       const activitiesWithCategories = rows.map(row => {
@@ -217,10 +215,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         WHERE a.organization_id = $1
         ORDER BY ar.created_at DESC
       `;
- console.log("Fetching activity requests for org:", req.user.organization_id);
 
       const { rows: requests } = await db.query(query, [req.user.organization_id]);
- console.log("Activity requests found:", requests.length);
       res.json(requests);
 
     } catch (err) {
@@ -250,7 +246,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // SCHRITT 1: Alte Entscheidung rückgängig machen
       if (oldStatus === 'approved') {
- console.log(`Resetting approved request ${requestId} to pending`);
 
         // Punkte abziehen
         const pointField = getPointField(request.type);
@@ -268,7 +263,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           [request.konfi_id, request.activity_id]
         );
 
- console.log(`Reset approval: removed ${request.points} points and activity entry`);
       }
 
       // SCHRITT 2: Status auf pending setzen, Kommentar löschen
@@ -277,7 +271,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         [requestId]
       );
 
- console.log(`Request ${requestId} reset to pending from ${oldStatus}`);
       res.json({ message: 'Antrag auf ausstehend zurückgesetzt', oldStatus });
 
     } catch (err) {
@@ -322,7 +315,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
 
- console.log(`Approved request ${requestId}: added ${request.points} points`);
 
         // Datenschutz: Foto löschen nach Genehmigung
         if (request.photo_filename) {
@@ -334,7 +326,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             if (err) {
  console.error('Error deleting photo:', err);
             } else {
- console.log(`Photo deleted for approved request ${requestId}: ${request.photo_filename}`);
             }
           });
 
@@ -370,7 +361,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           ]
         );
 
- console.log(`Notification sent to konfi ${request.konfi_name} for request ${requestId} (${status})`);
 
         // Send push notification to konfi (mit Request ID für Navigation)
         await PushService.sendActivityRequestStatusToKonfi(

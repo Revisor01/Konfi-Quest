@@ -81,7 +81,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   // Live-Update der Chat-Räume wenn Badge Count sich ändert
   useEffect(() => {
     if (rooms.length > 0) { // Nur wenn bereits Räume geladen sind
- console.log('ChatOverview: Badge changed, refreshing room data');
       loadChatRooms(true); // Silent reload
     }
   }, [badgeCount]);
@@ -94,12 +93,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     const socket = initializeWebSocket(token);
 
     const handleNewMessage = () => {
- console.log('ChatOverview: New message via WebSocket, refreshing rooms');
       loadChatRooms(true); // Silent reload
     };
 
     const handleReconnect = () => {
- console.log('ChatOverview: WebSocket reconnected, refreshing rooms');
       loadChatRooms(true); // Silent reload
     };
 

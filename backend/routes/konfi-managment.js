@@ -203,7 +203,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                         VALUES ($1, $2, 'konfi', NOW())
                     `;
                     await db.query(addParticipantQuery, [jahrgangChat.id, userId]);
- console.log(`Added konfi ${name} (${userId}) to jahrgang chat ${jahrgangChat.id}`);
                 }
             }
 
@@ -264,7 +263,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                             DELETE FROM chat_participants 
                             WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
                         `, [oldJahrgangChat.id, req.params.id]);
- console.log(`Removed konfi ${name} from old jahrgang chat ${oldJahrgangChat.id}`);
                     }
                 }
                 
@@ -288,7 +286,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                             INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
                             VALUES ($1, $2, 'konfi', NOW())
                         `, [newJahrgangChat.id, req.params.id]);
- console.log(`Added konfi ${name} to new jahrgang chat ${newJahrgangChat.id}`);
                     }
                 }
             }
@@ -382,7 +379,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // GET single konfi details with activities, bonusPoints, eventPoints
     router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
- console.log('Loading details for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
         try {
             const konfiQuery = `
@@ -439,7 +435,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // GET event points for konfi
     router.get('/:id/event-points', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
- console.log('Loading event points for konfi:', konfiId, 'Organization:', req.user.organization_id);
         
         try {
             const eventPointsQuery = `
@@ -483,7 +478,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
- console.log(`${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Bonuspunkten vergeben`);
                 }
             } catch (badgeErr) {
  console.error('Error checking badges after bonus points:', badgeErr);
@@ -573,7 +567,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
- console.log(`${newBadges} neue Badge(s) für Konfi ${req.params.id} nach Aktivität vergeben`);
                 }
             } catch (badgeErr) {
  console.error('Error checking badges after activity:', badgeErr);

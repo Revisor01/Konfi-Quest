@@ -4,11 +4,9 @@
 const initializeChatRooms = (db) => {
   return async () => {
     try {
- console.log('Starting chat room initialization with RBAC system...');
       
       // Create jahrgang chat rooms for each organization
       const { rows: jahrgaenge } = await db.query("SELECT * FROM jahrgaenge ORDER BY organization_id, id", []);
- console.log(`Found ${jahrgaenge.length} jahrgaenge to process`);
 
       for (const jahrgang of jahrgaenge) {
         const { rows: [existingRoom] } = await db.query(
@@ -17,7 +15,6 @@ const initializeChatRooms = (db) => {
         );
 
         if (!existingRoom) {
- console.log(`Creating chat room for Jahrgang "${jahrgang.name}" (ID: ${jahrgang.id})`);
           
           // Create room with proper organization_id
           const insertRoomQuery = `
@@ -53,13 +50,10 @@ const initializeChatRooms = (db) => {
             await db.query(insertParticipantQuery, [newRoomId, konfi.id]);
           }
           
- console.log(`Created chat room for Jahrgang ${jahrgang.name} and added ${konfis.length} participants.`);
         } else {
- console.log(`Chat room already exists for Jahrgang "${jahrgang.name}"`);
         }
       }
       
- console.log('Chat room initialization completed successfully');
     } catch (err) {
  console.error('Error during chat room initialization:', err);
     }

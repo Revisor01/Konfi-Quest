@@ -66,7 +66,6 @@ const KonfiEventsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshEvents = useCallback(() => {
- console.log('Live Update: Refreshing konfi events...');
     loadEvents();
   }, []);
 

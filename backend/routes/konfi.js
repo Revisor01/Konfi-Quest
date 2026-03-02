@@ -643,7 +643,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           );
         }
 
- console.log(`Notified ${admins.length} admins about new request from ${konfiData.display_name}`);
 
         // Send push notifications to admins
         await PushService.sendNewActivityRequestToAdmins(
@@ -1330,7 +1329,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       
       if (cachedVerse) {
- console.log(`Using cached verse for ${today} (${translation})`);
         return res.json({
           success: true,
           data: cachedVerse.verse_data,
@@ -1340,7 +1338,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       }
       
       // Not cached - fetch from external API
- console.log(`Fetching new verse from API for ${today} (${translation})`);
       const fetch = (await import('node-fetch')).default;
       const apiUrl = `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
       
@@ -1368,7 +1365,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           'INSERT INTO daily_verses (date, translation, verse_data) VALUES ($1, $2, $3) ON CONFLICT (date, translation) DO NOTHING',
           [today, translation, losungData.data]
         );
- console.log(`Cached verse for ${today} (${translation})`);
       } catch (cacheErr) {
  console.error('Error caching verse:', cacheErr);
         // Don't fail the request if caching fails
@@ -1386,7 +1382,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         );
         
         if (rowCount > 0) {
- console.log(`Cleaned up ${rowCount} old cached verses`);
         }
       } catch (cleanupErr) {
  console.error('Error cleaning up old verses:', cleanupErr);
@@ -1411,7 +1406,6 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         );
         
         if (fallbackCached) {
- console.log('Using fallback cached verse from previous days');
           return res.json({
             success: true,
             data: fallbackCached.verse_data,

@@ -52,7 +52,6 @@ const KonfiBadgesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshBadges = useCallback(() => {
- console.log('Live Update: Refreshing badges...');
     loadBadges();
   }, []);
 
@@ -164,7 +163,7 @@ const KonfiBadgesPage: React.FC = () => {
         try {
           await api.post('/konfi/badges/mark-seen');
         } catch (markError) {
- console.log('Could not mark badges as seen:', markError);
+ console.warn('Badges konnten nicht als gesehen markiert werden:', markError);
         }
       }
 

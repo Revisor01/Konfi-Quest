@@ -47,8 +47,6 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
 
     // Main handler for all live updates
     const handleLiveUpdate = (event: LiveUpdateEvent) => {
- console.log('Live Update received:', event);
-
       // Notify all listeners for this type
       const typeListeners = listeners.get(event.type);
       if (typeListeners) {
@@ -81,8 +79,6 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     socket.on('jahrgaengeUpdate', (data: any) => handleLiveUpdate({ type: 'jahrgaenge', action: 'refresh', data }));
     socket.on('levelsUpdate', (data: any) => handleLiveUpdate({ type: 'levels', action: 'refresh', data }));
 
- console.log('LiveUpdateContext: WebSocket listeners registered');
-
     return () => {
       socket.off('liveUpdate', handleLiveUpdate);
       socket.off('dashboardUpdate');
@@ -106,12 +102,9 @@ export const LiveUpdateProvider = ({ children }: { children: ReactNode }) => {
     }
     listeners.get(type)!.add(callback);
 
- console.log(`LiveUpdate: Subscribed to ${type}`);
-
     // Return unsubscribe function
     return () => {
       listeners.get(type)?.delete(callback);
- console.log(`LiveUpdate: Unsubscribed from ${type}`);
     };
   }, []);
 
@@ -154,7 +147,6 @@ export const useLiveRefresh = (
 
     typeArray.forEach(type => {
       const unsub = subscribe(type, () => {
- console.log(`LiveRefresh: Refreshing due to ${type} update`);
         onRefresh();
       });
       unsubscribes.push(unsub);

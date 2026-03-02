@@ -25,7 +25,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       `);
 
       if (rows.length === 0) {
-        console.log('Migrating settings table: adding organization_id column...');
 
         // Spalte hinzufügen (nullable zunächst)
         await db.query('ALTER TABLE settings ADD COLUMN organization_id INTEGER REFERENCES organizations(id)');
@@ -47,7 +46,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         `);
         await db.query('ALTER TABLE settings ADD CONSTRAINT settings_org_key_unique UNIQUE (organization_id, key)');
 
-        console.log('Settings table migration complete');
       }
     } catch (err) {
       console.error('Settings migration error:', err.message);

@@ -79,7 +79,6 @@ const AdminKonfisPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshData = useCallback(() => {
- console.log('Live Update: Refreshing konfis...');
     loadData();
   }, []);
 
@@ -189,7 +188,6 @@ const AdminKonfisPage: React.FC = () => {
         jahrgang_id: jahrgangId
       });
       
- console.log(`Konfi zu Jahrgangschat "${jahrgangName}" hinzugefügt`);
     } catch (err) {
  console.error('Fehler beim Jahrgangschat:', err);
       // Nicht als kritischer Fehler behandeln, da der Konfi bereits erstellt wurde

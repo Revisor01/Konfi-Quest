@@ -101,7 +101,6 @@ const KonfiDashboardPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshAllData = useCallback(() => {
- console.log('Live Update: Refreshing dashboard data...');
     loadDashboardData();
     loadUpcomingEvents();
     loadBadgeStats();
@@ -165,7 +164,7 @@ const KonfiDashboardPage: React.FC = () => {
         throw new Error('Invalid API response');
       }
     } catch (err) {
- console.log('Could not load daily verse from API, using fallback:', err);
+ console.warn('Tageslosung konnte nicht geladen werden, verwende Fallback:', err);
       
       // Fallback-Daten wenn API nicht funktioniert
       const fallbackVerses = [

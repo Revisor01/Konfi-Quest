@@ -344,7 +344,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                     "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2", 
                     [chatRoom.id, userId]
                 );
- console.log(`Removed user ${userId} from jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
             }
         }
 
@@ -397,7 +396,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                             req.user.id
                         ]);
                         chatRoom = newChatRoom;
- console.log(`Created missing jahrgang chat room ${chatRoom.id} for Jahrgang ${jahrgang.name}`);
                     }
                 }
                 
@@ -421,7 +419,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
                             "INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) VALUES ($1, $2, $3, NOW())",
                             [chatRoom.id, userId, userType]
                         );
- console.log(`Added user ${userId} (${userType}) to jahrgang chat ${chatRoom.id} (Jahrgang ${jahrgangId})`);
                     }
                 }
             }
@@ -529,7 +526,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       const hashedPassword = await bcrypt.hash(password, 10);
       await db.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [hashedPassword, id]);
 
- console.log(`Password reset by ${req.user.role_name} (ID: ${req.user.id}) for user ID ${id}`);
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {

@@ -39,7 +39,6 @@ const sendEmail = async ({ to, subject, text, html }) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
- console.log(`E-Mail gesendet an ${to}: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
  console.error(`Fehler beim Senden der E-Mail an ${to}:`, error);
@@ -185,7 +184,6 @@ const testEmailConnection = async () => {
 
   try {
     await transporter.verify();
- console.log('SMTP-Verbindung erfolgreich hergestellt');
     return true;
   } catch (error) {
  console.error('SMTP-Verbindungsfehler:', error);

@@ -69,7 +69,6 @@ const AdminBadgesPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshBadges = useCallback(() => {
- console.log('Live Update: Refreshing badges...');
     loadBadges();
   }, []);
 

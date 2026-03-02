@@ -50,7 +50,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       const params = [name, confirmation_date, req.user.organization_id];
       const { rows: [newJahrgang] } = await db.query(query, params);
 
- console.log(`Created Jahrgang "${name}" (ID: ${newJahrgang.id})`);
 
       res.status(201).json({
         id: newJahrgang.id,
@@ -166,7 +165,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
             try {
               const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
               await fs.unlink(fullPath);
- console.log(`Deleted file: ${fullPath}`);
             } catch (fileErr) {
  console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
             }

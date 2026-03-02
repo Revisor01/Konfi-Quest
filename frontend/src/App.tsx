@@ -93,8 +93,6 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
- console.log('AppContent: User available, setting up badge logic');
-
     // 1. Initial badge load
     refreshFromAPI();
 
@@ -105,14 +103,11 @@ const AppContent: React.FC = () => {
 
       const pushListener = await PushNotifications.addListener('pushNotificationReceived', 
         (notification: PushNotificationSchema) => {
- console.log('AppContent: Push received:', notification);
           if (notification.data?.type === 'chat') {
             const badgeCountFromPush = notification.badge ?? parseInt(notification.data?.aps?.badge) ?? -1;
             if (badgeCountFromPush !== -1) {
- console.log('AppContent: Setting badge from push:', badgeCountFromPush);
               setBadgeCount(badgeCountFromPush);
             } else {
- console.log('AppContent: Incrementing badge as fallback');
               setBadgeCount(prev => prev + 1);
             }
           }
@@ -121,13 +116,11 @@ const AppContent: React.FC = () => {
 
       const actionListener = await PushNotifications.addListener('pushNotificationActionPerformed', 
         (action) => {
- console.log('AppContent: Push action performed:', action);
           refreshFromAPI(); 
         }
       );
 
       return () => {
- console.log('AppContent: Cleaning up listeners');
         pushListener.remove();
         actionListener.remove();
       };

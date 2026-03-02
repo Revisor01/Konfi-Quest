@@ -18,45 +18,41 @@ const sendTokenToServer = async (token: string) => {
   const lastSent = (window as any).fcmTokenLastSent || 0;
   const now = Date.now();
   if ((window as any).fcmTokenSent === token && (now - lastSent) < 10000) {
- console.log('Token bereits vor weniger als 10s gesendet, überspringe:', token.substring(0, 20) + '...');
     return;
   }
-  
+
   try {
     // Device ID via Capacitor Device Plugin abrufen
     const deviceInfo = await Device.getId();
     const deviceId = deviceInfo.identifier;
- console.log('Using Device ID:', deviceId.substring(0, 8) + '...');
-    
+
     await api.post('/notifications/device-token', {
       token,
       platform: Capacitor.getPlatform(),
       device_id: deviceId
     });
-    
- console.log('FCM-Token erfolgreich an Server gesendet:', token.substring(0, 20) + '...');
+
     (window as any).fcmTokenSent = token; // Markiere Token als gesendet
     (window as any).fcmTokenLastSent = now; // Timestamp setzen
   } catch (err) {
- console.error('Fehler beim Senden des FCM-Tokens:', err);
-    
+    console.error('Fehler beim Senden des FCM-Tokens:', err);
+
     // Fallback zu localStorage Device ID
     try {
-      const fallbackDeviceId = localStorage.getItem('device_id') || 
+      const fallbackDeviceId = localStorage.getItem('device_id') ||
         `${Capacitor.getPlatform()}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('device_id', fallbackDeviceId);
-      
+
       await api.post('/notifications/device-token', {
         token,
         platform: Capacitor.getPlatform(),
         device_id: fallbackDeviceId
       });
-      
- console.log('FCM Token sent with fallback device ID');
+
       (window as any).fcmTokenSent = token;
       (window as any).fcmTokenLastSent = now;
     } catch (fallbackErr) {
- console.error('Error sending FCM token with fallback:', fallbackErr);
+      console.error('Error sending FCM token with fallback:', fallbackErr);
     }
   }
 };
@@ -118,57 +114,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
-  
+
   // Badge sync through state updates only (no custom events)
 
   // Chat notification functions
   const refreshChatNotifications = useCallback(async (skipBadgeUpdate = false) => {
     if (!user) return;
-    
+
     try {
       setChatNotificationsLoading(true);
       const response = await api.get('/chat/rooms');
       const rooms = response.data;
-      
+
       let totalUnread = 0;
       const unreadByRoom: Record<number, number> = {};
-      
+
       rooms.forEach((room: any) => {
         const unreadCount = room.unread_count || 0;
         unreadByRoom[room.id] = unreadCount;
         totalUnread += unreadCount;
       });
-      
+
       setChatNotifications(prev => {
         // Only update DEVICE badge if count actually changed AND skipBadgeUpdate is false
         const hasChanged = prev.totalUnreadCount !== totalUnread;
-        
+
         // Badge logic removed - now handled by BadgeContext
-        
+
         // ALWAYS update the state for tab badges, regardless of skipBadgeUpdate
- console.log('Updating chat notifications state:', totalUnread);
         return {
           totalUnreadCount: totalUnread,
           unreadByRoom
         };
       });
     } catch (err) {
- console.error('Error loading chat notifications:', err);
+      console.error('Error loading chat notifications:', err);
     } finally {
       setChatNotificationsLoading(false);
     }
   }, [user]);
 
   const markChatRoomAsRead = (roomId: number) => {
- console.log('Marking room as read:', roomId);
     setChatNotifications(prev => {
       const currentUnread = prev.unreadByRoom[roomId] || 0;
       const newTotalCount = prev.totalUnreadCount - currentUnread;
-      
- console.log(`Room ${roomId}: was ${currentUnread} unread, total going from ${prev.totalUnreadCount} to ${newTotalCount}`);
-      
+
       // Badge logic removed - now handled by BadgeContext
-      
+
       return {
         totalUnreadCount: newTotalCount,
         unreadByRoom: {
@@ -180,12 +172,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addUnreadChatMessage = (roomId: number, count: number = 1) => {
- console.log('Adding unread message for room:', roomId, 'count:', count);
     setChatNotifications(prev => {
       const newTotalCount = prev.totalUnreadCount + count;
-      
+
       // Badge logic removed - now handled by BadgeContext
-      
+
       return {
         totalUnreadCount: newTotalCount,
         unreadByRoom: {
@@ -199,35 +190,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) {
- console.log('ℹ Push notifications not available on web');
       return;
     }
-    
+
     if (pushRegistrationInProgress || pushAlreadyRegistered) {
- console.log('Push registration bereits in progress oder abgeschlossen');
       return;
     }
-    
+
     pushRegistrationInProgress = true;
-    
+
     try {
- console.log('Requesting push permissions after login...');
-      
       // Check current permission status
       const permStatus = await PushNotifications.checkPermissions();
- console.log('Current push permission status:', permStatus.receive);
-      
+
       if (permStatus.receive === 'prompt') {
         // Request permissions
         const permResult = await PushNotifications.requestPermissions();
         setPushNotificationsPermission(permResult.receive);
- console.log('Push permission result:', permResult.receive);
-        
+
         if (permResult.receive === 'granted') {
           // Register for push notifications
           await PushNotifications.register();
- console.log('Push notifications registered successfully');
-          
+
           // TESTFLIGHT FIX: Force APNS registration via native plugin
           if (Capacitor.getPlatform() === 'ios') {
             try {
@@ -235,22 +219,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
               if (FCMPlugin) {
                 await FCMPlugin.forceAPNSRegistration();
- console.log('Forced iOS APNS registration via plugin');
-                
+
                 // Force FCM token retrieval after APNS registration
                 setTimeout(async () => {
                   try {
                     await FCMPlugin.forceTokenRetrieval();
- console.log('Forced FCM token retrieval via plugin');
                   } catch (error) {
- console.warn('Could not force FCM token retrieval:', error);
+                    console.warn('Could not force FCM token retrieval:', error);
                   }
                 }, 2000);
               } else {
- console.warn('FCM Plugin not available');
+                console.warn('FCM Plugin not available');
               }
             } catch (error) {
- console.warn('Could not force iOS APNS registration:', error);
+              console.warn('Could not force iOS APNS registration:', error);
             }
           }
         }
@@ -258,41 +240,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setPushNotificationsPermission(permStatus.receive);
         // Already granted, just register
         await PushNotifications.register();
- console.log('Push notifications already granted and registered');
-        
+
         // TESTFLIGHT FIX: Force APNS registration for already granted permissions
         if (Capacitor.getPlatform() === 'ios') {
           try {
             const FCMPlugin = (window as any).Capacitor?.Plugins?.FCM;
             if (FCMPlugin) {
               await FCMPlugin.forceAPNSRegistration();
- console.log('Forced iOS APNS registration for existing permissions');
-              
+
               // Force FCM token retrieval after APNS registration
               setTimeout(async () => {
                 try {
                   await FCMPlugin.forceTokenRetrieval();
- console.log('Forced FCM token retrieval for existing permissions');
                 } catch (error) {
- console.warn('Could not force FCM token retrieval:', error);
+                  console.warn('Could not force FCM token retrieval:', error);
                 }
               }, 2000);
             } else {
- console.warn('FCM Plugin not available for existing permissions');
+              console.warn('FCM Plugin not available for existing permissions');
             }
           } catch (error) {
- console.warn('Could not force iOS APNS registration:', error);
+            console.warn('Could not force iOS APNS registration:', error);
           }
         }
       } else {
- console.log('Push permissions denied or restricted');
         setPushNotificationsPermission(permStatus.receive);
       }
-      
+
       pushAlreadyRegistered = true;
- console.log('Push registration completed successfully');
     } catch (error) {
- console.error('Error requesting push permissions:', error);
+      console.error('Error requesting push permissions:', error);
       setError('Push Notifications konnten nicht aktiviert werden');
     } finally {
       pushRegistrationInProgress = false;
@@ -321,43 +298,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         unreadByRoom: {}
       });
       setChatNotificationsLoading(true);
-      
+
       // Load with 1 second delay to allow Tab Bar to fully initialize
       const loadInitial = async () => {
- console.log('Starting delayed chat notifications load for tab badge visibility');
-        
         // Wait 1 second for Tab Bar to be fully ready
         setTimeout(async () => {
- console.log('⏰ 1 second delay complete - loading tab badge now');
-          
           // Try to get device badge first for immediate display
           try {
             const { Badge } = await import('@capawesome/capacitor-badge');
             const result = await Badge.get();
             if (result.count > 0) {
- console.log('Setting tab badge from device after delay:', result.count);
               setChatNotifications(prev => ({
                 ...prev,
                 totalUnreadCount: result.count
               }));
             }
           } catch (error) {
- console.log('Could not load device badge for tabs:', error);
+            console.warn('Could not load device badge for tabs:', error);
           }
-          
+
           // Now get real data from server
           // refreshChatNotifications disabled - Badge Context handles updates
-          
+
           // Ensure a final refresh for reliability
           setTimeout(() => {
- console.log('Final delayed refresh for tab badge reliability');
             // refreshChatNotifications disabled - Badge Context handles updates
           }, 300);
         }, 1000); // 1 second delay
       };
-      
+
       loadInitial();
-      
+
       // Auto-refresh notifications every 5 seconds for reliable badge sync
       // 5-second refresh disabled - Badge Context handles real-time updates
     } else {
@@ -371,30 +342,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [user, refreshChatNotifications]);
 
 useEffect(() => {
-  // NUR AUSFÜHREN, WENN EIN USER EINGELOGGT IST!
+  // NUR AUSFUEHREN, WENN EIN USER EINGELOGGT IST!
   if (!user) {
     return;
   }
-  
- console.log('User is logged in, setting up FCM token listener.');
-  
+
   const handleNativeFCMToken = (event: any) => {
     const token = event.detail;
-    
+
     if (token && token.length > 100) {
- console.log('Received FCM token from native event:', token.substring(0, 20) + '...');
-      
-      // ANTI-SPAM für native Events verwenden
+      // ANTI-SPAM fuer native Events verwenden
       sendTokenToServer(token);
     }
   };
-  
+
   window.addEventListener('fcmToken', handleNativeFCMToken);
-  
+
   // WICHTIG: Nach dem Setup des Listeners manuell den Token abfragen,
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
-  // aber dies ist eine zusätzliche Sicherheit.
+  // aber dies ist eine zusaetzliche Sicherheit.
   if ((window as any).Capacitor?.Plugins?.App) {
       const { App } = (window as any).Capacitor.Plugins;
       // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
@@ -402,24 +369,21 @@ useEffect(() => {
           methodName: "getLaunchUrl",
           data: {}
       });
- console.log('Triggered token retrieval on listener setup.');
   }
-  
-  
+
+
   return () => {
- console.log('Cleaning up FCM token listener.');
     window.removeEventListener('fcmToken', handleNativeFCMToken);
   };
-}, [user]); // <--- WICHTIGSTE ÄNDERUNG: Abhängigkeit von 'user'
-  
+}, [user]); // <--- WICHTIGSTE AENDERUNG: Abhaengigkeit von 'user'
+
   useEffect(() => {
     // Nur EINMAL Push-Permissions anfordern nach Login
     if (user && Capacitor.isNativePlatform() && !pushAlreadyRegistered && !pushRegistrationInProgress) {
- console.log('User eingeloggt - requesting Push Permissions (EINMALIG)');
       requestPushPermissions();
     }
   }, [user, requestPushPermissions]);
-  
+
   // App lifecycle events - simplified to avoid duplicate calls
   useEffect(() => {
     if (!user) return;
@@ -430,7 +394,6 @@ useEffect(() => {
     const handleAppActive = async () => {
       const now = Date.now();
       if (now - lastRefresh > minRefreshInterval) {
- console.log('App became active - refreshing chat notifications');
         // refreshChatNotifications disabled - Badge Context handles updates
         lastRefresh = now;
 
@@ -439,12 +402,11 @@ useEffect(() => {
           const lastTokenRefresh = parseInt(localStorage.getItem('lastTokenRefresh') || '0');
           const twelveHours = 12 * 60 * 60 * 1000;
           if (now - lastTokenRefresh > twelveHours) {
- console.log('Refreshing push token (12h interval)');
             try {
               await PushNotifications.register();
               localStorage.setItem('lastTokenRefresh', now.toString());
             } catch (err) {
- console.warn('Token refresh failed:', err);
+              console.warn('Token refresh failed:', err);
             }
           }
         }
@@ -475,42 +437,36 @@ useEffect(() => {
   // Push notifications setup and listeners
   useEffect(() => {
     if (!user) return;
-    
+
     const setupPushNotifications = async () => {
       try {
         // WICHTIG: Registration Listener fuer Android (und iOS Fallback)
         PushNotifications.addListener('registration', (token) => {
- console.log('Push registration token received:', token.value.substring(0, 20) + '...');
           // Token an Server senden
           sendTokenToServer(token.value);
         });
 
         PushNotifications.addListener('registrationError', (error) => {
- console.error('Push registration error:', error);
+          console.error('Push registration error:', error);
         });
 
         // Registriere Listener
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
- console.log('Push empfangen:', notification);
- console.log('Push data:', notification.data);
-          
           // Chat notifications are now handled by BadgeContext
-          
+
           // Bei Badge Updates direkt Badge Count setzen ohne API Call
           if (notification.data?.type === 'badge_update') {
             const badgeCount = parseInt(notification.data.count || '0');
- console.log('Badge update push:', badgeCount);
             setChatNotifications(prev => ({
               ...prev,
               totalUnreadCount: badgeCount
             }));
-            
+
             // Badge logic removed - now handled by BadgeContext
           }
         });
-        
+
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
- console.log('Push angeklickt:', action.notification);
           // Chat notifications refresh removed - handled by BadgeContext
 
           const notificationType = action.notification.data?.type;
@@ -559,41 +515,38 @@ useEffect(() => {
                 break;
 
               default:
- console.log('Unknown notification type:', notificationType);
+                console.warn('Unbekannter Notification-Typ:', notificationType);
                 break;
             }
 
             if (targetUrl) {
- console.log('Navigating to:', targetUrl);
               window.location.href = targetUrl;
             }
           }, 100);
         });
-        
+
         // Jetzt: Registrierung
         const permStatus = await PushNotifications.checkPermissions();
         setPushNotificationsPermission(permStatus.receive);
-        
+
         if (permStatus.receive === 'granted') {
- console.log('Berechtigung erteilt – registriere...');
           await PushNotifications.register();
         } else if (permStatus.receive === 'prompt') {
           const result = await PushNotifications.requestPermissions();
           setPushNotificationsPermission(result.receive);
           if (result.receive === 'granted') {
- console.log('Berechtigung nach Anfrage – registriere...');
             await PushNotifications.register();
           }
         }
       } catch (error) {
- console.error('Fehler bei Push-Setup:', error);
+        console.error('Fehler bei Push-Setup:', error);
       }
     };
-          
-    setupPushNotifications();
-  }, [user]); // Abhängigkeit ist korrekt
 
-  // hasPermission entfernt - Berechtigung jetzt über user.role_name prüfen
+    setupPushNotifications();
+  }, [user]); // Abhaengigkeit ist korrekt
+
+  // hasPermission entfernt - Berechtigung jetzt ueber user.role_name pruefen
 
   const value: AppContextType = {
     user,

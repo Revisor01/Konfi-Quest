@@ -43,54 +43,42 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
-// Debug: Log alle Engine-Level Events
+// Engine-Level Events
 io.engine.on('connection_error', (err) => {
- console.log('Socket.io Engine connection_error:', err.req?.url, err.code, err.message, err.context);
-});
-
-io.engine.on('initial_headers', (headers, req) => {
- console.log('Socket.io initial_headers for:', req.url?.substring(0, 50));
+  console.warn('Socket.io Engine connection_error:', err.code, err.message);
 });
 
 // Socket.io JWT Authentication Middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
- console.log('Socket.io Auth attempt - Token present:', !!token, token ? `(${token.substring(0, 20)}...)` : '');
 
   if (!token) {
- console.log('Socket.io Auth failed: No token provided');
     return next(new Error('Authentication required'));
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
- console.log('Socket.io Auth success for user:', decoded.display_name, '(ID:', decoded.id, ')');
     next();
   } catch (err) {
- console.log('Socket.io Auth failed: Invalid token -', err.message);
+    console.warn('Socket.io Auth fehlgeschlagen:', err.message);
     return next(new Error('Invalid token'));
   }
 });
 
 // Socket.io Connection Handler
 io.on('connection', (socket) => {
- console.log(`User connected: ${socket.user.display_name} (${socket.user.id})`);
-
-  // User tritt automatisch seinem persönlichen Room bei (für globale Benachrichtigungen)
+  // User tritt automatisch seinem persoenlichen Room bei (fuer globale Benachrichtigungen)
   const userRoom = `user_${socket.user.type}_${socket.user.id}`;
   socket.join(userRoom);
- console.log(`${socket.user.display_name} auto-joined personal room: ${userRoom}`);
 
   // User tritt seinen Chat-Rooms bei
   socket.on('joinRoom', (roomId) => {
     socket.join(`room_${roomId}`);
- console.log(`${socket.user.display_name} joined room ${roomId}`);
   });
 
   socket.on('leaveRoom', (roomId) => {
     socket.leave(`room_${roomId}`);
- console.log(`${socket.user.display_name} left room ${roomId}`);
   });
 
   // Typing Indicator
@@ -110,7 +98,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
- console.log(`User disconnected: ${socket.user.display_name}`);
+    // Verbindung getrennt
   });
 });
 
@@ -147,9 +135,8 @@ const transporter = nodemailer.createTransport(SMTP_CONFIG);
 transporter.verify(function(error, success) {
   if (error) {
  console.error('SMTP connection failed:', error);
-  } else {
- console.log('SMTP server ready for messages');
   }
+  // SMTP-Status wird im strukturierten Server-Start ausgegeben
 });
 
 // ====================================================================
@@ -215,7 +202,6 @@ const uploadLimiter = rateLimit({
 // MIDDLEWARE SETUP
 // ====================================================================
 
-console.log('Setting up middleware...');
 
 // CORS wird komplett von Apache gehandelt
 // app.use(cors()); // DEAKTIVIERT - Apache macht das
@@ -278,7 +264,7 @@ const chatUpload = multer({
     if (isAllowed) {
       cb(null, true);
     } else {
- console.log(`File rejected: ${file.originalname} (${file.mimetype})`);
+ console.warn(`Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
       cb(null, false);
     }
   }
@@ -355,7 +341,6 @@ if (!fs.existsSync(dataDir)) {
 // ROUTE IMPORTS
 // ====================================================================
 
-console.log('Mounting API routes...');
 
 const authRoutes = require('./routes/auth');
 const konfiRoutes = require('./routes/konfi');
@@ -462,10 +447,44 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ====================================================================
 
+// Firebase und APN Status ermitteln
+let firebaseStatus = 'Nicht konfiguriert';
+try {
+  const firebase = require('./push/firebase');
+  const fbApp = firebase.initializeFirebase();
+  if (fbApp) firebaseStatus = 'Verbunden';
+} catch (e) {
+  // Firebase nicht verfuegbar
+}
+
+let apnStatus = 'Nicht konfiguriert';
+try {
+  const apnModule = require('./push/apn');
+  if (apnModule && apnModule.getProvider && apnModule.getProvider()) {
+    apnStatus = 'Verbunden';
+  }
+} catch (e) {
+  // APN nicht verfuegbar
+}
+
+const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';
+
 server.listen(PORT, () => {
- console.log(`Konfi Points API running on port ${PORT}`);
- console.log(`WebSocket server ready`);
- console.log(`Uploads directory: ${uploadsDir}`);
+  console.log('========================================');
+  console.log('  KONFI QUEST API - Server gestartet');
+  console.log('========================================');
+  console.log(`  Port:         ${PORT}`);
+  console.log(`  Environment:  ${process.env.NODE_ENV || 'development'}`);
+  console.log(`  Database:     PostgreSQL (verbunden)`);
+  console.log(`  WebSocket:    Bereit`);
+  console.log(`  Uploads:      ${uploadsDir}`);
+  console.log('----------------------------------------');
+  console.log('  Services:');
+  console.log(`  - SMTP:       ${smtpStatus}`);
+  console.log(`  - Firebase:   ${firebaseStatus}`);
+  console.log(`  - APN:        ${apnStatus}`);
+  console.log('  - Background: Gestartet');
+  console.log('========================================');
 });
 
 // ====================================================================
@@ -474,10 +493,10 @@ server.listen(PORT, () => {
 
 // GEÄNDERT: Der Shutdown-Prozess verwendet jetzt db.end() und async/await.
 process.on('SIGINT', async () => {
- console.log('\n Shutting down gracefully...');
+  console.warn('Server wird heruntergefahren...');
   try {
     await db.end();
- console.log('Database connection pool closed.');
+    console.warn('Datenbankverbindung geschlossen.');
   } catch (err) {
  console.error('Error closing the database pool:', err.message);
   } finally {

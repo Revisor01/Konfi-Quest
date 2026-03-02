@@ -465,7 +465,6 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         RETURNING id, username, display_name, email, is_active, created_at
       `, [id, role.id, username, email || null, hashedPassword, display_name]);
 
- console.log(`Neuer Org-Admin erstellt: ${display_name} (${username}) für Org ${id} durch ${req.user.role_name}`);
       res.status(201).json(newAdmin);
     } catch (err) {
       if (err.code === '23505') {

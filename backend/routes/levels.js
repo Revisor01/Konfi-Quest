@@ -30,19 +30,14 @@ module.exports = (db, verifyTokenRBAC, roleHelpers) => {
 
   // GET /api/levels - Alle Level für Organisation laden
   router.get('/', verifyTokenRBAC, async (req, res) => {
- console.log('GET /api/levels - Request received');
- console.log('User:', req.user);
   try {
     const organizationId = req.user.organization_id;
- console.log('Organization ID:', organizationId);
 
- console.log('Executing DB query...');
     const result = await db.query(`
       SELECT * FROM levels
       WHERE organization_id = $1
       ORDER BY points_required ASC
     `, [organizationId]);
- console.log('Query result:', result.rows.length, 'levels found');
 
     res.json(result.rows);
   } catch (error) {

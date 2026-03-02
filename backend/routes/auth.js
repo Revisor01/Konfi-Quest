@@ -72,7 +72,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
   // Unified RBAC login - works for both admins and konfis
   router.post('/login', ...loginMiddleware, validateLogin, async (req, res) => {
     const { username, password } = req.body;
- console.log(`RBAC login attempt for: ${username}`);
+ console.warn(`Login-Versuch: ${username}`);
 
     try {
       const userQuery = `
@@ -93,18 +93,17 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       const { rows: [user] } = await db.query(userQuery, [username]);
 
       if (!user) {
- console.log(`Login failed: user '${username}' not found`);
+ console.warn(`Login fehlgeschlagen: Benutzer '${username}' not found`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const passwordMatch = await bcrypt.compare(password, user.password_hash);
       if (!passwordMatch) {
- console.log(`Login failed: wrong password for user '${username}'`);
+ console.warn(`Login fehlgeschlagen: Falsches Passwort fuer '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
       
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
- console.log(`${userType} login successful: ${username} (${user.display_name})`);
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
       const token = jwt.sign({
@@ -172,7 +171,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       
       await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, userId]);
       
- console.log(`Password changed for ${req.user.type} ID ${userId}`);
       res.json({ message: 'Passwort erfolgreich geändert' });
 
     } catch (err) {
@@ -199,7 +197,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     try {
       await db.query(`UPDATE users SET email = $1 WHERE id = $2`, [trimmedEmail, userId]);
 
- console.log(`Email updated for ${req.user.type} ID ${userId} to ${trimmedEmail || '(removed)'}`);
       res.json({ message: 'E-Mail-Adresse erfolgreich aktualisiert', email: trimmedEmail });
 
     } catch (err) {
@@ -227,7 +224,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
       await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
 
- console.log(`Role title updated for ${req.user.type} ID ${userId} to "${titleValue}"`);
       res.json({
         message: 'Funktionsbeschreibung erfolgreich aktualisiert',
         role_title: titleValue
@@ -297,7 +293,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       }
 
       // Always return a success message to not reveal if an email exists or not
- console.log(`Password reset request processed for email: ${email}`);
       res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
 
     } catch (err) {
@@ -344,7 +339,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         VALUES ($1, $2, $3, $4, $5)
       `, [inviteCode, organizationId, jahrgang_id, userId, expiresAt]);
 
- console.log(`Invite code ${inviteCode} created for jahrgang ${jahrgang.name} by user ${userId}`);
       res.json({
         invite_code: inviteCode,
         jahrgang_name: jahrgang.name,
@@ -581,7 +575,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
           is_super_admin: false
         }, JWT_SECRET, { expiresIn: '90d' });
 
-        console.log(`New Konfi registered: ${display_name} (${username}) for jahrgang ${invite.jahrgang_name}`);
         res.json({
           message: 'Registrierung erfolgreich',
           token,
@@ -633,7 +626,6 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       await db.query(`UPDATE users SET password_hash = $1 WHERE id = $2`, [hashedPassword, resetRecord.user_id]);
       await db.query('UPDATE password_resets SET used_at = NOW() WHERE id = $1', [resetRecord.id]);
       
- console.log(`Password reset successful for ${resetRecord.user_type} ID ${resetRecord.user_id}`);
       res.json({ message: 'Passwort erfolgreich zurückgesetzt' });
 
     } catch (err) {

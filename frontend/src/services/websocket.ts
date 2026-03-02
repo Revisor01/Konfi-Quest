@@ -8,15 +8,9 @@ let socket: Socket | null = null;
 export const initializeWebSocket = (token: string): Socket => {
   // Pruefen ob Socket bereits existiert (auch wenn noch nicht connected)
   if (socket) {
-    if (socket.connected) {
- console.log('WebSocket already connected');
-    } else {
- console.log('WebSocket exists, waiting for connection...');
-    }
     return socket;
   }
 
- console.log('Creating NEW WebSocket connection to', WS_URL);
   socket = io(WS_URL, {
     auth: { token },
     transports: ['websocket', 'polling'], // WebSocket zuerst, dann Polling als Fallback
@@ -27,22 +21,20 @@ export const initializeWebSocket = (token: string): Socket => {
     timeout: 20000,
   });
 
- console.log('Initializing WebSocket connection to', WS_URL);
-
   socket.on('connect', () => {
- console.log('WebSocket connected! Socket ID:', socket?.id);
+    // Verbindung hergestellt
   });
 
   socket.on('disconnect', (reason) => {
- console.log('WebSocket disconnected:', reason);
+    console.warn('WebSocket getrennt:', reason);
   });
 
   socket.on('connect_error', (error) => {
- console.error('WebSocket connection error:', error.message);
+    console.error('WebSocket connection error:', error.message);
   });
 
   socket.on('reconnect_attempt', (attempt) => {
- console.log('WebSocket reconnect attempt:', attempt);
+    console.warn('WebSocket reconnect attempt:', attempt);
   });
 
   return socket;
@@ -54,21 +46,17 @@ export const disconnectWebSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
- console.log('WebSocket disconnected manually');
   }
 };
 
 export const joinRoom = (roomId: number) => {
   if (socket?.connected) {
     socket.emit('joinRoom', roomId);
- console.log(`Joining room ${roomId}`);
   }
 };
 
 export const leaveRoom = (roomId: number) => {
   if (socket?.connected) {
     socket.emit('leaveRoom', roomId);
- console.log(`Leaving room ${roomId}`);
   }
 };
-

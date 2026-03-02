@@ -184,7 +184,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Listen for new messages
       socket.on('newMessage', (data: { roomId: number; message: any }) => {
         if (data.roomId === room.id) {
- console.log('WebSocket: New message received');
           setMessages(prev => {
             // Avoid duplicates
             if (prev.some(m => m.id === data.message.id)) return prev;
@@ -196,7 +195,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Listen for deleted messages
       socket.on('messageDeleted', (data: { roomId: number; messageId: number }) => {
         if (data.roomId === room.id) {
- console.log('WebSocket: Message deleted');
           setMessages(prev => prev.map(m =>
             m.id === data.messageId ? { ...m, deleted_at: new Date().toISOString() } : m
           ));
@@ -207,7 +205,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       socket.on('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
         if (data.roomId === room.id && data.userId !== user?.id) {
           // Could show typing indicator here
- console.log(`${data.userName} is typing...`);
         }
       });
 
@@ -316,7 +313,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       // Einfach: Badge Context neu laden für genaue Counts
       await refreshFromAPI();
       
- console.log('Room marked as read:', room.id);
     } catch (err) {
       // Silent fail - marking as read is not critical
  console.error('Error marking room as read:', err);
@@ -335,21 +331,12 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       }
       if (selectedFile) {
         formData.append('file', selectedFile);
- console.log('Uploading file:', selectedFile.name, selectedFile.size, selectedFile.type);
       }
       // Reply-Referenz hinzufügen wenn vorhanden
       if (replyToMessage) {
         formData.append('reply_to', replyToMessage.id.toString());
       }
 
-      // Debug: Check what we're sending
- console.log('FormData contents:', {
-        hasContent: !!messageText.trim(),
-        hasFile: !!selectedFile,
-        fileName: selectedFile?.name,
-        fileSize: selectedFile?.size,
-        replyTo: replyToMessage?.id
-      });
 
       await api.post(`/chat/rooms/${room.id}/messages`, formData, {
         headers: {
@@ -487,7 +474,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
- console.log('File selected:', file ? `${file.name} (${file.size} bytes, ${file.type})` : 'No file');
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
         setError('Datei ist zu groß (max. 10MB)');
@@ -502,7 +488,6 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       } else {
         setSelectedFilePreview(null);
       }
- console.log('File set as selectedFile');
     }
   };
 

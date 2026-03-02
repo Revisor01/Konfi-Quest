@@ -300,7 +300,6 @@ const checkAndAwardBadges = async (db, konfiId) => {
             ]
           );
         }
- console.log(`${earnedBadgeDetails.length} Badge-Notification(s) für Konfi ${konfi.name} gesendet`);
 
         // Send push notifications for each badge
         for (const badge of earnedBadgeDetails) {

@@ -238,41 +238,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
   const calculateRegistrationStatus = (event: Event): 'upcoming' | 'open' | 'closed' => {
     const now = getLocalNow();
-    
- console.log('EventDetailView - Calculating status for event:', event.name);
- console.log('EventDetailView - Current local time:', now.toLocaleString('de-DE', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: false }));
- console.log('EventDetailView - Current UTC:', now.toISOString());
- console.log('EventDetailView - User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
- console.log('EventDetailView - Registration opens at (UTC):', event.registration_opens_at);
- console.log('EventDetailView - Registration closes at (UTC):', event.registration_closes_at);
-    
+
     // If registration hasn't opened yet
     if (event.registration_opens_at) {
       const opensAt = parseLocalTime(event.registration_opens_at);
- console.log('EventDetailView - Opens at local time:', opensAt.toLocaleString('de-DE', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: false }));
       if (now < opensAt) {
- console.log('EventDetailView - Status: upcoming (not opened yet)');
         return 'upcoming';
       }
     }
-    
+
     // If registration has closed
     if (event.registration_closes_at) {
       const closesAt = parseLocalTime(event.registration_closes_at);
- console.log('EventDetailView - Closes at local time:', closesAt.toLocaleString('de-DE', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, hour12: false }));
       if (now > closesAt) {
- console.log('EventDetailView - Status: closed (deadline passed)');
         return 'closed';
       }
     }
-    
+
     // If event is full (nur wenn max_participants > 0, sonst unbegrenzt)
     if (event.max_participants > 0 && event.registered_count >= event.max_participants) {
- console.log('EventDetailView - Status: closed (event full)');
       return 'closed';
     }
-    
- console.log('EventDetailView - Status: open');
+
     return 'open';
   };
 

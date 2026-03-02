@@ -35,7 +35,7 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
  // console.log('BadgeContext: API refresh result:', totalUnread); // DISABLED wegen Spam
       setBadgeCount(totalUnread);
     } catch (error) {
- console.log('BadgeContext: API refresh failed:', error);
+ console.error('BadgeContext: API refresh fehlgeschlagen:', error);
     }
   }, []);
 
@@ -44,13 +44,11 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (badgeCount > 0) {
         Badge.set({ count: badgeCount });
- console.log('BadgeContext: Device badge set to:', badgeCount);
       } else {
         Badge.clear();
- console.log('BadgeContext: Device badge cleared');
       }
     } catch (error) {
- console.log('BadgeContext: Badge not available:', error);
+ console.warn('BadgeContext: Badge nicht verfuegbar:', error);
     }
   }, [badgeCount]);
 
@@ -63,7 +61,6 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     const socket = initializeWebSocket(token);
 
     const handleNewMessage = () => {
- console.log('BadgeContext: New message via WebSocket, refreshing badge');
       refreshFromAPI();
     };
 

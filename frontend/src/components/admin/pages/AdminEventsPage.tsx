@@ -87,7 +87,6 @@ const AdminEventsPage: React.FC = () => {
 
   // Memoized refresh function for live updates
   const refreshAllEvents = useCallback(() => {
- console.log('Live Update: Refreshing events data...');
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
@@ -100,8 +99,7 @@ const AdminEventsPage: React.FC = () => {
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
- console.log('Page ref:', pageRef.current);
-    // Event-Listener für Updates aus EventDetailView (legacy support)
+    // Event-Listener fuer Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
       loadEvents();
       loadCancelledEvents();

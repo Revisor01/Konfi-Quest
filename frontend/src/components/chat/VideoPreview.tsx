@@ -49,10 +49,9 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
           ctx.drawImage(offscreenVideo, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           setThumbnailUrl(dataUrl);
-          console.log('Canvas-Thumbnail generiert fuer:', message.file_name);
         }
       } catch (error) {
-        console.log('Canvas-Thumbnail fehlgeschlagen:', message.file_name, error);
+        console.warn('Canvas-Thumbnail fehlgeschlagen:', message.file_name, error);
       }
       // Offscreen-Video aufraeumen
       offscreenVideo.removeAttribute('src');
@@ -60,7 +59,7 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({ message, onError }) => {
     });
 
     offscreenVideo.addEventListener('error', () => {
-      console.log('Offscreen-Video-Fehler bei Thumbnail-Generierung:', message.file_name);
+      console.warn('Offscreen-Video-Fehler bei Thumbnail-Generierung:', message.file_name);
     });
 
     offscreenVideo.src = blobUrl;
