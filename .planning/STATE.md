@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Design-Konsistenz
 status: in-progress
-last_updated: "2026-03-02T12:22:33Z"
+last_updated: "2026-03-02T12:25:13.492Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 6 of 7 (Modal-Konsistenz)
-Plan: 2 of 4 complete
-Status: Plan 06-02 complete
-Last activity: 2026-03-02 -- Plan 06-02 complete (Admin-Modals Layout-Angleichung)
+Plan: 3 of 4 complete
+Status: Plan 06-03 complete
+Last activity: 2026-03-02 -- Plan 06-03 complete (Konfi- und Chat-Modals Layout-Angleichung)
 
-Progress: [##########          ] 50% (v1.1 Phase 6: 2/4 plans)
+Progress: [###############     ] 75% (v1.1 Phase 6: 3/4 plans)
 
 ## Performance Metrics
 
@@ -46,7 +46,7 @@ Progress: [##########          ] 50% (v1.1 Phase 6: 2/4 plans)
 | 3 (v1.1) | 3 | 14min | 4.7min |
 | 4 (v1.1) | 4/4 | 23min | 5.8min |
 | 5 (v1.1) | 3/3 | 28min | 9.3min |
-| 6 (v1.1) | 2/4 | 14min | 7min |
+| 6 (v1.1) | 3/4 | 20min | 6.7min |
 
 *Updated after each plan completion*
 
@@ -88,6 +88,8 @@ v1.0 Decisions archived in PROJECT.md Key Decisions table.
 - [Phase 06-02]: Domain-Farb-Zuordnung fuer Admin-Modals: Events=Rot, Activities=Gruen, Badges=Orange, Konfi=Lila, Settings/Users=Blau
 - [Phase 06-02]: BonusModal gehoert zur Konfi-Domain (Lila), nicht zu Settings (Blau)
 - [Phase 06-02]: OrganizationManagement und LevelManagement Section-Icons auf --users (Settings-Konsistenz)
+- [Phase 06-03]: Domain-Farbe hat Vorrang: UnregisterModal Section-Icons von events auf purple geaendert
+- [Phase 06-03]: Chat-Modals IonCardHeader/IonCardTitle durch IonListHeader mit app-section-icon--chat Pattern ersetzt
 
 ### Pending Todos
 
@@ -101,5 +103,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 06-02-PLAN.md (Admin-Modals Layout-Angleichung)
-Resume file: 06-03-PLAN.md next
+Stopped at: Completed 06-03-PLAN.md (Konfi- und Chat-Modals Layout-Angleichung)
+Resume file: 06-04-PLAN.md next
