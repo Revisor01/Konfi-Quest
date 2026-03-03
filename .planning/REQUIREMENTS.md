@@ -18,7 +18,7 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 ### Konfi Views
 
 - [ ] **KUI-01**: Tab "Dashboard" in "Start" umbenannt
-- [ ] **KUI-02**: Konfi EventDetailView Teilnehmer:innen-Anzeige redesignt (passt zum Design-System)
+- [x] **KUI-02**: Konfi EventDetailView Teilnehmer:innen-Anzeige redesignt (passt zum Design-System)
 - [ ] **KUI-03**: BadgesView EmptyState fuer "Offen" und "In Arbeit" Sektionen wenn leer
 - [ ] **KUI-04**: KonfiProfileView Farbe von Blau auf Lila geaendert
 - [ ] **KUI-05**: PointsHistoryModal "Gesamt" Textüberlauf behoben, Layout 3+2 statt 4+1
@@ -113,7 +113,7 @@ Geplante Milestones nach v1.3:
 | GUI-04 | Phase 13 | Complete |
 | GUI-05 | Phase 13 | Complete |
 | KUI-01 | Phase 14 | Pending |
-| KUI-02 | Phase 14 | Pending |
+| KUI-02 | Phase 14 | Complete |
 | KUI-03 | Phase 14 | Pending |
 | KUI-04 | Phase 16 | Pending |
 | KUI-05 | Phase 14 | Pending |

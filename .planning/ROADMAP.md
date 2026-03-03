@@ -50,7 +50,7 @@ Phase 11: Dokumentation (1 plan, complete)
 
 - [x] **Phase 12: Bug-Fixes + Sicherheit** - Funktionale Bugs in Modals und Auth-Seiten beheben, Passwort-Sicherheit erhoehen (completed 2026-03-03)
 - [x] **Phase 13: Globale UI-Anpassungen** - Querschnittliche visuelle Fixes die alle Views betreffen (completed 2026-03-03)
-- [ ] **Phase 14: Konfi Views -- Dashboard, Events, Badges** - Konfi-Hauptansichten polieren
+- [x] **Phase 14: Konfi Views -- Dashboard, Events, Badges** - Konfi-Hauptansichten polieren (completed 2026-03-03)
 - [ ] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen
 - [ ] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen
 - [ ] **Phase 17: Admin Views Polishing** - Admin-spezifische Detail-Views und Modals vereinheitlichen
@@ -171,7 +171,7 @@ Plans:
 | 11. Dokumentation | v1.2 | 1/1 | Complete | 2026-03-02 |
 | 12. Bug-Fixes + Sicherheit | 2/2 | Complete    | 2026-03-03 | - |
 | 13. Globale UI-Anpassungen | 2/2 | Complete    | 2026-03-03 | - |
-| 14. Konfi Views -- Dashboard, Events, Badges | v1.3 | 0/? | Not started | - |
+| 14. Konfi Views -- Dashboard, Events, Badges | 2/2 | Complete   | 2026-03-03 | - |
 | 15. Konfi Views -- Antraege | v1.3 | 0/? | Not started | - |
 | 16. Konfi Views -- Profil + Verlinkungen | v1.3 | 0/? | Not started | - |
 | 17. Admin Views Polishing | v1.3 | 0/? | Not started | - |

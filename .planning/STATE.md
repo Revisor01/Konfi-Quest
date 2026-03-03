@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: unknown
-last_updated: "2026-03-03T09:19:19.419Z"
+last_updated: "2026-03-03T10:19:05.220Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 13 -- Globale UI-Anpassungen
+**Current focus:** Phase 14 -- Konfi-Views, Dashboard, Events, Badges
 
 ## Current Position
 
-Phase: 13 of 19 (Globale UI-Anpassungen)
+Phase: 14 of 19 (Konfi-Views, Dashboard, Events, Badges)
 Plan: 2 of 2 in current phase (komplett)
-Status: Phase 13 abgeschlossen, bereit fuer Phase 14
-Last activity: 2026-03-03 -- Plan 13-01 abgeschlossen (Globale CSS-Fixes GUI-01/02/04/05)
+Status: Phase 14 Plan 02 abgeschlossen (EventDetailView Teilnehmer-Redesign)
+Last activity: 2026-03-03 -- Plan 14-02 abgeschlossen (EventDetailView Teilnehmer-Redesign KUI-02)
 
-Progress: [##........] 25% (v1.3: 2/8 Phasen, Phase 12+13 komplett)
+Progress: [###.......] 38% (v1.3: 3/8 Phasen, Phase 12+13+14 komplett)
 
 ## Performance Metrics
 
@@ -45,6 +45,8 @@ Progress: [##........] 25% (v1.3: 2/8 Phasen, Phase 12+13 komplett)
 |-------|------|-------|-------|-------|
 | 13 | 01 | 3min | 2 | 2 |
 | 13 | 02 | 2min | 1 | 8 |
+| 14 | 02 | 1min | 1 | 1 |
+| Phase 14 P01 | 1min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -63,6 +65,8 @@ Relevant for v1.3:
 - [Phase 13]: Alle IonCheckbox in Admin-Modals einheitlich Tuerkis (#06b6d4) statt rollenabhaengige Farben (GUI-03)
 - [Phase 13]: Activities-Farbe von #059669 auf #047857 (dunkleres Gruen) fuer bessere Lesbarkeit (GUI-04)
 - [Phase 13]: Auth min-height von 100vh auf 100% mit ::part(scroll) Ansatz statt vh-Einheiten (GUI-05)
+- [Phase 14]: personOutline statt person Icon fuer Personen-Listen-Eintraege (Outline-Variante konsistent mit Design-System)
+- [Phase 14]: Events-Farbe (Rot) statt Success-Farbe (Gruen) fuer Teilnehmer-Sektion in Konfi EventDetailView
 
 ### Pending Todos
 
@@ -75,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 13-01-PLAN.md (Globale CSS-Fixes), Phase 13 komplett
+Stopped at: Completed 14-02-PLAN.md (EventDetailView Teilnehmer-Redesign)
 Resume file: None
