@@ -298,7 +298,7 @@ const MainTabs: React.FC = () => {
           <IonTabBar slot="bottom">
             <IonTabButton tab="dashboard" href="/konfi/dashboard">
               <IonIcon icon={home} />
-              <IonLabel>Dashboard</IonLabel>
+              <IonLabel>Start</IonLabel>
             </IonTabButton>
             <IonTabButton tab="chat" href="/konfi/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
               <IonIcon icon={chatbubbles} />

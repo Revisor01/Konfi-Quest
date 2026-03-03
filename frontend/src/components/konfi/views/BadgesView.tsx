@@ -387,12 +387,28 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         {badgeCategories.length === 0 ? (
           <IonCard className="app-card">
             <IonCardContent>
-              <EmptyState
-                icon={trophyOutline}
-                title="Keine Badges gefunden"
-                message="Sammle Punkte für deine ersten Badges!"
-                iconColor="#f59e0b"
-              />
+              {selectedFilter === 'nicht_erhalten' ? (
+                <EmptyState
+                  icon={checkmarkCircle}
+                  title="Alle Badges erreicht!"
+                  message="Du hast alle sichtbaren Badges eingesammelt."
+                  iconColor="#22c55e"
+                />
+              ) : selectedFilter === 'in_arbeit' ? (
+                <EmptyState
+                  icon={trophyOutline}
+                  title="Keine Badges in Arbeit"
+                  message="Sammle Punkte, um den Fortschritt bei Badges zu starten!"
+                  iconColor="#667eea"
+                />
+              ) : (
+                <EmptyState
+                  icon={trophyOutline}
+                  title="Keine Badges gefunden"
+                  message="Sammle Punkte für deine ersten Badges!"
+                  iconColor="#f59e0b"
+                />
+              )}
             </IonCardContent>
           </IonCard>
         ) : (
