@@ -84,9 +84,29 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
         api.get('/auth/invite-codes').catch(() => ({ data: [] }))
       ]);
       setJahrgaenge(jahrgaengeRes.data);
-      setExistingInvites(invitesRes.data || []);
+      const invites = invitesRes.data || [];
+      setExistingInvites(invites);
       if (jahrgaengeRes.data.length > 0) {
         setSelectedJahrgang(jahrgaengeRes.data[0].id);
+      }
+
+      // Automatisch den ersten gueltigen Invite-Code als QR anzeigen
+      const validInvites = invites.filter((invite: ExistingInvite) => {
+        const date = new Date(invite.expires_at);
+        const now = new Date();
+        return date.getTime() > now.getTime();
+      });
+      if (validInvites.length > 0) {
+        const firstValid = validInvites[0];
+        const registrationUrl = `https://konfi-quest.de/register?code=${firstValid.invite_code}`;
+        const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
+          width: 256,
+          margin: 2,
+          color: { dark: '#000000', light: '#ffffff' }
+        });
+        setInviteCode(firstValid.invite_code);
+        setQrCodeDataUrl(qrDataUrl);
+        setSelectedJahrgang(firstValid.jahrgang_id);
       }
     } catch (error: any) {
       setError('Fehler beim Laden der Daten');

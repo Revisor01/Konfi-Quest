@@ -298,21 +298,28 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     init();
   }, [badgeId]);
 
+  const [initialDataLoading, setInitialDataLoading] = useState(true);
+
   const loadInitialData = async () => {
     try {
+      setInitialDataLoading(true);
+
       // Load activities
       const activitiesResponse = await api.get('/admin/activities');
-      setActivities(activitiesResponse.data);
+      setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
 
       // Load categories
       const categoriesResponse = await api.get('/admin/categories');
-      setCategories(categoriesResponse.data);
+      setCategories(Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
 
       // Load criteria types
       const criteriaResponse = await api.get('/admin/badges/criteria-types');
-      setCriteriaTypes(criteriaResponse.data);
+      setCriteriaTypes(criteriaResponse.data || {});
     } catch (err) {
- console.error('Error loading initial data:', err);
+      console.error('Error loading initial data:', err);
+      setError('Fehler beim Laden der Badge-Daten');
+    } finally {
+      setInitialDataLoading(false);
     }
   };
 
@@ -721,6 +728,16 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
+        {initialDataLoading && !isEditMode ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+            <IonSpinner name="crescent" />
+          </div>
+        ) : loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}>
+            <IonSpinner name="crescent" />
+          </div>
+        ) : (
+        <>
         {/* SEKTION: Badge-Informationen */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
@@ -1080,6 +1097,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         </IonCard>
         </IonList>
 
+        </>
+        )}
       </IonContent>
     </IonPage>
   );
