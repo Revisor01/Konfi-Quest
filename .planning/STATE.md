@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
-status: planning
+status: executing
 last_updated: "2026-03-03"
 progress:
   total_phases: 8
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 ## Current Position
 
 Phase: 12 of 19 (Bug-Fixes + Sicherheit) -- erste Phase in v1.3
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-03 -- v1.3 Roadmap erstellt (8 Phasen, 46 Requirements)
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-03-03 -- Plan 12-01 abgeschlossen (3 Admin-Modal Bugs behoben)
 
-Progress: [..........] 0% (v1.3: 0/8 Phasen)
+Progress: [..........] 0% (v1.3: 0/8 Phasen, Plan 1/2 in Phase 12)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Relevant for v1.3:
 - v1.1: useIonModal Pattern fuer alle Modals
 - v1.2: Super-Admin 2-Tab Layout (Organisationen + Profil)
 - v1.2: 17 BEM-Klassen app-event-detail__* fuer EventDetailView
+- v1.3: useIonModal stale-closure Workaround -- Modals muessen eigene Daten laden statt Props zu nutzen
 
 ### Pending Todos
 
@@ -62,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: v1.3 Roadmap erstellt, bereit fuer Phase 12 Planung
+Stopped at: Completed 12-01-PLAN.md (Admin-Modal Bugfixes)
 Resume file: None

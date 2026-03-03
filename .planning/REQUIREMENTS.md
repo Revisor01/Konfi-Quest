@@ -63,9 +63,9 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 ### Bugs
 
-- [ ] **BUG-01**: ParticipantManagementModal zeigt keine User
-- [ ] **BUG-02**: BadgeManagementModal Kategorien und Aktivitaeten nicht aus DB geladen
-- [ ] **BUG-03**: Invite-Modal QR-Code nicht persistiert nach Schliessen/Oeffnen
+- [x] **BUG-01**: ParticipantManagementModal zeigt keine User
+- [x] **BUG-02**: BadgeManagementModal Kategorien und Aktivitaeten nicht aus DB geladen
+- [x] **BUG-03**: Invite-Modal QR-Code nicht persistiert nach Schliessen/Oeffnen
 - [ ] **BUG-04**: ForgotPassword Mail wird nicht gesendet
 - [ ] **BUG-05**: ResetPasswordPage Unicode-Encoding "pr\u00fen" statt "pruefen"
 - [ ] **BUG-06**: ResetPasswordPage Zurueck-Button Layout
@@ -146,9 +146,9 @@ Geplante Milestones nach v1.3:
 | SUA-05 | Phase 19 | Pending |
 | SUA-06 | Phase 19 | Pending |
 | SUA-07 | Phase 19 | Pending |
-| BUG-01 | Phase 12 | Pending |
-| BUG-02 | Phase 12 | Pending |
-| BUG-03 | Phase 12 | Pending |
+| BUG-01 | Phase 12 | Complete |
+| BUG-02 | Phase 12 | Complete |
+| BUG-03 | Phase 12 | Complete |
 | BUG-04 | Phase 12 | Pending |
 | BUG-05 | Phase 12 | Pending |
 | BUG-06 | Phase 12 | Pending |
