@@ -206,35 +206,34 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                           opacity: loading ? 0.6 : 1,
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
+                          gap: '12px',
                           marginBottom: '0',
                           borderLeftColor: typeColor,
                           backgroundColor: isSelected ? `${typeColor}10` : undefined
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                          <div
-                            className="app-icon-circle"
-                            style={{ backgroundColor: typeColor }}
-                          >
-                            <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="app-list-item__title">{activity.name}</div>
-                            <div className="app-list-item__subtitle">
-                              {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} - {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                            </div>
-                          </div>
-                        </div>
                         <IonCheckbox
                           checked={isSelected}
                           disabled={loading}
                           style={{
                             '--checkbox-background-checked': '#06b6d4',
                             '--border-color-checked': '#06b6d4',
-                            '--checkmark-color': 'white'
+                            '--checkmark-color': 'white',
+                            flexShrink: 0
                           }}
                         />
+                        <div
+                          className="app-icon-circle"
+                          style={{ backgroundColor: typeColor, flexShrink: 0 }}
+                        >
+                          <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className="app-list-item__title">{activity.name}</div>
+                          <div className="app-list-item__subtitle">
+                            {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} - {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
