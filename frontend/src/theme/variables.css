@@ -362,8 +362,8 @@ ion-item.app-list-item:last-child {
   flex-shrink: 0;
 }
 .app-icon-circle--lg {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
 }
 .app-icon-circle--events { background-color: #dc2626; }
 .app-icon-circle--chat { background-color: #06b6d4; }
@@ -386,7 +386,7 @@ ion-item.app-list-item:last-child {
   font-size: 0.9rem;
 }
 .app-icon-circle--lg ion-icon {
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 /* === Tags === */
@@ -437,11 +437,14 @@ ion-item.app-list-item:last-child {
 }
 .app-list-item__main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   flex: 1;
   min-width: 0;
   overflow: hidden;
+}
+.app-list-item__main--centered {
+  align-items: center;
 }
 .app-list-item__content {
   flex: 1;
@@ -555,6 +558,34 @@ ion-popover ion-select-popover ion-item {
   --background: #ffffff;
   --background-hover: rgba(6, 182, 212, 0.08);
   --background-activated: rgba(6, 182, 212, 0.12);
+}
+
+/* === Fokus/Auswahl-Rahmen global entfernt (GUI-02) === */
+ion-checkbox {
+  --checkbox-background-checked: var(--ion-color-primary, #3880ff);
+  --border-color-checked: var(--ion-color-primary, #3880ff);
+}
+ion-checkbox::part(container) {
+  border-radius: 4px;
+}
+/* Fokus-Outline bei Items und Checkboxen entfernen */
+ion-item::part(native):focus,
+ion-item::part(native):focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+ion-checkbox:focus,
+ion-checkbox:focus-visible,
+ion-radio:focus,
+ion-radio:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* iOS/Android Highlight-Farbe bei focused Items neutralisieren */
+ion-item {
+  --highlight-color-focused: transparent;
+  --highlight-color-valid: transparent;
+  --highlight-color-invalid: transparent;
 }
 
 /* === Header Banner === */
@@ -1163,6 +1194,10 @@ ion-button.app-modal-submit-btn--chat {
 
 .app-auth-background {
   --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --overflow: auto;
+}
+.app-auth-background::part(scroll) {
+  min-height: 100%;
 }
 
 .app-auth-container {
@@ -1170,8 +1205,9 @@ ion-button.app-modal-submit-btn--chat {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  min-height: 100%;
   padding: 20px;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 .app-auth-hero {
