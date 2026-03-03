@@ -102,7 +102,7 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         title="Anträge"
         subtitle="Aktivitäts-Anträge verwalten"
         icon={documentOutline}
-        colors={{ primary: '#059669', secondary: '#047857' }}
+        preset="activities"
         stats={[
           { value: getPendingCount(), label: 'Offen' },
           { value: getApprovedCount(), label: 'Genehmigt' },

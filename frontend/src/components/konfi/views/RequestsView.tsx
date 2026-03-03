@@ -90,7 +90,7 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         title="Deine Aktivitäten"
         subtitle="Anträge und Verbuchungen"
         icon={checkmarkCircle}
-        colors={{ primary: '#10b981', secondary: '#059669' }}
+        preset="konfi-requests"
         stats={[
           { value: pendingRequests.length, label: 'Offen' },
           { value: approvedRequests.length, label: 'Verbucht' },
