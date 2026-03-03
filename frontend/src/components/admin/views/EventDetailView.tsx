@@ -40,7 +40,8 @@ import {
   home,
   pricetag,
   returnUpBack,
-  trophy
+  trophy,
+  informationCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -630,20 +631,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* Beschreibung */}
-              {eventData?.description && (
-                <div className="app-event-detail__description-divider">
-                  <h3 className="app-list-item__title">
-                    Beschreibung
-                  </h3>
-                  <p className="app-info-row__sublabel">
-                    {eventData.description}
-                  </p>
-                </div>
-              )}
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Beschreibung - eigene Card (wie Konfi-Ansicht) */}
+        {eventData?.description && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={informationCircle} />
+              </div>
+              <IonLabel>Beschreibung</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <p className="app-info-row__sublabel">
+                  {eventData.description}
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* Timeslots mit Teilnehmern */}
         {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
