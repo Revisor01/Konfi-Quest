@@ -20,14 +20,14 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [x] **KUI-01**: Tab "Dashboard" in "Start" umbenannt
 - [x] **KUI-02**: Konfi EventDetailView Teilnehmer:innen-Anzeige redesignt (passt zum Design-System)
 - [x] **KUI-03**: BadgesView EmptyState fuer "Offen" und "In Arbeit" Sektionen wenn leer
-- [ ] **KUI-04**: KonfiProfileView Farbe von Blau auf Lila geaendert
+- [x] **KUI-04**: KonfiProfileView Farbe von Blau auf Lila geaendert
 - [x] **KUI-05**: PointsHistoryModal "Gesamt" Textüberlauf behoben, Layout 3+2 statt 4+1
-- [ ] **KUI-06**: Bibeluebersetzung-Aendern Action funktioniert (aktuell ohne Funktion)
+- [x] **KUI-06**: Bibeluebersetzung-Aendern Action funktioniert (aktuell ohne Funktion)
 - [x] **KUI-07**: RequestsView Header-Gruen dunkler (wie Admin-Antraege)
 - [x] **KUI-08**: Konfi ActivityRequestModal Icons von Lila auf Gruen geaendert
 - [x] **KUI-09**: Konfi RequestDetailModal an Admin-Modal angeglichen
-- [ ] **KUI-10**: UnregisterModal erreichbar/verlinkt
-- [ ] **KUI-11**: EditProfileModal pruefen und verlinken oder entfernen
+- [x] **KUI-10**: UnregisterModal erreichbar/verlinkt
+- [x] **KUI-11**: EditProfileModal pruefen und verlinken oder entfernen
 
 ### Admin Views
 
@@ -115,14 +115,14 @@ Geplante Milestones nach v1.3:
 | KUI-01 | Phase 14 | Complete |
 | KUI-02 | Phase 14 | Complete |
 | KUI-03 | Phase 14 | Complete |
-| KUI-04 | Phase 16 | Pending |
+| KUI-04 | Phase 16 | Complete |
 | KUI-05 | Phase 14 | Complete |
-| KUI-06 | Phase 16 | Pending |
+| KUI-06 | Phase 16 | Complete |
 | KUI-07 | Phase 15 | Complete |
 | KUI-08 | Phase 15 | Complete |
 | KUI-09 | Phase 15 | Complete |
-| KUI-10 | Phase 16 | Pending |
-| KUI-11 | Phase 16 | Pending |
+| KUI-10 | Phase 16 | Complete |
+| KUI-11 | Phase 16 | Complete |
 | AUI-01 | Phase 17 | Pending |
 | AUI-02 | Phase 17 | Pending |
 | AUI-03 | Phase 17 | Pending |
