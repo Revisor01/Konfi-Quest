@@ -183,8 +183,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     checked={type === 'gemeinde'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
+                      '--checkbox-background-checked': '#06b6d4',
+                      '--border-color-checked': '#06b6d4',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -208,8 +208,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                     checked={type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#3b82f6',
-                      '--border-color-checked': '#3b82f6',
+                      '--checkbox-background-checked': '#06b6d4',
+                      '--border-color-checked': '#06b6d4',
                       '--checkmark-color': 'white'
                     }}
                   />

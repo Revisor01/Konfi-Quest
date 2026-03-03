@@ -391,8 +391,8 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': '#dc2626',
-                              '--border-color-checked': '#dc2626',
+                              '--checkbox-background-checked': '#06b6d4',
+                              '--border-color-checked': '#06b6d4',
                               '--checkmark-color': 'white'
                             }}
                           />

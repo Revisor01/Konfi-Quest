@@ -477,9 +477,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           checked={isSelected}
                           disabled={saving}
                           style={{
-                            '--checkbox-background-checked': roleColor,
-                            '--border-color-checked': roleColor,
-                            '--border-color': roleColor,
+                            '--checkbox-background-checked': '#06b6d4',
+                            '--border-color-checked': '#06b6d4',
+                            '--border-color': '#06b6d4',
                             '--checkmark-color': 'white'
                           }}
                         />
@@ -552,8 +552,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         checked={isAssigned}
                         disabled={saving}
                         style={{
-                          '--checkbox-background-checked': '#667eea',
-                          '--border-color-checked': '#667eea',
+                          '--checkbox-background-checked': '#06b6d4',
+                          '--border-color-checked': '#06b6d4',
                           '--checkmark-color': 'white'
                         }}
                       />

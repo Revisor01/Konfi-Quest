@@ -403,8 +403,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       checked={selectedAction === 'approve'}
                       disabled={loading}
                       style={{
-                        '--checkbox-background-checked': '#059669',
-                        '--border-color-checked': '#059669',
+                        '--checkbox-background-checked': '#06b6d4',
+                        '--border-color-checked': '#06b6d4',
                         '--checkmark-color': 'white'
                       }}
                     />
@@ -430,8 +430,8 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                       checked={selectedAction === 'reject'}
                       disabled={loading}
                       style={{
-                        '--checkbox-background-checked': '#dc3545',
-                        '--border-color-checked': '#dc3545',
+                        '--checkbox-background-checked': '#06b6d4',
+                        '--border-color-checked': '#06b6d4',
                         '--checkmark-color': 'white'
                       }}
                     />

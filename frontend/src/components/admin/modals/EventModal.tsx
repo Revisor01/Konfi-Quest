@@ -821,8 +821,8 @@ const EventModal: React.FC<EventModalProps> = ({
                     checked={formData.point_type === 'gemeinde'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
+                      '--checkbox-background-checked': '#06b6d4',
+                      '--border-color-checked': '#06b6d4',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -846,8 +846,8 @@ const EventModal: React.FC<EventModalProps> = ({
                     checked={formData.point_type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#3b82f6',
-                      '--border-color-checked': '#3b82f6',
+                      '--checkbox-background-checked': '#06b6d4',
+                      '--border-color-checked': '#06b6d4',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -917,8 +917,8 @@ const EventModal: React.FC<EventModalProps> = ({
                             checked={isSelected}
                             disabled={loading}
                             style={{
-                              '--checkbox-background-checked': '#dc2626',
-                              '--border-color-checked': '#dc2626',
+                              '--checkbox-background-checked': '#06b6d4',
+                              '--border-color-checked': '#06b6d4',
                               '--checkmark-color': 'white'
                             }}
                           />
@@ -981,8 +981,8 @@ const EventModal: React.FC<EventModalProps> = ({
                         checked={isSelected}
                         disabled={loading}
                         style={{
-                          '--checkbox-background-checked': '#dc2626',
-                          '--border-color-checked': '#dc2626',
+                          '--checkbox-background-checked': '#06b6d4',
+                          '--border-color-checked': '#06b6d4',
                           '--checkmark-color': 'white'
                         }}
                       />
