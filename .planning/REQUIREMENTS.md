@@ -73,7 +73,7 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 ### Fixes (nachtraeglich)
 
 - [ ] **FIX-01**: Checkbox-Farben in Admin-Modals nicht hardcoded tuerkis, sondern dynamische Typ-Farbe verwenden
-- [ ] **FIX-02**: Einmalpasswort wird nach Generierung korrekt im Alert angezeigt (sowohl bei Neuerstellung als auch bei Regenerierung)
+- [x] **FIX-02**: Einmalpasswort wird nach Generierung korrekt im Alert angezeigt (sowohl bei Neuerstellung als auch bei Regenerierung)
 
 ### Sicherheit
 
@@ -158,7 +158,7 @@ Geplante Milestones nach v1.3:
 | BUG-05 | Phase 12 | Complete |
 | BUG-06 | Phase 12 | Complete |
 | FIX-01 | Phase 17.1 | Pending |
-| FIX-02 | Phase 17.1 | Pending |
+| FIX-02 | Phase 17.1 | Complete |
 | SEC-01 | Phase 12 | Complete |
 
 **Coverage:**

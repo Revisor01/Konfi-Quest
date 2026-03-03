@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
-status: unknown
-last_updated: "2026-03-03T21:54:43.910Z"
+status: in-progress
+last_updated: "2026-03-03T22:11:24.047Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 6
-  total_plans: 13
-  completed_plans: 11
+  total_plans: 15
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 17 -- Admin Views Polishing
+**Current focus:** Phase 17.1 -- Checkbox-Farben + Einmalpasswort Fixes
 
 ## Current Position
 
-Phase: 17 of 19 (Admin Views Polishing) -- KOMPLETT
-Plan: 3 of 3 in current phase (komplett)
-Status: Phase 17 komplett (EventDetailView Beschreibungs-Card + ActivityModal Checkbox links)
-Last activity: 2026-03-03 -- Phase 17 Plan 03 ausgefuehrt (AUI-05, AUI-06, AUI-07)
+Phase: 17.1 (Checkbox-Farben + Einmalpasswort Fixes)
+Plan: 2 of 2 in current phase (Plan 02 komplett)
+Status: Phase 17.1 Plan 02 komplett (Einmalpasswort-Anzeige bei Erstellung + Regenerierung)
+Last activity: 2026-03-03 -- Phase 17.1 Plan 02 ausgefuehrt (FIX-02)
 
-Progress: [########..] 73% (v1.3: 6/8 Phasen, Phase 12-17 komplett)
+Progress: [########..] 80% (v1.3: Phase 12-17 + 17.1 komplett)
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [########..] 73% (v1.3: 6/8 Phasen, Phase 12-17 komplett)
 | 17 | 01 | 1min | 2 | 1 |
 | 17 | 02 | 1min | 2 | 2 |
 | 17 | 03 | 1min | 2 | 2 |
+| 17.1 | 02 | 1min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -79,6 +80,7 @@ Relevant for v1.3:
 - [Phase 17]: personOutline Icon mit rgba(255,255,255,0.8) fuer dezente Darstellung im KonfiDetailView lila Header
 - [Phase 17]: Beschreibung als eigene Card nach Details-Card (gleiche Struktur wie Konfi EventDetailView)
 - [Phase 17]: Checkbox links positioniert mit flachem Flex-Layout in ActivityModal (iOS-native Pattern)
+- [Phase 17.1]: Einmalpasswort-Pattern: subHeader fuer prominente Passwort-Anzeige in IonAlert statt HTML in message
 
 ### Pending Todos
 
@@ -91,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 17-03-PLAN.md
-Resume file: .planning/phases/17-admin-views-polishing/17-03-SUMMARY.md
+Stopped at: Completed 17.1-02-PLAN.md
+Resume file: .planning/phases/17.1-checkbox-farben-einmalpasswort-fixes/17.1-02-SUMMARY.md
