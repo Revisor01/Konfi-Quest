@@ -24,7 +24,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   ];
 
   const validateBibleTranslation = [
-    body('bible_translation').trim().notEmpty().withMessage('Bibelübersetzung ist erforderlich'),
+    body('translation').trim().notEmpty().withMessage('Bibelübersetzung ist erforderlich'),
     handleValidationErrors
   ];
 
