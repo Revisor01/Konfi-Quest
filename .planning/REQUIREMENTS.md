@@ -31,8 +31,8 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 ### Admin Views
 
-- [ ] **AUI-01**: KonfiDetailView Corner-Badge fuer Bonus- und Event-Eintraege (Konsistenz)
-- [ ] **AUI-02**: KonfiDetailView Icon vor Approved-Namen
+- [x] **AUI-01**: KonfiDetailView Corner-Badge fuer Bonus- und Event-Eintraege (Konsistenz)
+- [x] **AUI-02**: KonfiDetailView Icon vor Approved-Namen
 - [ ] **AUI-03**: Benutzer:innen-Liste Funktions-Icon von Line auf Solid
 - [ ] **AUI-04**: GoalsPage/PunkteZiel-Modal Standard-Stepper-Pattern (kein Sonderdesign)
 - [ ] **AUI-05**: Admin EventDetailView Beschreibung als eigene Card (wie Konfi-Ansicht)
@@ -128,8 +128,8 @@ Geplante Milestones nach v1.3:
 | KUI-09 | Phase 15 | Complete |
 | KUI-10 | Phase 16 | Complete |
 | KUI-11 | Phase 16 | Complete |
-| AUI-01 | Phase 17 | Pending |
-| AUI-02 | Phase 17 | Pending |
+| AUI-01 | Phase 17 | Complete |
+| AUI-02 | Phase 17 | Complete |
 | AUI-03 | Phase 17 | Pending |
 | AUI-04 | Phase 17 | Pending |
 | AUI-05 | Phase 17 | Pending |

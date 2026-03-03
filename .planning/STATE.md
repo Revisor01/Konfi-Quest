@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
-status: unknown
-last_updated: "2026-03-03T19:16:25.557Z"
+status: in-progress
+last_updated: "2026-03-03T21:44:50Z"
 progress:
-  total_phases: 5
+  total_phases: 8
   completed_phases: 5
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 16 -- Konfi-Views, Profil-Verlinkungen
+**Current focus:** Phase 17 -- Admin Views Polishing
 
 ## Current Position
 
-Phase: 16 of 19 (Konfi-Views, Profil-Verlinkungen) -- KOMPLETT
-Plan: 1 of 1 in current phase (komplett)
-Status: Phase 16 komplett (Profil Lila-Farbkonsistenz + Bible-Translation-Fix)
-Last activity: 2026-03-03 -- Phase 16 Plan 01 ausgefuehrt (KUI-04, KUI-06, KUI-10, KUI-11)
+Phase: 17 of 19 (Admin Views Polishing) -- IN PROGRESS
+Plan: 2 of 3 in current phase (komplett)
+Status: Plan 17-02 komplett (UsersView Solid-Icon + GoalsPage Stepper-Pattern)
+Last activity: 2026-03-03 -- Phase 17 Plan 02 ausgefuehrt (AUI-03, AUI-04)
 
-Progress: [######....] 63% (v1.3: 5/8 Phasen, Phase 12+13+14+15+16 komplett)
+Progress: [######....] 68% (v1.3: 5/8 Phasen + 2 Plans, Phase 12-16 komplett, 17 in progress)
 
 ## Performance Metrics
 
@@ -49,6 +49,8 @@ Progress: [######....] 63% (v1.3: 5/8 Phasen, Phase 12+13+14+15+16 komplett)
 | 14 | 02 | 1min | 1 | 1 |
 | 15 | 01 | 1min | 2 | 2 |
 | 16 | 01 | 1min | 2 | 3 |
+| 17 | 01 | 1min | 2 | 1 |
+| 17 | 02 | 1min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -73,6 +75,7 @@ Relevant for v1.3:
 - [Phase 14]: Stats-Labels ausgeschrieben (GOTTESDIENST statt GD, GEMEINDE statt GEM) fuer bessere Lesbarkeit
 - [Phase 15]: Konfi Antrags-Modals nutzen app-section-icon--requests (#047857) statt --purple fuer Farbkonsistenz mit Admin
 - [Phase 16]: Konfirmationstermin-Card Gradient auf Lila (#5b21b6/#4c1d95) passend zum konfis-Preset im SectionHeader
+- [Phase 17]: personOutline Icon mit rgba(255,255,255,0.8) fuer dezente Darstellung im KonfiDetailView lila Header
 
 ### Pending Todos
 
@@ -85,5 +88,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 16-01-PLAN.md
-Resume file: .planning/phases/16-konfi-views-profil-verlinkungen/16-01-SUMMARY.md
+Stopped at: Completed 17-01-PLAN.md
+Resume file: .planning/phases/17-admin-views-polishing/17-01-SUMMARY.md
