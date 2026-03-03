@@ -33,7 +33,8 @@ import {
   hourglass,
   listOutline,
   home,
-  pricetag
+  pricetag,
+  personOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -586,18 +587,31 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {participants.length > 0 && (
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--success">
+              <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={people} />
               </div>
               <IonLabel>Teilnehmer:innen ({participants.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
-              <IonCardContent>
-                <div className="app-info-row">
-                  <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                  <div className="app-info-row__content">
-                    {participants.map(p => p.display_name).join(', ')}
-                  </div>
+              <IonCardContent style={{ padding: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {participants.map((participant) => (
+                    <div
+                      key={participant.id}
+                      className="app-list-item app-list-item--events"
+                    >
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle app-icon-circle--events">
+                            <IonIcon icon={personOutline} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">{participant.display_name}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </IonCardContent>
             </IonCard>
