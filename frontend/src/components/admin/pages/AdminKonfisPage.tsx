@@ -157,13 +157,34 @@ const AdminKonfisPage: React.FC = () => {
   const handleAddKonfi = async (konfiData: any) => {
     try {
       const response = await api.post('/admin/konfis', konfiData);
-      
+
       // Automatisch Jahrgangschat erstellen/zuweisen
       if (konfiData.jahrgang_id) {
         await createOrJoinJahrgangChat(konfiData.jahrgang_id, response.data.id);
       }
-      
-      setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
+
+      const tempPassword = response.data.temporaryPassword;
+      if (tempPassword) {
+        presentAlert({
+          header: 'Konfi erstellt',
+          subHeader: `${response.data.name || konfiData.display_name}`,
+          message: `Einmalpasswort: ${tempPassword}`,
+          buttons: [
+            {
+              text: 'Kopieren',
+              handler: () => {
+                navigator.clipboard.writeText(tempPassword);
+                setSuccess('Passwort kopiert');
+                return false;
+              }
+            },
+            { text: 'Fertig', role: 'cancel' }
+          ]
+        });
+      } else {
+        setSuccess(`Konfi "${response.data.name}" erfolgreich hinzugefügt`);
+      }
+
       // Sofortige Aktualisierung
       await loadData();
     } catch (err: any) {
