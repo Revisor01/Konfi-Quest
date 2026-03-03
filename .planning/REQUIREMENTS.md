@@ -66,13 +66,13 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [x] **BUG-01**: ParticipantManagementModal zeigt keine User
 - [x] **BUG-02**: BadgeManagementModal Kategorien und Aktivitaeten nicht aus DB geladen
 - [x] **BUG-03**: Invite-Modal QR-Code nicht persistiert nach Schliessen/Oeffnen
-- [ ] **BUG-04**: ForgotPassword Mail wird nicht gesendet
-- [ ] **BUG-05**: ResetPasswordPage Unicode-Encoding "pr\u00fen" statt "pruefen"
-- [ ] **BUG-06**: ResetPasswordPage Zurueck-Button Layout
+- [x] **BUG-04**: ForgotPassword Mail wird nicht gesendet
+- [x] **BUG-05**: ResetPasswordPage Unicode-Encoding "pr\u00fen" statt "pruefen"
+- [x] **BUG-06**: ResetPasswordPage Zurueck-Button Layout
 
 ### Sicherheit
 
-- [ ] **SEC-01**: Konfi-Passwort-Management: Einmalpasswort generieren statt Klartext-Anzeige, mit Kopier-Button
+- [x] **SEC-01**: Konfi-Passwort-Management: Einmalpasswort generieren statt Klartext-Anzeige, mit Kopier-Button
 
 ## Future Requirements
 
@@ -149,10 +149,10 @@ Geplante Milestones nach v1.3:
 | BUG-01 | Phase 12 | Complete |
 | BUG-02 | Phase 12 | Complete |
 | BUG-03 | Phase 12 | Complete |
-| BUG-04 | Phase 12 | Pending |
-| BUG-05 | Phase 12 | Pending |
-| BUG-06 | Phase 12 | Pending |
-| SEC-01 | Phase 12 | Pending |
+| BUG-04 | Phase 12 | Complete |
+| BUG-05 | Phase 12 | Complete |
+| BUG-06 | Phase 12 | Complete |
+| SEC-01 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.3 requirements: 46 total

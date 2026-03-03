@@ -6,9 +6,9 @@ status: executing
 last_updated: "2026-03-03"
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 12 of 19 (Bug-Fixes + Sicherheit) -- erste Phase in v1.3
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-03 -- Plan 12-01 abgeschlossen (3 Admin-Modal Bugs behoben)
+Phase: 12 of 19 (Bug-Fixes + Sicherheit) -- ABGESCHLOSSEN
+Plan: 2 of 2 in current phase (komplett)
+Status: Phase 12 abgeschlossen, bereit für Phase 13
+Last activity: 2026-03-03 -- Plan 12-02 abgeschlossen (Auth-Bugs + Einmalpasswort SEC-01)
 
-Progress: [..........] 0% (v1.3: 0/8 Phasen, Plan 1/2 in Phase 12)
+Progress: [#.........] 12.5% (v1.3: 1/8 Phasen, Phase 12 komplett)
 
 ## Performance Metrics
 
@@ -51,6 +51,8 @@ Relevant for v1.3:
 - v1.2: Super-Admin 2-Tab Layout (Organisationen + Profil)
 - v1.2: 17 BEM-Klassen app-event-detail__* fuer EventDetailView
 - v1.3: useIonModal stale-closure Workaround -- Modals muessen eigene Daten laden statt Props zu nutzen
+- v1.3: Eigener passwordResetLimiter (5 req/15min) statt Login-Limiter fuer /request-password-reset
+- v1.3: Einmalpasswort-Pattern -- temporaryPassword im Alert mit Kopier-Button, kein Klartext in Toast/State/DB
 
 ### Pending Todos
 
@@ -63,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 12-01-PLAN.md (Admin-Modal Bugfixes)
+Stopped at: Completed 12-02-PLAN.md (Auth-Bugs + Einmalpasswort), Phase 12 abgeschlossen
 Resume file: None
