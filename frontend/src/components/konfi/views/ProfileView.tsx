@@ -264,9 +264,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
       <div style={{ 
         margin: '16px', 
         borderRadius: '24px',
-        background: profile.confirmation_date ? 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)' : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
+        background: profile.confirmation_date ? 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)' : 'linear-gradient(135deg, #64748b 0%, #475569 100%)',
         border: 'none',
-        boxShadow: profile.confirmation_date ? '0 10px 40px rgba(30, 58, 138, 0.3)' : '0 10px 40px rgba(100, 116, 139, 0.3)',
+        boxShadow: profile.confirmation_date ? '0 10px 40px rgba(91, 33, 182, 0.3)' : '0 10px 40px rgba(100, 116, 139, 0.3)',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
