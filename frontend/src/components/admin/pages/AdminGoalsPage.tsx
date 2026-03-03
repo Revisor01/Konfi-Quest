@@ -13,7 +13,9 @@ import {
   IonButton,
   IonButtons,
   IonIcon,
-  IonSpinner
+  IonSpinner,
+  IonItem,
+  IonInput
 } from '@ionic/react';
 import {
   closeOutline,
@@ -115,26 +117,42 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                 <IonLabel>Gottesdienst-Punkte</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent>
-                  <div className="app-stepper">
-                    <IonButton
-                      fill="clear"
-                      className="app-stepper__button"
-                      onClick={() => setFormData({ ...formData, target_gottesdienst: Math.max(0, formData.target_gottesdienst - 1) })}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <div className="app-stepper__value">
-                      {formData.target_gottesdienst}
+                <IonCardContent style={{ padding: '16px' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={saving || formData.target_gottesdienst <= 0}
+                        onClick={() => setFormData({ ...formData, target_gottesdienst: Math.max(0, formData.target_gottesdienst - 1) })}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={removeOutline} />
+                      </IonButton>
+                      <IonInput
+                        type="text"
+                        inputMode="numeric"
+                        value={formData.target_gottesdienst.toString()}
+                        onIonInput={(e) => {
+                          const val = parseInt(e.detail.value || '0', 10);
+                          if (!isNaN(val) && val >= 0) {
+                            setFormData({ ...formData, target_gottesdienst: val });
+                          }
+                        }}
+                        disabled={saving}
+                        style={{ textAlign: 'center', flex: 1, fontSize: '1.5rem', fontWeight: '700' }}
+                      />
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={saving}
+                        onClick={() => setFormData({ ...formData, target_gottesdienst: formData.target_gottesdienst + 1 })}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={addOutline} />
+                      </IonButton>
                     </div>
-                    <IonButton
-                      fill="clear"
-                      className="app-stepper__button"
-                      onClick={() => setFormData({ ...formData, target_gottesdienst: formData.target_gottesdienst + 1 })}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
+                  </IonItem>
                   <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
                     Ziel-Punkte für Gottesdienste
                   </p>
@@ -151,26 +169,42 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                 <IonLabel>Gemeinde-Punkte</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent>
-                  <div className="app-stepper">
-                    <IonButton
-                      fill="clear"
-                      className="app-stepper__button"
-                      onClick={() => setFormData({ ...formData, target_gemeinde: Math.max(0, formData.target_gemeinde - 1) })}
-                    >
-                      <IonIcon icon={removeOutline} />
-                    </IonButton>
-                    <div className="app-stepper__value">
-                      {formData.target_gemeinde}
+                <IonCardContent style={{ padding: '16px' }}>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={saving || formData.target_gemeinde <= 0}
+                        onClick={() => setFormData({ ...formData, target_gemeinde: Math.max(0, formData.target_gemeinde - 1) })}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={removeOutline} />
+                      </IonButton>
+                      <IonInput
+                        type="text"
+                        inputMode="numeric"
+                        value={formData.target_gemeinde.toString()}
+                        onIonInput={(e) => {
+                          const val = parseInt(e.detail.value || '0', 10);
+                          if (!isNaN(val) && val >= 0) {
+                            setFormData({ ...formData, target_gemeinde: val });
+                          }
+                        }}
+                        disabled={saving}
+                        style={{ textAlign: 'center', flex: 1, fontSize: '1.5rem', fontWeight: '700' }}
+                      />
+                      <IonButton
+                        fill="outline"
+                        size="small"
+                        disabled={saving}
+                        onClick={() => setFormData({ ...formData, target_gemeinde: formData.target_gemeinde + 1 })}
+                        style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                      >
+                        <IonIcon icon={addOutline} />
+                      </IonButton>
                     </div>
-                    <IonButton
-                      fill="clear"
-                      className="app-stepper__button"
-                      onClick={() => setFormData({ ...formData, target_gemeinde: formData.target_gemeinde + 1 })}
-                    >
-                      <IonIcon icon={addOutline} />
-                    </IonButton>
-                  </div>
+                  </IonItem>
                   <p className="app-settings-item__subtitle" style={{ textAlign: 'center', margin: '8px 0 0 0' }}>
                     Ziel-Punkte für Gemeindeaktivitäten
                   </p>
