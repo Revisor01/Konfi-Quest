@@ -129,7 +129,7 @@ ion-item.app-list-item:last-child {
 .app-list-item--booked, ion-item.app-list-item--booked { border-left-color: #007aff; }
 .app-list-item--primary, ion-item.app-list-item--primary { border-left-color: #5b21b6; }
 .app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
-.app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #059669; }
+.app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #047857; }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: #5b21b6; }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #2dd36f; }
@@ -169,8 +169,8 @@ ion-item.app-list-item:last-child {
 }
 /* Selected State fuer List Items - Activities (Dunkelgruen) */
 .app-list-item--activities.app-list-item--selected {
-  border-color: #059669;
-  background: rgba(5, 150, 105, 0.08);
+  border-color: #047857;
+  background: rgba(4, 120, 87, 0.08);
 }
 /* Selected State fuer List Items - Users (Indigo) */
 .app-list-item--users.app-list-item--selected {
@@ -306,19 +306,19 @@ ion-item.app-list-item:last-child {
 }
 .app-section-icon--events { background-color: #dc2626; }
 .app-section-icon--chat { background-color: #06b6d4; }
-.app-section-icon--success { background-color: #059669; }
+.app-section-icon--success { background-color: #047857; }
 .app-section-icon--warning { background-color: #ff9500; }
 .app-section-icon--danger { background-color: #dc3545; }
 .app-section-icon--info { background-color: #007aff; }
 .app-section-icon--purple { background-color: #5b21b6; }
 .app-section-icon--primary { background-color: #5b21b6; }
 .app-section-icon--bonus { background-color: #f97316; }
-.app-section-icon--activities { background-color: #059669; }
+.app-section-icon--activities { background-color: #047857; }
 .app-section-icon--users { background-color: #667eea; }
 .app-section-icon--level { background-color: #5b21b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
 .app-section-icon--badges { background-color: #f59e0b; }
-.app-section-icon--requests { background-color: #059669; }
+.app-section-icon--requests { background-color: #047857; }
 .app-section-icon--jahrgang { background-color: #007aff; }
 .app-section-icon--settings { background-color: #667eea; }
 .app-section-icon ion-icon {
@@ -375,7 +375,7 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--trophy { background-color: #ff9500; }
 .app-icon-circle--primary { background-color: #5b21b6; }
 .app-icon-circle--bonus { background-color: #f97316; }
-.app-icon-circle--activities { background-color: #059669; }
+.app-icon-circle--activities { background-color: #047857; }
 .app-icon-circle--users { background-color: #667eea; }
 .app-icon-circle--level { background-color: #5b21b6; }
 .app-icon-circle--organizations { background-color: #2dd36f; }
@@ -496,8 +496,8 @@ ion-item.app-list-item:last-child {
   --app-color-purple: #5b21b6;
   --app-color-purple-rgb: 91, 33, 182;
   --app-color-trophy: #ff9500;
-  --app-color-activities: #059669;
-  --app-color-activities-rgb: 5, 150, 105;
+  --app-color-activities: #047857;
+  --app-color-activities-rgb: 4, 120, 87;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
   --app-color-organizations: #2dd36f;
@@ -981,7 +981,7 @@ ion-button.app-action-button {
 .app-icon-color--category { color: #5b21b6; }
 .app-icon-color--gottesdienst { color: #3b82f6; }
 .app-icon-color--gemeinde { color: #22c55e; }
-.app-icon-color--activities { color: #059669; }
+.app-icon-color--activities { color: #047857; }
 .app-icon-color--organizations { color: #2dd36f; }
 .app-icon-color--jahrgang { color: #007aff; }
 .app-icon-color--success { color: #34c759; }
@@ -1161,8 +1161,8 @@ ion-button.app-modal-submit-btn--events {
   --background-hover: #b91c1c;
 }
 ion-button.app-modal-submit-btn--activities {
-  --background: #059669;
-  --background-hover: #047857;
+  --background: #047857;
+  --background-hover: #065f46;
 }
 ion-button.app-modal-submit-btn--badges {
   --background: #f59e0b;

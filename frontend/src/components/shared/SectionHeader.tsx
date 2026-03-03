@@ -5,19 +5,20 @@ interface SectionHeaderProps {
   title: string;
   subtitle: string;
   icon: string;
-  preset?: 'events' | 'activities' | 'konfis' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang';
+  preset?: 'events' | 'activities' | 'konfis' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests';
   colors?: { primary: string; secondary: string };
   stats: Array<{ value: number; label: string }>;
 }
 
 const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   events: { primary: '#dc2626', secondary: '#b91c1c' },
-  activities: { primary: '#059669', secondary: '#047857' },
+  activities: { primary: '#047857', secondary: '#065f46' },
   konfis: { primary: '#5b21b6', secondary: '#4c1d95' },
   users: { primary: '#667eea', secondary: '#5a67d8' },
   organizations: { primary: '#2dd36f', secondary: '#28ba62' },
   badges: { primary: '#f59e0b', secondary: '#d97706' },
   requests: { primary: '#5b21b6', secondary: '#4c1d95' },
+  'konfi-requests': { primary: '#047857', secondary: '#065f46' },
   jahrgang: { primary: '#007aff', secondary: '#0066d6' },
 };
 
