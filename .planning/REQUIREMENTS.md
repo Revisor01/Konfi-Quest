@@ -70,6 +70,11 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [x] **BUG-05**: ResetPasswordPage Unicode-Encoding "pr\u00fen" statt "pruefen"
 - [x] **BUG-06**: ResetPasswordPage Zurueck-Button Layout
 
+### Fixes (nachtraeglich)
+
+- [ ] **FIX-01**: Checkbox-Farben in Admin-Modals nicht hardcoded tuerkis, sondern dynamische Typ-Farbe verwenden
+- [ ] **FIX-02**: Einmalpasswort wird nach Generierung korrekt im Alert angezeigt (sowohl bei Neuerstellung als auch bei Regenerierung)
+
 ### Sicherheit
 
 - [x] **SEC-01**: Konfi-Passwort-Management: Einmalpasswort generieren statt Klartext-Anzeige, mit Kopier-Button
@@ -152,11 +157,13 @@ Geplante Milestones nach v1.3:
 | BUG-04 | Phase 12 | Complete |
 | BUG-05 | Phase 12 | Complete |
 | BUG-06 | Phase 12 | Complete |
+| FIX-01 | Phase 17.1 | Pending |
+| FIX-02 | Phase 17.1 | Pending |
 | SEC-01 | Phase 12 | Complete |
 
 **Coverage:**
-- v1.3 requirements: 46 total
-- Mapped to phases: 46/46
+- v1.3 requirements: 48 total
+- Mapped to phases: 48/48
 - Unmapped: 0
 
 ---

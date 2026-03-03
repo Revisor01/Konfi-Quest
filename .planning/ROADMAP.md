@@ -54,6 +54,7 @@ Phase 11: Dokumentation (1 plan, complete)
 - [x] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen (1 plan) (completed 2026-03-03)
 - [x] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen (completed 2026-03-03)
 - [ ] **Phase 17: Admin Views Polishing** - Admin-spezifische Detail-Views und Modals vereinheitlichen
+- [ ] **Phase 17.1: Checkbox-Farben + Einmalpasswort Fixes** - Tuerkise Checkbox-Farben und fehlende Passwort-Anzeige
 - [ ] **Phase 18: Settings-Bereich** - Settings-Seite Struktur, Farben und Modal-Konsistenz
 - [ ] **Phase 19: Super-Admin Ueberarbeitung** - Super-Admin komplett neu aufgebaut (keine TabBar, Design-System)
 
@@ -132,7 +133,23 @@ Plans:
   3. Benutzer:innen-Liste verwendet Solid-Icons statt Line-Icons fuer Funktionsanzeige
   4. GoalsPage und PunkteZiel-Modal verwenden Standard-Stepper-Pattern ohne Sonderdesign
   5. Admin EventDetailView zeigt Beschreibung als eigene Card und hat gleiche Detail-Reihenfolge wie Konfi-Ansicht
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 17-01-PLAN.md -- KonfiDetailView Corner-Badges Verifikation + Icon vor Name (AUI-01, AUI-02)
+- [ ] 17-02-PLAN.md -- UsersView Solid-Icons + GoalsPage Standard-Stepper (AUI-03, AUI-04)
+- [ ] 17-03-PLAN.md -- Admin EventDetailView Beschreibung eigene Card + ActivityModal Checkbox-Position (AUI-05, AUI-06, AUI-07)
+
+### Phase 17.1: Checkbox-Farben + Einmalpasswort Fixes
+**Goal**: Checkbox-Farben in Listen verwenden dynamische Typ-Farbe statt hardcoded tuerkis, und Einmalpasswort wird nach Generierung korrekt angezeigt
+**Depends on**: Phase 13
+**Requirements**: FIX-01, FIX-02
+**Success Criteria** (what must be TRUE):
+  1. Checkbox-Farben in Admin-Modals verwenden die dynamische Typ-Farbe statt hardcoded tuerkis
+  2. Einmalpasswort wird nach Klick auf Generieren im Alert korrekt angezeigt (Neuerstellung + Regenerierung)
+**Plans**: 2 plans
+Plans:
+- [ ] 17.1-01-PLAN.md -- Checkbox-Farben dynamisch statt hardcoded tuerkis (FIX-01)
+- [ ] 17.1-02-PLAN.md -- Einmalpasswort-Anzeige bei Erstellung und Regenerierung (FIX-02)
 
 ### Phase 18: Settings-Bereich
 **Goal**: Settings-Seite hat klare Struktur, konsistente Farben und alle Modals passen zum Design-System
@@ -179,5 +196,6 @@ Plans:
 | 15. Konfi Views -- Antraege | 1/1 | Complete    | 2026-03-03 | - |
 | 16. Konfi Views -- Profil + Verlinkungen | 1/1 | Complete    | 2026-03-03 | - |
 | 17. Admin Views Polishing | v1.3 | 0/? | Not started | - |
+| 17.1. Checkbox-Farben + Einmalpasswort | v1.3 | 0/2 | Not started | - |
 | 18. Settings-Bereich | v1.3 | 0/? | Not started | - |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 0/? | Not started | - |
