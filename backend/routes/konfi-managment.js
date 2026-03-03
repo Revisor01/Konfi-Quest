@@ -178,9 +178,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const userId = newUser.id;
 
             const profileQuery = `
-                INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id, password_plain, gottesdienst_points, gemeinde_points) 
-                VALUES ($1, $2, $3, $4, 0, 0)`;
-            await db.query(profileQuery, [userId, jahrgang_id, req.user.organization_id, password]);
+                INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id, gottesdienst_points, gemeinde_points)
+                VALUES ($1, $2, $3, 0, 0)`;
+            await db.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
 
             // Add konfi to jahrgang chat room if it exists
             const jahrgangChatQuery = `
@@ -207,7 +207,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             await db.query('COMMIT');
-            res.status(201).json({ id: userId, username, password, message: 'Konfi erfolgreich erstellt' });
+            res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 
         } catch (err) {
  await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
