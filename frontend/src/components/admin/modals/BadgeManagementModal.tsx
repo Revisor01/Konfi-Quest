@@ -477,8 +477,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': '#06b6d4',
-                              '--border-color-checked': '#06b6d4',
+                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                               '--checkmark-color': 'white'
                             }}
                           />
@@ -536,8 +536,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': '#06b6d4',
-                              '--border-color-checked': '#06b6d4',
+                              '--checkbox-background-checked': '#ff9500',
+                              '--border-color-checked': '#ff9500',
                               '--checkmark-color': 'white'
                             }}
                           />
@@ -658,8 +658,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                           <IonCheckbox
                             checked={isSelected}
                             style={{
-                              '--checkbox-background-checked': '#06b6d4',
-                              '--border-color-checked': '#06b6d4',
+                              '--checkbox-background-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                              '--border-color-checked': activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
                               '--checkmark-color': 'white'
                             }}
                           />
@@ -994,8 +994,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             checked={isSelected}
                             disabled={loading}
                             style={{
-                              '--checkbox-background-checked': '#06b6d4',
-                              '--border-color-checked': '#06b6d4',
+                              '--checkbox-background-checked': '#ff9500',
+                              '--border-color-checked': '#ff9500',
                               '--checkmark-color': 'white'
                             }}
                           />

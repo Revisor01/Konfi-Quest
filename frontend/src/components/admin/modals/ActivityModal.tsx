@@ -216,8 +216,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                           checked={isSelected}
                           disabled={loading}
                           style={{
-                            '--checkbox-background-checked': '#06b6d4',
-                            '--border-color-checked': '#06b6d4',
+                            '--checkbox-background-checked': typeColor,
+                            '--border-color-checked': typeColor,
                             '--checkmark-color': 'white',
                             flexShrink: 0
                           }}

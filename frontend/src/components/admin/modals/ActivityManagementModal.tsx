@@ -342,9 +342,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     checked={formData.type === 'gottesdienst'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#06b6d4',
-                      '--border-color-checked': '#06b6d4',
-                      '--border-color': '#06b6d4',
+                      '--checkbox-background-checked': '#3b82f6',
+                      '--border-color-checked': '#3b82f6',
+                      '--border-color': '#3b82f6',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -371,9 +371,9 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     checked={formData.type === 'gemeinde'}
                     disabled={loading}
                     style={{
-                      '--checkbox-background-checked': '#06b6d4',
-                      '--border-color-checked': '#06b6d4',
-                      '--border-color': '#06b6d4',
+                      '--checkbox-background-checked': '#059669',
+                      '--border-color-checked': '#059669',
+                      '--border-color': '#059669',
                       '--checkmark-color': 'white'
                     }}
                   />
@@ -428,8 +428,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                         checked={isChecked}
                         disabled={loading}
                         style={{
-                          '--checkbox-background-checked': '#06b6d4',
-                          '--border-color-checked': '#06b6d4',
+                          '--checkbox-background-checked': '#047857',
+                          '--border-color-checked': '#047857',
                           '--checkmark-color': 'white'
                         }}
                       />
