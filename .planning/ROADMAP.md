@@ -171,7 +171,7 @@ Plans:
 | 11. Dokumentation | v1.2 | 1/1 | Complete | 2026-03-02 |
 | 12. Bug-Fixes + Sicherheit | 2/2 | Complete    | 2026-03-03 | - |
 | 13. Globale UI-Anpassungen | 2/2 | Complete    | 2026-03-03 | - |
-| 14. Konfi Views -- Dashboard, Events, Badges | 2/2 | Complete   | 2026-03-03 | - |
+| 14. Konfi Views -- Dashboard, Events, Badges | 2/2 | Complete    | 2026-03-03 | - |
 | 15. Konfi Views -- Antraege | v1.3 | 0/? | Not started | - |
 | 16. Konfi Views -- Profil + Verlinkungen | v1.3 | 0/? | Not started | - |
 | 17. Admin Views Polishing | v1.3 | 0/? | Not started | - |
