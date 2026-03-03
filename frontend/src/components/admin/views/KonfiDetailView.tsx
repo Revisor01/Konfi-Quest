@@ -336,14 +336,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       const tempPassword = response.data.temporaryPassword;
       presentAlert({
         header: 'Einmalpasswort erstellt',
-        message: `Das neue Passwort wurde gesetzt. Kopiere es und gib es dem Konfi weiter.<br/><br/><strong style="font-family: monospace; letter-spacing: 1px; font-size: 1.1em;">${tempPassword}</strong>`,
+        subHeader: tempPassword,
+        message: 'Kopiere das Passwort und gib es dem Konfi weiter.',
         buttons: [
           {
             text: 'Kopieren',
             handler: () => {
               navigator.clipboard.writeText(tempPassword);
               setSuccess('Passwort kopiert');
-              return false; // Alert offen lassen
+              return false;
             }
           },
           { text: 'Fertig', role: 'cancel' }
