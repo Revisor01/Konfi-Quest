@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 14 -- Konfi-Views, Dashboard, Events, Badges
+**Current focus:** Phase 15 -- Konfi-Views, Antraege
 
 ## Current Position
 
-Phase: 14 of 19 (Konfi-Views, Dashboard, Events, Badges)
-Plan: 2 of 2 in current phase (komplett)
-Status: Phase 14 Plan 02 abgeschlossen (EventDetailView Teilnehmer-Redesign)
-Last activity: 2026-03-03 -- Plan 14-02 abgeschlossen (EventDetailView Teilnehmer-Redesign KUI-02)
+Phase: 15 of 19 (Konfi-Views, Antraege)
+Plan: 0 of 1 in current phase (geplant)
+Status: Phase 15 Plan 01 geplant (Konfi Antrags-Modals Farbkonsistenz)
+Last activity: 2026-03-03 -- Phase 15 Plan 01 erstellt (KUI-07, KUI-08, KUI-09)
 
-Progress: [###.......] 38% (v1.3: 3/8 Phasen, Phase 12+13+14 komplett)
+Progress: [####......] 38% (v1.3: 3/8 Phasen, Phase 12+13+14 komplett, Phase 15 geplant)
 
 ## Performance Metrics
 
@@ -81,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 14-02-PLAN.md (EventDetailView Teilnehmer-Redesign)
-Resume file: None
+Stopped at: Phase 15 Plan 01 erstellt (Konfi Antrags-Modals Farbkonsistenz)
+Resume file: .planning/phases/15-konfi-views-antraege/15-01-PLAN.md

@@ -51,7 +51,7 @@ Phase 11: Dokumentation (1 plan, complete)
 - [x] **Phase 12: Bug-Fixes + Sicherheit** - Funktionale Bugs in Modals und Auth-Seiten beheben, Passwort-Sicherheit erhoehen (completed 2026-03-03)
 - [x] **Phase 13: Globale UI-Anpassungen** - Querschnittliche visuelle Fixes die alle Views betreffen (completed 2026-03-03)
 - [x] **Phase 14: Konfi Views -- Dashboard, Events, Badges** - Konfi-Hauptansichten polieren (completed 2026-03-03)
-- [ ] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen
+- [ ] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen (1 plan)
 - [ ] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen
 - [ ] **Phase 17: Admin Views Polishing** - Admin-spezifische Detail-Views und Modals vereinheitlichen
 - [ ] **Phase 18: Settings-Bereich** - Settings-Seite Struktur, Farben und Modal-Konsistenz
@@ -105,7 +105,9 @@ Plans:
   1. RequestsView Header-Gruen ist dunkler und entspricht dem Admin-Antraege-Header
   2. ActivityRequestModal Icons sind Gruen statt Lila
   3. Konfi RequestDetailModal hat gleiches Layout und gleiche Struktur wie das Admin-Pendant
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 15-01-PLAN.md -- Konfi Antrags-Modals Sektions-Icons von Lila auf Gruen + Header-Farbe Verifikation
 
 ### Phase 16: Konfi Views -- Profil + Verlinkungen
 **Goal**: Konfi-Profil hat die richtige Farbe und alle Einstellungs-Actions sind erreichbar
