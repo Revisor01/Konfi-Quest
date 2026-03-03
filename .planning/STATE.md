@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: unknown
-last_updated: "2026-03-03T10:19:05.220Z"
+last_updated: "2026-03-03T10:19:40.739Z"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -45,8 +45,8 @@ Progress: [###.......] 38% (v1.3: 3/8 Phasen, Phase 12+13+14 komplett)
 |-------|------|-------|-------|-------|
 | 13 | 01 | 3min | 2 | 2 |
 | 13 | 02 | 2min | 1 | 8 |
+| 14 | 01 | 1min | 2 | 3 |
 | 14 | 02 | 1min | 1 | 1 |
-| Phase 14 P01 | 1min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -67,6 +67,8 @@ Relevant for v1.3:
 - [Phase 13]: Auth min-height von 100vh auf 100% mit ::part(scroll) Ansatz statt vh-Einheiten (GUI-05)
 - [Phase 14]: personOutline statt person Icon fuer Personen-Listen-Eintraege (Outline-Variante konsistent mit Design-System)
 - [Phase 14]: Events-Farbe (Rot) statt Success-Farbe (Gruen) fuer Teilnehmer-Sektion in Konfi EventDetailView
+- [Phase 14]: EmptyState-Text variiert je nach aktivem Filter (Offen/In Arbeit/Alle) mit passenden Icons und Farben
+- [Phase 14]: Stats-Labels ausgeschrieben (GOTTESDIENST statt GD, GEMEINDE statt GEM) fuer bessere Lesbarkeit
 
 ### Pending Todos
 
