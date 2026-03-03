@@ -195,7 +195,7 @@ Plans:
 | 14. Konfi Views -- Dashboard, Events, Badges | 2/2 | Complete    | 2026-03-03 | - |
 | 15. Konfi Views -- Antraege | 1/1 | Complete    | 2026-03-03 | - |
 | 16. Konfi Views -- Profil + Verlinkungen | 1/1 | Complete    | 2026-03-03 | - |
-| 17. Admin Views Polishing | 3/3 | Complete   | 2026-03-03 | - |
+| 17. Admin Views Polishing | 3/3 | Complete    | 2026-03-03 | - |
 | 17.1. Checkbox-Farben + Einmalpasswort | v1.3 | 0/2 | Not started | - |
 | 18. Settings-Bereich | v1.3 | 0/? | Not started | - |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 0/? | Not started | - |
