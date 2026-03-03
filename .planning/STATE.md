@@ -8,7 +8,7 @@ progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 Phase: 13 of 19 (Globale UI-Anpassungen)
 Plan: 2 of 2 in current phase (komplett)
-Status: Plan 13-02 abgeschlossen (Konsistente Checkbox-Farben)
-Last activity: 2026-03-03 -- Plan 13-02 abgeschlossen (Konsistente Checkbox-Farben GUI-03)
+Status: Phase 13 abgeschlossen, bereit fuer Phase 14
+Last activity: 2026-03-03 -- Plan 13-01 abgeschlossen (Globale CSS-Fixes GUI-01/02/04/05)
 
 Progress: [##........] 25% (v1.3: 2/8 Phasen, Phase 12+13 komplett)
 
@@ -43,6 +43,7 @@ Progress: [##........] 25% (v1.3: 2/8 Phasen, Phase 12+13 komplett)
 
 | Phase | Plan | Dauer | Tasks | Files |
 |-------|------|-------|-------|-------|
+| 13 | 01 | 3min | 2 | 2 |
 | 13 | 02 | 2min | 1 | 8 |
 
 ## Accumulated Context
@@ -60,6 +61,8 @@ Relevant for v1.3:
 - v1.3: Eigener passwordResetLimiter (5 req/15min) statt Login-Limiter fuer /request-password-reset
 - v1.3: Einmalpasswort-Pattern -- temporaryPassword im Alert mit Kopier-Button, kein Klartext in Toast/State/DB
 - [Phase 13]: Alle IonCheckbox in Admin-Modals einheitlich Tuerkis (#06b6d4) statt rollenabhaengige Farben (GUI-03)
+- [Phase 13]: Activities-Farbe von #059669 auf #047857 (dunkleres Gruen) fuer bessere Lesbarkeit (GUI-04)
+- [Phase 13]: Auth min-height von 100vh auf 100% mit ::part(scroll) Ansatz statt vh-Einheiten (GUI-05)
 
 ### Pending Todos
 
@@ -72,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 13-02-PLAN.md (Konsistente Checkbox-Farben)
+Stopped at: Completed 13-01-PLAN.md (Globale CSS-Fixes), Phase 13 komplett
 Resume file: None

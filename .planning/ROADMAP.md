@@ -49,7 +49,7 @@ Phase 11: Dokumentation (1 plan, complete)
 **Milestone Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
 
 - [x] **Phase 12: Bug-Fixes + Sicherheit** - Funktionale Bugs in Modals und Auth-Seiten beheben, Passwort-Sicherheit erhoehen (completed 2026-03-03)
-- [ ] **Phase 13: Globale UI-Anpassungen** - Querschnittliche visuelle Fixes die alle Views betreffen
+- [x] **Phase 13: Globale UI-Anpassungen** - Querschnittliche visuelle Fixes die alle Views betreffen (completed 2026-03-03)
 - [ ] **Phase 14: Konfi Views -- Dashboard, Events, Badges** - Konfi-Hauptansichten polieren
 - [ ] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen
 - [ ] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen
@@ -170,7 +170,7 @@ Plans:
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 11. Dokumentation | v1.2 | 1/1 | Complete | 2026-03-02 |
 | 12. Bug-Fixes + Sicherheit | 2/2 | Complete    | 2026-03-03 | - |
-| 13. Globale UI-Anpassungen | 1/2 | In Progress|  | - |
+| 13. Globale UI-Anpassungen | 2/2 | Complete   | 2026-03-03 | - |
 | 14. Konfi Views -- Dashboard, Events, Badges | v1.3 | 0/? | Not started | - |
 | 15. Konfi Views -- Antraege | v1.3 | 0/? | Not started | - |
 | 16. Konfi Views -- Profil + Verlinkungen | v1.3 | 0/? | Not started | - |
