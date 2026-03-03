@@ -16,7 +16,6 @@ import {
   IonItem,
   IonRefresher,
   IonRefresherContent,
-  useIonActionSheet,
   useIonModal,
   IonItemSliding,
   IonItemOptions,
@@ -50,7 +49,6 @@ interface Konfi {
   username?: string;
   jahrgang?: string;
   jahrgang_name?: string;
-  password?: string;
   gottesdienst_points?: number;
   gemeinde_points?: number;
   points?: {
@@ -84,7 +82,6 @@ interface KonfiDetailViewProps {
 
 const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) => {
   const { setSuccess, setError } = useApp();
-  const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
@@ -95,7 +92,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [loadedPassword, setLoadedPassword] = useState<string | null>(null);
   const [settings, setSettings] = useState<{ target_gottesdienst: number; target_gemeinde: number }>({
     target_gottesdienst: 10,
     target_gemeinde: 10
@@ -275,21 +271,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   };
 
   const handlePasswordAction = () => {
-    presentActionSheet({
-      header: 'Passwort Optionen',
+    presentAlert({
+      header: 'Einmalpasswort generieren',
+      message: 'Es wird ein neues temporäres Passwort erstellt. Das aktuelle Passwort wird überschrieben.',
       buttons: [
-        {
-          text: 'Passwort anzeigen',
-          handler: () => {
-            presentAlert({
-              header: 'Passwort',
-              message: `Aktuelles Passwort: ${loadedPassword || currentKonfi?.password || 'Nicht verfügbar'}`,
-              buttons: ['OK']
-            });
-          }
-        },
-        { text: 'Neues Passwort generieren', handler: () => handlePasswordReset() },
-        { text: 'Abbrechen', role: 'cancel' }
+        { text: 'Abbrechen', role: 'cancel' },
+        { text: 'Generieren', handler: () => handlePasswordReset() }
       ]
     });
   };
@@ -345,10 +332,22 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const handlePasswordReset = async () => {
     try {
       const response = await api.post(`/admin/konfis/${konfiId}/regenerate-password`);
-      const newPassword = response.data.password;
-      setCurrentKonfi((prev) => (prev ? { ...prev, password: newPassword } : null));
-      setLoadedPassword(newPassword);
-      setSuccess(`Neues Passwort: ${newPassword}`);
+      const tempPassword = response.data.temporaryPassword;
+      presentAlert({
+        header: 'Einmalpasswort erstellt',
+        message: `Das neue Passwort wurde gesetzt. Kopiere es und gib es dem Konfi weiter.<br/><br/><strong style="font-family: monospace; letter-spacing: 1px; font-size: 1.1em;">${tempPassword}</strong>`,
+        buttons: [
+          {
+            text: 'Kopieren',
+            handler: () => {
+              navigator.clipboard.writeText(tempPassword);
+              setSuccess('Passwort kopiert');
+              return false; // Alert offen lassen
+            }
+          },
+          { text: 'Fertig', role: 'cancel' }
+        ]
+      });
       window.dispatchEvent(new CustomEvent('konfis-updated'));
     } catch (err) {
       setError('Fehler beim Zurücksetzen des Passworts');

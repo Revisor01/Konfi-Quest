@@ -363,11 +363,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
             
-            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = $1 WHERE user_id = $2";
-            await db.query(updateProfileQuery, [newPassword, req.params.id]);
+            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
+            await db.query(updateProfileQuery, [req.params.id]);
 
             await db.query('COMMIT');
-            res.json({ message: 'Passwort erfolgreich neu generiert', password: newPassword });
+            res.json({ message: 'Passwort erfolgreich neu generiert', temporaryPassword: newPassword });
 
         } catch (err) {
  await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
@@ -382,11 +382,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         
         try {
             const konfiQuery = `
-                SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points, kp.password_plain,
+                SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
-                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id  
+                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
                 WHERE u.id = $1 AND r.name = 'konfi' AND u.organization_id = $2
             `;
@@ -422,8 +422,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 ...konfi,
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
-                badgeCount: badgeResult ? badgeResult.badgeCount : 0,
-                password: konfi.password_plain // For admin view
+                badgeCount: badgeResult ? badgeResult.badgeCount : 0
             });
 
         } catch (err) {
