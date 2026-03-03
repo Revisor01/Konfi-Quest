@@ -33,11 +33,11 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 - [x] **AUI-01**: KonfiDetailView Corner-Badge fuer Bonus- und Event-Eintraege (Konsistenz)
 - [x] **AUI-02**: KonfiDetailView Icon vor Approved-Namen
-- [ ] **AUI-03**: Benutzer:innen-Liste Funktions-Icon von Line auf Solid
-- [ ] **AUI-04**: GoalsPage/PunkteZiel-Modal Standard-Stepper-Pattern (kein Sonderdesign)
-- [ ] **AUI-05**: Admin EventDetailView Beschreibung als eigene Card (wie Konfi-Ansicht)
-- [ ] **AUI-06**: Admin vs Konfi EventDetailView Detail-Reihenfolge angeglichen
-- [ ] **AUI-07**: ActivityModal Haekchen-Position wie andere Modals (nicht oben rechts)
+- [x] **AUI-03**: Benutzer:innen-Liste Funktions-Icon von Line auf Solid
+- [x] **AUI-04**: GoalsPage/PunkteZiel-Modal Standard-Stepper-Pattern (kein Sonderdesign)
+- [x] **AUI-05**: Admin EventDetailView Beschreibung als eigene Card (wie Konfi-Ansicht)
+- [x] **AUI-06**: Admin vs Konfi EventDetailView Detail-Reihenfolge angeglichen
+- [x] **AUI-07**: ActivityModal Haekchen-Position wie andere Modals (nicht oben rechts)
 
 ### Settings-Bereich
 
@@ -130,11 +130,11 @@ Geplante Milestones nach v1.3:
 | KUI-11 | Phase 16 | Complete |
 | AUI-01 | Phase 17 | Complete |
 | AUI-02 | Phase 17 | Complete |
-| AUI-03 | Phase 17 | Pending |
-| AUI-04 | Phase 17 | Pending |
-| AUI-05 | Phase 17 | Pending |
-| AUI-06 | Phase 17 | Pending |
-| AUI-07 | Phase 17 | Pending |
+| AUI-03 | Phase 17 | Complete |
+| AUI-04 | Phase 17 | Complete |
+| AUI-05 | Phase 17 | Complete |
+| AUI-06 | Phase 17 | Complete |
+| AUI-07 | Phase 17 | Complete |
 | SET-01 | Phase 18 | Pending |
 | SET-02 | Phase 18 | Pending |
 | SET-03 | Phase 18 | Pending |

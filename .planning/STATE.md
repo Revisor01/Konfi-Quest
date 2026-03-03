@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: in-progress
-last_updated: "2026-03-03T21:44:50Z"
+last_updated: "2026-03-03T21:45:30Z"
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 17 of 19 (Admin Views Polishing) -- IN PROGRESS
-Plan: 2 of 3 in current phase (komplett)
-Status: Plan 17-02 komplett (UsersView Solid-Icon + GoalsPage Stepper-Pattern)
-Last activity: 2026-03-03 -- Phase 17 Plan 02 ausgefuehrt (AUI-03, AUI-04)
+Phase: 17 of 19 (Admin Views Polishing) -- KOMPLETT
+Plan: 3 of 3 in current phase (komplett)
+Status: Phase 17 komplett (EventDetailView Beschreibungs-Card + ActivityModal Checkbox links)
+Last activity: 2026-03-03 -- Phase 17 Plan 03 ausgefuehrt (AUI-05, AUI-06, AUI-07)
 
-Progress: [######....] 68% (v1.3: 5/8 Phasen + 2 Plans, Phase 12-16 komplett, 17 in progress)
+Progress: [########..] 73% (v1.3: 6/8 Phasen, Phase 12-17 komplett)
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [######....] 68% (v1.3: 5/8 Phasen + 2 Plans, Phase 12-16 komplett, 17
 | 16 | 01 | 1min | 2 | 3 |
 | 17 | 01 | 1min | 2 | 1 |
 | 17 | 02 | 1min | 2 | 2 |
+| 17 | 03 | 1min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Relevant for v1.3:
 - [Phase 15]: Konfi Antrags-Modals nutzen app-section-icon--requests (#047857) statt --purple fuer Farbkonsistenz mit Admin
 - [Phase 16]: Konfirmationstermin-Card Gradient auf Lila (#5b21b6/#4c1d95) passend zum konfis-Preset im SectionHeader
 - [Phase 17]: personOutline Icon mit rgba(255,255,255,0.8) fuer dezente Darstellung im KonfiDetailView lila Header
+- [Phase 17]: Beschreibung als eigene Card nach Details-Card (gleiche Struktur wie Konfi EventDetailView)
+- [Phase 17]: Checkbox links positioniert mit flachem Flex-Layout in ActivityModal (iOS-native Pattern)
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 17-01-PLAN.md
-Resume file: .planning/phases/17-admin-views-polishing/17-01-SUMMARY.md
+Stopped at: Completed 17-03-PLAN.md
+Resume file: .planning/phases/17-admin-views-polishing/17-03-SUMMARY.md
