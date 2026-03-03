@@ -152,7 +152,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         {/* SEKTION: Antragsdaten */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={documentTextOutline} />
             </div>
             <IonLabel>Antragsdaten</IonLabel>
@@ -219,7 +219,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
         {isPending && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--purple">
+              <div className="app-section-icon app-section-icon--requests">
                 <IonIcon icon={imageOutline} />
               </div>
               <IonLabel>Nachweis-Foto</IonLabel>
