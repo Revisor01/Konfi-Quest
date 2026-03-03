@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: unknown
-last_updated: "2026-03-03T00:12:58.331Z"
+last_updated: "2026-03-03T09:09:59.057Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 12 -- Bug-Fixes + Sicherheit
+**Current focus:** Phase 13 -- Globale UI-Anpassungen
 
 ## Current Position
 
-Phase: 12 of 19 (Bug-Fixes + Sicherheit) -- ABGESCHLOSSEN
+Phase: 13 of 19 (Globale UI-Anpassungen)
 Plan: 2 of 2 in current phase (komplett)
-Status: Phase 12 abgeschlossen, bereit für Phase 13
-Last activity: 2026-03-03 -- Plan 12-02 abgeschlossen (Auth-Bugs + Einmalpasswort SEC-01)
+Status: Plan 13-02 abgeschlossen (Konsistente Checkbox-Farben)
+Last activity: 2026-03-03 -- Plan 13-02 abgeschlossen (Konsistente Checkbox-Farben GUI-03)
 
-Progress: [#.........] 12.5% (v1.3: 1/8 Phasen, Phase 12 komplett)
+Progress: [##........] 25% (v1.3: 2/8 Phasen, Phase 12+13 komplett)
 
 ## Performance Metrics
 
@@ -38,6 +38,12 @@ Progress: [#.........] 12.5% (v1.3: 1/8 Phasen, Phase 12 komplett)
 | v1.0 | 2 | 5 | -- | -- |
 | v1.1 | 5 | 17 | ~125min | ~7.4min |
 | v1.2 | 4 | 6 | ~40min | ~6.7min |
+
+**v1.3 Plan-Metriken:**
+
+| Phase | Plan | Dauer | Tasks | Files |
+|-------|------|-------|-------|-------|
+| 13 | 02 | 2min | 1 | 8 |
 
 ## Accumulated Context
 
@@ -53,6 +59,7 @@ Relevant for v1.3:
 - v1.3: useIonModal stale-closure Workaround -- Modals muessen eigene Daten laden statt Props zu nutzen
 - v1.3: Eigener passwordResetLimiter (5 req/15min) statt Login-Limiter fuer /request-password-reset
 - v1.3: Einmalpasswort-Pattern -- temporaryPassword im Alert mit Kopier-Button, kein Klartext in Toast/State/DB
+- [Phase 13]: Alle IonCheckbox in Admin-Modals einheitlich Tuerkis (#06b6d4) statt rollenabhaengige Farben (GUI-03)
 
 ### Pending Todos
 
@@ -65,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 12-02-PLAN.md (Auth-Bugs + Einmalpasswort), Phase 12 abgeschlossen
+Stopped at: Completed 13-02-PLAN.md (Konsistente Checkbox-Farben)
 Resume file: None

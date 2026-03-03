@@ -11,7 +11,7 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 - [ ] **GUI-01**: Listen-Icons in allen Views kleiner und oben positioniert (statt gross und zentriert)
 - [ ] **GUI-02**: Auswahl-Rahmen (orange/tuerkis/rot) bei Fokus/Select in allen Modals und Listen entfernt
-- [ ] **GUI-03**: Auswahl-Farben konsistent: Konfis=Orange, alle anderen=Tuerkis (Haekchen, Hervorhebung)
+- [x] **GUI-03**: Auswahl-Farben konsistent: Konfis=Orange, alle anderen=Tuerkis (Haekchen, Hervorhebung)
 - [ ] **GUI-04**: Gruen in Headers kraeftiger (Aktivitaeten, Antraege -- zu matt)
 - [ ] **GUI-05**: Auth-Seiten durchgehende Hintergrundfarbe (weisser Bereich unten entfernt)
 
@@ -109,7 +109,7 @@ Geplante Milestones nach v1.3:
 |-------------|-------|--------|
 | GUI-01 | Phase 13 | Pending |
 | GUI-02 | Phase 13 | Pending |
-| GUI-03 | Phase 13 | Pending |
+| GUI-03 | Phase 13 | Complete |
 | GUI-04 | Phase 13 | Pending |
 | GUI-05 | Phase 13 | Pending |
 | KUI-01 | Phase 14 | Pending |
