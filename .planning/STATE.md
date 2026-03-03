@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: in-progress
-last_updated: "2026-03-03T22:11:24.047Z"
+last_updated: "2026-03-03T22:13:00.000Z"
 progress:
   total_phases: 8
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-03)
 
 ## Current Position
 
-Phase: 17.1 (Checkbox-Farben + Einmalpasswort Fixes)
-Plan: 2 of 2 in current phase (Plan 02 komplett)
-Status: Phase 17.1 Plan 02 komplett (Einmalpasswort-Anzeige bei Erstellung + Regenerierung)
-Last activity: 2026-03-03 -- Phase 17.1 Plan 02 ausgefuehrt (FIX-02)
+Phase: 17.1 (Checkbox-Farben + Einmalpasswort Fixes) -- KOMPLETT
+Plan: 2 of 2 in current phase (komplett)
+Status: Phase 17.1 komplett (Checkbox-Farben dynamisch + Einmalpasswort)
+Last activity: 2026-03-03 -- Phase 17.1 Plan 01 ausgefuehrt (FIX-01)
 
-Progress: [########..] 80% (v1.3: Phase 12-17 + 17.1 komplett)
+Progress: [########.#] 87% (v1.3: 7/8 Phasen, Phase 12-17 + 17.1 komplett)
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [########..] 80% (v1.3: Phase 12-17 + 17.1 komplett)
 | 17 | 01 | 1min | 2 | 1 |
 | 17 | 02 | 1min | 2 | 2 |
 | 17 | 03 | 1min | 2 | 2 |
+| 17.1 | 01 | 3min | 1 | 8 |
 | 17.1 | 02 | 1min | 2 | 2 |
 
 ## Accumulated Context
@@ -81,6 +82,7 @@ Relevant for v1.3:
 - [Phase 17]: Beschreibung als eigene Card nach Details-Card (gleiche Struktur wie Konfi EventDetailView)
 - [Phase 17]: Checkbox links positioniert mit flachem Flex-Layout in ActivityModal (iOS-native Pattern)
 - [Phase 17.1]: Einmalpasswort-Pattern: subHeader fuer prominente Passwort-Anzeige in IonAlert statt HTML in message
+- [Phase 17.1]: Checkbox-Farbe = Kontext-Farbe (borderLeftColor/typeColor), nicht hardcoded tuerkis (FIX-01)
 
 ### Pending Todos
 
@@ -93,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 17.1-02-PLAN.md
-Resume file: .planning/phases/17.1-checkbox-farben-einmalpasswort-fixes/17.1-02-SUMMARY.md
+Stopped at: Completed 17.1-01-PLAN.md (Phase 17.1 komplett)
+Resume file: .planning/phases/17.1-checkbox-farben-einmalpasswort-fixes/17.1-01-SUMMARY.md

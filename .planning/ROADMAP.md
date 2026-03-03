@@ -54,7 +54,7 @@ Phase 11: Dokumentation (1 plan, complete)
 - [x] **Phase 15: Konfi Views -- Antraege** - Request-Views und -Modals an Design-System angleichen (1 plan) (completed 2026-03-03)
 - [x] **Phase 16: Konfi Views -- Profil + Verlinkungen** - Profilfarbe, fehlende Actions und Modal-Verlinkungen (completed 2026-03-03)
 - [x] **Phase 17: Admin Views Polishing** - Admin-spezifische Detail-Views und Modals vereinheitlichen (completed 2026-03-03)
-- [ ] **Phase 17.1: Checkbox-Farben + Einmalpasswort Fixes** - Tuerkise Checkbox-Farben und fehlende Passwort-Anzeige
+- [x] **Phase 17.1: Checkbox-Farben + Einmalpasswort Fixes** - Tuerkise Checkbox-Farben und fehlende Passwort-Anzeige (completed 2026-03-03)
 - [ ] **Phase 18: Settings-Bereich** - Settings-Seite Struktur, Farben und Modal-Konsistenz
 - [ ] **Phase 19: Super-Admin Ueberarbeitung** - Super-Admin komplett neu aufgebaut (keine TabBar, Design-System)
 
@@ -196,6 +196,6 @@ Plans:
 | 15. Konfi Views -- Antraege | 1/1 | Complete    | 2026-03-03 | - |
 | 16. Konfi Views -- Profil + Verlinkungen | 1/1 | Complete    | 2026-03-03 | - |
 | 17. Admin Views Polishing | 3/3 | Complete    | 2026-03-03 | - |
-| 17.1. Checkbox-Farben + Einmalpasswort | 1/2 | In Progress|  | - |
+| 17.1. Checkbox-Farben + Einmalpasswort | 2/2 | Complete   | 2026-03-03 | - |
 | 18. Settings-Bereich | v1.3 | 0/? | Not started | - |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 0/? | Not started | - |
