@@ -27,7 +27,7 @@ import {
   at,
   school,
   time,
-  briefcaseOutline,
+  briefcase,
   filterOutline,
   peopleOutline,
   search
@@ -278,7 +278,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                             </span>
                             {user.role_title && (
                               <span className="app-list-item__meta-item">
-                                <IonIcon icon={briefcaseOutline} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
+                                <IonIcon icon={briefcase} className={user.is_active ? 'app-icon-color--badges' : ''} style={!user.is_active ? { color: '#999' } : undefined} />
                                 {user.role_title}
                               </span>
                             )}
