@@ -230,7 +230,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Aktivitaet Sektion - iOS26 Pattern mit Akkordeon */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={starOutline} />
             </div>
             <IonLabel>Aktivität wählen</IonLabel>
@@ -326,7 +326,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Datum Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={calendarOutline} />
             </div>
             <IonLabel>Datum wählen</IonLabel>
@@ -353,7 +353,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Anmerkungen Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={textOutline} />
             </div>
             <IonLabel>Anmerkungen (optional)</IonLabel>
@@ -376,7 +376,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
         {/* Foto Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--requests">
               <IonIcon icon={imageOutline} />
             </div>
             <IonLabel>Foto als Nachweis (optional)</IonLabel>
