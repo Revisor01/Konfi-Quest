@@ -118,7 +118,9 @@ Plans:
   2. Bibeluebersetzung-Aendern-Action oeffnet ein funktionierendes Modal oder Auswahlmenue
   3. UnregisterModal ist von einer sichtbaren Stelle aus erreichbar (z.B. Profil oder Settings)
   4. EditProfileModal ist entweder verlinkt und funktional oder sauber entfernt
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 16-01-PLAN.md -- Profil-Farbe Lila, Bibelübersetzung-Bug-Fix, EditProfileModal entfernen
 
 ### Phase 17: Admin Views Polishing
 **Goal**: Admin-Detail-Views und -Modals sind visuell konsistent mit dem Design-System
