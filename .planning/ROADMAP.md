@@ -169,7 +169,7 @@ Plans:
 | 9. Dashboard Bug-Fix + Design-Review | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-03-02 |
 | 11. Dokumentation | v1.2 | 1/1 | Complete | 2026-03-02 |
-| 12. Bug-Fixes + Sicherheit | 2/2 | Complete   | 2026-03-03 | - |
+| 12. Bug-Fixes + Sicherheit | 2/2 | Complete    | 2026-03-03 | - |
 | 13. Globale UI-Anpassungen | v1.3 | 0/? | Not started | - |
 | 14. Konfi Views -- Dashboard, Events, Badges | v1.3 | 0/? | Not started | - |
 | 15. Konfi Views -- Antraege | v1.3 | 0/? | Not started | - |
