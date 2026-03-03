@@ -2,10 +2,20 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
 const router = express.Router();
+
+// Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter)
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 5, // Max 5 Reset-Anfragen pro 15 Minuten
+  message: { error: 'Zu viele Passwort-Reset-Anfragen. Bitte warte 15 Minuten.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -260,8 +270,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     }
   });
 
-  // Request password reset (mit Rate Limiting gegen Spam)
-  router.post('/request-password-reset', ...loginMiddleware, validateRequestPasswordReset, async (req, res) => {
+  // Request password reset (mit eigenem Rate-Limiter, getrennt vom Login-Limiter)
+  router.post('/request-password-reset', passwordResetLimiter, validateRequestPasswordReset, async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'E-Mail-Adresse ist erforderlich' });
     

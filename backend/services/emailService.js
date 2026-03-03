@@ -5,9 +5,29 @@
 
 const nodemailer = require('nodemailer');
 
-// SMTP Transporter erstellen
-const createTransporter = () => {
-  return nodemailer.createTransport({
+// Gecachter Transporter (wird einmalig erstellt und wiederverwendet)
+let cachedTransporter = null;
+
+// SMTP-Credentials prüfen
+const validateSmtpConfig = () => {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.error('SMTP-Credentials nicht konfiguriert (SMTP_USER, SMTP_PASS)');
+    return false;
+  }
+  return true;
+};
+
+// SMTP Transporter erstellen oder aus Cache holen
+const getTransporter = () => {
+  if (cachedTransporter) {
+    return cachedTransporter;
+  }
+
+  if (!validateSmtpConfig()) {
+    throw new Error('SMTP-Credentials nicht konfiguriert. SMTP_USER und SMTP_PASS müssen als Umgebungsvariablen gesetzt sein.');
+  }
+
+  cachedTransporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'server.godsapp.de',
     port: parseInt(process.env.SMTP_PORT || '465'),
     secure: process.env.SMTP_SECURE !== 'false', // Default: true (Port 465 mit TLS)
@@ -16,6 +36,8 @@ const createTransporter = () => {
       pass: process.env.SMTP_PASS
     }
   });
+
+  return cachedTransporter;
 };
 
 /**
@@ -27,10 +49,12 @@ const createTransporter = () => {
  * @param {string} options.html - HTML-Inhalt (optional)
  */
 const sendEmail = async ({ to, subject, text, html }) => {
-  const transporter = createTransporter();
+  const transporter = getTransporter();
+
+  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER || 'team@konfi-quest.de'}>`;
 
   const mailOptions = {
-    from: process.env.SMTP_FROM || 'Konfi Quest <profil@konfi-quest.de>',
+    from: smtpFrom,
     to,
     subject,
     text,
@@ -41,7 +65,11 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const info = await transporter.sendMail(mailOptions);
     return { success: true, messageId: info.messageId };
   } catch (error) {
- console.error(`Fehler beim Senden der E-Mail an ${to}:`, error);
+    console.error(`Fehler beim Senden der E-Mail an ${to}:`, error);
+    // Transporter-Cache invalidieren bei Verbindungsfehler
+    if (error.code === 'ECONNECTION' || error.code === 'EAUTH' || error.code === 'ESOCKET') {
+      cachedTransporter = null;
+    }
     throw error;
   }
 };
@@ -180,13 +208,17 @@ Dein Konfi Quest Team
  * Testet die E-Mail-Konfiguration
  */
 const testEmailConnection = async () => {
-  const transporter = createTransporter();
+  if (!validateSmtpConfig()) {
+    return false;
+  }
 
   try {
+    const transporter = getTransporter();
     await transporter.verify();
     return true;
   } catch (error) {
- console.error('SMTP-Verbindungsfehler:', error);
+    console.error('SMTP-Verbindungsfehler:', error);
+    cachedTransporter = null;
     return false;
   }
 };

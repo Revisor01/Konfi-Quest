@@ -12,7 +12,7 @@ import {
   IonSpinner,
   IonIcon
 } from '@ionic/react';
-import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle } from 'ionicons/icons';
+import { lockClosedOutline, eye, eyeOff, checkmarkCircle, alertCircle, closeCircle, arrowBack } from 'ionicons/icons';
 import api from '../../services/api';
 
 const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ label, checked }) => (
@@ -296,6 +296,13 @@ const ResetPasswordPage: React.FC = () => {
                       'Passwort ändern'
                     )}
                   </IonButton>
+
+                  <div className="app-auth-footer">
+                    <span onClick={() => history.push('/login')} className="app-auth-link">
+                      <IonIcon icon={arrowBack} />
+                      Zurück zum Login
+                    </span>
+                  </div>
                 </>
               )}
             </IonCardContent>
