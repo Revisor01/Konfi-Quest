@@ -200,20 +200,33 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* Stats Boxen - 5 nebeneinander */}
-              <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '6px', position: 'relative', zIndex: 1 }}>
-                {[
-                  { value: calculatedTotals.total, label: 'GESAMT' },
-                  { value: calculatedTotals.gottesdienst, label: 'GD' },
-                  { value: calculatedTotals.gemeinde, label: 'GEM' },
-                  { value: calculatedTotals.eventCount, label: 'EVENTS' },
-                  { value: calculatedTotals.bonusCount, label: 'BONUS' }
-                ].map((stat) => (
-                  <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', maxWidth: '70px', padding: '10px 8px' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
-                    <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
-                  </div>
-                ))}
+              {/* Stats Boxen - 3 oben + 2 unten */}
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Erste Reihe: Gesamt, Gottesdienst, Gemeinde */}
+                <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px' }}>
+                  {[
+                    { value: calculatedTotals.total, label: 'GESAMT' },
+                    { value: calculatedTotals.gottesdienst, label: 'GOTTESDIENST' },
+                    { value: calculatedTotals.gemeinde, label: 'GEMEINDE' }
+                  ].map((stat) => (
+                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Zweite Reihe: Events, Bonus */}
+                <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
+                  {[
+                    { value: calculatedTotals.eventCount, label: 'EVENTS' },
+                    { value: calculatedTotals.bonusCount, label: 'BONUS' }
+                  ].map((stat) => (
+                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', maxWidth: '45%', padding: '10px 8px' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
