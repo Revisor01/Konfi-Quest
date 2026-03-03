@@ -35,7 +35,8 @@ import {
   trash,
   image,
   close,
-  podium
+  podium,
+  personOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -447,16 +448,29 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               marginBottom: '4px'
             }}
           >
-            <h1
+            <div
               style={{
-                margin: '0',
-                fontSize: '1.4rem',
-                fontWeight: '700',
-                color: 'white'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
               }}
             >
-              {currentKonfi?.name || 'Konfi'}
-            </h1>
+              <IonIcon
+                icon={personOutline}
+                style={{ fontSize: '1.2rem', color: 'rgba(255, 255, 255, 0.8)' }}
+              />
+              <h1
+                style={{
+                  margin: '0',
+                  fontSize: '1.4rem',
+                  fontWeight: '700',
+                  color: 'white'
+                }}
+              >
+                {currentKonfi?.name || 'Konfi'}
+              </h1>
+            </div>
           </div>
 
           {/* Username und Jahrgang */}
