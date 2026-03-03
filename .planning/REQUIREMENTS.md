@@ -23,9 +23,9 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [ ] **KUI-04**: KonfiProfileView Farbe von Blau auf Lila geaendert
 - [x] **KUI-05**: PointsHistoryModal "Gesamt" Textüberlauf behoben, Layout 3+2 statt 4+1
 - [ ] **KUI-06**: Bibeluebersetzung-Aendern Action funktioniert (aktuell ohne Funktion)
-- [ ] **KUI-07**: RequestsView Header-Gruen dunkler (wie Admin-Antraege)
-- [ ] **KUI-08**: Konfi ActivityRequestModal Icons von Lila auf Gruen geaendert
-- [ ] **KUI-09**: Konfi RequestDetailModal an Admin-Modal angeglichen
+- [x] **KUI-07**: RequestsView Header-Gruen dunkler (wie Admin-Antraege)
+- [x] **KUI-08**: Konfi ActivityRequestModal Icons von Lila auf Gruen geaendert
+- [x] **KUI-09**: Konfi RequestDetailModal an Admin-Modal angeglichen
 - [ ] **KUI-10**: UnregisterModal erreichbar/verlinkt
 - [ ] **KUI-11**: EditProfileModal pruefen und verlinken oder entfernen
 
@@ -118,9 +118,9 @@ Geplante Milestones nach v1.3:
 | KUI-04 | Phase 16 | Pending |
 | KUI-05 | Phase 14 | Complete |
 | KUI-06 | Phase 16 | Pending |
-| KUI-07 | Phase 15 | Pending |
-| KUI-08 | Phase 15 | Pending |
-| KUI-09 | Phase 15 | Pending |
+| KUI-07 | Phase 15 | Complete |
+| KUI-08 | Phase 15 | Complete |
+| KUI-09 | Phase 15 | Complete |
 | KUI-10 | Phase 16 | Pending |
 | KUI-11 | Phase 16 | Pending |
 | AUI-01 | Phase 17 | Pending |
