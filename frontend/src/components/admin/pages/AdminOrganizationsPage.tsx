@@ -13,13 +13,14 @@ import {
   useIonModal,
   useIonAlert
 } from '@ionic/react';
-import { 
-  arrowBack
+import {
+  logOut,
+  add
 } from 'ionicons/icons';
-import { add } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { logout } from '../../../services/auth';
 import OrganizationView from '../OrganizationView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
@@ -55,6 +56,24 @@ const AdminOrganizationsPage: React.FC = () => {
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
+
+  const handleLogout = () => {
+    presentAlert({
+      header: 'Abmelden',
+      message: 'Möchtest du dich wirklich abmelden?',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Abmelden',
+          role: 'destructive',
+          handler: async () => {
+            await logout();
+            window.location.href = '/';
+          }
+        }
+      ]
+    });
+  };
 
   // Modal mit useIonModal Hook
   const [presentOrganizationModalHook, dismissOrganizationModalHook] = useIonModal(OrganizationManagementModal, {
@@ -148,8 +167,8 @@ const AdminOrganizationsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
         <IonButtons slot="start">
-          <IonButton onClick={() => window.history.back()}>
-            <IonIcon icon={arrowBack} />
+          <IonButton onClick={handleLogout}>
+            <IonIcon icon={logOut} />
           </IonButton>
         </IonButtons>
           <IonTitle>Organisations-Verwaltung</IonTitle>
@@ -161,12 +180,6 @@ const AdminOrganizationsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Organisations-Verwaltung</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           loadOrganizations();
           e.detail.complete();

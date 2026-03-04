@@ -165,29 +165,13 @@ const MainTabs: React.FC = () => {
   };
 
   return isSuperAdmin ? (
-    // Super-Admin Tabs: Nur Organisationen + Profil/Settings
+    // Super-Admin: Nur Organisationen-View ohne TabBar
     <ModalProvider>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
-          <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
-          <Route exact path="/admin/settings" component={AdminSettingsPage} />
-          <Route exact path="/admin/profile" component={AdminProfilePage} />
-          <Route exact path="/admin/users" component={AdminUsersPage} />
-          <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
-        </IonRouterOutlet>
-
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="super-organizations" href="/admin/organizations">
-            <IonIcon icon={business} />
-            <IonLabel>Organisationen</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="super-settings" href="/admin/settings">
-            <IonIcon icon={person} />
-            <IonLabel>Profil</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
+      <IonRouterOutlet>
+        <Route exact path="/admin" render={() => <Redirect to="/admin/organizations" />} />
+        <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
+        <Route exact path="/" render={() => <Redirect to="/admin/organizations" />} />
+      </IonRouterOutlet>
     </ModalProvider>
   ) : user.type === 'admin' ? (
     // Admin Tabs (org_admin / teamer)
