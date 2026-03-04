@@ -261,7 +261,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
             <IonButton
               onClick={handleSubmit}
               disabled={!isFormValid || loading}
-              className="app-modal-submit-btn app-modal-submit-btn--settings"
+              className="app-modal-submit-btn app-modal-submit-btn--level"
             >
               {loading ? (
                 <IonSpinner name="crescent" />
@@ -277,7 +277,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         {/* SEKTION: Grunddaten */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--settings">
+            <div className="app-section-icon app-section-icon--level">
               <IonIcon icon={create} />
             </div>
             <IonLabel>Level Details</IonLabel>

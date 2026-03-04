@@ -1176,6 +1176,10 @@ ion-button.app-modal-submit-btn--settings {
   --background: #667eea;
   --background-hover: #5a6fd6;
 }
+ion-button.app-modal-submit-btn--level {
+  --background: #5b21b6;
+  --background-hover: #4c1d95;
+}
 ion-button.app-modal-submit-btn--chat {
   --background: #06b6d4;
   --background-hover: #0891b2;
