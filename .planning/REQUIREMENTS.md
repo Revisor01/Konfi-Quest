@@ -41,11 +41,11 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 ### Settings-Bereich
 
-- [ ] **SET-01**: Settings-Seite Struktur: Profil raus, Konto oben, Verwaltung, Inhalt
-- [ ] **SET-02**: Benutzer + Konfis einladen Farbe auf mattes Blau
-- [ ] **SET-03**: Aktivitaeten Gottesdienst-Aktivitaeten in Blau
-- [ ] **SET-04**: Kategorien durchgehend Orange (nicht Gruen im Inneren)
-- [ ] **SET-05**: Kategorien eigene Farbe zur Abgrenzung von Badges
+- [x] **SET-01**: Settings-Seite Struktur: Profil raus, Konto oben, Verwaltung, Inhalt
+- [x] **SET-02**: Benutzer + Konfis einladen Farbe auf mattes Blau
+- [x] **SET-03**: Aktivitaeten Gottesdienst-Aktivitaeten in Blau
+- [x] **SET-04**: Kategorien durchgehend Orange (nicht Gruen im Inneren)
+- [x] **SET-05**: Kategorien eigene Farbe zur Abgrenzung von Badges
 - [x] **SET-06**: Level-Modal Icon-Farbe Lila + iOS Backdrop-Effekt
 - [x] **SET-07**: Profil-Modals Icons und Funktionsbeschreibung auf Lila
 - [x] **SET-08**: AdminBadgesPage Zurueck-Button oben links
@@ -135,11 +135,11 @@ Geplante Milestones nach v1.3:
 | AUI-05 | Phase 17 | Complete |
 | AUI-06 | Phase 17 | Complete |
 | AUI-07 | Phase 17 | Complete |
-| SET-01 | Phase 18 | Pending |
-| SET-02 | Phase 18 | Pending |
-| SET-03 | Phase 18 | Pending |
-| SET-04 | Phase 18 | Pending |
-| SET-05 | Phase 18 | Pending |
+| SET-01 | Phase 18 | Complete |
+| SET-02 | Phase 18 | Complete |
+| SET-03 | Phase 18 | Complete |
+| SET-04 | Phase 18 | Complete |
+| SET-05 | Phase 18 | Complete |
 | SET-06 | Phase 18 | Complete |
 | SET-07 | Phase 18 | Complete |
 | SET-08 | Phase 18 | Complete |
