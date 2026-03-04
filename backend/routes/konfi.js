@@ -1720,6 +1720,38 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         [konfiId, eventId]
       );
 
+      // Nachruecken von Warteliste wenn ein bestaetigter Platz frei wird
+      if (registration.status === 'confirmed') {
+        try {
+          // Bei Timeslot-Events nur innerhalb desselben Timeslots nachruecken
+          const promotionQuery = registration.timeslot_id
+            ? "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
+            : "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
+          const promotionParams = registration.timeslot_id
+            ? [eventId, registration.timeslot_id]
+            : [eventId];
+
+          const { rows: [nextInLine] } = await db.query(promotionQuery, promotionParams);
+
+          if (nextInLine) {
+            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [nextInLine.id]);
+
+            // Push-Notification an nachgerueckten Konfi
+            try {
+              await PushService.sendWaitlistPromotionToKonfi(db, nextInLine.user_id, event.name, event.event_date, eventId);
+            } catch (pushErr) {
+              console.error('Error sending waitlist promotion push:', pushErr);
+            }
+
+            // Live-Update an nachgerueckten Konfi
+            liveUpdate.sendToKonfi(nextInLine.user_id, 'events', 'update');
+          }
+        } catch (promotionErr) {
+          console.error('Error promoting from waitlist:', promotionErr);
+          // Stornierung war bereits erfolgreich, Promotion-Fehler nicht an User weitergeben
+        }
+      }
+
       // IMMER Abmeldung protokollieren (mit oder ohne Grund)
       await db.query(
         'INSERT INTO event_unregistrations (user_id, event_id, reason, unregistered_at, organization_id) VALUES ($1, $2, $3, NOW(), $4)',
