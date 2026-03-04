@@ -84,11 +84,11 @@ Phase 19: Super-Admin Ueberarbeitung (2 plans, complete)
   3. Konfi kann nur buchen wenn das Registrierungsfenster offen ist (opens_at/closes_at wird geprueft)
   4. Admin-Buchung fuer einen Konfi prueft Kapazitaet transaktionssicher und kann nicht ueberbuchen
   5. Konfi sieht seine Wartelisten-Buchungen in der eigenen Buchungsuebersicht
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
 
 Plans:
-- [ ] 20-01: TBD
-- [ ] 20-02: TBD
+- [ ] 20-01: events.js -- Status-Vereinheitlichung (waitlist statt pending), User-Bookings-Fix, Admin-Booking Transaktion, Nachruecken bei Kapazitaetsaenderung [EVT-01, EVT-05, EVT-06, EVT-08]
+- [ ] 20-02: konfi.js -- Registrierungsfenster-Pruefung, Nachrueck-Logik bei Stornierung, Route-Dokumentation [EVT-01, EVT-02, EVT-03, EVT-04, EVT-07]
 
 ### Phase 21: Badge-Logik Debug
 **Goal**: Alle Badge-Kriterien loesen korrekt aus -- unabhaengig von Kriterium-Typ, Zeitraum oder Datenkonstellation
@@ -171,7 +171,7 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 17.1. Checkbox-Farben + Einmalpasswort | v1.3 | 2/2 | Complete | 2026-03-03 |
 | 18. Settings-Bereich | v1.3 | 3/3 | Complete | 2026-03-04 |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 2/2 | Complete | 2026-03-04 |
-| 20. Event-Logik Debug | v1.4 | 0/? | Not started | - |
+| 20. Event-Logik Debug | 1/2 | In Progress|  | - |
 | 21. Badge-Logik Debug | v1.4 | 0/? | Not started | - |
 | 22. Punkte-Vergabe Debug | v1.4 | 0/? | Not started | - |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |

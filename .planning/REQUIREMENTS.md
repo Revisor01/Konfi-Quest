@@ -9,13 +9,13 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 ### Event-Logik
 
-- [ ] **EVT-01**: Event-Buchung verwendet konsistenten Warteliste-Status (nicht `pending` vs `waitlist`)
-- [ ] **EVT-02**: Konfi-Buchungsroute prueft `registration_opens_at`/`registration_closes_at`
-- [ ] **EVT-03**: Nachruecken funktioniert korrekt bei Stornierung (Self-Cancel und Admin-Cancel)
-- [ ] **EVT-04**: Nachruecken bei Timeslot-Events nur innerhalb desselben Timeslots
+- [x] **EVT-01**: Event-Buchung verwendet konsistenten Warteliste-Status (nicht `pending` vs `waitlist`)
+- [x] **EVT-02**: Konfi-Buchungsroute prueft `registration_opens_at`/`registration_closes_at`
+- [x] **EVT-03**: Nachruecken funktioniert korrekt bei Stornierung (Self-Cancel und Admin-Cancel)
+- [x] **EVT-04**: Nachruecken bei Timeslot-Events nur innerhalb desselben Timeslots
 - [ ] **EVT-05**: Kapazitaetsaenderung (mehr Plaetze) loest Nachruecken aus
 - [ ] **EVT-06**: `GET /user/bookings` zeigt auch Wartelisten-Buchungen
-- [ ] **EVT-07**: Doppelte Booking-Routen (`events.js` vs `konfi.js`) konsolidiert oder synchronisiert
+- [x] **EVT-07**: Doppelte Booking-Routen (`events.js` vs `konfi.js`) konsolidiert oder synchronisiert
 - [ ] **EVT-08**: Admin-Booking (`POST /:id/participants`) prueft Kapazitaet mit Transaktion
 
 ### Badge-Logik
@@ -69,13 +69,13 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVT-01 | Phase 20 | Pending |
-| EVT-02 | Phase 20 | Pending |
-| EVT-03 | Phase 20 | Pending |
-| EVT-04 | Phase 20 | Pending |
+| EVT-01 | Phase 20 | Complete |
+| EVT-02 | Phase 20 | Complete |
+| EVT-03 | Phase 20 | Complete |
+| EVT-04 | Phase 20 | Complete |
 | EVT-05 | Phase 20 | Pending |
 | EVT-06 | Phase 20 | Pending |
-| EVT-07 | Phase 20 | Pending |
+| EVT-07 | Phase 20 | Complete |
 | EVT-08 | Phase 20 | Pending |
 | BDG-01 | Phase 21 | Pending |
 | BDG-02 | Phase 21 | Pending |
