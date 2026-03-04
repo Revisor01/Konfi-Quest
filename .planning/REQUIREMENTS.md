@@ -46,8 +46,8 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [ ] **SET-03**: Aktivitaeten Gottesdienst-Aktivitaeten in Blau
 - [ ] **SET-04**: Kategorien durchgehend Orange (nicht Gruen im Inneren)
 - [ ] **SET-05**: Kategorien eigene Farbe zur Abgrenzung von Badges
-- [ ] **SET-06**: Level-Modal Icon-Farbe Lila + iOS Backdrop-Effekt
-- [ ] **SET-07**: Profil-Modals Icons und Funktionsbeschreibung auf Lila
+- [x] **SET-06**: Level-Modal Icon-Farbe Lila + iOS Backdrop-Effekt
+- [x] **SET-07**: Profil-Modals Icons und Funktionsbeschreibung auf Lila
 - [x] **SET-08**: AdminBadgesPage Zurueck-Button oben links
 - [x] **SET-09**: Badges-Sektionen Oberkategorie-Icons in Zwischenueberschriften
 
@@ -140,8 +140,8 @@ Geplante Milestones nach v1.3:
 | SET-03 | Phase 18 | Pending |
 | SET-04 | Phase 18 | Pending |
 | SET-05 | Phase 18 | Pending |
-| SET-06 | Phase 18 | Pending |
-| SET-07 | Phase 18 | Pending |
+| SET-06 | Phase 18 | Complete |
+| SET-07 | Phase 18 | Complete |
 | SET-08 | Phase 18 | Complete |
 | SET-09 | Phase 18 | Complete |
 | SUA-01 | Phase 19 | Pending |
