@@ -531,8 +531,63 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
+      // Nachrueck-Logik: Wenn Kapazitaet erhoeht wurde, Wartelisten-Eintraege nachruecken lassen
+      const promotedUsers = [];
+      if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
+        // Bei Timeslot-Events: Fuer jeden Timeslot separat pruefen
+        for (const slot of timeslots) {
+          if (!slot.id) continue; // Nur bestehende Timeslots pruefen
+          const { rows: [tsCapacity] } = await db.query(
+            "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
+            [slot.id]
+          );
+          const freeSlots = slot.max_participants - tsCapacity.confirmed_count;
+          if (freeSlots > 0) {
+            const { rows: waitlistEntries } = await db.query(
+              "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $3",
+              [id, slot.id, freeSlots]
+            );
+            for (const entry of waitlistEntries) {
+              await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
+              promotedUsers.push(entry.user_id);
+            }
+          }
+        }
+      } else if (max_participants > 0) {
+        // Bei normalen Events: Gesamtkapazitaet pruefen
+        const { rows: [currentCounts] } = await db.query(
+          "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
+          [id]
+        );
+        const freeSlots = max_participants - currentCounts.confirmed_count;
+        if (freeSlots > 0) {
+          const { rows: waitlistEntries } = await db.query(
+            "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $2",
+            [id, freeSlots]
+          );
+          for (const entry of waitlistEntries) {
+            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
+            promotedUsers.push(entry.user_id);
+          }
+        }
+      }
+
       await db.query('COMMIT');
-      res.json({ message: 'Event erfolgreich aktualisiert' });
+
+      // Push-Notifications und Live-Updates fuer nachgerueckte Konfis (nach COMMIT)
+      if (promotedUsers.length > 0) {
+        const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [id]);
+        for (const userId of promotedUsers) {
+          try {
+            await PushService.sendWaitlistPromotionToKonfi(db, userId, eventInfo ? eventInfo.name : name);
+          } catch (pushErr) {
+ console.error('Push notification failed for waitlist promotion:', pushErr);
+          }
+          liveUpdate.sendToUser('konfi', userId, 'events', 'update', { eventId: id, action: 'promoted' });
+        }
+      }
+
+      res.json({ message: 'Event erfolgreich aktualisiert', promoted_count: promotedUsers.length });
 
       // Live Update: Notify all konfis and admins about the event update
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
@@ -827,34 +882,51 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
   });
   
-  // Add participant to event (Admin only)
+  // Add participant to event (Admin only) - mit Transaktion gegen Race Conditions
   router.post('/:id/participants', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
     const { user_id, status = 'auto', timeslot_id = null } = req.body;
-    
+
     try {
-      
-      // 1. Get event details
-      const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
-      if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
-      
+      // Transaktion starten fuer Race-Condition-Schutz
+      await db.query('BEGIN');
+
+      // 1. Get event details (FOR UPDATE sperrt die Zeile)
+      const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
+      if (!event) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
       // 2. Validate user
       const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
-      if (!user) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
-      
+      if (!user) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
+
       // 3. Validate timeslot if provided
       let timeslot = null;
       if (event.has_timeslots) {
-        if (!timeslot_id) return res.status(400).json({ error: 'Zeitslot-Auswahl für dieses Event erforderlich' });
+        if (!timeslot_id) {
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: 'Zeitslot-Auswahl für dieses Event erforderlich' });
+        }
         const { rows: [ts] } = await db.query("SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
-        if (!ts) return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
+        if (!ts) {
+          await db.query('ROLLBACK');
+          return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
+        }
         timeslot = ts;
       }
-      
+
       // 4. Check if already booked
       const { rows: [existing] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2", [eventId, user_id]);
-      if (existing) return res.status(409).json({ error: 'Benutzer ist bereits für dieses Event angemeldet' });
-      
+      if (existing) {
+        await db.query('ROLLBACK');
+        return res.status(409).json({ error: 'Benutzer ist bereits für dieses Event angemeldet' });
+      }
+
       // 5. Determine final status
       let finalStatus = status;
       if (status === 'auto') {
@@ -864,7 +936,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         : "SELECT COUNT(*) as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'";
         const capacityParam = isTimeslotBooking ? timeslot.id : eventId;
         const maxCapacity = isTimeslotBooking ? timeslot.max_participants : event.max_participants;
-        
+
         const { rows: [capacityResult] } = await db.query(capacityQuery, [capacityParam]);
         const confirmedCount = parseInt(capacityResult.confirmed_count, 10);
 
@@ -878,25 +950,30 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
 
             if (waitlistCount >= event.max_waitlist_size) {
+              await db.query('ROLLBACK');
               return res.status(409).json({ error: 'Event und Warteliste sind voll' });
             }
             finalStatus = 'waitlist';
           } else {
+            await db.query('ROLLBACK');
             return res.status(409).json({ error: 'Event ist voll und Warteliste ist deaktiviert' });
           }
         } else {
           finalStatus = 'confirmed';
         }
       }
-      
+
       // 6. Create booking
       const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
       const { rows: [newBooking] } = await db.query(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id]);
-      
+
+      // Transaktion abschliessen
+      await db.query('COMMIT');
+
       const responseMessage = timeslot
       ? `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? '(waitlist)' : 'successfully'}`
       : `Participant added ${finalStatus === 'waitlist' ? 'to waitlist' : 'successfully'}`;
-      
+
       res.status(201).json({
         id: newBooking.id,
         status: finalStatus,
@@ -909,6 +986,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
 
     } catch (err) {
+      await db.query('ROLLBACK');
  console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Dieser Benutzer ist bereits für dieses Event angemeldet.' });
