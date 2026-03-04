@@ -1494,6 +1494,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
   });
 
   // Register for event
+  // HINWEIS: Dieser Endpunkt ist die primaere Konfi-Buchungsroute.
+  // events.js POST /:id/book ist die aeltere Route (wird vom Admin-Frontend genutzt).
+  // Beide verwenden einheitlich status='waitlist' fuer Wartelisten-Eintraege.
   router.post('/events/:id/register', verifyTokenRBAC, async (req, res) => {
     if (req.user.type !== 'konfi') {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
@@ -1504,11 +1507,15 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const eventId = req.params.id;
       const { timeslot_id } = req.body; // Optional timeslot for timeslot events
 
+      // Transaktion starten fuer Race-Condition-Schutz
+      await db.query('BEGIN');
+
       // Check if already registered
       const checkQuery = 'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2';
       const { rows: [existing] } = await db.query(checkQuery, [konfiId, eventId]);
 
       if (existing) {
+        await db.query('ROLLBACK');
         return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
       }
 
@@ -1538,13 +1545,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         const { rows: [existingKonfirmation] } = await db.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
 
         if (existingKonfirmation) {
+          await db.query('ROLLBACK');
           return res.status(409).json({
             error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.'
           });
         }
       }
 
-      // Get event details and current registration count
+      // Get event details and current registration count (FOR UPDATE sperrt die Event-Zeile)
       const eventQuery = `
         SELECT e.*,
                COUNT(eb.id) FILTER (WHERE eb.status = 'confirmed') as confirmed_count,
@@ -1553,11 +1561,24 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         LEFT JOIN event_bookings eb ON e.id = eb.event_id
         WHERE e.id = $1 AND e.organization_id = $2
         GROUP BY e.id
+        FOR UPDATE OF e
       `;
       const { rows: [event] } = await db.query(eventQuery, [eventId, req.user.organization_id]);
 
       if (!event) {
+        await db.query('ROLLBACK');
         return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Registrierungsfenster pruefen
+      const now = new Date();
+      if (event.registration_opens_at && now < new Date(event.registration_opens_at)) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Anmeldung noch nicht geoeffnet' });
+      }
+      if (event.registration_closes_at && now > new Date(event.registration_closes_at)) {
+        await db.query('ROLLBACK');
+        return res.status(400).json({ error: 'Anmeldung bereits geschlossen' });
       }
 
       // Check if event has timeslots and validate timeslot selection
@@ -1568,6 +1589,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       if (event.has_timeslots) {
         if (!timeslot_id) {
+          await db.query('ROLLBACK');
           return res.status(400).json({ error: 'Bitte wähle einen Zeitslot aus' });
         }
 
@@ -1578,6 +1600,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         );
 
         if (!timeslot) {
+          await db.query('ROLLBACK');
           return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
         }
 
@@ -1604,6 +1627,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       } else if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
         status = 'waitlist';
       } else {
+        await db.query('ROLLBACK');
         return res.status(400).json({
           error: 'Event ist voll und Warteliste ist auch voll'
         });
@@ -1617,6 +1641,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       `;
       const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId, timeslot_id || null, status]);
 
+      // Transaktion abschliessen
+      await db.query('COMMIT');
+
       const message = status === 'confirmed'
         ? 'Erfolgreich angemeldet'
         : `Auf Warteliste gesetzt (Platz ${waitlistCount + 1})`;
@@ -1628,18 +1655,19 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         timeslot_id: timeslot_id || null
       });
 
-      // Push-Notification an Konfi senden
+      // Push-Notification an Konfi senden (nach COMMIT)
       try {
         await PushService.sendEventRegisteredToKonfi(db, konfiId, event.name, event.event_date, status, eventId, selectedTimeslot);
       } catch (pushErr) {
- console.error('Error sending event registration push:', pushErr);
+        console.error('Error sending event registration push:', pushErr);
       }
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
- console.error('Database error in POST /events/:id/register:', err);
+      await db.query('ROLLBACK').catch(() => {});
+      console.error('Database error in POST /events/:id/register:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
