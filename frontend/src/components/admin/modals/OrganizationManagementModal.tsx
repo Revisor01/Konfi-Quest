@@ -360,7 +360,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {/* SEKTION: Organisations-Daten */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className="app-section-icon app-section-icon--organizations">
               <IonIcon icon={businessOutline} />
             </div>
             <IonLabel>Organisation</IonLabel>
@@ -397,7 +397,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {/* SEKTION: Kontakt */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className="app-section-icon app-section-icon--organizations">
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>Kontakt</IonLabel>
@@ -436,7 +436,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {/* SEKTION: Status */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className="app-section-icon app-section-icon--organizations">
               <IonIcon icon={shieldOutline} />
             </div>
             <IonLabel>Status</IonLabel>
@@ -466,7 +466,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {!isEditMode && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--users">
+              <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={personOutline} />
               </div>
               <IonLabel>Organisations-Administrator</IonLabel>
@@ -488,10 +488,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   </IonItem>
                 </IonList>
 
-                <IonItem lines="none" style={{ '--background': 'rgba(45, 211, 111, 0.08)', borderRadius: '10px', marginTop: '12px' }}>
-                  <IonIcon icon={shieldOutline} slot="start" style={{ color: '#2dd36f' }} />
+                <IonItem lines="none" style={{ '--background': 'rgba(102, 126, 234, 0.08)', borderRadius: '10px', marginTop: '12px' }}>
+                  <IonIcon icon={shieldOutline} slot="start" style={{ color: '#667eea' }} />
                   <IonLabel>
-                    <p style={{ color: '#2dd36f', margin: 0, fontWeight: '500', fontSize: '0.85rem' }}>
+                    <p style={{ color: '#667eea', margin: 0, fontWeight: '500', fontSize: '0.85rem' }}>
                       Der Administrator kann die gesamte Organisation verwalten
                     </p>
                   </IonLabel>
@@ -505,7 +505,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {isEditMode && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--users">
+              <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={personOutline} />
               </div>
               <IonLabel>Organisations-Administratoren</IonLabel>
@@ -513,7 +513,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 size="small"
                 fill="clear"
                 onClick={() => setShowAddAdmin(!showAddAdmin)}
-                style={{ '--color': '#2dd36f' }}
+                style={{ '--color': '#667eea' }}
               >
                 <IonIcon icon={addOutline} slot="start" />
                 Hinzufügen
@@ -529,10 +529,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         <IonItem style={{ '--background': '#f8f9fa', '--border-radius': '10px', marginBottom: '8px' }}>
                           <div slot="start" style={{
                             width: '40px', height: '40px', borderRadius: '50%',
-                            backgroundColor: admin.is_active ? '#2dd36f' : '#6b7280',
+                            backgroundColor: admin.is_active ? '#667eea' : '#6b7280',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'white', fontWeight: '700', fontSize: '0.9rem',
-                            boxShadow: admin.is_active ? '0 2px 8px rgba(45, 211, 111, 0.3)' : 'none'
+                            boxShadow: admin.is_active ? '0 2px 8px rgba(102, 126, 234, 0.3)' : 'none'
                           }}>
                             {getInitials(admin.display_name)}
                           </div>
@@ -548,7 +548,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         {/* Passwort zurücksetzen für diesen Admin */}
                         <div style={{ marginLeft: '48px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <IonIcon icon={keyOutline} style={{ color: '#2dd36f', fontSize: '0.9rem' }} />
+                            <IonIcon icon={keyOutline} style={{ color: '#667eea', fontSize: '0.9rem' }} />
                             <span style={{ fontWeight: '500', fontSize: '0.85rem', color: '#666' }}>Passwort zurücksetzen</span>
                           </div>
                           <div style={{ display: 'flex', gap: '8px' }}>
@@ -573,7 +573,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                               size="small"
                               onClick={() => handleResetPassword(admin.id)}
                               disabled={selectedAdminId !== admin.id || !newPassword.trim() || resettingPassword}
-                              style={{ '--background': '#2dd36f', '--background-activated': '#16a34a' }}
+                              style={{ '--background': '#667eea', '--background-activated': '#5a67d8' }}
                             >
                               {resettingPassword && selectedAdminId === admin.id ? <IonSpinner name="crescent" /> : 'Setzen'}
                             </IonButton>
@@ -591,7 +591,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
                 {/* Neuen Admin hinzufügen */}
                 {showAddAdmin && (
-                  <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(45, 211, 111, 0.05)', borderRadius: '12px', border: '1px dashed #2dd36f' }}>
+                  <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(102, 126, 234, 0.05)', borderRadius: '12px', border: '1px dashed #667eea' }}>
                     <h4 style={{ margin: '0 0 12px 0', fontSize: '0.95rem', fontWeight: '600', color: '#333' }}>Neuen Administrator hinzufügen</h4>
                     <IonList style={{ background: 'transparent' }} lines="none">
                       <IonItem style={{ '--background': 'white', '--border-radius': '10px', marginBottom: '8px' }}>
@@ -640,7 +640,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         expand="block"
                         onClick={handleAddAdmin}
                         disabled={!newAdminData.display_name.trim() || !newAdminData.username.trim() || !newAdminData.password.trim() || addingAdmin}
-                        style={{ flex: 1, '--background': '#2dd36f', '--background-activated': '#16a34a' }}
+                        style={{ flex: 1, '--background': '#667eea', '--background-activated': '#5a67d8' }}
                       >
                         {addingAdmin ? <IonSpinner name="crescent" /> : 'Hinzufügen'}
                       </IonButton>
@@ -656,7 +656,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
         {isEditMode && organization && (
           <IonList inset={true} className="app-modal-section">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--users">
+              <div className="app-section-icon app-section-icon--organizations">
                 <IonIcon icon={businessOutline} />
               </div>
               <IonLabel>Statistiken</IonLabel>
@@ -665,18 +665,18 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
               <IonCardContent style={{ padding: '16px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                    <IonIcon icon={people} style={{ fontSize: '1.2rem', color: '#34c759', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2dd36f' }}>{organization.konfi_count || 0}</div>
+                    <IonIcon icon={people} style={{ fontSize: '1.2rem', color: '#667eea', display: 'block', margin: '0 auto 4px' }} />
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.konfi_count || 0}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Konfis</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
                     <IonIcon icon={personOutline} style={{ fontSize: '1.2rem', color: '#f59e0b', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2dd36f' }}>{organization.user_count || 0}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.user_count || 0}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Team</div>
                   </div>
                   <div style={{ background: '#f8f9fa', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
                     <IonIcon icon={flash} style={{ fontSize: '1.2rem', color: '#dc2626', display: 'block', margin: '0 auto 4px' }} />
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2dd36f' }}>{organization.event_count || 0}</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#667eea' }}>{organization.event_count || 0}</div>
                     <div style={{ fontSize: '0.75rem', color: '#666' }}>Events</div>
                   </div>
                 </div>
