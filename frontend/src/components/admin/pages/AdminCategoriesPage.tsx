@@ -156,7 +156,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         {/* Kategorie Details - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--activities">
+            <div className="app-section-icon app-section-icon--categories">
               <IonIcon icon={pricetag} />
             </div>
             <IonLabel>Kategorie Details</IonLabel>
@@ -338,7 +338,7 @@ const AdminCategoriesPage: React.FC = () => {
           title="Kategorien"
           subtitle="Aktivitäten und Events"
           icon={pricetag}
-          preset="activities"
+          preset="users"
           stats={[
             { value: categories.length, label: 'GESAMT' }
           ]}
@@ -349,7 +349,7 @@ const AdminCategoriesPage: React.FC = () => {
           icon={pricetagOutline}
           title="Kategorien"
           count={categories.length}
-          iconColorClass="activities"
+          iconColorClass="categories"
           emptyIcon={pricetag}
           emptyTitle="Keine Kategorien gefunden"
           emptyMessage="Noch keine Kategorien angelegt"
@@ -383,12 +383,12 @@ const AdminCategoriesPage: React.FC = () => {
                         }}
                       >
                         <div
-                          className="app-list-item app-list-item--activities"
+                          className="app-list-item app-list-item--categories"
                           style={{ width: '100%' }}
                         >
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
-                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                                 <IonIcon icon={pricetag} />
                               </div>
                               <div className="app-list-item__content">

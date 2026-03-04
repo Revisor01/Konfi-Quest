@@ -134,6 +134,7 @@ ion-item.app-list-item:last-child {
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: #5b21b6; }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #2dd36f; }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
+.app-list-item--categories, ion-item.app-list-item--categories { border-left-color: #0ea5e9; }
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
 .app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
 
@@ -318,6 +319,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--level { background-color: #5b21b6; }
 .app-section-icon--organizations { background-color: #2dd36f; }
 .app-section-icon--badges { background-color: #f59e0b; }
+.app-section-icon--categories { background-color: #0ea5e9; }
 .app-section-icon--requests { background-color: #047857; }
 .app-section-icon--jahrgang { background-color: #007aff; }
 .app-section-icon--settings { background-color: #667eea; }
@@ -380,6 +382,7 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--level { background-color: #5b21b6; }
 .app-icon-circle--organizations { background-color: #2dd36f; }
 .app-icon-circle--badges { background-color: #f59e0b; }
+.app-icon-circle--categories { background-color: #0ea5e9; }
 .app-icon-circle--jahrgang { background-color: #007aff; }
 .app-icon-circle ion-icon {
   color: white;

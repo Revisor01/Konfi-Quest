@@ -185,10 +185,10 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--jahrgang app-settings-item"
+                  className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--jahrgang">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={qrCode} />
                   </div>
                   <div className="app-flex-fill">
@@ -254,10 +254,10 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--badges app-settings-item"
+                  className="app-list-item app-list-item--categories app-settings-item"
                   onClick={() => history.push('/admin/settings/categories')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
                     <IonIcon icon={pricetag} />
                   </div>
                   <div className="app-flex-fill">

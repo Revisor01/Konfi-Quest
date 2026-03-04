@@ -184,7 +184,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         emptyIconColor="#059669"
       >
         {filteredAndSortedActivities.map((activity, index) => {
-              const typeColor = '#059669';
+              const typeColor = activity.type === 'gottesdienst' ? '#007aff' : '#059669';
 
               return (
               <IonItemSliding
