@@ -48,8 +48,8 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [ ] **SET-05**: Kategorien eigene Farbe zur Abgrenzung von Badges
 - [ ] **SET-06**: Level-Modal Icon-Farbe Lila + iOS Backdrop-Effekt
 - [ ] **SET-07**: Profil-Modals Icons und Funktionsbeschreibung auf Lila
-- [ ] **SET-08**: AdminBadgesPage Zurueck-Button oben links
-- [ ] **SET-09**: Badges-Sektionen Oberkategorie-Icons in Zwischenueberschriften
+- [x] **SET-08**: AdminBadgesPage Zurueck-Button oben links
+- [x] **SET-09**: Badges-Sektionen Oberkategorie-Icons in Zwischenueberschriften
 
 ### Super-Admin
 
@@ -142,8 +142,8 @@ Geplante Milestones nach v1.3:
 | SET-05 | Phase 18 | Pending |
 | SET-06 | Phase 18 | Pending |
 | SET-07 | Phase 18 | Pending |
-| SET-08 | Phase 18 | Pending |
-| SET-09 | Phase 18 | Pending |
+| SET-08 | Phase 18 | Complete |
+| SET-09 | Phase 18 | Complete |
 | SUA-01 | Phase 19 | Pending |
 | SUA-02 | Phase 19 | Pending |
 | SUA-03 | Phase 19 | Pending |

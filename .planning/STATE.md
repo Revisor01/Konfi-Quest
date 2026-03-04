@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Layout-Polishing
 status: unknown
-last_updated: "2026-03-03T22:17:02.780Z"
+last_updated: "2026-03-04T21:58:21Z"
 progress:
   total_phases: 7
   completed_phases: 7
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-03)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** Phase 17.1 -- Checkbox-Farben + Einmalpasswort Fixes
+**Current focus:** Phase 18 -- Settings-Bereich
 
 ## Current Position
 
-Phase: 17.1 (Checkbox-Farben + Einmalpasswort Fixes) -- KOMPLETT
-Plan: 2 of 2 in current phase (komplett)
-Status: Phase 17.1 komplett (Checkbox-Farben dynamisch + Einmalpasswort)
-Last activity: 2026-03-03 -- Phase 17.1 Plan 01 ausgefuehrt (FIX-01)
+Phase: 18 (Settings-Bereich) -- IN PROGRESS
+Plan: 3 of 3 in current phase (Plan 03 komplett)
+Status: Phase 18 Plan 03 komplett (AdminBadgesPage Zurueck-Button + Oberkategorie-Icons)
+Last activity: 2026-03-04 -- Phase 18 Plan 03 ausgefuehrt (SET-08, SET-09)
 
-Progress: [########.#] 87% (v1.3: 7/8 Phasen, Phase 12-17 + 17.1 komplett)
+Progress: [########.#] 87% (v1.3: Phase 12-17.1 komplett, Phase 18 in progress)
 
 ## Performance Metrics
 
@@ -54,6 +54,8 @@ Progress: [########.#] 87% (v1.3: 7/8 Phasen, Phase 12-17 + 17.1 komplett)
 | 17 | 03 | 1min | 2 | 2 |
 | 17.1 | 01 | 3min | 1 | 8 |
 | 17.1 | 02 | 1min | 2 | 2 |
+| 18 | 02 | 1min | 2 | 2 |
+| 18 | 03 | 1min | 2 | 2 |
 
 ## Accumulated Context
 
@@ -83,6 +85,8 @@ Relevant for v1.3:
 - [Phase 17]: Checkbox links positioniert mit flachem Flex-Layout in ActivityModal (iOS-native Pattern)
 - [Phase 17.1]: Einmalpasswort-Pattern: subHeader fuer prominente Passwort-Anzeige in IonAlert statt HTML in message
 - [Phase 17.1]: Checkbox-Farbe = Kontext-Farbe (borderLeftColor/typeColor), nicht hardcoded tuerkis (FIX-01)
+- [Phase 18]: Level-Modal Submit-Button nutzt eigene --level Klasse statt --konfi (gleiche Farbe, semantisch getrennt)
+- [Phase 18]: getCriteriaTypeIcon Mapping fuer 13 Badge criteria_types auf individuelle ionicons (SET-09)
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: Completed 17.1-01-PLAN.md (Phase 17.1 komplett)
-Resume file: .planning/phases/17.1-checkbox-farben-einmalpasswort-fixes/17.1-01-SUMMARY.md
+Last session: 2026-03-04
+Stopped at: Completed 18-03-PLAN.md (AdminBadgesPage Zurueck-Button + Oberkategorie-Icons)
+Resume file: .planning/phases/18-settings-bereich/18-03-SUMMARY.md
