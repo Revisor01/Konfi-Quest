@@ -47,6 +47,8 @@ Progress: [##########] 100%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [21-01] getISOWeeksInYear Dec-28-Methode fuer korrekte Jahreswechsel-Behandlung
+- [21-01] activity_combination filter+length statt every() fuer criteria_value Mindestanzahl
 - [21-02] Alle 9 Umlaut-Ersetzungen in defaultBadges korrigiert
 - [20-02] FOR UPDATE OF e fuer Row-Level-Locking bei Event-Registrierung
 - [20-02] Nachrueck-Logik nach DELETE aber vor Response/Logging eingefuegt
@@ -65,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Plan 21-02 (Default-Badges Umlaute) abgeschlossen
-Resume file: .planning/phases/21-badge-logik-debug/21-02-SUMMARY.md
+Stopped at: Phase 21 komplett -- Plan 21-01 (Badge-Kriterien-Logik) und 21-02 (Default-Badges) abgeschlossen
+Resume file: .planning/phases/21-badge-logik-debug/21-01-SUMMARY.md

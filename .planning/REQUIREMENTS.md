@@ -20,10 +20,10 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 ### Badge-Logik
 
-- [ ] **BDG-01**: Alle 13 Badge-Kriterium-Typen funktionieren korrekt
-- [ ] **BDG-02**: Streak-Berechnung funktioniert bei Jahreswechsel (Woche 52/53)
-- [ ] **BDG-03**: `category_activities` zaehlt korrekt ueber Activity- und Event-Kategorien
-- [ ] **BDG-04**: `bonus_points`-Kriterium ist klar dokumentiert (zaehlt Vergaben, nicht Summe)
+- [x] **BDG-01**: Alle 13 Badge-Kriterium-Typen funktionieren korrekt
+- [x] **BDG-02**: Streak-Berechnung funktioniert bei Jahreswechsel (Woche 52/53)
+- [x] **BDG-03**: `category_activities` zaehlt korrekt ueber Activity- und Event-Kategorien
+- [x] **BDG-04**: `bonus_points`-Kriterium ist klar dokumentiert (zaehlt Vergaben, nicht Summe)
 - [x] **BDG-05**: Default-Badges bei Org-Erstellung verwenden korrekte Umlaute
 
 ### Punkte-Vergabe
@@ -77,10 +77,10 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 | EVT-06 | Phase 20 | Complete |
 | EVT-07 | Phase 20 | Complete |
 | EVT-08 | Phase 20 | Complete |
-| BDG-01 | Phase 21 | Pending |
-| BDG-02 | Phase 21 | Pending |
-| BDG-03 | Phase 21 | Pending |
-| BDG-04 | Phase 21 | Pending |
+| BDG-01 | Phase 21 | Complete |
+| BDG-02 | Phase 21 | Complete |
+| BDG-03 | Phase 21 | Complete |
+| BDG-04 | Phase 21 | Complete |
 | BDG-05 | Phase 21 | Complete |
 | PNK-01 | Phase 22 | Pending |
 | PNK-02 | Phase 22 | Pending |
