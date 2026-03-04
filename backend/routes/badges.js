@@ -79,7 +79,7 @@ const CRITERIA_TYPES = {
   bonus_points: { 
     label: "Bonuspunkte", 
     description: "Anzahl erhaltener Bonuspunkte",
-    help: "Badge wird vergeben, wenn die angegebene Anzahl von Bonuspunkt-Einträgen erhalten wurde (unabhängig von der Höhe der Bonuspunkte). Beispiel: Wert 2 = mindestens 2 Bonuspunkt-Vergaben."
+    help: "Badge wird vergeben, wenn die angegebene Anzahl von Bonuspunkt-Vergaben erhalten wurde (es zählt die Anzahl der Vergaben, nicht die Punktesumme). Beispiel: Wert 2 = mindestens 2 Bonuspunkt-Vergaben erhalten."
   }
 };
 
