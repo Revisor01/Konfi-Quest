@@ -34,7 +34,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const query = `
         SELECT e.*,
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as waitlist_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
                 COUNT(DISTINCT eb.id) as total_participants,
                 CASE 
@@ -55,7 +55,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                     CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
                   ) > 0 AND COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) >= (
                     CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
-                  ) AND (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
+                  ) AND (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
                 END as registration_status
         FROM events e
@@ -130,7 +130,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const query = `
         SELECT e.*, 
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' THEN eb.id END) as registered_count,
-                COUNT(DISTINCT CASE WHEN eb.status = 'pending' THEN eb.id END) as waitlist_count,
+                COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
                 STRING_AGG(DISTINCT c.name, ',') as category_names,
@@ -251,11 +251,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         LEFT JOIN event_timeslots et ON eb.timeslot_id = et.id
         WHERE eb.event_id = $1 AND u.organization_id = $2
         ORDER BY 
-          CASE eb.status 
-            WHEN 'confirmed' THEN 1 
-            WHEN 'pending' THEN 2 
-            ELSE 3 
-          END, 
+          CASE eb.status
+            WHEN 'confirmed' THEN 1
+            WHEN 'waitlist' THEN 2
+            ELSE 3
+          END,
           eb.created_at ASC
       `;
       const { rows: participants } = await db.query(participantsQuery, [eventId, req.user.organization_id]);
@@ -320,7 +320,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // Calculate correct registered_count for timeslot events
       const registeredCount = participants.filter(p => p.status === 'confirmed').length;
-      const pendingCount = participants.filter(p => p.status === 'pending').length;
+      const pendingCount = participants.filter(p => p.status === 'waitlist').length;
       
       // For timeslot events, calculate total capacity and availability
       let totalCapacity = event.max_participants;
@@ -567,7 +567,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       // Check for pending bookings (waitlist)
-      const { rows: [pendingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'pending'", [id]);
+      const { rows: [pendingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
       
       if (pendingUsage.count > 0) {
         await db.query('ROLLBACK');
@@ -717,11 +717,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
 
       const { rows: [counts] } = await db.query(
-        "SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'pending') as pending_count FROM event_bookings WHERE event_id = $1",
+        "SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'waitlist') as waitlist_count FROM event_bookings WHERE event_id = $1",
         [eventId]
       );
       const confirmedCount = parseInt(counts.confirmed_count, 10);
-      const pendingCount = parseInt(counts.pending_count, 10);
+      const waitlistCount = parseInt(counts.waitlist_count, 10);
 
       let bookingStatus = 'confirmed';
       let message = 'Erfolgreich angemeldet';
@@ -732,11 +732,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           await db.query('ROLLBACK');
           return res.status(400).json({ error: 'Das Event ist leider bereits ausgebucht' });
         }
-        if (pendingCount >= event.max_waitlist_size) {
+        if (waitlistCount >= event.max_waitlist_size) {
           await db.query('ROLLBACK');
           return res.status(400).json({ error: 'Das Event und die Warteliste sind leider voll' });
         }
-        bookingStatus = 'pending';
+        bookingStatus = 'waitlist';
         message = 'Auf die Warteliste gesetzt';
       }
 
@@ -788,8 +788,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (booking.status === 'confirmed') {
         // For timeslot events, only promote from the same timeslot's waitlist
         const query = booking.timeslot_id
-          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'pending' ORDER BY created_at ASC LIMIT 1"
-          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1";
+          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
+          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
         const params = booking.timeslot_id ? [eventId, booking.timeslot_id] : [eventId];
 
         const { rows: [nextInLine] } = await db.query(query, params);
@@ -872,15 +872,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         if (maxCapacity > 0 && confirmedCount >= maxCapacity) {
           if (event.waitlist_enabled) {
             const waitlistQuery = isTimeslotBooking
-            ? "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'pending'"
-            : "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = $1 AND status = 'pending'";
+            ? "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'waitlist'"
+            : "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'";
             const { rows: [waitlistResult] } = await db.query(waitlistQuery, [capacityParam]);
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
 
             if (waitlistCount >= event.max_waitlist_size) {
               return res.status(409).json({ error: 'Event und Warteliste sind voll' });
             }
-            finalStatus = 'pending';
+            finalStatus = 'waitlist';
           } else {
             return res.status(409).json({ error: 'Event ist voll und Warteliste ist deaktiviert' });
           }
@@ -894,8 +894,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       const { rows: [newBooking] } = await db.query(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id]);
       
       const responseMessage = timeslot
-      ? `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'pending' ? '(waitlist)' : 'successfully'}`
-      : `Participant added ${finalStatus === 'pending' ? 'to waitlist' : 'successfully'}`;
+      ? `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? '(waitlist)' : 'successfully'}`
+      : `Participant added ${finalStatus === 'waitlist' ? 'to waitlist' : 'successfully'}`;
       
       res.status(201).json({
         id: newBooking.id,
@@ -940,8 +940,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (booking.status === 'confirmed') {
         // For timeslot events, only promote from the same timeslot's waitlist
         const query = booking.timeslot_id
-          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'pending' ORDER BY created_at ASC LIMIT 1"
-          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'pending' ORDER BY created_at ASC LIMIT 1";
+          ? "SELECT id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1"
+          : "SELECT id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT 1";
         const params = booking.timeslot_id ? [eventId, booking.timeslot_id] : [eventId];
 
         const { rows: [nextInLine] } = await db.query(query, params);
@@ -987,10 +987,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       const query = `
-        SELECT eb.*, e.name as event_name, e.event_date, e.location
+        SELECT eb.*, eb.status, e.name as event_name, e.event_date, e.location
         FROM event_bookings eb
         JOIN events e ON eb.event_id = e.id
-        WHERE eb.user_id = $1 AND eb.status = 'confirmed'
+        WHERE eb.user_id = $1 AND eb.status IN ('confirmed', 'waitlist')
         ORDER BY e.event_date ASC
       `;
       const { rows: bookings } = await db.query(query, [req.user.id]);
@@ -1173,8 +1173,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const { status } = req.body;
     
     try {
-      if (!['confirmed', 'pending'].includes(status)) {
-        return res.status(400).json({ error: 'Ungültiger Status. Muss bestätigt oder ausstehend sein' });
+      if (!['confirmed', 'waitlist'].includes(status)) {
+        return res.status(400).json({ error: 'Ungültiger Status. Muss bestätigt oder Warteliste sein' });
       }
       
       
@@ -1409,7 +1409,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         SELECT DISTINCT eb.user_id, u.display_name, u.username
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
-        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'pending')
+        WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist')
       `, [eventId]);
       
       // Send push notifications to all participants
