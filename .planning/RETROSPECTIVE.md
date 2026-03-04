@@ -90,6 +90,81 @@
 
 ---
 
+## Milestone: v1.2 -- Polishing + Tech Debt
+
+**Shipped:** 2026-03-02
+**Phases:** 4 | **Plans:** 6 | **Sessions:** ~3
+
+### What Was Built
+- Super-Admin TabBar auf 2 Tabs reduziert
+- ActivityRings 3. Runde Strichstaerke und Bright-Farbvarianten
+- Dashboard Design-Review (Begruessing, Glass-Chips, Tageslosung)
+- rateLimitMessage UI-Wiring + console.log Cleanup (325 Statements)
+- app-condense-toolbar auf alle 20 Headers, EventDetailView BEM-Klassen
+- CLAUDE.md komplett neu geschrieben
+
+### What Worked
+- Tech Debt gezielt aus v1.1 aufgeloest (condense-toolbar, Inline-Styles, rateLimitMessage)
+- Kleine Plans mit klarem Scope (~6.7min/Plan Durchschnitt)
+
+### What Was Inefficient
+- Kein eigener Milestone-Audit -- haette Luecken frueher erkannt
+- v1.2 Retrospektive fehlte -- erst bei v1.3 nachgeholt
+
+### Key Lessons
+1. Tech-Debt-Milestones halten Codebase-Qualitaet konstant
+2. Milestone-Audit auch bei kleinen Milestones sinnvoll
+
+### Cost Observations
+- Model mix: ~80% opus, ~20% sonnet
+- Sessions: ~3 Sessions an 1 Tag
+- Notable: 6 Plans in ~40min (Durchschnitt 6.7min/Plan)
+
+---
+
+## Milestone: v1.3 -- Layout-Polishing
+
+**Shipped:** 2026-03-04
+**Phases:** 9 | **Plans:** 18 | **Sessions:** ~6
+
+### What Was Built
+- Admin-Modal-Bugs behoben (Participant, Badges, QR-Code) + sicheres Einmalpasswort-System
+- Globale UI-Konsistenz: Listen-Icons 32px, Fokus-Rahmen entfernt, Checkbox-Farben dynamisch
+- Konfi-Views: Tab "Start", EmptyStates, PointsHistory 3+2, Profil Lila, Antrags-Icons Gruen
+- Admin-Views: Corner-Badges, Solid-Icons, Standard-Stepper, Beschreibungs-Cards, Checkbox links
+- Settings: Struktur Konto/Verwaltung/Inhalt, Kategorien Sky-Blue, Gottesdienst Blau, Badges Oberkategorie-Icons
+- Super-Admin: TabBar entfernt, Vollbild-Layout, mattes Blau (#667eea), Logout-Button
+
+### What Worked
+- Systematischer View-fuer-View Durchgang: Alle Issues in einem Audit erfasst, dann nach Bereich gruppiert
+- Dezimal-Phase (17.1) fuer dringende Fixes zwischendurch eingefuegt -- sauberer als Ad-hoc-Aenderungen
+- Plan-Metriken zeigen ~1.4min/Plan Durchschnitt -- kleinere, fokussierte Plans sind deutlich schneller
+- 48/48 Requirements alle complete -- kein einziger Gap im finalen Audit
+
+### What Was Inefficient
+- Initiales Audit zeigte 41/48 Requirements weil Phase 19 noch nicht ausgefuehrt war -- Audit-Timing besser am Ende
+- SUMMARY-Dateien haben kein `one_liner` Feld -- summary-extract Tool konnte Accomplishments nicht extrahieren
+- Phase Details in ROADMAP.md blieben vollstaendig statt nach Archivierung bereinigt zu werden
+
+### Patterns Established
+- getCriteriaTypeIcon Mapping: 13 Badge criteria_types auf individuelle ionicons
+- Kategorien-Farbe Sky-Blue (#0ea5e9) als eigene CSS-Klasse getrennt von Activities/Badges
+- Super-Admin IonRouterOutlet statt IonTabs fuer tabfreie Layouts
+- subHeader statt HTML-in-message fuer IonAlert-Inhalte
+
+### Key Lessons
+1. Kleine Plans (~1min) mit klarem 1-2 Task Scope sind effizienter als groessere Multi-Task Plans
+2. Systematischer Audit VOR Milestone-Start liefert praezise Issue-Liste fuer Requirements
+3. Dezimal-Phasen (17.1) gut fuer dringende Zwischendurch-Fixes
+4. Milestone-Audit erst ausfuehren wenn alle Phasen fertig sind
+
+### Cost Observations
+- Model mix: ~85% opus, ~15% sonnet (verifier)
+- Sessions: ~6 Sessions ueber 2 Tage
+- Notable: 18 Plans in ~25min (Durchschnitt ~1.4min/Plan), schnellster Milestone bisher
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -98,10 +173,14 @@
 |-----------|----------|--------|-------|----------|------------|
 | v1.0 | ~5 | 2 | 5 | ~4min | GSD Workflow etabliert |
 | v1.1 | ~8 | 5 | 17 | ~7.4min | CSS-First + Wave-Parallelisierung skaliert |
+| v1.2 | ~3 | 4 | 6 | ~6.7min | Tech Debt gezielt aufloesen |
+| v1.3 | ~6 | 9 | 18 | ~1.4min | Kleine fokussierte Plans, systematischer Audit |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Wave-Parallelisierung spart signifikant Zeit bei unabhaengigen Plans (v1.0 + v1.1)
 2. Research vor Planung fuehrt zu praeziseren Plans (v1.0), CSS-Klassen-First ebenso (v1.1)
-3. Integration-Checks und Audits am Ende finden Gaps die Phase-Verifikation uebersieht (v1.0 + v1.1)
-4. Quick-Fixes fuer Minor-Gaps effizienter als eigene Phase erstellen (v1.1)
+3. Integration-Checks und Audits am Ende finden Gaps die Phase-Verifikation uebersieht (v1.0 + v1.1 + v1.3)
+4. Kleinere Plans (1-2 Tasks) sind deutlich schneller als Multi-Task Plans (v1.2 + v1.3)
+5. Systematischer View-Audit vor Milestone liefert praezise Issue-Listen (v1.3)
+6. Tech-Debt-Milestones halten Codebase-Qualitaet konstant (v1.2)

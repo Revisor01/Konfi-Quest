@@ -4,11 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.3 Layout-Polishing
+## Current State
 
-**Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
-
-**Current State:** v1.0, v1.1 und v1.2 shipped. App ist funktional komplett. v1.3 raeaumt die letzten visuellen Inkonsistenzen auf bevor weitere Features kommen.
+v1.0-v1.3 shipped. App ist funktional komplett und visuell konsistent. Alle Views, Modals und Bereiche (Admin, Konfi, Settings, Super-Admin) folgen dem Design-System. Bereit fuer naechsten Milestone.
 
 ## Core Value
 
@@ -57,17 +55,17 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - app-condense-toolbar auf alle 20 collapsible Headers -- v1.2
 - EventDetailView Inline-Styles durch 17 BEM CSS-Klassen ersetzt -- v1.2
 - CLAUDE.md komplett neu geschrieben mit aktuellem Projektstatus -- v1.2
+- Globale Listen-Icons 32px mit Top-Alignment, Fokus-Rahmen entfernt -- v1.3
+- Checkbox-Farben dynamisch (Kontext-Farbe statt hardcoded Tuerkis) -- v1.3
+- Sicheres Einmalpasswort-System mit Kopier-Button -- v1.3
+- Konfi-Views poliert (Start-Tab, EmptyStates, PointsHistory 3+2, Profil Lila) -- v1.3
+- Admin-Views vereinheitlicht (Corner-Badges, Solid-Icons, Stepper, Beschreibungs-Cards) -- v1.3
+- Settings ueberarbeitet (Konto/Verwaltung/Inhalt, Kategorien Sky-Blue, Badges Oberkategorie-Icons) -- v1.3
+- Super-Admin komplett neu (kein TabBar, Vollbild, mattes Blau, Logout-Button) -- v1.3
 
 ### Active
 
-- [ ] Globale Listen-Icons kleiner und oben positioniert
-- [ ] Auswahl-Rahmen (Fokus-Border) in allen Modals/Listen entfernt
-- [ ] Farbkonsistenz in allen Views und Modals
-- [ ] Super-Admin komplett ueberarbeitet (keine TabBar, nur Organisationen)
-- [ ] Konfi-Passwort-Management sicher (Einmalpasswort statt Klartext-Anzeige)
-- [ ] Settings-Seite Struktur und Farben ueberarbeitet
-- [ ] Auth-Seiten Bugs behoben (Mail, Unicode, Layout)
-- [ ] Fehlende EmptyStates, Back-Links und Verlinkungen ergaenzt
+(Naechster Milestone definiert neue Requirements)
 
 ### Out of Scope
 
@@ -85,8 +83,9 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.0 shipped: Backend Security Hardening + Theme-Stabilisierung (2 Phasen, 5 Plans)
 - v1.1 shipped: Design-Konsistenz ueber alle Admin- und Konfi-Bereiche (5 Phasen, 17 Plans, -1227 Netto-Zeilen)
 - v1.2 shipped: Polishing + Tech Debt (4 Phasen, 6 Plans, 78 Dateien geaendert)
-- v1.3 in Arbeit: Layout-Polishing (45 Issues aus systematischem View-fuer-View Durchgang)
-- Gesamt: 11 Phasen, 28 Plans ueber 3 Milestones shipped
+- v1.3 shipped: Layout-Polishing (9 Phasen, 18 Plans, 48 Requirements, 65 Dateien geaendert)
+- Gesamt: 20 Phasen, 46 Plans ueber 4 Milestones shipped
+- Codebase: ~34.259 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
 - PostgreSQL-Migration: Alle 15 Backend-Routes vollstaendig migriert
@@ -126,6 +125,12 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Custom Event fuer Rate-Limit Alerts | Globaler 429-Handler ueber Axios-Interceptor und Custom Event | Bestaetigt v1.2 |
 | BEM-Klassen fuer EventDetailView | 17 app-event-detail__* Klassen statt Inline-Styles | Bestaetigt v1.2 |
 | CLAUDE.md als kompaktes Arbeitsdokument | Nur aktuell relevante Infos, keine historischen Details | Bestaetigt v1.2 |
+| Dynamische Checkbox-Farben statt hardcoded | Kontext-Farbe (typeColor) statt einheitlich Tuerkis | Bestaetigt v1.3 |
+| Einmalpasswort-System mit subHeader-Alert | Prominente Passwort-Anzeige ohne HTML in IonAlert | Bestaetigt v1.3 |
+| Activities-Gruen #047857 statt #059669 | Bessere Lesbarkeit in Headers | Bestaetigt v1.3 |
+| Kategorien Sky-Blue #0ea5e9 | Eigene Farbe statt Activities/Badges fuer Abgrenzung | Bestaetigt v1.3 |
+| Super-Admin ohne IonTabs | Nur IonRouterOutlet fuer tabfreies Vollbild-Layout | Bestaetigt v1.3 |
+| Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
 
 ---
-*Last updated: 2026-03-03 after v1.3 milestone start*
+*Last updated: 2026-03-04 after v1.3 milestone*

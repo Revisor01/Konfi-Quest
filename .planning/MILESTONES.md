@@ -1,20 +1,24 @@
 # Milestones
 
-## v1.3 Layout-Polishing (In Progress)
+## v1.3 Layout-Polishing (Shipped: 2026-03-04)
 
-**Phases planned:** 8 Phasen (12-19), Plans TBD
-**Requirements:** 46 (GUI: 5, KUI: 11, AUI: 7, SET: 9, SUA: 7, BUG: 6, SEC: 1)
-**Goal:** Systematischer Durchgang aller Views und Modals -- Farben, Umrandungen, fehlende Back-Links, Icon-Groessen, Auswahl-Rahmen, Bugs und Design-Inkonsistenzen beseitigen.
+**Phases completed:** 9 Phasen (12-19 + 17.1), 18 Plans
+**Timeline:** 2026-03-03 bis 2026-03-04 (2 Tage)
+**Stats:** 65 files changed, 4654 insertions, 637 deletions
+**Git range:** Phase 12 bis Phase 19 (59 Commits)
+**Requirements:** 48/48 (GUI: 5, KUI: 11, AUI: 7, SET: 9, SUA: 7, BUG: 6, FIX: 2, SEC: 1)
 
-**Phase-Struktur:**
-- Phase 12: Bug-Fixes + Sicherheit (7 reqs)
-- Phase 13: Globale UI-Anpassungen (5 reqs)
-- Phase 14: Konfi Views -- Dashboard, Events, Badges (4 reqs)
-- Phase 15: Konfi Views -- Antraege (3 reqs)
-- Phase 16: Konfi Views -- Profil + Verlinkungen (4 reqs)
-- Phase 17: Admin Views Polishing (7 reqs)
-- Phase 18: Settings-Bereich (9 reqs)
-- Phase 19: Super-Admin Ueberarbeitung (7 reqs)
+**Key accomplishments:**
+- Admin-Modal-Bugs behoben (Participant, Badges, QR-Code) + sicheres Einmalpasswort-System mit Kopier-Button
+- Globale UI-Konsistenz: Listen-Icons 32px/Top-Aligned, Fokus-Rahmen entfernt, Checkbox-Farben vereinheitlicht
+- Konfi-Views poliert: Tab "Start", EmptyStates, PointsHistory 3+2 Layout, Profil Lila, Antrags-Icons Gruen
+- Admin-Views vereinheitlicht: Corner-Badges, Solid-Icons, Standard-Stepper, Beschreibungs-Cards, Checkbox links
+- Settings-Bereich ueberarbeitet: Struktur (Konto/Verwaltung/Inhalt), Kategorien Sky-Blue, Gottesdienst Blau, Badges mit Oberkategorie-Icons
+- Super-Admin komplett neu: TabBar entfernt, Vollbild-Layout, mattes Blau (#667eea), Logout-Button, OrganizationManagementModal
+
+**v1.2 Tech Debt aufgeloest:**
+- Checkbox-Farben von hardcoded Tuerkis auf dynamische Kontext-Farben
+- Einmalpasswort-Alert ohne HTML-Tags (subHeader statt HTML in message)
 
 ---
 
