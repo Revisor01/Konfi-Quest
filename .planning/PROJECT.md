@@ -4,9 +4,16 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current State
+## Current Milestone: v1.4 Logik-Debug
 
-v1.0-v1.3 shipped. App ist funktional komplett und visuell konsistent. Alle Views, Modals und Bereiche (Admin, Konfi, Settings, Super-Admin) folgen dem Design-System. Bereit fuer naechsten Milestone.
+**Goal:** Systematischer Debug aller Kern-Logiken (Events, Badges, Punkte, Rechte) als Grundlage fuer Push-Benachrichtigungen
+
+**Target features:**
+- Event-Logik: Buchung, Warteliste, Nachruecken, Kapazitaetsaenderungen, Timeslots, Stornierung
+- Badge-Logik: Alle Badges systematisch pruefen ob Kriterien korrekt ausloesen
+- Punkte-Vergabe: Antraege, Event-Punkte, Bonus-Punkte, korrekte Berechnung
+- User/Rechte/Institutionen: RBAC-Rollen, Super-Admin Organisations-Verwaltung
+- Chat-Logik: Oberflaechlicher Sanity-Check (laeuft bereits gut)
 
 ## Core Value
 
@@ -65,7 +72,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Naechster Milestone definiert neue Requirements)
+(Definiert in REQUIREMENTS.md fuer v1.4)
 
 ### Out of Scope
 
@@ -133,4 +140,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
 
 ---
-*Last updated: 2026-03-04 after v1.3 milestone*
+*Last updated: 2026-03-05 after v1.4 milestone start*
