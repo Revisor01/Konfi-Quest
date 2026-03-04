@@ -67,7 +67,7 @@ Phase 19: Super-Admin Ueberarbeitung (2 plans, complete)
 **Milestone Goal:** Systematischer Debug aller Kern-Logiken (Events, Badges, Punkte, Rechte) als Grundlage fuer Push-Benachrichtigungen
 
 - [x] **Phase 20: Event-Logik Debug** - Buchung, Warteliste, Nachruecken, Kapazitaet, Timeslots und Stornierung absichern (completed 2026-03-04)
-- [ ] **Phase 21: Badge-Logik Debug** - Alle Badge-Kriterien systematisch pruefen und korrigieren
+- [x] **Phase 21: Badge-Logik Debug** - Alle Badge-Kriterien systematisch pruefen und korrigieren (completed 2026-03-04)
 - [ ] **Phase 22: Punkte-Vergabe Debug** - Transaktionssicherheit und Konsistenz bei Punkteoperationen
 - [ ] **Phase 23: User/Rechte/Institutionen Debug** - RBAC, Jahrgang-Filterung und Org-Verwaltung absichern
 - [ ] **Phase 24: Chat-Logik Debug** - Dateizugriff und Socket-Rollen-Konsistenz
@@ -173,7 +173,7 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 18. Settings-Bereich | v1.3 | 3/3 | Complete | 2026-03-04 |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 2/2 | Complete | 2026-03-04 |
 | 20. Event-Logik Debug | 2/2 | Complete    | 2026-03-04 | - |
-| 21. Badge-Logik Debug | v1.4 | 0/? | Not started | - |
+| 21. Badge-Logik Debug | 2/2 | Complete   | 2026-03-04 | - |
 | 22. Punkte-Vergabe Debug | v1.4 | 0/? | Not started | - |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |
 | 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |

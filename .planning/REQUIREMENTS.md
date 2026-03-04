@@ -24,7 +24,7 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 - [ ] **BDG-02**: Streak-Berechnung funktioniert bei Jahreswechsel (Woche 52/53)
 - [ ] **BDG-03**: `category_activities` zaehlt korrekt ueber Activity- und Event-Kategorien
 - [ ] **BDG-04**: `bonus_points`-Kriterium ist klar dokumentiert (zaehlt Vergaben, nicht Summe)
-- [ ] **BDG-05**: Default-Badges bei Org-Erstellung verwenden korrekte Umlaute
+- [x] **BDG-05**: Default-Badges bei Org-Erstellung verwenden korrekte Umlaute
 
 ### Punkte-Vergabe
 
@@ -81,7 +81,7 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 | BDG-02 | Phase 21 | Pending |
 | BDG-03 | Phase 21 | Pending |
 | BDG-04 | Phase 21 | Pending |
-| BDG-05 | Phase 21 | Pending |
+| BDG-05 | Phase 21 | Complete |
 | PNK-01 | Phase 22 | Pending |
 | PNK-02 | Phase 22 | Pending |
 | PNK-03 | Phase 22 | Pending |

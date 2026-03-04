@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: unknown
-last_updated: "2026-03-04T23:49:34.994Z"
+status: in-progress
+last_updated: "2026-03-04T23:58:48Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.4 Logik-Debug -- Phase 20: Event-Logik Debug
+**Current focus:** v1.4 Logik-Debug -- Phase 21: Badge-Logik Debug
 
 ## Current Position
 
-Phase: 20 (1 of 5) (Event-Logik Debug) -- COMPLETE
-Plan: 20-01 + 20-02 complete (2 of 2 in Wave 1)
-Status: Phase 20 complete
-Last activity: 2026-03-05 -- Plan 20-01 events.js Event-Logik abgeschlossen
+Phase: 21 (2 of 5) (Badge-Logik Debug) -- COMPLETE
+Plan: 21-01 + 21-02 complete (2 of 2 in Wave 1)
+Status: Phase 21 complete
+Last activity: 2026-03-05 -- Plan 21-01 Badge-Kriterien-Logik Debug abgeschlossen
 
 Progress: [##########] 100%
 
@@ -47,6 +47,7 @@ Progress: [##########] 100%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [21-02] Alle 9 Umlaut-Ersetzungen in defaultBadges korrigiert
 - [20-02] FOR UPDATE OF e fuer Row-Level-Locking bei Event-Registrierung
 - [20-02] Nachrueck-Logik nach DELETE aber vor Response/Logging eingefuegt
 - [20-01] Einheitlicher 'waitlist' Status statt 'pending' in events.js
@@ -64,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Phase 20 komplett -- Plan 20-01 (events.js) und 20-02 (konfi.js) abgeschlossen
-Resume file: .planning/phases/20-event-logik-debug/20-01-SUMMARY.md
+Stopped at: Plan 21-02 (Default-Badges Umlaute) abgeschlossen
+Resume file: .planning/phases/21-badge-logik-debug/21-02-SUMMARY.md
