@@ -69,36 +69,36 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EVT-01 | — | Pending |
-| EVT-02 | — | Pending |
-| EVT-03 | — | Pending |
-| EVT-04 | — | Pending |
-| EVT-05 | — | Pending |
-| EVT-06 | — | Pending |
-| EVT-07 | — | Pending |
-| EVT-08 | — | Pending |
-| BDG-01 | — | Pending |
-| BDG-02 | — | Pending |
-| BDG-03 | — | Pending |
-| BDG-04 | — | Pending |
-| BDG-05 | — | Pending |
-| PNK-01 | — | Pending |
-| PNK-02 | — | Pending |
-| PNK-03 | — | Pending |
-| PNK-04 | — | Pending |
-| PNK-05 | — | Pending |
-| USR-01 | — | Pending |
-| USR-02 | — | Pending |
-| USR-03 | — | Pending |
-| USR-04 | — | Pending |
-| CHT-01 | — | Pending |
-| CHT-02 | — | Pending |
+| EVT-01 | Phase 20 | Pending |
+| EVT-02 | Phase 20 | Pending |
+| EVT-03 | Phase 20 | Pending |
+| EVT-04 | Phase 20 | Pending |
+| EVT-05 | Phase 20 | Pending |
+| EVT-06 | Phase 20 | Pending |
+| EVT-07 | Phase 20 | Pending |
+| EVT-08 | Phase 20 | Pending |
+| BDG-01 | Phase 21 | Pending |
+| BDG-02 | Phase 21 | Pending |
+| BDG-03 | Phase 21 | Pending |
+| BDG-04 | Phase 21 | Pending |
+| BDG-05 | Phase 21 | Pending |
+| PNK-01 | Phase 22 | Pending |
+| PNK-02 | Phase 22 | Pending |
+| PNK-03 | Phase 22 | Pending |
+| PNK-04 | Phase 22 | Pending |
+| PNK-05 | Phase 22 | Pending |
+| USR-01 | Phase 23 | Pending |
+| USR-02 | Phase 23 | Pending |
+| USR-03 | Phase 23 | Pending |
+| USR-04 | Phase 23 | Pending |
+| CHT-01 | Phase 24 | Pending |
+| CHT-02 | Phase 24 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 after roadmap creation*

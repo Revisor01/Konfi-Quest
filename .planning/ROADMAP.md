@@ -6,6 +6,7 @@
 - Shipped **v1.1 Design-Konsistenz** - Phases 3-7 (shipped 2026-03-02)
 - Shipped **v1.2 Polishing + Tech Debt** - Phases 8-11 (shipped 2026-03-02)
 - Shipped **v1.3 Layout-Polishing** - Phases 12-19 (shipped 2026-03-04)
+- In Progress **v1.4 Logik-Debug** - Phases 20-24
 
 ## Phases
 
@@ -61,7 +62,92 @@ Phase 19: Super-Admin Ueberarbeitung (2 plans, complete)
 
 </details>
 
+### v1.4 Logik-Debug (In Progress)
+
+**Milestone Goal:** Systematischer Debug aller Kern-Logiken (Events, Badges, Punkte, Rechte) als Grundlage fuer Push-Benachrichtigungen
+
+- [ ] **Phase 20: Event-Logik Debug** - Buchung, Warteliste, Nachruecken, Kapazitaet, Timeslots und Stornierung absichern
+- [ ] **Phase 21: Badge-Logik Debug** - Alle Badge-Kriterien systematisch pruefen und korrigieren
+- [ ] **Phase 22: Punkte-Vergabe Debug** - Transaktionssicherheit und Konsistenz bei Punkteoperationen
+- [ ] **Phase 23: User/Rechte/Institutionen Debug** - RBAC, Jahrgang-Filterung und Org-Verwaltung absichern
+- [ ] **Phase 24: Chat-Logik Debug** - Dateizugriff und Socket-Rollen-Konsistenz
+
+## Phase Details
+
+### Phase 20: Event-Logik Debug
+**Goal**: Events koennen zuverlaessig gebucht, storniert und nachgerueckt werden -- ohne Race Conditions oder inkonsistente Zustaende
+**Depends on**: Nothing (first phase of v1.4)
+**Requirements**: EVT-01, EVT-02, EVT-03, EVT-04, EVT-05, EVT-06, EVT-07, EVT-08
+**Success Criteria** (what must be TRUE):
+  1. Konfi kann ein Event buchen und landet bei voller Kapazitaet auf der Warteliste mit einheitlichem Status
+  2. Bei Stornierung (durch Konfi oder Admin) rueckt der naechste Wartelisten-Eintrag automatisch nach -- bei Timeslot-Events nur innerhalb desselben Timeslots
+  3. Konfi kann nur buchen wenn das Registrierungsfenster offen ist (opens_at/closes_at wird geprueft)
+  4. Admin-Buchung fuer einen Konfi prueft Kapazitaet transaktionssicher und kann nicht ueberbuchen
+  5. Konfi sieht seine Wartelisten-Buchungen in der eigenen Buchungsuebersicht
+**Plans**: TBD
+
+Plans:
+- [ ] 20-01: TBD
+- [ ] 20-02: TBD
+
+### Phase 21: Badge-Logik Debug
+**Goal**: Alle Badge-Kriterien loesen korrekt aus -- unabhaengig von Kriterium-Typ, Zeitraum oder Datenkonstellation
+**Depends on**: Phase 20 (Event-Punkte muessen korrekt vergeben werden bevor Badge-Kriterien darauf aufbauen)
+**Requirements**: BDG-01, BDG-02, BDG-03, BDG-04, BDG-05
+**Success Criteria** (what must be TRUE):
+  1. Alle 13 Badge-Kriterium-Typen vergeben Badges korrekt wenn die Bedingung erfuellt ist
+  2. Streak-Badges zaehlen korrekt ueber den Jahreswechsel (Woche 52/53 nach Woche 1)
+  3. Category-Activities-Badges zaehlen sowohl regulaere Aktivitaeten als auch Event-Kategorien
+  4. Default-Badges bei neuer Organisation enthalten korrekte Umlaute
+**Plans**: TBD
+
+Plans:
+- [ ] 21-01: TBD
+
+### Phase 22: Punkte-Vergabe Debug
+**Goal**: Punkteoperationen sind transaktionssicher und konsistent -- keine verlorenen Punkte, keine negativen Werte, keine doppelten Routen
+**Depends on**: Nothing (kann parallel zu Phase 20 geplant werden, aber sequenziell ausgefuehrt)
+**Requirements**: PNK-01, PNK-02, PNK-03, PNK-04, PNK-05
+**Success Criteria** (what must be TRUE):
+  1. Activity- und Bonus-Punkte-Zuweisungen sind atomar (INSERT + konfi_profiles UPDATE in einer Transaktion)
+  2. Loeschen von Bonus-Punkten kann konfi_profiles nie unter 0 setzen
+  3. Es gibt genau einen Endpunkt fuer Bonus-Punkte-Operationen (keine doppelten Routen)
+  4. Points-History zeigt korrekte Berechnungen ohne Abweichungen zwischen Anzeige und DB-Werten
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: TBD
+
+### Phase 23: User/Rechte/Institutionen Debug
+**Goal**: RBAC-Rollen, Jahrgang-Filterung und Org-Verwaltung funktionieren lueckenlos und konsistent
+**Depends on**: Nothing (unabhaengig von Event/Badge/Punkte-Logik)
+**Requirements**: USR-01, USR-02, USR-03, USR-04
+**Success Criteria** (what must be TRUE):
+  1. last_login_at wird nur beim Login-Endpunkt aktualisiert, nicht bei Token-Validierung oder anderen Requests
+  2. Jahrgang-basierte Filterung greift konsistent in allen relevanten Routes (Konfis, Activities, Events)
+  3. Loeschen einer Organisation entfernt alle abhaengigen Daten sauber (CASCADE-Kette verifiziert)
+  4. Organisations-Endpunkte haben Rate-Limiting das Missbrauch verhindert
+**Plans**: TBD
+
+Plans:
+- [ ] 23-01: TBD
+
+### Phase 24: Chat-Logik Debug
+**Goal**: Chat-Dateizugriff ist organisationsbezogen abgesichert und Socket-Rollen bleiben aktuell
+**Depends on**: Nothing (unabhaengig)
+**Requirements**: CHT-01, CHT-02
+**Success Criteria** (what must be TRUE):
+  1. GET /files/:filename liefert Dateien nur an Nutzer derselben Organisation (kein Cross-Tenant-Zugriff)
+  2. Bei Rollenaenderung eines Users werden die Socket.io-Berechtigungen sofort aktualisiert
+**Plans**: TBD
+
+Plans:
+- [ ] 24-01: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -85,3 +171,8 @@ Phase 19: Super-Admin Ueberarbeitung (2 plans, complete)
 | 17.1. Checkbox-Farben + Einmalpasswort | v1.3 | 2/2 | Complete | 2026-03-03 |
 | 18. Settings-Bereich | v1.3 | 3/3 | Complete | 2026-03-04 |
 | 19. Super-Admin Ueberarbeitung | v1.3 | 2/2 | Complete | 2026-03-04 |
+| 20. Event-Logik Debug | v1.4 | 0/? | Not started | - |
+| 21. Badge-Logik Debug | v1.4 | 0/? | Not started | - |
+| 22. Punkte-Vergabe Debug | v1.4 | 0/? | Not started | - |
+| 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |
+| 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |
