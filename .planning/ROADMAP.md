@@ -198,4 +198,4 @@ Plans:
 | 17. Admin Views Polishing | 3/3 | Complete    | 2026-03-03 | - |
 | 17.1. Checkbox-Farben + Einmalpasswort | 2/2 | Complete    | 2026-03-03 | - |
 | 18. Settings-Bereich | 3/3 | Complete    | 2026-03-04 | - |
-| 19. Super-Admin Ueberarbeitung | 2/2 | Complete   | 2026-03-04 | - |
+| 19. Super-Admin Ueberarbeitung | 2/2 | Complete    | 2026-03-04 | - |
