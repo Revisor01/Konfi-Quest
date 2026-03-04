@@ -53,13 +53,13 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 
 ### Super-Admin
 
-- [ ] **SUA-01**: Keine TabBar, nur Organisationen-View (kein Profil-Tab)
-- [ ] **SUA-02**: Direkter Redirect nach Login auf Organisationen (keine weisse Seite)
-- [ ] **SUA-03**: Farbe mattes Blau durchgehend
-- [ ] **SUA-04**: Listen-Elemente an CSS-Variablen/Design-System angepasst
-- [ ] **SUA-05**: Statistik als SectionHeader oben (wie andere Views)
+- [x] **SUA-01**: Keine TabBar, nur Organisationen-View (kein Profil-Tab)
+- [x] **SUA-02**: Direkter Redirect nach Login auf Organisationen (keine weisse Seite)
+- [x] **SUA-03**: Farbe mattes Blau durchgehend
+- [x] **SUA-04**: Listen-Elemente an CSS-Variablen/Design-System angepasst
+- [x] **SUA-05**: Statistik als SectionHeader oben (wie andere Views)
 - [ ] **SUA-06**: OrganizationManagementModal ans Design-System angepasst
-- [ ] **SUA-07**: Logout-Moeglichkeit eingebaut
+- [x] **SUA-07**: Logout-Moeglichkeit eingebaut
 
 ### Bugs
 
@@ -144,13 +144,13 @@ Geplante Milestones nach v1.3:
 | SET-07 | Phase 18 | Complete |
 | SET-08 | Phase 18 | Complete |
 | SET-09 | Phase 18 | Complete |
-| SUA-01 | Phase 19 | Pending |
-| SUA-02 | Phase 19 | Pending |
-| SUA-03 | Phase 19 | Pending |
-| SUA-04 | Phase 19 | Pending |
-| SUA-05 | Phase 19 | Pending |
+| SUA-01 | Phase 19 | Complete |
+| SUA-02 | Phase 19 | Complete |
+| SUA-03 | Phase 19 | Complete |
+| SUA-04 | Phase 19 | Complete |
+| SUA-05 | Phase 19 | Complete |
 | SUA-06 | Phase 19 | Pending |
-| SUA-07 | Phase 19 | Pending |
+| SUA-07 | Phase 19 | Complete |
 | BUG-01 | Phase 12 | Complete |
 | BUG-02 | Phase 12 | Complete |
 | BUG-03 | Phase 12 | Complete |
