@@ -83,6 +83,12 @@ const CRITERIA_TYPES = {
   }
 };
 
+function getISOWeeksInYear(year) {
+  const dec28 = new Date(Date.UTC(year, 11, 28));
+  const dayOfYear = Math.ceil((dec28 - new Date(Date.UTC(year, 0, 1))) / 86400000) + 1;
+  return Math.ceil((dayOfYear - (dec28.getUTCDay() || 7) + 10) / 7);
+}
+
 const checkAndAwardBadges = async (db, konfiId) => {
   try {
     // First get konfi's organization
@@ -140,7 +146,8 @@ const checkAndAwardBadges = async (db, konfiId) => {
           if (criteria.required_activities) {
             const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.organization_id = $2`, [konfiId, konfi.organization_id]);
             const completedActivities = results.map(r => r.name);
-            earned = criteria.required_activities.every(req => completedActivities.includes(req));
+            const matchCount = criteria.required_activities.filter(req => completedActivities.includes(req)).length;
+            earned = matchCount >= badge.criteria_value;
           }
           break;
         
@@ -248,7 +255,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
               let expectedWeek = week - 1;
               if (expectedWeek === 0) {
                 expectedYear -= 1;
-                expectedWeek = 52;
+                expectedWeek = getISOWeeksInYear(expectedYear);
               }
               const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
               if (nextWeek === expectedWeekStr) {
