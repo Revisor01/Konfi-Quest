@@ -71,7 +71,11 @@ import {
   today,
   time,
   filterOutline,
-  search
+  search,
+  statsChart,
+  grid,
+  listOutline,
+  pricetag
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
@@ -186,6 +190,25 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
   };
 
+  const getCriteriaTypeIcon = (type: string) => {
+    switch (type) {
+      case 'total_points': return statsChart;
+      case 'gottesdienst_points': return home;
+      case 'gemeinde_points': return people;
+      case 'specific_activity': return flash;
+      case 'both_categories': return grid;
+      case 'activity_combination': return listOutline;
+      case 'category_activities': return pricetag;
+      case 'time_based': return time;
+      case 'activity_count': return checkmarkCircle;
+      case 'event_count': return calendar;
+      case 'bonus_points': return star;
+      case 'streak': return flame;
+      case 'unique_activities': return sparkles;
+      default: return flash;
+    }
+  };
+
   const getBadgeStatusColor = (badge: Badge) => {
     if (!badge.is_active) return 'danger';
     if (badge.is_hidden) return 'warning';
@@ -286,7 +309,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
             <IonList key={criteriaType} inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--badges">
-                  <IonIcon icon={flash} />
+                  <IonIcon icon={getCriteriaTypeIcon(criteriaType)} />
                 </div>
                 <IonLabel>{getCriteriaTypeText(criteriaType)} ({typeBadges.length})</IonLabel>
               </IonListHeader>
