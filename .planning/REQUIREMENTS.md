@@ -58,7 +58,7 @@ Requirements fuer Milestone v1.3 Layout-Polishing.
 - [x] **SUA-03**: Farbe mattes Blau durchgehend
 - [x] **SUA-04**: Listen-Elemente an CSS-Variablen/Design-System angepasst
 - [x] **SUA-05**: Statistik als SectionHeader oben (wie andere Views)
-- [ ] **SUA-06**: OrganizationManagementModal ans Design-System angepasst
+- [x] **SUA-06**: OrganizationManagementModal ans Design-System angepasst
 - [x] **SUA-07**: Logout-Moeglichkeit eingebaut
 
 ### Bugs
@@ -149,7 +149,7 @@ Geplante Milestones nach v1.3:
 | SUA-03 | Phase 19 | Complete |
 | SUA-04 | Phase 19 | Complete |
 | SUA-05 | Phase 19 | Complete |
-| SUA-06 | Phase 19 | Pending |
+| SUA-06 | Phase 19 | Complete |
 | SUA-07 | Phase 19 | Complete |
 | BUG-01 | Phase 12 | Complete |
 | BUG-02 | Phase 12 | Complete |
