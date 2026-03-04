@@ -99,10 +99,11 @@ Plans:
   2. Streak-Badges zaehlen korrekt ueber den Jahreswechsel (Woche 52/53 nach Woche 1)
   3. Category-Activities-Badges zaehlen sowohl regulaere Aktivitaeten als auch Event-Kategorien
   4. Default-Badges bei neuer Organisation enthalten korrekte Umlaute
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
 
 Plans:
-- [ ] 21-01: TBD
+- [ ] 21-01: badges.js -- Streak-Jahreswechsel-Fix, activity_combination criteria_value Fix, Code-Review aller 13 Typen, bonus_points Dokumentation [BDG-01, BDG-02, BDG-03, BDG-04]
+- [ ] 21-02: organizations.js -- Default-Badges Umlaute korrigieren [BDG-05]
 
 ### Phase 22: Punkte-Vergabe Debug
 **Goal**: Punkteoperationen sind transaktionssicher und konsistent -- keine verlorenen Punkte, keine negativen Werte, keine doppelten Routen
