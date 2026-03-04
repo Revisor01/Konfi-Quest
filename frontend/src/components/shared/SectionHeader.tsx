@@ -15,7 +15,7 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   activities: { primary: '#047857', secondary: '#065f46' },
   konfis: { primary: '#5b21b6', secondary: '#4c1d95' },
   users: { primary: '#667eea', secondary: '#5a67d8' },
-  organizations: { primary: '#2dd36f', secondary: '#28ba62' },
+  organizations: { primary: '#667eea', secondary: '#5a67d8' },
   badges: { primary: '#f59e0b', secondary: '#d97706' },
   requests: { primary: '#5b21b6', secondary: '#4c1d95' },
   'konfi-requests': { primary: '#047857', secondary: '#065f46' },

@@ -132,7 +132,7 @@ ion-item.app-list-item:last-child {
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #047857; }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
 .app-list-item--level, ion-item.app-list-item--level { border-left-color: #5b21b6; }
-.app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #2dd36f; }
+.app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #667eea; }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
 .app-list-item--categories, ion-item.app-list-item--categories { border-left-color: #0ea5e9; }
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
@@ -183,10 +183,10 @@ ion-item.app-list-item:last-child {
   border-color: #5b21b6;
   background: rgba(91, 33, 182, 0.08);
 }
-/* Selected State fuer List Items - Organizations (Gruen) */
+/* Selected State fuer List Items - Organizations (Blau) */
 .app-list-item--organizations.app-list-item--selected {
-  border-color: #2dd36f;
-  background: rgba(45, 211, 111, 0.08);
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.08);
 }
 /* Selected State fuer List Items - Info (Blau) */
 .app-list-item--info.app-list-item--selected {
@@ -317,7 +317,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--activities { background-color: #047857; }
 .app-section-icon--users { background-color: #667eea; }
 .app-section-icon--level { background-color: #5b21b6; }
-.app-section-icon--organizations { background-color: #2dd36f; }
+.app-section-icon--organizations { background-color: #667eea; }
 .app-section-icon--badges { background-color: #f59e0b; }
 .app-section-icon--categories { background-color: #0ea5e9; }
 .app-section-icon--requests { background-color: #047857; }
@@ -380,7 +380,7 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--activities { background-color: #047857; }
 .app-icon-circle--users { background-color: #667eea; }
 .app-icon-circle--level { background-color: #5b21b6; }
-.app-icon-circle--organizations { background-color: #2dd36f; }
+.app-icon-circle--organizations { background-color: #667eea; }
 .app-icon-circle--badges { background-color: #f59e0b; }
 .app-icon-circle--categories { background-color: #0ea5e9; }
 .app-icon-circle--jahrgang { background-color: #007aff; }
@@ -503,8 +503,8 @@ ion-item.app-list-item:last-child {
   --app-color-activities-rgb: 4, 120, 87;
   --app-color-users: #667eea;
   --app-color-users-rgb: 102, 126, 234;
-  --app-color-organizations: #2dd36f;
-  --app-color-organizations-rgb: 45, 211, 111;
+  --app-color-organizations: #667eea;
+  --app-color-organizations-rgb: 102, 126, 234;
   --app-color-badges: #f59e0b;
   --app-color-badges-rgb: 245, 158, 11;
   --app-color-requests: #5b21b6;
@@ -985,7 +985,7 @@ ion-button.app-action-button {
 .app-icon-color--gottesdienst { color: #3b82f6; }
 .app-icon-color--gemeinde { color: #22c55e; }
 .app-icon-color--activities { color: #047857; }
-.app-icon-color--organizations { color: #2dd36f; }
+.app-icon-color--organizations { color: #667eea; }
 .app-icon-color--jahrgang { color: #007aff; }
 .app-icon-color--success { color: #34c759; }
 .app-icon-color--danger { color: #dc3545; }

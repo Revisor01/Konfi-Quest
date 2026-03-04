@@ -129,7 +129,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
       {/* Suche & Filter */}
       <IonList inset={true} className="app-segment-wrapper">
         <IonListHeader>
-          <div className="app-section-icon app-section-icon--success">
+          <div className="app-section-icon app-section-icon--organizations">
             <IonIcon icon={filterOutline} />
           </div>
           <IonLabel>Suche & Filter</IonLabel>
@@ -178,12 +178,12 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
         icon={businessOutline}
         title="Organisationen"
         count={filteredAndSortedOrganizations.length}
-        iconColorClass="success"
+        iconColorClass="organizations"
         isEmpty={filteredAndSortedOrganizations.length === 0}
         emptyIcon={businessOutline}
         emptyTitle="Keine Organisationen gefunden"
         emptyMessage="Noch keine Gemeinden angelegt"
-        emptyIconColor="#2dd36f"
+        emptyIconColor="#667eea"
       >
         {filteredAndSortedOrganizations.map((organization) => (
               <IonItemSliding
@@ -213,7 +213,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                       {/* Initialen-Icon */}
                       <div
                         className="app-avatar-initials app-avatar-initials--sm"
-                        style={{ backgroundColor: organization.is_active ? '#2dd36f' : '#6b7280' }}
+                        style={{ backgroundColor: organization.is_active ? '#667eea' : '#6b7280' }}
                       >
                         {getInitials(organization.display_name)}
                       </div>
