@@ -94,32 +94,58 @@ const AdminSettingsPage: React.FC = () => {
           </IonToolbar>
         </IonHeader>
 
-        {/* Profil-Block */}
-        {user && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonCard className="app-card">
-              <IonCardContent>
-                <div className="app-settings-item" style={{ cursor: 'default' }}>
-                  <div
-                    className="app-avatar-initials app-avatar-initials--lg"
-                    style={{ backgroundColor: '#667eea' }}
-                  >
-                    {(user.display_name || user.username || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">{user.display_name || user.username}</h2>
-                    <p className="app-settings-item__subtitle">
-                      {user.role_name === 'super_admin' ? 'Super-Admin' :
-                       user.role_name === 'org_admin' ? 'Admin' :
-                       user.role_name === 'teamer' ? 'Teamer:in' : user.role_name}
-                      {user.organization ? ` - ${user.organization}` : ''}
-                    </p>
-                  </div>
+        {/* Konto */}
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={person} />
+            </div>
+            <IonLabel>Konto</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <div
+                className="app-list-item app-list-item--primary app-settings-item"
+                onClick={() => history.push('/admin/profile')}
+              >
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
+                  <IonIcon icon={person} />
                 </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">Profil</h2>
+                  <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
+                </div>
+              </div>
+
+              <div
+                className="app-list-item app-list-item--warning app-settings-item"
+                onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
+                style={{
+                  cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {pushNotificationsPermission === 'granted' && (
+                  <div
+                    className="app-corner-badge"
+                    style={{ backgroundColor: '#059669' }}
+                  >
+                    Aktiviert
+                  </div>
+                )}
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                  <IonIcon icon={notifications} />
+                </div>
+                <div className="app-flex-fill">
+                  <h2 className="app-settings-item__title">Push-Benachrichtigungen</h2>
+                  <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
+                </div>
+              </div>
+
+            </IonCardContent>
+          </IonCard>
+        </IonList>
 
         {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
@@ -282,59 +308,6 @@ const AdminSettingsPage: React.FC = () => {
             </IonCard>
           </IonList>
         )}
-
-        {/* Konto */}
-        <IonList inset={true} className="app-segment-wrapper">
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
-              <IonIcon icon={person} />
-            </div>
-            <IonLabel>Konto</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent>
-              <div
-                className="app-list-item app-list-item--primary app-settings-item"
-                onClick={() => history.push('/admin/profile')}
-              >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
-                  <IonIcon icon={person} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Profil</h2>
-                  <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
-                </div>
-              </div>
-
-              <div
-                className="app-list-item app-list-item--warning app-settings-item"
-                onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
-                style={{
-                  cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {pushNotificationsPermission === 'granted' && (
-                  <div
-                    className="app-corner-badge"
-                    style={{ backgroundColor: '#059669' }}
-                  >
-                    Aktiviert
-                  </div>
-                )}
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                  <IonIcon icon={notifications} />
-                </div>
-                <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Push-Benachrichtigungen</h2>
-                  <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
-                </div>
-              </div>
-
-            </IonCardContent>
-          </IonCard>
-        </IonList>
 
         <div className="app-segment-wrapper">
           <IonButton
