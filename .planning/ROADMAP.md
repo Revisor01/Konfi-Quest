@@ -142,10 +142,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. GET /files/:filename liefert Dateien nur an Nutzer derselben Organisation (kein Cross-Tenant-Zugriff)
   2. Bei Rollenaenderung eines Users werden die Socket.io-Berechtigungen sofort aktualisiert
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 24-01: TBD
+- [ ] 24-01-PLAN.md -- Path-Traversal-Schutz + Org-Check Haertung + Socket-Disconnect bei Rollenaenderung [CHT-01, CHT-02]
 
 ## Progress
 
@@ -178,4 +178,4 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 21. Badge-Logik Debug | 2/2 | Complete    | 2026-03-05 | - |
 | 22. Punkte-Vergabe Debug | 2/2 | Complete    | 2026-03-05 | - |
 | 23. User/Rechte/Institutionen Debug | 2/2 | Complete    | 2026-03-05 | - |
-| 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |
+| 24. Chat-Logik Debug | v1.4 | 0/1 | Not started | - |
