@@ -28,9 +28,9 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 ### Punkte-Vergabe
 
-- [ ] **PNK-01**: Activity-Zuweisung verwendet Transaktion (INSERT + UPDATE atomar)
-- [ ] **PNK-02**: Bonus-Punkte-Zuweisung verwendet Transaktion
-- [ ] **PNK-03**: Bonus-Punkte-Loeschung kann keine negativen Punkte erzeugen (`GREATEST(0, ...)`)
+- [x] **PNK-01**: Activity-Zuweisung verwendet Transaktion (INSERT + UPDATE atomar)
+- [x] **PNK-02**: Bonus-Punkte-Zuweisung verwendet Transaktion
+- [x] **PNK-03**: Bonus-Punkte-Loeschung kann keine negativen Punkte erzeugen (`GREATEST(0, ...)`)
 - [ ] **PNK-04**: Doppelte Bonus-Routen (`activities.js` vs `konfi-managment.js`) konsolidiert
 - [ ] **PNK-05**: Points-History-Berechnung (Subtraktion) ist korrekt und konsistent
 
@@ -82,9 +82,9 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 | BDG-03 | Phase 21 | Complete |
 | BDG-04 | Phase 21 | Complete |
 | BDG-05 | Phase 21 | Complete |
-| PNK-01 | Phase 22 | Pending |
-| PNK-02 | Phase 22 | Pending |
-| PNK-03 | Phase 22 | Pending |
+| PNK-01 | Phase 22 | Complete |
+| PNK-02 | Phase 22 | Complete |
+| PNK-03 | Phase 22 | Complete |
 | PNK-04 | Phase 22 | Pending |
 | PNK-05 | Phase 22 | Pending |
 | USR-01 | Phase 23 | Pending |

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: unknown
-last_updated: "2026-03-05T00:02:20.525Z"
+status: in-progress
+last_updated: "2026-03-05T20:55:39Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 6
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.4 Logik-Debug -- Phase 21: Badge-Logik Debug
+**Current focus:** v1.4 Logik-Debug -- Phase 22: Punkte-Vergabe Debug
 
 ## Current Position
 
-Phase: 21 (2 of 5) (Badge-Logik Debug) -- COMPLETE
-Plan: 21-01 + 21-02 complete (2 of 2 in Wave 1)
-Status: Phase 21 complete
-Last activity: 2026-03-05 -- Plan 21-01 Badge-Kriterien-Logik Debug abgeschlossen
+Phase: 22 (3 of 5) (Punkte-Vergabe Debug) -- IN PROGRESS
+Plan: 22-01 complete (1 of 2 in Wave 1)
+Status: Plan 22-01 abgeschlossen, Plan 22-02 ausstehend
+Last activity: 2026-03-05 -- Plan 22-01 Punkte-Vergabe Transaktionssicherheit abgeschlossen
 
-Progress: [##########] 100%
+Progress: [########--] 83%
 
 ## Performance Metrics
 
@@ -47,6 +47,9 @@ Progress: [##########] 100%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [22-01] client.connect() Pattern fuer alle Transaktionen statt db.query('BEGIN')
+- [22-01] GREATEST(0, ...) bei allen Punkt-Abzuegen
+- [22-01] Badge-Check und Push-Notifications nach COMMIT
 - [21-01] getISOWeeksInYear Dec-28-Methode fuer korrekte Jahreswechsel-Behandlung
 - [21-01] activity_combination filter+length statt every() fuer criteria_value Mindestanzahl
 - [21-02] Alle 9 Umlaut-Ersetzungen in defaultBadges korrigiert
@@ -67,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Phase 21 komplett -- Plan 21-01 (Badge-Kriterien-Logik) und 21-02 (Default-Badges) abgeschlossen
-Resume file: .planning/phases/21-badge-logik-debug/21-01-SUMMARY.md
+Stopped at: Completed 22-01-PLAN.md
+Resume file: .planning/phases/22-punkte-vergabe-debug/22-01-SUMMARY.md
