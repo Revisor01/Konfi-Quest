@@ -112,7 +112,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
  console.warn(`Login fehlgeschlagen: Falsches Passwort fuer '${username}'`);
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
-      
+
+      // last_login_at nur beim echten Login aktualisieren (nicht in Middleware)
+      await db.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [user.id]);
+
       const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
@@ -426,6 +429,25 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     } catch (err) {
  console.error('Database error in POST /api/auth/invite-codes/:id/extend:', err);
       res.status(500).json({ error: 'Fehler beim Verlängern des Einladungscodes' });
+    }
+  });
+
+  // Delete invite code (org_admin only)
+  router.delete('/invite-codes/:id', verifyToken, async (req, res) => {
+    const organizationId = req.user.organization_id;
+    if (req.user.role_name !== 'org_admin') {
+      return res.status(403).json({ error: 'Nur Administratoren können Einladungscodes löschen' });
+    }
+    try {
+      const { rowCount } = await db.query(
+        'DELETE FROM invite_codes WHERE id = $1 AND organization_id = $2',
+        [req.params.id, organizationId]
+      );
+      if (rowCount === 0) return res.status(404).json({ error: 'Code nicht gefunden' });
+      res.json({ message: 'Einladungscode gelöscht' });
+    } catch (err) {
+      console.error('Error deleting invite code:', err);
+      res.status(500).json({ error: 'Fehler beim Löschen' });
     }
   });
 

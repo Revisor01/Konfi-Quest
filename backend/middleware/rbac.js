@@ -100,9 +100,6 @@ const verifyTokenRBAC = (db) => {
         is_org_admin: user.role_name === 'org_admin'
       };
 
-      // Last login aktualisieren
-      await db.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [user.id]);
-
       next();
     } catch (err) {
  console.error('Database error in verifyTokenRBAC middleware:', err);
