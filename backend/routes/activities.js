@@ -244,32 +244,44 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const oldStatus = request.status;
       if (oldStatus === 'pending') return res.status(400).json({ error: 'Antrag ist bereits ausstehend' });
 
-      // SCHRITT 1: Alte Entscheidung rückgängig machen
-      if (oldStatus === 'approved') {
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
 
-        // Punkte abziehen
-        const pointField = getPointField(request.type);
-        await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} - $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
+        // SCHRITT 1: Alte Entscheidung rückgängig machen
+        if (oldStatus === 'approved') {
 
-        // konfi_activity Eintrag löschen
-        await db.query(
-          `DELETE FROM konfi_activities
-           WHERE id = (
-             SELECT id FROM konfi_activities
-             WHERE konfi_id = $1 AND activity_id = $2
-             ORDER BY completed_date DESC, id DESC
-             LIMIT 1
-           )`,
-          [request.konfi_id, request.activity_id]
+          // Punkte abziehen (mit GREATEST um negative Werte zu verhindern)
+          const pointField = getPointField(request.type);
+          await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [request.points, request.konfi_id]);
+
+          // konfi_activity Eintrag löschen
+          await client.query(
+            `DELETE FROM konfi_activities
+             WHERE id = (
+               SELECT id FROM konfi_activities
+               WHERE konfi_id = $1 AND activity_id = $2
+               ORDER BY completed_date DESC, id DESC
+               LIMIT 1
+             )`,
+            [request.konfi_id, request.activity_id]
+          );
+
+        }
+
+        // SCHRITT 2: Status auf pending setzen, Kommentar löschen
+        await client.query(
+          "UPDATE activity_requests SET status = 'pending', admin_comment = NULL, approved_by = NULL, updated_at = NOW() WHERE id = $1",
+          [requestId]
         );
 
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
       }
-
-      // SCHRITT 2: Status auf pending setzen, Kommentar löschen
-      await db.query(
-        "UPDATE activity_requests SET status = 'pending', admin_comment = NULL, approved_by = NULL, updated_at = NOW() WHERE id = $1",
-        [requestId]
-      );
 
       res.json({ message: 'Antrag auf ausstehend zurückgesetzt', oldStatus });
 
@@ -302,21 +314,40 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(400).json({ error: 'Nur ausstehende Anträge können genehmigt oder abgelehnt werden' });
       }
 
-      // Status ändern
-      const updateRequestQuery = "UPDATE activity_requests SET status = $1, admin_comment = $2, approved_by = $3, updated_at = NOW() WHERE id = $4";
-      await db.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
-
+      const client = await db.connect();
       let newBadges = 0;
+      try {
+        await client.query('BEGIN');
+
+        // Status ändern
+        const updateRequestQuery = "UPDATE activity_requests SET status = $1, admin_comment = $2, approved_by = $3, updated_at = NOW() WHERE id = $4";
+        await client.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
+
+        if (status === 'approved') {
+          await client.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+
+          const pointField = getPointField(request.type);
+          await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
+
+          // Foto-Referenz in DB entfernen (innerhalb Transaktion)
+          if (request.photo_filename) {
+            await client.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
+          }
+        }
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      // Badge-Check NACH COMMIT (verwendet db Pool)
       if (status === 'approved') {
-        await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
-
-        const pointField = getPointField(request.type);
-        await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
-
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
 
-
-        // Datenschutz: Foto löschen nach Genehmigung
+        // Datenschutz: Foto-Datei löschen nach Genehmigung (nicht-kritisch, nach COMMIT)
         if (request.photo_filename) {
           const fs = require('fs');
           const path = require('path');
@@ -325,11 +356,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           fs.unlink(photoPath, (err) => {
             if (err) {
  console.error('Error deleting photo:', err);
-            } else {
             }
           });
-
-          await db.query("UPDATE activity_requests SET photo_filename = NULL WHERE id = $1", [requestId]);
         }
       }
 
@@ -403,12 +431,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     try {
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
       if (!activity) return res.status(404).json({ error: 'Aktivität nicht gefunden' });
-  
-      await db.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
-      
-      const pointField = getPointField(activity.type);
-      await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
 
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
+
+        await client.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
+
+        const pointField = getPointField(activity.type);
+        await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      // Badge-Check NACH COMMIT (verwendet db Pool)
       const badgeResult = await checkAndAwardBadges(db, konfiId);
       res.json({ message: 'Aktivität erfolgreich zugewiesen', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
 
@@ -438,10 +479,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     try {
       const pointField = getPointField(type);
 
-      await db.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", [konfiId, points, type, description, req.user.id, date, req.user.organization_id]);
+      const client = await db.connect();
+      try {
+        await client.query('BEGIN');
 
-      await db.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
+        await client.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", [konfiId, points, type, description, req.user.id, date, req.user.organization_id]);
 
+        await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
+
+        await client.query('COMMIT');
+      } catch (txErr) {
+        await client.query('ROLLBACK');
+        throw txErr;
+      } finally {
+        client.release();
+      }
+
+      // Badge-Check NACH COMMIT (verwendet db Pool)
       const newBadges = await checkAndAwardBadges(db, konfiId);
 
       // Send push notification for bonus points
