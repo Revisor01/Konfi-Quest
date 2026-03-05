@@ -198,6 +198,15 @@ const uploadLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Rate Limiter fuer Organisations-Verwaltung (Schutz vor Missbrauch)
+const orgLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 20, // Max 20 schreibende Org-Requests pro 15 Minuten
+  message: { error: 'Zu viele Anfragen an die Organisationsverwaltung. Bitte versuche es spaeter erneut.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 // ====================================================================
 // MIDDLEWARE SETUP
 // ====================================================================
@@ -416,7 +425,7 @@ app.use('/api/admin/users', usersRoutes(db, rbacVerifier, roleHelpers));
 
 app.use('/api/users', usersRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
-app.use('/api/organizations', organizationsRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, roleHelpers));
 
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 
