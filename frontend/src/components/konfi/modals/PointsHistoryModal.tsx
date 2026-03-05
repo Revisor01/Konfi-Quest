@@ -43,15 +43,13 @@ interface PointEntry {
 interface PointsTotals {
   gottesdienst: number;
   gemeinde: number;
-  bonus: number;
-  event: number;
   total: number;
 }
 
 const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
-  const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, bonus: 0, event: 0, total: 0 });
+  const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
 
   useEffect(() => {
     loadHistory();
@@ -61,7 +59,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     try {
       const response = await api.get('/konfi/points-history');
       setHistory(response.data.history || []);
-      setTotals(response.data.totals || { gottesdienst: 0, gemeinde: 0, bonus: 0, event: 0, total: 0 });
+      setTotals(response.data.totals || { gottesdienst: 0, gemeinde: 0, total: 0 });
     } catch (err) {
  console.error('Error loading points history:', err);
     } finally {
@@ -127,37 +125,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  // Berechne korrekte Punkte (Events und Bonus zählen zu ihrer category)
-  const calculateTotals = () => {
-    let gottesdienstTotal = 0;
-    let gemeindeTotal = 0;
-    let eventCount = 0;
-    let bonusCount = 0;
-
-    history.forEach(entry => {
-      if (entry.category === 'gottesdienst') {
-        gottesdienstTotal += entry.points;
-      } else if (entry.category === 'gemeinde') {
-        gemeindeTotal += entry.points;
-      }
-
-      if (entry.source_type === 'event') {
-        eventCount++;
-      } else if (entry.source_type === 'bonus') {
-        bonusCount++;
-      }
-    });
-
-    return {
-      total: gottesdienstTotal + gemeindeTotal,
-      gottesdienst: gottesdienstTotal,
-      gemeinde: gemeindeTotal,
-      eventCount,
-      bonusCount
-    };
-  };
-
-  const calculatedTotals = calculateTotals();
+  // Event- und Bonus-Anzahl aus History berechnen (nur Zaehler, keine Punkte)
+  const eventCount = history.filter(h => h.source_type === 'event').length;
+  const bonusCount = history.filter(h => h.source_type === 'bonus').length;
 
   return (
     <IonPage>
@@ -205,9 +175,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 {/* Erste Reihe: Gesamt, Gottesdienst, Gemeinde */}
                 <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px' }}>
                   {[
-                    { value: calculatedTotals.total, label: 'GESAMT' },
-                    { value: calculatedTotals.gottesdienst, label: 'GOTTESDIENST' },
-                    { value: calculatedTotals.gemeinde, label: 'GEMEINDE' }
+                    { value: totals.total, label: 'GESAMT' },
+                    { value: totals.gottesdienst, label: 'GOTTESDIENST' },
+                    { value: totals.gemeinde, label: 'GEMEINDE' }
                   ].map((stat) => (
                     <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
@@ -218,8 +188,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 {/* Zweite Reihe: Events, Bonus */}
                 <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
                   {[
-                    { value: calculatedTotals.eventCount, label: 'EVENTS' },
-                    { value: calculatedTotals.bonusCount, label: 'BONUS' }
+                    { value: eventCount, label: 'EVENTS' },
+                    { value: bonusCount, label: 'BONUS' }
                   ].map((stat) => (
                     <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', maxWidth: '45%', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
@@ -288,7 +258,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                               )}
                               {/* Punkte-Badge */}
                               <div className="app-corner-badge" style={{ backgroundColor: categoryColor, position: 'static' }}>
-                                +{entry.points}
+                                +{entry.points}P
                               </div>
                             </div>
 

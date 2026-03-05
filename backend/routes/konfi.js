@@ -499,25 +499,13 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         [konfiId, orgId]
       );
 
-      // Calculate bonus and event totals from individual entries
-      const bonusTotal = bonusPoints.reduce((sum, b) => sum + parseInt(b.points || 0), 0);
-      const eventTotal = eventPoints.reduce((sum, e) => sum + parseInt(e.points || 0), 0);
-
-      // konfi_profiles enthält bereits Events UND Bonus in gottesdienst_points/gemeinde_points
-      // Um "reine Aktivitäten" zu zeigen, Events und Bonus subtrahieren
-      const eventGD = eventPoints.filter(e => e.category === 'gottesdienst').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
-      const eventGemeinde = eventPoints.filter(e => e.category === 'gemeinde').reduce((sum, e) => sum + parseInt(e.points || 0), 0);
-      const bonusGD = bonusPoints.filter(b => b.category === 'gottesdienst').reduce((sum, b) => sum + parseInt(b.points || 0), 0);
-      const bonusGemeinde = bonusPoints.filter(b => b.category === 'gemeinde').reduce((sum, b) => sum + parseInt(b.points || 0), 0);
-
+      // konfi_profiles enthaelt bereits alle Punkte (Aktivitaeten + Events + Bonus)
+      // Single Source of Truth - direkt verwenden
       const totals = {
-        gottesdienst: (konfiProfile?.gottesdienst_points || 0) - eventGD - bonusGD,
-        gemeinde: (konfiProfile?.gemeinde_points || 0) - eventGemeinde - bonusGemeinde,
-        bonus: bonusTotal,
-        event: eventTotal
+        gottesdienst: konfiProfile?.gottesdienst_points || 0,
+        gemeinde: konfiProfile?.gemeinde_points || 0,
+        total: (konfiProfile?.gottesdienst_points || 0) + (konfiProfile?.gemeinde_points || 0)
       };
-      // konfi_profiles enthält bereits alles (Aktivitäten + Events + Bonus)
-      totals.total = (konfiProfile?.gottesdienst_points || 0) + (konfiProfile?.gemeinde_points || 0);
 
       res.json({
         history: allPoints,
