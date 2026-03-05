@@ -62,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Roadmap fuer v1.5 erstellt, bereit fuer Phase 25 Planung
-Resume file: —
+Stopped at: Phase 25 context gathered
+Resume file: .planning/phases/25-foundation-konfiguration/25-CONTEXT.md
