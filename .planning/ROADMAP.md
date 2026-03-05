@@ -177,5 +177,5 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 20. Event-Logik Debug | 2/2 | Complete    | 2026-03-04 | - |
 | 21. Badge-Logik Debug | 2/2 | Complete    | 2026-03-05 | - |
 | 22. Punkte-Vergabe Debug | 2/2 | Complete    | 2026-03-05 | - |
-| 23. User/Rechte/Institutionen Debug | v1.4 | 0/2 | Not started | - |
+| 23. User/Rechte/Institutionen Debug | 1/2 | In Progress|  | - |
 | 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |

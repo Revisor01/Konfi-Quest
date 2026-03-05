@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: unknown
-last_updated: "2026-03-05T21:02:40.064Z"
+status: in-progress
+last_updated: "2026-03-05T21:13:45.000Z"
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.4 Logik-Debug -- Phase 22: Punkte-Vergabe Debug
+**Current focus:** v1.4 Logik-Debug -- Phase 23: User-Rechte und Institutionen Debug
 
 ## Current Position
 
-Phase: 22 (3 of 5) (Punkte-Vergabe Debug) -- COMPLETE
-Plan: 22-02 complete (2 of 2)
-Status: Phase 22 komplett abgeschlossen
-Last activity: 2026-03-05 -- Plan 22-02 Bonus-Konsolidierung und Points-History abgeschlossen
+Phase: 23 (4 of 5) (User-Rechte und Institutionen Debug) -- IN PROGRESS
+Plan: 23-01 complete (1 of 2)
+Status: Plan 23-01 abgeschlossen, Plan 23-02 ausstehend
+Last activity: 2026-03-05 -- Plan 23-01 last_login_at Fix und Org Rate-Limiter abgeschlossen
 
-Progress: [##########] 100%
+Progress: [########--] 87%
 
 ## Performance Metrics
 
@@ -47,6 +47,8 @@ Progress: [##########] 100%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [23-01] last_login_at UPDATE gehoert ausschliesslich in den Login-Endpunkt, nicht in die Token-Verifikation
+- [23-01] orgLimiter mit 20 req/15min auf alle Org-Endpunkte (inkl. GET)
 - [22-02] konfi_profiles als Single Source of Truth fuer Punkte-Totals
 - [22-02] Bonus-Endpunkt in konfi-managment.js konsolidiert mit Teamer-Berechtigung
 - [22-01] client.connect() Pattern fuer alle Transaktionen statt db.query('BEGIN')
@@ -72,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 22-02-PLAN.md (Phase 22 complete)
-Resume file: .planning/phases/22-punkte-vergabe-debug/22-02-SUMMARY.md
+Stopped at: Completed 23-01-PLAN.md
+Resume file: .planning/phases/23-user-rechte-institutionen-debug/23-01-SUMMARY.md
