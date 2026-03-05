@@ -68,7 +68,7 @@ Phase 19: Super-Admin Ueberarbeitung (2 plans, complete)
 
 - [x] **Phase 20: Event-Logik Debug** - Buchung, Warteliste, Nachruecken, Kapazitaet, Timeslots und Stornierung absichern (completed 2026-03-04)
 - [x] **Phase 21: Badge-Logik Debug** - Alle Badge-Kriterien systematisch pruefen und korrigieren (completed 2026-03-04)
-- [ ] **Phase 22: Punkte-Vergabe Debug** - Transaktionssicherheit und Konsistenz bei Punkteoperationen
+- [x] **Phase 22: Punkte-Vergabe Debug** - Transaktionssicherheit und Konsistenz bei Punkteoperationen (completed 2026-03-05)
 - [ ] **Phase 23: User/Rechte/Institutionen Debug** - RBAC, Jahrgang-Filterung und Org-Verwaltung absichern
 - [ ] **Phase 24: Chat-Logik Debug** - Dateizugriff und Socket-Rollen-Konsistenz
 
@@ -175,6 +175,6 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 19. Super-Admin Ueberarbeitung | v1.3 | 2/2 | Complete | 2026-03-04 |
 | 20. Event-Logik Debug | 2/2 | Complete    | 2026-03-04 | - |
 | 21. Badge-Logik Debug | 2/2 | Complete    | 2026-03-05 | - |
-| 22. Punkte-Vergabe Debug | 1/2 | In Progress|  | - |
+| 22. Punkte-Vergabe Debug | 2/2 | Complete   | 2026-03-05 | - |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |
 | 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |

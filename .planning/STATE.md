@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: in-progress
-last_updated: "2026-03-05T20:55:39Z"
+status: complete
+last_updated: "2026-03-05T21:00:29Z"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 
 ## Current Position
 
-Phase: 22 (3 of 5) (Punkte-Vergabe Debug) -- IN PROGRESS
-Plan: 22-01 complete (1 of 2 in Wave 1)
-Status: Plan 22-01 abgeschlossen, Plan 22-02 ausstehend
-Last activity: 2026-03-05 -- Plan 22-01 Punkte-Vergabe Transaktionssicherheit abgeschlossen
+Phase: 22 (3 of 5) (Punkte-Vergabe Debug) -- COMPLETE
+Plan: 22-02 complete (2 of 2)
+Status: Phase 22 komplett abgeschlossen
+Last activity: 2026-03-05 -- Plan 22-02 Bonus-Konsolidierung und Points-History abgeschlossen
 
-Progress: [########--] 83%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -47,6 +47,8 @@ Progress: [########--] 83%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [22-02] konfi_profiles als Single Source of Truth fuer Punkte-Totals
+- [22-02] Bonus-Endpunkt in konfi-managment.js konsolidiert mit Teamer-Berechtigung
 - [22-01] client.connect() Pattern fuer alle Transaktionen statt db.query('BEGIN')
 - [22-01] GREATEST(0, ...) bei allen Punkt-Abzuegen
 - [22-01] Badge-Check und Push-Notifications nach COMMIT
@@ -70,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 22-01-PLAN.md
-Resume file: .planning/phases/22-punkte-vergabe-debug/22-01-SUMMARY.md
+Stopped at: Completed 22-02-PLAN.md (Phase 22 complete)
+Resume file: .planning/phases/22-punkte-vergabe-debug/22-02-SUMMARY.md
