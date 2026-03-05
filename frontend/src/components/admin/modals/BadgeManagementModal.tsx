@@ -332,15 +332,26 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       const badge = response.data;
 
       if (badge) {
-        // Parse extra criteria FIRST
-        let extra = {};
+        // Parse extra criteria FIRST (kann doppelt escaped sein: "{\"days\":30}")
+        let extra: any = {};
         try {
-          extra = typeof badge.criteria_extra === 'string'
-            ? JSON.parse(badge.criteria_extra || '{}')
-            : (badge.criteria_extra || {});
+          let parsed = badge.criteria_extra;
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed || '{}');
+          }
+          // Falls nach dem ersten Parse immer noch ein String (doppelt escaped)
+          if (typeof parsed === 'string') {
+            parsed = JSON.parse(parsed);
+          }
+          extra = parsed || {};
         } catch (e) {
- console.error('Error parsing criteria_extra:', e);
+          console.error('Error parsing criteria_extra:', e);
           extra = {};
+        }
+
+        // time_based: DB speichert "days", Modal nutzt "weeks" - umrechnen
+        if (badge.criteria_type === 'time_based' && extra.days && !extra.weeks) {
+          extra.weeks = Math.round(extra.days / 7) || 1;
         }
 
         const newFormData = {
@@ -389,8 +400,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           }
           break;
         case 'time_based':
-          if (extraCriteria.days) {
-            criteriaExtra = { days: extraCriteria.days };
+          if (extraCriteria.weeks) {
+            criteriaExtra = { days: extraCriteria.weeks * 7 };
           }
           break;
         case 'activity_combination':
@@ -402,7 +413,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
       const badgeData = {
         ...formData,
-        criteria_extra: JSON.stringify(criteriaExtra)
+        criteria_extra: criteriaExtra
       };
 
       if (isEditMode) {

@@ -175,20 +175,24 @@ const checkAndAwardBadges = async (db, konfiId) => {
           break;
         
         case 'time_based':
-          if (criteria.weeks) {
-            const timeBasedQuery = `
-              SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
-              UNION ALL
-              SELECT e.event_date as date FROM event_bookings eb
-              JOIN events e ON eb.event_id = e.id
-              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
-              ORDER BY date DESC
-            `;
-            const { rows: results } = await db.query(timeBasedQuery, [konfiId, konfi.organization_id]);
-            const now = new Date();
-            const cutoff = new Date(now.getTime() - (criteria.weeks * 7 * 24 * 60 * 60 * 1000));
-            const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
-            earned = recentCount >= badge.criteria_value;
+          {
+            // Unterstützt sowohl "days" als auch "weeks" Format
+            const days = criteria.days || (criteria.weeks ? criteria.weeks * 7 : null);
+            if (days) {
+              const timeBasedQuery = `
+                SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
+                UNION ALL
+                SELECT e.event_date as date FROM event_bookings eb
+                JOIN events e ON eb.event_id = e.id
+                WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+                ORDER BY date DESC
+              `;
+              const { rows: results } = await db.query(timeBasedQuery, [konfiId, konfi.organization_id]);
+              const now = new Date();
+              const cutoff = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+              const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
+              earned = recentCount >= badge.criteria_value;
+            }
           }
           break;
         

@@ -18,7 +18,7 @@ import {
   IonCardContent,
   useIonAlert
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, flash, calendar, home, people, star } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, flash, calendar, home, people, pricetag } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface Activity {
@@ -26,6 +26,7 @@ interface Activity {
   name: string;
   points: number;
   type: string;
+  categories?: { id: number; name: string }[];
 }
 
 interface ActivityModalProps {
@@ -198,31 +199,48 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                     return (
                       <div
                         key={activity.id}
-                        className="app-list-item"
+                        className="app-list-item app-list-item--activities"
                         onClick={() => !loading && setSelectedActivity(activity.id)}
                         style={{
                           cursor: loading ? 'default' : 'pointer',
                           opacity: loading ? 0.6 : 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
                           marginBottom: '0',
                           borderLeftColor: typeColor,
-                          backgroundColor: isSelected ? `${typeColor}10` : undefined
+                          backgroundColor: isSelected ? `${typeColor}10` : undefined,
+                          position: 'relative',
+                          overflow: 'hidden'
                         }}
                       >
+                        {/* Corner Badge */}
                         <div
-                          className="app-icon-circle"
-                          style={{ backgroundColor: typeColor, flexShrink: 0 }}
+                          className="app-corner-badge"
+                          style={{ backgroundColor: typeColor }}
                         >
-                          <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                          +{activity.points}P
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div className="app-list-item__title">{activity.name}</div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: typeColor, fontWeight: '600', fontSize: '0.85rem', flexShrink: 0 }}>
-                          <IonIcon icon={star} style={{ fontSize: '0.9rem' }} />
-                          {activity.points}
+
+                        <div className="app-list-item__row">
+                          <div className="app-list-item__main">
+                            <div
+                              className="app-icon-circle app-icon-circle--lg"
+                              style={{ backgroundColor: typeColor }}
+                            >
+                              <IonIcon icon={activity.type === 'gottesdienst' ? home : people} />
+                            </div>
+                            <div className="app-list-item__content">
+                              <div className="app-list-item__title" style={{ paddingRight: '60px' }}>
+                                {activity.name}
+                              </div>
+                              {activity.categories && activity.categories.length > 0 && (
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={pricetag} style={{ color: '#ff9500' }} />
+                                    {activity.categories.map(cat => cat.name).join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );

@@ -129,7 +129,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const getStatusColor = (konfi: Konfi) => {
     const total = getTotalPoints(konfi);
     const percent = targetTotal > 0 ? (total / targetTotal) * 100 : 0;
-    if (percent >= 100) return '#10b981'; // Grün - Ziel erreicht
+    if (percent >= 100) return '#059669'; // Dunkelgrün - Ziel erreicht
     return '#5b21b6'; // Lila - Auf dem Weg (Sektionsfarbe)
   };
 
@@ -309,12 +309,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                               {/* Gemeinde */}
                               <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                  <span style={{ fontSize: '0.65rem', color: '#22c55e', fontWeight: '600' }}>Gemeinde</span>
+                                  <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
                                   <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGemeinde}</span>
                                 </div>
                                 <div className="app-progress-bar">
                                   <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
-                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#22c55e' }} />
+                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
                                   </div>
                                 </div>
                               </div>
@@ -326,7 +326,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                                 <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
                                 <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
                                   {totalPoints}/{targetTotal}
-                                  {percentTotal > 100 && <span style={{ color: '#10b981', marginLeft: '4px' }}>({percentTotal}%)</span>}
+                                  {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
                                 </span>
                               </div>
                               <div className="app-progress-bar app-progress-bar--thick">

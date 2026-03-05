@@ -293,10 +293,10 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--warning app-settings-item"
+                  className="app-list-item app-list-item--level app-settings-item"
                   onClick={() => history.push('/admin/settings/levels')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
                     <IonIcon icon={trophy} />
                   </div>
                   <div className="app-flex-fill">

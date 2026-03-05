@@ -438,6 +438,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     return (
                       <div
                         key={role.id}
+                        className="app-list-item"
                         onClick={() => !saving && setFormData({ ...formData, role_id: role.id })}
                         style={{
                           cursor: saving ? 'default' : 'pointer',
@@ -445,13 +446,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '12px 16px',
-                          borderRadius: '10px',
-                          borderTop: 'none',
-                          borderRight: 'none',
-                          borderBottom: 'none',
-                          borderLeft: `3px solid ${roleColor}`,
-                          background: isSelected ? `${roleColor}15` : 'white'
+                          marginBottom: '0',
+                          borderLeftColor: roleColor,
+                          background: isSelected ? `${roleColor}15` : undefined
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -519,8 +516,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </IonLabel>
               </IonItem>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {jahrgaenge.map(jahrgang => {
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {jahrgaenge.map((jahrgang, index) => {
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
 
                   return (
@@ -534,6 +531,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        marginBottom: index < jahrgaenge.length - 1 ? '8px' : '0',
                         background: isAssigned ? 'rgba(102, 126, 234, 0.08)' : undefined
                       }}
                     >

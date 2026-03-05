@@ -111,7 +111,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             {/* Gottesdienst-Ziel */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon app-section-icon--activities">
+                <div className="app-section-icon app-section-icon--users">
                   <IonIcon icon={home} />
                 </div>
                 <IonLabel>Gottesdienst-Punkte</IonLabel>
@@ -140,7 +140,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                           }
                         }}
                         disabled={saving}
-                        style={{ textAlign: 'center', flex: 1, fontSize: '1.2rem', fontWeight: '700' }}
+                        style={{ textAlign: 'center', flex: 1 }}
                       />
                       <IonButton
                         fill="outline"
@@ -163,7 +163,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
             {/* Gemeinde-Ziel */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon app-section-icon--activities">
+                <div className="app-section-icon app-section-icon--users">
                   <IonIcon icon={people} />
                 </div>
                 <IonLabel>Gemeinde-Punkte</IonLabel>
@@ -192,7 +192,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                           }
                         }}
                         disabled={saving}
-                        style={{ textAlign: 'center', flex: 1, fontSize: '1.2rem', fontWeight: '700' }}
+                        style={{ textAlign: 'center', flex: 1 }}
                       />
                       <IonButton
                         fill="outline"

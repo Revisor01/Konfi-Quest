@@ -166,9 +166,9 @@ const AdminKonfisPage: React.FC = () => {
       const tempPassword = response.data.temporaryPassword;
       if (tempPassword) {
         presentAlert({
-          header: 'Konfi erstellt',
-          subHeader: `${response.data.name || konfiData.display_name}`,
-          message: `Einmalpasswort: ${tempPassword}`,
+          header: 'Einmalpasswort',
+          subHeader: tempPassword,
+          message: `Konfi "${konfiData.display_name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
           buttons: [
             {
               text: 'Kopieren',

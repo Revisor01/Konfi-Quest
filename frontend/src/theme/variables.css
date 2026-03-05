@@ -131,7 +131,7 @@ ion-item.app-list-item:last-child {
 .app-list-item--bonus, ion-item.app-list-item--bonus { border-left-color: #f97316; }
 .app-list-item--activities, ion-item.app-list-item--activities { border-left-color: #047857; }
 .app-list-item--users, ion-item.app-list-item--users { border-left-color: #667eea; }
-.app-list-item--level, ion-item.app-list-item--level { border-left-color: #5b21b6; }
+.app-list-item--level, ion-item.app-list-item--level { border-left-color: #ec4899; }
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #667eea; }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
 .app-list-item--categories, ion-item.app-list-item--categories { border-left-color: #0ea5e9; }
@@ -316,7 +316,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--bonus { background-color: #f97316; }
 .app-section-icon--activities { background-color: #047857; }
 .app-section-icon--users { background-color: #667eea; }
-.app-section-icon--level { background-color: #5b21b6; }
+.app-section-icon--level { background-color: #ec4899; }
 .app-section-icon--organizations { background-color: #667eea; }
 .app-section-icon--badges { background-color: #f59e0b; }
 .app-section-icon--categories { background-color: #0ea5e9; }
@@ -379,7 +379,7 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--bonus { background-color: #f97316; }
 .app-icon-circle--activities { background-color: #047857; }
 .app-icon-circle--users { background-color: #667eea; }
-.app-icon-circle--level { background-color: #5b21b6; }
+.app-icon-circle--level { background-color: #ec4899; }
 .app-icon-circle--organizations { background-color: #667eea; }
 .app-icon-circle--badges { background-color: #f59e0b; }
 .app-icon-circle--categories { background-color: #0ea5e9; }
@@ -1180,8 +1180,8 @@ ion-button.app-modal-submit-btn--settings {
   --background-hover: #5a6fd6;
 }
 ion-button.app-modal-submit-btn--level {
-  --background: #5b21b6;
-  --background-hover: #4c1d95;
+  --background: #ec4899;
+  --background-hover: #db2777;
 }
 ion-button.app-modal-submit-btn--chat {
   --background: #06b6d4;

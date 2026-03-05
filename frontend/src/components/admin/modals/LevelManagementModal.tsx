@@ -186,7 +186,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
     description: '',
     points_required: 0,
     icon: 'trophy',
-    color: '#5b21b6',
+    color: '#ec4899',
     is_active: true
   });
   const [loading, setLoading] = useState(false);
@@ -221,7 +221,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
         description: formData.description?.trim() || '',
         points_required: formData.points_required,
         icon: formData.icon || 'trophy',
-        color: formData.color || '#5b21b6',
+        color: formData.color || '#ec4899',
         reward_type: formData.reward_type || null,
         reward_value: formData.reward_value || null,
         is_active: formData.is_active !== false

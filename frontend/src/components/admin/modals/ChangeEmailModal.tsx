@@ -148,7 +148,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--purple">
+          <IonCard className="app-card app-info-box--blue">
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.

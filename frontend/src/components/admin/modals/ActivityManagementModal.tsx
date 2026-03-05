@@ -320,6 +320,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               </IonList>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
+                  className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -327,18 +328,15 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    borderTop: 'none',
-                    borderRight: 'none',
-                    borderBottom: 'none',
-                    borderLeft: '3px solid #3b82f6',
+                    marginBottom: '0',
+                    borderLeftColor: '#3b82f6',
                     background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
                 </div>
                 <div
+                  className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -346,12 +344,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
-                    borderTop: 'none',
-                    borderRight: 'none',
-                    borderBottom: 'none',
-                    borderLeft: '3px solid #059669',
+                    marginBottom: '0',
+                    borderLeftColor: '#059669',
                     background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
                   }}
                 >
@@ -371,14 +365,14 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             <IonLabel>Kategorien</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: '16px' }}>
             {initializing ? (
               <div style={{ padding: '40px 20px', textAlign: 'center' }}>
                 <IonSpinner name="crescent" />
               </div>
             ) : categories.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {categories.map((category) => {
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {categories.map((category, index) => {
                   const isChecked = formData.category_ids.includes(category.id);
                   return (
                     <div
@@ -400,6 +394,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        marginBottom: index < categories.length - 1 ? '8px' : '0',
                         background: isChecked ? 'rgba(14, 165, 233, 0.08)' : undefined
                       }}
                     >

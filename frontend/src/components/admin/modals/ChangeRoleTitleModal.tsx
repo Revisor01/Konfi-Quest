@@ -109,7 +109,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--purple">
+          <IonCard className="app-card app-info-box--blue">
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.

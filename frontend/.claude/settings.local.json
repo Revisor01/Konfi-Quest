@@ -57,7 +57,19 @@
       "Bash(gh secret:*)",
       "mcp__plugin_claude-mem_mem-search__search",
       "Bash(npx ionic cap sync:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(gh workflow:*)",
+      "WebFetch(domain:ionic.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm view:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh api:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(npx ionic build:*)",
+      "Bash(git status:*)",
+      "WebFetch(domain:ionicons.com)",
+      "WebFetch(domain:unpkg.com)"
     ],
     "deny": [],
     "ask": []

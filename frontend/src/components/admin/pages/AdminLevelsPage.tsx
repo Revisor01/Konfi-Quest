@@ -217,7 +217,7 @@ const AdminLevelsPage: React.FC = () => {
               title="Level-System"
               subtitle="Punkte-Level und Belohnungen"
               icon={trophy}
-              preset="konfis"
+              preset="level"
               stats={[
                 { value: levels.length, label: 'GESAMT' }
               ]}
@@ -255,12 +255,12 @@ const AdminLevelsPage: React.FC = () => {
                           >
                             <div
                               className="app-list-item app-list-item--level"
-                              style={{ borderLeftColor: level.color || '#5b21b6' }}
+                              style={{ borderLeftColor: level.color || '#ec4899' }}
                             >
                               {/* Corner Badge für Punkte */}
                               <div
                                 className="app-corner-badge"
-                                style={{ backgroundColor: level.color || '#5b21b6' }}
+                                style={{ backgroundColor: level.color || '#ec4899' }}
                               >
                                 {level.points_required}P
                               </div>
@@ -268,7 +268,7 @@ const AdminLevelsPage: React.FC = () => {
                                 <div className="app-list-item__main">
                                   <div
                                     className="app-icon-circle app-icon-circle--lg"
-                                    style={{ backgroundColor: level.color || '#5b21b6' }}
+                                    style={{ backgroundColor: level.color || '#ec4899' }}
                                   >
                                     <IonIcon icon={getIconFromString(level.icon || 'trophy')} />
                                   </div>

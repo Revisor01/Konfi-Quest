@@ -225,6 +225,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                 ref={(ref) => {
                   if (ref) slidingRefs.current.set(user.id, ref);
                 }}
+                style={{ marginBottom: index < filteredAndSortedUsers.length - 1 ? '8px' : '0' }}
               >
                 <IonItem
                   button={user.can_edit !== false}

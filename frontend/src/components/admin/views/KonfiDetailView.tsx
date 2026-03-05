@@ -277,7 +277,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       message: 'Es wird ein neues temporäres Passwort erstellt. Das aktuelle Passwort wird überschrieben.',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
-        { text: 'Generieren', handler: () => handlePasswordReset() }
+        {
+          text: 'Generieren',
+          handler: () => {
+            setTimeout(() => handlePasswordReset(), 300);
+          }
+        }
       ]
     });
   };
@@ -556,7 +561,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               backgroundColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
                             }}
                           >
-                            +{bonus.points}
+                            +{bonus.points}P
                           </div>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
@@ -646,7 +651,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           backgroundColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
                         }}
                       >
-                        +{eventPoint.points}
+                        +{eventPoint.points}P
                       </div>
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">
@@ -731,7 +736,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                                 : '#059669'
                             }}
                           >
-                            {activity.isPending ? '?' : '+'}{activity.points}
+                            {activity.isPending ? '?' : '+'}{activity.points}P
                           </div>
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">

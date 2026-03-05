@@ -209,6 +209,48 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
   };
 
+  const getCriteriaDetail = (badge: Badge): string | null => {
+    let extra: any = {};
+    try {
+      if (badge.criteria_extra) {
+        let parsed = typeof badge.criteria_extra === 'string'
+          ? JSON.parse(badge.criteria_extra)
+          : badge.criteria_extra;
+        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+        extra = parsed || {};
+      }
+    } catch { /* ignore */ }
+
+    switch (badge.criteria_type) {
+      case 'total_points':
+      case 'gottesdienst_points':
+      case 'gemeinde_points':
+      case 'bonus_points':
+        return `${badge.criteria_value} Punkte`;
+      case 'both_categories':
+        return `${badge.criteria_value} Punkte pro Kategorie`;
+      case 'specific_activity':
+        return extra.activity_id ? `${badge.criteria_value}x Aktivität #${extra.activity_id}` : `${badge.criteria_value}x`;
+      case 'activity_combination':
+        return extra.activity_ids?.length ? `${extra.activity_ids.length} Aktivitäten, min. ${badge.criteria_value}x` : null;
+      case 'category_activities':
+        return extra.required_category ? `${badge.criteria_value}x in "${extra.required_category}"` : `${badge.criteria_value}x`;
+      case 'time_based':
+        const weeks = extra.days ? Math.round(extra.days / 7) : (extra.weeks || '?');
+        return `${badge.criteria_value} in ${weeks} Wochen`;
+      case 'activity_count':
+        return `${badge.criteria_value} Aktivitäten`;
+      case 'event_count':
+        return `${badge.criteria_value} Events`;
+      case 'streak':
+        return `${badge.criteria_value} Wochen am Stück`;
+      case 'unique_activities':
+        return `${badge.criteria_value} verschiedene`;
+      default:
+        return `Wert: ${badge.criteria_value}`;
+    }
+  };
+
   const getBadgeStatusColor = (badge: Badge) => {
     if (!badge.is_active) return 'danger';
     if (badge.is_hidden) return 'warning';
@@ -424,8 +466,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                                       </div>
                                     )}
 
-                                    {/* Zeile 3: Verliehen-Count */}
+                                    {/* Zeile 3: Kriterien-Details + Verliehen-Count */}
                                     <div className="app-list-item__meta">
+                                      {getCriteriaDetail(badge) && (
+                                        <span className="app-list-item__meta-item">
+                                          <IonIcon icon={getCriteriaTypeIcon(badge.criteria_type)} style={{ color: isInactive ? '#999' : badgeColor }} />
+                                          {getCriteriaDetail(badge)}
+                                        </span>
+                                      )}
                                       <span className="app-list-item__meta-item">
                                         <IonIcon icon={trophy} style={{ color: isInactive ? '#999' : '#ff9500' }} />
                                         {badge.earned_count || 0}x verliehen

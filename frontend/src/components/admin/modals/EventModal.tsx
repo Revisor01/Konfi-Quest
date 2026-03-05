@@ -859,7 +859,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         <span style={{
                           marginLeft: '8px',
                           fontSize: '0.8rem',
-                          color: '#dc2626',
+                          color: '#0ea5e9',
                           fontWeight: 'normal'
                         }}>
                           ({formData.category_ids.length} ausgewählt)
@@ -873,7 +873,7 @@ const EventModal: React.FC<EventModalProps> = ({
                       return (
                         <div
                           key={category.id}
-                          className="app-list-item app-list-item--events"
+                          className="app-list-item app-list-item--categories"
                           onClick={() => {
                             if (!loading) {
                               setFormData(prev => ({
@@ -891,7 +891,7 @@ const EventModal: React.FC<EventModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
+                            background: isSelected ? 'rgba(14, 165, 233, 0.08)' : undefined
                           }}
                         >
                           <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
@@ -915,7 +915,7 @@ const EventModal: React.FC<EventModalProps> = ({
                     <span style={{
                       marginLeft: '8px',
                       fontSize: '0.8rem',
-                      color: '#dc2626',
+                      color: '#8b5cf6',
                       fontWeight: 'normal'
                     }}>
                       ({formData.jahrgang_ids.length} ausgewählt)
@@ -929,7 +929,7 @@ const EventModal: React.FC<EventModalProps> = ({
                   return (
                     <div
                       key={jahrgang.id}
-                      className="app-list-item app-list-item--events"
+                      className="app-list-item app-list-item--jahrgang"
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -947,7 +947,7 @@ const EventModal: React.FC<EventModalProps> = ({
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         marginBottom: '0',
-                        background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
+                        background: isSelected ? 'rgba(139, 92, 246, 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>

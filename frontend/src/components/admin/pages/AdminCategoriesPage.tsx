@@ -338,7 +338,7 @@ const AdminCategoriesPage: React.FC = () => {
           title="Kategorien"
           subtitle="Aktivitäten und Events"
           icon={pricetag}
-          preset="users"
+          preset="categories"
           stats={[
             { value: categories.length, label: 'GESAMT' }
           ]}
@@ -353,7 +353,7 @@ const AdminCategoriesPage: React.FC = () => {
           emptyIcon={pricetag}
           emptyTitle="Keine Kategorien gefunden"
           emptyMessage="Noch keine Kategorien angelegt"
-          emptyIconColor="#f59e0b"
+          emptyIconColor="#0ea5e9"
         >
                   {categories.map((category, index) => (
                     <IonItemSliding

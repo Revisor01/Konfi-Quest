@@ -5,7 +5,7 @@ interface SectionHeaderProps {
   title: string;
   subtitle: string;
   icon: string;
-  preset?: 'events' | 'activities' | 'konfis' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests';
+  preset?: 'events' | 'activities' | 'konfis' | 'users' | 'organizations' | 'badges' | 'requests' | 'jahrgang' | 'konfi-requests' | 'categories' | 'level';
   colors?: { primary: string; secondary: string };
   stats: Array<{ value: number; label: string }>;
 }
@@ -20,6 +20,8 @@ const PRESET_COLORS: Record<string, { primary: string; secondary: string }> = {
   requests: { primary: '#5b21b6', secondary: '#4c1d95' },
   'konfi-requests': { primary: '#047857', secondary: '#065f46' },
   jahrgang: { primary: '#007aff', secondary: '#0066d6' },
+  categories: { primary: '#0ea5e9', secondary: '#0284c7' },
+  level: { primary: '#ec4899', secondary: '#db2777' },
 };
 
 // Hilfsfunktion: HEX zu RGB-String fuer rgba()

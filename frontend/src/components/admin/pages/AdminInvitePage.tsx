@@ -17,19 +17,23 @@ import {
   IonButtons,
   IonIcon,
   IonSpinner,
-  IonText
+  IonText,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  useIonAlert
 } from '@ionic/react';
 import {
   closeOutline,
-  qrCodeOutline,
+  qrCode,
   school,
-  refreshOutline,
   copyOutline,
   shareOutline,
   add,
-  timeOutline,
-  checkmarkCircleOutline,
-  peopleOutline
+  time,
+  checkmarkCircle,
+  people,
+  trash
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -56,6 +60,7 @@ interface AdminInviteModalProps {
 
 const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) => {
   const { setSuccess, setError } = useApp();
+  const [presentAlert] = useIonAlert();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -81,7 +86,10 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       setLoading(true);
       const [jahrgaengeRes, invitesRes] = await Promise.all([
         api.get('/admin/jahrgaenge'),
-        api.get('/auth/invite-codes').catch(() => ({ data: [] }))
+        api.get('/auth/invite-codes').catch((err) => {
+          console.error('Fehler beim Laden der Einladungscodes:', err);
+          return { data: [] };
+        })
       ]);
       setJahrgaenge(jahrgaengeRes.data);
       const invites = invitesRes.data || [];
@@ -164,6 +172,33 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     }
   };
 
+  const deleteInvite = (invite: ExistingInvite) => {
+    presentAlert({
+      header: 'Code löschen',
+      message: `Einladungscode "${invite.invite_code}" wirklich löschen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Löschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/auth/invite-codes/${invite.id}`);
+              setSuccess('Einladungscode gelöscht');
+              if (inviteCode === invite.invite_code) {
+                setInviteCode(null);
+                setQrCodeDataUrl(null);
+              }
+              await loadData();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Löschen');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const showExistingInviteQR = async (invite: ExistingInvite) => {
     const registrationUrl = `https://konfi-quest.de/register?code=${invite.invite_code}`;
     const qrDataUrl = await QRCode.toDataURL(registrationUrl, {
@@ -243,7 +278,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             {/* Jahrgang Auswahl */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon app-section-icon--jahrgang">
+                <div className="app-section-icon app-section-icon--users">
                   <IonIcon icon={school} />
                 </div>
                 <IonLabel>Jahrgang auswählen</IonLabel>
@@ -295,85 +330,88 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             {existingInvites.length > 0 && (
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
-                  <div className="app-section-icon app-section-icon--jahrgang">
-                    <IonIcon icon={checkmarkCircleOutline} />
+                  <div className="app-section-icon app-section-icon--users">
+                    <IonIcon icon={checkmarkCircle} />
                   </div>
                   <IonLabel>Aktive Einladungscodes</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent>
-                    <IonList lines="none" className="app-list-inner">
+                    <IonList lines="none" style={{ background: 'transparent', padding: '0', margin: '0' }}>
                       {existingInvites.map((invite, index) => (
-                          <div
-                            key={invite.id}
-                            className="app-list-item"
-                            style={{
-                              marginBottom: index < existingInvites.length - 1 ? '8px' : '0',
-                              position: 'relative',
-                              overflow: 'hidden',
-                              borderLeftColor: '#22c55e',
-                              cursor: 'pointer'
-                            }}
+                        <IonItemSliding key={invite.id} style={{ marginBottom: index < existingInvites.length - 1 ? '8px' : '0' }}>
+                          <IonItem
+                            button
                             onClick={() => showExistingInviteQR(invite)}
+                            detail={false}
+                            lines="none"
+                            style={{
+                              '--background': 'transparent',
+                              '--padding-start': '0',
+                              '--padding-end': '0',
+                              '--inner-padding-end': '0',
+                              '--inner-border-width': '0',
+                              '--border-style': 'none',
+                              '--min-height': 'auto'
+                            }}
                           >
-                            {/* Corner Badge */}
                             <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: '#22c55e' }}
+                              className="app-list-item"
+                              style={{
+                                width: '100%',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                borderLeftColor: '#059669'
+                              }}
                             >
-                              {invite.used_count || 0}x
-                            </div>
-                            <div className="app-list-item__row">
-                              <div className="app-list-item__main">
-                                <div
-                                  className="app-icon-circle"
-                                  style={{ backgroundColor: '#22c55e' }}
-                                >
-                                  <IonIcon icon={qrCodeOutline} />
+                              {/* Corner Badge - Gültigkeit */}
+                              <div style={{ position: 'absolute', top: '0', right: '0', zIndex: 10 }}>
+                                <div style={{ backgroundColor: '#059669', color: 'white', fontSize: '0.65rem', fontWeight: '700', padding: '4px 8px', borderRadius: '0 8px 0 8px' }}>
+                                  {formatExpiryDate(invite.expires_at)}
                                 </div>
-                                <div className="app-list-item__content">
-                                  <div className="app-list-item__title app-list-item__title--with-badge">
-                                    {invite.jahrgang_name}
+                              </div>
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className="app-icon-circle" style={{ backgroundColor: '#059669' }}>
+                                    <IonIcon icon={qrCode} />
                                   </div>
-                                  <div className="app-list-item__meta">
-                                    <span className="app-list-item__meta-item" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
-                                      {invite.invite_code}
-                                    </span>
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={timeOutline} />
-                                      {formatExpiryDate(invite.expires_at)}
-                                    </span>
-                                    <span className="app-list-item__meta-item">
-                                      <IonIcon icon={peopleOutline} />
-                                      {invite.used_count || 0} {(invite.used_count || 0) === 1 ? 'Registrierung' : 'Registrierungen'}
-                                    </span>
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title" style={{ paddingRight: '100px' }}>
+                                      {invite.jahrgang_name}
+                                    </div>
+                                    <div className="app-list-item__meta">
+                                      <span className="app-list-item__meta-item" style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                                        {invite.invite_code}
+                                      </span>
+                                      <span className="app-list-item__meta-item">
+                                        <IonIcon icon={people} style={{ color: '#667eea' }} />
+                                        {invite.used_count || 0}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <IonButton
-                              fill="clear"
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                extendInvite(invite.id);
-                              }}
-                              disabled={extendingInvite === invite.id}
-                              style={{
-                                position: 'absolute',
-                                bottom: '4px',
-                                right: '8px',
-                                '--color': '#22c55e',
-                                fontSize: '0.75rem'
-                              }}
+                          </IonItem>
+                          <IonItemOptions side="end" style={{ '--ion-item-background': 'transparent', border: 'none', gap: '0' } as any}>
+                            <IonItemOption
+                              onClick={() => extendInvite(invite.id)}
+                              style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
                             >
-                              {extendingInvite === invite.id ? (
-                                <IonSpinner name="crescent" style={{ width: '14px', height: '14px' }} />
-                              ) : (
-                                '+7 Tage'
-                              )}
-                            </IonButton>
-                          </div>
+                              <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#059669' }}>
+                                <IonIcon icon={time} />
+                              </div>
+                            </IonItemOption>
+                            <IonItemOption
+                              onClick={() => deleteInvite(invite)}
+                              style={{ '--background': 'transparent', '--color': 'transparent', padding: '0', minWidth: 'auto', '--border-width': '0' }}
+                            >
+                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                                <IonIcon icon={trash} />
+                              </div>
+                            </IonItemOption>
+                          </IonItemOptions>
+                        </IonItemSliding>
                       ))}
                     </IonList>
                   </IonCardContent>
@@ -385,8 +423,8 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
             {qrCodeDataUrl && inviteCode && (
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
-                  <div className="app-section-icon app-section-icon--jahrgang">
-                    <IonIcon icon={qrCodeOutline} />
+                  <div className="app-section-icon app-section-icon--users">
+                    <IonIcon icon={qrCode} />
                   </div>
                   <IonLabel>QR-Code</IonLabel>
                 </IonListHeader>
