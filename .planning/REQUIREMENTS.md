@@ -43,8 +43,8 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 
 ### Chat-Logik
 
-- [ ] **CHT-01**: Dateizugriff `GET /files/:filename` prueft Organisation-Zugehoerigkeit
-- [ ] **CHT-02**: Socket.io-Rollen werden bei Rollenaenderung aktualisiert
+- [x] **CHT-01**: Dateizugriff `GET /files/:filename` prueft Organisation-Zugehoerigkeit
+- [x] **CHT-02**: Socket.io-Rollen werden bei Rollenaenderung aktualisiert
 
 ## Future Requirements
 
@@ -91,8 +91,8 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 | USR-02 | Phase 23 | Complete |
 | USR-03 | Phase 23 | Complete |
 | USR-04 | Phase 23 | Complete |
-| CHT-01 | Phase 24 | Pending |
-| CHT-02 | Phase 24 | Pending |
+| CHT-01 | Phase 24 | Complete |
+| CHT-02 | Phase 24 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 24 total

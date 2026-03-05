@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: unknown
-last_updated: "2026-03-05T21:16:10.965Z"
+status: in_progress
+last_updated: "2026-03-05T21:25:00Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 9
+  completed_plans: 9
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.4 Logik-Debug -- Phase 23: User-Rechte und Institutionen Debug
+**Current focus:** v1.4 Logik-Debug -- Phase 24: Chat-Logik-Debug
 
 ## Current Position
 
-Phase: 23 (4 of 5) (User-Rechte und Institutionen Debug) -- COMPLETE
-Plan: 23-02 complete (2 of 2)
-Status: Phase 23 komplett abgeschlossen
-Last activity: 2026-03-05 -- Plan 23-02 Jahrgang-Filter und Org-Löschkette abgeschlossen
+Phase: 24 (5 of 5) (Chat-Logik-Debug) -- COMPLETE
+Plan: 24-01 complete (1 of 1)
+Status: Phase 24 komplett abgeschlossen
+Last activity: 2026-03-05 -- Plan 24-01 Chat-Dateizugriff und Socket-Invalidierung abgeschlossen
 
 Progress: [##########] 100%
 
@@ -47,6 +47,9 @@ Progress: [##########] 100%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [24-01] Hex-Regex statt Whitelist fuer Dateinamen-Validierung (multer MD5-Hashes)
+- [24-01] Content-Type aus originalem Dateinamen (DB) statt aus Hash ableiten
+- [24-01] Beide User-Typen (admin/konfi) beim Socket-Disconnect pruefen
 - [23-02] Teamer-Jahrgang-Prüfung vor Aktivitäts-Zuweisung per konfi_profiles.jahrgang_id
 - [23-02] Events ohne Jahrgang-Zuweisung bleiben für alle Teamer sichtbar
 - [23-02] Org-Löschung entfernt alle 30+ Tabellen explizit statt CASCADE-Annahme
@@ -77,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 23-02-PLAN.md (Phase 23 complete)
-Resume file: .planning/phases/23-user-rechte-institutionen-debug/23-02-SUMMARY.md
+Stopped at: Completed 24-01-PLAN.md (Phase 24 complete)
+Resume file: .planning/phases/24-chat-logik-debug/24-01-SUMMARY.md
