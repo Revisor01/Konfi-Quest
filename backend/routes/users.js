@@ -255,6 +255,23 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       res.json({ message: 'Benutzer erfolgreich aktualisiert' });
 
+      // Bei Rollenaenderung: Socket.io-Verbindungen des Users trennen
+      // damit der Client sich mit neuem Token (neue Rolle) neu verbindet
+      if (role_id !== undefined && global.io) {
+        // User-Room-Name folgt dem Pattern aus server.js: user_{type}_{id}
+        // Beide moeglichen Typen pruefen (admin und konfi)
+        const userRoomAdmin = `user_admin_${id}`;
+        const userRoomKonfi = `user_konfi_${id}`;
+
+        for (const roomName of [userRoomAdmin, userRoomKonfi]) {
+          const sockets = await global.io.in(roomName).fetchSockets();
+          for (const s of sockets) {
+            s.emit('forceDisconnect', { reason: 'role_changed' });
+            s.disconnect(true);
+          }
+        }
+      }
+
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Benutzername oder E-Mail existiert bereits' });

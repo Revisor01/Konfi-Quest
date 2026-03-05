@@ -97,8 +97,10 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('disconnect', () => {
-    // Verbindung getrennt
+  socket.on('disconnect', (reason) => {
+    if (reason === 'server namespace disconnect') {
+      console.log(`Socket disconnected for user ${socket.user.id}: forced (role change)`);
+    }
   });
 });
 
