@@ -73,15 +73,27 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         GROUP BY e.id, timeslot_capacity.total_capacity
         ORDER BY e.event_date ASC
       `;
-      
+
       const { rows } = await db.query(query, [req.user.organization_id]);
-      
-      // Debug: Log registration status calculations
-      rows.forEach(event => {
-      });
+
+      // Für Teamer: nur Events anzeigen die mindestens einem zugewiesenen Jahrgang zugeordnet sind
+      // ODER die keinem Jahrgang zugeordnet sind (allgemeine Events)
+      let filteredRows = rows;
+      if (req.user.role_name === 'teamer' && req.user.assigned_jahrgaenge && req.user.assigned_jahrgaenge.length > 0) {
+        const viewableJahrgaenge = req.user.assigned_jahrgaenge
+          .filter(j => j.can_view)
+          .map(j => j.id);
+        filteredRows = rows.filter(row => {
+          // Allgemeine Events (keine Jahrgang-Zuweisung) sind für alle sichtbar
+          if (!row.jahrgang_ids) return true;
+          // Prüfen ob mindestens ein zugewiesener Jahrgang dabei ist
+          const eventJahrgangIds = row.jahrgang_ids.split(',').map(id => parseInt(id, 10));
+          return eventJahrgangIds.some(id => viewableJahrgaenge.includes(id));
+        });
+      }
       
       // Transform the data to include categories and jahrgaenge arrays
-      const eventsWithRelations = rows.map(row => {
+      const eventsWithRelations = filteredRows.map(row => {
         const categories = [];
         if (row.category_ids) {
           const ids = row.category_ids.split(',');

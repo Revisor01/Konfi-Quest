@@ -418,10 +418,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const { konfiId, activityId, completed_date } = req.body;
     if (!konfiId || !activityId) return res.status(400).json({ error: 'Konfi-ID und Aktivitäts-ID sind erforderlich' });
     const date = completed_date || new Date().toISOString().split('T')[0];
-  
+
     try {
       const { rows: [activity] } = await db.query("SELECT * FROM activities WHERE id = $1 AND organization_id = $2", [activityId, req.user.organization_id]);
       if (!activity) return res.status(404).json({ error: 'Aktivität nicht gefunden' });
+
+      // Jahrgang-Zugriff prüfen für Teamer
+      if (req.user.role_name === 'teamer') {
+        const { rows: [konfiProfile] } = await db.query(
+          'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [konfiId]
+        );
+        if (!konfiProfile) {
+          return res.status(404).json({ error: 'Konfi nicht gefunden' });
+        }
+        const hasAccess = req.user.assigned_jahrgaenge.some(
+          j => j.id === konfiProfile.jahrgang_id && j.can_view
+        );
+        if (!hasAccess) {
+          return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
+        }
+      }
 
       const client = await db.connect();
       try {
