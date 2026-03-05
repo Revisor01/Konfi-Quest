@@ -62,7 +62,7 @@ class BackgroundService {
             WHERE cp.user_id = $1
             AND cp.user_type = $2
             AND cm.created_at > cp.last_read_at
-            AND cm.sender_id != $3
+            AND cm.user_id != $3
           `;
           const { rows: [result] } = await db.query(badgeQuery, [user.user_id, user.user_type, user.user_id]);
 
