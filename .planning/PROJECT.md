@@ -4,9 +4,17 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current State
+## Current Milestone: v1.5 Push-Notifications
 
-v1.4 Logik-Debug shipped (2026-03-05). Alle Kern-Logiken (Events, Badges, Punkte, Rechte, Chat) sind systematisch debugged und transaktionssicher. Bereit fuer naechsten Milestone.
+**Goal:** Push-Notification-System zuverlaessig und vollstaendig machen — Token-Lifecycle, fehlende Flows, Admin-Konfiguration.
+
+**Target features:**
+- Token-Lifecycle: Registrierung, Cleanup bei Logout, Multi-Device, Fallback-ID Fix
+- Invalid-Token-Bereinigung nach Firebase-Errors
+- Fehlende Push-Flows: Event-Erinnerungen, Admin-Alerts, Level-Up/Punkte-Meilensteine
+- Push-Flow Vollstaendigkeits-Check ueber alle Routes
+- Admin Push-Konfiguration (Code-Level Toggles welche Types aktiv sind)
+- Badge-Count-Sync zwischen verschiedenen Systemen
 
 ## Core Value
 
@@ -70,7 +78,7 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Naechster Milestone -- /gsd:new-milestone)
+See: .planning/REQUIREMENTS.md (v1.5 Push-Notifications)
 
 ### Out of Scope
 
@@ -139,4 +147,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
 
 ---
-*Last updated: 2026-03-05 after v1.4 milestone complete*
+*Last updated: 2026-03-05 after v1.5 milestone start*
