@@ -130,8 +130,8 @@ const AdminProfilePage: React.FC = () => {
         </IonHeader>
         {/* Header - Dashboard-Style mit app-detail-header CSS-Klassen */}
         <div className="app-detail-header" style={{
-          background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)',
-          boxShadow: '0 20px 40px rgba(91, 33, 182, 0.3)'
+          background: 'linear-gradient(135deg, #667eea 0%, #5567d5 100%)',
+          boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)'
         }}>
           <div className="app-detail-header__content" style={{ padding: '70px 24px 24px 24px', alignItems: 'center', textAlign: 'center' }}>
             {/* Avatar */}
@@ -170,7 +170,7 @@ const AdminProfilePage: React.FC = () => {
         {/* Konto-Einstellungen - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={settingsOutline} />
             </div>
             <IonLabel>Konto-Einstellungen</IonLabel>
@@ -196,12 +196,12 @@ const AdminProfilePage: React.FC = () => {
                   }}
                 >
                   <div
-                    className="app-list-item app-list-item--purple"
+                    className="app-list-item app-list-item--users"
                     style={{ width: '100%' }}
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--purple">
+                        <div className="app-icon-circle app-icon-circle--users">
                           <IonIcon icon={briefcaseOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -235,12 +235,12 @@ const AdminProfilePage: React.FC = () => {
                   }}
                 >
                   <div
-                    className="app-list-item app-list-item--purple"
+                    className="app-list-item app-list-item--users"
                     style={{ width: '100%' }}
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--purple">
+                        <div className="app-icon-circle app-icon-circle--users">
                           <IonIcon icon={mailOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -273,12 +273,12 @@ const AdminProfilePage: React.FC = () => {
                   }}
                 >
                   <div
-                    className="app-list-item app-list-item--purple"
+                    className="app-list-item app-list-item--users"
                     style={{ width: '100%' }}
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
-                        <div className="app-icon-circle app-icon-circle--purple">
+                        <div className="app-icon-circle app-icon-circle--users">
                           <IonIcon icon={keyOutline} />
                         </div>
                         <div className="app-list-item__content">
@@ -299,17 +299,17 @@ const AdminProfilePage: React.FC = () => {
         {/* App-Info - iOS26 Pattern */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className="app-section-icon app-section-icon--users">
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>App-Info</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: '16px' }}>
-              <div className="app-list-item app-list-item--purple">
+              <div className="app-list-item app-list-item--users">
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
-                    <div className="app-icon-circle app-icon-circle--purple">
+                    <div className="app-icon-circle app-icon-circle--users">
                       <IonIcon icon={shieldOutline} />
                     </div>
                     <div className="app-list-item__content">
