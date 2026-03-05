@@ -11,7 +11,6 @@ import {
   IonLabel,
   IonSelect,
   IonSelectOption,
-  IonCheckbox,
   IonInput,
   IonSpinner,
   IonSegment,
@@ -576,7 +575,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       return (
                         <div
                           key={participantId}
-                          className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--warning'} ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className={`app-list-item ${isAdmin ? 'app-list-item--chat' : 'app-list-item--primary'}`}
                           onClick={() => {
                             if (!creating) {
                               if (chatType === 'direct') {
@@ -590,22 +589,23 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1,
                             marginBottom: '0',
-                            borderLeftColor: isAdmin ? '#06b6d4' : '#ff9500',
+                            borderLeftColor: isAdmin ? '#06b6d4' : '#5b21b6',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            background: isSelected ? (isAdmin ? 'rgba(6, 182, 212, 0.08)' : 'rgba(91, 33, 182, 0.08)') : undefined
                           }}
                         >
                           {/* Eselsohr mit Rolle/Funktion */}
                           <div
                             className="app-corner-badge"
-                            style={{ backgroundColor: isAdmin ? '#06b6d4' : '#ff9500' }}
+                            style={{ backgroundColor: isAdmin ? '#06b6d4' : '#5b21b6' }}
                           >
                             {isAdmin ? (targetUser.role_description || 'Admin') : 'Konfi'}
                           </div>
 
                           <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: '8px' } : undefined}>
                             <div className="app-list-item__main">
-                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--warning'}`}>
+                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--chat' : 'app-icon-circle--primary'}`}>
                                 <IonIcon icon={person} />
                               </div>
                               <div className="app-list-item__content">
@@ -623,19 +623,6 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                               </div>
                             </div>
 
-                            {chatType === 'group' && (
-                              <IonCheckbox
-                                checked={isSelected}
-                                style={{
-                                  '--checkbox-background-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                  '--border-color-checked': isAdmin ? '#06b6d4' : '#ff9500',
-                                  '--checkmark-color': 'white',
-                                  marginRight: '4px',
-                                  marginTop: '16px',
-                                  alignSelf: 'flex-start'
-                                }}
-                              />
-                            )}
                           </div>
                         </div>
                       );

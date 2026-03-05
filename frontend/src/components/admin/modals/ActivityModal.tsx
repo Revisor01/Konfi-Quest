@@ -16,10 +16,9 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
-  IonCheckbox,
   useIonAlert
 } from '@ionic/react';
-import { closeOutline, checkmarkOutline, flash, calendar, home, people } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline, flash, calendar, home, people, star } from 'ionicons/icons';
 import api from '../../../services/api';
 
 interface Activity {
@@ -212,16 +211,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                           backgroundColor: isSelected ? `${typeColor}10` : undefined
                         }}
                       >
-                        <IonCheckbox
-                          checked={isSelected}
-                          disabled={loading}
-                          style={{
-                            '--checkbox-background-checked': typeColor,
-                            '--border-color-checked': typeColor,
-                            '--checkmark-color': 'white',
-                            flexShrink: 0
-                          }}
-                        />
                         <div
                           className="app-icon-circle"
                           style={{ backgroundColor: typeColor, flexShrink: 0 }}
@@ -230,9 +219,10 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div className="app-list-item__title">{activity.name}</div>
-                          <div className="app-list-item__subtitle">
-                            {activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'} - {activity.points} {activity.points === 1 ? 'Punkt' : 'Punkte'}
-                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: typeColor, fontWeight: '600', fontSize: '0.85rem', flexShrink: 0 }}>
+                          <IonIcon icon={star} style={{ fontSize: '0.9rem' }} />
+                          {activity.points}
                         </div>
                       </div>
                     );

@@ -14,7 +14,6 @@ import {
   IonCard,
   IonCardContent,
   IonIcon,
-  IonCheckbox,
   IonList,
   IonListHeader,
   IonSpinner,
@@ -448,9 +447,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           justifyContent: 'space-between',
                           padding: '12px 16px',
                           borderRadius: '10px',
-                          borderTop: '1px solid rgba(0,0,0,0.06)',
-                          borderRight: '1px solid rgba(0,0,0,0.06)',
-                          borderBottom: '1px solid rgba(0,0,0,0.06)',
+                          borderTop: 'none',
+                          borderRight: 'none',
+                          borderBottom: 'none',
                           borderLeft: `3px solid ${roleColor}`,
                           background: isSelected ? `${roleColor}15` : 'white'
                         }}
@@ -473,16 +472,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             )}
                           </div>
                         </div>
-                        <IonCheckbox
-                          checked={isSelected}
-                          disabled={saving}
-                          style={{
-                            '--checkbox-background-checked': roleColor,
-                            '--border-color-checked': roleColor,
-                            '--border-color': roleColor,
-                            '--checkmark-color': 'white'
-                          }}
-                        />
                       </div>
                     );
                   })}
@@ -530,33 +519,25 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </IonLabel>
               </IonItem>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {jahrgaenge.map(jahrgang => {
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
 
                   return (
                     <div
                       key={jahrgang.id}
-                      className={`app-list-item app-list-item--users ${isAssigned ? 'app-list-item--selected' : ''}`}
+                      className="app-list-item app-list-item--users"
                       onClick={() => !saving && handleJahrgangAssignment(jahrgang.id, !isAssigned)}
                       style={{
                         cursor: saving ? 'default' : 'pointer',
                         opacity: saving ? 0.6 : 1,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        background: isAssigned ? 'rgba(102, 126, 234, 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
-                      <IonCheckbox
-                        checked={isAssigned}
-                        disabled={saving}
-                        style={{
-                          '--checkbox-background-checked': '#667eea',
-                          '--border-color-checked': '#667eea',
-                          '--checkmark-color': 'white'
-                        }}
-                      />
                     </div>
                   );
                 })}
@@ -578,7 +559,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent style={{ padding: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {user.assigned_jahrgaenge.map(assignment => (
                     <div
                       key={assignment.id}

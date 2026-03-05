@@ -16,13 +16,13 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
-  IonCheckbox
 } from '@ionic/react';
 import {
   closeOutline,
   documentTextOutline,
   imageOutline,
   checkmarkCircle,
+  checkmarkOutline,
   closeCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -193,7 +193,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           {isPending && selectedAction && (
             <IonButtons slot="end">
               <IonButton onClick={handleSubmit} disabled={loading || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
-                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkCircle} />}
+                {loading ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
               </IonButton>
             </IonButtons>
           )}
@@ -385,56 +385,40 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {/* Genehmigen */}
                   <div
-                    className={`app-list-item app-list-item--activities ${selectedAction === 'approve' ? 'app-list-item--selected' : ''}`}
+                    className="app-list-item app-list-item--activities"
                     onClick={() => !loading && setSelectedAction('approve')}
                     style={{
                       cursor: loading ? 'default' : 'pointer',
                       opacity: loading ? 0.6 : 1,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      background: selectedAction === 'approve' ? 'rgba(5, 150, 105, 0.08)' : undefined
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <IonIcon icon={checkmarkCircle} style={{ color: '#059669', fontSize: '1.2rem' }} />
                       <span style={{ fontWeight: '500', color: '#333' }}>Genehmigen</span>
                     </div>
-                    <IonCheckbox
-                      checked={selectedAction === 'approve'}
-                      disabled={loading}
-                      style={{
-                        '--checkbox-background-checked': '#059669',
-                        '--border-color-checked': '#059669',
-                        '--checkmark-color': 'white'
-                      }}
-                    />
                   </div>
 
                   {/* Ablehnen */}
                   <div
-                    className={`app-list-item app-list-item--events ${selectedAction === 'reject' ? 'app-list-item--selected' : ''}`}
+                    className="app-list-item app-list-item--events"
                     onClick={() => !loading && setSelectedAction('reject')}
                     style={{
                       cursor: loading ? 'default' : 'pointer',
                       opacity: loading ? 0.6 : 1,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      background: selectedAction === 'reject' ? 'rgba(220, 53, 69, 0.08)' : undefined
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <IonIcon icon={closeCircle} style={{ color: '#dc3545', fontSize: '1.2rem' }} />
                       <span style={{ fontWeight: '500', color: '#333' }}>Ablehnen</span>
                     </div>
-                    <IonCheckbox
-                      checked={selectedAction === 'reject'}
-                      disabled={loading}
-                      style={{
-                        '--checkbox-background-checked': '#dc3545',
-                        '--border-color-checked': '#dc3545',
-                        '--checkmark-color': 'white'
-                      }}
-                    />
                   </div>
                 </div>
 

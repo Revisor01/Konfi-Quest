@@ -105,10 +105,10 @@ const AdminSettingsPage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent>
               <div
-                className="app-list-item app-list-item--primary app-settings-item"
+                className="app-list-item app-list-item--users app-settings-item"
                 onClick={() => history.push('/admin/profile')}
               >
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--primary">
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={person} />
                 </div>
                 <div className="app-flex-fill">
@@ -118,7 +118,7 @@ const AdminSettingsPage: React.FC = () => {
               </div>
 
               <div
-                className="app-list-item app-list-item--warning app-settings-item"
+                className="app-list-item app-list-item--users app-settings-item"
                 onClick={() => pushNotificationsPermission !== 'granted' && requestPushPermissions()}
                 style={{
                   cursor: pushNotificationsPermission !== 'granted' ? 'pointer' : 'default',
@@ -134,11 +134,11 @@ const AdminSettingsPage: React.FC = () => {
                     Aktiviert
                   </div>
                 )}
-                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                   <IonIcon icon={notifications} />
                 </div>
                 <div className="app-flex-fill">
-                  <h2 className="app-settings-item__title">Push-Benachrichtigungen</h2>
+                  <h2 className="app-settings-item__title">Benachrichtigungen</h2>
                   <p className="app-settings-item__subtitle">Chat-Nachrichten und Updates</p>
                 </div>
               </div>
@@ -172,10 +172,10 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--activities app-settings-item"
+                  className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => presentGoalsModal({ presentingElement: presentingElement })}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--activities">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
                     <IonIcon icon={statsChart} />
                   </div>
                   <div className="app-flex-fill">
@@ -254,15 +254,15 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--categories app-settings-item"
-                  onClick={() => history.push('/admin/settings/categories')}
+                  className="app-list-item app-list-item--badges app-settings-item"
+                  onClick={() => history.push('/admin/badges')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
-                    <IonIcon icon={pricetag} />
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
+                    <IonIcon icon={ribbon} />
                   </div>
                   <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Kategorien</h2>
-                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
+                    <h2 className="app-settings-item__title">Badges</h2>
+                    <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
                   </div>
                 </div>
 
@@ -280,28 +280,28 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--level app-settings-item"
+                  className="app-list-item app-list-item--categories app-settings-item"
+                  onClick={() => history.push('/admin/settings/categories')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--categories">
+                    <IonIcon icon={pricetag} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Kategorien</h2>
+                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
+                  </div>
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--warning app-settings-item"
                   onClick={() => history.push('/admin/settings/levels')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
                     <IonIcon icon={trophy} />
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Level-System</h2>
                     <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
-                  </div>
-                </div>
-
-                <div
-                  className="app-list-item app-list-item--badges app-settings-item"
-                  onClick={() => history.push('/admin/badges')}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--badges">
-                    <IonIcon icon={ribbon} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Badges</h2>
-                    <p className="app-settings-item__subtitle">Auszeichnungen und Erfolge verwalten</p>
                   </div>
                 </div>
               </IonCardContent>

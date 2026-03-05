@@ -88,13 +88,13 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={handleClose} disabled={saving}>
+            <IonButton className="app-modal-close-btn" onClick={handleClose} disabled={saving}>
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>Punkte-Ziele</IonTitle>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving || loading}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--users" onClick={handleSave} disabled={saving || loading}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} slot="icon-only" />}
             </IonButton>
           </IonButtons>
@@ -140,7 +140,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                           }
                         }}
                         disabled={saving}
-                        style={{ textAlign: 'center', flex: 1, fontSize: '1.5rem', fontWeight: '700' }}
+                        style={{ textAlign: 'center', flex: 1, fontSize: '1.2rem', fontWeight: '700' }}
                       />
                       <IonButton
                         fill="outline"
@@ -192,7 +192,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
                           }
                         }}
                         disabled={saving}
-                        style={{ textAlign: 'center', flex: 1, fontSize: '1.5rem', fontWeight: '700' }}
+                        style={{ textAlign: 'center', flex: 1, fontSize: '1.2rem', fontWeight: '700' }}
                       />
                       <IonButton
                         fill="outline"
@@ -214,7 +214,7 @@ const AdminGoalsPage: React.FC<AdminGoalsModalProps> = ({ onClose, onSuccess, di
 
             {/* Info */}
             <IonList inset={true} className="app-segment-wrapper">
-              <IonCard className="app-card app-info-box--neutral">
+              <IonCard className="app-card app-info-box--blue">
                 <IonCardContent className="app-info-box">
                   <p style={{ margin: 0 }}>
                     Diese Ziele werden in den Activity Rings der Konfi-Details angezeigt.

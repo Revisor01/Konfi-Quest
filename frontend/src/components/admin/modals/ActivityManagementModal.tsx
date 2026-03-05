@@ -10,7 +10,6 @@ import {
   IonItem,
   IonLabel,
   IonInput,
-  IonCheckbox,
   IonIcon,
   IonSpinner,
   IonList,
@@ -330,24 +329,14 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     justifyContent: 'space-between',
                     padding: '12px 16px',
                     borderRadius: '10px',
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    borderRight: '1px solid rgba(0,0,0,0.06)',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
                     borderLeft: '3px solid #3b82f6',
-                    background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : 'white'
+                    background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-                  <IonCheckbox
-                    checked={formData.type === 'gottesdienst'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#3b82f6',
-                      '--border-color-checked': '#3b82f6',
-                      '--border-color': '#3b82f6',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
                 <div
                   onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
@@ -359,24 +348,14 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     justifyContent: 'space-between',
                     padding: '12px 16px',
                     borderRadius: '10px',
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    borderRight: '1px solid rgba(0,0,0,0.06)',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderTop: 'none',
+                    borderRight: 'none',
+                    borderBottom: 'none',
                     borderLeft: '3px solid #059669',
-                    background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : 'white'
+                    background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-                  <IonCheckbox
-                    checked={formData.type === 'gemeinde'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
-                      '--border-color': '#059669',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
               </div>
             </IonCardContent>
@@ -404,7 +383,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   return (
                     <div
                       key={category.id}
-                      className={`app-list-item app-list-item--activities ${isChecked ? 'app-list-item--selected' : ''}`}
+                      className="app-list-item app-list-item--categories"
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -420,19 +399,11 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                         opacity: loading ? 0.6 : 1,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        background: isChecked ? 'rgba(14, 165, 233, 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
-                      <IonCheckbox
-                        checked={isChecked}
-                        disabled={loading}
-                        style={{
-                          '--checkbox-background-checked': '#047857',
-                          '--border-color-checked': '#047857',
-                          '--checkmark-color': 'white'
-                        }}
-                      />
                     </div>
                   );
                 })}

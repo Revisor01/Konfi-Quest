@@ -23,7 +23,6 @@ import {
   IonCardContent,
   IonModal,
   IonDatetimeButton,
-  IonCheckbox,
   useIonAlert
 } from '@ionic/react';
 import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline } from 'ionicons/icons';
@@ -492,17 +491,17 @@ const EventModal: React.FC<EventModalProps> = ({
           <IonCard className="app-card">
           <IonCardContent>
             <IonList>
-              <IonItem lines="full" >
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Event Datum & Uhrzeit *</IonLabel>
                 <IonDatetimeButton datetime="event-date-picker" />
               </IonItem>
 
-              <IonItem lines="full" >
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Endzeit (optional)</IonLabel>
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
 
-              <IonItem lines="full" >
+              <IonItem lines="none" >
                 <IonLabel position="stacked">Anmeldung ab</IonLabel>
                 <IonDatetimeButton datetime="registration-opens-picker" />
               </IonItem>
@@ -803,7 +802,7 @@ const EventModal: React.FC<EventModalProps> = ({
               </IonItem>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div
-                  className={`app-list-item ${formData.point_type === 'gemeinde' ? 'app-list-item--selected' : ''}`}
+                  className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, point_type: 'gemeinde' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -817,18 +816,9 @@ const EventModal: React.FC<EventModalProps> = ({
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-                  <IonCheckbox
-                    checked={formData.point_type === 'gemeinde'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
                 <div
-                  className={`app-list-item ${formData.point_type === 'gottesdienst' ? 'app-list-item--selected' : ''}`}
+                  className="app-list-item"
                   onClick={() => !loading && setFormData({ ...formData, point_type: 'gottesdienst' })}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
@@ -842,15 +832,6 @@ const EventModal: React.FC<EventModalProps> = ({
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-                  <IonCheckbox
-                    checked={formData.point_type === 'gottesdienst'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#3b82f6',
-                      '--border-color-checked': '#3b82f6',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
               </div>
             </IonList>
@@ -892,7 +873,7 @@ const EventModal: React.FC<EventModalProps> = ({
                       return (
                         <div
                           key={category.id}
-                          className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className="app-list-item app-list-item--events"
                           onClick={() => {
                             if (!loading) {
                               setFormData(prev => ({
@@ -909,19 +890,11 @@ const EventModal: React.FC<EventModalProps> = ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0'
+                            marginBottom: '0',
+                            background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
                           }}
                         >
                           <span style={{ fontWeight: '500', color: '#333' }}>{category.name}</span>
-                          <IonCheckbox
-                            checked={isSelected}
-                            disabled={loading}
-                            style={{
-                              '--checkbox-background-checked': '#dc2626',
-                              '--border-color-checked': '#dc2626',
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
                       );
                     })}
@@ -956,7 +929,7 @@ const EventModal: React.FC<EventModalProps> = ({
                   return (
                     <div
                       key={jahrgang.id}
-                      className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                      className="app-list-item app-list-item--events"
                       onClick={() => {
                         if (!loading) {
                           setFormData(prev => ({
@@ -973,19 +946,11 @@ const EventModal: React.FC<EventModalProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        marginBottom: '0'
+                        marginBottom: '0',
+                        background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
                       }}
                     >
                       <span style={{ fontWeight: '500', color: '#333' }}>{jahrgang.name}</span>
-                      <IonCheckbox
-                        checked={isSelected}
-                        disabled={loading}
-                        style={{
-                          '--checkbox-background-checked': '#dc2626',
-                          '--border-color-checked': '#dc2626',
-                          '--checkmark-color': 'white'
-                        }}
-                      />
                     </div>
                   );
                 })}

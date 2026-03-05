@@ -13,7 +13,6 @@ import {
   IonListHeader,
   IonIcon,
   IonInput,
-  IonCheckbox,
   IonCard,
   IonCardContent,
   IonSelect,
@@ -367,14 +366,15 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                       return (
                         <div
                           key={konfi.id}
-                          className={`app-list-item app-list-item--events ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className="app-list-item app-list-item--events"
                           onClick={() => handleKonfiSelection(konfi.id)}
                           style={{
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0'
+                            marginBottom: '0',
+                            background: isSelected ? 'rgba(220, 38, 38, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -388,14 +388,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                               )}
                             </div>
                           </div>
-                          <IonCheckbox
-                            checked={isSelected}
-                            style={{
-                              '--checkbox-background-checked': '#dc2626',
-                              '--border-color-checked': '#dc2626',
-                              '--checkmark-color': 'white'
-                            }}
-                          />
                         </div>
                       );
                     })}

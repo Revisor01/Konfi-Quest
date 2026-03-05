@@ -16,7 +16,6 @@ import {
   IonTextarea,
   IonCard,
   IonCardContent,
-  IonCheckbox
 } from '@ionic/react';
 import { closeOutline, checkmarkOutline, gift, calendar, removeOutline, addOutline, chatbubbleOutline } from 'ionicons/icons';
 import api from '../../../services/api';
@@ -179,15 +178,6 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
-                  <IonCheckbox
-                    checked={type === 'gemeinde'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#059669',
-                      '--border-color-checked': '#059669',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
                 <div
                   className="app-list-item"
@@ -204,15 +194,6 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
                   }}
                 >
                   <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
-                  <IonCheckbox
-                    checked={type === 'gottesdienst'}
-                    disabled={loading}
-                    style={{
-                      '--checkbox-background-checked': '#3b82f6',
-                      '--border-color-checked': '#3b82f6',
-                      '--checkmark-color': 'white'
-                    }}
-                  />
                 </div>
               </div>
             </IonCardContent>

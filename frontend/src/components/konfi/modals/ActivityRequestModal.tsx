@@ -267,14 +267,14 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                           return (
                             <div
                               key={activity.id}
-                              className={`app-list-item app-list-item--${colorVariant}${isSelected ? ' app-list-item--selected' : ''}`}
+                              className={`app-list-item app-list-item--${colorVariant}`}
                               onClick={() => {
                                 setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
                                 if (accordionGroupRef.current) {
                                   accordionGroupRef.current.value = undefined;
                                 }
                               }}
-                              style={{ cursor: 'pointer', position: 'relative' }}
+                              style={{ cursor: 'pointer', position: 'relative', background: isSelected ? (activity.type === 'gottesdienst' ? 'rgba(0, 122, 255, 0.08)' : 'rgba(5, 150, 105, 0.08)') : undefined }}
                             >
                               {/* Punkte Eselsohr oben rechts */}
                               <div
