@@ -129,10 +129,11 @@ Plans:
   2. Jahrgang-basierte Filterung greift konsistent in allen relevanten Routes (Konfis, Activities, Events)
   3. Loeschen einer Organisation entfernt alle abhaengigen Daten sauber (CASCADE-Kette verifiziert)
   4. Organisations-Endpunkte haben Rate-Limiting das Missbrauch verhindert
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 parallel)
 
 Plans:
-- [ ] 23-01: TBD
+- [ ] 23-01-PLAN.md -- last_login_at Fix + Org Rate-Limiting [USR-01, USR-04]
+- [ ] 23-02-PLAN.md -- Jahrgang-Filterung in Activities/Events + Org-Loeschung CASCADE [USR-02, USR-03]
 
 ### Phase 24: Chat-Logik Debug
 **Goal**: Chat-Dateizugriff ist organisationsbezogen abgesichert und Socket-Rollen bleiben aktuell
@@ -176,5 +177,5 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 20. Event-Logik Debug | 2/2 | Complete    | 2026-03-04 | - |
 | 21. Badge-Logik Debug | 2/2 | Complete    | 2026-03-05 | - |
 | 22. Punkte-Vergabe Debug | 2/2 | Complete    | 2026-03-05 | - |
-| 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |
+| 23. User/Rechte/Institutionen Debug | v1.4 | 0/2 | Not started | - |
 | 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |
