@@ -314,34 +314,91 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     }
   });
 
-  // Delete organization (super admin only)
+  // Delete organization (super admin only) - Vollständige CASCADE-Löschkette
   router.delete('/:id', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
+    const client = await db.connect();
     try {
       const { id } = req.params;
-      
-      // Check if organization has any data (konfis).
-      // This is not an atomic transaction but preserves the check logic.
-      const checkQuery = "SELECT COUNT(*) as count FROM konfi_profiles WHERE organization_id = $1";
-      const { rows: [result] } = await db.query(checkQuery, [id]);
-      
-      if (parseInt(result.count, 10) > 0) {
-        return res.status(409).json({ 
-          error: 'Organisation mit bestehenden Konfis kann nicht gelöscht werden. Bitte zuerst alle Daten übertragen oder löschen.' 
-        });
-      }
-      
-      // Delete organization. Assumes database schema uses ON DELETE CASCADE for related data.
-      const deleteQuery = "DELETE FROM organizations WHERE id = $1";
-      const { rowCount } = await db.query(deleteQuery, [id]);
-        
-      if (rowCount === 0) {
+      await client.query('BEGIN');
+
+      // Prüfen ob Organisation existiert
+      const { rows: [org] } = await client.query('SELECT id FROM organizations WHERE id = $1', [id]);
+      if (!org) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ error: 'Organisation nicht gefunden' });
       }
-        
-      res.json({ message: 'Organisation erfolgreich gelöscht' });
+
+      // Alle abhängigen Daten in korrekter Reihenfolge löschen
+      // 1. Chat-System (hängt von users ab)
+      await client.query('DELETE FROM chat_poll_votes WHERE poll_id IN (SELECT id FROM chat_polls WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1))', [id]);
+      await client.query('DELETE FROM chat_polls WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM chat_read_status WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM chat_messages WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM chat_participants WHERE room_id IN (SELECT id FROM chat_rooms WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM chat_rooms WHERE organization_id = $1', [id]);
+
+      // 2. Event-Daten
+      await client.query('DELETE FROM event_points WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM event_bookings WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM event_timeslots WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM event_category_assignments WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM event_jahrgang_assignments WHERE event_id IN (SELECT id FROM events WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM events WHERE organization_id = $1', [id]);
+
+      // 3. Konfi-Daten
+      await client.query('DELETE FROM konfi_activities WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM bonus_points WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM konfi_badges WHERE konfi_id IN (SELECT user_id FROM konfi_profiles WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM activity_requests WHERE organization_id = $1', [id]);
+
+      // 4. Notifications und Push-Tokens
+      await client.query('DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM push_tokens WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM password_resets WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+
+      // 5. User-Zuweisungen
+      await client.query('DELETE FROM user_jahrgang_assignments WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1)', [id]);
+
+      // 6. Konfi-Profile
+      await client.query('DELETE FROM konfi_profiles WHERE organization_id = $1', [id]);
+
+      // 7. Users
+      await client.query('DELETE FROM users WHERE organization_id = $1', [id]);
+
+      // 8. Aktivitäten und Kategorien
+      await client.query('DELETE FROM activity_category_assignments WHERE activity_id IN (SELECT id FROM activities WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM activities WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM categories WHERE organization_id = $1', [id]);
+
+      // 9. Badges, Levels, Settings
+      await client.query('DELETE FROM custom_badges WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM levels WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM settings WHERE organization_id = $1', [id]);
+
+      // 10. Invite-Codes und Jahrgänge
+      await client.query('DELETE FROM invite_codes WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM jahrgaenge WHERE organization_id = $1', [id]);
+
+      // 11. Rollen (role_permissions werden explizit gelöscht)
+      await client.query('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM roles WHERE organization_id = $1', [id]);
+
+      // 12. Organisation selbst
+      const { rowCount } = await client.query('DELETE FROM organizations WHERE id = $1', [id]);
+      if (rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Organisation nicht gefunden' });
+      }
+
+      await client.query('COMMIT');
+      res.json({ message: 'Organisation und alle zugehörigen Daten erfolgreich gelöscht' });
+
     } catch (err) {
- console.error('Error deleting organization:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
+      await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+      console.error('Error deleting organization:', err);
+      res.status(500).json({ error: 'Datenbankfehler beim Löschen der Organisation' });
+    } finally {
+      client.release();
     }
   });
 
