@@ -28,8 +28,8 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 ### Push-Konfiguration
 
-- [ ] **CFG-01**: Push-Types koennen per Konfig-Flag aktiviert/deaktiviert werden (Code-Level Defaults)
-- [ ] **CFG-02**: Notification-Type Registry mit zentraler Type-Definition und Default-Einstellungen
+- [x] **CFG-01**: Push-Types koennen per Konfig-Flag aktiviert/deaktiviert werden (Code-Level Defaults)
+- [x] **CFG-02**: Notification-Type Registry mit zentraler Type-Definition und Default-Einstellungen
 
 ### Badge-Count
 
@@ -77,8 +77,8 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 | FLW-02 | Phase 28 | Pending |
 | FLW-03 | Phase 28 | Pending |
 | FLW-04 | Phase 28 | Pending |
-| CFG-01 | Phase 25 | Pending |
-| CFG-02 | Phase 25 | Pending |
+| CFG-01 | Phase 25 | Complete |
+| CFG-02 | Phase 25 | Complete |
 | BDG-01 | Phase 27 | Pending |
 | BDG-02 | Phase 27 | Pending |
 | BDG-03 | Phase 27 | Pending |

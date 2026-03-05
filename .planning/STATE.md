@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
-status: ready_to_plan
-last_updated: "2026-03-05T23:00:00.000Z"
+status: executing
+last_updated: "2026-03-05T22:26:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 1
+  completed_plans: 1
 ---
 
 # Project State
@@ -18,29 +18,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.5 Push-Notifications — Phase 25 ready to plan
+**Current focus:** v1.5 Push-Notifications — Phase 25 Plan 01 complete
 
 ## Current Position
 
 Phase: 25 of 29 (Foundation + Konfiguration)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-05 — Roadmap fuer v1.5 erstellt (5 Phasen, 17 Requirements)
+Plan: 1 of 1
+Status: Phase 25 complete
+Last activity: 2026-03-05 — Phase 25 Plan 01 (Push Foundation) ausgefuehrt
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [##░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 55 (v1.0-v1.4)
+- Total plans completed: 56 (v1.0-v1.4 + 25-01)
 - Average duration: --
 - Total execution time: --
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 25    | 01   | 1min     | 3     | 4     |
 
 ## Accumulated Context
 
 ### Decisions
 
 All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
+
+- [25-01] Push-Type Registry als Kommentar-Block in pushService.js statt separatem Config-File
+- [25-01] Migration idempotent mit IF NOT EXISTS fuer sichere Wiederholbarkeit
 
 ### Research Findings (v1.5)
 
@@ -62,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Phase 25 context gathered
-Resume file: .planning/phases/25-foundation-konfiguration/25-CONTEXT.md
+Stopped at: Completed 25-01-PLAN.md
+Resume file: .planning/phases/25-foundation-konfiguration/25-01-SUMMARY.md
