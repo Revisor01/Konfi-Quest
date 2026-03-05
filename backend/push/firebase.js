@@ -64,7 +64,7 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
     return { success: true, messageId: response };
   } catch (error) {
     console.error('Firebase notification error:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, errorCode: error.code || null };
   }
 };
 
