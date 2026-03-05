@@ -1,5 +1,37 @@
 const { sendFirebasePushNotification } = require('../push/firebase');
 
+/**
+ * Push Notification Type Registry
+ *
+ * Alle Push-Types werden durch statische Methoden in dieser Klasse definiert.
+ * Zum Deaktivieren eines Types: Aufruf in der jeweiligen Route auskommentieren.
+ *
+ * Type                        | Methode                              | Empfaenger      | Enabled
+ * ----------------------------|--------------------------------------|-----------------|--------
+ * chat                        | sendChatNotification                 | User            | ja
+ * badge_update                | sendBadgeUpdate                      | User            | ja
+ * new_activity_request        | sendNewActivityRequestToAdmins       | Org-Admins      | ja
+ * activity_request_status     | sendActivityRequestStatusToKonfi     | Konfi           | ja
+ * badge_earned                | sendBadgeEarnedToKonfi               | Konfi           | ja
+ * activity_assigned           | sendActivityAssignedToKonfi          | Konfi           | ja
+ * bonus_points                | sendBonusPointsToKonfi               | Konfi           | ja
+ * event_registered            | sendEventRegisteredToKonfi           | Konfi           | ja
+ * event_unregistered          | sendEventUnregisteredToKonfi         | Konfi           | ja
+ * event_unregistration        | sendEventUnregistrationToAdmins      | Org-Admins      | ja
+ * level_up                    | sendLevelUpToKonfi                   | Konfi           | ja
+ * event_reminder              | sendEventReminderToKonfi             | Konfi           | ja
+ * waitlist_promotion          | sendWaitlistPromotionToKonfi         | Konfi           | ja
+ * event_cancelled             | sendEventCancellationToKonfis        | Konfi (multi)   | ja
+ * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
+ * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
+ * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
+ *
+ * Helper-Methoden (nicht direkt als Push-Type):
+ * - getTokensForUser(db, userId)
+ * - sendToUser(db, userId, notification)
+ * - sendToMultipleUsers(db, userIds, notification)
+ */
+
 class PushService {
   /**
    * Helper: Holt alle Push-Tokens für einen User
