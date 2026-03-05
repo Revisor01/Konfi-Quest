@@ -150,73 +150,76 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const hashedPassword = bcrypt.hashSync(password, 10);
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
+        const client = await db.connect();
         try {
-            await db.query('BEGIN');
+            await client.query('BEGIN');
 
             // First verify that the jahrgang exists
             const jahrgangCheckQuery = "SELECT id FROM jahrgaenge WHERE id = $1 AND organization_id = $2";
-            const { rows: [jahrgangExists] } = await db.query(jahrgangCheckQuery, [jahrgang_id, req.user.organization_id]);
-            
+            const { rows: [jahrgangExists] } = await client.query(jahrgangCheckQuery, [jahrgang_id, req.user.organization_id]);
+
             if (!jahrgangExists) {
-                await db.query('ROLLBACK');
+                await client.query('ROLLBACK');
                 return res.status(400).json({ error: 'Jahrgang nicht gefunden oder gehört nicht zu Ihrer Organisation' });
             }
 
             const roleQuery = "SELECT id FROM roles WHERE name = 'konfi' AND organization_id = $1";
-            const { rows: [role] } = await db.query(roleQuery, [req.user.organization_id]);
+            const { rows: [role] } = await client.query(roleQuery, [req.user.organization_id]);
 
             if (!role) {
-                await db.query('ROLLBACK');
+                await client.query('ROLLBACK');
                 return res.status(500).json({ error: 'Konfi-Rolle nicht gefunden' });
             }
 
             const userQuery = `
-                INSERT INTO users (username, display_name, password_hash, role_id, organization_id) 
-                VALUES ($1, $2, $3, $4, $5) 
+                INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING id`;
-            const { rows: [newUser] } = await db.query(userQuery, [username, name, hashedPassword, role.id, req.user.organization_id]);
+            const { rows: [newUser] } = await client.query(userQuery, [username, name, hashedPassword, role.id, req.user.organization_id]);
             const userId = newUser.id;
 
             const profileQuery = `
                 INSERT INTO konfi_profiles (user_id, jahrgang_id, organization_id, gottesdienst_points, gemeinde_points)
                 VALUES ($1, $2, $3, 0, 0)`;
-            await db.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
+            await client.query(profileQuery, [userId, jahrgang_id, req.user.organization_id]);
 
             // Add konfi to jahrgang chat room if it exists
             const jahrgangChatQuery = `
-                SELECT id FROM chat_rooms 
+                SELECT id FROM chat_rooms
                 WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
             `;
-            const { rows: [jahrgangChat] } = await db.query(jahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
-            
+            const { rows: [jahrgangChat] } = await client.query(jahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
+
             if (jahrgangChat) {
                 // Check if konfi is not already a participant (shouldn't happen, but safety first)
                 const existingParticipantQuery = `
-                    SELECT id FROM chat_participants 
+                    SELECT id FROM chat_participants
                     WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
                 `;
-                const { rows: [existingParticipant] } = await db.query(existingParticipantQuery, [jahrgangChat.id, userId]);
-                
+                const { rows: [existingParticipant] } = await client.query(existingParticipantQuery, [jahrgangChat.id, userId]);
+
                 if (!existingParticipant) {
                     const addParticipantQuery = `
-                        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
+                        INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
                         VALUES ($1, $2, 'konfi', NOW())
                     `;
-                    await db.query(addParticipantQuery, [jahrgangChat.id, userId]);
+                    await client.query(addParticipantQuery, [jahrgangChat.id, userId]);
                 }
             }
 
-            await db.query('COMMIT');
+            await client.query('COMMIT');
             res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 
         } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+            await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
 
             if (err.code === '23505') { // unique_violation
                 return res.status(409).json({ error: 'Benutzername existiert bereits' });
             }
  console.error('Database error in POST /konfis:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
@@ -228,120 +231,126 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
+        const client = await db.connect();
         try {
-            await db.query('BEGIN');
-            
+            await client.query('BEGIN');
+
             // Get current jahrgang_id before update
             const currentProfileQuery = `SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1`;
-            const { rows: [currentProfile] } = await db.query(currentProfileQuery, [req.params.id]);
-            
+            const { rows: [currentProfile] } = await client.query(currentProfileQuery, [req.params.id]);
+
             const userQuery = `
-                UPDATE users SET display_name = $1, username = $2 
+                UPDATE users SET display_name = $1, username = $2
                 WHERE id = $3 AND organization_id = $4`;
-            const { rowCount: userUpdateCount } = await db.query(userQuery, [name, username, req.params.id, req.user.organization_id]);
+            const { rowCount: userUpdateCount } = await client.query(userQuery, [name, username, req.params.id, req.user.organization_id]);
 
             if (userUpdateCount === 0) {
-                await db.query('ROLLBACK');
+                await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
 
             const profileQuery = `UPDATE konfi_profiles SET jahrgang_id = $1 WHERE user_id = $2`;
-            await db.query(profileQuery, [jahrgang_id, req.params.id]);
+            await client.query(profileQuery, [jahrgang_id, req.params.id]);
 
             // Handle jahrgang chat membership changes
             if (currentProfile && currentProfile.jahrgang_id !== parseInt(jahrgang_id)) {
                 // Remove from old jahrgang chat
                 if (currentProfile.jahrgang_id) {
                     const oldJahrgangChatQuery = `
-                        SELECT id FROM chat_rooms 
+                        SELECT id FROM chat_rooms
                         WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
                     `;
-                    const { rows: [oldJahrgangChat] } = await db.query(oldJahrgangChatQuery, [currentProfile.jahrgang_id, req.user.organization_id]);
-                    
+                    const { rows: [oldJahrgangChat] } = await client.query(oldJahrgangChatQuery, [currentProfile.jahrgang_id, req.user.organization_id]);
+
                     if (oldJahrgangChat) {
-                        await db.query(`
-                            DELETE FROM chat_participants 
+                        await client.query(`
+                            DELETE FROM chat_participants
                             WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
                         `, [oldJahrgangChat.id, req.params.id]);
                     }
                 }
-                
+
                 // Add to new jahrgang chat
                 const newJahrgangChatQuery = `
-                    SELECT id FROM chat_rooms 
+                    SELECT id FROM chat_rooms
                     WHERE type = 'jahrgang' AND jahrgang_id = $1 AND organization_id = $2
                 `;
-                const { rows: [newJahrgangChat] } = await db.query(newJahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
-                
+                const { rows: [newJahrgangChat] } = await client.query(newJahrgangChatQuery, [jahrgang_id, req.user.organization_id]);
+
                 if (newJahrgangChat) {
                     // Check if not already a participant
                     const existingParticipantQuery = `
-                        SELECT id FROM chat_participants 
+                        SELECT id FROM chat_participants
                         WHERE room_id = $1 AND user_id = $2 AND user_type = 'konfi'
                     `;
-                    const { rows: [existingParticipant] } = await db.query(existingParticipantQuery, [newJahrgangChat.id, req.params.id]);
-                    
+                    const { rows: [existingParticipant] } = await client.query(existingParticipantQuery, [newJahrgangChat.id, req.params.id]);
+
                     if (!existingParticipant) {
-                        await db.query(`
-                            INSERT INTO chat_participants (room_id, user_id, user_type, joined_at) 
+                        await client.query(`
+                            INSERT INTO chat_participants (room_id, user_id, user_type, joined_at)
                             VALUES ($1, $2, 'konfi', NOW())
                         `, [newJahrgangChat.id, req.params.id]);
                     }
                 }
             }
 
-            await db.query('COMMIT');
+            await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich aktualisiert' });
 
         } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+            await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
  console.error('Database error in PUT /konfis/:id:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
     // DELETE a konfi
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
+        const client = await db.connect();
         try {
-            await db.query('BEGIN');
+            await client.query('BEGIN');
 
             const checkUserQuery = `
-                SELECT u.id FROM users u 
-                JOIN roles r ON u.role_id = r.id 
+                SELECT u.id FROM users u
+                JOIN roles r ON u.role_id = r.id
                 WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'konfi'`;
-            const { rows: [user] } = await db.query(checkUserQuery, [userId, req.user.organization_id]);
+            const { rows: [user] } = await client.query(checkUserQuery, [userId, req.user.organization_id]);
 
             if (!user) {
-                await db.query('ROLLBACK');
+                await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
-            
+
             // Delete related data (in correct order to avoid FK violations)
-            await db.query("DELETE FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await db.query("DELETE FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await db.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await db.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await db.query("DELETE FROM konfi_badges WHERE konfi_id = $1", [userId]);
-            await db.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await db.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
-            await db.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
-            await db.query("DELETE FROM users WHERE id = $1", [userId]);
-            
-            await db.query('COMMIT');
+            await client.query("DELETE FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM konfi_badges WHERE konfi_id = $1", [userId]);
+            await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
+            await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM chat_messages WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM notifications WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM password_resets WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM user_jahrgang_assignments WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM chat_poll_votes WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM push_tokens WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM konfi_profiles WHERE user_id = $1", [userId]);
+            await client.query("DELETE FROM users WHERE id = $1", [userId]);
+
+            await client.query('COMMIT');
             res.json({ message: 'Konfi erfolgreich gelöscht' });
 
         } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+            await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
  console.error('Database error in DELETE /konfis/:id:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
@@ -350,29 +359,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
+        const client = await db.connect();
         try {
-            await db.query('BEGIN');
+            await client.query('BEGIN');
 
             const updateUserQuery = `
-                UPDATE users SET password_hash = $1 
+                UPDATE users SET password_hash = $1
                 WHERE id = $2 AND organization_id = $3`;
-            const { rowCount } = await db.query(updateUserQuery, [hashedPassword, req.params.id, req.user.organization_id]);
+            const { rowCount } = await client.query(updateUserQuery, [hashedPassword, req.params.id, req.user.organization_id]);
 
             if (rowCount === 0) {
-                await db.query('ROLLBACK');
+                await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
-            
-            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
-            await db.query(updateProfileQuery, [req.params.id]);
 
-            await db.query('COMMIT');
+            const updateProfileQuery = "UPDATE konfi_profiles SET password_plain = NULL WHERE user_id = $1";
+            await client.query(updateProfileQuery, [req.params.id]);
+
+            await client.query('COMMIT');
             res.json({ message: 'Passwort erfolgreich neu generiert', temporaryPassword: newPassword });
 
         } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+            await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
  console.error('Database error in POST /konfis/:id/regenerate-password:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
@@ -462,18 +474,30 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         try {
             const updateField = getPointField(type);
 
-            const query = `
-                INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-            await db.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
+            const client = await db.connect();
+            try {
+                await client.query('BEGIN');
 
-            const updateQuery = `
-                UPDATE konfi_profiles
-                SET ${updateField} = ${updateField} + $1
-                WHERE user_id = $2`;
-            await db.query(updateQuery, [points, req.params.id]);
+                const query = `
+                    INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
+                await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
 
-            // Check for new badges after bonus points are added
+                const updateQuery = `
+                    UPDATE konfi_profiles
+                    SET ${updateField} = ${updateField} + $1
+                    WHERE user_id = $2`;
+                await client.query(updateQuery, [points, req.params.id]);
+
+                await client.query('COMMIT');
+            } catch (txErr) {
+                await client.query('ROLLBACK');
+                throw txErr;
+            } finally {
+                client.release();
+            }
+
+            // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
@@ -500,23 +524,29 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
     // DELETE bonus points
     router.delete('/:id/bonus-points/:bonusId', rbacVerifier, requireAdmin, async (req, res) => {
+        const client = await db.connect();
         try {
-            const { rows: [bonus] } = await db.query('SELECT * FROM bonus_points WHERE id = $1 AND konfi_id = $2', [req.params.bonusId, req.params.id]);
-            
+            await client.query('BEGIN');
+
+            const { rows: [bonus] } = await client.query('SELECT * FROM bonus_points WHERE id = $1 AND konfi_id = $2', [req.params.bonusId, req.params.id]);
+
             if (!bonus) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Bonuspunkte nicht gefunden' });
             }
-            
-            await db.query('DELETE FROM bonus_points WHERE id = $1', [req.params.bonusId]);
+
+            await client.query('DELETE FROM bonus_points WHERE id = $1', [req.params.bonusId]);
 
             const updateField = getPointField(bonus.type);
             const updateQuery = `
                 UPDATE konfi_profiles
-                SET ${updateField} = ${updateField} - $1
+                SET ${updateField} = GREATEST(0, ${updateField} - $1)
                 WHERE user_id = $2`;
-            await db.query(updateQuery, [bonus.points, req.params.id]);
+            await client.query(updateQuery, [bonus.points, req.params.id]);
 
-            // Check for badge changes after bonus points are removed
+            await client.query('COMMIT');
+
+            // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
                 await checkAndAwardBadges(db, req.params.id);
             } catch (badgeErr) {
@@ -533,6 +563,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         } catch (err) {
  console.error('Database error in DELETE /konfis/:id/bonus-points/:bonusId:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
@@ -549,20 +581,32 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!activity) {
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
-            
-            const query = `
-                INSERT INTO konfi_activities (konfi_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-            await db.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
 
-            const updateField = getPointField(activity.type);
-            const updateQuery = `
-                UPDATE konfi_profiles
-                SET ${updateField} = ${updateField} + $1
-                WHERE user_id = $2`;
-            await db.query(updateQuery, [activity.points, req.params.id]);
+            const client = await db.connect();
+            try {
+                await client.query('BEGIN');
 
-            // Check for new badges after activity is added
+                const query = `
+                    INSERT INTO konfi_activities (konfi_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
+                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
+
+                const updateField = getPointField(activity.type);
+                const updateQuery = `
+                    UPDATE konfi_profiles
+                    SET ${updateField} = ${updateField} + $1
+                    WHERE user_id = $2`;
+                await client.query(updateQuery, [activity.points, req.params.id]);
+
+                await client.query('COMMIT');
+            } catch (txErr) {
+                await client.query('ROLLBACK');
+                throw txErr;
+            } finally {
+                client.release();
+            }
+
+            // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
                 const newBadges = await checkAndAwardBadges(db, req.params.id);
                 if (newBadges > 0) {
@@ -586,28 +630,34 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
     // DELETE activity for a konfi
     router.delete('/:id/activities/:activityId', rbacVerifier, requireAdmin, async (req, res) => {
+        const client = await db.connect();
         try {
+            await client.query('BEGIN');
+
             const getActivityQuery = `
-                SELECT ka.*, a.points, a.type 
-                FROM konfi_activities ka 
+                SELECT ka.*, a.points, a.type
+                FROM konfi_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 WHERE ka.id = $1 AND ka.konfi_id = $2`;
-            const { rows: [activity] } = await db.query(getActivityQuery, [req.params.activityId, req.params.id]);
-            
+            const { rows: [activity] } = await client.query(getActivityQuery, [req.params.activityId, req.params.id]);
+
             if (!activity) {
+                await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
-            
-            await db.query('DELETE FROM konfi_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
+
+            await client.query('DELETE FROM konfi_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
 
             const updateField = getPointField(activity.type);
             const updateQuery = `
                 UPDATE konfi_profiles
-                SET ${updateField} = ${updateField} - $1
+                SET ${updateField} = GREATEST(0, ${updateField} - $1)
                 WHERE user_id = $2`;
-            await db.query(updateQuery, [activity.points, req.params.id]);
+            await client.query(updateQuery, [activity.points, req.params.id]);
 
-            // Check for badge changes after activity removal
+            await client.query('COMMIT');
+
+            // Badge-Check NACH COMMIT (verwendet db Pool)
             try {
                 await checkAndAwardBadges(db, req.params.id);
             } catch (badgeErr) {
@@ -624,6 +674,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         } catch (err) {
  console.error('Database error in DELETE /konfis/:id/activities/:activityId:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
         }
     });
 
