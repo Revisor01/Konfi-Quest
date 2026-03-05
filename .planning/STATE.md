@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
-status: executing
-last_updated: "2026-03-05T22:26:00.000Z"
+status: unknown
+last_updated: "2026-03-05T22:29:32.004Z"
 progress:
-  total_phases: 5
+  total_phases: 1
   completed_phases: 1
   total_plans: 1
   completed_plans: 1
