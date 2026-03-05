@@ -67,29 +67,29 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TKN-01 | — | Pending |
-| TKN-02 | — | Pending |
-| TKN-03 | — | Pending |
-| TKN-04 | — | Pending |
-| CLN-01 | — | Pending |
-| CLN-02 | — | Pending |
-| FLW-01 | — | Pending |
-| FLW-02 | — | Pending |
-| FLW-03 | — | Pending |
-| FLW-04 | — | Pending |
-| CFG-01 | — | Pending |
-| CFG-02 | — | Pending |
-| BDG-01 | — | Pending |
-| BDG-02 | — | Pending |
-| BDG-03 | — | Pending |
-| BDG-04 | — | Pending |
-| CMP-01 | — | Pending |
+| TKN-01 | Phase 26 | Pending |
+| TKN-02 | Phase 26 | Pending |
+| TKN-03 | Phase 26 | Pending |
+| TKN-04 | Phase 26 | Pending |
+| CLN-01 | Phase 26 | Pending |
+| CLN-02 | Phase 29 | Pending |
+| FLW-01 | Phase 28 | Pending |
+| FLW-02 | Phase 28 | Pending |
+| FLW-03 | Phase 28 | Pending |
+| FLW-04 | Phase 28 | Pending |
+| CFG-01 | Phase 25 | Pending |
+| CFG-02 | Phase 25 | Pending |
+| BDG-01 | Phase 27 | Pending |
+| BDG-02 | Phase 27 | Pending |
+| BDG-03 | Phase 27 | Pending |
+| BDG-04 | Phase 27 | Pending |
+| CMP-01 | Phase 29 | Pending |
 
 **Coverage:**
 - v1.5 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17
+- Mapped to phases: 17
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 after roadmap creation*

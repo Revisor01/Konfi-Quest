@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
-status: defining_requirements
-last_updated: "2026-03-05T22:00:00.000Z"
+status: ready_to_plan
+last_updated: "2026-03-05T23:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,14 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.5 Push-Notifications — Defining requirements
+**Current focus:** v1.5 Push-Notifications — Phase 25 ready to plan
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 25 of 29 (Foundation + Konfiguration)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-05 — Milestone v1.5 started
+Status: Ready to plan
+Last activity: 2026-03-05 — Roadmap fuer v1.5 erstellt (5 Phasen, 17 Requirements)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -40,6 +42,15 @@ Last activity: 2026-03-05 — Milestone v1.5 started
 
 All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
 
+### Research Findings (v1.5)
+
+- sendLevelUpToKonfi() existiert aber wird nie aufgerufen
+- Badge-Count wird von 4 unabhaengigen Systemen verwaltet (BadgeContext, AppContext, PushService, Capacitor Badge)
+- event_reminders Tabelle wird referenziert aber existiert moeglicherweise nicht
+- APNS Silent Push Header falsch konfiguriert (alert statt background)
+- Push-Listener in AppContext akkumulieren ohne Cleanup
+- Nur 1 neue Dependency noetig: node-cron
+
 ### Pending Todos
 
 None.
@@ -51,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Defining requirements for v1.5
+Stopped at: Roadmap fuer v1.5 erstellt, bereit fuer Phase 25 Planung
 Resume file: —

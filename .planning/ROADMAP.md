@@ -7,6 +7,7 @@
 - Shipped **v1.2 Polishing + Tech Debt** - Phases 8-11 (shipped 2026-03-02)
 - Shipped **v1.3 Layout-Polishing** - Phases 12-19 (shipped 2026-03-04)
 - Shipped **v1.4 Logik-Debug** - Phases 20-24 (shipped 2026-03-05)
+- Active **v1.5 Push-Notifications** - Phases 25-29
 
 ## Phases
 
@@ -75,7 +76,95 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
 
 </details>
 
+### v1.5 Push-Notifications (Active)
+
+**Milestone Goal:** Push-Notification-System zuverlaessig und vollstaendig machen — Token-Lifecycle, fehlende Flows, Admin-Konfiguration, Badge-Count-Sync.
+
+- [ ] **Phase 25: Foundation + Konfiguration** - NotificationTypeRegistry, DB-Schema-Fixes, Push-Type Toggles
+- [ ] **Phase 26: Token-Lifecycle** - Token-Zustellung zuverlaessig machen (Logout, Fallback-ID, Refresh, Wechsel, Invalidierung)
+- [ ] **Phase 27: Badge-Count Single Source of Truth** - BadgeCountService als einzige Berechnungsquelle, korrekte Badge-Anzeige ueberall
+- [ ] **Phase 28: Fehlende Push-Flows** - Event-Erinnerungen, Admin-Alert, Level-Up, Punkte-Meilenstein
+- [ ] **Phase 29: Token-Cleanup + End-to-End Verifikation** - Proaktiver Cleanup, alle 17 Push-Flows verifiziert
+
+## Phase Details
+
+### Phase 25: Foundation + Konfiguration
+**Goal**: Push-System hat eine zentrale Type-Registry und sauberes DB-Schema als Grundlage fuer alle weiteren Aenderungen
+**Depends on**: Nothing (first phase of v1.5)
+**Requirements**: CFG-01, CFG-02
+**Success Criteria** (what must be TRUE):
+  1. Jeder Push-Notification-Type ist in einer zentralen Registry definiert mit Name, Beschreibung und enabled-Flag
+  2. Push-Types koennen per Flag aktiviert/deaktiviert werden und PushService prueft diese Flags vor dem Versand
+  3. event_reminders Tabelle existiert in der DB (CREATE TABLE IF NOT EXISTS)
+  4. push_tokens Tabelle hat error_count und last_error_at Spalten fuer spaetere Token-Bereinigung
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD
+
+### Phase 26: Token-Lifecycle
+**Goal**: Jedes Geraet erhaelt zuverlaessig Push-Notifications fuer den aktuell eingeloggten User — keine Ghost-Tokens, keine verlorenen Geraete
+**Depends on**: Phase 25
+**Requirements**: TKN-01, TKN-02, TKN-03, TKN-04, CLN-01
+**Success Criteria** (what must be TRUE):
+  1. Nach Logout erhaelt das Geraet keine Pushes mehr fuer den abgemeldeten User
+  2. Geraete mit Fallback-Device-IDs erhalten Pushes genauso zuverlaessig wie Geraete mit nativer Device-ID
+  3. Token wird bei App Resume (nach >12h) automatisch refreshed ohne User-Aktion
+  4. Bei User-Wechsel auf demselben Geraet erhaelt nur der neue User Pushes
+  5. Firebase-Errors mit ungueltigen Tokens fuehren sofort zur Loeschung des Tokens aus der DB
+**Plans**: TBD
+
+Plans:
+- [ ] 26-01: TBD
+- [ ] 26-02: TBD
+
+### Phase 27: Badge-Count Single Source of Truth
+**Goal**: Unread-Badge-Zahlen sind ueberall konsistent — App-Icon, TabBar und Chat-Liste zeigen denselben korrekten Wert
+**Depends on**: Phase 25
+**Requirements**: BDG-01, BDG-02, BDG-03, BDG-04
+**Success Criteria** (what must be TRUE):
+  1. Ein einziger BadgeCountService berechnet den Badge-Count, alle anderen Systeme konsumieren diesen Wert
+  2. Das App-Icon auf dem Homescreen zeigt die korrekte Anzahl ungelesener Nachrichten (nicht hardcoded "1")
+  3. In der Chat-Liste zeigt jeder Raum die richtige Anzahl ungelesener Nachrichten seit letztem Besuch
+  4. Die TabBar-Badges (Chat-Tab, Notifications-Tab) stimmen mit den tatsaechlichen Unread-Counts ueberein
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD
+- [ ] 27-02: TBD
+
+### Phase 28: Fehlende Push-Flows
+**Goal**: Konfis und Admins erhalten alle relevanten Push-Benachrichtigungen — Events, Registrierungen, Level-Ups, Meilensteine
+**Depends on**: Phase 26
+**Requirements**: FLW-01, FLW-02, FLW-03, FLW-04
+**Success Criteria** (what must be TRUE):
+  1. Angemeldete Konfis erhalten X Stunden vor einem Event eine Erinnerungs-Push
+  2. Admins erhalten eine Push-Benachrichtigung wenn ein neuer Konfi sich ueber Invite-Code registriert
+  3. Konfis erhalten eine Push-Benachrichtigung wenn sie ein neues Level erreichen
+  4. Konfis erhalten eine Push-Benachrichtigung wenn sie die Mindestpunkte fuer Gottesdienst oder Gemeinde erreichen
+**Plans**: TBD
+
+Plans:
+- [ ] 28-01: TBD
+- [ ] 28-02: TBD
+
+### Phase 29: Token-Cleanup + End-to-End Verifikation
+**Goal**: Das Push-System ist selbstreinigend und alle 17 Push-Flows (14 bestehende + 3 neue) funktionieren End-to-End auf echtem Geraet
+**Depends on**: Phase 26, Phase 27, Phase 28
+**Requirements**: CLN-02, CMP-01
+**Success Criteria** (what must be TRUE):
+  1. Verwaiste Tokens (User geloescht, Token aelter als 60 Tage) werden automatisch alle 24h bereinigt
+  2. Alle 14 bestehenden Push-Flows senden erfolgreich an ein echtes iOS-Geraet
+  3. Alle 3 neuen Push-Flows (Level-Up, Admin-Alert, Meilenstein) senden erfolgreich an ein echtes iOS-Geraet
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD
+
 ## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -104,3 +193,8 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
 | 22. Punkte-Vergabe Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 24. Chat-Logik Debug | v1.4 | 1/1 | Complete | 2026-03-05 |
+| 25. Foundation + Konfiguration | v1.5 | 0/? | Not started | - |
+| 26. Token-Lifecycle | v1.5 | 0/? | Not started | - |
+| 27. Badge-Count Single Source of Truth | v1.5 | 0/? | Not started | - |
+| 28. Fehlende Push-Flows | v1.5 | 0/? | Not started | - |
+| 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/? | Not started | - |
