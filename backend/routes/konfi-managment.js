@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
+const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const router = express.Router();
 
@@ -465,7 +466,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     });
 
     // POST bonus points for a konfi
-    router.post('/:id/bonus-points', rbacVerifier, requireAdmin, validateBonusPoints, async (req, res) => {
+    router.post('/:id/bonus-points', rbacVerifier, requireTeamer, validateBonusPoints, async (req, res) => {
         const { points, type, description } = req.body;
         if (!points || !type || !description) {
             return res.status(400).json({ error: 'Punkte, Typ und Beschreibung sind erforderlich' });
@@ -505,6 +506,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             } catch (badgeErr) {
  console.error('Error checking badges after bonus points:', badgeErr);
                 // Don't fail the request if badge checking fails
+            }
+
+            // Push-Notification an Konfi senden
+            try {
+                await PushService.sendBonusPointsToKonfi(db, req.params.id, points, description, type);
+            } catch (pushErr) {
+ console.error('Error sending bonus points push:', pushErr);
             }
 
             res.status(201).json({ message: 'Bonuspunkte erfolgreich hinzugefügt' });

@@ -38,15 +38,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     handleValidationErrors
   ];
 
-  const validateAssignBonus = [
-    body('konfiId').isInt({ min: 1 }).withMessage('Ungültige Konfi-ID'),
-    commonValidations.points,
-    commonValidations.type,
-    body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
-    commonValidations.date,
-    handleValidationErrors
-  ];
-
   const validateRequestUpdate = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('status').isIn(['approved', 'rejected']).withMessage('Status muss "approved" oder "rejected" sein'),
@@ -465,56 +456,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
  console.error('Database error in POST /api/activities/assign-activity:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-
-  // Assign bonus points to a konfi
-  // Pfad: POST /api/activities/assign-bonus
-  router.post('/assign-bonus', rbacVerifier, requireTeamer, validateAssignBonus, async (req, res) => {
-    const { konfiId, points, type, description, completed_date } = req.body;
-    if (!konfiId || !points || !type || !description) return res.status(400).json({ error: 'Alle Felder sind erforderlich' });
-    const date = completed_date || new Date().toISOString().split('T')[0];
-  
-    try {
-      const pointField = getPointField(type);
-
-      const client = await db.connect();
-      try {
-        await client.query('BEGIN');
-
-        await client.query("INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5, $6, $7)", [konfiId, points, type, description, req.user.id, date, req.user.organization_id]);
-
-        await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [points, konfiId]);
-
-        await client.query('COMMIT');
-      } catch (txErr) {
-        await client.query('ROLLBACK');
-        throw txErr;
-      } finally {
-        client.release();
-      }
-
-      // Badge-Check NACH COMMIT (verwendet db Pool)
-      const newBadges = await checkAndAwardBadges(db, konfiId);
-
-      // Send push notification for bonus points
-      try {
-        await PushService.sendBonusPointsToKonfi(db, konfiId, points, description, type);
-      } catch (pushErr) {
- console.error('Error sending bonus points push:', pushErr);
-      }
-
-      res.json({ message: 'Bonuspunkte erfolgreich vergeben', newBadges });
-
-      // Live-Update an Konfi senden
-      liveUpdate.sendToKonfi(konfiId, 'points', 'update');
-      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
-    } catch (err) {
-      if (err.message === 'Ungueltiger Punktetyp') {
-        return res.status(400).json({ error: 'Ungueltiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
-      }
- console.error('Database error in POST /api/activities/assign-bonus:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
