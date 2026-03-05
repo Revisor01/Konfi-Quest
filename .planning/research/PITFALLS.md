@@ -1,258 +1,376 @@
-# Pitfalls Research
+# Domain Pitfalls: v1.5 Push-Notifications
 
-**Domain:** Ionic 8 Hybrid-App Design-Konsistenz-Refactoring und Security Hardening (Multi-Tenant Kirchengemeinde-App)
-**Researched:** 2026-02-27
-**Confidence:** HIGH (basierend auf Codebase-Analyse, Ionic-Dokumentation und Community-Issues)
+**Domain:** Push-Notification-System Verbesserungen (Token-Lifecycle, Scheduled Notifications, Badge-Count-Sync)
+**Researched:** 2026-03-05
+**Confidence:** HIGH (basierend auf Codebase-Analyse, Firebase-Dokumentation, Capacitor-Dokumentation, Community-Issues)
 
 ## Critical Pitfalls
 
-### Pitfall 1: iOS Card-Modal-Animation bleibt nach Modal-Wechsel haengen
+Fehler die Rewrites oder schwerwiegende Probleme verursachen.
+
+### Pitfall 1: Badge-Count wird von 4 unabhaengigen Systemen verwaltet — kein Single Source of Truth
 
 **What goes wrong:**
-Wenn ein Modal mit `presentingElement` (Card-Style) geoeffnet wird und waehrend der Anzeige ein zweites Modal ohne `presentingElement` (Fullscreen-Style) geoeffnet wird, bleibt die dahinterliegende Seite im "boxed" Card-Modal-State stecken. Die Seite schrumpft und kehrt nicht in ihren normalen Zustand zurueck.
+Badge-Counts divergieren zwischen App-Icon, TabBar und Chat-Liste. User sieht "3" auf dem App-Icon aber "0" im Chat-Tab, oder umgekehrt. Schlimmstenfalls akkumulieren Badges endlos und zeigen unrealistische Zahlen (z.B. "47 ungelesen" obwohl alles gelesen wurde).
 
 **Why it happens:**
-Ionic React verwaltet den Card-Modal-State ueber CSS-Transformationen auf dem `presentingElement`. Wenn Modals mit unterschiedlichen Styles (Card vs. Fullscreen) gemischt werden, wird der CSS-State des presenting elements nicht korrekt zurueckgesetzt. Im Konfi Quest Code gibt es zwei verschiedene Patterns: `KonfiDetailView` und `EventDetailView` verwenden eigenen `useState<HTMLElement>` fuer das `presentingElement`, waehrend Page-Komponenten `useModalPage()` aus dem `ModalContext` nutzen. Diese Inkonsistenz erhoeht das Risiko fuer State-Mismatch.
+Aktuell verwalten 4 verschiedene Systeme den Badge-Count unabhaengig voneinander:
+1. **BadgeContext** (`BadgeContext.tsx`): Holt `unread_count` via `/chat/rooms` API, setzt Device-Badge via `@capawesome/capacitor-badge`
+2. **AppContext** (`AppContext.tsx`): Hat eigenen `chatNotifications` State mit `totalUnreadCount` und `unreadByRoom`, kommentierte Badge-Logik ("Badge logic removed - now handled by BadgeContext"), aber State wird trotzdem weiter aktualisiert
+3. **PushService** (`pushService.js`): Sendet `badge: 1` hardcoded bei den meisten Notifications, `sendBadgeUpdate` sendet beliebigen Count
+4. **Capacitor Badge Plugin**: Wird direkt in `BadgeContext` und indirekt ueber APNS Payload gesetzt
 
-**How to avoid:**
-- Alle Modals innerhalb einer Seite muessen konsistent entweder Card-Style (mit `presentingElement`) oder Fullscreen verwenden
-- Den `ModalContext` mit `useModalPage()` als einzige Quelle fuer `presentingElement` verwenden, nie eigenen State
-- Die `cleanupModals()` Funktion im ModalContext bei Route-Wechseln aufrufen (bereits implementiert, aber verifizieren)
-- Beim Refactoring `KonfiDetailView` (Zeile 91) und `EventDetailView` (Zeile 133) von eigenem `useState` auf `useModalPage()` migrieren
+Die Systeme widersprechen sich: AppContext deaktiviert seine Badge-Logik ("Badge logic removed"), fuehrt aber weiterhin Badge-relevante Berechnungen durch (Zeile 308-313: liest Device-Badge bei Start und setzt es als `totalUnreadCount`). BadgeContext refresht via API bei jedem WebSocket `newMessage` Event. PushService sendet `badge: 1` als statischen Wert unabhaengig vom echten Count.
 
-**Warning signs:**
-- Seite erscheint "eingerueckt" oder verkleinert nach Schliessen eines Modals
-- Backdrop bleibt sichtbar nach Modal-Dismiss
-- Unterschiedliche `presentingElement`-Quellen in derselben View (eigener State vs. ModalContext)
+**Consequences:**
+- App-Icon zeigt falsche Zahl (APNS setzt Badge auf das was der Server sendet — aktuell immer "1")
+- TabBar-Badges und App-Icon-Badge sind nicht synchron
+- User oeffnet Chat, liest alles, App-Icon zeigt weiterhin Badge
+- Bei vielen Notifications akkumuliert der Badge-Count auf dem Icon nicht korrekt (jede Push setzt auf "1" statt zu inkrementieren)
 
-**Phase to address:**
-Phase: Design-Konsistenz (Modal-Refactoring). Muss VOR dem Refactoring der Admin-Seiten abgeschlossen sein, da sonst neue Modals auf fehlerhafter Basis aufbauen.
+**Prevention:**
+- Badge-Count MUSS serverseitig berechnet werden — nur der Server kennt den echten Unread-Count
+- Ein einziges System (BadgeContext) konsumiert den serverseitigen Count
+- PushService muss den echten Count vom Server holen und in den APNS Payload einsetzen (nicht `badge: 1`)
+- AppContext-Badge-Logik komplett entfernen (nicht nur auskommentieren)
+- APNS Badge im Push-Payload ist der einzige Weg, den App-Icon Badge im Background zu aktualisieren
+
+**Detection:**
+- App-Icon Badge zeigt immer "1" unabhaengig von der tatsaechlichen Anzahl
+- Badge bleibt nach dem Lesen aller Nachrichten bestehen
+- Unterschiedliche Zahlen auf App-Icon vs. TabBar vs. Chat-Liste
+
+**Phase to address:** Fruehe Phase — vor allen neuen Push-Flows, weil jeder neue Flow den Badge-Count beeinflussen muss
 
 ---
 
-### Pitfall 2: Organization-ID-Filterung fehlt in Security-kritischen Routes
+### Pitfall 2: Fallback-Device-IDs erzeugen Ghost-Tokens die nie bereinigt werden
 
 **What goes wrong:**
-Benutzer aus Organisation A koennen Daten aus Organisation B lesen oder manipulieren. Konkret: `notifications.js` hat KEINE `organization_id`-Filterung. Die `push_tokens`-Tabelle hat kein `organization_id`-Feld. Ein Admin koennte theoretisch Push-Tokens anderer Organisationen sehen oder manipulieren, wenn IDs erraten werden.
+Die `push_tokens`-Tabelle fuellt sich mit Token-Eintraegen, die nie wieder geloescht werden koennen. Push-Notifications werden an tote Tokens gesendet, was Firebase-Quota verbraucht und die Zustellung an echte Geraete verzoegert.
 
 **Why it happens:**
-Schrittweise Migration von SQLite zu PostgreSQL. Aeltere Routes wurden vor dem RBAC-System geschrieben. Neue Organisation-Isolation wurde fuer Chat (Juli 2025) nachgeruestet, aber nicht systematisch ueber alle Routes hinweg. Die `verifyTokenRBAC` Middleware laedt zwar `organization_id`, aber erzwingt sie nicht automatisch in Queries -- das muss jede Route selbst tun.
+Der aktuelle Code hat zwei separate Device-ID-Quellen:
+1. **Capacitor `Device.getId()`** — liefert eine stabile, geraete-spezifische ID
+2. **Fallback-Generierung** (`AppContext.tsx` Zeile 42-43): `${platform}_${Date.now()}_${Math.random()...}` — generiert bei jedem Fehlschlag eine NEUE ID
 
-**How to avoid:**
-- Systematischer Audit ALLER Routes mit Checkliste: "Enthaelt jeder SELECT/UPDATE/DELETE ein `WHERE organization_id = $X`?"
-- Routes-Prioritaetsliste: `notifications.js` (0 org-Filter), `badges.js` (teilweise), `levels.js` (pruefen)
-- Middleware-Layer erweitern: `requireOrganizationScope()` der automatisch `req.user.organization_id` als Pflichtparameter injiziert
-- Fuer `push_tokens`: `organization_id` Spalte hinzufuegen und bei Token-Registrierung setzen
+Das Fallback wird gespeichert in `localStorage`, aber:
+- Wenn `Device.getId()` einmal fehlschlaegt (z.B. Timing-Problem beim App-Start) wird eine Fallback-ID generiert
+- Beim naechsten App-Start funktioniert `Device.getId()` und liefert die echte ID
+- Jetzt existieren ZWEI Eintraege in `push_tokens`: einer mit der echten ID, einer mit der Fallback-ID
+- Die Fallback-ID wird beim Logout nie korrekt geloescht (Logout nutzt `Device.getId()`, nicht die Fallback-ID)
 
-**Warning signs:**
-- Route-Datei hat keinen Import/Verwendung von `organization_id` oder `req.user.organization_id`
-- SQL-Queries ohne WHERE-Clause auf `organization_id`
-- Tests, die Cross-Organisation-Zugriff nicht abdecken
+Zusaetzlich: `getTokensForUser` in `pushService.js` (Zeile 11) filtert Device-IDs mit Underscores via `AND device_id NOT LIKE '%\\_\\_%'` — das soll Fallback-IDs ausfiltern, filtert aber auch legitime Device-IDs mit Underscores. Diese gefilterten Tokens bleiben in der DB, werden nie genutzt, nie geloescht.
 
-**Phase to address:**
-Phase: Security Hardening (erste Phase, vor Design-Arbeit). Cross-Tenant Data Leakage ist der schwerwiegendste Fehler in Multi-Tenant-Systemen.
+**Consequences:**
+- DB-Tabelle waechst unbegrenzt
+- Push-Sends an tote Tokens erzeugen Firebase-Errors die geloggt aber nicht behandelt werden
+- Logout loescht nur den Token zur aktuellen Device-ID, nicht den Fallback-Token
+
+**Prevention:**
+- Fallback-Device-ID-Generierung entfernen — wenn `Device.getId()` fehlschlaegt, Push-Registrierung abbrechen und spaeter erneut versuchen
+- Token-Cleanup-Job der Tokens aelter als 60 Tage loescht
+- Bei Token-Registrierung alle alten Tokens des gleichen Users mit dem gleichen FCM-Token loeschen (nicht nur andere User)
+- `NOT LIKE '%\\_\\_%'` Filter entfernen und stattdessen explizit ungueltige Tokens markieren
+
+**Detection:**
+- `SELECT COUNT(*) FROM push_tokens GROUP BY user_id` zeigt User mit >2 Tokens pro Plattform
+- Firebase-Error-Logs zeigen wiederholt `messaging/registration-token-not-registered`
 
 ---
 
-### Pitfall 3: JWT Token ohne Rotation und Blacklisting bei 24h Laufzeit
+### Pitfall 3: Firebase-Error bei ungueltigem Token wird geloggt aber Token nie aus DB entfernt
 
 **What goes wrong:**
-Ein kompromittierter JWT Token ist 24 Stunden gueltig. Es gibt keinen Mechanismus, um einen Token vorzeitig zu invalidieren (kein Logout-Blacklist, kein Refresh-Token-Rotation). Wenn ein Konfi sein Passwort aendert, bleiben alte Tokens gueltig. Wenn ein Admin einen User deaktiviert, bleibt dessen Token bis zum Ablauf aktiv.
+Einmal registrierte Tokens bleiben fuer immer in der Datenbank, auch wenn das Geraet die App deinstalliert hat, der FCM-Token expired ist, oder das APNS-Token ungueltig wurde. Jeder Push-Versuch an diese Tokens erzeugt einen Firebase-Error, kostet Latenz und verbraucht Firebase-Quota.
 
 **Why it happens:**
-Einfache JWT-Implementierung ohne Refresh-Token-Mechanismus. Die `verifyTokenRBAC`-Middleware prueft zwar `is_active` in der Datenbank (Zeile 62), was eine partielle Mitigation darstellt. Allerdings gibt es fuer Passwort-Aenderungen, Rollen-Aenderungen oder manuelle Sperren keine sofortige Token-Invalidierung.
+In `pushService.js` werden Firebase-Errors nur geloggt:
+```javascript
+} catch (error) {
+  console.error('Push failed for token:', error.message);
+  errorCount++;
+}
+```
+Es gibt keine Pruefung des Error-Codes und keine Entfernung des Tokens aus der Datenbank.
 
-**How to avoid:**
-- Phase 1 (Sofort): Access Token Laufzeit auf 1-2 Stunden reduzieren
-- Phase 2: Refresh Token Mechanismus mit `httpOnly` Cookie und Rotation bei jedem Refresh
-- Phase 3: Token-Version in `users` Tabelle (`token_version INT`). Bei Passwort-Aenderung, Rollen-Aenderung oder Admin-Sperrung wird `token_version` inkrementiert. JWT enthaelt `token_version`, Middleware vergleicht.
-- WICHTIG: Die bestehende DB-Pruefung in `verifyTokenRBAC` (is_active Check) beibehalten -- sie ist aktuell die einzige Schutzschicht
+Firebase liefert spezifische Error-Codes die eine Bereinigung triggern sollten:
+- `messaging/registration-token-not-registered` — Token existiert nicht mehr (App deinstalliert)
+- `messaging/invalid-argument` — Token-Format ist ungueltig
+- `messaging/invalid-registration-token` — Token ist malformed
 
-**Warning signs:**
-- User meldet sich ab, kann aber mit altem Token weiter zugreifen
-- Passwort-Aenderung invalidiert laufende Sessions nicht
-- Admin deaktiviert User, der sofort weiter navigieren kann (bis Token expired)
+Laut [Firebase Best Practices](https://firebase.google.com/docs/cloud-messaging/manage-tokens): Tokens sollten bei diesen Errors sofort geloescht werden. Zusaetzlich sollten Tokens die >60 Tage nicht aktualisiert wurden als "stale" betrachtet werden.
 
-**Phase to address:**
-Phase: Security Hardening. Token-Laufzeit-Reduktion in Phase 1, Refresh-Token in Phase 2 (wenn vor Go-Live genug Zeit).
+**Consequences:**
+- Jeder Push-Send-Vorgang dauert laenger (sequentielle Sends an alle Tokens inkl. toter)
+- Firebase-Quota wird verschwendet
+- Error-Logs werden mit wiederholten Fehlern geflutet
+- Bei `sendToMultipleUsers` (z.B. Event-Notification an alle Konfis) multipliziert sich das Problem
+
+**Prevention:**
+- Error-Code-Pruefung in `sendFirebasePushNotification` oder im catch-Block von `sendToUser`:
+  - Bei `messaging/registration-token-not-registered`, `messaging/invalid-argument`: Token sofort aus DB loeschen
+  - Bei `messaging/internal-error`: Retry mit Backoff, Token behalten
+  - Bei `messaging/quota-exceeded`: Alle Sends pausieren
+- Periodischer Cleanup-Job (Cron, taeglich): Tokens loeschen deren `updated_at` aelter als 60 Tage ist
+- `sendFirebasePushNotification` in `firebase.js` muss den Error WERFEN (nicht `{ success: false }` returnen) damit der Caller den Error-Code pruefen kann — aktuell wird der Error geschluckt (Zeile 65-68)
+
+**Detection:**
+- `SELECT COUNT(*), MAX(updated_at) FROM push_tokens` — wenn aelteste Tokens Monate alt sind, fehlt Cleanup
+- Firebase Console zeigt hohe Error-Rate bei Cloud Messaging
 
 ---
 
-### Pitfall 4: Design-Refactoring bricht funktionierendes Konfi-UI
+## Moderate Pitfalls
+
+### Pitfall 4: Scheduled Event-Erinnerungen ohne Persistenz — Server-Restart loescht alle Jobs
 
 **What goes wrong:**
-Beim Anpassen der Admin-Seiten an das Konfi-Design-Pattern werden versehentlich globale CSS-Klassen geaendert, die auch das bereits fertige Konfi-UI betreffen. Die `variables.css` enthaelt globale Styles wie `ion-card.app-card`, `ion-popover`, und `.app-list-item`, die von ALLEN Views (Konfi + Admin) verwendet werden. Eine Aenderung an z.B. `.app-list-item` Padding bricht die Konfi-EventsView.
+Event-Erinnerungen (FLW-01: "X Stunden vor Event-Beginn") werden als In-Memory Cron-Jobs geplant. Bei einem Server-Restart (Docker-Rebuild, Deployment) gehen alle geplanten Jobs verloren. Konfis erhalten keine Erinnerungen fuer bereits erstellte Events.
 
 **Why it happens:**
-Das Design System in `variables.css` (529 Zeilen) definiert wiederverwendbare Komponenten-Klassen, die absichtlich global sind. Es gibt keine Scoping-Mechanik (kein CSS Modules, kein Styled Components). Wenn ein Entwickler eine `.app-card` Eigenschaft aendert, weil sie im Admin-Bereich anders aussehen soll, wirkt sich das global aus.
+Node-Cron und aehnliche In-Memory-Scheduler verlieren ihren State bei Process-Restart. Docker-Container werden bei jedem `docker-compose up -d --build` neu erstellt. Das aktuelle Deployment-Pattern (`git pull && docker-compose down && docker-compose up -d --build`) garantiert einen Restart bei jedem Deploy.
 
-**How to avoid:**
-- REGEL: Bestehende CSS-Klassen in `variables.css` NIEMALS aendern, nur neue hinzufuegen
-- Admin-spezifische Abweichungen als eigene Klassen: `.admin-card` statt Modifikation von `.app-card`
-- Vor jedem CSS-Edit: In den Devtools pruefen, welche Komponenten die betroffene Klasse verwenden
-- Konfi-EventsView als "Goldene Referenz" festlegen: Screenshots vor Refactoring machen, nach jedem Schritt vergleichen
-- Optional: CSS Scope mit Klassen-Prefix `.admin-` und `.konfi-` fuer bereichsspezifische Styles
+**Prevention:**
+Zwei Ansaetze, nach Komplexitaet:
 
-**Warning signs:**
-- Admin-CSS-Aenderung sichtbar auf Konfi-Seiten
-- Konfi-EventsView sieht nach Admin-Refactoring anders aus
-- Globale Ionic-Selektoren (z.B. `ion-card`, `ion-popover`) in variables.css werden geaendert
+**Einfacher Ansatz (empfohlen):** Polling-basiert statt Scheduler
+- Cron-Job laeuft alle 5 Minuten und prueft: "Welche Events beginnen in den naechsten 1h / 24h?"
+- Query: `SELECT * FROM events WHERE start_date BETWEEN NOW() AND NOW() + INTERVAL '1 hour' AND reminder_sent = false`
+- `reminder_sent` Boolean-Spalte in `events` oder separate `event_reminders` Tabelle
+- Ueberlebt Restarts automatisch weil der State in der Datenbank liegt
 
-**Phase to address:**
-Phase: Design-Konsistenz. Muss als explizite Regel VOR dem Refactoring etabliert werden. Jede Design-Phase sollte mit einem Screenshot-Vergleich der Konfi-Views beginnen und enden.
+**Komplexerer Ansatz:** Job-Queue (Bull/BullMQ mit Redis)
+- Overkill fuer diesen Use-Case, erfordert Redis-Setup
+
+**Detection:**
+- Event-Erinnerungen funktionieren nach Deploy nicht mehr
+- Keine Erinnerungen fuer Events die vor dem letzten Restart erstellt wurden
 
 ---
 
-### Pitfall 5: iOS 26 Theme und MD3 Theme kollidieren auf CSS-Ebene
+### Pitfall 5: Token-Cleanup bei Logout schlaegt fehl wenn JWT bereits expired ist
 
 **What goes wrong:**
-In `variables.css` werden BEIDE Theme-Bibliotheken importiert: `@rdlabo/ionic-theme-ios26` (3 CSS-Dateien) UND `@rdlabo/ionic-theme-md3` (2 CSS-Dateien). Diese Themes definieren ueberlappende CSS Custom Properties und Styles. Auf Android zeigt sich iOS-spezifisches Styling (z.B. durch `md-remove-ios-class-effect.css`, das iOS-Klassen auf MD-Plattform entfernt). Auf iOS koennen MD3-Styles die iOS26-Styles ueberschreiben, je nach Import-Reihenfolge.
+Wenn ein Konfi die App laengere Zeit nicht oeffnet und der JWT (90 Tage Laufzeit) ablaeuft, kann der Token nicht mehr per API geloescht werden. Der Logout-Call in `auth.ts` (Zeile 81) `api.delete('/notifications/device-token')` benoetigt einen gueltigen JWT (`verifyTokenRBAC` Middleware). Bei expirtem JWT erhaelt der Call `401 Unauthorized`, der Push-Token bleibt in der DB.
 
 **Why it happens:**
-Beide Theme-Pakete werden bedingungslos geladen. In `App.tsx` wird die Animation plattformabhaengig gesetzt (`isPlatform('ios')`), aber die CSS-Dateien werden IMMER geladen -- unabhaengig von der Plattform. Das CSS-Cascading fuehrt dazu, dass spaeter importierte Regeln fruehere ueberschreiben.
+Das DELETE-Endpoint fuer Device-Tokens ist durch `verifyTokenRBAC` geschuetzt. Logisch korrekt (nur eigene Tokens loeschen), aber problematisch beim "erzwungenen Logout" nach Token-Expiry. Der Logout-Code faengt den Fehler ab (Zeile 88-98: "Logout sollte trotzdem funktionieren"), aber der Push-Token wird nicht entfernt.
 
-**How to avoid:**
-- CSS-Imports plattformabhaengig machen: Separate CSS-Dateien fuer iOS und Android, die jeweils nur ein Theme laden
-- Alternative: Dynamischer CSS-Import via JavaScript beim App-Start basierend auf `isPlatform()`
-- Einfachste Loesung: `@import` Reihenfolge in `variables.css` pruefen und sicherstellen, dass iOS26-Imports VOR MD3-Imports stehen (aktuell: iOS26 zuerst, MD3 danach -- MD3 koennte iOS26 ueberschreiben auf iOS)
-- `md-remove-ios-class-effect.css` sollte NUR auf Android geladen werden -- aktuell wird sie immer geladen
+**Consequences:**
+- Verwaiste Tokens in der DB die bei jedem Push-Send getestet werden
+- Nach Passwort-Reset und Neu-Login: Alter Token existiert noch parallel zum neuen
+- Bei User-Loeschung: Token verwaist komplett
 
-**Warning signs:**
-- Android-Geraete zeigen iOS-typische Animationen oder Styling
-- iOS-Geraete zeigen Material-Design-Elemente (flache Buttons, ripple effects)
-- Inkonsistente Darstellung zwischen iOS-Simulator und Android-Emulator
-- `registerTabBarEffect` funktioniert nicht korrekt auf Android
-
-**Phase to address:**
-Phase: Design-Konsistenz (Theme-Konfiguration). Sollte als erstes in der Design-Phase adressiert werden, da alle weiteren Design-Entscheidungen auf dem korrekten Theme aufbauen.
+**Prevention:**
+- Token-Cleanup NICHT nur beim Logout machen, sondern auch:
+  1. Bei Token-Registrierung: Alle alten Tokens des gleichen Users auf dem gleichen Device loeschen (bereits teilweise implementiert via UPSERT)
+  2. Periodischer Server-Side Cleanup: Tokens von deaktivierten/geloeschten Usern entfernen
+  3. Tokens deren `updated_at` > 90 Tage (JWT-Laufzeit) alt ist automatisch loeschen
+- Alternative: Token-Delete-Endpoint OHNE Auth-Requirement, aber mit Device-ID + User-ID als Identifikation (Sicherheitsabwaegung)
 
 ---
 
-### Pitfall 6: registerTabBarEffect bricht bei 6 Tabs (bekanntes Problem)
+### Pitfall 6: Push-Listener in AppContext werden bei jedem User-State-Change neu registriert
 
 **What goes wrong:**
-Die `registerTabBarEffect` Funktion aus `@rdlabo/ionic-theme-ios26` versagt auf iOS, wenn die TabBar 6 oder mehr Tabs hat. Das Admin-Layout hat aktuell exakt 6 Tabs (Konfis, Chat, Events, Badges, Antraege, Mehr). Das Konfi-Layout hat ebenfalls 6 Tabs (Dashboard, Chat, Events, Badges, Aktivitaeten, Profil). Der Effect wird bei jedem Route-Wechsel zerstoert und neu erstellt (`useEffect` in MainTabs.tsx Zeile 157-169), was zu Flackern fuehrt.
+Push-Notification-Listener (`pushNotificationReceived`, `pushNotificationActionPerformed`, `registration`) werden mehrfach registriert. Notifications werden doppelt oder dreifach verarbeitet. Navigation bei Notification-Tap fuehrt zu falschem Ziel oder wird mehrfach ausgefuehrt.
 
 **Why it happens:**
-Die Bibliothek `@rdlabo/ionic-theme-ios26` ist ein Community-Paket (nicht offiziell von Ionic). Die `registerTabBarEffect` nutzt Ionic Gesture und Animation APIs, die bei mehr als 5 Tabs Performance-Probleme haben. Das Re-Registering bei jedem Route-Wechsel (`location.pathname` Dependency) verschaerft das Problem.
+In `AppContext.tsx` (Zeile 438-547) wird `setupPushNotifications` in einem `useEffect` mit Dependency `[user]` ausgefuehrt. Jedes Mal wenn `setUser()` aufgerufen wird (auch mit dem gleichen User-Objekt), werden neue Listener registriert. Die alten Listener werden NICHT entfernt — es gibt kein Cleanup in der Return-Funktion des `useEffect`.
 
-**How to avoid:**
-- Tab-Anzahl auf 5 reduzieren (z.B. "Badges" in "Mehr"-Menu integrieren)
-- Alternative: `registerTabBarEffect` nur einmal beim Mount registrieren, nicht bei jedem Route-Wechsel
-- Konditionalen Aufruf: Nur auf iOS ausfuehren (auf Android wird es nicht benoetigt)
-- Oder: Eigenen Tab-Bar-Effect implementieren, der die Bibliothek ersetzt
-- Langfristig: Warten auf offizielle Ionic iOS 26 Theme-Unterstuetzung (Issue #30466 ist offen)
+`PushNotifications.addListener` registriert Listener kumulativ. Ohne `removeAllListeners()` oder individuellem Listener-Cleanup stacken sich die Listener.
 
-**Warning signs:**
-- TabBar-Animation ruckelt oder springt bei Wechsel zwischen Tabs
-- `console.error` oder Warnungen von `registerTabBarEffect`
-- Leere/weisse TabBar kurz sichtbar beim Route-Wechsel
+Zusaetzlich: Das zweite `useEffect` (Zeile 344-378, `handleNativeFCMToken`) registriert einen `window.addEventListener('fcmToken', ...)` — dieser wird korrekt aufgeraeumt. Aber das dritte `useEffect` (Zeile 438-547) hat KEINEN Cleanup.
 
-**Phase to address:**
-Phase: Known Bugs (fruehe Phase). Sollte vor dem Design-Refactoring geloest werden, da die Tab-Struktur alle weiteren Layout-Entscheidungen beeinflusst.
+**Consequences:**
+- Notification-Handler wird 2-3x aufgerufen pro Notification
+- Navigation bei Tap fuehrt zu Race-Conditions (mehrere `window.location.href` Zuweisungen)
+- Performance-Degradation durch Listener-Akkumulation
+
+**Prevention:**
+- `useEffect` Cleanup-Funktion muss alle registrierten Listener entfernen:
+  ```typescript
+  return () => {
+    PushNotifications.removeAllListeners();
+  };
+  ```
+- ABER: `removeAllListeners()` entfernt ALLE Listener global — auch die aus anderen Effects. Besser: Individuelle Listener-Referenzen speichern und einzeln entfernen
+- `pushAlreadyRegistered` Flag schuetzt nur vor doppelter Permission-Anfrage, nicht vor doppelten Listenern
+- Capacitor-Doku empfiehlt: Listener in einer zentralen Stelle registrieren, nicht in React-Lifecycle-Hooks
 
 ---
 
-## Technical Debt Patterns
+### Pitfall 7: sendToMultipleUsers ist sequentiell — bei 100+ Konfis blockiert ein Push-Send minutenlang
 
-| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
-|----------|-------------------|----------------|-----------------|
-| `console.log` statt strukturiertem Logging | Schnelle Debugging-Ausgabe | Keine Log-Levels, kein JSON-Format, keine Log-Rotation in Produktion | Waehrend Beta-Phase akzeptabel, aber vor Go-Live auf winston/pino umstellen |
-| Globale CSS-Klassen ohne Scoping | Schnelle Wiederverwendung | Design-Aenderung an einer Stelle bricht andere Bereiche | Akzeptabel wenn Konvention "nur hinzufuegen, nie aendern" eingehalten wird |
-| `CREATE TABLE IF NOT EXISTS` in Route-Handler (notifications.js) | Keine separate Migration noetig | Schema-Aenderungen schwer nachvollziehbar, Race-Conditions beim Parallel-Start | Nie -- Schema sollte ueber Migrations-Skript verwaltet werden |
-| Polling statt WebSocket fuer Pending-Counts (MainTabs.tsx, 30s/60s Intervals) | Einfache Implementierung | Unnoetige API-Last, verzoegerte Updates | Akzeptabel bei geringer Nutzerzahl (<100), dann auf WebSocket-Events umstellen |
-| `verifyTokenRBAC` macht DB-Query bei JEDEM Request | Aktuelle Daten (is_active, Rollen) | Latenz auf jeder Route, Datenbank-Last | Akzeptabel wenn Caching hinzugefuegt wird (Redis, 30s TTL) |
+**What goes wrong:**
+Die Methode `sendToMultipleUsers` (Zeile 65-72) iteriert sequentiell ueber alle User-IDs. Fuer jeden User werden alle Tokens geladen (DB-Query) und dann sequentiell an Firebase gesendet. Bei einer Organisation mit 50 Konfis und je 2 Devices: 50 * 2 = 100 sequentielle Firebase-API-Calls.
 
-## Integration Gotchas
+**Why it happens:**
+Einfache `for...of` Loop ohne Parallelisierung:
+```javascript
+for (const userId of userIds) {
+  const result = await this.sendToUser(db, userId, notification);
+  results.push({ userId, ...result });
+}
+```
+
+**Consequences:**
+- Event-Erstellung blockiert den Express-Handler waehrend alle Pushes gesendet werden
+- API-Response an den Admin kommt erst nach allen Push-Sends zurueck
+- Bei Firebase-Timeout eines einzelnen Tokens blockiert der gesamte Vorgang
+
+**Prevention:**
+- Push-Sends NICHT im Request-Handler ausfuehren — in eine Queue auslagern oder `setImmediate()` / `process.nextTick()` nutzen
+- `Promise.allSettled()` statt sequentiellem Loop fuer Parallelisierung
+- Firebase `sendEachForMulticast()` API nutzen fuer Batch-Sends (bis zu 500 Tokens pro Call)
+- Response an Admin sofort zurueckgeben, Pushes asynchron im Hintergrund senden
+
+---
+
+### Pitfall 8: APNS-spezifische Konfiguration fehlt fuer Silent Pushes und Badge-Only Updates
+
+**What goes wrong:**
+Badge-Count-Updates via `sendBadgeUpdate` (Zeile 156-187) senden eine Notification ohne `title` und `body`. iOS behandelt Notifications ohne Content als Silent Pushes, die spezielle APNS-Header benoetigen (`apns-push-type: background`, `content-available: 1`). Ohne diese Header wird die Notification von iOS verworfen.
+
+**Why it happens:**
+In `firebase.js` (Zeile 49-61) werden APNS-Header statisch gesetzt:
+```javascript
+headers: {
+  'apns-push-type': 'alert',
+  'apns-priority': '10',
+}
+```
+`apns-push-type: alert` erfordert einen sichtbaren Notification-Body. Badge-Only Updates sind kein "alert" — sie sollten `apns-push-type: background` mit `apns-priority: 5` und `content-available: 1` verwenden.
+
+**Consequences:**
+- Badge-Count-Updates kommen auf iOS nicht an
+- App-Icon Badge wird nicht aktualisiert wenn die App im Background ist
+- Nur bei App-Oeffnung wird der Badge korrekt gesetzt (via API-Call)
+
+**Prevention:**
+- `sendFirebasePushNotification` muss unterscheiden zwischen Alert-Pushes (mit title/body) und Silent-Pushes (badge-only)
+- Fuer Silent Pushes:
+  ```javascript
+  apns: {
+    headers: {
+      'apns-push-type': 'background',
+      'apns-priority': '5',
+    },
+    payload: {
+      aps: {
+        'content-available': 1,
+        badge: badgeCount,
+      }
+    }
+  }
+  ```
+- Android hat dieses Problem nicht — FCM auf Android setzt Data-Messages ohne Notification-Content korrekt zu
+
+---
+
+## Minor Pitfalls
+
+### Pitfall 9: CREATE TABLE IF NOT EXISTS in Route-Handler statt Migration
+
+**What goes wrong:**
+`notifications.js` (Zeile 33-41) fuehrt `CREATE TABLE IF NOT EXISTS push_tokens` bei JEDEM `POST /device-token` Request aus. Bei parallelen Requests kann es zu Race-Conditions kommen. Schema-Aenderungen (z.B. neue Spalte `organization_id`) koennen nicht sauber durchgefuehrt werden.
+
+**Prevention:**
+- Schema-Definition in eine separate Migrations-Datei verschieben
+- `CREATE TABLE` aus dem Route-Handler entfernen
+- Neue Spalten via `ALTER TABLE` Migration hinzufuegen
+
+---
+
+### Pitfall 10: Notification-Type Registry fehlt — neue Push-Flows erfordern Aenderungen an 3+ Stellen
+
+**What goes wrong:**
+Beim Hinzufuegen eines neuen Push-Flows (z.B. "Level-Up Notification") muessen Aenderungen an mehreren Stellen vorgenommen werden: PushService (neuen Method), Route (Call), Frontend Navigation Handler (`pushNotificationActionPerformed` Switch-Case in AppContext), ggf. BadgeContext. Wenn eine Stelle vergessen wird, fehlt die Navigation bei Tap oder der Badge-Count stimmt nicht.
+
+**Prevention:**
+- Zentrale Notification-Type Registry als Konfiguration:
+  ```javascript
+  const NOTIFICATION_TYPES = {
+    level_up: { enabled: true, navigateTo: (user) => user.type === 'admin' ? '/admin/konfis' : '/konfi/dashboard' },
+    // ...
+  };
+  ```
+- Frontend-Navigation-Handler liest aus dieser Registry statt hardcoded Switch-Case
+- Neue Types muessen nur an EINER Stelle registriert werden
+
+---
+
+### Pitfall 11: Token-Registrierung sendet Platform als "web" auf Desktop-Browsern
+
+**What goes wrong:**
+Die Validierung in `notifications.js` erlaubt `platform: 'web'` (Zeile 12). Capacitor auf Desktop gibt `web` als Platform zurueck. Ein Token mit Platform `web` ist kein FCM-Token und kann nicht fuer Push-Notifications verwendet werden. Der Token wird gespeichert aber jeder Push-Versand an diesen Token schlaegt fehl.
+
+**Prevention:**
+- `web`-Platform aus der Validierung entfernen (oder separat behandeln)
+- Push-Registrierung nur auf nativen Plattformen ausfuehren (bereits durch `Capacitor.isNativePlatform()` Check im Frontend geschuetzt, aber Server-Side Defence-in-Depth fehlt)
+
+---
+
+## Phase-Specific Warnings
+
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| Badge-Count-Sync (BDG-*) | Pitfall 1: 4 Systeme verwalten Badge | Zuerst AppContext Badge-Logik komplett entfernen, dann BadgeContext als Single Source of Truth etablieren, dann PushService den echten Count senden lassen |
+| Token-Lifecycle (TKN-*) | Pitfall 2 + 5: Fallback-IDs + Logout bei expired JWT | Fallback-ID-Generierung entfernen, Server-Side Cleanup implementieren |
+| Token-Bereinigung (CLN-*) | Pitfall 3: Firebase-Errors nicht behandelt | Error-Code-Parsing in firebase.js, Token-Loeschung bei spezifischen Error-Codes |
+| Event-Erinnerungen (FLW-01) | Pitfall 4: In-Memory Scheduler verliert Jobs | Polling-basierter Ansatz mit DB-State statt Scheduler |
+| Neue Push-Flows (FLW-*) | Pitfall 10: Aenderungen an 3+ Stellen noetig | Notification-Type Registry als erstes erstellen, dann neue Flows hinzufuegen |
+| Push-Konfiguration (CFG-*) | Pitfall 10: Kein zentrales Type-Registry | CFG-02 (Notification-Type Registry) vor CFG-01 (Enable/Disable Flags) implementieren |
+| Push-Listener (CMP-01) | Pitfall 6: Listener-Akkumulation | Listener-Setup in AppContext reparieren bevor neue Notification-Types verifiziert werden |
+| Push-Send Performance | Pitfall 7: Sequentielle Sends | Bei Event-Notifications (alle Konfis einer Org) auf async/parallel umstellen |
+| Badge-Only Updates | Pitfall 8: Silent Push APNS Config | firebase.js um Push-Type-Unterscheidung erweitern |
+
+## Integration Gotchas (v1.5-spezifisch)
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Firebase Push (backend) | Token-Registrierung ohne `organization_id` in `push_tokens` | `organization_id` Spalte hinzufuegen, beim Registrieren mitgeben |
-| Socket.io Chat | Room-Join ohne Organisation-Validierung | `io.use()` Middleware die `organization_id` aus JWT verifiziert und nur Rooms der eigenen Org erlaubt |
-| @rdlabo/ionic-theme-ios26 | CSS global laden fuer beide Plattformen | Plattform-abhaengige CSS-Imports oder Feature-Detection |
-| Capacitor Push Notifications | `PushNotifications.removeAllListeners()` vor `addListener` (App.tsx Zeile 103) | Listener-Cleanup ueber `useEffect` Return-Funktion, nicht manuelles `removeAll` das andere Listener zerstoert |
-| Ionic Router + IonTabs | Route-Wechsel innerhalb Tabs fuehrt zu Modal-State-Leaks | `cleanupModals()` bei Route-Wechsel ausfuehren (bereits implementiert in ModalContext, verifizieren) |
+| BadgeContext + AppContext | Beide Systeme zaehlen Badges, AppContext hat "removed" Badge-Logik die trotzdem noch State setzt | AppContext komplett von Badge-Management befreien, nur BadgeContext nutzen |
+| PushService + Badge Count | `badge: 1` hardcoded statt echtem Count | Server muss echten Unread-Count berechnen und in APNS Payload einsetzen |
+| Firebase Error + Token DB | Error wird geloggt, Token bleibt | Error-Code parsen, bei `not-registered`/`invalid-argument` Token aus DB loeschen |
+| Cron-Jobs + Docker | In-Memory Jobs gehen bei Container-Restart verloren | DB-basierter State fuer alle Scheduled Tasks |
+| Multiple Device Tokens + Logout | Logout loescht nur Token der aktuellen Device-ID | Server-Side Cleanup fuer verwaiste Tokens implementieren |
+| WebSocket (BadgeContext) + Push | Doppelte Updates: WebSocket `newMessage` Event UND Push Notification erhoehen Badge | Deduplizierung: Wenn App im Foreground (WebSocket aktiv), Push-Badge ignorieren |
 
-## Performance Traps
+## "Looks Done But Isn't" Checklist (v1.5)
 
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| `verifyTokenRBAC` laedt `user_jahrgang_assignments` bei JEDEM Request | Langsamere API-Responses, hoehere DB-Last | Jahrgang-Assignments in JWT-Payload oder Redis cachen | Ab 50+ gleichzeitigen Nutzern spuerbar |
-| N+1 Badge-Progress-Queries im Dashboard | Dashboard-Ladezeit >2 Sekunden | CTEs oder Batch-Queries fuer Badge-Progress | Ab 20+ aktiven Badges pro Organisation |
-| `registerTabBarEffect` destroy/recreate bei jedem Route-Wechsel | Tab-Animation flackert, Performance-Drop auf aelteren iPhones | Effect nur einmal beim Mount, `destroy` nur beim Unmount | Sofort sichtbar auf iPhone SE oder aelteren Geraeten |
-| Alle Chat-Nachrichten in einer Tabelle ohne Partitioning | Langsame Chat-Room-Abfragen | Pagination + Index auf `(room_id, created_at)` | Ab 100.000+ Nachrichten |
-
-## Security Mistakes
-
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| `push_tokens` ohne `organization_id` | Cross-Org Token-Manipulation theoretisch moeglich | Spalte hinzufuegen, bei Registrierung setzen, bei Queries filtern |
-| JWT enthaelt `organization_id` im Payload (auth.js Zeile 87) | Wenn Token dekodiert wird (z.B. im Frontend), sieht jeder die Org-ID | Nicht sicherheitskritisch (Org-ID ist kein Geheimnis), aber sensible Daten (Email) aus JWT entfernen |
-| Kein Token-Blacklist bei Passwort-Aenderung | Alte Sessions bleiben 24h aktiv nach Passwort-Aenderung | `token_version` in `users` Tabelle, bei Passwort-Aenderung inkrementieren, in JWT einbetten und bei Verifizierung pruefen |
-| Rate-Limiter in-Memory (express-rate-limit) | Server-Restart setzt Limiter zurueck, Brute-Force nach Deploy moeglich | Redis-basierter Rate-Limiter Store |
-| `validate-invite/:code` ist public ohne Rate-Limiting | Invite-Code Brute-Force (8 Hex-Chars = 4.3 Milliarden Moeglichkeiten, aber trotzdem) | Rate-Limiting auf Invite-Validation Endpoint hinzufuegen |
-| SQL-Injection-Risiko bei dynamischen Spalten (activities.js) | Derzeit durch Validierung geschuetzt, aber fragiles Pattern | CASE-Statements statt Template-Literals fuer dynamische Spalten |
-
-## UX Pitfalls
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Rate-Limiter zeigt keine Benutzer-Nachricht bei 15-Min-Sperre | User denkt App ist kaputt, versucht es immer wieder | Klare Fehlermeldung mit Countdown "Bitte warte noch X Minuten" |
-| Konfi sieht 6 Tabs auf kleinem iPhone-Display | Tabs werden sehr schmal, Labels abgeschnitten | Tab-Anzahl auf 5 reduzieren oder "Mehr"-Tab mit Untermenu |
-| Admin-Design inkonsistent zum Konfi-Design | Verwirrung beim Wechsel zwischen Bereichen, unprofessioneller Eindruck | Design-System konsequent auf alle Bereiche anwenden (Ziel dieses Milestones) |
-| Modal-Backdrop-Effekt fehlt auf manchen Admin-Seiten | Kein visuelles Feedback dass ein Modal ueber der Seite liegt | `presentingElement` konsistent in allen Modals setzen |
-| Push-Notifications ohne Organization-Scope | Theoretisch koennte ein Admin einer anderen Org Pushes sehen | Push-Token-Registrierung mit `organization_id` verknuepfen |
-
-## "Looks Done But Isn't" Checklist
-
-- [ ] **Modal-System:** Alle 20+ Modals verwenden `useIonModal` -- aber pruefen ob ALLE `presentingElement` korrekt setzen (einige View-Dateien nutzen eigenen State statt ModalContext)
-- [ ] **Organization-Isolation:** Chat hat `organization_id`-Filter -- aber `notifications.js`, `badges.js` (teilweise) und `levels.js` muessen auditiert werden
-- [ ] **iOS 26 Theme:** CSS wird geladen -- aber `md-remove-ios-class-effect.css` wird auch auf Android geladen (unerwuenscht)
-- [ ] **Invite-Code-System:** Funktioniert -- aber `used_at` wird nie gesetzt (Zeile 520 in auth.js ist auskommentiert), Codes sind unendlich wiederverwendbar
-- [ ] **Badge-Streak-Berechnung:** Badge-System existiert -- aber Streak- und Zeit-basierte Fortschrittsberechnung sind TODO-Stubs (konfi.js Zeilen 962-970), immer 0%
-- [ ] **Dark Mode:** CSS-Imports sind vorbereitet (als Kommentar in App.tsx) -- aber `variables.css` hat nur Light-Mode Farben, Custom-Klassen (`.app-list-item`, `.app-card`) haben hardcodierte `white`/`#333`-Werte
-- [ ] **Responsive Design:** Ionic Grid vorhanden -- aber Admin-Seiten auf Tablet-Groesse nicht getestet
-- [ ] **Error Boundary:** React Error Boundary nicht implementiert -- ein Fehler in einer Subkomponente crasht die gesamte App
+- [ ] **AppContext Badge-Logik "entfernt":** Kommentare sagen "Badge logic removed - now handled by BadgeContext", aber `setChatNotifications` State wird weiter gepflegt und Device-Badge wird bei App-Start gelesen (Zeile 308-313)
+- [ ] **Push-Listener Cleanup:** `setupPushNotifications` useEffect (Zeile 438) hat KEINEN Cleanup — Listener akkumulieren bei User-State-Changes
+- [ ] **Fallback-Device-ID Filter:** `NOT LIKE '%\\_\\_%'` in PushService filtert Tokens, aber die gefilterten Tokens werden nie bereinigt
+- [ ] **Token-Loeschung bei Logout:** `auth.ts` loescht Token per API — funktioniert nur wenn JWT noch gueltig ist
+- [ ] **sendBadgeUpdate:** Methode existiert aber wird nirgendwo aufgerufen (nur der Method-Body existiert, kein Caller im Code)
+- [ ] **Event-Reminder Methode:** `sendEventReminderToKonfi` existiert in PushService, aber es gibt keinen Scheduler der sie aufruft
+- [ ] **firebase.js Error Handling:** `sendFirebasePushNotification` catcht den Error und returned `{ success: false }` — der Caller in PushService catcht ebenfalls und loggt nur. Doppeltes Error-Swallowing.
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Globale CSS-Aenderung bricht Konfi-UI | LOW | Git revert der CSS-Aenderung, Admin-spezifische Klasse erstellen |
-| Cross-Org Data Leak entdeckt | HIGH | Sofort alle betroffenen Routes patchen, Audit-Log pruefen (nicht vorhanden!), betroffene Nutzer informieren |
-| Modal-State-Leak nach Refactoring | MEDIUM | `ModalContext.cleanupModals()` in betroffener Route aufrufen, presenting element Pattern korrigieren |
-| Theme-Konflikt iOS/Android | MEDIUM | CSS-Imports separieren, plattform-spezifische Imports einfuehren |
-| Token-Kompromittierung | HIGH | JWT_SECRET rotieren (invalidiert ALLE Tokens, alle User muessen sich neu anmelden), kuerzere Token-Laufzeit einfuehren |
-| registerTabBarEffect Crash | LOW | Effect-Code in try/catch wrappen, Fallback auf Standard-TabBar ohne Animation |
-
-## Pitfall-to-Phase Mapping
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| Organization-ID-Filterung fehlt | Security Hardening (Phase 1) | SQL-Audit aller Routes: jeder SELECT/UPDATE/DELETE hat `WHERE organization_id` |
-| JWT Token-Lifecycle | Security Hardening (Phase 1-2) | Token-Laufzeit reduziert, `token_version` in Users-Tabelle, Passwort-Aenderung invalidiert Sessions |
-| Theme-Konflikt iOS/MD3 | Design-Konsistenz (fruehe Phase) | iOS-Simulator und Android-Emulator zeigen jeweils korrekte Plattform-Styles |
-| registerTabBarEffect 6-Tabs | Known Bugs (fruehe Phase) | Admin- und Konfi-TabBar animiert korrekt auf iOS-Device |
-| Modal presentingElement Inkonsistenz | Design-Konsistenz (Modal-Phase) | Alle 20+ Modals verwenden `useModalPage()` als einzige Quelle, keine eigenen `useState<HTMLElement>` |
-| CSS bricht Konfi-UI | Design-Konsistenz (jede Phase) | Screenshot-Vergleich der Konfi-Views vor und nach jeder Design-Aenderung |
-| Invite-Code wiederverwendbar | Security Hardening | `used_at` wird gesetzt, oder max_uses Counter implementiert |
-| Push-Token ohne Org-Scope | Security Hardening | `push_tokens` Tabelle hat `organization_id`, Queries filtern danach |
-| Rate-Limiter in-Memory | Security Hardening | Redis-Store konfiguriert, ueberdauert Server-Restarts |
-| Badge-Streak TODO | Feature-Completion (spaetere Phase) | Streak-basierte Badges zeigen korrekten Fortschritt (nicht 0%) |
+| Badge-Count divergiert | LOW | `BadgeContext.refreshFromAPI()` manuell triggern, Device Badge via `Badge.clear()` zuruecksetzen |
+| DB voll mit Ghost-Tokens | LOW | `DELETE FROM push_tokens WHERE updated_at < NOW() - INTERVAL '90 days'` |
+| Firebase-Errors durch tote Tokens | LOW | Einmaliger Cleanup-Job + Error-Handler in PushService einbauen |
+| Event-Erinnerungen nach Restart weg | MEDIUM | Polling-Job nachtraeglich einbauen, `reminder_sent` Spalte migrieren |
+| Listener-Duplikate | LOW | `PushNotifications.removeAllListeners()` einmalig aufrufen, dann sauberen Setup |
+| Silent Push auf iOS funktioniert nicht | LOW | APNS Header in firebase.js anpassen, Unterscheidung alert/background einfuehren |
 
 ## Sources
 
-- [Ionic Modal API Dokumentation](https://ionicframework.com/docs/api/modal) -- presentingElement Nutzung und Card-Modal Verhalten
-- [GitHub Issue #28352: IonModal with presentingElement doesn't render on iOS](https://github.com/ionic-team/ionic-framework/issues/28352) -- bekanntes presentingElement-Problem
-- [GitHub Issue #30296: Card Modal State nach Wechsel haengt](https://github.com/ionic-team/ionic-framework/issues/30296) -- Card-Modal-State-Leak
-- [GitHub Issue #30466: iOS 26 Style Support in Ionic](https://github.com/ionic-team/ionic-framework/issues/30466) -- offizieller iOS 26 Support Status
-- [@rdlabo/ionic-theme-ios26 GitHub Repository](https://github.com/rdlabo-team/ionic-theme-ios26) -- Community-Theme-Bibliothek
-- [Multi-Tenant Leakage: When Row-Level Security Fails in SaaS](https://medium.com/@instatunnel/multi-tenant-leakage-when-row-level-security-fails-in-saas-da25f40c788c) -- Organisation-Isolation Pitfalls
-- [10 Common Mistakes in Ionic Apps](https://www.ionicframeworks.com/2025/07/10-common-mistakes-in-ionic-apps-and.html) -- Allgemeine Ionic-Fehler
-- [Secure Authentication with JWTs & Rotating Refresh Tokens](https://dev.to/wiljeder/secure-authentication-with-jwts-rotating-refresh-tokens-typescript-express-vanilla-js-4f41) -- JWT Rotation Best Practices
-- [How to Handle JWT Authentication Securely in Node.js](https://oneuptime.com/blog/post/2026-01-06-nodejs-jwt-authentication-secure/view) -- JWT Security Hardening
-- Codebase-Analyse: `backend/middleware/rbac.js`, `backend/routes/auth.js`, `backend/routes/notifications.js`, `frontend/src/theme/variables.css`, `frontend/src/contexts/ModalContext.tsx`, `frontend/src/components/layout/MainTabs.tsx`
+- [Firebase Best Practices fuer Token Management](https://firebase.google.com/docs/cloud-messaging/manage-tokens) — Token-Freshness, Staleness Window, Cleanup
+- [Firebase FCM Error Codes](https://firebase.google.com/docs/cloud-messaging/error-codes) — Welche Errors Token-Loeschung triggern sollten
+- [Firebase Blog: Managing Cloud Messaging Tokens](https://firebase.blog/posts/2023/04/managing-cloud-messaging-tokens/) — Periodischer Token-Cleanup
+- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) — Listener-Management, Registration
+- [Capacitor Badge Plugin (capawesome)](https://github.com/capawesome-team/capacitor-badge) — autoClear, Persist-Optionen
+- [GitHub Issue #1301: iOS Badge Count Handling](https://github.com/ionic-team/capacitor/issues/1301) — Background Badge Updates
+- [GitHub Issue #1749: APNs vs FCM Token Confusion](https://github.com/ionic-team/capacitor/issues/1749) — Token-Lifecycle iOS
+- [GitHub Issue #24: Background Badge Count Update](https://github.com/capawesome-team/capacitor-badge/issues/24) — Listener fuer Background Notifications
+- [Node-Cron Patterns, Practices and Pitfalls](https://www.bomberbot.com/node/mastering-node-js-job-scheduling-with-node-cron-patterns-practices-and-pitfalls/) — Server-Restart verliert Jobs
+- Codebase-Analyse: `backend/services/pushService.js`, `backend/push/firebase.js`, `backend/routes/notifications.js`, `frontend/src/contexts/AppContext.tsx`, `frontend/src/contexts/BadgeContext.tsx`, `frontend/src/services/auth.ts`
 
 ---
-*Pitfalls research for: Konfi Quest Design-Konsistenz und Security Hardening*
-*Researched: 2026-02-27*
+*Pitfalls research for: Konfi Quest v1.5 Push-Notifications*
+*Researched: 2026-03-05*

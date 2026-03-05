@@ -1,181 +1,188 @@
 # Project Research Summary
 
-**Project:** Konfi Quest -- Design-Konsistenz und Security Hardening
-**Domain:** Ionic 8 Hybrid-App Stabilisierung (Multi-Tenant, RBAC, Kirchengemeinde)
-**Researched:** 2026-02-27
+**Project:** Konfi Quest v1.5 Push-Notifications
+**Domain:** Push-Notification-System Verbesserung (Token-Lifecycle, Badge-Sync, Scheduled Notifications)
+**Researched:** 2026-03-05
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Konfi Quest ist eine produktive Ionic 8 Hybrid-App mit funktionierendem Backend (Node.js/Express + PostgreSQL) und einem fertig designten Konfi-UI, das als Referenz dient. Der aktuelle Milestone hat zwei klare Ziele: (1) alle Admin- und Teamer-Views an das bestehende Konfi-Design-Pattern angleichen und (2) kritische Sicherheitsluecken im Multi-Tenant-Backend schliessen. Der Tech-Stack bleibt unveraendert -- es geht ausschliesslich um Haertung und Konsistenz, nicht um neue Features.
+Konfi Quest hat bereits ein funktionierendes Push-Notification-System mit 14 aktiven Push-Flows, Firebase Admin SDK, Capacitor Push Notifications und einer push_tokens-Tabelle in PostgreSQL. Das System leidet jedoch unter drei strukturellen Problemen: Der Badge-Count wird von 4 unabhaengigen Systemen verwaltet ohne Single Source of Truth, ungueltige FCM-Tokens werden nie bereinigt (Firebase-Errors werden nur geloggt), und der Token-Lifecycle hat Luecken bei Logout und Fallback-Device-IDs. Alle 14 bestehenden Push-Flows funktionieren im Code, aber `sendLevelUpToKonfi` wird nirgends aufgerufen und Event-Erinnerungen referenzieren eine Tabelle die moeglicherweise nicht existiert.
 
-Der empfohlene Ansatz basiert auf einer klaren Trennung von Security-Arbeit und Design-Arbeit, wobei Security Prioritaet hat. Die Forschung zeigt, dass `notifications.js` keine organization_id-Filterung hat, JWT-Tokens 24 Stunden ohne Refresh laufen, und `helmet` zwar installiert aber nicht aktiviert ist. Diese drei Punkte sind die groessten Risiken. Auf der Design-Seite existiert bereits ein umfangreiches CSS-Klassensystem (`app-list-item`, `app-card`, etc.), das nur konsequent auf alle Admin-Views angewendet werden muss. Drei kleine Shared Components (SectionHeader, EmptyState, ListSection) eliminieren ~50 Zeilen duplizierte Inline-Styles pro View.
+Der empfohlene Ansatz ist konservativ: Nur eine neue Dependency (node-cron), keine Architektur-Umstellung, sondern gezielte Reparaturen an bestehenden Komponenten. Drei neue Services (BadgeCountService, TokenCleanupService, NotificationTypeRegistry) kapseln die fehlende Logik. Das bestehende setInterval-Pattern im BackgroundService bleibt erhalten. Firebase `sendEachForMulticast` wird fuer Batch-Szenarien genutzt (bereits in firebase-admin enthalten). Kein Redis, kein Bull, kein separater Worker-Prozess.
 
-Die Hauptrisiken sind: (a) Cross-Tenant Data Leakage durch fehlende organization_id-Filterung in einzelnen Routes, (b) globale CSS-Aenderungen die das fertige Konfi-UI brechen, und (c) Theme-Konflikte zwischen iOS 26 und MD3 CSS-Imports. Mitigation: Security-Audit aller Routes als erstes, CSS-Regel "nur hinzufuegen, nie aendern", und plattformabhaengige Theme-Imports.
+Die Hauptrisiken sind: (1) Badge-Count-Divergenz zwischen App-Icon, TabBar und Chat -- loesbar durch BadgeCountService als einzige Berechnungsquelle. (2) APNS-Header fuer Silent Pushes sind falsch konfiguriert (`apns-push-type: alert` statt `background` fuer Badge-Only Updates) -- iOS verwirft diese Pushes im Background. (3) Push-Listener in AppContext akkumulieren bei User-State-Changes weil kein Cleanup im useEffect existiert. Alle drei sind mit gezielten Code-Aenderungen behebbar.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Der bestehende Stack (React 19 + Ionic 8 + Capacitor 7 + Express + PostgreSQL) bleibt unveraendert. Empfohlen werden Minor-Updates und zwei neue Backend-Dependencies.
+Nur eine neue Dependency: **node-cron v3.0.3** fuer periodische Jobs (Event-Erinnerungen alle 15 Min, Token-Cleanup taeglich). Alle anderen benoetigten APIs sind bereits installiert und teilweise ungenutzt.
 
-**Core-Aenderungen:**
-- **@ionic/react 8.5.0 -> ^8.7.18**: Bugfixes fuer datetime, safe-area-inset und Navigation. Kein Breaking Change.
-- **@capacitor/core 7.4.2 -> 7.5.0**: Bugfixes fuer Cookies und CLI. NICHT auf Capacitor 8.x upgraden (zu frisch).
-- **helmet ^8.1.0** (NEU aktivieren): 13 Security-Headers automatisch. Ist in package.json vorhanden aber nicht in server.js aktiviert.
-- **express-validator ^7.2.0** (NEU): Input-Validierung direkt auf Express-Routes. Leichtgewichtiger als Zod/Joi fuer bestehendes JS-Backend.
-- **@rdlabo/ionic-theme-ios26 ^2.2.1**: Minor-Update, fixt action-sheet cancel margin.
+**Core technologies (bereits vorhanden, besser nutzen):**
+- **firebase-admin ^12.7.0:** `sendEachForMulticast()` fuer Batch-Versand (aktuell nicht genutzt, sendet sequentiell)
+- **firebase-admin Error-Codes:** Token-Invalidierung erkennen (`messaging/registration-token-not-registered`) -- aktuell werden Fehler nur geloggt
+- **@capawesome/capacitor-badge ^7.0.1:** Badge.set()/clear() -- funktioniert, aber Android-Workaround noetig (removeAllDeliveredNotifications vor Badge.set)
+- **node-cron ^3.0.3 (NEU):** Einzige neue Dependency -- leichtgewichtiger Cron-Scheduler im Express-Prozess
 
-**Explizit NICHT hinzufuegen:** Tailwind CSS (kollidiert mit Ionic Shadow DOM), Passport.js (Overkill), Redis (nicht noetig bei <500 Usern), Styled Components, React Router v6.
+**Bewusst NICHT hinzugefuegt:** Redis/BullMQ (unnoetig bei <100 Usern), @capacitor-firebase/messaging (wuerde Custom FCM Plugin ersetzen), Web Push (App ist native-only), PM2/Worker-Prozesse (ein Docker-Container reicht).
 
 ### Expected Features
 
-**Must have (Table Stakes -- vor Go-Live):**
-- Einheitliches Header-Pattern (kompaktes Banner) in allen Views
-- Konsistente Listen-Items (`app-list-item`) in allen Admin-Views
-- useIonModal-Pattern in verbleibenden 4-5 Modals durchsetzen (aktuell noch `isOpen`)
-- Helmet Security Headers aktivieren (eine Zeile Code)
-- organization_id-Filterung vollstaendig in allen 15 Route-Dateien
-- Input-Validierung in activities.js (Template-Literal SQL-Injection-Risiko)
-- Passwort-Reset Validierung angleichen (nutzt nur `length < 6` statt `validatePassword()`)
-- Rate-Limiter UX im Login (Countdown-Anzeige statt stille Blockade)
-- Badge Double-Count Risiko absichern
+**Must have (Table Stakes) -- 11 Requirements:**
+- Token-Cleanup bei Logout (TKN-01) -- Geraet erhaelt nach Logout weiter Pushes fuer alten User
+- Fallback-Device-ID Fix (TKN-02) -- Geraete mit Fallback-IDs erhalten NIE Pushes
+- Invalid-Token-Bereinigung nach Firebase-Error (CLN-01) -- tote Tokens bleiben fuer immer in DB
+- Periodischer Token-Cleanup (CLN-02) -- verwaiste Tokens bereinigen
+- Badge-Count Single Source of Truth (BDG-01) -- 4 Systeme verwalten Badge unabhaengig
+- App-Icon Badge korrekt (BDG-02) -- APNS setzt Badge aktuell immer auf "1"
+- Chat Unread-Counts pro Raum (BDG-03) -- last_read_at nicht immer korrekt
+- TabBar Badges konsistent (BDG-04) -- abhaengig von BDG-01
+- Bestehende 14 Push-Flows verifiziert (CMP-01) -- End-to-End auf echtem Geraet
 
-**Should have (v1.x nach Go-Live):**
-- JWT Refresh-Token-Mechanismus (Access: 2h, Refresh: 7d mit Rotation)
-- Sichere Token-Speicherung auf Mobilgeraeten (Keychain/Keystore)
-- Audit-Logging fuer Admin-Aktionen (neue DB-Tabelle)
-- DSGVO-Datenexport (rechtlich relevant fuer Minderjahrige)
-- Push-Token Lifecycle (90-Tage Expiry, Logout-Invalidierung)
+**Should have (Differentiators) -- 6 Requirements:**
+- Event-Erinnerungen verifizieren (FLW-01) -- bereits implementiert, braucht Verifikation + DB-Migration
+- Admin-Alert bei neuer Registrierung (FLW-02) -- auth.js erweitern
+- Level-Up Push (FLW-03) -- sendLevelUpToKonfi existiert, wird nie aufgerufen
+- Punkte-Meilenstein Push (FLW-04) -- neue Logik
+- Push-Type Registry (CFG-02) -- zentrale Type-Definition
+- Push-Types Toggle (CFG-01) -- Enable/Disable-Flags
 
 **Defer (v2+):**
-- Dark Mode (erfordert umfangreiches CSS-Refactoring aller hardcodierten Farben)
-- Biometrische Authentifizierung
-- Row-Level Security in PostgreSQL
-- Certificate Pinning
-- Animierte View-Uebergaenge
+- User-Level Notification Preferences UI -- bei <100 Nutzern nicht noetig
+- Digest-Notifications (taegliche Zusammenfassung) -- Overkill
+- Rich Notifications mit Bildern/Actions -- erfordert Notification Service Extension
+- SMS/Email Fallback -- Push-Zuverlaessigkeit verbessern statt Fallback-Kanaele
 
 ### Architecture Approach
 
-Die App folgt einem etablierten Page-View-Modal Pattern: Pages laden Daten und verwalten State, Views sind reine Darstellungskomponenten, Modals uebernehmen CRUD-Formulare via useIonModal-Hook. Das Design-System basiert auf CSS-Klassen in `variables.css` (nicht React-Komponenten). Das Backend ist ein Express-Monolith mit RBAC-Middleware (`verifyTokenRBAC`) und organization_id-basierter Tenant-Isolation.
+Die Architektur erweitert das bestehende System um drei neue Services ohne die Grundstruktur zu aendern. PushService bleibt die zentrale Klasse fuer alle Push-Sends, wird aber um Type-Guard (NotificationTypeRegistry) und Token-Invalidierung (firebase.js tokenInvalid Flag) ergaenzt. BadgeCountService zentralisiert die Badge-Berechnung die aktuell an 4 Stellen unabhaengig passiert. TokenCleanupService implementiert reaktive (bei jedem Send) und proaktive (alle 24h) Token-Bereinigung.
 
-**Refactoring-Architektur (drei Ebenen):**
-1. **Shared UI Components (NEU):** `SectionHeader`, `EmptyState`, `ListSection` -- eliminieren 50+ Zeilen Inline-Style-Duplizierung pro View
-2. **CSS-Klassen (ERWEITERN):** `app-header-banner`, `app-stats-row`, `app-stats-item` zu bestehendem System hinzufuegen
-3. **Custom Hooks (NEU):** `useDataLoader`, `useRefresher` -- eliminieren duplizierten useEffect/try-catch Code
+**Neue Komponenten:**
+1. **NotificationTypeRegistry** (backend/config/notificationTypes.js) -- Zentrale Type-Definitionen mit enabled/disabled Flags
+2. **BadgeCountService** (backend/services/badgeCountService.js) -- Einzige Quelle fuer Badge-Count-Berechnung
+3. **TokenCleanupService** (backend/services/tokenCleanupService.js) -- Reaktive + proaktive Token-Bereinigung
 
-**Strukturbereinigung:** 7 Admin-Views liegen direkt in `admin/` statt in `admin/views/`. Verschieben fuer konsistente Dateistruktur.
+**Modifikationen an bestehenden Komponenten:**
+- firebase.js: tokenInvalid Return-Wert bei spezifischen Error-Codes
+- PushService.sendToUser(): Type-Check + Token-Invalidierung + sendEachForMulticast
+- PushService.getTokensForUser(): Fallback-ID-Filter entfernen
+- AppContext.tsx: Logout Token-Cleanup + Listener-Cleanup im useEffect
+- BadgeContext.tsx: Neuer /chat/badge-count Endpoint statt /chat/rooms parsen
+- BackgroundService: TokenCleanupService-Intervall hinzufuegen
+
+**DB-Aenderungen:**
+- push_tokens: error_count + last_error_at Spalten (fuer spaetere Erweiterung)
+- event_reminders: CREATE TABLE IF NOT EXISTS (wird referenziert aber nie erstellt)
+- CREATE TABLE aus notifications.js Route-Handler entfernen
 
 ### Critical Pitfalls
 
-1. **organization_id fehlt in notifications.js (0 Vorkommen)** -- Systematischer Audit aller Routes mit <20 org_id-Vorkommen. Push-Tokens-Tabelle braucht organization_id-Spalte. Middleware `requireOrganizationScope()` als Sicherheitsnetz.
+1. **Badge-Count ohne Single Source of Truth** -- 4 Systeme (BadgeContext, AppContext, PushService, Capacitor Badge) verwalten den Count unabhaengig. Loesung: BadgeCountService als einzige Berechnungsquelle, alle anderen konsumieren. APNS Payload muss echten Count enthalten (nicht hardcoded "1").
 
-2. **CSS-Refactoring bricht Konfi-UI** -- Bestehende CSS-Klassen in variables.css NIEMALS aendern, nur neue hinzufuegen. Admin-spezifische Abweichungen als `.admin-*` Klassen. Screenshots der Konfi-Views vor und nach jeder Design-Aenderung.
+2. **Firebase-Errors bei ungueltigen Tokens werden ignoriert** -- Tokens bleiben fuer immer in der DB, jeder Push-Send an tote Tokens verbraucht Firebase-Quota und Latenz. Loesung: Error-Code-Parsing in firebase.js, sofortige Token-Loeschung bei `messaging/registration-token-not-registered`.
 
-3. **iOS Card-Modal-State haengt** -- Alle Modals muessen konsistent `useModalPage()` aus ModalContext nutzen, nicht eigenen `useState<HTMLElement>`. KonfiDetailView (Zeile 91) und EventDetailView (Zeile 133) muessen migriert werden.
+3. **APNS-Header fuer Silent Pushes falsch** -- Badge-Only Updates nutzen `apns-push-type: alert` statt `background`. iOS verwirft diese im Background. Loesung: firebase.js muss zwischen Alert-Pushes und Silent-Pushes unterscheiden.
 
-4. **iOS 26 und MD3 Theme kollidieren** -- Beide Themes werden bedingungslos geladen. `md-remove-ios-class-effect.css` laeuft auch auf iOS. Loesung: Plattformabhaengige CSS-Imports oder Import-Reihenfolge korrigieren.
+4. **Push-Listener akkumulieren in AppContext** -- useEffect fuer setupPushNotifications hat keinen Cleanup. Listener stacken bei User-State-Changes. Loesung: removeAllListeners() im useEffect-Cleanup.
 
-5. **registerTabBarEffect bricht bei 6 Tabs** -- Bekanntes Problem in `@rdlabo/ionic-theme-ios26`. Entweder Tabs auf 5 reduzieren, Effect nur einmal mounten, oder eigenen Tab-Effect implementieren.
+5. **Fallback-Device-IDs erzeugen Ghost-Tokens** -- Tokens mit Fallback-IDs werden per `NOT LIKE '%\\_\\_%'` ausgefiltert, bleiben aber in der DB. Loesung: Filter entfernen, reaktives Cleanup ueber tokenInvalid.
 
 ## Implications for Roadmap
 
-### Phase 1: Security Hardening (Backend)
-**Rationale:** Cross-Tenant Data Leakage ist das groesste Risiko einer Multi-Tenant-App. Muss vor jeder anderen Arbeit geloest werden, da ein Datenleck alle Design-Arbeit irrelevant macht.
-**Delivers:** Abgesichertes Backend mit vollstaendiger Tenant-Isolation und Security-Headers.
-**Addresses:** Helmet aktivieren, organization_id-Audit aller 15 Routes, Input-Validierung (activities.js Template-Literals), Passwort-Reset Fix, JWT Token-Laufzeit auf 2-4h reduzieren, Invite-Code `used_at` Fix.
-**Avoids:** Pitfall 2 (org_id-Filterung fehlt), Pitfall 3 (JWT ohne Rotation), SQL-Injection-Risiko.
+### Phase 1: Foundation + Konfiguration
+**Rationale:** Grundlagen die alle weiteren Phasen brauchen. NotificationTypeRegistry ist Voraussetzung fuer Type-Guards in PushService. DB-Aenderungen muessen vor Code-Aenderungen passieren.
+**Delivers:** NotificationTypeRegistry, DB-Schema-Fixes (event_reminders Tabelle, push_tokens Erweiterung, CREATE TABLE aus Route entfernen)
+**Addresses:** CFG-01, CFG-02
+**Avoids:** Pitfall 10 (Aenderungen an 3+ Stellen bei neuen Push-Flows)
+**Komplexitaet:** LOW -- neue Dateien + SQL-Statements
 
-### Phase 2: Known Bugs und Theme-Konfiguration
-**Rationale:** Bevor Design-Arbeit beginnt, muessen die Grundlagen stimmen: TabBar muss funktionieren, Themes muessen plattformkorrekt laden, bekannte Bugs muessen weg. Sonst baut Design-Arbeit auf fehlerhafter Basis auf.
-**Delivers:** Stabile Grundlage fuer Design-Refactoring: funktionierende TabBar, korrekte Theme-Imports, behobene bekannte Bugs.
-**Addresses:** registerTabBarEffect 6-Tabs Fix, iOS26/MD3 Theme-Separation, Rate-Limiter UX, Badge Double-Count, deprecated Date Utils.
-**Avoids:** Pitfall 5 (Theme-Konflikt), Pitfall 6 (TabBar-Crash).
+### Phase 2: Token-Lifecycle reparieren
+**Rationale:** Ohne zuverlaessige Token-Zustellung sind alle weiteren Push-Verbesserungen wirkungslos. Dies ist die kritischste Phase.
+**Delivers:** Reaktive Token-Invalidierung (firebase.js), Fallback-ID-Filter entfernt, Logout-Cleanup robust, Push-Listener-Cleanup in AppContext
+**Addresses:** TKN-01, TKN-02, TKN-03, TKN-04, CLN-01
+**Avoids:** Pitfall 2 (Ghost-Tokens), Pitfall 3 (Firebase-Errors ignoriert), Pitfall 5 (Logout bei expired JWT), Pitfall 6 (Listener-Akkumulation)
+**Komplexitaet:** MEDIUM -- firebase.js, PushService, AppContext aendern
 
-### Phase 3: Design-System Grundlagen
-**Rationale:** Bevor einzelne Views angefasst werden, muessen die wiederverwendbaren Bausteine existieren. Sonst wird Design-Konsistenz durch Copy-Paste statt durch Wiederverwendung erreicht.
-**Delivers:** Shared Components (SectionHeader, EmptyState, ListSection), neue CSS-Klassen (app-header-banner), Custom Hooks (useDataLoader).
-**Addresses:** Header-Banner-Duplizierung, Leerzustands-Pattern, Listen-Sektions-Pattern.
-**Avoids:** Pitfall 4 (CSS bricht Konfi-UI) -- neue Klassen statt Aenderungen an bestehenden.
+### Phase 3: Badge-Count Single Source of Truth
+**Rationale:** User-sichtbarste Verbesserung. Voraussetzung fuer korrekte Badge-Anzeige bei allen Push-Flows. Unabhaengig von Phase 2 implementierbar (parallel moeglich).
+**Delivers:** BadgeCountService, GET /chat/badge-count Endpoint, BadgeContext vereinfacht, AppContext Badge-Logik entfernt, APNS Silent Push korrekt
+**Addresses:** BDG-01, BDG-02, BDG-03, BDG-04
+**Avoids:** Pitfall 1 (4 Badge-Systeme), Pitfall 8 (APNS Silent Push Header)
+**Komplexitaet:** MEDIUM -- neuer Service + mehrere Dateien refactoren
 
-### Phase 4: Admin-Views Design-Konsistenz
-**Rationale:** Die Admin-Views sind der groesste visuelle Inkonsistenz-Bereich. Mit den Shared Components aus Phase 3 kann jede View systematisch angeglichen werden.
-**Delivers:** Alle Admin-Views (Konfis, Events, Badges, Aktivitaeten, Jahrgaenge, Users, Settings) nutzen einheitliches Header-Banner, Listen-Items, Sektions-Header und Farb-Schema.
-**Addresses:** Admin-Views auf Design-Referenz umbauen, Dateistruktur bereinigen (Views nach admin/views/ verschieben), Swipe-Delete konsistent.
-**Avoids:** Pitfall 4 (CSS bricht Konfi-UI) -- immer Screenshot-Vergleich vor/nach Aenderungen.
+### Phase 4: Fehlende Push-Flows
+**Rationale:** Neue Features auf dem jetzt zuverlaessigen Fundament. Level-Up und Admin-Alert sind LOW-Effort (Methoden existieren teilweise schon).
+**Delivers:** Level-Up Push aktiv (FLW-03), Admin-Alert bei Registrierung (FLW-02), Punkte-Meilenstein (FLW-04), Event-Erinnerungen verifiziert (FLW-01)
+**Addresses:** FLW-01, FLW-02, FLW-03, FLW-04
+**Avoids:** Pitfall 4 (Polling statt In-Memory-Scheduler fuer Event-Erinnerungen)
+**Komplexitaet:** LOW-MEDIUM -- FLW-03 ist nur ein Funktionsaufruf, FLW-04 braucht Meilenstein-Logik
 
-### Phase 5: Modal-Konsistenz und Konfi-Views Feinschliff
-**Rationale:** Modals sind der letzte grosse Inkonsistenz-Bereich. Danach Konfi-Views auf neue Shared Components umstellen (leichtere Wartung, kein visueller Unterschied fuer User).
-**Delivers:** Alle 20+ Modals auf useIonModal-Pattern, konsistentes Formular-Design, presentingElement ueber ModalContext, Konfi-Views nutzen SectionHeader-Komponente.
-**Addresses:** useIonModal in 4-5 verbleibenden Modals, Modal-Formular-Konsistenz, presentingElement-Migration in KonfiDetailView und EventDetailView.
-**Avoids:** Pitfall 1 (Card-Modal-State haengt) -- einheitliche presentingElement-Quelle.
-
-### Phase 6: Post-Go-Live Security (v1.x)
-**Rationale:** JWT Refresh-Token und sichere Token-Speicherung sind wichtig, aber die 2-4h Token-Laufzeit aus Phase 1 reicht fuer den Go-Live. Diese Phase kann nach der Stabilisierung kommen.
-**Delivers:** Vollstaendiger JWT Refresh-Token-Flow mit HttpOnly Cookies, Capacitor Secure Storage, Audit-Logging, DSGVO-Export.
-**Addresses:** Refresh-Token-Rotation, Sichere Token-Speicherung, Audit-Log-Tabelle, DSGVO Art. 15/20 Export.
-**Avoids:** Pitfall 3 (JWT ohne Rotation) -- vollstaendige Loesung.
+### Phase 5: Token-Cleanup + End-to-End Verifikation
+**Rationale:** Abschluss-Phase. Proaktiver Cleanup setzt reaktiven Cleanup (Phase 2) voraus. End-to-End-Verifikation aller 17 Flows (14 bestehende + 3 neue) als Abnahme.
+**Delivers:** TokenCleanupService, 24h-Cleanup-Job in BackgroundService, alle Push-Flows End-to-End verifiziert
+**Addresses:** CLN-02, CMP-01
+**Avoids:** Pitfall 7 (sequentielle Sends -- sendEachForMulticast fuer Batch)
+**Komplexitaet:** MEDIUM -- TokenCleanupService + umfassende Verifikation auf echtem Geraet
 
 ### Phase Ordering Rationale
 
-- **Security vor Design:** Ein Cross-Tenant-Datenleck macht jede UI-Arbeit wertlos. organization_id-Audit und Helmet-Aktivierung sind die dringendsten Massnahmen.
-- **Bugs vor Design:** registerTabBarEffect und Theme-Konflikte beeinflussen die Tab-Struktur und das Rendering. Design-Entscheidungen die auf fehlerhaftem Rendering basieren muessen spaeter revidiert werden.
-- **Design-Grundlagen vor Views:** SectionHeader, EmptyState und CSS-Klassen einmal erstellen statt in jeder View duplizieren. Spart Zeit und verhindert Inkonsistenz.
-- **Admin vor Konfi:** Konfi-UI ist die Referenz und funktioniert bereits. Admin-Views haben den groessten Design-Rueckstand. Konfi-Views bekommen in Phase 5 nur den Upgrade auf Shared Components.
-- **Modals zuletzt (vor Go-Live):** Modal-Migration ist technisch riskant (iOS Card-Modal-State). Mit stabilem Fundament und klarem Pattern (ModalContext) sinkt das Risiko.
+- **Foundation vor allem:** DB-Schema und Type-Registry sind Voraussetzungen fuer alle Code-Aenderungen
+- **Token-Lifecycle vor neuen Flows:** Ohne zuverlaessige Zustellung sind neue Push-Flows nutzlos
+- **Badge-Sync parallel zu Token-Lifecycle moeglich:** Keine direkte Abhaengigkeit, aber sauberer wenn Token-Lifecycle zuerst steht
+- **Neue Flows erst auf solidem Fundament:** Level-Up, Meilenstein-Push etc. brauchen funktionierendes Token-System + Type-Registry
+- **Verifikation ganz am Ende:** Alle Flows muessen existieren bevor End-to-End-Tests sinnvoll sind
+- **Insgesamt 1 neue Dependency (node-cron):** Minimales Risiko, maximaler Fokus auf Code-Qualitaet
 
 ### Research Flags
 
-Phasen die tieferes Research waehrend der Planung brauchen:
-- **Phase 2 (Theme-Konfiguration):** Plattformabhaengige CSS-Imports sind nicht dokumentiert -- muss experimentell getestet werden. registerTabBarEffect-Alternativen muessen evaluiert werden.
-- **Phase 6 (JWT Refresh-Token):** Refresh-Token-Rotation mit Capacitor Secure Storage ist nicht trivial. HttpOnly Cookies funktionieren anders in nativen WebViews als im Browser.
+Phasen die tiefere Research waehrend der Planung brauchen:
+- **Phase 3 (Badge-Count):** APNS Silent Push Header-Konfiguration muss auf echtem iOS-Geraet getestet werden. Android Badge-Verhalten (Badge.clear() vs System-Notification-Count) ist nur MEDIUM Confidence.
+- **Phase 4 (FLW-04 Punkte-Meilenstein):** Meilenstein-Schwellwerte muessen definiert werden (welche Punkte-Zahlen?). Level-Check-Logik muss im Code lokalisiert werden.
 
-Phasen mit Standard-Patterns (kein zusaetzliches Research noetig):
-- **Phase 1 (Security Hardening):** Helmet-Aktivierung, organization_id-Audit und Input-Validierung sind gut dokumentierte Express-Best-Practices.
-- **Phase 3 (Design-System):** React Shared Components und CSS-Klassen sind Standard-Patterns.
-- **Phase 4 (Admin-Views):** Anwendung bestehender Patterns auf existierende Views -- kein neues Wissen noetig.
+Phasen mit Standard-Patterns (keine Research noetig):
+- **Phase 1 (Foundation):** SQL CREATE TABLE, JS Config-Objekt -- trivial
+- **Phase 2 (Token-Lifecycle):** Firebase Error-Codes sind offiziell dokumentiert, Cleanup-Pattern ist Standard
+- **Phase 5 (Cleanup):** Periodischer DB-Cleanup ist etabliertes Pattern
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Alle Versionen gegen GitHub Releases verifiziert. Bestehender Stack bleibt, nur Minor-Updates und zwei neue Dependencies. |
-| Features | HIGH | Basiert auf direkter Codebase-Analyse und Ist-Zustand-Audit. Feature-Prioritaeten klar durch Security- und UX-Kriterien. |
-| Architecture | HIGH | Direkte Codebase-Analyse aller relevanten Dateien. Page-View-Modal Pattern und CSS-Klassen-System sind bereits etabliert. |
-| Pitfalls | HIGH | Kombination aus Codebase-Analyse und verifizierten Ionic/React Community-Issues. Alle Pitfalls sind im Code nachweisbar. |
+| Stack | HIGH | Nur 1 neue Dependency (node-cron), Rest existiert bereits. Firebase-APIs offiziell dokumentiert |
+| Features | HIGH | Basiert auf direkter Codebase-Analyse aller relevanten Dateien. 14 bestehende Flows verifiziert |
+| Architecture | HIGH | Alle Dateien analysiert (pushService.js 663 Zeilen, AppContext.tsx 584 Zeilen etc.). Probleme konkret identifiziert |
+| Pitfalls | HIGH | Firebase-Doku, Capacitor-Doku, Community-Issues. Alle Probleme im Code nachvollziehbar |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Theme-Kollision im Detail:** Die genaue Auswirkung der parallelen iOS26/MD3 Imports wurde nicht auf echten Geraeten getestet. Muss in Phase 2 experimentell validiert werden.
-- **registerTabBarEffect Alternative:** Ob v2.2.1 das 6-Tabs-Problem fixt, ist unbekannt. Muss beim Update getestet werden. Fallback-Plan (Tabs reduzieren) sollte bereitstehen.
-- **Capacitor Secure Storage Kompatibilitaet:** `@capacitor-community/secure-storage` wurde nicht auf Kompatibilitaet mit Capacitor 7.5 geprueft. Relevant fuer Phase 6.
-- **notifications.js Vollstaendigkeit:** Die Route wurde als "0 organization_id Vorkommen" identifiziert, aber der genaue Scope der noetigten Aenderungen (Schema + Code) muss in Phase 1 detailliert werden.
-- **Badge-System Migration:** badges.js ist noch nicht auf PostgreSQL migriert. Muss waehrend Phase 1 (Security) oder Phase 4 (Design) abgeschlossen werden, je nachdem was zuerst relevant wird.
+- **Android Badge-Count Verhalten:** `Badge.clear()` hat keinen Einfluss auf System-Notification-Count. Workaround (removeAllDeliveredNotifications) muss auf Zielgeraeten getestet werden -- MEDIUM Confidence
+- **Punkte-Meilenstein Schwellwerte:** Welche Punkte-Zahlen loesen einen Meilenstein-Push aus? Settings-Tabelle hat `min_gottesdienst_points` und `min_gemeinde_points` -- muessen definiert werden
+- **Level-Check Lokalisierung:** Wo genau im Code passiert der Level-Check nach Punkte-Vergabe? Muss in activities.js / konfi-managment.js / badges.js identifiziert werden
+- **event_reminders Tabelle:** Wird im Code referenziert, existiert moeglicherweise nicht in der DB. Muss vor Phase 4 geprueft werden
+- **node-cron vs setInterval:** FEATURES.md listet node-cron als Anti-Feature (setInterval reicht), STACK.md empfiehlt node-cron. Empfehlung: setInterval beibehalten fuer bestehende Jobs, node-cron nur fuer neue Cron-spezifische Jobs falls noetig
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Ionic Framework GitHub Releases](https://github.com/ionic-team/ionic-framework/releases) -- v8.7.18 verifiziert
-- [Capacitor GitHub Releases](https://github.com/ionic-team/capacitor/releases) -- v7.5.0 + v8.1.0 verifiziert
-- [rdlabo/ionic-theme-ios26 GitHub](https://github.com/rdlabo-team/ionic-theme-ios26/releases) -- v2.2.1 verifiziert
-- [Express.js Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html) -- Helmet, CORS
-- [Helmet.js](https://helmetjs.github.io/) -- v8.1.0
-- [OWASP Node.js Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html)
-- [Ionic Modal API Dokumentation](https://ionicframework.com/docs/api/modal) -- useIonModal, presentingElement
-- Direkte Codebase-Analyse aller relevanten Frontend- und Backend-Dateien
+- [Firebase Admin SDK: Send Messages](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk) -- sendEachForMulticast, Batch-APIs
+- [Firebase FCM Error Codes](https://firebase.google.com/docs/cloud-messaging/error-codes) -- Token-Invalidierung
+- [Firebase: Token Management Best Practices](https://firebase.google.com/docs/cloud-messaging/manage-tokens) -- 60-Tage Staleness
+- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) -- Token-Lifecycle, Listener-Management
+- [Capawesome Badge Plugin](https://capawesome.io/plugins/badge/) -- Badge.set/clear
 
 ### Secondary (MEDIUM confidence)
-- [JWT Refresh Token Rotation Best Practices](https://www.freecodecamp.org/news/how-to-build-a-secure-authentication-system-with-jwt-and-refresh-tokens/) -- Token Rotation Pattern
-- [Auth0 Refresh Token Guide](https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/) -- HttpOnly Cookie Storage
-- [Capacitor Security Documentation](https://capacitorjs.com/docs/guides/security) -- Secure Storage
-- [Multi-Tenant Leakage: When RLS Fails](https://medium.com/@instatunnel/multi-tenant-leakage-when-row-level-security-fails-in-saas-da25f40c788c)
+- [Android Badge Count Issue #203](https://github.com/capawesome-team/capacitor-plugins/issues/203) -- Badge.clear() vs System-Count
+- [Firebase sendMulticast Deprecation](https://community.flutterflow.io/discussions/post/the-messaging-sendmulticast-function-is-no-longer-supported-in-firebase-KVt3BAb65dNRhk6) -- sendEachForMulticast als Ersatz
+- [node-cron npm](https://www.npmjs.com/package/node-cron) -- v3.0.3 stable
 
-### Tertiary (LOW confidence)
-- [registerTabBarEffect 6-Tabs-Problem](https://github.com/rdlabo-team/ionic-theme-ios26) -- Community-berichtet, nicht offiziell dokumentiert
-- [@capacitor-community/secure-storage](https://github.com/nicekiwi/capacitor-secure-storage) -- Capacitor 7.5 Kompatibilitaet nicht verifiziert
+### Codebase-Analyse (HIGH confidence)
+- pushService.js (663 Zeilen, 14+2 Methoden), backgroundService.js (312 Zeilen), firebase.js (74 Zeilen)
+- AppContext.tsx (584 Zeilen), BadgeContext.tsx (107 Zeilen), notifications.js (165 Zeilen)
+- Alle Route-Handler: activities.js, auth.js, badges.js, chat.js, events.js, konfi.js, konfi-managment.js
 
 ---
-*Research completed: 2026-02-27*
+*Research completed: 2026-03-05*
 *Ready for roadmap: yes*

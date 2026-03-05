@@ -1,530 +1,577 @@
-# Architecture Research
+# Architecture Patterns
 
-**Domain:** Ionic 8 React Multi-Tenant App -- Design-Konsistenz-Refactoring und Security Hardening
-**Researched:** 2026-02-27
-**Confidence:** HIGH (basiert auf direkter Codebase-Analyse, nicht auf externen Quellen)
+**Domain:** Push-Notification-System Verbesserung fuer Ionic/Capacitor App
+**Researched:** 2026-03-05
+**Confidence:** HIGH (basiert auf direkter Codebase-Analyse aller relevanten Dateien)
 
-## Standard Architecture
+## Ist-Zustand: Bestehende Push-Architektur
 
-### System Overview
+### Komponenten-Uebersicht
 
 ```
-+---------------------------------------------------------------+
-|                       Frontend (Ionic 8 React)                 |
-+---------------------------------------------------------------+
-|  App.tsx                                                       |
-|    AppProvider (AppContext)                                     |
-|      BadgeProvider (BadgeContext)                               |
-|        LiveUpdateProvider (LiveUpdateContext)                   |
-|          AppContent                                            |
-|            IonReactRouter                                      |
-|              MainTabs (Routing + Tab-Rendering)                |
-+---------------------------------------------------------------+
-|  ModalProvider (ModalContext) -- je Tab-Set                     |
-+-------+-------+-------+-------+-------+-------+               |
-| Admin | Admin | Admin | Admin | Admin | Admin |               |
-| Konfis| Chat  |Events |Badges |Requests|Mehr  |               |
-+-------+-------+-------+-------+-------+-------+               |
-| Konfi | Konfi | Konfi | Konfi | Konfi | Konfi |               |
-| Dash  | Chat  |Events |Badges |Aktiv. |Profil |               |
-+-------+-------+-------+-------+-------+-------+               |
-|                                                                |
-|  Komponentenstruktur pro Bereich:                              |
-|  Page (IonPage) --> View (Darstellung) --> Modal (useIonModal) |
-|                                                                |
-+---------------------------------------------------------------+
-|  services/api.ts (Axios)    services/websocket.ts (Socket.io)  |
-+---------------------------------------------------------------+
-                        |                    |
-                    HTTPS/REST          WebSocket
-                        |                    |
-+---------------------------------------------------------------+
-|                    Backend (Node.js Express)                    |
-+---------------------------------------------------------------+
-|  server.js                                                     |
-|    CORS + Rate Limiting                                        |
-|    Socket.io (Chat Echtzeit)                                   |
-|    Middleware: verifyTokenRBAC (JWT + DB-Lookup)                |
-|    Routes: auth, activities, badges, categories, chat,         |
-|            events, jahrgaenge, konfi, konfi-management,        |
-|            levels, notifications, organizations, roles,        |
-|            settings, users                                     |
-|    Services: pushService (Firebase)                            |
-+---------------------------------------------------------------+
-|  PostgreSQL (Docker Container)                                 |
-|    users, konfi_profiles, organizations, roles,                |
-|    konfi_activities, bonus_points, konfi_badges,               |
-|    event_bookings, chat_rooms, chat_messages, ...              |
-+---------------------------------------------------------------+
+Frontend (React 19 + Ionic 8 + Capacitor 7)
+  |-- AppContext.tsx ......... Token-Registrierung, Chat-Notifications State, Push-Permission
+  |-- BadgeContext.tsx ....... Device Badge Sync, WebSocket newMessage Listener
+  |-- websocket.ts .......... Socket.io Client (Singleton)
+
+Backend (Node.js Express + PostgreSQL)
+  |-- server.js ............. Socket.io Setup, Route Mounting, BackgroundService.startAllServices()
+  |-- push/firebase.js ...... Firebase Admin SDK, sendFirebasePushNotification()
+  |-- services/pushService.js PushService Klasse, 14 statische Methoden, 663 Zeilen
+  |-- services/backgroundService.js ... 3 setInterval-Services (Badge 5min, Reminder 15min, Pending 4h)
+  |-- routes/notifications.js ........ Token CRUD (POST/DELETE /device-token, POST /test-push)
+  |-- routes/chat.js ................. sendChatNotification + sendBadgeUpdate (2 Aufrufe)
+  |-- routes/events.js ............... 8 PushService Aufrufe
+  |-- routes/konfi.js ................ 4 PushService Aufrufe
+  |-- routes/activities.js ........... 2 PushService Aufrufe
+  |-- routes/badges.js ............... 1 PushService Aufruf (sendBadgeEarnedToKonfi)
+  |-- routes/konfi-managment.js ...... 1 PushService Aufruf (sendBonusPointsToKonfi)
+
+Datenbank (PostgreSQL)
+  |-- push_tokens ........... user_id, user_type, token, platform, device_id, updated_at
+  |-- event_reminders ....... event_id, user_id, reminder_type, sent_at (implizit, kein CREATE)
+  |-- chat_messages ......... Basis fuer Badge Count Berechnung
+  |-- chat_participants ..... last_read_at fuer Unread-Berechnung
 ```
 
-### Component Responsibilities
+### Alle 14 bestehenden Push-Flows
 
-| Component | Responsibility | Communicates With |
-|-----------|----------------|-------------------|
-| **App.tsx** | Bootstrap, Theme-Setup (iOS26/MD3), Provider-Hierarchie, Auth-Gate | AppContext, BadgeContext, MainTabs |
-| **MainTabs** | Routing (Admin vs. Konfi), Tab-Bar-Rendering, Badge-Counts, iOS26-Tab-Effekt | Alle Pages, AppContext, BadgeContext |
-| **AppContext** | User-State, Auth-Status, Chat-Notifications, Push-Permissions | api.ts, PushNotifications (Capacitor) |
-| **BadgeContext** | Device-Badge-Count, Real-Time-Sync | AppContext, PushNotifications |
-| **ModalContext** | PresentingElement-Tracking pro Tab, Modal-Cleanup bei Navigation | Alle Pages (ueber useModalPage Hook) |
-| **LiveUpdateContext** | Event-basierte Live-Refreshes fuer Datenaenderungen | Pages die useLiveRefresh nutzen |
-| **Page-Komponenten** | Datenlade-Logik, Modal-Praesentation, State-Management | Views, Modals, api.ts, ModalContext |
-| **View-Komponenten** | Reine Darstellung, UI-Pattern-Implementierung, Event-Callbacks | Erhalten Daten via Props von Pages |
-| **Modal-Komponenten** | Formulare, CRUD-Operationen, eigene API-Calls | api.ts, onClose/onSuccess Callbacks |
-| **api.ts** | HTTP-Client (Axios), Token-Injection, 401-Handling | Backend REST API |
-| **websocket.ts** | Socket.io-Client, Room Join/Leave | Backend Socket.io |
-| **variables.css** | Design-System: CSS-Klassen, Farben, Komponenten-Styles | Alle Komponenten (ueber Klassen) |
+| # | Flow | PushService Methode | Aufgerufen in |
+|---|------|---------------------|---------------|
+| 1 | Neuer Antrag -> Admins | sendNewActivityRequestToAdmins | konfi.js |
+| 2 | Antrag-Status -> Konfi | sendActivityRequestStatusToKonfi | activities.js |
+| 3 | Aktivitaet zugewiesen -> Konfi | sendActivityAssignedToKonfi | activities.js |
+| 4 | Bonuspunkte -> Konfi | sendBonusPointsToKonfi | konfi-managment.js |
+| 5 | Badge erhalten -> Konfi | sendBadgeEarnedToKonfi | badges.js |
+| 6 | Event-Anmeldung -> Konfi | sendEventRegisteredToKonfi | konfi.js |
+| 7 | Event-Abmeldung -> Konfi | sendEventUnregisteredToKonfi | konfi.js |
+| 8 | Event-Abmeldung -> Admins | sendEventUnregistrationToAdmins | konfi.js |
+| 9 | Warteliste aufgerueckt -> Konfi | sendWaitlistPromotionToKonfi | events.js, konfi.js |
+| 10 | Event abgesagt -> Konfis | sendEventCancellationToKonfis | events.js |
+| 11 | Neues Event -> Org-Konfis | sendNewEventToOrgKonfis | events.js |
+| 12 | Event-Anwesenheit -> Konfi | sendEventAttendanceToKonfi | events.js |
+| 13 | Event-Erinnerung -> Konfi | sendEventReminderToKonfi | backgroundService.js |
+| 14 | Events warten auf Verbuchung -> Admins | sendEventsPendingApprovalToAdmins | backgroundService.js |
+| -- | Chat-Nachricht -> User | sendChatNotification | chat.js |
+| -- | Badge Update (Silent) -> User | sendBadgeUpdate | chat.js, backgroundService.js |
+| -- | Level-Up -> Konfi | sendLevelUpToKonfi | **EXISTIERT aber wird NIRGENDS aufgerufen!** |
 
 ---
 
-## Aktuelle Projektstruktur
+## Ist-Analyse: Identifizierte Probleme
+
+### Problem 1: Badge Count -- 4 Quellen, keine Single Source of Truth
 
 ```
-frontend/src/
-+-- App.tsx                    # Bootstrap + Auth-Gate
-+-- main.tsx                   # Einstiegspunkt
-+-- components/
-|   +-- admin/                 # Admin-Bereich
-|   |   +-- pages/             # 14 Pages (AdminKonfisPage, AdminEventsPage, ...)
-|   |   +-- views/             # 3 Views (KonfiDetailView, EventDetailView, ActivityRings)
-|   |   +-- modals/            # 14 Modals (EventModal, KonfiModal, ...)
-|   |   +-- settings/          # 1 Settings-Komponente
-|   |   +-- ActivitiesView.tsx # View auf Top-Level (INKONSISTENT)
-|   |   +-- BadgesView.tsx     # View auf Top-Level (INKONSISTENT)
-|   |   +-- EventsView.tsx     # View auf Top-Level (INKONSISTENT)
-|   |   +-- KonfisView.tsx     # View auf Top-Level (INKONSISTENT)
-|   |   +-- UsersView.tsx      # View auf Top-Level (INKONSISTENT)
-|   |   +-- OrganizationView.tsx # View auf Top-Level (INKONSISTENT)
-|   |   +-- ActivityRequestsView.tsx # View auf Top-Level (INKONSISTENT)
-|   +-- konfi/                 # Konfi-Bereich
-|   |   +-- pages/             # 6 Pages (KonfiDashboardPage, KonfiEventsPage, ...)
-|   |   +-- views/             # 6 Views (DashboardView, EventsView, ...)
-|   |   +-- modals/            # 7 Modals (EditProfileModal, PointsHistoryModal, ...)
-|   +-- chat/                  # Chat-Bereich (geteilt Admin/Konfi)
-|   |   +-- pages/             # 1 Page (ChatOverviewPage)
-|   |   +-- views/             # 1 View (ChatRoomView)
-|   |   +-- modals/            # 7 Modals
-|   |   +-- ChatOverview.tsx   # Komponente auf Top-Level
-|   |   +-- ChatRoom.tsx       # Komponente auf Top-Level
-|   |   +-- MessageBubble.tsx  # Extrahierte Subkomponente
-|   |   +-- VideoPreview.tsx   # Extrahierte Subkomponente
-|   |   +-- LazyImage.tsx      # Extrahierte Subkomponente
-|   |   +-- constants.ts       # Konstanten
-|   +-- auth/                  # Auth-Seiten (Login, Register, etc.)
-|   +-- common/                # 2 gemeinsame Komponenten (LoadingSpinner, PushNotificationSettings)
-|   +-- layout/                # MainTabs.tsx
-+-- contexts/                  # 4 Contexts (App, Badge, LiveUpdate, Modal)
-+-- services/                  # api.ts, auth.ts, websocket.ts
-+-- hooks/                     # (leer!)
-+-- theme/                     # variables.css
-+-- types/                     # chat.ts, dashboard.ts, ionic.d.ts
-+-- utils/                     # dateUtils.ts, helpers.ts
+Quelle 1: BadgeContext.tsx
+  WebSocket 'newMessage' --> refreshFromAPI() --> GET /chat/rooms
+  --> Zaehlt unread_count pro Room --> Badge.set()
 
-backend/
-+-- server.js                  # Express + Socket.io Setup, alle Route-Mounts
-+-- database.js                # PostgreSQL-Verbindung
-+-- middleware/
-|   +-- rbac.js                # JWT-Verifikation, Rollen-Checks, Org-Isolation
-+-- routes/                    # 15 Route-Dateien (monolithisch, nicht aufgeteilt)
-+-- services/
-|   +-- pushService.js         # Firebase Push Notifications
-+-- push/
-|   +-- firebase.js            # Firebase Admin SDK
-+-- utils/                     # liveUpdate.js, passwordUtils.js
-+-- migrations/                # DB-Migrationen
+Quelle 2: BackgroundService.updateAllUserBadges() [alle 5 Min]
+  SQL: COUNT chat_messages WHERE created_at > last_read_at
+  --> PushService.sendBadgeUpdate() --> Silent Push
+
+Quelle 3: AppContext.tsx pushNotificationReceived Handler
+  Push mit type='badge_update' --> setzt chatNotifications.totalUnreadCount
+
+Quelle 4: chat.js Route POST /rooms/:roomId/mark-read
+  Eigene SQL Query fuer Badge Count --> PushService.sendBadgeUpdate()
+
+KONSEQUENZ: Race Conditions. Counts koennen divergieren.
 ```
 
-### Struktur-Probleme (Ist-Zustand)
+### Problem 2: Token Lifecycle -- Lueckenhaft
 
-1. **Inkonsistente View-Platzierung**: Admin-Views liegen teils in `admin/views/` (3 Dateien), teils direkt in `admin/` (7 Dateien). Konfi-Views sind konsistent in `konfi/views/`.
-2. **Leeres hooks/-Verzeichnis**: Custom Hooks fehlen, obwohl wiederverwendbare Logik in Pages dupliziert wird.
-3. **Monolithische Backend-Routes**: Route-Dateien (z.B. events.js, chat.js) sind 500-1000+ Zeilen lang.
-4. **Fehlende Shared Components**: `common/` enthaelt nur 2 Komponenten, obwohl viele Patterns (Header-Banner, Listen-Items, Empty-States) dupliziert werden.
+```
+- Logout loescht nur exaktes device_id/platform Match
+- Fallback-IDs (Format: platform_timestamp_random) werden AKTIV ausgefiltert
+  in getTokensForUser() durch: device_id NOT LIKE '%\\_\\_%'
+  --> Tokens mit Fallback-IDs erhalten NIE Push-Notifications!
+- Kein Cleanup bei Firebase-Errors (ungueltige Tokens bleiben fuer immer)
+- Kein periodischer Cleanup veralteter Tokens
+- CREATE TABLE IF NOT EXISTS in notifications.js Route (bei JEDEM POST Request)
+```
+
+### Problem 3: sendLevelUpToKonfi existiert aber wird nie aufgerufen
+
+Die Methode ist in pushService.js definiert (Zeile 453-472) aber kein Route-Handler ruft sie auf. Weder in activities.js noch in konfi-managment.js noch in badges.js.
+
+### Problem 4: firebase.js gibt bei Fehlern kein `tokenInvalid` Flag zurueck
+
+```javascript
+// AKTUELL: Fehler werden nur geloggt
+} catch (error) {
+    console.error('Firebase notification error:', error);
+    return { success: false, error: error.message };
+}
+// --> Kein Unterschied zwischen ungueltigem Token und Netzwerk-Fehler
+```
 
 ---
 
-## Architectural Patterns
+## Empfohlene Architektur: Neue Komponenten
 
-### Pattern 1: Page-View-Modal Hierarchie
+### Komponente 1: NotificationTypeRegistry (NEU)
 
-**Was:** Jeder Bereich folgt einer Drei-Ebenen-Hierarchie: Page (Daten + Logik) --> View (Darstellung) --> Modal (CRUD-Formulare).
+**Datei:** `backend/config/notificationTypes.js`
+**Verantwortung:** Zentrale Definition aller Push-Notification-Types mit enabled/disabled Flags.
 
-**Wann verwenden:** Immer. Dies ist das etablierte Pattern der gesamten App.
+```javascript
+const NOTIFICATION_TYPES = {
+  // Activities
+  new_activity_request:    { enabled: true, category: 'activities', target: 'admin' },
+  activity_request_status: { enabled: true, category: 'activities', target: 'konfi' },
+  activity_assigned:       { enabled: true, category: 'activities', target: 'konfi' },
+  // Bonus
+  bonus_points:            { enabled: true, category: 'points', target: 'konfi' },
+  // Badges
+  badge_earned:            { enabled: true, category: 'badges', target: 'konfi' },
+  // Events
+  event_registered:        { enabled: true, category: 'events', target: 'konfi' },
+  event_unregistered:      { enabled: true, category: 'events', target: 'konfi' },
+  event_unregistration:    { enabled: true, category: 'events', target: 'admin' },
+  waitlist_promotion:      { enabled: true, category: 'events', target: 'konfi' },
+  event_cancelled:         { enabled: true, category: 'events', target: 'konfi' },
+  new_event:               { enabled: true, category: 'events', target: 'konfi' },
+  event_attendance:        { enabled: true, category: 'events', target: 'konfi' },
+  event_reminder:          { enabled: true, category: 'events', target: 'konfi' },
+  events_pending_approval: { enabled: true, category: 'events', target: 'admin' },
+  // Chat
+  chat:                    { enabled: true, category: 'chat', target: 'all' },
+  badge_update:            { enabled: true, category: 'system', target: 'all' },
+  // NEU in v1.5
+  new_registration:        { enabled: true, category: 'admin', target: 'admin' },
+  level_up:                { enabled: true, category: 'progress', target: 'konfi' },
+  points_milestone:        { enabled: true, category: 'progress', target: 'konfi' },
+};
 
-**Trade-offs:** Klare Trennung von Datenhaltung und Darstellung. Views sind wiederverwendbar (Admin-EventsView vs. Konfi-EventsView zeigen unterschiedliche Daten mit gleichem Layout). Modals sind ueber useIonModal-Hook entkoppelt.
-
-**Referenz-Implementierung (Konfi Events):**
-```
-KonfiEventsPage.tsx (Page)
-  -> Laedt Events via api.get('/konfi/events')
-  -> Verwaltet activeTab State
-  -> Praesentiert EventDetailModal via useIonModal
-  -> Rendert: EventsView (View)
-    -> Bekommt events, onSelectEvent, onTabChange als Props
-    -> Rendert: Header-Banner, IonSegment Tabs, Event-Liste
-    -> Nutzt: CSS-Klassen aus variables.css (app-list-item, app-corner-badge, etc.)
-```
-
-### Pattern 2: Design-System ueber CSS-Klassen
-
-**Was:** Wiederverwendbare UI-Patterns sind als CSS-Klassen in `variables.css` definiert, nicht als React-Komponenten.
-
-**Wann verwenden:** Fuer alle visuellen Patterns die bereichsuebergreifend identisch sind.
-
-**Aktuelle CSS-Klassen (Design-System-Kern):**
-```
-app-card                    -- Karten-Container
-app-list-item               -- Listen-Element mit farbigem linken Rand
-app-list-item--{variant}    -- Farbvarianten (events, chat, success, warning, ...)
-app-list-item--selected     -- Ausgewaehlter Zustand
-app-list-item__row          -- Flex-Row innerhalb eines List-Items
-app-list-item__main         -- Hauptbereich (Icon + Content)
-app-list-item__content      -- Text-Content
-app-list-item__title        -- Titel-Text
-app-list-item__subtitle     -- Untertitel
-app-list-item__meta         -- Meta-Informationen (Icons + Text)
-app-list-item__meta-item    -- Einzelnes Meta-Element
-app-icon-circle             -- Runder Icon-Container
-app-icon-circle--lg         -- Grosser Icon-Container (40px)
-app-icon-circle--{variant}  -- Farbvarianten
-app-section-icon            -- Section-Header-Icon (klein, 24px)
-app-section-icon--{variant} -- Farbvarianten
-app-corner-badge            -- Eselsohr-Badge (oben rechts)
-app-chip                    -- Status-Chip
-app-tag                     -- Kategorie-Tag
-app-reason-box              -- Info-Box mit farbigem linken Rand
-app-gradient-background     -- Seitenhintergrund-Gradient
+const isTypeEnabled = (type) => {
+  const config = NOTIFICATION_TYPES[type];
+  return config ? config.enabled : false;
+};
 ```
 
-**Trade-offs:** Flexibel und leichtgewichtig. Nachteil: Keine TypeScript-Typensicherheit, keine Props-Validierung. Header-Banner werden als Inline-Styles dupliziert (nicht als CSS-Klasse).
+**Integration:** PushService.sendToUser() prueft `isTypeEnabled(notification.data.type)` vor dem Senden. Code-Level Config, kein DB-Backing -- reicht fuer v1.5 (CFG-01, CFG-02).
 
-### Pattern 3: Kompakter Header-Banner
+### Komponente 2: BadgeCountService (NEU)
 
-**Was:** Jeder Bereich hat einen farbigen Gradient-Banner oben mit Icon, Titel, Untertitel und Stats-Row.
+**Datei:** `backend/services/badgeCountService.js`
+**Verantwortung:** Einzige Quelle fuer Badge-Count-Berechnung. Alle anderen Stellen konsumieren diesen Service.
 
-**Wann verwenden:** Auf jeder Hauptseite als visueller Ankerpunkt.
-
-**Problem:** Dieses Pattern wird als Inline-Styles in jeder View dupliziert (~50 Zeilen pro View). Es gibt keine gemeinsame Komponente oder CSS-Klasse dafuer.
-
-**Farbschema (fest definiert):**
-```
-Konfis:        #5b21b6 (Lila)     --> #4c1d95
-Events:        #dc2626 (Rot)      --> #b91c1c
-Chat:          #06b6d4 (Cyan)     --> #0891b2
-Badges:        #f59e0b (Gelb)     --> #d97706
-Aktivitaeten:  #059669 (Gruen)    --> #047857
-Requests:      #059669 (Gruen)    --> #047857
-Users:         #667eea (Indigo)   --> #5a67d8
-Organizations: #2dd36f (Gruen)    --> #22c55e
-Levels:        #5b21b6 (Lila)     --> #4c1d95
-Jahrgaenge:    #007aff (Blau)     --> #0066cc
-```
-
-### Pattern 4: useIonModal mit Callbacks
-
-**Was:** Modals werden IMMER ueber den `useIonModal` Hook geoeffnet, NIEMALS ueber `<IonModal isOpen={state}>`.
-
-**Wann verwenden:** Immer. Ohne Ausnahme.
-
-**Beispiel:**
-```typescript
-const [presentModal, dismissModal] = useIonModal(EventModal, {
-  event: editEvent,
-  onClose: () => {
-    dismissModal();
-    setEditEvent(null);
-  },
-  onSuccess: () => {
-    dismissModal();
-    setEditEvent(null);
-    loadEvents();
+```javascript
+class BadgeCountService {
+  static async calculateForUser(db, userId) {
+    const { rows: [result] } = await db.query(`
+      SELECT COALESCE(SUM(
+        CASE WHEN cm.created_at > COALESCE(cp.last_read_at, '1970-01-01')
+             AND cm.sender_id != $1
+        THEN 1 ELSE 0 END
+      ), 0)::int as total_unread
+      FROM chat_participants cp
+      JOIN chat_messages cm ON cm.room_id = cp.room_id
+      WHERE cp.user_id = $1
+    `, [userId]);
+    return result.total_unread;
   }
+
+  static async syncToDevices(db, userId) {
+    const count = await this.calculateForUser(db, userId);
+    await PushService.sendBadgeUpdate(db, userId, count);
+    return count;
+  }
+}
+```
+
+**Konsumenten:**
+- BackgroundService.updateAllUserBadges() --> `BadgeCountService.syncToDevices()` (statt eigene Query)
+- chat.js mark-read Route --> `BadgeCountService.syncToDevices()` (statt eigene Query)
+- Neuer Endpoint GET /api/chat/badge-count --> `BadgeCountService.calculateForUser()` (statt /chat/rooms parsen)
+
+### Komponente 3: TokenCleanupService (NEU)
+
+**Datei:** `backend/services/tokenCleanupService.js`
+**Verantwortung:** Ungueltige und verwaiste Tokens aus der DB entfernen.
+
+**Zwei Mechanismen:**
+
+1. **Reaktiv (bei jedem Send):** firebase.js gibt `tokenInvalid: true` zurueck bei:
+   - `messaging/registration-token-not-registered`
+   - `messaging/invalid-registration-token`
+   - `messaging/mismatched-credential`
+   --> PushService.sendToUser() loescht Token sofort aus DB
+
+2. **Proaktiv (alle 24h via BackgroundService):**
+   - Tokens mit `updated_at` aelter als 90 Tage loeschen
+   - Tokens von geloeschten Usern loeschen (LEFT JOIN users WHERE users.id IS NULL)
+   - Duplikat-Tokens (gleicher Token-Wert, verschiedene Zeilen) auf neueste reduzieren
+
+---
+
+## Empfohlene Architektur: Modifikationen bestehender Komponenten
+
+### Modifikation 1: push/firebase.js -- Token-Invalidierung erkennen
+
+```javascript
+// AENDERUNG: Unterscheide ungueltige Tokens von anderen Fehlern
+} catch (error) {
+    const invalidTokenCodes = [
+      'messaging/registration-token-not-registered',
+      'messaging/invalid-registration-token',
+      'messaging/mismatched-credential'
+    ];
+    const tokenInvalid = invalidTokenCodes.includes(error.code);
+    return { success: false, error: error.message, tokenInvalid };
+}
+```
+
+### Modifikation 2: PushService.sendToUser() -- Type-Check + Token-Cleanup
+
+```javascript
+static async sendToUser(db, userId, notification) {
+  // NEU: Type-Check gegen Registry
+  const type = notification.data?.type;
+  if (type && !isTypeEnabled(type)) {
+    return { success: true, sent: 0, message: 'Type disabled' };
+  }
+
+  const tokens = await this.getTokensForUser(db, userId);
+  // ... bestehende Logik ...
+
+  for (const token of tokens) {
+    const result = await sendFirebasePushNotification(token.token, payload);
+    // NEU: Ungueltige Tokens sofort entfernen
+    if (result.tokenInvalid) {
+      await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+    }
+  }
+}
+```
+
+### Modifikation 3: PushService.getTokensForUser() -- Fallback-ID-Filter entfernen
+
+```javascript
+// VORHER (filtert Fallback-IDs komplett aus):
+AND device_id NOT LIKE '%\\_\\_%'
+
+// NACHHER (alle Tokens senden, Fallback-IDs sind valide):
+-- Filter komplett entfernt. Jeder Token wird versucht.
+-- Ungueltige Tokens werden reaktiv per tokenInvalid geloescht.
+```
+
+**Begruendung:** Der Underscore-Filter schliesst alle Tokens mit Fallback-Device-IDs aus. Das ist der Kern von TKN-02 -- diese Tokens werden nie erreicht. Mit reaktivem Cleanup (Modifikation 2) braucht man den Filter nicht mehr.
+
+### Modifikation 4: notifications.js Route -- Logout + Table-Fix
+
+1. **CREATE TABLE entfernen:** push_tokens Tabelle gehoert in DB-Init, nicht in Route-Handler.
+2. **Logout erweitern:** DELETE loescht alle Tokens des Users auf dem Device (nicht nur exaktes Match).
+
+```javascript
+// VORHER: Loescht nur exaktes device_id + platform Match
+// NACHHER: Loescht ALLE Tokens des Users auf diesem Device
+router.delete('/device-token', verifyTokenRBAC, async (req, res) => {
+  const { device_id } = req.body;
+  const userId = req.user.id;
+  // Alle Plattform-Tokens fuer dieses Device entfernen
+  await db.query('DELETE FROM push_tokens WHERE user_id = $1 AND device_id = $2', [userId, device_id]);
+  res.json({ success: true });
 });
-
-// Oeffnen mit presentingElement fuer iOS Sheet-Modal-Effekt
-presentModal({
-  presentingElement: presentingElement
-});
 ```
 
-**Trade-offs:** Korrekte iOS-Animation (Sheet-Modal mit Backdrop), korrekte Lifecycle-Events. Erfordert ModalContext + useModalPage Hook fuer das presentingElement-Tracking.
+### Modifikation 5: AppContext.tsx -- Logout Token Cleanup + Token-Uebergabe
 
-### Pattern 5: RBAC Middleware-Chain
-
-**Was:** Backend-Routes verwenden eine Middleware-Chain: `verifyTokenRBAC --> requireRole/requireAdmin/requireTeamer --> Route-Handler`.
-
-**Wann verwenden:** Auf jeder geschuetzten Route.
-
-**Rollen-Hierarchie:**
+```typescript
+// Bei Logout: Device-Tokens loeschen BEVOR Token/Auth entfernt wird
+const handleLogout = async () => {
+  try {
+    const deviceInfo = await Device.getId();
+    await api.delete('/notifications/device-token', {
+      data: { device_id: deviceInfo.identifier }
+    });
+  } catch (err) { /* Fehler ignorieren */ }
+  // ... bestehende Logout-Logik ...
+};
 ```
-super_admin (5) - Organisations-uebergreifend, nur Org-Verwaltung
-org_admin (4)   - Volle Rechte in eigener Organisation
-admin (3)       - Konfis, Events, Badges, Aktivitaeten, Requests
-teamer (2)      - Events, Konfis ansehen, Punkte vergeben
-konfi (1)       - Nur eigene Daten
+
+### Modifikation 6: BadgeContext.tsx -- Vereinfachter API-Call
+
+```typescript
+// VORHER: Holt /chat/rooms und zaehlt manuell unread_count
+const refreshFromAPI = useCallback(async () => {
+  const response = await api.get('/chat/rooms');
+  let totalUnread = 0;
+  response.data.forEach((room: any) => { totalUnread += room.unread_count || 0; });
+  setBadgeCount(totalUnread);
+}, []);
+
+// NACHHER: Holt dezidierten Badge-Endpoint (Single Source of Truth)
+const refreshFromAPI = useCallback(async () => {
+  const response = await api.get('/chat/badge-count');
+  setBadgeCount(response.data.count);
+}, []);
+```
+
+### Modifikation 7: BackgroundService -- Cleanup-Intervall + Event-Reminder-Fix
+
+```javascript
+static startAllServices(db) {
+  this.startBadgeUpdateService(db);      // bestehend, 5 Min
+  this.startEventReminderService(db);    // bestehend, 15 Min -- event_reminders Tabelle absichern
+  this.startPendingEventsService(db);    // bestehend, 4h
+  this.startTokenCleanupService(db);     // NEU, 24h
+}
+```
+
+**Event-Reminder-Fix:** Die event_reminders Tabelle wird im Code referenziert aber nirgends erstellt. CREATE TABLE IF NOT EXISTS muss beim Service-Start ausgefuehrt werden.
+
+---
+
+## Komponentengrenzen (Soll-Zustand)
+
+| Komponente | Verantwortung | Kommuniziert mit |
+|-----------|---------------|-------------------|
+| NotificationTypeRegistry | Type-Definitionen, enabled/disabled Flags | PushService (wird abgefragt vor Send) |
+| PushService (modifiziert) | Push senden, Token-Invalidierung, Type-Guard | firebase.js, NotificationTypeRegistry, DB |
+| BadgeCountService (neu) | Badge Count berechnen (Single Source of Truth) | DB (chat_messages, chat_participants) |
+| TokenCleanupService (neu) | Verwaiste/ungueltige Tokens loeschen | DB (push_tokens) |
+| BackgroundService (modifiziert) | Scheduling aller periodischen Tasks | BadgeCountService, TokenCleanupService, PushService |
+| BadgeContext (modifiziert) | Device Badge Sync via neuen Endpoint | GET /api/chat/badge-count, WebSocket |
+| AppContext (modifiziert) | Token-Registrierung, Logout-Cleanup | notifications.js Route |
+
+---
+
+## Datenfluss: Badge Count (Soll) -- Single Source of Truth
+
+```
+                  BadgeCountService.calculateForUser(db, userId)
+                               |
+          +--------------------+--------------------+
+          |                    |                    |
+  BackgroundService     chat.js mark-read    GET /api/chat/badge-count
+  (alle 5 Min)          Route                (neuer Endpoint)
+          |                    |                    |
+  syncToDevices()       syncToDevices()       Return { count: N }
+  --> Silent Push       --> Silent Push             |
+                                              BadgeContext.tsx
+                                              --> Badge.set(count)
+                                              --> TabBar Badge Update
+
+  WebSocket 'newMessage' --> BadgeContext.refreshFromAPI()
+                         --> GET /api/chat/badge-count
+```
+
+**Vorher:** 4 unabhaengige Badge-Count-Berechnungen.
+**Nachher:** 1 Berechnung (BadgeCountService), 3 Konsumenten.
+
+---
+
+## Datenfluss: Token Lifecycle (Soll) -- Vollstaendig
+
+```
+App Start / Login:
+  PushNotifications.register() --> registration Event
+  --> sendTokenToServer() --> POST /notifications/device-token
+  --> Upsert mit Device.getId() als device_id
+  --> Collision-Check: DELETE WHERE token=$1 AND user_id != $2
+
+Token Refresh (App Resume, max alle 12h):
+  appStateChange --> PushNotifications.register()
+  --> updated_at wird in push_tokens aktualisiert
+
+Logout:
+  handleLogout() --> DELETE /notifications/device-token (device_id)
+  --> Alle Tokens dieses Users auf diesem Device geloescht
+
+User-Wechsel auf gleichem Device:
+  Logout alter User --> Tokens geloescht
+  Login neuer User --> Neuer Token registriert
+  --> Token-Collision loescht evt. verwaiste Tokens
+
+Reaktiver Cleanup (bei jedem Send):
+  firebase.js --> tokenInvalid: true
+  --> PushService.sendToUser() --> DELETE FROM push_tokens WHERE id = X
+
+Proaktiver Cleanup (alle 24h):
+  TokenCleanupService.cleanup()
+  --> Tokens aelter 90 Tage
+  --> Tokens geloeschter User
+  --> Duplikat-Tokens konsolidieren
 ```
 
 ---
 
-## Data Flow
+## DB-Aenderungen
 
-### Request Flow (Frontend --> Backend)
+### Bestehende Tabellen
 
-```
-[User Action in View]
-    |
-    v
-[Page Component] -- State Update + API Call
-    |
-    v
-[api.ts Axios Instance]
-    | -- Token aus localStorage injiziert
-    v
-[Backend: Express Route]
-    | -- verifyTokenRBAC: JWT pruefen, User aus DB laden
-    | -- requireRole: Rollen-Check
-    | -- organization_id Filter: Tenant-Isolation
-    v
-[PostgreSQL Query]
-    |
-    v
-[Response JSON]
-    |
-    v
-[Page Component] -- State Update
-    |
-    v
-[View Component] -- Re-Render via Props
+```sql
+-- push_tokens: Felder fuer Error-Tracking (fuer spaetere Erweiterung)
+ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS error_count INTEGER DEFAULT 0;
+ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS last_error_at TIMESTAMPTZ;
 ```
 
-### State Management
+### Tabellen absichern
 
-```
-AppContext (global)
-    |-- user: User | null         (Auth-Status)
-    |-- chatNotifications          (Unread Counts)
-    |-- error/success              (Globale Meldungen)
-    |
-    +-- Wird konsumiert von:
-        |-- MainTabs (Tab-Routing)
-        |-- Alle Pages (User-Info, Fehlermeldungen)
-        |-- Alle Modals (User-Info fuer API-Calls)
-
-BadgeContext (global)
-    |-- badgeCount: number         (Device + Tab Badge)
-    |
-    +-- Wird konsumiert von:
-        |-- MainTabs (Tab-Badge-Anzeige)
-
-ModalContext (pro Tab-Set)
-    |-- presentingElement          (Aktives IonPage-Element)
-    |
-    +-- Wird konsumiert von:
-        |-- Alle Pages (via useModalPage Hook)
-        |-- Indirekt: Alle Modals (via presentingElement)
-
-LiveUpdateContext (global)
-    |-- Event-basierte Refreshes   (Socket.io Events)
-    |
-    +-- Wird konsumiert von:
-        |-- Pages die useLiveRefresh nutzen
+```sql
+-- event_reminders: Wird im Code referenziert aber nirgends erstellt
+CREATE TABLE IF NOT EXISTS event_reminders (
+  id SERIAL PRIMARY KEY,
+  event_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  reminder_type TEXT NOT NULL,
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(event_id, user_id, reminder_type)
+);
 ```
 
-### Key Data Flows
+### push_tokens CREATE TABLE entfernen
 
-1. **Auth-Flow:** Login --> JWT Token --> localStorage --> api.ts Interceptor --> Jeder Request hat Bearer Token --> verifyTokenRBAC laedt vollen User aus DB (inkl. Rollen, Org, Jahrgaenge)
-
-2. **Konfi-Dashboard-Flow:** KonfiDashboardPage laedt /konfi/dashboard --> DashboardView rendert Punkte-Uebersicht, Activity Rings, naechste Events, Ranking, Badges --> Modals fuer Details
-
-3. **Admin-Event-Management-Flow:** AdminEventsPage laedt /events --> EventsView zeigt Liste mit Status-Farben, Corner-Badges, Sliding-Actions --> EventModal fuer Create/Edit --> EventDetailView fuer Teilnehmer-Management
-
-4. **Chat-Real-Time-Flow:** ChatRoomView --> Socket.io joinRoom --> Server broadcastet newMessage --> Alle Clients im Room erhalten Update --> MessageBubble-Rendering --> Push-Notification an Offline-User
-
-5. **Multi-Tenant-Isolation-Flow:** verifyTokenRBAC setzt req.user.organization_id --> Jede Route filtert mit `WHERE organization_id = $1` --> Daten sind organisations-isoliert
+Die notifications.js Route fuehrt bei JEDEM POST /device-token ein CREATE TABLE IF NOT EXISTS aus. Das gehoert in die DB-Initialisierung (database.js oder Init-Script), nicht in den Route-Handler.
 
 ---
 
-## Component Boundaries -- Refactoring-Architektur
+## Fehlende Push-Flows (neu zu implementieren)
 
-### Ziel-Architektur fuer Design-Konsistenz
+### Flow: Admin-Push bei neuer Konfi-Registrierung (FLW-02)
 
-Die Refactoring-Architektur sollte drei Ebenen von Wiederverwendung etablieren:
+**Wo integrieren:** `backend/routes/auth.js` im Register-Endpoint, nach erfolgreichem User-Anlegen.
 
-#### Ebene 1: Shared UI Components (NEU zu erstellen)
-
-| Component | Props | Ersetzt |
-|-----------|-------|---------|
-| `SectionHeader` | title, subtitle, icon, color, stats[] | ~50 Zeilen Inline-Styles pro View (Header-Banner) |
-| `EmptyState` | icon, title, message, color | Duplizierter Empty-State in jeder View |
-| `ListSection` | title, icon, color, count, children | IonListHeader + IonCard app-card Pattern |
-
-**NICHT als Shared Component:** Listen-Items (zu unterschiedlich pro Bereich), Modals (zu spezifisch), Status-Logik (bereichsspezifisch).
-
-#### Ebene 2: CSS-Klassen (BEREITS VORHANDEN, erweitern)
-
-Das CSS-Design-System in `variables.css` ist bereits umfangreich. Fehlend:
-
-| Klasse | Zweck |
-|--------|-------|
-| `app-header-banner` | Gradient-Banner (aktuell Inline-Styles) |
-| `app-header-banner--{variant}` | Farbvarianten fuer Bereiche |
-| `app-stats-row` | Stats-Reihe im Header-Banner |
-| `app-stats-item` | Einzelnes Stat-Element |
-
-#### Ebene 3: Hooks (NEU zu erstellen)
-
-| Hook | Zweck | Ersetzt |
-|------|-------|---------|
-| `useDataLoader(url)` | Lade-Logik mit Loading/Error-State | Duplizierter useEffect + try/catch in jeder Page |
-| `useRefresher(loadFn)` | IonRefresher-Handler | Duplizierter Refresher-Code |
-
-### Build-Reihenfolge (Abhaengigkeiten)
-
-```
-Phase 1: Design-System-Grundlagen
-  1.1 CSS-Klassen fuer Header-Banner    -- Keine Abhaengigkeit
-  1.2 SectionHeader-Komponente          -- Abhaengig von 1.1
-  1.3 EmptyState-Komponente             -- Keine Abhaengigkeit
-  1.4 ListSection-Komponente            -- Keine Abhaengigkeit
-
-Phase 2: Admin-Views angleichen
-  2.1 Admin-Views nach views/ verschieben  -- Strukturbereinigung
-  2.2 SectionHeader in Admin-Views einbauen -- Abhaengig von 1.2
-  2.3 EmptyState in Admin-Views einbauen    -- Abhaengig von 1.3
-  2.4 ListSection in Admin-Views einbauen   -- Abhaengig von 1.4
-
-Phase 3: Konfi-Views angleichen
-  3.1 SectionHeader in Konfi-Views          -- Abhaengig von 1.2
-  3.2 EmptyState in Konfi-Views             -- Abhaengig von 1.3
-
-Phase 4: Modal-Konsistenz pruefen
-  4.1 Alle 28 Modals auf useIonModal Pattern pruefen  -- Keine Abhaengigkeit
-  4.2 Farblogik und Spacing in Modals angleichen       -- Abhaengig von 4.1
-
-Phase 5: Security Hardening
-  5.1 organization_id-Filterung in allen Routes pruefen -- Keine Abhaengigkeit
-  5.2 JWT Token-Lifecycle verbessern                     -- Keine Abhaengigkeit
-  5.3 Rate-Limiting erweitern                            -- Keine Abhaengigkeit
+```javascript
+// Nach: INSERT INTO users ... mit role='konfi'
+await PushService.sendNewRegistrationToAdmins(db, organization_id, display_name);
 ```
 
----
+**Neue PushService Methode:** `sendNewRegistrationToAdmins()` -- analog zu `sendNewActivityRequestToAdmins()`.
 
-## Anti-Patterns
+### Flow: Level-Up Push (FLW-03)
 
-### Anti-Pattern 1: Inline-Style-Duplizierung fuer Design-Patterns
+**Wo integrieren:** `backend/routes/badges.js` in `checkAndAwardBadges()`, wo Levels berechnet werden. Oder in `activities.js` / `konfi-managment.js` nach Punkte-Vergabe, wo Level-Check passiert.
 
-**Was passiert:** Der Header-Banner (Gradient, Icon, Stats-Row) wird in jeder View als ~50 Zeilen Inline-Styles kopiert. EventsView, KonfisView, BadgesView, ActivitiesView, DashboardView -- alle haben identische Struktur mit minimalen Unterschieden (Farbe, Titel, Stats-Werte).
+**PushService Methode existiert bereits:** `sendLevelUpToKonfi()` -- muss nur aufgerufen werden.
 
-**Warum problematisch:** Design-Aenderungen muessen in 10+ Dateien manuell synchronisiert werden. Abweichungen schleichen sich ein (z.B. unterschiedliche Padding-Werte, fehlende dekorative Kreise).
+**Wichtig:** Level-Up muss erkannt werden = vorheriges Level speichern, nach Punkte-Aenderung vergleichen.
 
-**Stattdessen:** Eine `SectionHeader`-Komponente erstellen, die `color`, `icon`, `title`, `subtitle` und `stats` als Props akzeptiert. Alternativ CSS-Klassen fuer die Struktur, nur Farbe als Inline-Style.
+### Flow: Punkte-Meilenstein Push (FLW-04)
 
-### Anti-Pattern 2: Views auf falscher Verzeichnisebene
+**Wo integrieren:** Nach jeder Punkte-Aenderung (activities.js, konfi-managment.js Bonus), pruefen ob Mindestpunkte fuer Gottesdienst oder Gemeinde erstmals erreicht.
 
-**Was passiert:** Admin-Views liegen teils in `admin/views/` (KonfiDetailView, EventDetailView, ActivityRings), teils direkt in `admin/` (EventsView, KonfisView, BadgesView, UsersView, etc.).
+**Neue PushService Methode:** `sendPointsMilestoneToKonfi(db, konfiId, type, currentPoints, requiredPoints)`
 
-**Warum problematisch:** Inkonsistente Dateistruktur. Entwickler muessen suchen, wo Views liegen. Neue Entwickler verstehen das Pattern nicht.
-
-**Stattdessen:** Alle Views in `admin/views/` verschieben. Import-Pfade in Pages anpassen.
-
-### Anti-Pattern 3: organization_id-Filter nicht in allen Routes
-
-**Was passiert:** Einige Backend-Routes (z.B. notifications, settings) filtern nicht oder nur teilweise nach `organization_id`. Dies ermoeglicht theoretisch Cross-Tenant-Datenlecks.
-
-**Warum problematisch:** Multi-Tenant-Isolation ist nur so stark wie die schwaechste Route.
-
-**Stattdessen:** Systematisches Audit aller Routes. Jede Query die Tenant-Daten zurueckgibt MUSS `WHERE organization_id = req.user.organization_id` enthalten.
-
-### Anti-Pattern 4: JWT ohne Refresh-Token-Mechanismus
-
-**Was passiert:** JWT-Token werden mit 24h Laufzeit ausgestellt. Es gibt keinen Refresh-Token-Mechanismus. Bei Ablauf wird der User ausgeloggt und muss sich neu anmelden.
-
-**Warum problematisch:** Schlechte UX (ploetzliches Ausloggen), Sicherheitsrisiko (langes Token-Fenster).
-
-**Stattdessen:** Refresh-Token-Rotation implementieren oder Token-Laufzeit auf 1h reduzieren mit automatischem Refresh.
+**Erkennung:** Settings-Tabelle hat `min_gottesdienst_points` und `min_gemeinde_points`. Vergleich vorher/nachher noetig.
 
 ---
 
-## Security Architecture -- Multi-Tenant Hardening
+## Patterns to Follow
 
-### Ist-Zustand der Tenant-Isolation
+### Pattern 1: Fire-and-Forget Push (BESTEHEND -- beibehalten)
 
-| Route-Datei | org_id Filterung | Status |
-|-------------|------------------|--------|
-| activities.js | 32 Vorkommen | Gut abgedeckt |
-| events.js | 75 Vorkommen | Gut abgedeckt |
-| chat.js | 35 Vorkommen | Behoben (Juli 2025) |
-| konfi-managment.js | 54 Vorkommen | Gut abgedeckt |
-| konfi.js | 76 Vorkommen | Gut abgedeckt |
-| badges.js | 37 Vorkommen | Zu pruefen (nicht migriert) |
-| organizations.js | 37 Vorkommen | Durch super_admin-Check abgedeckt |
-| users.js | 25 Vorkommen | Zu pruefen |
-| categories.js | 11 Vorkommen | Zu pruefen |
-| jahrgaenge.js | 11 Vorkommen | Zu pruefen |
-| auth.js | 13 Vorkommen | Login-spezifisch, OK |
-| levels.js | 19 Vorkommen | Zu pruefen |
-| notifications.js | 0 Vorkommen | KRITISCH -- keine Isolation! |
-| roles.js | 6 Vorkommen | Minimal, zu pruefen |
-| settings.js | Nicht geprueft | Zu pruefen |
+Push-Notifications werden mit try/catch gesendet, Fehler werden geloggt aber nicht propagiert. Push-Fehler sollen nie eine eigentliche Operation blockieren.
 
-### Security-Hardening-Massnahmen (priorisiert)
+```javascript
+// Bestehender Pattern in allen Route-Handlern:
+try {
+  await PushService.sendActivityAssignedToKonfi(db, konfiId, ...);
+} catch (pushErr) {
+  // Push-Fehler ignorieren, Operation war erfolgreich
+}
+```
 
-1. **notifications.js auditieren** -- Keine organization_id-Filterung gefunden. Push-Tokens koennten bereichsuebergreifend sein.
-2. **badges.js migrieren und auditieren** -- Noch nicht auf PostgreSQL migriert, organization_id-Filter unklar.
-3. **Alle Routes mit <20 org_id-Vorkommen einzeln pruefen** -- categories, jahrgaenge, levels, roles, settings.
-4. **JWT Token-Laufzeit reduzieren** -- Aktuell 24h, besser 1-4h mit Refresh-Token.
-5. **Rate-Limiting auf fehlende Routes erweitern** -- Aktuell nur Chat, Events, File-Uploads abgedeckt.
+### Pattern 2: Background Service als setInterval (BESTEHEND -- erweitern)
+
+Periodische Tasks laufen als setInterval im Node.js-Prozess. Einzelne Docker-Instanz, kein Cluster, kein separater Scheduler noetig.
+
+### Pattern 3: Centralized Type Guard (NEU)
+
+Jeder Push geht durch isTypeEnabled() Check. Der Check passiert in sendToUser() und sendToMultipleUsers() -- nur an EINER Stelle. Route-Handler muessen sich nicht darum kuemmern.
+
+### Pattern 4: WebSocket fuer Foreground, Push fuer Background (BESTEHEND)
+
+Chat-Nachrichten nutzen beide Kanaele parallel. WebSocket ist schneller fuer Foreground-Updates, Push ist zuverlaessiger fuer Background-Notifications.
 
 ---
 
-## Integration Points
+## Anti-Patterns to Avoid
 
-### Externe Services
+### Anti-Pattern 1: Multiple Badge Count Berechnungen
 
-| Service | Integration Pattern | Sicherheitsrelevanz |
-|---------|---------------------|---------------------|
-| Firebase Cloud Messaging | Server --> Firebase Admin SDK --> APNS/FCM | Push-Token-Isolation pro Organisation sicherstellen |
-| Capacitor Push Notifications | Natives Plugin --> AppDelegate --> FCM Token --> Backend | Token-Duplikat-Bereinigung vorhanden |
-| Capacitor Badge Plugin | @capawesome/capacitor-badge --> Device Badge Count | Rein lokal, kein Sicherheitsrisiko |
-| Socket.io | WebSocket mit JWT-Auth --> Room-basierte Isolation | JWT wird bei Connection verifiziert |
+**Was:** Badge Count wird an 4 Stellen unabhaengig berechnet.
+**Stattdessen:** BadgeCountService als Single Source of Truth.
 
-### Interne Grenzen
+### Anti-Pattern 2: Token-Fehler ignorieren
 
-| Grenze | Kommunikation | Sicherheitsaspekte |
-|--------|---------------|---------------------|
-| Frontend Admin <-> Konfi | Getrennte Route-Pfade (/admin/* vs /konfi/*) | Frontend-Trennung, Backend-RBAC-Checks pro Route |
-| Page <-> View | Props (one-way) | Keine Sicherheitsrelevanz |
-| Page <-> Modal | useIonModal + Callbacks (onClose, onSuccess) | Modal-Daten stammen aus Page-State |
-| Frontend <-> Backend API | REST via Axios + Bearer Token | Token in localStorage, 401-Auto-Redirect |
-| Frontend <-> Backend Socket | Socket.io mit JWT-Auth | JWT in handshake.auth, Room-Isolation |
-| Backend Route <-> PostgreSQL | Pool-basierte Queries mit Parametrisierung | SQL Injection: durch parametrisierte Queries geschuetzt |
+**Was:** Firebase-Send-Fehler werden geloggt, Token bleibt in DB.
+**Stattdessen:** tokenInvalid Flag, sofortige Loeschung.
 
----
+### Anti-Pattern 3: CREATE TABLE in Route-Handler
 
-## Scaling Considerations
+**Was:** notifications.js erstellt push_tokens Tabelle bei jedem POST.
+**Stattdessen:** Tabellen-Erstellung in DB-Init.
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-500 User (aktuell) | Monolith reicht. Fokus auf Korrektheit und Design-Konsistenz. |
-| 500-5k User | Connection Pooling pruefen, Socket.io Redis-Adapter fuer Multi-Instance |
-| 5k+ User | Backend-Routes in Services aufteilen, Caching-Layer, CDN fuer Uploads |
+### Anti-Pattern 4: Fallback Device-IDs ausfiltern
 
-### Erste Engpaesse
-
-1. **Socket.io Memory:** Bei vielen gleichzeitigen Chat-Connections. Loesung: Redis-Adapter.
-2. **PostgreSQL Queries:** Einige Routes laden zu viele Daten (z.B. alle Events ohne Pagination). Loesung: Pagination einfuehren.
-3. **Push-Token-Tabelle:** CREATE TABLE IF NOT EXISTS bei jedem Request. Loesung: In Migrations verschieben.
+**Was:** getTokensForUser() filtert device_id NOT LIKE '%\\_\\_%' -- schliesst Fallback-IDs komplett aus.
+**Stattdessen:** Filter entfernen, ungueltige Tokens reaktiv per tokenInvalid loeschen.
 
 ---
 
-## Sources
+## Build-Reihenfolge (Abhaengigkeiten beachtet)
 
-- Direkte Codebase-Analyse (alle Dateien gelesen und ausgewertet)
-- `/Users/simonluthe/Documents/Konfipoints/.planning/PROJECT.md` -- Projektkontext
-- `/Users/simonluthe/Documents/Konfipoints/CLAUDE.md` -- Migrationsstatus und bekannte Probleme
-- `/Users/simonluthe/Documents/Konfipoints/6.2-Analyse.md` -- Vorherige Analyse mit erledigten und offenen Punkten
-- `/Users/simonluthe/Documents/Konfipoints/DESIGN_VORLAGE_LISTE.md` -- Design-Vorlage fuer Listen
+```
+Phase 1: Foundation (keine Abhaengigkeiten)
+  |-- NotificationTypeRegistry erstellen (CFG-01, CFG-02)
+  |-- push_tokens: error_count/last_error_at Felder hinzufuegen
+  |-- event_reminders Tabelle absichern (CREATE IF NOT EXISTS)
+  |-- CREATE TABLE aus notifications.js Route entfernen
+
+Phase 2: Token-Lifecycle (abhaengig von Phase 1)
+  |-- firebase.js: tokenInvalid Return-Wert (CLN-01)
+  |-- PushService.sendToUser(): Token-Invalidierung + Type-Check
+  |-- PushService.getTokensForUser(): Fallback-ID-Filter entfernen (TKN-02)
+  |-- notifications.js: Logout alle Tokens auf Device (TKN-01)
+  |-- AppContext.tsx: Logout Token Cleanup (TKN-01, TKN-04)
+  |-- Token-Refresh bei Resume verifizieren (TKN-03)
+
+Phase 3: Badge Count Single Source of Truth (abhaengig von Phase 1)
+  |-- BadgeCountService erstellen (BDG-01)
+  |-- Neuer Endpoint GET /api/chat/badge-count (BDG-02)
+  |-- BackgroundService: BadgeCountService nutzen
+  |-- chat.js mark-read: BadgeCountService nutzen
+  |-- BadgeContext.tsx: Neuen Endpoint nutzen (BDG-02)
+  |-- AppContext chatNotifications von BadgeContext speisen (BDG-03, BDG-04)
+
+Phase 4: Fehlende Push-Flows (abhaengig von Phase 1+2)
+  |-- Level-Up Push aufrufen -- Methode existiert bereits (FLW-03)
+  |-- Admin-Push bei neuer Registrierung (FLW-02)
+  |-- Punkte-Meilenstein Push (FLW-04)
+  |-- Event-Reminder-Service verifizieren/fixen (FLW-01)
+
+Phase 5: Token Cleanup + Vollstaendigkeit (abhaengig von Phase 2)
+  |-- TokenCleanupService erstellen (CLN-02)
+  |-- BackgroundService: Cleanup-Intervall (24h) hinzufuegen
+  |-- Alle 14+3 Push-Flows End-to-End verifizieren (CMP-01)
+  |-- TabBar Badges fuer Antraege, Events, Chat synchronisieren
+```
 
 ---
-*Architecture research for: Konfi Quest -- Design-Konsistenz-Refactoring und Security Hardening*
-*Researched: 2026-02-27*
+
+## Skalierbarkeit
+
+| Aspekt | Aktuell (Beta, <20 User) | Bei 100 Usern | Bei 1000 Usern |
+|--------|--------------------------|---------------|----------------|
+| Push-Tokens | ~10-20 | ~100-200 | ~1000-2000 |
+| Badge Sync (5min) | Kein Problem | ~200 Firebase Calls/5min | Firebase Multicast nutzen |
+| Event Reminders | Funktioniert | Funktioniert | Bulk-Queries statt Einzel-Loop |
+| Token Cleanup | Nicht vorhanden | Leicht noetig | Wichtig gegen DB-Bloat |
+
+**Fuer v1.5 nicht noetig:** Firebase Multicast, Redis-basierter Scheduler, Message Queues. setInterval reicht bei aktueller Nutzerzahl.
+
+---
+
+## Quellen
+
+- Direkte Codebase-Analyse: pushService.js (663 Zeilen, 14+2 Methoden), backgroundService.js (312 Zeilen, 3 Services), firebase.js (74 Zeilen), AppContext.tsx (584 Zeilen), BadgeContext.tsx (107 Zeilen), notifications.js (165 Zeilen), server.js (516 Zeilen)
+- Firebase Admin SDK: Error Codes fuer Token-Invalidierung (HIGH confidence -- dokumentierte Firebase-API)
+- Capacitor Push Notifications: Token-Lifecycle Verhalten (HIGH confidence -- im Code verifiziert)
+
+---
+*Architecture research for: Konfi Quest v1.5 Push-Notifications*
+*Researched: 2026-03-05*

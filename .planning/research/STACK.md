@@ -1,205 +1,304 @@
-# Stack Research
+# Technology Stack: v1.5 Push-Notifications
 
-**Domain:** Ionic 8 Hybrid-App -- UI Design-Konsistenz & Security Hardening
-**Researched:** 2026-02-27
-**Confidence:** MEDIUM-HIGH
-
-## Kontext
-
-Dieses Research fokussiert sich auf zwei Dimensionen fuer das bestehende Konfi Quest System:
-1. **UI Design-Konsistenz** -- Wie wird eine einheitliche Optik ueber Admin/Teamer/Konfi Views hinweg erreicht?
-2. **Security Hardening** -- Welche Standardmassnahmen fehlen im bestehenden Node.js/Express Backend?
-
-Der bestehende Tech-Stack (React 19 + Ionic 8 + Capacitor 7 + Express + PostgreSQL) bleibt unveraendert. Es geht um ergaenzende Libraries und Patterns.
+**Project:** Konfi Quest
+**Researched:** 2026-03-05
+**Scope:** Stack-Ergaenzungen fuer Scheduled Push, Token-Lifecycle, Badge-Count-Sync
+**Overall Confidence:** HIGH
 
 ---
 
-## Recommended Stack -- Design-Konsistenz
+## Bestandsaufnahme (bereits installiert, NICHT aendern)
 
-### Theming Libraries (bereits im Projekt)
-
-| Technology | Aktuelle Version | Empfohlene Version | Purpose | Why |
-|------------|-----------------|-------------------|---------|-----|
-| @ionic/react | 8.5.0 | ^8.7.18 | UI-Komponenten | **Update empfohlen.** v8.7.18 (25.02.2026) fixt datetime, safe-area-inset und navigation Bugs. Ionic 8.7 brachte neue CSS Utility-Klassen und Reorder-Events. Confidence: HIGH (GitHub Releases verifiziert) |
-| @rdlabo/ionic-theme-ios26 | 2.2.0 | ^2.2.1 | iOS 26 Design System | **Beibehalten + Minor Update.** v2.2.1 (22.02.2026) fixt action-sheet cancel margin. Library wird aktiv gepflegt (monatliche Releases). Confidence: HIGH (GitHub Releases verifiziert) |
-| @rdlabo/ionic-theme-md3 | 1.0.2 | 1.0.2 | Material Design 3 fuer Android | **Beibehalten auf aktueller Version.** v1.0.2 ist die neueste Version (22.01.2026). Explizit kompatibel mit ionic-theme-ios26 designed. Confidence: HIGH (GitHub Releases verifiziert) |
-| ionicons | 7.4.0 | ^7.4.0 | Icon Library | **Beibehalten.** Ionic 8.7 brachte Ionicons v8 Update -- aber v7.4 ist weiterhin kompatibel. Upgrade auf v8 optional. Confidence: MEDIUM |
-
-### Design System Patterns (keine neuen Dependencies)
-
-| Pattern | Purpose | Wie umsetzen |
-|---------|---------|-------------|
-| CSS Custom Properties in :root | Zentrale Farbpalette fuer alle Rollen | Bereits vorhanden in variables.css. `--app-color-*` Variablen konsistent in allen Views verwenden. |
-| BEM-artige CSS-Klassen | Wiederverwendbare Komponenten-Styles | Bereits vorhanden (`app-list-item`, `app-chip`, `app-card`). Admin-Views muessen diese Klassen uebernehmen statt eigene Styles zu nutzen. |
-| Kompakter Header-Pattern | Einheitliche Seitenheader | Referenz-Implementation aus Konfi-UI. Icon + Titel inline, Stats-Row darunter. Kein grosser Overlay-Text. |
-| useIonModal Hook | Konsistentes Modal-Verhalten | Bereits als Pattern definiert. Alle 20+ Modale muessen auditiert und migriert werden. |
-
-### Was NICHT hinzufuegen
-
-| Vermeiden | Warum | Stattdessen |
-|-----------|-------|-------------|
-| Tailwind CSS | Wuerde mit Ionic CSS-Variablen-System kollidieren. Ionic nutzt Shadow DOM -- Tailwind-Klassen greifen dort nicht. Ausserdem: App hat bereits ein eigenes Design-System in variables.css. | Bestehende `app-*` CSS-Klassen erweitern. Ionic Utility-Klassen (ion-padding, ion-margin) nutzen. |
-| Styled Components / CSS-in-JS | Unnoetige Komplexitaet. Ionic-Komponenten nutzen CSS Custom Properties und Shadow DOM Parts. CSS-in-JS kann diese nicht zuverlaessig ueberschreiben. | CSS Custom Properties + globale Klassen in variables.css |
-| Separate Theme-Libraries (z.B. danielkleebinder/md3-for-ionic) | Inkompatibel mit rdlabo-Themes. rdlabo/ionic-theme-md3 ist explizit auf Kompatibilitaet mit rdlabo/ionic-theme-ios26 ausgelegt. Mischen verschiedener Theme-Libraries fuehrt zu CSS-Konflikten. | @rdlabo/ionic-theme-md3 beibehalten |
-| React Router v6 | Ionic React Router basiert auf React Router v5. Migration wuerde komplettes Routing-Refactoring erfordern. Kein Nutzen fuer Design-Konsistenz. | react-router-dom 5.3.4 beibehalten |
+| Technology | Version | Zweck |
+|------------|---------|-------|
+| firebase-admin | ^12.7.0 | FCM Push-Versand via `admin.messaging().send()` |
+| @capacitor/push-notifications | ^7.0.1 | Native Push-Registration und Token-Empfang |
+| @capawesome/capacitor-badge | ^7.0.1 | App-Icon Badge-Count (get/set/clear) |
+| @capacitor/device | ^7.0.1 | Device-ID fuer Token-Zuordnung |
+| @capacitor/app | 7.0.1 | App-Lifecycle Events (Resume/Pause) |
+| socket.io / socket.io-client | ^4.7.2 / ^4.8.1 | Echtzeit Chat + Badge-Updates |
+| pg | ^8.16.3 | PostgreSQL (push_tokens Tabelle) |
 
 ---
 
-## Recommended Stack -- Security Hardening
+## Neue Dependencies
 
-### Neue Dependencies (Backend)
+### Backend: node-cron
 
-| Library | Version | Purpose | Why Recommended | Confidence |
-|---------|---------|---------|-----------------|------------|
-| helmet | ^8.1.0 | HTTP Security Headers | Setzt 13 Security-Headers automatisch (CSP, HSTS, X-Frame-Options, etc.). Express.js offizielle Best-Practice-Empfehlung. Aktuell komplett fehlend im Backend. | HIGH (Official Express Docs, helmet npm) |
-| express-validator | ^7.2.0 | Input Validation Middleware | Express-native Validation direkt auf req.body/params/query. Kein separates Schema-Objekt noetig (wie bei Joi/Zod). Fuer bestehendes Express-Backend am einfachsten zu integrieren -- Route fuer Route hinzufuegbar. | MEDIUM (Community Best Practice, npm trends) |
+| Technology | Version | Zweck | Warum |
+|------------|---------|-------|-------|
+| node-cron | ^3.0.3 | Event-Erinnerungen (FLW-01), Token-Cleanup (CLN-02) | Leichtgewichtig, null externe Abhaengigkeiten, crontab-Syntax, laeuft im selben Express-Prozess |
 
-### Bestehende Dependencies -- Konfigurationsaenderungen
+**Warum node-cron und nicht Alternativen:**
 
-| Library | Aktuelle Version | Aenderung | Rationale |
-|---------|-----------------|-----------|-----------|
-| express-rate-limit | 8.2.1 | Konfiguration anpassen, NICHT upgraden | Version ist aktuell. Problem: In-Memory Store verliert State bei Restart. Fuer Produktionsbetrieb mit <500 Usern akzeptabel, aber Rate-Limiter UX im Frontend verbessern (Countdown anzeigen). Redis-Store erst bei Skalierungsbedarf. |
-| jsonwebtoken | 9.0.2 | Refresh-Token-Mechanismus implementieren | Aktuell: 24h Access Token, kein Refresh. Empfehlung: Access Token auf 2h reduzieren, Refresh Token (7d) in HttpOnly Cookie. Token-Rotation bei jedem Refresh. Kein Library-Wechsel noetig -- jsonwebtoken reicht aus. |
-| cors | 2.8.5 | CORS via Express aktivieren (zusaetzlich zu Apache) | Defense-in-Depth: Selbst wenn Apache CORS handelt, sollte Express als zweite Schicht explizit nur erlaubte Origins akzeptieren. Konfiguration existiert bereits fuer Socket.io (ALLOWED_ORIGINS). |
+| Kategorie | Empfohlen | Alternative | Warum nicht |
+|-----------|-----------|-------------|-------------|
+| Scheduler | node-cron | node-schedule | node-schedule ist Date-basiert, fuer minuetliches Polling Overkill |
+| Scheduler | node-cron | agenda | Braucht MongoDB. Massiv ueberengineered fuer 2 Cron-Jobs |
+| Scheduler | node-cron | bull / bullmq | Redis-Abhaengigkeit. Sinnvoll bei hohem Durchsatz, hier unnoetig |
+| Scheduler | node-cron | setTimeout-Ketten | Fragil, kein Cron-Ausdruck-Support, schwer zu warten |
 
-### Security Patterns (keine neuen Dependencies)
-
-| Pattern | Problem | Loesung |
-|---------|---------|---------|
-| Organization-ID Middleware | Nicht alle Routes filtern konsistent nach organization_id | Zentrale Middleware erstellen, die JEDE Query mit organization_id anreichert. Bereits teilweise in rbac.js vorhanden (filterByJahrgangAccess). Muss auf alle Routes erweitert werden. |
-| JWT Refresh Token Rotation | 24h Token-Lifetime zu lang, kein Refresh | Access Token: 2h. Refresh Token: 7d, in DB gespeichert, bei jedem Refresh rotiert. Altes Refresh Token wird sofort invalidiert. Bei Reuse-Detection (gestohlenes Token wiederverwendet) alle Tokens des Users invalidieren. |
-| Token Blacklist bei Logout | Logout invalidiert Token nicht | Refresh Tokens in DB speichern (neue Tabelle `refresh_tokens`). Bei Logout alle Refresh Tokens des Users/Geraets loeschen. Access Token laeuft nach 2h automatisch ab. |
-| Input Sanitization | SQL-Injection Risiko bei dynamischen Spalten | Template-Literal-Interpolation in SQL ersetzen durch parameterisierte Queries oder CASE-Statements. express-validator fuer Request-Body-Validation nutzen. |
-| Audit Logging | Keine Nachverfolgung von Admin-Aktionen | Neue Tabelle `audit_log (id, user_id, action, entity_type, entity_id, details_json, created_at)`. Middleware oder Helper-Funktion, die bei jeder schreibenden Operation einen Eintrag erstellt. |
-
-### Was NICHT hinzufuegen
-
-| Vermeiden | Warum | Stattdessen |
-|-----------|-------|-------------|
-| Passport.js | Overkill fuer bestehende JWT-Auth. Passport wuerde Session-Management einfuehren, das mit dem aktuellen stateless JWT-Ansatz kollidiert. App hat bereits funktionierendes RBAC. | jsonwebtoken beibehalten + Refresh-Token-Logik selbst implementieren |
-| Zod (Backend) | Zod ist primaer fuer TypeScript optimiert. Backend ist reines JavaScript. TypeScript-Type-Inference (Zods Staerke) bringt hier keinen Vorteil. | express-validator -- designed fuer Express, kein Schema-Boilerplate |
-| Joi | Schwergewichtiger als express-validator, mehr Dependencies. Fuer ein bestehendes Express-Backend ohne Validation-Layer ist express-validator leichtgewichtiger einzufuehren. | express-validator |
-| Redis (jetzt) | Fuer <500 User nicht noetig. In-Memory Rate Limiter und JWT Refresh Tokens in PostgreSQL reichen aus. Redis einfuehren wenn Skalierung es erfordert. | PostgreSQL fuer Token-Storage, In-Memory fuer Rate Limiting |
-| OAuth2 / OpenID Connect | App hat geschlossene Nutzergruppe (Kirchengemeinden). Keine externen Identity Provider noetig. Selbst-implementiertes JWT+RBAC ist ausreichend und einfacher zu warten. | Bestehendes JWT + RBAC System haerten |
-
----
-
-## Capacitor Version -- Wichtiger Hinweis
-
-| Technology | Aktuelle Version | Neueste Version | Empfehlung |
-|------------|-----------------|-----------------|------------|
-| @capacitor/core | 7.4.2 | 7.5.0 (11.02.2026) | **Auf 7.5.0 updaten.** Bugfixes fuer Cookies und neue CLI Features. NICHT auf Capacitor 8.x upgraden -- 8.0 wurde parallel released (11.02.2026), erfordert aber Migration und ist zu frisch fuer Produktionseinsatz. Confidence: HIGH (GitHub Releases verifiziert) |
-
----
-
-## Installation
+**Installation:**
 
 ```bash
-# Backend Security Dependencies
-cd backend && npm install helmet@^8.1.0 express-validator@^7.2.0
-
-# Frontend Updates
-cd frontend && npm install @ionic/react@^8.7.18 @ionic/react-router@^8.7.18 @rdlabo/ionic-theme-ios26@^2.2.1 @capacitor/core@7.5.0 @capacitor/ios@7.5.0 @capacitor/android@7.5.0
-
-# Dev Dependencies (keine neuen)
+cd backend && npm install node-cron@^3.0.3
 ```
 
----
+**Confidence:** HIGH — node-cron ist De-facto-Standard fuer Node.js-Cron-Jobs. 2095+ abhaengige Packages im npm-Registry.
 
-## Alternatives Considered
+### Frontend: Keine neuen Dependencies
 
-| Kategorie | Empfohlen | Alternative | Wann Alternative waehlen |
-|-----------|-----------|-------------|-------------------------|
-| Input Validation | express-validator | Zod | Wenn Backend auf TypeScript migriert wird -- dann Zod fuer End-to-End Type Safety |
-| Rate Limit Store | In-Memory (express-rate-limit default) | Redis via rate-limit-redis | Wenn >500 gleichzeitige User oder Multi-Instance Deployment |
-| Theme Library (iOS) | @rdlabo/ionic-theme-ios26 | Ionic Native iOS 26 Support | Wenn Ionic offiziell iOS 26 Styles integriert (Issue #30466 offen). Dann rdlabo-Library entfernen. |
-| Theme Library (Android) | @rdlabo/ionic-theme-md3 | Kein Theme (Ionic Default MD) | Wenn MD3 Styling nicht gewuenscht. Ionic Default ist Material Design 2, sieht datiert aus auf Android. |
-| Token Storage | PostgreSQL Tabelle | Redis | Wenn Token-Lookup-Performance zum Bottleneck wird (unwahrscheinlich bei <500 Usern) |
-| Audit Logging | PostgreSQL Tabelle | ELK Stack / Loki | Wenn detaillierte Log-Analyse und Dashboard benoetigt werden. Fuer Start reicht PostgreSQL. |
+Alle benoetigten Plugins sind bereits installiert. Kein neues Package noetig.
 
 ---
 
-## Version Compatibility
+## Bestehende APIs besser nutzen (kein Install noetig)
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| @ionic/react@8.7.18 | React 19.0.0 | Ionic 8 unterstuetzt React 18 und 19. Verifiziert durch bestehende funktionierende App. |
-| @ionic/react@8.7.18 | @rdlabo/ionic-theme-ios26@2.2.1 | rdlabo-Themes sind CSS-only, keine JavaScript-API-Aenderungen zwischen Ionic Minor Versions. |
-| @rdlabo/ionic-theme-ios26@2.2.1 | @rdlabo/ionic-theme-md3@1.0.2 | Explizit aufeinander abgestimmt (gleicher Maintainer, rdlabo-team). |
-| @capacitor/core@7.5.0 | @ionic/react@8.7.18 | Capacitor 7.x ist vollstaendig kompatibel mit Ionic 8.x. |
-| helmet@8.1.0 | express@4.18.2 | Helmet 8 unterstuetzt Express 4 und 5. |
-| express-validator@7.2.0 | express@4.18.2 | express-validator ist fuer Express 4/5 designed. |
-| react-router-dom@5.3.4 | @ionic/react-router@8.7.18 | Ionic React Router basiert auf React Router v5. NICHT auf v6 upgraden. |
+### 1. firebase-admin: sendEachForMulticast (Batch-Versand)
 
----
+**Status:** Bereits in firebase-admin ^12.7.0 enthalten, aktuell NICHT genutzt.
 
-## Stack Patterns by Variant
+**Aktuelles Problem:** `pushService.js` sendet Nachrichten einzeln in einer for-Schleife. Bei Event-Erinnerungen an 30+ Konfis wird das langsam.
 
-**Fuer Admin-Views (Design-Konsistenz):**
-- Bestehende `app-list-item`, `app-card`, `app-chip` CSS-Klassen aus variables.css verwenden
-- Kompakter Header: Icon + Titel inline, optional Stats-Row
-- Farb-Mapping: Jeder Bereich hat definierte Farbe (`--app-color-events`, `--app-color-chat`, etc.)
-- Keine eigenen Inline-Styles oder View-spezifische CSS-Dateien fuer grundlegende Layouts
+**Empfehlung:** `sendEachForMulticast` fuer Batch-Szenarien nutzen (bis zu 500 Tokens pro Aufruf):
 
-**Fuer Modale (useIonModal Pattern):**
-- Immer `useIonModal` Hook verwenden, NIEMALS `<IonModal isOpen={state}>`
-- `presentingElement` auf den aktuellen `IonRouterOutlet` setzen fuer Card-Style auf iOS
-- `canDismiss` nutzen fuer Formulare mit ungespeicherten Aenderungen
-- Beim Dismiss: Daten ueber Callback zurueckgeben, dann Parent-Daten neu laden
-
-**Fuer Security Middleware-Reihenfolge:**
 ```javascript
-// 1. Helmet zuerst (Security Headers)
-app.use(helmet());
-// 2. CORS (Origin-Filterung)
-app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
-// 3. Rate Limiting (globale Begrenzung)
-app.use(generalLimiter);
-// 4. Body Parsing
-app.use(express.json({ limit: '10mb' }));
-// 5. Authentifizierung (verifyTokenRBAC auf geschuetzten Routes)
-// 6. Input Validation (express-validator auf einzelnen Endpoints)
+// AKTUELL (sequentiell, langsam):
+for (const token of tokens) {
+  await sendFirebasePushNotification(token.token, notification);
+}
+
+// BESSER (Batch, bis zu 500 Tokens):
+const message = {
+  tokens: tokenList,  // string[] mit FCM-Tokens
+  notification: { title, body },
+  data: { type: 'event_reminder', ... },
+  apns: { payload: { aps: { badge: badgeCount, sound: 'default' } } }
+};
+const response = await admin.messaging().sendEachForMulticast(message);
+// response.responses[i].success / response.responses[i].error
 ```
 
-**Fuer JWT Refresh Token Flow:**
+**Wichtig:** `sendMulticast()` ist deprecated seit firebase-admin v12. `sendEachForMulticast()` ist der aktuelle Ersatz.
+
+**Wann verwenden:** Event-Erinnerungen (FLW-01), neue Events an alle Konfis, Event-Absagen. NICHT fuer Einzel-Push (Chat, Badge-Earned etc.).
+
+**Confidence:** HIGH — Offizielle Firebase-Dokumentation.
+
+### 2. firebase-admin: Error-Codes fuer Token-Cleanup (CLN-01)
+
+Bereits in firebase-admin enthalten. Folgende Error-Codes identifizieren ungueltige Tokens:
+
+```javascript
+const INVALID_TOKEN_ERRORS = [
+  'messaging/invalid-registration-token',
+  'messaging/registration-token-not-registered'
+];
 ```
-Login → Access Token (2h) + Refresh Token (7d, HttpOnly Cookie)
-API Request → Access Token im Authorization Header
-Token Expired → POST /auth/refresh mit Refresh Token Cookie
-  → Neues Access Token + neues Refresh Token (Rotation)
-  → Altes Refresh Token invalidiert
-Logout → DELETE /auth/logout → Alle Refresh Tokens geloescht
+
+**Aktueller Zustand:** `firebase.js` loggt Fehler, loescht aber keine Tokens aus der DB. Jeder fehlgeschlagene Push an einen ungueltigen Token bleibt in der DB und erzeugt bei jedem Versand erneut einen Fehler.
+
+**Aenderung:** Nach jedem Push-Fehler Error-Code pruefen. Bei ungueltigem Token: DELETE FROM push_tokens WHERE token = $1.
+
+**Confidence:** HIGH — Firebase-Dokumentation listet Error-Codes explizit.
+
+### 3. @capawesome/capacitor-badge: Badge.set() und Badge.clear()
+
+**Bereits genutzt** in BadgeContext.tsx. Funktioniert korrekt auf iOS.
+
+**Android-Problem (dokumentiert):** Auf Android verwaltet das System den Badge-Count basierend auf Notification-Center-Eintraegen SEPARAT von `Badge.set()`. `Badge.clear()` hat keinen Einfluss auf den System-Notification-Count.
+
+**Workaround:** Beim App-Oeffnen `PushNotifications.removeAllDeliveredNotifications()` aufrufen (loescht Notification-Center), DANN `Badge.set({ count: serverCount })`. So stimmen System-Badge und App-Badge ueberein.
+
+**Confidence:** MEDIUM — Dokumentiert in capawesome GitHub Issues (#203), Workaround muss auf Zielgeraeten getestet werden.
+
+---
+
+## Architektur-Entscheidungen fuer v1.5
+
+### 1. Cron-Jobs: Im Express-Prozess, KEIN separater Worker
+
+**Warum:** App laeuft in einem einzelnen Docker-Container. Separater Worker-Prozess waere Overhead ohne Nutzen. node-cron im Express-Prozess reicht fuer 2 Jobs.
+
+**Geplante Jobs:**
+
+| Job | Cron-Ausdruck | Zweck | Requirement |
+|-----|---------------|-------|-------------|
+| Event-Erinnerung | `*/15 * * * *` (alle 15 Min) | Prueft Events in den naechsten 24h/1h, sendet Push an angemeldete Konfis | FLW-01 |
+| Token-Cleanup | `0 3 * * *` (taeglich 03:00) | Loescht Tokens aelter als 60 Tage, Tokens von geloeschten Usern | CLN-02 |
+
+**Dateistruktur:**
+
+```
+backend/
+  cron/
+    index.js              # Startet alle Cron-Jobs
+    eventReminders.js     # Event-Erinnerungen Logik
+    tokenCleanup.js       # Token-Bereinigung Logik
+  config/
+    pushTypes.js          # Notification-Type Registry
+```
+
+### 2. Badge-Count: Server als Single Source of Truth (BDG-01)
+
+**Aktueller Zustand (3 unabhaengige Quellen):**
+- BadgeContext: Holt unread_count via `/chat/rooms` API
+- Device-Badge: Wird via `Badge.set()` gesetzt
+- Push-Payload: APNS badge-Count im Payload
+
+**Problem:** Diese drei koennen divergieren. BadgeContext refresht nur bei WebSocket-Event, Push-Payload hat statischen Wert, Device-Badge wird nur bei State-Change aktualisiert.
+
+**Loesung:**
+
+```
+PostgreSQL (chat_messages.read_at IS NULL) = Source of Truth
+
+Ausspielwege (alle nutzen denselben Server-Count):
+  1. Push-Payload: apns.payload.aps.badge = serverCount
+  2. WebSocket: badgeUpdate-Event mit serverCount
+  3. API: GET /chat/rooms liefert unread_count pro Raum
+
+Frontend:
+  - BadgeContext konsumiert Server-Count, berechnet NIE selbst
+  - Badge.set() wird NUR mit Server-Count aufgerufen
+  - Bei App-Resume: API-Refresh, dann Badge.set()
+```
+
+### 3. Token-Lifecycle: Bestehendes Schema reicht (TKN-01 bis TKN-04)
+
+Die `push_tokens` Tabelle hat bereits alle benoetigten Felder:
+
+```sql
+push_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  user_type TEXT NOT NULL,
+  token TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  device_id TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, platform, device_id)
+)
+```
+
+**Keine Schema-Aenderung noetig.** Logik-Aenderungen:
+
+| Requirement | Was fehlt | Wo aendern |
+|-------------|-----------|------------|
+| TKN-01 (Logout-Cleanup) | Frontend ruft DELETE /device-token nicht zuverlaessig auf | AppContext.tsx Logout-Flow |
+| TKN-02 (Fallback-ID) | `device_id NOT LIKE '%\\_\\_%'` filtert Fallback-IDs aus | pushService.js Query anpassen |
+| TKN-03 (Token-Refresh) | Logik existiert in AppContext (12h Check), braucht nur Verifizierung | AppContext.tsx |
+| TKN-04 (User-Wechsel) | DELETE WHERE token AND user_id != new_user existiert bereits | notifications.js (bereits korrekt) |
+
+### 4. Push-Type Registry: Code-Level Config (CFG-01, CFG-02)
+
+Kein neues Package noetig. Einfaches JavaScript-Objekt:
+
+```javascript
+// backend/config/pushTypes.js
+const PUSH_TYPES = {
+  chat_message:          { enabled: true,  label: 'Chat-Nachrichten' },
+  event_reminder_1day:   { enabled: true,  label: 'Event-Erinnerung (1 Tag)' },
+  event_reminder_1hour:  { enabled: true,  label: 'Event-Erinnerung (1 Stunde)' },
+  new_activity_request:  { enabled: true,  label: 'Neuer Aktivitaets-Antrag' },
+  activity_request_status: { enabled: true, label: 'Antrag genehmigt/abgelehnt' },
+  badge_earned:          { enabled: true,  label: 'Badge erhalten' },
+  level_up:              { enabled: true,  label: 'Level-Up' },
+  points_milestone:      { enabled: true,  label: 'Punkte-Meilenstein' },
+  new_event:             { enabled: true,  label: 'Neues Event' },
+  event_registered:      { enabled: true,  label: 'Event-Anmeldung' },
+  event_unregistered:    { enabled: true,  label: 'Event-Abmeldung' },
+  event_cancelled:       { enabled: true,  label: 'Event abgesagt' },
+  event_attendance:      { enabled: true,  label: 'Anwesenheit verbucht' },
+  waitlist_promotion:    { enabled: true,  label: 'Wartelisten-Nachrueecker' },
+  bonus_points:          { enabled: true,  label: 'Bonuspunkte' },
+  activity_assigned:     { enabled: true,  label: 'Aktivitaet zugewiesen' },
+  events_pending:        { enabled: true,  label: 'Events warten auf Verbuchung' },
+  new_registration:      { enabled: true,  label: 'Neue Konfi-Registrierung' },
+};
+
+module.exports = PUSH_TYPES;
+```
+
+**PushService nutzt Registry:** Vor jedem Push pruefen ob `PUSH_TYPES[type].enabled === true`.
+
+**Warum kein DB-Config:** Per-User-Preferences sind out-of-scope fuer v1.5 (PREF-01/PREF-02 in Future Requirements). Code-Level Defaults reichen.
+
+---
+
+## Was NICHT hinzugefuegt werden soll
+
+| Technologie | Warum nicht |
+|-------------|-------------|
+| Redis / BullMQ | Kein Queue-System noetig. Max 50-100 Push-Nachrichten pro Event-Erinnerung. node-cron + Batch-Versand reicht. |
+| @capacitor-firebase/messaging | Wuerde bestehende Push-Integration (Custom FCM Plugin in AppDelegate.swift) komplett ersetzen. Zu grosses Risiko fuer v1.5. |
+| web-push | Out of scope — App ist native-only |
+| Notification-Preferences DB-Tabelle | Out of scope fuer v1.5, Code-Level Config reicht |
+| Separate Worker-Prozesse / PM2 | Ein Docker-Container, ein Prozess. Cron-Jobs sind CPU-leicht (DB-Query + HTTP-Calls). |
+| node-schedule | Bietet Date-basiertes Scheduling, aber Event-Erinnerungen brauchen Polling-Pattern (alle 15 Min pruefen), nicht punkt-genaue Ausfuehrung |
+| Firebase Cloud Functions | Backend laeuft self-hosted auf Hetzner, nicht auf Google Cloud. Cloud Functions waeren ein separates Deployment. |
+
+---
+
+## Zusammenfassung: Was sich aendert
+
+```
+Backend:
+  + npm install node-cron@^3.0.3    # Einzige neue Dependency
+  + backend/cron/index.js            # Cron-Job Starter
+  + backend/cron/eventReminders.js   # Event-Erinnerungen (FLW-01)
+  + backend/cron/tokenCleanup.js     # Token-Bereinigung (CLN-02)
+  + backend/config/pushTypes.js      # Notification-Type Registry (CFG-01, CFG-02)
+  ~ backend/push/firebase.js         # Error-Handling + Token-Cleanup (CLN-01)
+  ~ backend/services/pushService.js  # sendEachForMulticast + Badge-Count + Type-Check
+  ~ backend/routes/notifications.js  # Logout-Token-Cleanup robuster (TKN-01)
+  ~ backend/server.js                # Cron-Jobs starten
+
+Frontend:
+  (keine neuen Dependencies)
+  ~ BadgeContext.tsx                  # Server als Source of Truth (BDG-01)
+  ~ AppContext.tsx                    # Logout: Token loeschen (TKN-01), Fallback-ID Fix (TKN-02)
 ```
 
 ---
 
-## Offene Fragen fuer Phase-spezifisches Research
+## Requirement-zu-Stack Mapping
 
-1. **registerTabBarEffect Bug mit 6+ Tabs:** Ist dies in ionic-theme-ios26 v2.2.1 gefixt? Muss waehrend der Implementierung getestet werden.
-2. **Capacitor 8 Migration:** Capacitor 8.0 wurde am 11.02.2026 released. Soll dies im naechsten Milestone evaluiert werden? Breaking Changes pruefen.
-3. **Ionic Native iOS 26 Support:** Issue #30466 im Ionic Framework Repository ist offen. Wenn Ionic dies nativ integriert, kann rdlabo-Library entfernt werden. Monitoring empfohlen.
-4. **express-validator vs. manuelle Validation:** Einige Routes haben bereits grundlegende req.body Checks. Soll express-validator schrittweise oder auf einmal eingefuehrt werden?
+| Requirement | Stack-Komponente | Neue Dependency? |
+|-------------|------------------|------------------|
+| TKN-01 | AppContext.tsx + notifications.js | Nein |
+| TKN-02 | pushService.js Query-Fix | Nein |
+| TKN-03 | AppContext.tsx (bereits implementiert) | Nein |
+| TKN-04 | notifications.js (bereits implementiert) | Nein |
+| CLN-01 | firebase.js Error-Code Check | Nein |
+| CLN-02 | node-cron + tokenCleanup.js | **Ja: node-cron** |
+| FLW-01 | node-cron + eventReminders.js + sendEachForMulticast | **Ja: node-cron** |
+| FLW-02 | pushService.js (neuer Flow) | Nein |
+| FLW-03 | pushService.js (sendLevelUpToKonfi existiert bereits!) | Nein |
+| FLW-04 | pushService.js (neuer Flow, Meilenstein-Check) | Nein |
+| CFG-01 | config/pushTypes.js | Nein |
+| CFG-02 | config/pushTypes.js | Nein |
+| BDG-01 | Server-Side Count Berechnung | Nein |
+| BDG-02 | BadgeContext.tsx + APNS Payload | Nein |
+| BDG-03 | BadgeContext.tsx / AppContext.tsx | Nein |
+| BDG-04 | BadgeContext.tsx State-Sync | Nein |
+| CMP-01 | Audit bestehender Push-Flows | Nein |
 
----
-
-## Sources
-
-- [Ionic Framework GitHub Releases](https://github.com/ionic-team/ionic-framework/releases) -- Verifiziert: v8.7.18 (25.02.2026), Confidence: HIGH
-- [Capacitor GitHub Releases](https://github.com/ionic-team/capacitor/releases) -- Verifiziert: v7.5.0 + v8.1.0 (11.02.2026), Confidence: HIGH
-- [rdlabo/ionic-theme-ios26 GitHub Releases](https://github.com/rdlabo-team/ionic-theme-ios26/releases) -- Verifiziert: v2.2.1 (22.02.2026), Confidence: HIGH
-- [rdlabo/ionic-theme-md3 GitHub Releases](https://github.com/rdlabo-team/ionic-theme-md3/releases) -- Verifiziert: v1.0.2 (22.01.2026), Confidence: HIGH
-- [Ionic Framework iOS 26 Support Issue #30466](https://github.com/ionic-team/ionic-framework/issues/30466) -- Status: Offen, Confidence: HIGH
-- [Express.js Security Best Practices](https://expressjs.com/en/advanced/best-practice-security.html) -- Helmet + CORS Empfehlung, Confidence: HIGH
-- [Helmet.js](https://helmetjs.github.io/) -- v8.1.0, 13 Security Headers, Confidence: HIGH
-- [Ionic Theming Documentation](https://ionicframework.com/docs/theming/basics) -- CSS Custom Properties Pattern, Confidence: HIGH
-- [Ionic Modal Documentation](https://ionicframework.com/docs/api/modal) -- useIonModal, presentingElement, canDismiss, Confidence: HIGH
-- [JWT Refresh Token Rotation Best Practices](https://www.freecodecamp.org/news/how-to-build-a-secure-authentication-system-with-jwt-and-refresh-tokens/) -- Token Rotation Pattern, Confidence: MEDIUM
-- [Auth0 Refresh Token Guide](https://auth0.com/blog/refresh-tokens-what-are-they-and-when-to-use-them/) -- HttpOnly Cookie Storage, Confidence: HIGH
-- [express-rate-limit npm](https://www.npmjs.com/package/express-rate-limit) -- v8.2.1 Konfiguration, Confidence: HIGH
-- [Joi vs Zod Comparison (Better Stack)](https://betterstack.com/community/guides/scaling-nodejs/joi-vs-zod/) -- Validation Library Vergleich, Confidence: MEDIUM
-- [MDN: Securing APIs with Express Rate Limit](https://developer.mozilla.org/en-US/blog/securing-apis-express-rate-limit-and-slow-down/) -- Rate Limiting Patterns, Confidence: HIGH
+**Ergebnis:** 1 neue Dependency (node-cron). Rest sind Code-Aenderungen an bestehenden Dateien.
 
 ---
 
-*Stack research for: Konfi Quest -- UI Design-Konsistenz & Security Hardening*
-*Researched: 2026-02-27*
+## Quellen
+
+- [node-cron npm](https://www.npmjs.com/package/node-cron) — v3.0.3 stable, aktiv gepflegt (Confidence: HIGH)
+- [Firebase Admin SDK: Send Messages](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk) — sendEachForMulticast Dokumentation (Confidence: HIGH)
+- [Firebase Messaging API Reference](https://firebase.google.com/docs/reference/admin/node/firebase-admin.messaging.messaging) — Error-Codes, Batch-APIs (Confidence: HIGH)
+- [Capawesome Badge Plugin](https://capawesome.io/plugins/badge/) — Badge-Count Management (Confidence: HIGH)
+- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) — Token-Registration, removeAllDeliveredNotifications (Confidence: HIGH)
+- [Android Badge Count Issue #203](https://github.com/capawesome-team/capacitor-plugins/issues/203) — Badge.clear() vs System-Count (Confidence: MEDIUM)
+- [Firebase sendMulticast Deprecation](https://community.flutterflow.io/discussions/post/the-messaging-sendmulticast-function-is-no-longer-supported-in-firebase-KVt3BAb65dNRhk6) — sendMulticast deprecated, sendEachForMulticast empfohlen (Confidence: HIGH)
+
+---
+
+*Stack research for: Konfi Quest v1.5 Push-Notifications*
+*Researched: 2026-03-05*
