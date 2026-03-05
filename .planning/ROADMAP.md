@@ -112,11 +112,11 @@ Plans:
   3. Token wird bei App Resume (nach >12h) automatisch refreshed ohne User-Aktion
   4. Bei User-Wechsel auf demselben Geraet erhaelt nur der neue User Pushes
   5. Firebase-Errors mit ungueltigen Tokens fuehren sofort zur Loeschung des Tokens aus der DB
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 26-01: TBD
-- [ ] 26-02: TBD
+- [ ] 26-01-PLAN.md — Backend: Fallback-ID Filter entfernen, Firebase Error-Handling in sendToUser/sendChatNotification
+- [ ] 26-02-PLAN.md — Frontend: localStorage-Key Refresh umbenennen, Logout/User-Wechsel Verifikation
 
 ### Phase 27: Badge-Count Single Source of Truth
 **Goal**: Unread-Badge-Zahlen sind ueberall konsistent — App-Icon, TabBar und Chat-Liste zeigen denselben korrekten Wert
@@ -193,8 +193,8 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 22. Punkte-Vergabe Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 24. Chat-Logik Debug | v1.4 | 1/1 | Complete | 2026-03-05 |
-| 25. Foundation + Konfiguration | 1/1 | Complete    | 2026-03-05 | - |
-| 26. Token-Lifecycle | v1.5 | 0/? | Not started | - |
+| 25. Foundation + Konfiguration | v1.5 | 1/1 | Complete | 2026-03-05 |
+| 26. Token-Lifecycle | v1.5 | 0/2 | Not started | - |
 | 27. Badge-Count Single Source of Truth | v1.5 | 0/? | Not started | - |
 | 28. Fehlende Push-Flows | v1.5 | 0/? | Not started | - |
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/? | Not started | - |
