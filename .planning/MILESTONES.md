@@ -1,5 +1,14 @@
 # Milestones
 
+## v1.4 Logik-Debug (Shipped: 2026-03-05)
+
+**Phases completed:** 5 phases, 9 plans, 0 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v1.3 Layout-Polishing (Shipped: 2026-03-04)
 
 **Phases completed:** 9 Phasen (12-19 + 17.1), 18 Plans
