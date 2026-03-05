@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
 status: in-progress
-last_updated: "2026-03-05T21:13:45.000Z"
+last_updated: "2026-03-05T21:12:26Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 
 ## Current Position
 
-Phase: 23 (4 of 5) (User-Rechte und Institutionen Debug) -- IN PROGRESS
-Plan: 23-01 complete (1 of 2)
-Status: Plan 23-01 abgeschlossen, Plan 23-02 ausstehend
-Last activity: 2026-03-05 -- Plan 23-01 last_login_at Fix und Org Rate-Limiter abgeschlossen
+Phase: 23 (4 of 5) (User-Rechte und Institutionen Debug) -- COMPLETE
+Plan: 23-02 complete (2 of 2)
+Status: Phase 23 komplett abgeschlossen
+Last activity: 2026-03-05 -- Plan 23-02 Jahrgang-Filter und Org-Löschkette abgeschlossen
 
-Progress: [########--] 87%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -47,6 +47,9 @@ Progress: [########--] 87%
 ### Decisions
 
 All v1.0-v1.3 decisions archived in PROJECT.md Key Decisions table.
+- [23-02] Teamer-Jahrgang-Prüfung vor Aktivitäts-Zuweisung per konfi_profiles.jahrgang_id
+- [23-02] Events ohne Jahrgang-Zuweisung bleiben für alle Teamer sichtbar
+- [23-02] Org-Löschung entfernt alle 30+ Tabellen explizit statt CASCADE-Annahme
 - [23-01] last_login_at UPDATE gehoert ausschliesslich in den Login-Endpunkt, nicht in die Token-Verifikation
 - [23-01] orgLimiter mit 20 req/15min auf alle Org-Endpunkte (inkl. GET)
 - [22-02] konfi_profiles als Single Source of Truth fuer Punkte-Totals
@@ -74,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 23-01-PLAN.md
-Resume file: .planning/phases/23-user-rechte-institutionen-debug/23-01-SUMMARY.md
+Stopped at: Completed 23-02-PLAN.md (Phase 23 complete)
+Resume file: .planning/phases/23-user-rechte-institutionen-debug/23-02-SUMMARY.md

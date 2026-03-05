@@ -37,8 +37,8 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 ### User/Rechte/Institutionen
 
 - [x] **USR-01**: `last_login_at` wird nur beim echten Login aktualisiert, nicht bei jedem Request
-- [ ] **USR-02**: Jahrgang-Zugriffs-Filterung ist konsistent in allen relevanten Routes
-- [ ] **USR-03**: Org-Loeschung beruecksichtigt alle abhaengigen Daten korrekt (CASCADE verifiziert)
+- [x] **USR-02**: Jahrgang-Zugriffs-Filterung ist konsistent in allen relevanten Routes
+- [x] **USR-03**: Org-Loeschung beruecksichtigt alle abhaengigen Daten korrekt (CASCADE verifiziert)
 - [x] **USR-04**: Organisations-Endpunkte haben angemessenes Rate-Limiting
 
 ### Chat-Logik
@@ -88,8 +88,8 @@ Requirements fuer Logik-Debug Milestone. Jedes Requirement wird einer Roadmap-Ph
 | PNK-04 | Phase 22 | Complete |
 | PNK-05 | Phase 22 | Complete |
 | USR-01 | Phase 23 | Complete |
-| USR-02 | Phase 23 | Pending |
-| USR-03 | Phase 23 | Pending |
+| USR-02 | Phase 23 | Complete |
+| USR-03 | Phase 23 | Complete |
 | USR-04 | Phase 23 | Complete |
 | CHT-01 | Phase 24 | Pending |
 | CHT-02 | Phase 24 | Pending |
