@@ -946,40 +946,45 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       return res.status(401).json({ error: 'Ungültiger Token' });
     }
     try {
-      const filename = req.params.filename;
-      
+      // Path-Traversal-Schutz: nur den Dateinamen ohne Verzeichniskomponenten verwenden
+      const filename = path.basename(req.params.filename);
+
+      // Nur Hex-Hashes (multer MD5) als Dateinamen akzeptieren
+      if (!/^[a-f0-9]+$/.test(filename)) {
+        return res.status(400).json({ error: 'Ungültiger Dateiname' });
+      }
+
       // Check if user has access to this file by checking chat membership
       const { rows: [fileMessage] } = await db.query(
-        `SELECT cm.room_id 
-         FROM chat_messages cm 
+        `SELECT cm.room_id, cm.file_name
+         FROM chat_messages cm
          JOIN chat_rooms cr ON cm.room_id = cr.id
          WHERE cm.file_path = $1 AND cr.organization_id = $2`,
         [filename, req.user.organization_id]
       );
-      
+
       if (!fileMessage) {
         return res.status(404).json({ error: 'Datei nicht gefunden' });
       }
-      
+
       // Check if user is member of the chat room
       const { rows: [membership] } = await db.query(
-        `SELECT 1 FROM chat_participants cp 
+        `SELECT 1 FROM chat_participants cp
          WHERE cp.room_id = $1 AND cp.user_id = $2`,
         [fileMessage.room_id, req.user.id]
       );
-      
+
       if (!membership) {
         return res.status(403).json({ error: 'Zugriff verweigert' });
       }
-      
+
       const filePath = path.join(uploadsDir, 'chat', filename);
-      
+
       if (fs.existsSync(filePath)) {
-        // Set correct content type for different file types
-        const ext = path.extname(filename).toLowerCase();
+        // Content-Type aus dem originalen Dateinamen (DB) ableiten
         const contentTypes = {
           '.jpg': 'image/jpeg',
-          '.jpeg': 'image/jpeg', 
+          '.jpeg': 'image/jpeg',
           '.png': 'image/png',
           '.gif': 'image/gif',
           '.webp': 'image/webp',
@@ -987,11 +992,14 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
         };
-        
-        if (contentTypes[ext]) {
-          res.setHeader('Content-Type', contentTypes[ext]);
+
+        if (fileMessage.file_name) {
+          const ext = path.extname(fileMessage.file_name).toLowerCase();
+          if (contentTypes[ext]) {
+            res.setHeader('Content-Type', contentTypes[ext]);
+          }
         }
-        
+
         res.sendFile(filePath);
       } else {
         res.status(404).json({ error: 'Datei nicht auf dem Server gefunden' });
