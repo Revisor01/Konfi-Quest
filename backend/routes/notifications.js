@@ -30,18 +30,6 @@ module.exports = (db, verifyTokenRBAC) => {
     }
 
     try {
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS push_tokens (
-          id SERIAL PRIMARY KEY,
-          user_id INTEGER NOT NULL,
-          user_type TEXT NOT NULL,
-          token TEXT NOT NULL,
-          platform TEXT NOT NULL,
-          device_id TEXT NOT NULL,
-          updated_at TIMESTAMPTZ DEFAULT NOW(),
-          UNIQUE(user_id, platform, device_id)
-        )`);
-
       // Device ID generieren falls nicht vorhanden
       const finalDeviceId = device_id || `${platform}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
