@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Logik-Debug
-status: in-progress
-last_updated: "2026-03-04T23:58:48Z"
+status: unknown
+last_updated: "2026-03-05T00:02:20.525Z"
 progress:
   total_phases: 2
   completed_phases: 2
