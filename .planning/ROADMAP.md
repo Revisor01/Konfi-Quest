@@ -80,7 +80,7 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
 
 **Milestone Goal:** Push-Notification-System zuverlaessig und vollstaendig machen — Token-Lifecycle, fehlende Flows, Admin-Konfiguration, Badge-Count-Sync.
 
-- [ ] **Phase 25: Foundation + Konfiguration** - NotificationTypeRegistry, DB-Schema-Fixes, Push-Type Toggles
+- [ ] **Phase 25: Foundation + Konfiguration** - DB-Schema-Fixes, Firebase Error-Code Forwarding, Push-Type Dokumentation
 - [ ] **Phase 26: Token-Lifecycle** - Token-Zustellung zuverlaessig machen (Logout, Fallback-ID, Refresh, Wechsel, Invalidierung)
 - [ ] **Phase 27: Badge-Count Single Source of Truth** - BadgeCountService als einzige Berechnungsquelle, korrekte Badge-Anzeige ueberall
 - [ ] **Phase 28: Fehlende Push-Flows** - Event-Erinnerungen, Admin-Alert, Level-Up, Punkte-Meilenstein
@@ -89,7 +89,7 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
 ## Phase Details
 
 ### Phase 25: Foundation + Konfiguration
-**Goal**: Push-System hat eine zentrale Type-Registry und sauberes DB-Schema als Grundlage fuer alle weiteren Aenderungen
+**Goal**: Push-System hat sauberes DB-Schema und Firebase Error-Code Forwarding als Grundlage fuer alle weiteren Aenderungen
 **Depends on**: Nothing (first phase of v1.5)
 **Requirements**: CFG-01, CFG-02
 **Success Criteria** (what must be TRUE):
@@ -97,10 +97,10 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
   2. Push-Types koennen per Flag aktiviert/deaktiviert werden und PushService prueft diese Flags vor dem Versand
   3. event_reminders Tabelle existiert in der DB (CREATE TABLE IF NOT EXISTS)
   4. push_tokens Tabelle hat error_count und last_error_at Spalten fuer spaetere Token-Bereinigung
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 25-01: TBD
+- [ ] 25-01-PLAN.md — DB-Schema Migration, Firebase Error-Code Forwarding, Push-Type Registry Dokumentation
 
 ### Phase 26: Token-Lifecycle
 **Goal**: Jedes Geraet erhaelt zuverlaessig Push-Notifications fuer den aktuell eingeloggten User — keine Ghost-Tokens, keine verlorenen Geraete
@@ -193,7 +193,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 22. Punkte-Vergabe Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 24. Chat-Logik Debug | v1.4 | 1/1 | Complete | 2026-03-05 |
-| 25. Foundation + Konfiguration | v1.5 | 0/? | Not started | - |
+| 25. Foundation + Konfiguration | v1.5 | 0/1 | Not started | - |
 | 26. Token-Lifecycle | v1.5 | 0/? | Not started | - |
 | 27. Badge-Count Single Source of Truth | v1.5 | 0/? | Not started | - |
 | 28. Fehlende Push-Flows | v1.5 | 0/? | Not started | - |
