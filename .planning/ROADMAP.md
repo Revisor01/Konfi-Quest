@@ -114,10 +114,11 @@ Plans:
   2. Loeschen von Bonus-Punkten kann konfi_profiles nie unter 0 setzen
   3. Es gibt genau einen Endpunkt fuer Bonus-Punkte-Operationen (keine doppelten Routen)
   4. Points-History zeigt korrekte Berechnungen ohne Abweichungen zwischen Anzeige und DB-Werten
-**Plans**: TBD
+**Plans**: 2 plans (Wave 1 -> Wave 2)
 
 Plans:
-- [ ] 22-01: TBD
+- [ ] 22-01-PLAN.md -- Transaktionssicherheit + Negativ-Schutz in activities.js und konfi-managment.js [PNK-01, PNK-02, PNK-03]
+- [ ] 22-02-PLAN.md -- Bonus-Route konsolidieren + Points-History konsistent machen [PNK-04, PNK-05]
 
 ### Phase 23: User/Rechte/Institutionen Debug
 **Goal**: RBAC-Rollen, Jahrgang-Filterung und Org-Verwaltung funktionieren lueckenlos und konsistent
@@ -174,6 +175,6 @@ Phases execute in numeric order: 20 -> 21 -> 22 -> 23 -> 24
 | 19. Super-Admin Ueberarbeitung | v1.3 | 2/2 | Complete | 2026-03-04 |
 | 20. Event-Logik Debug | 2/2 | Complete    | 2026-03-04 | - |
 | 21. Badge-Logik Debug | 2/2 | Complete    | 2026-03-05 | - |
-| 22. Punkte-Vergabe Debug | v1.4 | 0/? | Not started | - |
+| 22. Punkte-Vergabe Debug | v1.4 | 0/2 | Planned | - |
 | 23. User/Rechte/Institutionen Debug | v1.4 | 0/? | Not started | - |
 | 24. Chat-Logik Debug | v1.4 | 0/? | Not started | - |
