@@ -12,7 +12,6 @@ import {
   IonLabel,
   IonInput,
   IonList,
-  IonCheckbox,
   IonSearchbar,
   IonCard,
   IonCardContent,
@@ -325,11 +324,9 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                             <p>Admin</p>
                           </IonLabel>
 
-                          <IonCheckbox
-                            slot="end"
-                            checked={isSelected}
-                            color="tertiary"
-                          />
+                          {isSelected && (
+                            <IonIcon icon={checkmarkOutline} slot="end" style={{ color: '#17a2b8', fontSize: '1.2rem' }} />
+                          )}
                         </IonItem>
                       );
                     })}
@@ -390,11 +387,9 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ onClose, onSuccess, dis
                             <p>{konfi.jahrgang || 'Kein Jahrgang'}</p>
                           </IonLabel>
 
-                          <IonCheckbox
-                            slot="end"
-                            checked={isSelected}
-                            color="primary"
-                          />
+                          {isSelected && (
+                            <IonIcon icon={checkmarkOutline} slot="end" style={{ color: '#17a2b8', fontSize: '1.2rem' }} />
+                          )}
                         </IonItem>
                       );
                     })}
