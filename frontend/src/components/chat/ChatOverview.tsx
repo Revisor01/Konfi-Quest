@@ -60,7 +60,7 @@ interface ChatOverviewRef {
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom }, ref) => {
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
-  const { refreshFromAPI, badgeCount, setBadgeCount } = useBadge();
+  const { chatUnreadByRoom, refreshAllCounts } = useBadge();
   const [rooms, setRooms] = useState<ChatRoomOverview[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -78,12 +78,12 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     loadChatRooms();
   }, []);
 
-  // Live-Update der Chat-Räume wenn Badge Count sich ändert
+  // Live-Update der Chat-Raeume wenn Badge Count sich aendert
   useEffect(() => {
-    if (rooms.length > 0) { // Nur wenn bereits Räume geladen sind
+    if (rooms.length > 0) { // Nur wenn bereits Raeume geladen sind
       loadChatRooms(true); // Silent reload
     }
-  }, [badgeCount]);
+  }, [chatUnreadByRoom]);
 
   // WebSocket: Live-Update wenn neue Nachrichten ankommen
   useEffect(() => {
@@ -114,11 +114,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     try {
       const response = await api.get('/chat/rooms');
       setRooms(response.data);
-
-      // Badge Context immer aktualisieren wenn Räume geladen werden
-      // Berechne Total aus geladenen Daten (schneller als erneuter API Call)
-      const totalUnread = response.data.reduce((sum: number, room: any) => sum + (room.unread_count || 0), 0);
-      setBadgeCount(totalUnread);
     } catch (err) {
       if (!silent) setError('Fehler beim Laden der Chaträume');
  console.error('Error loading chat rooms:', err);
@@ -325,7 +320,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           colors={{ primary: '#06b6d4', secondary: '#0891b2' }}
           stats={[
             { value: rooms.length, label: 'CHATS' },
-            { value: rooms.reduce((sum, room) => sum + room.unread_count, 0), label: 'UNGELESEN' },
+            { value: Object.values(chatUnreadByRoom).reduce((sum, c) => sum + c, 0), label: 'UNGELESEN' },
             { value: rooms.filter(room => room.last_message && new Date(room.last_message.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length, label: 'AKTIV' }
           ]}
         />
@@ -448,26 +443,29 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                                   >
                                     <IonIcon icon={getRoomIcon(room)} />
                                   </div>
-                                  {room.unread_count > 0 && (
-                                    <span style={{
-                                      position: 'absolute',
-                                      top: '-4px',
-                                      right: '-4px',
-                                      fontSize: '0.55rem',
-                                      color: 'white',
-                                      fontWeight: '700',
-                                      backgroundColor: '#dc3545',
-                                      width: room.unread_count > 9 ? '18px' : '16px',
-                                      height: '16px',
-                                      borderRadius: '50%',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-                                    }}>
-                                      {room.unread_count > 9 ? '9+' : room.unread_count}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const unread = chatUnreadByRoom[room.id] ?? room.unread_count ?? 0;
+                                    return unread > 0 ? (
+                                      <span style={{
+                                        position: 'absolute',
+                                        top: '-4px',
+                                        right: '-4px',
+                                        fontSize: '0.55rem',
+                                        color: 'white',
+                                        fontWeight: '700',
+                                        backgroundColor: '#dc3545',
+                                        width: unread > 9 ? '18px' : '16px',
+                                        height: '16px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                                      }}>
+                                        {unread > 9 ? '9+' : unread}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                 </div>
 
                                 {/* Content */}
