@@ -54,19 +54,36 @@ class BackgroundService {
 
       for (const user of users) {
         try {
-          // Badge Count fuer User berechnen
+          // Badge Count fuer User berechnen (Chat + Antraege + Events)
           const badgeQuery = `
-            SELECT COUNT(DISTINCT cm.id)::int as total_unread
-            FROM chat_messages cm
-            JOIN chat_participants cp ON cm.room_id = cp.room_id
-            WHERE cp.user_id = $1
-            AND cp.user_type = $2
-            AND cm.created_at > cp.last_read_at
-            AND cm.user_id != $3
+            SELECT
+              (SELECT COUNT(DISTINCT cm.id)::int FROM chat_messages cm
+               JOIN chat_participants cp ON cm.room_id = cp.room_id
+               LEFT JOIN chat_read_status crs ON cm.room_id = crs.room_id
+                 AND crs.user_id = $1 AND crs.user_type = $2
+               WHERE cp.user_id = $1 AND cp.user_type = $2
+                 AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
+                 AND cm.deleted_at IS NULL
+                 AND NOT (cm.user_id = $1 AND cm.user_type = $2)
+              ) as chat_unread,
+              CASE WHEN $2 = 'admin' THEN (
+                SELECT COUNT(*)::int FROM activity_requests ar
+                JOIN activities a ON ar.activity_id = a.id
+                WHERE a.organization_id = (SELECT organization_id FROM users WHERE id = $1)
+                  AND ar.status = 'pending'
+              ) ELSE 0 END as pending_requests,
+              CASE WHEN $2 = 'admin' THEN (
+                SELECT COUNT(DISTINCT e.id)::int FROM events e
+                JOIN event_bookings eb ON e.id = eb.event_id
+                WHERE e.organization_id = (SELECT organization_id FROM users WHERE id = $1)
+                  AND e.event_date < CURRENT_DATE
+                  AND eb.status = 'confirmed'
+                  AND eb.attendance_status IS NULL
+              ) ELSE 0 END as pending_events
           `;
-          const { rows: [result] } = await db.query(badgeQuery, [user.user_id, user.user_type, user.user_id]);
+          const { rows: [result] } = await db.query(badgeQuery, [user.user_id, user.user_type]);
 
-          const badgeCount = result?.total_unread || 0;
+          const badgeCount = (result?.chat_unread || 0) + (result?.pending_requests || 0) + (result?.pending_events || 0);
 
           // Nur Badge Update senden wenn Count > 0 (spart Push Notifications)
           if (badgeCount > 0) {
