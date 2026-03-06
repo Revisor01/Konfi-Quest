@@ -9,10 +9,10 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 ### Token-Lifecycle
 
-- [ ] **TKN-01**: Device Token wird bei Logout vollstaendig geloescht (alle Tokens des Users auf diesem Device)
+- [x] **TKN-01**: Device Token wird bei Logout vollstaendig geloescht (alle Tokens des Users auf diesem Device)
 - [ ] **TKN-02**: Fallback Device-ID funktioniert zuverlaessig (keine Filterung in Queries)
-- [ ] **TKN-03**: Token-Refresh bei App Resume alle 12h zuverlaessig
-- [ ] **TKN-04**: Token-Uebergabe bei User-Wechsel auf selben Device korrekt (alter User Token geloescht)
+- [x] **TKN-03**: Token-Refresh bei App Resume alle 12h zuverlaessig
+- [x] **TKN-04**: Token-Uebergabe bei User-Wechsel auf selben Device korrekt (alter User Token geloescht)
 
 ### Token-Bereinigung
 
@@ -67,10 +67,10 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TKN-01 | Phase 26 | Pending |
+| TKN-01 | Phase 26 | Complete |
 | TKN-02 | Phase 26 | Pending |
-| TKN-03 | Phase 26 | Pending |
-| TKN-04 | Phase 26 | Pending |
+| TKN-03 | Phase 26 | Complete |
+| TKN-04 | Phase 26 | Complete |
 | CLN-01 | Phase 26 | Pending |
 | CLN-02 | Phase 29 | Pending |
 | FLW-01 | Phase 28 | Pending |
