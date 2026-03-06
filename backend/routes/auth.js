@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
+const PushService = require('../services/pushService');
 const router = express.Router();
 
 // Eigener Rate-Limiter für Passwort-Reset (getrennt vom Login-Limiter)
@@ -595,6 +596,19 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
         `, [newUser.id, invite.jahrgang_id, invite.id]);
 
         await client.query('COMMIT');
+
+        // Push-Notification an Jahrgangs-Admins
+        try {
+          await PushService.sendNewKonfiRegistrationToAdmins(
+            db,
+            invite.organization_id,
+            invite.jahrgang_id,
+            display_name,
+            invite.jahrgang_name
+          );
+        } catch (pushErr) {
+          console.error('Push for new registration failed:', pushErr);
+        }
 
         // Auto-Login: JWT Token generieren
         const token = jwt.sign({

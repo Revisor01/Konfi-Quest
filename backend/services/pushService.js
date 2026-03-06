@@ -25,6 +25,7 @@ const { sendFirebasePushNotification } = require('../push/firebase');
  * new_event                   | sendNewEventToOrgKonfis              | Org-Konfis      | ja
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
  * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
+ * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -729,6 +730,53 @@ class PushService {
       return await this.sendToMultipleUsers(db, adminIds, notification);
     } catch (error) {
  console.error('sendEventsPendingApprovalToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Neue Konfi-Registrierung - Push an Jahrgangs-Admins (Fallback: alle Org-Admins)
+   */
+  static async sendNewKonfiRegistrationToAdmins(db, organizationId, jahrgangId, konfiName, jahrgangName) {
+    try {
+      // Admins des Jahrgangs finden
+      const { rows: admins } = await db.query(`
+        SELECT DISTINCT u.id FROM users u
+        JOIN roles r ON u.role_id = r.id
+        JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
+        WHERE r.name IN ('admin', 'org_admin')
+          AND u.organization_id = $1
+          AND uja.jahrgang_id = $2
+      `, [organizationId, jahrgangId]);
+
+      // Fallback: Alle Org-Admins wenn kein Jahrgangs-Admin
+      let adminIds;
+      if (admins.length === 0) {
+        const { rows: allAdmins } = await db.query(`
+          SELECT u.id FROM users u
+          JOIN roles r ON u.role_id = r.id
+          WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1
+        `, [organizationId]);
+        adminIds = allAdmins.map(a => a.id);
+      } else {
+        adminIds = admins.map(a => a.id);
+      }
+
+      if (adminIds.length === 0) return { success: false, message: 'No admins found' };
+
+      const notification = {
+        title: 'Neue Registrierung',
+        body: `${konfiName} hat sich registriert (${jahrgangName})`,
+        data: {
+          type: 'new_konfi_registration',
+          organization_id: organizationId.toString(),
+          jahrgang_id: jahrgangId.toString()
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('sendNewKonfiRegistrationToAdmins error:', error);
       return { success: false, error: error.message };
     }
   }
