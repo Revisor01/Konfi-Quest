@@ -67,17 +67,40 @@ class PushService {
       let errorCount = 0;
 
       for (const token of tokens) {
-        try {
-          await sendFirebasePushNotification(token.token, {
-            title: notification.title,
-            body: notification.body,
-            badge: notification.badge || 1,
-            sound: 'default',
-            data: notification.data || {}
-          });
+        const result = await sendFirebasePushNotification(token.token, {
+          title: notification.title,
+          body: notification.body,
+          badge: notification.badge || 1,
+          sound: 'default',
+          data: notification.data || {}
+        });
+
+        if (result.success) {
           successCount++;
-        } catch (error) {
- console.error('Push failed for token:', error.message);
+          // Error-Count zurücksetzen bei Erfolg (nur wenn vorher > 0)
+          if (token.error_count > 0) {
+            await db.query(
+              'UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = $1',
+              [token.id]
+            );
+          }
+        } else {
+          // Fatale Errors: Token sofort löschen
+          const fatalCodes = [
+            'messaging/registration-token-not-registered',
+            'messaging/invalid-registration-token'
+          ];
+          if (fatalCodes.includes(result.errorCode)) {
+            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+          } else {
+            // Sonstige Errors: Counter erhöhen
+            await db.query(
+              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+              [token.id]
+            );
+            console.error('Push failed for token:', result.error);
+          }
           errorCount++;
         }
       }
@@ -143,24 +166,47 @@ class PushService {
 
       // An alle Devices senden
       for (const token of tokens) {
-        try {
-          await sendFirebasePushNotification(token.token, {
-            title: notificationData.title || 'Neue Nachricht',
-            body: notificationData.body,
-            badge: notificationData.badge || 1,
-            sound: 'default',
-            data: {
-              type: 'chat',
-              roomId: notificationData.roomId?.toString() || '',
-              messageId: notificationData.messageId?.toString() || '',
-              sender_id: notificationData.data?.sender_id?.toString() || '',
-              sender_name: notificationData.data?.sender_name || '',
-              room_name: notificationData.data?.room_name || ''
-            }
-          });
+        const result = await sendFirebasePushNotification(token.token, {
+          title: notificationData.title || 'Neue Nachricht',
+          body: notificationData.body,
+          badge: notificationData.badge || 1,
+          sound: 'default',
+          data: {
+            type: 'chat',
+            roomId: notificationData.roomId?.toString() || '',
+            messageId: notificationData.messageId?.toString() || '',
+            sender_id: notificationData.data?.sender_id?.toString() || '',
+            sender_name: notificationData.data?.sender_name || '',
+            room_name: notificationData.data?.room_name || ''
+          }
+        });
+
+        if (result.success) {
           successCount++;
-        } catch (error) {
- console.error('Push notification failed for token:', error);
+          // Error-Count zurücksetzen bei Erfolg (nur wenn vorher > 0)
+          if (token.error_count > 0) {
+            await db.query(
+              'UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = $1',
+              [token.id]
+            );
+          }
+        } else {
+          // Fatale Errors: Token sofort löschen
+          const fatalCodes = [
+            'messaging/registration-token-not-registered',
+            'messaging/invalid-registration-token'
+          ];
+          if (fatalCodes.includes(result.errorCode)) {
+            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+            console.warn(`Token ${token.id} gelöscht (${result.errorCode})`);
+          } else {
+            // Sonstige Errors: Counter erhöhen
+            await db.query(
+              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+              [token.id]
+            );
+            console.error('Push failed for token:', result.error);
+          }
           errorCount++;
         }
       }
