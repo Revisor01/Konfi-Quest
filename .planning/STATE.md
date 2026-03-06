@@ -83,5 +83,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 27-02-PLAN.md
-Resume file: .planning/phases/27-badge-count-single-source-of-truth/27-02-SUMMARY.md
+Stopped at: Phase 28 context gathered
+Resume file: .planning/phases/28-fehlende-push-flows/28-CONTEXT.md
