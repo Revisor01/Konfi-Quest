@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
 status: in-progress
-last_updated: "2026-03-06T18:59:00Z"
+last_updated: "2026-03-06T19:03:04.414Z"
 progress:
-  total_phases: 5
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.5 Push-Notifications — Phase 27 complete
+**Current focus:** v1.5 Push-Notifications — Phase 28 complete
 
 ## Current Position
 
 Phase: 28 of 29 (fehlende-push-flows)
-Plan: 1 of 2 complete
-Status: Phase 28 Plan 01 complete
-Last activity: 2026-03-06 — Phase 28 Plan 01 (Event-Reminder + Admin-Registration-Push) ausgefuehrt
+Plan: 2 of 2 complete
+Status: Phase 28 complete
+Last activity: 2026-03-06 — Phase 28 Plan 02 (Level-Up Push) ausgefuehrt
 
-Progress: [######░░░░] 60%
+Progress: [#######░░░] 70%
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Progress: [######░░░░] 60%
 | 27    | 01   | 5min     | 2     | 6     |
 | 27    | 02   | 1min     | 1     | 1     |
 | 28    | 01   | 1min     | 2     | 2     |
+| 28    | 02   | 1min     | 2     | 4     |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
 - [28-01] Event-Reminder-Logik war bereits korrekt - keine Aenderungen noetig
 - [28-01] Jahrgangs-Admin-Lookup via user_jahrgang_assignments mit Fallback auf alle Org-Admins
 - [28-01] Push nach COMMIT aber vor res.json() mit fehlschlagsicherem try/catch
+- [Phase 28]: checkAndSendLevelUp als wiederverwendbare Helper-Methode, Level-Down erkannt aber nicht gepusht
+- [Phase 28]: FLW-04 als covered by existing badge system markiert
 
 ### Research Findings (v1.5)
 
@@ -87,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 28-01-PLAN.md
-Resume file: .planning/phases/28-fehlende-push-flows/28-01-SUMMARY.md
+Stopped at: Completed 28-02-PLAN.md
+Resume file: .planning/phases/28-fehlende-push-flows/28-02-SUMMARY.md
