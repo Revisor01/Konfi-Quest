@@ -54,7 +54,9 @@ export const logout = async (): Promise<void> => {
   
   logoutInProgress = true;
   
-  // Push token für aktuelles Device löschen vor logout
+  // TKN-01: Löscht nur den Token des AKTUELLEN Devices (user_id + platform + device_id)
+  // Andere Geräte des Users behalten ihre Tokens
+  // Best-effort: Logout geht immer durch, auch bei Fehler
   try {
     let deviceId: string | undefined;
     
