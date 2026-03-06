@@ -40,16 +40,14 @@ class PushService {
     const query = `
       SELECT * FROM push_tokens
       WHERE user_id = $1
-        AND device_id NOT LIKE '%\\_\\_%'
         AND id IN (
           SELECT MAX(id)
           FROM push_tokens
-          WHERE user_id = $2
-            AND device_id NOT LIKE '%\\_\\_%'
+          WHERE user_id = $1
           GROUP BY device_id, platform
         )
     `;
-    const { rows: tokens } = await db.query(query, [userId, userId]);
+    const { rows: tokens } = await db.query(query, [userId]);
     return tokens || [];
   }
 
@@ -114,17 +112,15 @@ class PushService {
       const { rows: senderTokens } = await db.query(senderTokensQuery, [notificationData.data?.sender_id]);
       const senderTokenList = senderTokens.map(t => t.token);
 
-      // NUR das neueste echte Device Token verwenden, Fallback-IDs ignorieren
+      // Neuestes Token pro Device verwenden
       // UND Sender-Tokens ausschließen (für den Fall dass gleicher Token bei verschiedenen Accounts)
       let query = `
         SELECT * FROM push_tokens
         WHERE user_id = $1
-          AND device_id NOT LIKE '%\\_\\_%'
           AND id IN (
             SELECT MAX(id)
             FROM push_tokens
             WHERE user_id = $2
-              AND device_id NOT LIKE '%\\_\\_%'
             GROUP BY device_id, platform
           )
       `;
