@@ -338,6 +338,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       if (status === 'approved') {
         newBadges = await checkAndAwardBadges(db, request.konfi_id);
 
+        // Level-Check NACH Badge-Check
+        try {
+          await PushService.checkAndSendLevelUp(db, request.konfi_id, req.user.organization_id);
+        } catch (levelErr) {
+          console.error('Level-up check failed:', levelErr);
+        }
+
         // Datenschutz: Foto-Datei löschen nach Genehmigung (nicht-kritisch, nach COMMIT)
         if (request.photo_filename) {
           const fs = require('fs');
@@ -458,6 +465,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Badge-Check NACH COMMIT (verwendet db Pool)
       const badgeResult = await checkAndAwardBadges(db, konfiId);
+
+      // Level-Check NACH Badge-Check
+      try {
+        await PushService.checkAndSendLevelUp(db, konfiId, req.user.organization_id);
+      } catch (levelErr) {
+        console.error('Level-up check failed:', levelErr);
+      }
+
       res.json({ message: 'Aktivität erfolgreich zugewiesen', newBadges: badgeResult.count, badgeDetails: badgeResult.badges });
 
       // Push-Notification an Konfi senden

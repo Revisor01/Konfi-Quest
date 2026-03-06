@@ -1342,6 +1342,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           
           await db.query('COMMIT');
 
+          // Level-Check NACH COMMIT und Badge-Check
+          try {
+            await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id);
+          } catch (levelErr) {
+            console.error('Level-up check failed:', levelErr);
+          }
+
           // Push-Notification: Teilnahme bestätigt mit Punkten
           try {
             await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points);

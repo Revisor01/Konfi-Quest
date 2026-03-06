@@ -508,6 +508,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 // Don't fail the request if badge checking fails
             }
 
+            // Level-Check NACH Badge-Check
+            try {
+                await PushService.checkAndSendLevelUp(db, parseInt(req.params.id), req.user.organization_id);
+            } catch (levelErr) {
+                console.error('Level-up check failed:', levelErr);
+            }
+
             // Push-Notification an Konfi senden
             try {
                 await PushService.sendBonusPointsToKonfi(db, req.params.id, points, description, type);
