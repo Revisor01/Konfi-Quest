@@ -127,11 +127,11 @@ Plans:
   2. Das App-Icon auf dem Homescreen zeigt die korrekte Anzahl ungelesener Nachrichten (nicht hardcoded "1")
   3. In der Chat-Liste zeigt jeder Raum die richtige Anzahl ungelesener Nachrichten seit letztem Besuch
   4. Die TabBar-Badges (Chat-Tab, Notifications-Tab) stimmen mit den tatsaechlichen Unread-Counts ueberein
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 27-01: TBD
-- [ ] 27-02: TBD
+- [ ] 27-01-PLAN.md — Frontend-Konsolidierung: BadgeContext erweitern, AppContext/MainTabs bereinigen, ChatOverview umstellen
+- [ ] 27-02-PLAN.md — Backend: backgroundService Badge-Query um Antraege und Events erweitern
 
 ### Phase 28: Fehlende Push-Flows
 **Goal**: Konfis und Admins erhalten alle relevanten Push-Benachrichtigungen — Events, Registrierungen, Level-Ups, Meilensteine
@@ -194,7 +194,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 23. User/Rechte/Institutionen Debug | v1.4 | 2/2 | Complete | 2026-03-05 |
 | 24. Chat-Logik Debug | v1.4 | 1/1 | Complete | 2026-03-05 |
 | 25. Foundation + Konfiguration | v1.5 | 1/1 | Complete | 2026-03-05 |
-| 26. Token-Lifecycle | 2/2 | Complete    | 2026-03-06 | - |
-| 27. Badge-Count Single Source of Truth | v1.5 | 0/? | Not started | - |
+| 26. Token-Lifecycle | v1.5 | 2/2 | Complete | 2026-03-06 |
+| 27. Badge-Count Single Source of Truth | v1.5 | 0/2 | Not started | - |
 | 28. Fehlende Push-Flows | v1.5 | 0/? | Not started | - |
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/? | Not started | - |
