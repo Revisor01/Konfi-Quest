@@ -142,11 +142,11 @@ Plans:
   2. Admins erhalten eine Push-Benachrichtigung wenn ein neuer Konfi sich ueber Invite-Code registriert
   3. Konfis erhalten eine Push-Benachrichtigung wenn sie ein neues Level erreichen
   4. Konfis erhalten eine Push-Benachrichtigung wenn sie die Mindestpunkte fuer Gottesdienst oder Gemeinde erreichen
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 28-01: TBD
-- [ ] 28-02: TBD
+- [ ] 28-01-PLAN.md — Event-Reminder Verifikation (FLW-01) + Admin-Alert bei Registrierung (FLW-02)
+- [ ] 28-02-PLAN.md — Level-Up Push Helper + Integration an 4 Punkte-Vergabe-Stellen (FLW-03, FLW-04 covered)
 
 ### Phase 29: Token-Cleanup + End-to-End Verifikation
 **Goal**: Das Push-System ist selbstreinigend und alle 17 Push-Flows (14 bestehende + 3 neue) funktionieren End-to-End auf echtem Geraet
@@ -195,6 +195,6 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 24. Chat-Logik Debug | v1.4 | 1/1 | Complete | 2026-03-05 |
 | 25. Foundation + Konfiguration | v1.5 | 1/1 | Complete | 2026-03-05 |
 | 26. Token-Lifecycle | v1.5 | 2/2 | Complete | 2026-03-06 |
-| 27. Badge-Count Single Source of Truth | 2/2 | Complete    | 2026-03-06 | - |
-| 28. Fehlende Push-Flows | v1.5 | 0/? | Not started | - |
+| 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
+| 28. Fehlende Push-Flows | v1.5 | 0/2 | Not started | - |
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/? | Not started | - |
