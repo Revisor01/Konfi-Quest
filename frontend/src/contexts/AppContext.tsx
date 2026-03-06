@@ -399,12 +399,12 @@ useEffect(() => {
 
         // Token bei App-Resume erneuern (max alle 12 Stunden)
         if (Capacitor.isNativePlatform()) {
-          const lastTokenRefresh = parseInt(localStorage.getItem('lastTokenRefresh') || '0');
+          const lastTokenRefresh = parseInt(localStorage.getItem('push_token_last_refresh') || '0');
           const twelveHours = 12 * 60 * 60 * 1000;
           if (now - lastTokenRefresh > twelveHours) {
             try {
               await PushNotifications.register();
-              localStorage.setItem('lastTokenRefresh', now.toString());
+              localStorage.setItem('push_token_last_refresh', now.toString());
             } catch (err) {
               console.warn('Token refresh failed:', err);
             }
