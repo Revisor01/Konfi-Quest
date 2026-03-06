@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
 status: unknown
-last_updated: "2026-03-06T07:15:58.808Z"
+last_updated: "2026-03-06T09:56:24.860Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 
 ## Current Position
 
-Phase: 26 of 29 (Token-Lifecycle)
-Plan: 2 of 2
-Status: Phase 26 Plan 02 complete
-Last activity: 2026-03-06 — Phase 26 Plan 02 (Frontend Token-Lifecycle) ausgefuehrt
+Phase: 27 of 29 (Badge-Count-Single-Source-of-Truth)
+Plan: 1 of 2
+Status: Phase 27 Plan 01 complete
+Last activity: 2026-03-06 — Phase 27 Plan 01 (BadgeContext Single Source of Truth) ausgefuehrt
 
 Progress: [####░░░░░░] 40%
 
@@ -41,6 +41,7 @@ Progress: [####░░░░░░] 40%
 | 25    | 01   | 1min     | 3     | 4     |
 | 26    | 01   | 1min     | 2     | 1     |
 | 26    | 02   | 2min     | 2     | 2     |
+| 27    | 01   | 5min     | 2     | 6     |
 
 ## Accumulated Context
 
@@ -55,6 +56,9 @@ All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
 - [26-02] localStorage-Key umbenannt zu 'push_token_last_refresh' per CONTEXT.md Konvention
 - [26-02] Logout loescht nur Token des aktuellen Devices (TKN-01 verifiziert)
 - [26-02] User-Wechsel-Logik im Backend bereits korrekt (TKN-04 verifiziert)
+- [Phase 27]: BadgeContext refreshAllCounts mit Promise.all fuer parallele API-Calls
+- [Phase 27]: markRoomAsRead optimistisch + API im Hintergrund
+- [Phase 27]: totalBadgeCount role-abhaengig: Admin=chat+requests+events, Konfi=nur chat
 
 ### Research Findings (v1.5)
 
@@ -76,5 +80,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Session resumed, proceeding to plan-phase 27
-Resume file: .planning/phases/27-badge-count-single-source-of-truth/.continue-here.md
+Stopped at: Completed 27-01-PLAN.md
+Resume file: .planning/phases/27-badge-count-single-source-of-truth/27-01-SUMMARY.md

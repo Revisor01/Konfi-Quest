@@ -33,10 +33,10 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 ### Badge-Count
 
-- [ ] **BDG-01**: Badge-Count Single Source of Truth — ein System verwaltet den Count, andere konsumieren
+- [x] **BDG-01**: Badge-Count Single Source of Truth — ein System verwaltet den Count, andere konsumieren
 - [ ] **BDG-02**: App-Icon Badge (iOS/Android) zeigt korrekte Unread-Anzahl
-- [ ] **BDG-03**: Chat-Liste zeigt korrekte Unread-Counts pro Raum
-- [ ] **BDG-04**: TabBar Badge-Zahlen stimmen mit tatsaechlichen Unread-Counts ueberein
+- [x] **BDG-03**: Chat-Liste zeigt korrekte Unread-Counts pro Raum
+- [x] **BDG-04**: TabBar Badge-Zahlen stimmen mit tatsaechlichen Unread-Counts ueberein
 
 ### Vollstaendigkeit
 
@@ -79,10 +79,10 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 | FLW-04 | Phase 28 | Pending |
 | CFG-01 | Phase 25 | Complete |
 | CFG-02 | Phase 25 | Complete |
-| BDG-01 | Phase 27 | Pending |
+| BDG-01 | Phase 27 | Complete |
 | BDG-02 | Phase 27 | Pending |
-| BDG-03 | Phase 27 | Pending |
-| BDG-04 | Phase 27 | Pending |
+| BDG-03 | Phase 27 | Complete |
+| BDG-04 | Phase 27 | Complete |
 | CMP-01 | Phase 29 | Pending |
 
 **Coverage:**
