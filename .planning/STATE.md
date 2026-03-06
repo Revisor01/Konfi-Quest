@@ -76,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Completed 26-02-PLAN.md
-Resume file: .planning/phases/26-token-lifecycle/26-02-SUMMARY.md
+Stopped at: Session resumed, proceeding to plan-phase 27
+Resume file: .planning/phases/27-badge-count-single-source-of-truth/.continue-here.md
