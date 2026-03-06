@@ -33,7 +33,7 @@ import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { BadgeProvider, useBadge } from './contexts/BadgeContext';
 import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
-import { PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
+import { PushNotifications } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
@@ -86,37 +86,26 @@ setupIonicReact({
 
 const AppContent: React.FC = () => {
   const { user, loading } = useApp();
-  // Nur die Funktionen für Side-Effects, nicht den badgeCount selbst
-  const { setBadgeCount, refreshFromAPI } = useBadge();
+  const { refreshAllCounts } = useBadge();
 
   // Setup badge logic when user is available
   useEffect(() => {
     if (!user) return;
 
-    // 1. Initial badge load
-    refreshFromAPI();
-
-    // 2. Setup push notification listeners
+    // Badge-Counts werden bereits vom BadgeContext initialisiert
+    // Push-Listener fuer sofortiges Refresh bei eingehender Notification
     const setupListeners = async () => {
-      // Remove existing listeners to avoid duplicates
       await PushNotifications.removeAllListeners();
 
-      const pushListener = await PushNotifications.addListener('pushNotificationReceived', 
-        (notification: PushNotificationSchema) => {
-          if (notification.data?.type === 'chat') {
-            const badgeCountFromPush = notification.badge ?? parseInt(notification.data?.aps?.badge) ?? -1;
-            if (badgeCountFromPush !== -1) {
-              setBadgeCount(badgeCountFromPush);
-            } else {
-              setBadgeCount(prev => prev + 1);
-            }
-          }
+      const pushListener = await PushNotifications.addListener('pushNotificationReceived',
+        () => {
+          refreshAllCounts();
         }
       );
 
-      const actionListener = await PushNotifications.addListener('pushNotificationActionPerformed', 
-        (action) => {
-          refreshFromAPI(); 
+      const actionListener = await PushNotifications.addListener('pushNotificationActionPerformed',
+        () => {
+          refreshAllCounts();
         }
       );
 
@@ -134,7 +123,7 @@ const AppContent: React.FC = () => {
       });
     };
 
-  }, [user, setBadgeCount, refreshFromAPI]);
+  }, [user, refreshAllCounts]);
 
   // Generischer 429 Rate-Limit Alert-Handler
   const [presentAlert] = useIonAlert();

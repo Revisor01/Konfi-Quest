@@ -43,8 +43,8 @@ import { FileOpener } from '@capacitor-community/file-opener';
 
 
 const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingElement }) => {
-  const { user, setError, setSuccess, markChatRoomAsRead } = useApp();
-  const { refreshFromAPI } = useBadge();
+  const { user, setError, setSuccess } = useApp();
+  const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts } = useBadge();
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -306,16 +306,15 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const markRoomAsRead = async () => {
     if (!room) return;
     try {
-      await api.post(`/chat/rooms/${room.id}/mark-read`);
-      // Update global chat notifications state
-      markChatRoomAsRead(room.id);
-      
-      // Einfach: Badge Context neu laden für genaue Counts
-      await refreshFromAPI();
-      
+      // BadgeContext macht optimistisches Update + API Call
+      badgeMarkRoomAsRead(room.id);
+
+      // Badge Context neu laden fuer genaue Counts
+      await refreshAllCounts();
+
     } catch (err) {
       // Silent fail - marking as read is not critical
- console.error('Error marking room as read:', err);
+      console.error('Error marking room as read:', err);
     }
   };
 

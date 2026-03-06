@@ -58,78 +58,11 @@ import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  const { badgeCount } = useBadge();
+  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount } = useBadge();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-  const [pendingEventsCount, setPendingEventsCount] = useState(0);
   const [newBadgesCount, setNewBadgesCount] = useState(0);
   const location = useLocation(); // Hook, um den aktuellen Pfad zu erhalten
-
-  // Load pending requests count for admin (nicht für super_admin)
-  useEffect(() => {
-    const loadPendingRequestsCount = async () => {
-      if (user?.type === 'admin' && !isSuperAdmin) {
-        try {
-          const response = await api.get('/admin/activities/requests');
-          const pendingCount = response.data.filter((req: any) => req.status === 'pending').length;
-          setPendingRequestsCount(pendingCount);
-        } catch (error) {
-          // Ignoriere Fehler (z.B. wenn super_admin keinen Zugriff hat)
- console.warn('Offene Antraege konnten nicht geladen werden:', error);
-        }
-      }
-    };
-
-    loadPendingRequestsCount();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(loadPendingRequestsCount, 30000);
-
-    // Event Listener für sofortige Aktualisierung bei Statusänderung
-    const handleRequestStatusChanged = () => {
-      loadPendingRequestsCount();
-    };
-    window.addEventListener('requestStatusChanged', handleRequestStatusChanged);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('requestStatusChanged', handleRequestStatusChanged);
-    };
-  }, [user, isSuperAdmin]);
-
-  // Load pending events count for admin (nicht für super_admin)
-  useEffect(() => {
-    const loadPendingEventsCount = async () => {
-      if (user?.type === 'admin' && !isSuperAdmin) {
-        try {
-          const response = await api.get('/events');
-          const pendingCount = response.data.filter((event: any) =>
-            event.unprocessed_count > 0 && new Date(event.event_date) < new Date()
-          ).length;
-          setPendingEventsCount(pendingCount);
-        } catch (error) {
- console.warn('Offene Events konnten nicht geladen werden:', error);
-        }
-      }
-    };
-
-    loadPendingEventsCount();
-
-    // Refresh every 60 seconds
-    const interval = setInterval(loadPendingEventsCount, 60000);
-
-    // Event Listener für sofortige Aktualisierung bei Attendance-Änderung
-    const handleEventsUpdated = () => {
-      loadPendingEventsCount();
-    };
-    window.addEventListener('events-updated', handleEventsUpdated);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('events-updated', handleEventsUpdated);
-    };
-  }, [user, isSuperAdmin]);
 
   // Load new badges count for konfi (badges not yet seen)
   useEffect(() => {
@@ -222,9 +155,9 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-chat" href="/admin/chat">
               <IonIcon icon={chatbubbles} />
               <IonLabel>Chat</IonLabel>
-              {badgeCount > 0 && (
+              {chatUnreadTotal > 0 && (
                 <IonBadge color="danger">
-                  {badgeCount > 9 ? '9+' : badgeCount}
+                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
                 </IonBadge>
               )}
             </IonTabButton>
@@ -287,9 +220,9 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="chat" href="/konfi/chat"> {/* HIER IST DER CHAT-TAB-BUTTON */}
               <IonIcon icon={chatbubbles} />
               <IonLabel>Chat</IonLabel>
-              {badgeCount > 0 && (
+              {chatUnreadTotal > 0 && (
                 <IonBadge color="danger">
-                  {badgeCount > 9 ? '9+' : badgeCount}
+                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
                 </IonBadge>
               )}
             </IonTabButton>

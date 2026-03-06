@@ -57,11 +57,6 @@ const sendTokenToServer = async (token: string) => {
   }
 };
 
-export interface ChatNotifications {
-  totalUnreadCount: number;
-  unreadByRoom: Record<number, number>;
-}
-
 interface User {
   id: number;
   type: 'admin' | 'konfi' | 'user';
@@ -82,16 +77,11 @@ interface AppContextType {
   loading: boolean;
   error: string;
   success: string;
-  chatNotifications: ChatNotifications;
-  chatNotificationsLoading: boolean;
   pushNotificationsPermission: string;
   setUser: (user: User | null) => void;
   setError: (error: string) => void;
   setSuccess: (success: string) => void;
   clearMessages: () => void;
-  refreshChatNotifications: () => Promise<void>;
-  markChatRoomAsRead: (roomId: number) => void;
-  addUnreadChatMessage: (roomId: number, count?: number) => void;
   requestPushPermissions: () => Promise<void>;
   // hasPermission entfernt - jetzt rollen-basiert (user.role_name prüfen)
 }
@@ -105,87 +95,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Chat notifications state
-  const [chatNotifications, setChatNotifications] = useState<ChatNotifications>({
-    totalUnreadCount: 0,
-    unreadByRoom: {}
-  });
-  const [chatNotificationsLoading, setChatNotificationsLoading] = useState(true);
-
   // Push notifications state
   const [pushNotificationsPermission, setPushNotificationsPermission] = useState<string>('prompt');
 
   // Badge sync through state updates only (no custom events)
-
-  // Chat notification functions
-  const refreshChatNotifications = useCallback(async (skipBadgeUpdate = false) => {
-    if (!user) return;
-
-    try {
-      setChatNotificationsLoading(true);
-      const response = await api.get('/chat/rooms');
-      const rooms = response.data;
-
-      let totalUnread = 0;
-      const unreadByRoom: Record<number, number> = {};
-
-      rooms.forEach((room: any) => {
-        const unreadCount = room.unread_count || 0;
-        unreadByRoom[room.id] = unreadCount;
-        totalUnread += unreadCount;
-      });
-
-      setChatNotifications(prev => {
-        // Only update DEVICE badge if count actually changed AND skipBadgeUpdate is false
-        const hasChanged = prev.totalUnreadCount !== totalUnread;
-
-        // Badge logic removed - now handled by BadgeContext
-
-        // ALWAYS update the state for tab badges, regardless of skipBadgeUpdate
-        return {
-          totalUnreadCount: totalUnread,
-          unreadByRoom
-        };
-      });
-    } catch (err) {
-      console.error('Error loading chat notifications:', err);
-    } finally {
-      setChatNotificationsLoading(false);
-    }
-  }, [user]);
-
-  const markChatRoomAsRead = (roomId: number) => {
-    setChatNotifications(prev => {
-      const currentUnread = prev.unreadByRoom[roomId] || 0;
-      const newTotalCount = prev.totalUnreadCount - currentUnread;
-
-      // Badge logic removed - now handled by BadgeContext
-
-      return {
-        totalUnreadCount: newTotalCount,
-        unreadByRoom: {
-          ...prev.unreadByRoom,
-          [roomId]: 0
-        }
-      };
-    });
-  };
-
-  const addUnreadChatMessage = (roomId: number, count: number = 1) => {
-    setChatNotifications(prev => {
-      const newTotalCount = prev.totalUnreadCount + count;
-
-      // Badge logic removed - now handled by BadgeContext
-
-      return {
-        totalUnreadCount: newTotalCount,
-        unreadByRoom: {
-          ...prev.unreadByRoom,
-          [roomId]: (prev.unreadByRoom[roomId] || 0) + count
-        }
-      };
-    });
-  };
 
   // Push notifications functions
   const requestPushPermissions = useCallback(async () => {
@@ -289,58 +202,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [error, success]);
 
-  // Load chat notifications when user changes
-  useEffect(() => {
-    if (user) {
-      // Reset badge state on startup but keep loading true
-      setChatNotifications({
-        totalUnreadCount: 0,
-        unreadByRoom: {}
-      });
-      setChatNotificationsLoading(true);
-
-      // Load with 1 second delay to allow Tab Bar to fully initialize
-      const loadInitial = async () => {
-        // Wait 1 second for Tab Bar to be fully ready
-        setTimeout(async () => {
-          // Try to get device badge first for immediate display
-          try {
-            const { Badge } = await import('@capawesome/capacitor-badge');
-            const result = await Badge.get();
-            if (result.count > 0) {
-              setChatNotifications(prev => ({
-                ...prev,
-                totalUnreadCount: result.count
-              }));
-            }
-          } catch (error) {
-            console.warn('Could not load device badge for tabs:', error);
-          }
-
-          // Now get real data from server
-          // refreshChatNotifications disabled - Badge Context handles updates
-
-          // Ensure a final refresh for reliability
-          setTimeout(() => {
-            // refreshChatNotifications disabled - Badge Context handles updates
-          }, 300);
-        }, 1000); // 1 second delay
-      };
-
-      loadInitial();
-
-      // Auto-refresh notifications every 5 seconds for reliable badge sync
-      // 5-second refresh disabled - Badge Context handles real-time updates
-    } else {
-      // Clear notifications when user logs out
-      setChatNotifications({
-        totalUnreadCount: 0,
-        unreadByRoom: {}
-      });
-      setChatNotificationsLoading(false);
-    }
-  }, [user, refreshChatNotifications]);
-
 useEffect(() => {
   // NUR AUSFUEHREN, WENN EIN USER EINGELOGGT IST!
   if (!user) {
@@ -394,7 +255,6 @@ useEffect(() => {
     const handleAppActive = async () => {
       const now = Date.now();
       if (now - lastRefresh > minRefreshInterval) {
-        // refreshChatNotifications disabled - Badge Context handles updates
         lastRefresh = now;
 
         // Token bei App-Resume erneuern (max alle 12 Stunden)
@@ -432,7 +292,7 @@ useEffect(() => {
         stateChangeListener.remove();
       }
     };
-  }, [user, refreshChatNotifications]);
+  }, [user]);
 
   // Push notifications setup and listeners
   useEffect(() => {
@@ -454,16 +314,7 @@ useEffect(() => {
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
           // Chat notifications are now handled by BadgeContext
 
-          // Bei Badge Updates direkt Badge Count setzen ohne API Call
-          if (notification.data?.type === 'badge_update') {
-            const badgeCount = parseInt(notification.data.count || '0');
-            setChatNotifications(prev => ({
-              ...prev,
-              totalUnreadCount: badgeCount
-            }));
-
-            // Badge logic removed - now handled by BadgeContext
-          }
+          // Badge Updates werden jetzt vom BadgeContext behandelt
         });
 
         PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
@@ -553,16 +404,11 @@ useEffect(() => {
     loading,
     error,
     success,
-    chatNotifications,
-    chatNotificationsLoading,
     pushNotificationsPermission,
     setUser,
     setError,
     setSuccess,
     clearMessages,
-    refreshChatNotifications,
-    markChatRoomAsRead,
-    addUnreadChatMessage,
     requestPushPermissions,
   };
 

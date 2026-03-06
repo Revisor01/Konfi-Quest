@@ -1,15 +1,24 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { Badge } from '@capawesome/capacitor-badge';
 import api from '../services/api';
 import { initializeWebSocket, getSocket } from '../services/websocket';
+import { useApp } from './AppContext';
 
 // Badge Context Interface
 interface BadgeContextType {
+  // Chat
+  chatUnreadByRoom: Record<number, number>;
+  chatUnreadTotal: number;
+  // Admin-only
+  pendingRequestsCount: number;
+  pendingEventsCount: number;
+  // Gesamt (Role-abhaengig)
+  totalBadgeCount: number;
+  // Actions
+  refreshAllCounts: () => Promise<void>;
+  markRoomAsRead: (roomId: number) => void;
+  // Legacy Alias (Abwaertskompatibilitaet)
   badgeCount: number;
-  setBadgeCount: React.Dispatch<React.SetStateAction<number>>;
-  incrementBadge: () => void;
-  decrementBadge: (amount?: number) => void;
-  resetBadge: () => void;
   refreshFromAPI: () => Promise<void>;
 }
 
@@ -18,50 +27,108 @@ const BadgeContext = createContext<BadgeContextType | undefined>(undefined);
 
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
-  const [badgeCount, setBadgeCount] = useState(0);
+  const { user } = useApp();
 
-  // API refresh function - wird von AppContent aufgerufen
-  const refreshFromAPI = useCallback(async () => {
+  const [chatUnreadByRoom, setChatUnreadByRoom] = useState<Record<number, number>>({});
+  const [chatUnreadTotal, setChatUnreadTotal] = useState(0);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [pendingEventsCount, setPendingEventsCount] = useState(0);
+
+  const isAdmin = user?.type === 'admin' && user?.role_name !== 'super_admin';
+
+  // totalBadgeCount: Admin = chat + requests + events, Konfi = nur chat
+  const totalBadgeCount = useMemo(() => {
+    if (isAdmin) {
+      return chatUnreadTotal + pendingRequestsCount + pendingEventsCount;
+    }
+    return chatUnreadTotal;
+  }, [chatUnreadTotal, pendingRequestsCount, pendingEventsCount, isAdmin]);
+
+  // Zentraler Refresh aller Counts
+  const refreshAllCounts = useCallback(async () => {
+    if (!user) return;
+
     try {
- // console.log('BadgeContext: Refreshing from API'); // DISABLED wegen Spam
-      const response = await api.get('/chat/rooms');
-      const rooms = response.data;
-      
+      // Chat-Rooms immer laden
+      const promises: Promise<any>[] = [api.get('/chat/rooms')];
+
+      // Admin-only: Requests + Events
+      if (isAdmin) {
+        promises.push(api.get('/admin/activities/requests'));
+        promises.push(api.get('/events'));
+      }
+
+      const results = await Promise.all(promises);
+
+      // Chat-Rooms verarbeiten
+      const rooms = results[0].data;
+      const unreadByRoom: Record<number, number> = {};
       let totalUnread = 0;
       rooms.forEach((room: any) => {
-        totalUnread += room.unread_count || 0;
+        const unreadCount = room.unread_count || 0;
+        unreadByRoom[room.id] = unreadCount;
+        totalUnread += unreadCount;
       });
-      
- // console.log('BadgeContext: API refresh result:', totalUnread); // DISABLED wegen Spam
-      setBadgeCount(totalUnread);
-    } catch (error) {
- console.error('BadgeContext: API refresh fehlgeschlagen:', error);
-    }
-  }, []);
+      setChatUnreadByRoom(unreadByRoom);
+      setChatUnreadTotal(totalUnread);
 
-  // Sync badge with device badge whenever count changes
+      // Admin-Counts verarbeiten
+      if (isAdmin && results.length >= 3) {
+        const requests = results[1].data;
+        const pendingCount = requests.filter((req: any) => req.status === 'pending').length;
+        setPendingRequestsCount(pendingCount);
+
+        const events = results[2].data;
+        const pendingEvents = events.filter((event: any) =>
+          event.unprocessed_count > 0 && new Date(event.event_date) < new Date()
+        ).length;
+        setPendingEventsCount(pendingEvents);
+      }
+    } catch (error) {
+      console.error('BadgeContext: refreshAllCounts fehlgeschlagen:', error);
+    }
+  }, [user, isAdmin]);
+
+  // markRoomAsRead: Optimistisch + API Call
+  const markRoomAsRead = useCallback((roomId: number) => {
+    setChatUnreadByRoom(prev => {
+      const currentUnread = prev[roomId] || 0;
+      if (currentUnread === 0) return prev;
+      return { ...prev, [roomId]: 0 };
+    });
+    setChatUnreadTotal(prev => {
+      const currentUnread = chatUnreadByRoom[roomId] || 0;
+      return Math.max(0, prev - currentUnread);
+    });
+
+    // API Call im Hintergrund
+    api.post(`/chat/rooms/${roomId}/mark-read`).catch(err => {
+      console.error('BadgeContext: markRoomAsRead API fehlgeschlagen:', err);
+    });
+  }, [chatUnreadByRoom]);
+
+  // Sync Device Badge bei Aenderung von totalBadgeCount
   useEffect(() => {
     try {
-      if (badgeCount > 0) {
-        Badge.set({ count: badgeCount });
+      if (totalBadgeCount > 0) {
+        Badge.set({ count: totalBadgeCount });
       } else {
         Badge.clear();
       }
     } catch (error) {
- console.warn('BadgeContext: Badge nicht verfuegbar:', error);
+      console.warn('BadgeContext: Badge nicht verfuegbar:', error);
     }
-  }, [badgeCount]);
+  }, [totalBadgeCount]);
 
-  // WebSocket: Live-Update wenn neue Nachrichten ankommen
-  // WICHTIG: Muss hier bleiben für Updates wenn User NICHT auf Chat-Tab ist
+  // WebSocket: Live-Update bei neuen Nachrichten
   useEffect(() => {
     const token = localStorage.getItem('konfi_token');
-    if (!token) return;
+    if (!token || !user) return;
 
     const socket = initializeWebSocket(token);
 
     const handleNewMessage = () => {
-      refreshFromAPI();
+      refreshAllCounts();
     };
 
     socket.on('newMessage', handleNewMessage);
@@ -69,28 +136,64 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       socket.off('newMessage', handleNewMessage);
     };
-  }, [refreshFromAPI]);
+  }, [refreshAllCounts, user]);
 
-  const incrementBadge = () => {
-    setBadgeCount(prev => prev + 1);
-  };
+  // Window Event Listeners fuer sofortige Aktualisierung
+  useEffect(() => {
+    if (!user) return;
 
-  const decrementBadge = (amount: number = 1) => {
-    setBadgeCount(prev => Math.max(0, prev - amount));
-  };
+    const handleRequestStatusChanged = () => {
+      refreshAllCounts();
+    };
+    const handleEventsUpdated = () => {
+      refreshAllCounts();
+    };
 
-  const resetBadge = () => {
-    setBadgeCount(0);
-  };
+    window.addEventListener('requestStatusChanged', handleRequestStatusChanged);
+    window.addEventListener('events-updated', handleEventsUpdated);
+
+    return () => {
+      window.removeEventListener('requestStatusChanged', handleRequestStatusChanged);
+      window.removeEventListener('events-updated', handleEventsUpdated);
+    };
+  }, [user, refreshAllCounts]);
+
+  // Initialer Load + Polling fuer Admin-Counts (30s)
+  useEffect(() => {
+    if (!user) return;
+
+    // Initialer Load
+    refreshAllCounts();
+
+    // Polling nur fuer Admin (requests + events aendern sich nicht per WebSocket)
+    if (isAdmin) {
+      const interval = setInterval(refreshAllCounts, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, isAdmin, refreshAllCounts]);
+
+  // Reset bei Logout
+  useEffect(() => {
+    if (!user) {
+      setChatUnreadByRoom({});
+      setChatUnreadTotal(0);
+      setPendingRequestsCount(0);
+      setPendingEventsCount(0);
+    }
+  }, [user]);
 
   return (
-    <BadgeContext.Provider value={{ 
-      badgeCount, 
-      setBadgeCount, 
-      incrementBadge, 
-      decrementBadge, 
-      resetBadge,
-      refreshFromAPI
+    <BadgeContext.Provider value={{
+      chatUnreadByRoom,
+      chatUnreadTotal,
+      pendingRequestsCount,
+      pendingEventsCount,
+      totalBadgeCount,
+      refreshAllCounts,
+      markRoomAsRead,
+      // Legacy Alias
+      badgeCount: chatUnreadTotal,
+      refreshFromAPI: refreshAllCounts,
     }}>
       {children}
     </BadgeContext.Provider>
