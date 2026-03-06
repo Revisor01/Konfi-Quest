@@ -523,6 +523,67 @@ class PushService {
   }
 
   /**
+   * Level-Check nach Punkte-Vergabe: Vergleicht aktuelles Level mit gespeichertem Level
+   * und sendet Level-Up Push falls aufgestiegen.
+   * Wird an allen Punkte-Vergabe-Stellen aufgerufen (activities, konfi-managment, events).
+   */
+  static async checkAndSendLevelUp(db, konfiId, organizationId) {
+    try {
+      // 1. Aktuelle Punkte und gespeichertes Level holen
+      const { rows: [profile] } = await db.query(
+        'SELECT gottesdienst_points, gemeinde_points, current_level_id FROM konfi_profiles WHERE user_id = $1',
+        [konfiId]
+      );
+      if (!profile) return;
+
+      const totalPoints = (profile.gottesdienst_points || 0) + (profile.gemeinde_points || 0);
+
+      // 2. Alle aktiven Levels der Organisation holen (aufsteigend nach Punkten)
+      const { rows: levels } = await db.query(
+        'SELECT * FROM levels WHERE organization_id = $1 AND is_active = true ORDER BY points_required ASC',
+        [organizationId]
+      );
+      if (levels.length === 0) return;
+
+      // 3. Hoechstes erreichtes Level berechnen
+      let newLevel = null;
+      for (const level of levels) {
+        if (totalPoints >= level.points_required) {
+          newLevel = level;
+        }
+      }
+
+      // 4. Vergleich mit gespeichertem Level — nur wenn Level AUFGESTIEGEN
+      if (newLevel && newLevel.id !== profile.current_level_id) {
+        // Pruefen ob neues Level HOEHER ist (nicht Level-Down bei Punkte-Abzug)
+        const oldLevel = levels.find(l => l.id === profile.current_level_id);
+        if (oldLevel && newLevel.points_required <= oldLevel.points_required) {
+          // Level-Down oder gleiches Level — kein Push, aber Level-ID updaten
+          await db.query(
+            'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+            [newLevel.id, konfiId]
+          );
+          return;
+        }
+
+        // Level-ID updaten
+        await db.query(
+          'UPDATE konfi_profiles SET current_level_id = $1 WHERE user_id = $2',
+          [newLevel.id, konfiId]
+        );
+
+        // Level-Up Push senden
+        await this.sendLevelUpToKonfi(
+          db, konfiId, newLevel.name, newLevel.title, newLevel.icon, newLevel.id
+        );
+      }
+    } catch (error) {
+      console.error('checkAndSendLevelUp error:', error);
+      // Fehler nicht weiterwerfen — Level-Check darf Punkte-Vergabe nicht blockieren
+    }
+  }
+
+  /**
    * Level-Up - Push an Konfi
    */
   static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null) {
