@@ -21,8 +21,8 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 ### Fehlende Push-Flows
 
-- [ ] **FLW-01**: Event-Erinnerung X Stunden vor Event-Beginn an angemeldete Konfis
-- [ ] **FLW-02**: Admin erhaelt Push bei neuer Konfi-Registrierung (Invite-Code eingeloest)
+- [x] **FLW-01**: Event-Erinnerung X Stunden vor Event-Beginn an angemeldete Konfis
+- [x] **FLW-02**: Admin erhaelt Push bei neuer Konfi-Registrierung (Invite-Code eingeloest)
 - [ ] **FLW-03**: Konfi erhaelt Push bei Level-Up
 - [ ] **FLW-04**: Konfi erhaelt Push bei Punkte-Meilenstein (Mindestpunkte Gottesdienst/Gemeinde erreicht)
 
@@ -73,8 +73,8 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 | TKN-04 | Phase 26 | Complete |
 | CLN-01 | Phase 26 | Complete |
 | CLN-02 | Phase 29 | Pending |
-| FLW-01 | Phase 28 | Pending |
-| FLW-02 | Phase 28 | Pending |
+| FLW-01 | Phase 28 | Complete |
+| FLW-02 | Phase 28 | Complete |
 | FLW-03 | Phase 28 | Pending |
 | FLW-04 | Phase 28 | Pending |
 | CFG-01 | Phase 25 | Complete |

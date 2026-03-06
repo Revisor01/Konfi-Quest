@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
-status: unknown
-last_updated: "2026-03-06T10:02:23.548Z"
+status: in-progress
+last_updated: "2026-03-06T18:59:00Z"
 progress:
-  total_phases: 3
+  total_phases: 5
   completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 
 ## Current Position
 
-Phase: 27 of 29 (Badge-Count-Single-Source-of-Truth)
-Plan: 2 of 2
-Status: Phase 27 complete
-Last activity: 2026-03-06 — Phase 27 Plan 02 (backgroundService Badge-Query) ausgefuehrt
+Phase: 28 of 29 (fehlende-push-flows)
+Plan: 1 of 2 complete
+Status: Phase 28 Plan 01 complete
+Last activity: 2026-03-06 — Phase 28 Plan 01 (Event-Reminder + Admin-Registration-Push) ausgefuehrt
 
-Progress: [####░░░░░░] 40%
+Progress: [######░░░░] 60%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [####░░░░░░] 40%
 | 26    | 02   | 2min     | 2     | 2     |
 | 27    | 01   | 5min     | 2     | 6     |
 | 27    | 02   | 1min     | 1     | 1     |
+| 28    | 01   | 1min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 27]: totalBadgeCount role-abhaengig: Admin=chat+requests+events, Konfi=nur chat
 - [27-02] chat_read_status statt cp.last_read_at fuer konsistente Unread-Berechnung im backgroundService
 - [27-02] activities.organization_id fuer pending_requests Filterung (konsistent mit activities.js)
+- [28-01] Event-Reminder-Logik war bereits korrekt - keine Aenderungen noetig
+- [28-01] Jahrgangs-Admin-Lookup via user_jahrgang_assignments mit Fallback auf alle Org-Admins
+- [28-01] Push nach COMMIT aber vor res.json() mit fehlschlagsicherem try/catch
 
 ### Research Findings (v1.5)
 
@@ -83,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-06
-Stopped at: Phase 28 context gathered
-Resume file: .planning/phases/28-fehlende-push-flows/28-CONTEXT.md
+Stopped at: Completed 28-01-PLAN.md
+Resume file: .planning/phases/28-fehlende-push-flows/28-01-SUMMARY.md
