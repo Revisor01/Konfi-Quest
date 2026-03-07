@@ -7,10 +7,50 @@ const liveUpdate = require('../utils/liveUpdate');
 // Jahrgänge: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
+  // Idempotente Migration: Punkte-Typ-Spalten auf jahrgaenge-Tabelle
+  const ensurePointConfigColumns = async () => {
+    try {
+      const { rows } = await db.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'jahrgaenge' AND column_name = 'gottesdienst_enabled'
+      `);
+
+      if (rows.length === 0) {
+        await db.query('ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true');
+        await db.query('ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true');
+        await db.query('ALTER TABLE jahrgaenge ADD COLUMN target_gottesdienst INTEGER DEFAULT 10');
+        await db.query('ALTER TABLE jahrgaenge ADD COLUMN target_gemeinde INTEGER DEFAULT 10');
+
+        // Bestehende org-weite target-Werte aus settings in Jahrgänge migrieren
+        await db.query(`
+          UPDATE jahrgaenge SET target_gottesdienst = COALESCE(
+            (SELECT value::int FROM settings WHERE organization_id = jahrgaenge.organization_id AND key = 'target_gottesdienst'), 10
+          )
+        `);
+        await db.query(`
+          UPDATE jahrgaenge SET target_gemeinde = COALESCE(
+            (SELECT value::int FROM settings WHERE organization_id = jahrgaenge.organization_id AND key = 'target_gemeinde'), 10
+          )
+        `);
+
+        console.log('Migration: Punkte-Typ-Spalten zu jahrgaenge hinzugefügt und Daten migriert');
+      }
+    } catch (err) {
+      console.error('Jahrgaenge migration error:', err.message);
+    }
+  };
+
+  // Migration beim Laden ausführen
+  ensurePointConfigColumns();
+
   // Validierungsregeln
   const validateCreateJahrgang = [
     commonValidations.name,
     body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
+    body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
+    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
+    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
     handleValidationErrors
   ];
 
@@ -18,6 +58,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     commonValidations.name,
     body('confirmation_date').optional().isISO8601().withMessage('Ungültiges Datumsformat'),
+    body('gottesdienst_enabled').optional().isBoolean().withMessage('gottesdienst_enabled muss Boolean sein'),
+    body('gemeinde_enabled').optional().isBoolean().withMessage('gemeinde_enabled muss Boolean sein'),
+    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('target_gottesdienst muss >= 0 sein'),
+    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('target_gemeinde muss >= 0 sein'),
     handleValidationErrors
   ];
 
@@ -40,22 +84,27 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
   // POST a new jahrgang
   router.post('/', rbacVerifier, requireAdmin, validateCreateJahrgang, async (req, res) => {
-    const { name, confirmation_date } = req.body;
+    const { name, confirmation_date, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
-      const query = "INSERT INTO jahrgaenge (name, confirmation_date, organization_id) VALUES ($1, $2, $3) RETURNING id";
-      const params = [name, confirmation_date, req.user.organization_id];
+      const query = `INSERT INTO jahrgaenge (name, confirmation_date, organization_id, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *`;
+      const params = [
+        name,
+        confirmation_date,
+        req.user.organization_id,
+        gottesdienst_enabled !== undefined ? gottesdienst_enabled : true,
+        gemeinde_enabled !== undefined ? gemeinde_enabled : true,
+        target_gottesdienst !== undefined ? target_gottesdienst : 10,
+        target_gemeinde !== undefined ? target_gemeinde : 10
+      ];
       const { rows: [newJahrgang] } = await db.query(query, params);
 
-
-      res.status(201).json({
-        id: newJahrgang.id,
-        name,
-        confirmation_date
-      });
+      res.status(201).json(newJahrgang);
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'create');
@@ -70,14 +119,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
   // PUT (update) a jahrgang
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateJahrgang, async (req, res) => {
-    const { name, confirmation_date } = req.body;
+    const { name, confirmation_date, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Name ist erforderlich' });
     }
 
     try {
-      const query = "UPDATE jahrgaenge SET name = $1, confirmation_date = $2 WHERE id = $3 AND organization_id = $4";
-      const params = [name, confirmation_date, req.params.id, req.user.organization_id];
+      const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = $2,
+        gottesdienst_enabled = COALESCE($5, gottesdienst_enabled),
+        gemeinde_enabled = COALESCE($6, gemeinde_enabled),
+        target_gottesdienst = COALESCE($7, target_gottesdienst),
+        target_gemeinde = COALESCE($8, target_gemeinde)
+        WHERE id = $3 AND organization_id = $4`;
+      const params = [
+        name, confirmation_date, req.params.id, req.user.organization_id,
+        gottesdienst_enabled !== undefined ? gottesdienst_enabled : null,
+        gemeinde_enabled !== undefined ? gemeinde_enabled : null,
+        target_gottesdienst !== undefined ? target_gottesdienst : null,
+        target_gemeinde !== undefined ? target_gemeinde : null
+      ];
       const { rowCount } = await db.query(query, params);
 
       if (rowCount === 0) {
