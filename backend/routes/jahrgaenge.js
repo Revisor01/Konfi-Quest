@@ -125,6 +125,39 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     }
 
     try {
+      // Bestehende Werte laden für Warnungen bei Deaktivierung
+      const { rows: [currentJahrgang] } = await db.query(
+        'SELECT gottesdienst_enabled, gemeinde_enabled FROM jahrgaenge WHERE id = $1 AND organization_id = $2',
+        [req.params.id, req.user.organization_id]
+      );
+
+      if (!currentJahrgang) {
+        return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+      }
+
+      // Warnungen sammeln bei Deaktivierung mit bestehenden Punkten
+      const warnings = [];
+
+      if (currentJahrgang.gottesdienst_enabled && gottesdienst_enabled === false) {
+        const { rows: [{ count }] } = await db.query(
+          'SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1 AND gottesdienst_points > 0',
+          [req.params.id]
+        );
+        if (count > 0) {
+          warnings.push({ type: 'gottesdienst', affected_count: count, message: `${count} Konfi(s) haben bereits Gottesdienst-Punkte` });
+        }
+      }
+
+      if (currentJahrgang.gemeinde_enabled && gemeinde_enabled === false) {
+        const { rows: [{ count }] } = await db.query(
+          'SELECT COUNT(*)::int as count FROM konfi_profiles WHERE jahrgang_id = $1 AND gemeinde_points > 0',
+          [req.params.id]
+        );
+        if (count > 0) {
+          warnings.push({ type: 'gemeinde', affected_count: count, message: `${count} Konfi(s) haben bereits Gemeinde-Punkte` });
+        }
+      }
+
       const query = `UPDATE jahrgaenge SET name = $1, confirmation_date = $2,
         gottesdienst_enabled = COALESCE($5, gottesdienst_enabled),
         gemeinde_enabled = COALESCE($6, gemeinde_enabled),
@@ -143,7 +176,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
       }
-      res.json({ message: 'Jahrgang erfolgreich aktualisiert' });
+
+      const response = { message: 'Jahrgang erfolgreich aktualisiert' };
+      if (warnings.length > 0) response.warnings = warnings;
+      res.json(response);
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'jahrgaenge', 'update');
