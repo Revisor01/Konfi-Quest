@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.5 Push-Notifications (Shipped: 2026-03-07)
+
+**Phases completed:** 5 phases (25-29), 8 plans, 16 tasks
+**Timeline:** 2026-03-05 bis 2026-03-07 (3 Tage)
+**Stats:** 16 files changed, 647 insertions, 406 deletions
+**Requirements:** 17/17 (TKN: 4, CLN: 2, FLW: 4, CFG: 2, BDG: 4, CMP: 1)
+
+**Key accomplishments:**
+- Push-Type Registry mit 18 dokumentierten Notification-Types und Firebase Error-Code Forwarding als Grundlage
+- Vollstaendiger Token-Lifecycle: Logout-Cleanup, 12h-Refresh, User-Wechsel-Handling, Fallback-Device-ID Fix
+- BadgeContext als Single Source of Truth fuer alle Unread-Counts (App-Icon, TabBar, Chat-Liste)
+- Neue Push-Flows: Event-Erinnerungen (15min-Intervall), Admin-Alert bei Registrierung, Level-Up-Notifications
+- Selbstreinigendes Token-System mit 6h-Cleanup-Intervall fuer verwaiste/fehlerhafte Tokens
+- Konsistentes Result-Pattern in allen Push-Send-Methoden mit error_count Tracking
+
+---
+
 ## v1.4 Logik-Debug (Shipped: 2026-03-05)
 
 **Phases completed:** 5 phases, 9 plans, 0 tasks
@@ -55,9 +72,11 @@
 
 ## Geplante Milestones
 
-- **v1.4 Push-Benachrichtigungen** -- Systematischer Durchgang aller Push-Flows
-- **v1.5 Event-Logik Debug** -- Anmeldung, Warteliste, Zeitsteuerung
-- **v2.0 Teamer + Neue Features** -- Teamer-Design, Teamer-Badges, Konfi Wrapped
+- **v1.6 Dashboard-Konfig + Punkte-Logik** -- Punkte-Typ auf 0 setzbar (per Jahrgang), Dashboard-Konfig fuer Org-Admins
+- **v1.7 Unterricht** -- Kategorie "Unterricht" mit Auto-Enrollment, Opt-out, Anwesenheitsuebersicht
+- **v1.8 Teamer** -- Neue Rolle, professionelleres Dashboard, Konfi-zu-Teamer Transition, Teamer-Badges/Events/Chat
+- **v1.9 Datenschutz + Archivierung** -- Jahrgaenge archivieren, Loeschfristen, DSGVO
+- **Konfi Wrapped** -- Spotify-Wrapped-Style Rueckblick vor Konfirmation
 
 ---
 

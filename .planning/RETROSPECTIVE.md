@@ -165,6 +165,69 @@
 
 ---
 
+## Milestone: v1.4 -- Logik-Debug
+
+**Shipped:** 2026-03-05
+**Phases:** 5 | **Plans:** 9
+
+### What Was Built
+- Event-Logik transaktionssicher: Waitlist-Status, Registrierungsfenster, Nachruecken, Kapazitaetspruefung
+- Badge-Kriterien komplett repariert: alle 13 Typen, Streak-Jahreswechsel, category_activities UNION ALL
+- Punkteoperationen atomar: client.connect()/BEGIN/COMMIT, GREATEST(0,...), Bonus-Route konsolidiert
+- RBAC gehaertet: last_login_at nur beim Login, Jahrgang-Filter, Org-Loeschkette, Rate-Limiting
+- Chat-Sicherheit: Path-Traversal-Schutz, Org-Dateizugriff, Socket-Disconnect bei Rollenaenderung
+
+### What Worked
+- Systematischer Debug-Durchgang nach Logik-Bereichen (Events, Badges, Punkte, User, Chat)
+- Transaktionssicherheit als Grundprinzip fuer alle Datenbank-Operationen
+
+### Key Lessons
+1. Logik-Bugs verstecken sich oft hinter Race Conditions -- Transaktionen sind Pflicht
+2. Badge-Kriterien-System braucht UNION ALL statt UNION fuer korrekte Zaehlung
+
+---
+
+## Milestone: v1.5 -- Push-Notifications
+
+**Shipped:** 2026-03-07
+**Phases:** 5 | **Plans:** 8
+
+### What Was Built
+- Push-Type Registry mit 18 Notification-Types und Firebase Error-Code Forwarding
+- Token-Lifecycle: Logout-Cleanup, 12h-Refresh, User-Wechsel-Handling, Fallback-Device-ID Fix
+- BadgeContext als Single Source of Truth fuer alle Unread-Counts
+- Neue Push-Flows: Event-Erinnerungen (15min), Admin-Alert bei Registrierung, Level-Up
+- Selbstreinigendes Token-System mit 6h-Cleanup fuer verwaiste Tokens
+- Konsistentes Result-Pattern in allen Push-Send-Methoden
+
+### What Worked
+- Klare Phasen-Trennung: Foundation -> Lifecycle -> Badge -> Flows -> Cleanup
+- Integration-Checker fand keine Luecken -- Cross-Phase-Wiring war durchgehend korrekt
+- 3-Source Cross-Reference (VERIFICATION + SUMMARY + REQUIREMENTS) lieferte 100% Abdeckung
+- Research-Phase identifizierte kritische Bugs (sendBadgeUpdate try/catch) vor der Planung
+
+### What Was Inefficient
+- SUMMARY-Dateien fehlt weiterhin `one_liner` Feld -- Accomplishments manuell extrahiert
+- Vorheriger Milestone-Audit (vor Phase 29) zeigte gaps_found weil Phase 29 noch nicht fertig war
+
+### Patterns Established
+- Result-Pattern fuer Firebase-Push: result.success Check, fatalCodes Array, error_count Tracking
+- Background-Service-Pattern: startXxxService mit Guard-Variable, sofortiger Aufruf + setInterval
+- checkAndSendLevelUp als wiederverwendbare Helper-Methode an allen Punkte-Vergabe-Stellen
+
+### Key Lessons
+1. Push-Notification-System braucht konsistentes Error-Handling-Pattern in ALLEN Send-Methoden
+2. Token-Cleanup als Background-Service ist besser als reaktives Loeschen -- proaktive Bereinigung
+3. BadgeContext als Single Source of Truth eliminiert Inkonsistenzen zwischen 4 vorherigen Systemen
+4. Milestone-Audit erst nach der letzten Phase ausfuehren -- nicht davor
+
+### Cost Observations
+- Model mix: ~85% opus (execution), ~15% sonnet (verification)
+- Sessions: ~6 Sessions ueber 3 Tage
+- Notable: 8 Plans in ~14min aktiver Ausfuehrung (Durchschnitt ~1.8min/Plan)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -175,12 +238,16 @@
 | v1.1 | ~8 | 5 | 17 | ~7.4min | CSS-First + Wave-Parallelisierung skaliert |
 | v1.2 | ~3 | 4 | 6 | ~6.7min | Tech Debt gezielt aufloesen |
 | v1.3 | ~6 | 9 | 18 | ~1.4min | Kleine fokussierte Plans, systematischer Audit |
+| v1.4 | ~4 | 5 | 9 | ~2min | Logik-Debug nach Bereichen, Transaktionssicherheit |
+| v1.5 | ~6 | 5 | 8 | ~1.8min | Push-System E2E, Integration-Checker ohne Luecken |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Wave-Parallelisierung spart signifikant Zeit bei unabhaengigen Plans (v1.0 + v1.1)
-2. Research vor Planung fuehrt zu praeziseren Plans (v1.0), CSS-Klassen-First ebenso (v1.1)
+2. Research vor Planung fuehrt zu praeziseren Plans (v1.0 + v1.5), CSS-Klassen-First ebenso (v1.1)
 3. Integration-Checks und Audits am Ende finden Gaps die Phase-Verifikation uebersieht (v1.0 + v1.1 + v1.3)
-4. Kleinere Plans (1-2 Tasks) sind deutlich schneller als Multi-Task Plans (v1.2 + v1.3)
+4. Kleinere Plans (1-2 Tasks) sind deutlich schneller als Multi-Task Plans (v1.2 + v1.3 + v1.5)
 5. Systematischer View-Audit vor Milestone liefert praezise Issue-Listen (v1.3)
 6. Tech-Debt-Milestones halten Codebase-Qualitaet konstant (v1.2)
+7. Konsistente Patterns (Result-Pattern, Background-Service) ueber alle Methoden spart spaetere Bug-Fixes (v1.5)
+8. Milestone-Audit erst nach letzter Phase, nicht davor (v1.3 + v1.5)

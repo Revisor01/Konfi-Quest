@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
 status: unknown
-last_updated: "2026-03-07T00:29:09.361Z"
+last_updated: "2026-03-07T07:27:18.945Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -15,19 +15,16 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-05)
+See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.5 Push-Notifications — Milestone complete
+**Current focus:** v1.6 Dashboard-Konfig + Punkte-Logik (planning)
 
 ## Current Position
 
-Phase: 29 of 29 (token-cleanup-end-to-end-verifikation)
-Plan: 1 of 1 complete
-Status: Phase 29 complete — Milestone v1.5 complete
-Last activity: 2026-03-07 — Phase 29 Plan 01 (Token-Cleanup + End-to-End Verifikation) ausgefuehrt
-
-Progress: [##########] 100%
+Milestone: v1.5 Push-Notifications shipped 2026-03-07
+Next: v1.6 Dashboard-Konfig + Punkte-Logik — awaiting /gsd:new-milestone
+Last activity: 2026-03-07 — v1.5 milestone archived
 
 ## Performance Metrics
 

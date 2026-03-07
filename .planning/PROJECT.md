@@ -4,17 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.5 Push-Notifications
+## Current State
 
-**Goal:** Push-Notification-System zuverlaessig und vollstaendig machen — Token-Lifecycle, fehlende Flows, Admin-Konfiguration.
-
-**Target features:**
-- Token-Lifecycle: Registrierung, Cleanup bei Logout, Multi-Device, Fallback-ID Fix
-- Invalid-Token-Bereinigung nach Firebase-Errors
-- Fehlende Push-Flows: Event-Erinnerungen, Admin-Alerts, Level-Up/Punkte-Meilensteine
-- Push-Flow Vollstaendigkeits-Check ueber alle Routes
-- Admin Push-Konfiguration (Code-Level Toggles welche Types aktiv sind)
-- Badge-Count-Sync zwischen verschiedenen Systemen
+v1.5 Push-Notifications shipped (2026-03-07). Naechster Milestone: v1.6 Dashboard-Konfig + Punkte-Logik.
 
 ## Core Value
 
@@ -75,17 +67,22 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Punkteoperationen atomar: client.connect()/BEGIN/COMMIT, GREATEST(0,...), Bonus-Route konsolidiert -- v1.4
 - RBAC gehaertet: last_login_at nur beim Login, Jahrgang-Filter, Org-Loeschkette, Rate-Limiting -- v1.4
 - Chat-Sicherheit: Path-Traversal-Schutz, Org-Dateizugriff, Socket-Disconnect bei Rollenaenderung -- v1.4
+- Push-Type Registry mit 18 Notification-Types und Firebase Error-Code Forwarding -- v1.5
+- Token-Lifecycle: Logout-Cleanup, 12h-Refresh, User-Wechsel, Fallback-Device-ID -- v1.5
+- BadgeContext als Single Source of Truth fuer Unread-Counts (App-Icon, TabBar, Chat) -- v1.5
+- Push-Flows: Event-Erinnerungen, Admin-Alert bei Registrierung, Level-Up-Notifications -- v1.5
+- Selbstreinigendes Token-System mit 6h-Cleanup fuer verwaiste/fehlerhafte Tokens -- v1.5
+- Konsistentes Result-Pattern in allen Push-Send-Methoden mit error_count Tracking -- v1.5
 
 ### Active
 
-See: .planning/REQUIREMENTS.md (v1.5 Push-Notifications)
+(Next milestone: v1.6 Dashboard-Konfig + Punkte-Logik — see /gsd:new-milestone)
 
 ### Out of Scope
 
-- Teamer-Bereich Design -- eigener Milestone v2.0
-- Teamer-Badges -- eigener Milestone v2.0
-- Konfi Wrapped -- eigener Milestone v2.0
-- Offline-Support -- Komplexitaet zu hoch
+- Teamer-System (Rolle, Dashboard, Badges, Events, Chat) -- eigener Milestone v1.8
+- Konfi Wrapped -- eigener Milestone (Timing-abhaengig)
+- Offline-Support -- Komplexitaet zu hoch, nur bei konkretem Bedarf
 - App Store Submission -- erst nach Stabilisierung
 - Komplettes Backend-Refactoring (Route-Splitting) -- funktioniert, nur kritische Fixes
 - API-Dokumentation (Swagger/OpenAPI) -- kein externer Zugriff geplant
@@ -98,7 +95,8 @@ See: .planning/REQUIREMENTS.md (v1.5 Push-Notifications)
 - v1.2 shipped: Polishing + Tech Debt (4 Phasen, 6 Plans, 78 Dateien geaendert)
 - v1.3 shipped: Layout-Polishing (9 Phasen, 18 Plans, 48 Requirements, 65 Dateien geaendert)
 - v1.4 shipped: Logik-Debug (5 Phasen, 9 Plans, 24 Requirements, 50 Dateien, +3397/-1552 Zeilen)
-- Gesamt: 25 Phasen, 55 Plans ueber 5 Milestones shipped
+- v1.5 shipped: Push-Notifications (5 Phasen, 8 Plans, 17 Requirements, 16 Dateien, +647/-406 Zeilen)
+- Gesamt: 30 Phasen, 63 Plans ueber 6 Milestones shipped
 - Codebase: ~34.259 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
@@ -147,4 +145,4 @@ See: .planning/REQUIREMENTS.md (v1.5 Push-Notifications)
 | Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
 
 ---
-*Last updated: 2026-03-05 after v1.5 milestone start*
+*Last updated: 2026-03-07 after v1.5 milestone completion*
