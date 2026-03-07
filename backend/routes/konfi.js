@@ -39,8 +39,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       // Get konfi basic info with level information and confirmation location
       const konfiQuery = `
-        SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points, 
+        SELECT u.id, u.display_name, kp.gottesdienst_points, kp.gemeinde_points,
                kp.jahrgang_id, j.name as jahrgang_name, j.confirmation_date,
+               j.gottesdienst_enabled, j.gemeinde_enabled, j.target_gottesdienst, j.target_gemeinde,
                kp.current_level_id, l.name as current_level_name, l.title as current_level_title,
                l.icon as current_level_icon, l.color as current_level_color, l.points_required as current_level_points,
                ce.location as confirmation_location
@@ -224,12 +225,39 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         pointsToNextLevel = nextLevel.points_required - totalPoints;
       }
 
+      // Point config aus Jahrgang-Daten
+      const point_config = {
+        gottesdienst_enabled: konfi.gottesdienst_enabled !== false,
+        gemeinde_enabled: konfi.gemeinde_enabled !== false,
+        target_gottesdienst: konfi.target_gottesdienst || 10,
+        target_gemeinde: konfi.target_gemeinde || 10
+      };
+
+      // Dashboard config aus Settings laden
+      const { rows: dashboardSettings } = await db.query(
+        "SELECT key, value FROM settings WHERE organization_id = $1 AND key LIKE 'dashboard_show_%'",
+        [req.user.organization_id]
+      );
+      const dashboardMap = {};
+      dashboardSettings.forEach(row => {
+        dashboardMap[row.key] = row.value === 'true' || row.value === '1';
+      });
+      const dashboard_config = {
+        show_konfirmation: dashboardMap.dashboard_show_konfirmation !== undefined ? dashboardMap.dashboard_show_konfirmation : true,
+        show_events: dashboardMap.dashboard_show_events !== undefined ? dashboardMap.dashboard_show_events : true,
+        show_losung: dashboardMap.dashboard_show_losung !== undefined ? dashboardMap.dashboard_show_losung : true,
+        show_badges: dashboardMap.dashboard_show_badges !== undefined ? dashboardMap.dashboard_show_badges : true,
+        show_ranking: dashboardMap.dashboard_show_ranking !== undefined ? dashboardMap.dashboard_show_ranking : true
+      };
+
       // Return dashboard data
       res.json({
         konfi: {
           ...konfi,
           confirmation_location: konfi.confirmation_location
         },
+        point_config,
+        dashboard_config,
         recent_badges: badges,
         badge_count: badgeCount,
         recent_events: recentEvents,

@@ -8,9 +8,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
   // Validierungsregeln
   const validateSettings = [
-    body('target_gottesdienst').optional().isInt({ min: 0 }).withMessage('Zielpunkte müssen eine nicht-negative Ganzzahl sein'),
-    body('target_gemeinde').optional().isInt({ min: 0 }).withMessage('Zielpunkte müssen eine nicht-negative Ganzzahl sein'),
     body('max_waitlist_size').optional().isInt({ min: 0 }).withMessage('Wartelistengröße muss eine nicht-negative Ganzzahl sein'),
+    body('dashboard_show_konfirmation').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('dashboard_show_events').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('dashboard_show_badges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('dashboard_show_ranking').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     handleValidationErrors
   ];
 
@@ -68,9 +71,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
 
       const settings = {};
       rows.forEach(row => {
-        if (row.key === 'target_gottesdienst' || row.key === 'target_gemeinde' || row.key === 'max_waitlist_size') {
+        if (row.key === 'max_waitlist_size') {
           settings[row.key] = parseInt(row.value, 10) || 0;
-        } else if (row.key === 'waitlist_enabled') {
+        } else if (row.key === 'waitlist_enabled' || row.key.startsWith('dashboard_show_')) {
           settings[row.key] = row.value === 'true' || row.value === '1';
         } else {
           settings[row.key] = row.value;
@@ -89,27 +92,33 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     try {
       const orgId = req.user.organization_id;
       const {
-        target_gottesdienst,
-        target_gemeinde,
         konfi_chat_permissions,
         waitlist_enabled,
-        max_waitlist_size
+        max_waitlist_size,
+        dashboard_show_konfirmation,
+        dashboard_show_events,
+        dashboard_show_losung,
+        dashboard_show_badges,
+        dashboard_show_ranking
       } = req.body;
 
-      if (target_gottesdienst !== undefined) {
-        await db.query(
-          `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'target_gottesdienst', $2)
-           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
-          [orgId, target_gottesdienst]
-        );
-      }
+      // Dashboard-Widget-Toggles speichern
+      const dashboardKeys = {
+        dashboard_show_konfirmation,
+        dashboard_show_events,
+        dashboard_show_losung,
+        dashboard_show_badges,
+        dashboard_show_ranking
+      };
 
-      if (target_gemeinde !== undefined) {
-        await db.query(
-          `INSERT INTO settings (organization_id, key, value) VALUES ($1, 'target_gemeinde', $2)
-           ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
-          [orgId, target_gemeinde]
-        );
+      for (const [key, value] of Object.entries(dashboardKeys)) {
+        if (value !== undefined) {
+          await db.query(
+            `INSERT INTO settings (organization_id, key, value) VALUES ($1, $2, $3)
+             ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+            [orgId, key, String(value)]
+          );
+        }
       }
 
       if (konfi_chat_permissions !== undefined) {
