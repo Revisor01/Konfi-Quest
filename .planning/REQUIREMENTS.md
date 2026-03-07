@@ -12,8 +12,8 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 - [x] **PKT-01**: Org-Admin kann Gottesdienst-Punkte pro Jahrgang aktivieren/deaktivieren
 - [x] **PKT-02**: Org-Admin kann Gemeinde-Punkte pro Jahrgang aktivieren/deaktivieren
 - [x] **PKT-03**: Org-Admin kann Punkteziel (target) pro Jahrgang im laufenden Jahr aendern
-- [ ] **PKT-04**: Backend lehnt Punktevergabe fuer deaktivierte Typen ab
-- [ ] **PKT-05**: Warnung erscheint beim Deaktivieren wenn Konfis bereits Punkte dieses Typs haben
+- [x] **PKT-04**: Backend lehnt Punktevergabe fuer deaktivierte Typen ab
+- [x] **PKT-05**: Warnung erscheint beim Deaktivieren wenn Konfis bereits Punkte dieses Typs haben
 
 ### Punkte-UI
 
@@ -62,8 +62,8 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 | PKT-01 | Phase 30 | Complete |
 | PKT-02 | Phase 30 | Complete |
 | PKT-03 | Phase 30 | Complete |
-| PKT-04 | Phase 31 | Pending |
-| PKT-05 | Phase 31 | Pending |
+| PKT-04 | Phase 31 | Complete |
+| PKT-05 | Phase 31 | Complete |
 | PUI-01 | Phase 32 | Pending |
 | PUI-02 | Phase 32 | Pending |
 | PUI-03 | Phase 32 | Pending |

@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.6 Phase 30 - DB-Schema + Backend-Endpoints
+**Current focus:** v1.6 Phase 31 - Punkte-Logik Backend
 
 ## Current Position
 
-Phase: 30 of 33 (DB-Schema + Backend-Endpoints) -- COMPLETE
+Phase: 31 of 33 (Punkte-Logik Backend) -- COMPLETE
 Plan: 2 of 2 in current phase (all done)
-Status: Phase 30 complete
-Last activity: 2026-03-07 -- Plan 30-02 (Frontend Punkte-Config + Dashboard-Toggles) abgeschlossen
+Status: Phase 31 complete
+Last activity: 2026-03-07 -- Plan 31-02 (Badge-Logik + Ranking-Queries) abgeschlossen
 
 Progress: [==========] 100%
 
@@ -40,6 +40,7 @@ Progress: [==========] 100%
 |-------|------|----------|-------|-------|
 | 30    | 01   | 5min     | 2     | 3     |
 | 30    | 02   | 3min     | 2     | 4     |
+| 31    | 01   | 2min     | 2     | 5     |
 
 ## Accumulated Context
 
@@ -59,6 +60,9 @@ v1.6 Entscheidungen:
 - [Phase 30-02]: Dashboard-Widget-Toggles nur fuer org_admin sichtbar
 - [Phase 30-02]: Optimistisches Update mit Revert bei API-Fehler fuer Dashboard-Toggles
 - [Phase 30-02]: Punkte-Ziel-Inputs bedingt gerendert (nur wenn jeweiliger Typ enabled)
+- [Phase 31-01]: Guard gibt 400 zurueck bei deaktiviertem Punkte-Typ, nicht 403
+- [Phase 31-01]: Event-Attendance Guard rollt Transaction zurueck bei deaktiviertem Typ
+- [Phase 31-01]: Warnung bei Deaktivierung ist Info-only (200 mit warnings-Array)
 
 ### Pending Todos
 
@@ -72,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 30-02-PLAN.md (Phase 30 complete)
-Resume file: Next phase (31)
+Stopped at: Completed 31-01-PLAN.md
+Resume file: Next plan in phase 31 or next phase (32)
