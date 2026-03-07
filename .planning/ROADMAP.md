@@ -8,6 +8,7 @@
 - Shipped **v1.3 Layout-Polishing** - Phases 12-19 (shipped 2026-03-04)
 - Shipped **v1.4 Logik-Debug** - Phases 20-24 (shipped 2026-03-05)
 - Shipped **v1.5 Push-Notifications** - Phases 25-29 (shipped 2026-03-07)
+- In Progress **v1.6 Dashboard-Konfig + Punkte-Logik** - Phases 30-33
 
 ## Phases
 
@@ -89,10 +90,79 @@ Phase 29: Token-Cleanup + End-to-End Verifikation (1 plan, complete)
 
 </details>
 
+### v1.6 Dashboard-Konfig + Punkte-Logik (In Progress)
+
+**Milestone Goal:** Punkte-Typen pro Jahrgang konfigurierbar machen und Dashboard-Widgets fuer Org-Admins steuerbar machen.
+
+- [ ] **Phase 30: DB-Schema + Backend-Endpoints** - Jahrgang-Config und Dashboard-Settings als Datengrundlage
+- [ ] **Phase 31: Punkte-Logik Backend** - Guards, Badge-Skip und Warnung bei Deaktivierung
+- [ ] **Phase 32: Punkte-UI Frontend** - Ringe, Bars, Ranking und Historie reagieren auf deaktivierte Typen
+- [ ] **Phase 33: Dashboard-Widget-Steuerung** - Org-Admin steuert Dashboard-Sektionen fuer Konfis
+
+## Phase Details
+
+### Phase 30: DB-Schema + Backend-Endpoints
+**Goal**: Jahrgang-Tabelle und Settings-Tabelle liefern die Konfigurationsdaten fuer Punkte-Typen und Dashboard-Widgets
+**Depends on**: Nothing (first phase of v1.6)
+**Requirements**: PKT-01, PKT-02, PKT-03, DSH-01
+**Success Criteria** (what must be TRUE):
+  1. Org-Admin kann im Jahrgang-Edit-Modal Gottesdienst-Punkte und Gemeinde-Punkte einzeln aktivieren/deaktivieren
+  2. Org-Admin kann das Punkteziel (target) pro Jahrgang im laufenden Jahr aendern
+  3. Dashboard-Endpoint (/api/konfi/dashboard) liefert point_config mit den aktiven Punkte-Typen des Jahrgangs
+  4. Org-Admin kann in den Settings Dashboard-Sektionen (Losung, Ranking, Badges, Events, Konfirmation) ein/ausblenden
+**Plans**: TBD
+
+Plans:
+- [ ] 30-01: TBD
+- [ ] 30-02: TBD
+
+### Phase 31: Punkte-Logik Backend
+**Goal**: Backend verhindert Punktevergabe fuer deaktivierte Typen und passt Badge-Logik sowie Ranking an
+**Depends on**: Phase 30
+**Requirements**: PKT-04, PKT-05, PUI-04
+**Success Criteria** (what must be TRUE):
+  1. API gibt 400er-Fehler mit klarer Meldung zurueck wenn Punkte an einen deaktivierten Typ vergeben werden sollen
+  2. Beim Deaktivieren eines Punkte-Typs erscheint eine Warnung mit der Anzahl betroffener Konfis die bereits Punkte haben
+  3. Badge-Vergabe ueberspringt Kriterien die einen deaktivierten Punkte-Typ erfordern (gottesdienst_points, gemeinde_points, both_categories)
+  4. Ranking-Query summiert nur aktive Punkte-Typen des jeweiligen Jahrgangs
+**Plans**: TBD
+
+Plans:
+- [ ] 31-01: TBD
+- [ ] 31-02: TBD
+
+### Phase 32: Punkte-UI Frontend
+**Goal**: Alle Punkte-bezogenen UI-Elemente reagieren korrekt auf deaktivierte Punkte-Typen
+**Depends on**: Phase 30
+**Requirements**: PUI-01, PUI-02, PUI-03, PUI-05
+**Success Criteria** (what must be TRUE):
+  1. ActivityRings zeigen dynamisch 1, 2 oder 3 Ringe basierend auf den aktiven Punkte-Typen (Gesamt-Ring nur bei 2 aktiven Typen)
+  2. Fortschrittsbalken in KonfisView und KonfiDetailView blenden deaktivierte Punkte-Typen komplett aus
+  3. Ranking-Liste im Dashboard zeigt nur die Summe der aktiven Punkte-Typen an
+  4. Punkte-Historie filtert Eintraege deaktivierter Punkte-Typen aus der Anzeige
+**Plans**: TBD
+
+Plans:
+- [ ] 32-01: TBD
+- [ ] 32-02: TBD
+
+### Phase 33: Dashboard-Widget-Steuerung
+**Goal**: Dashboard rendert nur die vom Org-Admin aktivierten Sektionen
+**Depends on**: Phase 30
+**Requirements**: DSH-02, DSH-03
+**Success Criteria** (what must be TRUE):
+  1. DashboardView blendet deaktivierte Sektionen (Losung, Ranking, Badges, Events, Konfirmation) komplett aus
+  2. Aenderungen an der Dashboard-Konfiguration wirken sofort fuer alle Konfis der Organisation ohne App-Neustart
+**Plans**: TBD
+
+Plans:
+- [ ] 33-01: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
+Phases execute in numeric order: 30 -> 31 -> 32 -> 33
+Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel ausgefuehrt werden.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -126,3 +196,7 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 28. Fehlende Push-Flows | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 1/1 | Complete | 2026-03-07 |
+| 30. DB-Schema + Backend-Endpoints | v1.6 | 0/? | Not started | - |
+| 31. Punkte-Logik Backend | v1.6 | 0/? | Not started | - |
+| 32. Punkte-UI Frontend | v1.6 | 0/? | Not started | - |
+| 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |

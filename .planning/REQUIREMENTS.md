@@ -36,6 +36,8 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 - Dashboard-Widget-Toggles in bestehender `settings`-Tabelle (Key-Value Pattern)
 - Warnung beim Deaktivieren wenn Konfis bereits Punkte haben
 - Punkteziel im laufenden Jahr aenderbar
+- Ranking summiert nur aktive Punkte-Typen (alte Punkte bleiben in DB, zaehlen aber nicht)
+- both_categories Badge-Kriterium wird uebersprungen wenn nur ein Typ aktiv
 
 ## Future Requirements
 
@@ -57,25 +59,25 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKT-01 | Pending | Pending |
-| PKT-02 | Pending | Pending |
-| PKT-03 | Pending | Pending |
-| PKT-04 | Pending | Pending |
-| PKT-05 | Pending | Pending |
-| PUI-01 | Pending | Pending |
-| PUI-02 | Pending | Pending |
-| PUI-03 | Pending | Pending |
-| PUI-04 | Pending | Pending |
-| PUI-05 | Pending | Pending |
-| DSH-01 | Pending | Pending |
-| DSH-02 | Pending | Pending |
-| DSH-03 | Pending | Pending |
+| PKT-01 | Phase 30 | Pending |
+| PKT-02 | Phase 30 | Pending |
+| PKT-03 | Phase 30 | Pending |
+| PKT-04 | Phase 31 | Pending |
+| PKT-05 | Phase 31 | Pending |
+| PUI-01 | Phase 32 | Pending |
+| PUI-02 | Phase 32 | Pending |
+| PUI-03 | Phase 32 | Pending |
+| PUI-04 | Phase 31 | Pending |
+| PUI-05 | Phase 32 | Pending |
+| DSH-01 | Phase 30 | Pending |
+| DSH-02 | Phase 33 | Pending |
+| DSH-03 | Phase 33 | Pending |
 
 **Coverage:**
 - v1.6 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-07*
-*Last updated: 2026-03-07 after initial definition*
+*Last updated: 2026-03-07 after roadmap creation*
