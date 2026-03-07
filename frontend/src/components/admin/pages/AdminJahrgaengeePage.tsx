@@ -25,7 +25,8 @@ import {
   IonSpinner,
   IonDatetime,
   IonDatetimeButton,
-  IonModal
+  IonModal,
+  IonToggle
 } from '@ionic/react';
 import {
   add,
@@ -35,7 +36,8 @@ import {
   arrowBack,
   calendar,
   trash,
-  schoolOutline
+  schoolOutline,
+  settingsOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -49,6 +51,10 @@ interface Jahrgang {
   name: string;
   confirmation_date?: string;
   created_at: string;
+  gottesdienst_enabled?: boolean;
+  gemeinde_enabled?: boolean;
+  target_gottesdienst?: number;
+  target_gemeinde?: number;
 }
 
 interface JahrgangModalProps {
@@ -76,19 +82,31 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
   
   const [formData, setFormData] = useState({
     name: '',
-    confirmation_date: ''
+    confirmation_date: '',
+    gottesdienst_enabled: true,
+    gemeinde_enabled: true,
+    target_gottesdienst: 10,
+    target_gemeinde: 10
   });
 
   useEffect(() => {
     if (jahrgang) {
       setFormData({
         name: jahrgang.name,
-        confirmation_date: jahrgang.confirmation_date || ''
+        confirmation_date: jahrgang.confirmation_date || '',
+        gottesdienst_enabled: jahrgang.gottesdienst_enabled ?? true,
+        gemeinde_enabled: jahrgang.gemeinde_enabled ?? true,
+        target_gottesdienst: jahrgang.target_gottesdienst ?? 10,
+        target_gemeinde: jahrgang.target_gemeinde ?? 10
       });
     } else {
       setFormData({
         name: '',
-        confirmation_date: ''
+        confirmation_date: '',
+        gottesdienst_enabled: true,
+        gemeinde_enabled: true,
+        target_gottesdienst: 10,
+        target_gemeinde: 10
       });
     }
   }, [jahrgang]);
@@ -103,7 +121,11 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
     try {
       const payload = {
         name: formData.name.trim(),
-        confirmation_date: formData.confirmation_date.trim() || null
+        confirmation_date: formData.confirmation_date.trim() || null,
+        gottesdienst_enabled: formData.gottesdienst_enabled,
+        gemeinde_enabled: formData.gemeinde_enabled,
+        target_gottesdienst: formData.target_gottesdienst,
+        target_gemeinde: formData.target_gemeinde
       };
 
       if (jahrgang) {
@@ -180,6 +202,72 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   <IonLabel position="stacked">Konfirmationsdatum</IonLabel>
                   <IonDatetimeButton datetime="confirmation-date" disabled={loading} />
                 </IonItem>
+              </IonList>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* Punkte-Konfiguration */}
+        <IonList inset={true} style={{ margin: '16px' }}>
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={settingsOutline} />
+            </div>
+            <IonLabel>Punkte-Konfiguration</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <IonList style={{ background: 'transparent', padding: '0' }}>
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel>Gottesdienst-Punkte aktiviert</IonLabel>
+                  <IonToggle
+                    checked={formData.gottesdienst_enabled}
+                    onIonChange={(e) => setFormData({ ...formData, gottesdienst_enabled: e.detail.checked })}
+                    disabled={loading}
+                  />
+                </IonItem>
+                {formData.gottesdienst_enabled && (
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Ziel Gottesdienst</IonLabel>
+                    <IonInput
+                      type="number"
+                      min="0"
+                      value={formData.target_gottesdienst}
+                      onIonInput={(e) => {
+                        const val = parseInt(e.detail.value || '0', 10);
+                        if (!isNaN(val) && val >= 0) {
+                          setFormData({ ...formData, target_gottesdienst: val });
+                        }
+                      }}
+                      disabled={loading}
+                    />
+                  </IonItem>
+                )}
+                <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                  <IonLabel>Gemeinde-Punkte aktiviert</IonLabel>
+                  <IonToggle
+                    checked={formData.gemeinde_enabled}
+                    onIonChange={(e) => setFormData({ ...formData, gemeinde_enabled: e.detail.checked })}
+                    disabled={loading}
+                  />
+                </IonItem>
+                {formData.gemeinde_enabled && (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Ziel Gemeinde</IonLabel>
+                    <IonInput
+                      type="number"
+                      min="0"
+                      value={formData.target_gemeinde}
+                      onIonInput={(e) => {
+                        const val = parseInt(e.detail.value || '0', 10);
+                        if (!isNaN(val) && val >= 0) {
+                          setFormData({ ...formData, target_gemeinde: val });
+                        }
+                      }}
+                      disabled={loading}
+                    />
+                  </IonItem>
+                )}
               </IonList>
             </IonCardContent>
           </IonCard>

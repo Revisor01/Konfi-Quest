@@ -41,7 +41,6 @@ import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
 import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
-import AdminGoalsPage from '../admin/pages/AdminGoalsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage'; // Diese bleibt!
 import ChatRoomView from '../chat/views/ChatRoomView'; // Diese bleibt!
@@ -134,7 +133,6 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/settings/categories" component={AdminCategoriesPage} />
           <Route exact path="/admin/settings/jahrgaenge" component={AdminJahrgaengeePage} />
           <Route exact path="/admin/settings/levels" component={AdminLevelsPage} />
-          <Route exact path="/admin/settings/goals" component={AdminGoalsPage} />
           <Route exact path="/admin/settings/invite" component={AdminInvitePage} />
           <Route exact path="/admin/badges" component={AdminBadgesPage} />
           <Route exact path="/admin/requests" component={AdminActivityRequestsPage} />

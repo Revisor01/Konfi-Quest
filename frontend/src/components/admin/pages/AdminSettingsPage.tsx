@@ -15,7 +15,6 @@ import {
   useIonAlert,
   useIonModal
 } from '@ionic/react';
-import AdminGoalsPage from './AdminGoalsPage';
 import AdminInvitePage from './AdminInvitePage';
 import {
   people,
@@ -29,7 +28,6 @@ import {
   logOut,
   flash,
   notifications,
-  statsChart,
   qrCode
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
@@ -42,12 +40,6 @@ const AdminSettingsPage: React.FC = () => {
   const { user, pushNotificationsPermission, requestPushPermissions } = useApp();
   const [presentAlert] = useIonAlert();
   const history = useHistory();
-
-  const [presentGoalsModal, dismissGoalsModal] = useIonModal(AdminGoalsPage, {
-    onClose: () => dismissGoalsModal(),
-    onSuccess: () => dismissGoalsModal(),
-    dismiss: () => dismissGoalsModal()
-  });
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -168,19 +160,6 @@ const AdminSettingsPage: React.FC = () => {
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Benutzer:innen</h2>
                     <p className="app-settings-item__subtitle">Admins, Teamer:innen und Rollen verwalten</p>
-                  </div>
-                </div>
-
-                <div
-                  className="app-list-item app-list-item--users app-settings-item"
-                  onClick={() => presentGoalsModal({ presentingElement: presentingElement })}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
-                    <IonIcon icon={statsChart} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Punkte-Ziele</h2>
-                    <p className="app-settings-item__subtitle">Ziel-Punkte für Gottesdienst und Gemeinde</p>
                   </div>
                 </div>
 
