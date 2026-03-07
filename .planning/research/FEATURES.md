@@ -1,246 +1,235 @@
-# Feature Landscape: Push-Notification System v1.5
+# Feature Landscape: Dashboard-Konfig + Punkte-Logik v1.6
 
-**Domain:** Push-Notifications, Badge-Sync, Event-Erinnerungen fuer Ionic/Capacitor App
-**Researched:** 2026-03-05
-**Confidence:** HIGH (Codebase-Analyse + Firebase-Dokumentation + Capacitor-Doku)
+**Domain:** Konfigurierbare Punkte-Typen + Dashboard-Widget-System fuer Konfi Quest
+**Researched:** 2026-03-07
+**Confidence:** HIGH (basiert auf vollstaendiger Codebase-Analyse, keine externen Abhaengigkeiten)
 
 ## Ist-Zustand Analyse
 
-### Bereits implementiert (14 Push-Typen in pushService.js)
+### Punkte-System (aktuell)
 
-| Typ | Methode | Aufgerufen von | Status |
-|-----|---------|----------------|--------|
-| chat | sendChatNotification | Socket.io Handler | Aktiv |
-| new_activity_request | sendNewActivityRequestToAdmins | activities Route | Aktiv |
-| activity_request_status | sendActivityRequestStatusToKonfi | activities Route | Aktiv |
-| badge_earned | sendBadgeEarnedToKonfi | badges Route | Aktiv |
-| activity_assigned | sendActivityAssignedToKonfi | konfi-managment Route | Aktiv |
-| bonus_points | sendBonusPointsToKonfi | bonus Route | Aktiv |
-| event_registered | sendEventRegisteredToKonfi | konfi Route | Aktiv |
-| event_unregistered | sendEventUnregisteredToKonfi | konfi Route | Aktiv |
-| event_unregistration | sendEventUnregistrationToAdmins | konfi Route | Aktiv |
-| event_reminder | sendEventReminderToKonfi | backgroundService | Aktiv |
-| waitlist_promotion | sendWaitlistPromotionToKonfi | konfi Route | Aktiv |
-| event_cancelled | sendEventCancellationToKonfis | events Route | Aktiv |
-| new_event | sendNewEventToOrgKonfis | events Route | Aktiv |
-| event_attendance | sendEventAttendanceToKonfi | events Route | Aktiv |
-| events_pending_approval | sendEventsPendingApprovalToAdmins | backgroundService | Aktiv |
-| badge_update | sendBadgeUpdate | backgroundService | Aktiv |
-| level_up | sendLevelUpToKonfi | **NICHT AUFGERUFEN** | Nur Methode vorhanden |
+| Komponente | Ort | Verhalten |
+|-----------|-----|-----------|
+| Punkte-Ziele | `settings`-Tabelle (Key-Value, org-scoped) | `target_gottesdienst` + `target_gemeinde`, global pro Organisation |
+| Punkte-Speicherung | `konfi_profiles` (Spalten `gottesdienst_points`, `gemeinde_points`) | Immer zwei Spalten, werden summiert |
+| Aktivitaeten-Typ | `activities.type` = `gottesdienst` ODER `gemeinde` | Hardcoded 2 Typen, Whitelist in `getPointField()` |
+| Ranking | `konfi.js` Z.97-107 | `SUM(gottesdienst_points + gemeinde_points)` |
+| ActivityRings | `ActivityRings.tsx` | 3 Ringe hardcoded: Gesamt (Gold), Gottesdienst (Blau), Gemeinde (Gruen) |
+| Progress-Bars | `KonfisView.tsx` Z.292-334 | 3 Bars: Gottesdienst, Gemeinde, Gesamt |
+| Admin-Ziele | `AdminGoalsPage.tsx` | 2 Stepper (Gottesdienst + Gemeinde), laedt/speichert via `/settings` |
+| Badge-Kriterien | `badges.js` (13 CRITERIA_TYPES) | 4 punkte-basiert: `total_points`, `gottesdienst_points`, `gemeinde_points`, `both_categories` |
 
-### Bereits implementierte Infrastruktur
+### Dashboard-Sections (aktuell in DashboardView.tsx, ~1450 Zeilen)
 
-| Komponente | Status | Details |
-|-----------|--------|---------|
-| Firebase Admin SDK | Aktiv | push/firebase.js, Service Account vorhanden |
-| push_tokens Tabelle | Aktiv | user_id, token, platform, device_id, UPSERT |
-| BackgroundService | Aktiv | Badge-Updates (5min), Event-Reminders (15min), Pending-Events (4h) |
-| event_reminders Tabelle | Genutzt | Verhindert Doppel-Erinnerungen (1_day, 1_hour) |
-| BadgeContext (Frontend) | Aktiv | Separate Context fuer Badge-Count, WebSocket-Integration |
-| AppContext Push-Setup | Aktiv | Token-Registrierung, FCM-Listener, Navigation bei Tap |
-| Token-Refresh bei App Resume | Aktiv | Alle 12h via localStorage Timestamp |
-| Device-Token Cleanup bei Logout | Teilweise | DELETE-Route existiert, aber wird sie aufgerufen? |
+| Section | Zeilen | Inhalt | Abschaltbar? |
+|---------|--------|--------|-------------|
+| Header + ActivityRings | Z.586-743 | Begruessing, Ringe, Level-Badge, Level-Progress | Nein (Kern-Element) |
+| Konfirmation | Z.745-912 | Countdown + Events | Nicht konfigurierbar |
+| Tageslosung | Z.915-960 | AT/NT Bibelvers wechselnd | Nicht konfigurierbar |
+| Badges | Z.962-1234 | Badge-Sammlung, Stats, Secret-Badges | Nicht konfigurierbar |
+| Ranking | Z.1236-1450 | Jahrgangs-Platzierung, Top 3 + Nachbarn | Nicht konfigurierbar |
+| Events | Z.830-912 | Angemeldete Events | Nicht konfigurierbar |
 
 ## Table Stakes
 
-Features, die Nutzer fuer ein zuverlaessiges Push-System erwarten. Fehlen = App wirkt unfertig.
+Features die fuer v1.6 erwartet werden. Ohne diese ist das Feature unvollstaendig.
 
-| Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten | Req-ID |
-|---------|---------------|-------------|-----------------|--------|
-| Token-Cleanup bei Logout | Geraet erhaelt nach Logout weiter Pushes fuer alten User -- fundamentaler Vertrauensbruch | LOW | Frontend muss DELETE /device-token aufrufen | TKN-01 |
-| Fallback-Device-ID korrekt filtern | Query `NOT LIKE '%\\_\\_%'` filtert Fallback-IDs raus -- Geraete ohne echte ID erhalten nie Pushes | LOW | pushService.js getTokensForUser anpassen | TKN-02 |
-| Token-Refresh bei App Resume | Bereits implementiert (12h Intervall) -- verifizieren dass es zuverlaessig funktioniert | LOW | AppContext.tsx -- nur Verifikation | TKN-03 |
-| Token-Uebergabe bei User-Wechsel | FCM-Token gehoert physisch dem Geraet, nicht dem User. Bei Re-Login muss alter User-Token geloescht werden | LOW | Bereits in notifications.js implementiert (DELETE WHERE token=$1 AND user_id!=$2) | TKN-04 |
-| Invalid-Token-Bereinigung nach Firebase-Error | Firebase gibt `messaging/registration-token-not-registered` bei ungueltigem Token -- dieser muss sofort aus DB entfernt werden | MEDIUM | pushService.js sendToUser muss Error-Codes auswerten | CLN-01 |
-| Periodischer Token-Cleanup | Verwaiste Tokens (User geloescht, Token >60 Tage alt) verstopfen DB und verursachen unnoetige Firebase-Calls | LOW | Neuer Cleanup-Job in backgroundService, alle 24h | CLN-02 |
-| Badge-Count als Single Source of Truth | Aktuell: BadgeContext rechnet aus Chat-Rooms, backgroundService sendet Badge-Updates, AppContext hoert auf badge_update Pushes -- drei Quellen, keine ist autoritativ | MEDIUM | BadgeContext muss einzige Quelle sein, alles andere konsumiert | BDG-01 |
-| App-Icon Badge korrekt | iOS/Android App-Icon muss ungelesene Nachrichten korrekt anzeigen -- @capawesome/capacitor-badge ist bereits integriert | LOW | Abhaengig von BDG-01 (Single Source) | BDG-02 |
-| Chat Unread-Counts pro Raum | chat_participants.last_read_at existiert, wird aber nicht immer korrekt aktualisiert | LOW | Backend-Query bereits korrekt in backgroundService | BDG-03 |
-| TabBar Badge-Zahlen korrekt | TabBar-Badges muessen mit tatsaechlichen Counts uebereinstimmen | LOW | Abhaengig von BDG-01 | BDG-04 |
-| Bestehende 14 Push-Flows verifiziert | Alle existierenden Flows muessen tatsaechlich funktionieren (nicht nur Code vorhanden) | MEDIUM | End-to-End Test auf echtem Geraet | CMP-01 |
+| Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten | Notes |
+|---------|---------------|-------------|-----------------|-------|
+| Punkte-Typ Aktivierung/Deaktivierung pro Jahrgang | Kern-Anforderung: Manche Gemeinden nutzen nur einen Punktetyp. Muss jahrgangs-spezifisch sein, nicht org-weit | Med | `jahrgaenge` Tabelle erweitern, `jahrgaenge.js`, Jahrgang-Edit-Modal | Aktuell hat `jahrgaenge` nur `name` + `confirmation_date`. Neue Spalten: `gottesdienst_enabled BOOLEAN DEFAULT true`, `gemeinde_enabled BOOLEAN DEFAULT true` |
+| ActivityRings dynamisch (1-3 Ringe) | Ohne Anpassung zeigen Ringe leere/sinnlose Rings fuer deaktivierten Typ | Med | `ActivityRings.tsx` (Props erweitern um `showGottesdienst`, `showGemeinde`) | Bei 1 Typ: 1 Ring. Bei 0 Typen: Ringe komplett ausblenden |
+| Gesamt-Ring-Logik bei einem Typ | Gesamt-Ring = Summe beider Typen. Bei einem Typ ist Gesamt identisch mit dem aktiven Typ -> redundant | Low | `ActivityRings.tsx` | Gesamt-Ring nur anzeigen wenn beide Typen aktiv |
+| Legende dynamisch | LegendItem zeigt aktuell immer alle 3 Labels | Low | `ActivityRings.tsx` LegendItem-Komponente | Nur aktive Typen in Legende |
+| Progress-Bars in KonfisView anpassen | Admin sieht 0/0 Bars fuer deaktivierte Typen | Low | `KonfisView.tsx` Z.292-334 | Deaktivierte Bar ausblenden, bei 1 Typ: Gesamt = aktiver Typ |
+| KonfiDetailView ActivityRings anpassen | Admin-Konfi-Detail zeigt identische Ringe wie Dashboard | Low | `KonfiDetailView.tsx` Z.499-500 | Gleiche Logik wie Dashboard-Ringe, braucht Jahrgang-Config |
+| Badge-Kriterien Warnung bei Typ-Deaktivierung | Badges mit `gottesdienst_points`/`gemeinde_points`/`both_categories` werden unerreichbar wenn Typ deaktiviert | High | `badges.js`, `checkAndAwardBadges()`, Jahrgang-Edit-Modal | Admin muss beim Deaktivieren gewarnt werden: "X Badges verwenden diesen Punktetyp" |
+| Badge-Check skip bei deaktiviertem Typ | `checkAndAwardBadges` darf Badges mit deaktiviertem Typ-Kriterium nicht als "nicht erreicht" zaehlen | Med | `badges.js` checkAndAwardBadges, Jahrgang-Config | Badge wird uebersprungen, nicht als fehlend gewertet |
+| Backend: Jahrgang-Config im Dashboard-Endpoint | Frontend braucht die enabled/disabled Info pro Typ | Low | `konfi.js` Dashboard-Route Z.32-62 | JOIN mit `jahrgaenge` liefert bereits `jahrgang_name`, muss `gottesdienst_enabled` + `gemeinde_enabled` hinzufuegen |
+| Dashboard-Widget-Konfiguration (Org-Admin UI) | Org-Admin bestimmt welche Widgets Konfis sehen | Med | `settings.js` (Key-Value Store erweitern), neuer Admin-Settings-Bereich | Neuer Settings-Key `dashboard_widgets` als JSON |
+| Dashboard rendert nur aktive Widgets | Konfi sieht nur konfigurierte Sections | Med | `DashboardView.tsx` (5 abschaltbare Sections) | Conditional Rendering basierend auf Widget-Config |
+| Backend: Widget-Config im Dashboard-Daten | Frontend braucht Widget-Config bei jedem Dashboard-Load | Low | `konfi.js` Dashboard-Route, `settings`-Tabelle | Settings-Query erweitern um `dashboard_widgets` Key |
 
 ## Differentiators
 
-Features, die das System komplett machen. Nicht zwingend erwartet, aber machen die App professionell.
+Features die ueber das Minimum hinausgehen, aber echten Mehrwert bieten.
 
-| Feature | Wert-Proposition | Komplexitaet | Abhaengigkeiten | Req-ID |
-|---------|-----------------|-------------|-----------------|--------|
-| Event-Erinnerungen (1 Tag + 1 Stunde) | Konfis vergessen Events -- Erinnerungen erhoehen Teilnahme signifikant. **Bereits implementiert** in backgroundService + pushService, braucht nur Verifikation + event_reminders Tabelle anlegen | LOW | event_reminders Tabelle muss existieren (CREATE TABLE falls nicht vorhanden) | FLW-01 |
-| Admin-Alert bei neuer Konfi-Registrierung | Admin weiss sofort wenn ein neuer Konfi sich registriert hat und kann reagieren (Willkommensnachricht, Jahrgangs-Zuweisung pruefen) | LOW | auth.js register-konfi Route + PushService.sendToMultipleUsers | FLW-02 |
-| Level-Up Push-Notification | Konfi erhaelt Glueckwunsch-Push bei Level-Aufstieg. **sendLevelUpToKonfi existiert bereits** in pushService, wird aber nie aufgerufen | LOW | Muss in der Route eingebaut werden, wo Level-Checks passieren (nach Punkte-Vergabe) | FLW-03 |
-| Punkte-Meilenstein Push | Konfi erhaelt Push wenn Mindestpunkte (Gottesdienst oder Gemeinde) erreicht sind -- wichtiger Moment in der Konfi-Zeit | MEDIUM | Neue Methode in pushService, Trigger nach Punkte-Update in konfi-managment/bonus Routes | FLW-04 |
-| Push-Type Registry mit Defaults | Zentrale Definition aller Push-Typen mit Enable/Disable-Flag -- macht System wartbar und erweiterbar | LOW | Neue Datei pushTypes.js mit Type-Registry-Map | CFG-02 |
-| Push-Types aktivierbar/deaktivierbar | Admins oder Code koennen bestimmte Push-Typen abschalten (z.B. Event-Erinnerungen oder Bonus-Pushes) | LOW | pushTypes.js + Check in sendToUser vor jedem Send | CFG-01 |
+| Feature | Wertversprechen | Komplexitaet | Notes |
+|---------|----------------|-------------|-------|
+| Migration-Hinweis bei Typ-Deaktivierung | "X Konfis haben bereits Y Punkte in diesem Typ" -- verhindert versehentliches Deaktivieren | Low | Ein COUNT-Query beim Toggle genuegt. Guter UX-Schutz |
+| Info-Text im Konfi-Dashboard | Kurzer Text "Deine Gemeinde trackt nur Gottesdienst-Punkte" wenn ein Typ deaktiviert | Low | Hilft Konfis zu verstehen warum nur ein Ring sichtbar ist |
+| Admin-Goals pro Jahrgang | Statt org-weite Targets: Unterschiedliche Ziele pro Jahrgang | Med | Wuerde `target_gottesdienst`/`target_gemeinde` von `settings` nach `jahrgaenge` verschieben. Sinnvoll wenn Jahrgaenge verschiedene Anforderungen haben |
+| Preview der Widget-Konfiguration | Admin sieht Vorschau wie Dashboard fuer Konfis aussieht | Med | Nett, aber bei 5 einfachen Toggles uebertrieben |
 
 ## Anti-Features
 
-Features, die verlockend erscheinen, aber in v1.5 NICHT gebaut werden sollten.
+Features die explizit NICHT gebaut werden sollen.
 
-| Anti-Feature | Warum verlockend | Warum problematisch | Alternative |
-|--------------|-----------------|--------------------|----|
-| User-Level Notification Preferences UI | Nutzer koennte selbst waehlen welche Pushes er bekommt | Zu komplex fuer v1.5: Settings-UI, Backend-Speicherung, Frontend-Toggle pro Typ, Migration. Bei <100 Nutzern nicht noetig | Code-Level Toggles (CFG-01) reichen. User-Preferences als v2.0 Feature |
-| Digest-Notifications (taegliche Zusammenfassung) | Weniger Push-Spam, eleganter | Erfordert Queue-System, Aggregation-Logik, Template-Engine fuer Zusammenfassungen. Overkill bei aktueller Nutzerzahl | Einzelne Pushes mit sinnvollem Timing (nicht mitten in der Nacht) |
-| Rich Notifications mit Bildern/Actions | iOS unterstuetzt Bilder und Action-Buttons in Pushes | Erfordert Notification Service Extension (Swift), separate Build-Konfiguration, Content-Available vs Alert Push Typen | Standard-Pushes mit klarem Titel und Body reichen |
-| Web Push Notifications | Nutzer am Desktop koennten auch Pushes bekommen | App ist native-only. Web Push erfordert Service Worker, separates Token-Management, Browser-Kompatibilitaet | Kein Web-Push. In-App Notification Center existiert |
-| SMS/Email fuer Push-Events | Fallback wenn Push nicht ankommt | SMS kostet Geld pro Nachricht, Email-Notifications erfordern Template-System. Mail-Service existiert aber ist nicht fuer Push vorgesehen | Push-Zuverlaessigkeit verbessern (Token-Cleanup, Retry) statt Fallback-Kanaele |
-| Lokale Notifications (Capacitor Local Notifications) | Event-Erinnerungen ohne Server moeglich | Server-seitige Erinnerungen sind zuverlaessiger (backgroundService laeuft bereits). Lokale Notifications erfordern Alarm-Permissions auf Android, werden bei App-Kill geloescht | Server-Side Event Reminders (backgroundService, bereits implementiert) |
-| node-cron statt setInterval | Praezisere Zeitsteuerung mit Cron-Syntax | Aktuelle setInterval-Loesung in backgroundService funktioniert ausreichend. node-cron wuerde neue Dependency einfuehren ohne echten Mehrwert bei 15-Minuten-Intervallen | setInterval beibehalten. Cron nur noetig wenn minutengenaues Scheduling kritisch wird |
+| Anti-Feature | Warum vermeiden | Stattdessen |
+|-------------|----------------|-------------|
+| Punkte loeschen bei Typ-Deaktivierung | Datenverlust, Admin-Fehler nicht reversibel | Punkte bleiben in DB, werden nur nicht angezeigt/gewertet. Reaktivierung stellt alles wieder her |
+| Dynamische Anzahl Punkte-Typen (N Typen) | System ist auf 2 Typen (Gottesdienst + Gemeinde) gebaut -- DB-Spalten, Variablennamen, UI-Texte. Generische N Typen waere massives Refactoring (>1000 Zeilen) | Bleibe bei 2 festen Typen, erlaube 0/1/2 aktiv |
+| Widget-Konfiguration pro Jahrgang | Zu granular, ueberfordert Admins. Verschiedene Jahrgaenge gleicher Org sehen verschiedene Dashboards? Verwirrend | Dashboard-Config gilt org-weit |
+| Punkte-Typ umbenennen | "Gottesdienst" und "Gemeinde" sind in der gesamten Codebase hardcoded: DB-Spalten (`gottesdienst_points`, `gemeinde_points`), getPointField-Whitelist, ActivityRings-Farben, LegendItems, Badge-Criteria | Labels bleiben fest. Umbenennung waere ein eigenes Refactoring |
+| Custom Dashboard-Widgets | Admin erstellt beliebige Dashboard-Widgets mit eigenem Inhalt | Festes Widget-Set (5 Stueck) mit Toggle reicht. Konfis sind keine Power-User |
+| Drag & Drop Widget-Reihenfolge | Admin sortiert Widgets per Drag & Drop | Feste Reihenfolge. Reihenfolge ist durchdacht (Header -> Konfirmation -> Losung -> Badges -> Ranking -> Events) |
+| Aktivitaeten bei deaktiviertem Typ blockieren | Gemeinde-Aktivitaeten nicht mehr erfassbar wenn Gemeinde deaktiviert | Aktivitaeten bleiben erfassbar, Punkte werden weiterhin gespeichert. Nur Anzeige (Ring/Bar/Ziel) entfaellt. Ermoegllicht spaetere Reaktivierung |
 
 ## Feature-Abhaengigkeiten
 
 ```
-[Token-Cleanup bei Logout] (TKN-01)
-    Keine Abhaengigkeit -- Frontend-Aenderung beim Logout
+Jahrgang-Tabelle erweitern (gottesdienst_enabled, gemeinde_enabled)
+  |-> Backend: Dashboard-Endpoint liefert Jahrgang-Config mit
+  |     |-> ActivityRings dynamisch (1-3 Ringe)
+  |     |-> Progress-Bars anpassen (KonfisView)
+  |     |-> KonfiDetailView Ringe anpassen
+  |     |-> Badge-Check skip bei deaktiviertem Typ
+  |-> Jahrgang-Edit-Modal: Toggles fuer Punkte-Typen
+  |     |-> Badge-Warnung bei Deaktivierung (Alert im Modal)
+  |     |-> Migration-Hinweis (optional)
 
-[Fallback-Device-ID Fix] (TKN-02)
-    Keine Abhaengigkeit -- Query-Anpassung in pushService.js
-
-[Invalid-Token-Bereinigung] (CLN-01)
-    Erfordert: Firebase Error-Code Parsing
-    Beeinflusst: Alle Push-Flows (weniger fehlgeschlagene Sends)
-
-[Periodischer Token-Cleanup] (CLN-02)
-    Erfordert: Neuer Job in backgroundService
-    Optimalerweise nach CLN-01 (gleiche Token-Logik)
-
-[Badge-Count Single Source] (BDG-01)
-    Keine Abhaengigkeit -- Refactoring von BadgeContext
-    BLOCKER fuer: BDG-02, BDG-03, BDG-04
-
-[App-Icon Badge] (BDG-02)
-    Erfordert: BDG-01
-
-[Chat Unread-Counts] (BDG-03)
-    Erfordert: BDG-01
-
-[TabBar Badges] (BDG-04)
-    Erfordert: BDG-01
-
-[Event-Erinnerungen] (FLW-01)
-    Bereits implementiert -- nur Verifikation + DB-Migration
-    Erfordert: event_reminders Tabelle existiert
-
-[Admin-Alert Registrierung] (FLW-02)
-    Keine Abhaengigkeit -- auth.js Erweiterung
-
-[Level-Up Push] (FLW-03)
-    Erfordert: Level-Check-Logik identifizieren (wo werden Punkte vergeben?)
-    sendLevelUpToKonfi existiert bereits
-
-[Punkte-Meilenstein Push] (FLW-04)
-    Erfordert: Meilenstein-Definition (welche Schwellwerte?)
-    Erfordert: konfi_profiles.gottesdienst_points/gemeinde_points Abfrage
-
-[Push-Type Registry] (CFG-02)
-    Keine Abhaengigkeit -- neue Datei
-    BLOCKER fuer: CFG-01
-
-[Push-Types Toggle] (CFG-01)
-    Erfordert: CFG-02 (Registry muss existieren)
-
-[14 Flows verifiziert] (CMP-01)
-    Erfordert: CLN-01 (sonst schlagen Sends mit invaliden Tokens fehl)
-    Am besten NACH allen anderen Features
+Dashboard-Widget-Config in Settings-Tabelle
+  |-> Admin Settings UI: Widget-Toggles
+  |-> Backend: Widget-Config im Dashboard-Daten
+  |     |-> DashboardView Conditional Rendering
 ```
 
-## MVP-Empfehlung fuer v1.5
+## Bestandsaufnahme: Betroffene Code-Stellen
 
-### Phase 1: Token-Zuverlaessigkeit (Fundament)
-1. **TKN-01**: Logout Token-Cleanup -- Vertrauensbruch beseitigen
-2. **TKN-02**: Fallback-ID Fix -- Geraete ohne echte ID erreichen
-3. **TKN-04**: User-Wechsel Token-Uebergabe -- bereits implementiert, verifizieren
-4. **CLN-01**: Firebase Error-Code Cleanup -- ungueltige Tokens sofort entfernen
-5. **CLN-02**: Periodischer Cleanup -- verwaiste Tokens bereinigen
+### Was passiert wenn `gottesdienst_enabled = false`?
 
-### Phase 2: Badge-Count-Sync (User-sichtbar)
-6. **BDG-01**: Single Source of Truth definieren -- BadgeContext als einzige Quelle
-7. **BDG-02**: App-Icon Badge korrekt -- @capawesome/capacitor-badge sync
-8. **BDG-03**: Chat Unread-Counts -- pro Raum korrekt
-9. **BDG-04**: TabBar Badges -- konsistent mit BDG-01
+| Stelle | Datei | Aktuelles Verhalten | Neues Verhalten |
+|--------|-------|-------------------|-----------------|
+| ActivityRings | `ActivityRings.tsx` | 3 Ringe: Gesamt (Gold), Gottesdienst (Blau), Gemeinde (Gruen) | 1 Ring: Gemeinde (Gruen). Gesamt-Ring entfaellt (= Gemeinde) |
+| ActivityRings Props | `DashboardView.tsx` Z.636-643 | Alle 3 Werte uebergeben | `showGottesdienst={false}` |
+| Legende | `ActivityRings.tsx` LegendItem | 3 Labels | 1 Label (Gemeinde) |
+| Admin-Konfi-Liste | `KonfisView.tsx` Z.292-334 | 3 Progress-Bars | 2 Bars (Gemeinde + Gesamt, wobei identisch -> 1 Bar) |
+| Admin-Konfi-Detail | `KonfiDetailView.tsx` Z.499-500 | Alle Goals | `gottesdienstGoal={0}` |
+| Badge-Check | `badges.js` checkAndAwardBadges | Prueft `gottesdienst_points` Kriterium | Skip Badges mit `gottesdienst_points`/`both_categories` Kriterium |
+| Ranking | `konfi.js` Z.97-107 | `SUM(godi + gem)` | Bleibt: Summe ist weiterhin korrekt (Godi = 0) |
+| Punkte-Ziel Stepper | `AdminGoalsPage.tsx` | 2 Stepper immer sichtbar | Gottesdienst-Stepper ausgegraut oder unsichtbar wenn Typ deaktiviert fuer alle Jahrgaenge |
 
-### Phase 3: Fehlende Push-Flows (Neue Features)
-10. **FLW-01**: Event-Erinnerungen -- verifizieren (bereits implementiert)
-11. **FLW-02**: Admin-Alert Registrierung -- auth.js erweitern
-12. **FLW-03**: Level-Up Push -- sendLevelUpToKonfi aufrufen
-13. **FLW-04**: Punkte-Meilenstein -- neue Logik
+### Was passiert wenn BEIDE Typen deaktiviert?
 
-### Phase 4: Konfiguration + Verifikation
-14. **CFG-02**: Push-Type Registry -- zentrale Definition
-15. **CFG-01**: Push-Types Toggle -- aktivierbar/deaktivierbar
-16. **CMP-01**: Alle 14+4 Flows End-to-End verifizieren
+| Stelle | Verhalten |
+|--------|-----------|
+| ActivityRings | Komplett ausblenden. Nur Begruessing + Level sichtbar |
+| Progress-Bars | Komplett ausblenden |
+| Ranking | Bleibt (alle haben 0 Punkte, Platz 1 geteilt) -- ODER ausblenden |
+| Badge-Checks | Punkte-basierte Badges uebersprungen, andere Kriterien (activity_count, event_count, streak, etc.) funktionieren weiterhin |
+| Level-Progress | Basiert auf Gesamtpunkten = 0 -> kein Fortschritt. Progress-Bar ausblenden |
 
-**Reihenfolge-Rationale:**
-- Token-Zuverlaessigkeit ZUERST: Ohne zuverlaessige Token-Zustellung sind neue Flows sinnlos
-- Badge-Sync VOR neuen Flows: Nutzer sehen sofort Verbesserung bei bestehenden Features
-- Konfiguration ZULETZT: Setzt voraus, dass alle Flows existieren und funktionieren
+**Empfehlung:** Beide-deaktiviert ist ein Edge Case der funktionieren muss, aber nicht optimiert werden muss. Ringe + Level-Progress ausblenden, Rest bleibt.
+
+### Dashboard-Widgets: Konfigurierbare Sections
+
+| Widget-ID | Section | Default | Kann deaktiviert werden? |
+|-----------|---------|---------|------------------------|
+| `header` | Header mit ActivityRings, Begruessing, Level | aktiv | NEIN -- enthaelt Kern-Identitaet der App |
+| `konfirmation` | Countdown zur Konfirmation | aktiv | JA |
+| `tageslosung` | Tageslosung (AT/NT wechselnd) | aktiv | JA |
+| `badges` | Badge-Sammlung mit Stats | aktiv | JA |
+| `ranking` | Jahrgangs-Ranking | aktiv | JA |
+| `events` | Angemeldete Events | aktiv | JA |
+
+## Datenmodell-Empfehlung
+
+### Punkte-Typ-Konfiguration: Spalten auf `jahrgaenge`
+
+```sql
+ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true;
+ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true;
+```
+
+**Warum auf `jahrgaenge` statt `settings`:**
+- Punkte-Typen sind jahrgangs-spezifisch: Jahrgang 2025 kann Gottesdienst-frei sein, Jahrgang 2026 nicht
+- `settings`-Tabelle ist org-weit (kein Jahrgang-Bezug)
+- Jahrgang-Edit-Modal ist der natuerliche Ort fuer diese Konfiguration
+- Kein neues Datenmodell noetig, nur 2 Spalten
+
+**Targets bleiben in `settings`:** `target_gottesdienst` und `target_gemeinde` sind weiterhin org-weite Zielwerte. Die `enabled`-Flags auf dem Jahrgang bestimmen nur, OB ein Typ angezeigt/gewertet wird.
+
+### Dashboard-Widget-Config: JSON in `settings`
+
+```sql
+-- In bestehender settings-Tabelle (Key-Value):
+INSERT INTO settings (organization_id, key, value)
+VALUES (1, 'dashboard_widgets', '{"konfirmation":true,"tageslosung":true,"badges":true,"ranking":true,"events":true}');
+```
+
+**Warum:** Passt in bestehendes Key-Value-Pattern. JSON-Wert mit Widget-IDs und boolean. Default wenn Key fehlt: alle aktiv.
+
+## Kritische Entscheidung: ActivityRings bei einem Typ
+
+**Option A: 2 Ringe (Gesamt + aktiver Typ)**
+- Gesamt-Ring ist identisch mit aktivem Typ -> redundant und verwirrend
+
+**Option B: 1 Ring (nur aktiver Typ) -- EMPFOHLEN**
+- Klar und eindeutig
+- Zentrale Zahl zeigt weiterhin Gesamtpunkte
+- Legende zeigt nur aktiven Typ
+- Wenig Code-Aenderung: neue optionale Props `showGottesdienst`, `showGemeinde`
+
+**Option C: 2 Ringe mit angepassten Radien (aktiver Typ aussen, Gesamt innen)**
+- Visuell ansprechender als 1 Ring
+- Aber: immer noch redundant bei 1 Typ
+
+**Empfehlung:** Option B. ActivityRings bekommt `showGottesdienst?: boolean` und `showGemeinde?: boolean` Props (default: true). Nicht uebergebene Ringe werden nicht gerendert. Radien der verbleibenden Ringe werden angepasst damit sie zentriert aussehen.
+
+## MVP-Empfehlung
+
+### Phase 1: Punkte-Logik (Backend + Datenmodell)
+1. Jahrgang-Tabelle erweitern (`gottesdienst_enabled`, `gemeinde_enabled`)
+2. Jahrgang-CRUD Endpoints anpassen (neue Felder lesen/schreiben)
+3. Dashboard-Endpoint: Jahrgang-Config mitliefern
+4. Badge-Check: Deaktivierte Typ-Kriterien skippen
+
+### Phase 2: Punkte-UI (Frontend-Anpassungen)
+5. ActivityRings: Dynamische Props, 1-3 Ringe
+6. Jahrgang-Edit-Modal: Toggles fuer Punkte-Typen + Badge-Warnung
+7. KonfisView Progress-Bars anpassen
+8. KonfiDetailView Ringe anpassen
+9. AdminGoalsPage: Deaktivierte Typen markieren
+
+### Phase 3: Dashboard-Konfiguration
+10. Settings-Endpoint um `dashboard_widgets` erweitern
+11. Admin-UI: Widget-Toggles in Settings (Checkbox-Liste)
+12. DashboardView: Conditional Rendering basierend auf Widget-Config
+13. Backend: Widget-Config im Dashboard-Daten mitliefern
+
+**Zurueckstellen:**
+- Widget-Reihenfolge (feste Reihenfolge reicht)
+- Preview (unnoetig bei einfachen Toggles)
+- Info-Banner fuer Konfis (nice-to-have, kann spaeter kommen)
+- Admin-Goals pro Jahrgang (erst bei konkretem Bedarf)
 
 ## Feature-Priorisierungs-Matrix
 
 | Feature | Nutzer-Wert | Implementierungskosten | Prioritaet |
 |---------|------------|----------------------|-----------|
-| Token-Cleanup bei Logout (TKN-01) | HIGH | LOW | P1 |
-| Fallback-ID Fix (TKN-02) | MEDIUM | LOW | P1 |
-| Token-Refresh verifizieren (TKN-03) | LOW | LOW | P1 |
-| User-Wechsel Token (TKN-04) | MEDIUM | LOW | P1 |
-| Invalid-Token-Bereinigung (CLN-01) | HIGH | MEDIUM | P1 |
-| Periodischer Cleanup (CLN-02) | MEDIUM | LOW | P1 |
-| Badge Single Source (BDG-01) | HIGH | MEDIUM | P1 |
-| App-Icon Badge (BDG-02) | MEDIUM | LOW | P1 |
-| Chat Unread-Counts (BDG-03) | MEDIUM | LOW | P1 |
-| TabBar Badges (BDG-04) | MEDIUM | LOW | P1 |
-| Event-Erinnerungen (FLW-01) | HIGH | LOW (Verifikation) | P1 |
-| Admin-Alert Registrierung (FLW-02) | MEDIUM | LOW | P1 |
-| Level-Up Push (FLW-03) | MEDIUM | LOW | P1 |
-| Punkte-Meilenstein (FLW-04) | MEDIUM | MEDIUM | P1 |
-| Push-Type Registry (CFG-02) | LOW | LOW | P1 |
-| Push-Types Toggle (CFG-01) | LOW | LOW | P1 |
-| Alle Flows verifiziert (CMP-01) | HIGH | MEDIUM | P1 |
-
-**Alle Features sind P1** -- dies ist ein fokussierter Milestone mit klarem Scope.
-
-## Kritische Beobachtungen aus der Codebase
-
-### 1. BadgeContext und AppContext sind nicht synchron
-- `BadgeContext.tsx` berechnet Badge-Count aus `/chat/rooms` API
-- `AppContext.tsx` hat eigenen `chatNotifications` State mit `totalUnreadCount`
-- `backgroundService.js` sendet `badge_update` Push-Notifications mit eigenem Count
-- Kommentare wie "Badge logic removed - now handled by BadgeContext" deuten auf halbfertige Migration hin
-- **Risiko:** Drei verschiedene Counts koennen divergieren
-
-### 2. sendLevelUpToKonfi ist toter Code
-- Methode existiert in pushService.js (Zeile 453-471)
-- Wird nirgends aufgerufen -- kein einziger Aufruf in allen Routes
-- Muss an der Stelle eingebaut werden, wo Level-Checks nach Punkte-Vergabe passieren
-
-### 3. Event-Reminder Infrastruktur existiert bereits
-- backgroundService.js hat komplette Implementierung (1-Tag + 1-Stunde Erinnerungen)
-- event_reminders Tabelle wird in Queries referenziert aber moeglicherweise nicht per Migration angelegt
-- Muss nur verifiziert werden dass Tabelle existiert und Logik funktioniert
-
-### 4. Firebase Error-Handling fehlt komplett
-- In pushService.js wird bei Send-Fehler nur `console.error` geloggt
-- Keine Unterscheidung zwischen `messaging/registration-token-not-registered` (Token loeschen!) und temporaeren Fehlern (Retry!)
-- Firebase Best Practice: Token sofort aus DB entfernen bei diesen Error-Codes:
-  - `messaging/registration-token-not-registered`
-  - `messaging/invalid-registration-token`
-
-### 5. Keine Notification-Type-Registry
-- Push-Typen sind als Strings ueber pushService.js verstreut ("chat", "new_event", etc.)
-- Kein zentraler Ort der definiert welche Typen existieren und ob sie aktiv sind
-- Einfache Loesung: Map-Objekt mit Type-Name -> { enabled, defaultTitle, category }
+| Punkte-Typ toggle pro Jahrgang | HIGH | MED | P1 |
+| ActivityRings dynamisch | HIGH | MED | P1 |
+| Badge-Warnung bei Deaktivierung | HIGH | MED | P1 |
+| Badge-Check skip | HIGH | MED | P1 |
+| Dashboard-Widget-Toggles (Admin) | MED | MED | P1 |
+| Dashboard Conditional Rendering | MED | MED | P1 |
+| Progress-Bars anpassen | MED | LOW | P1 |
+| KonfiDetailView Ringe | MED | LOW | P1 |
+| Backend Config-Endpoints | MED | LOW | P1 |
+| Migration-Hinweis bei Deaktivierung | LOW | LOW | P2 |
+| Info-Text im Konfi-Dashboard | LOW | LOW | P2 |
 
 ## Quellen
 
-- [Firebase: FCM Token Management Best Practices](https://firebase.google.com/docs/cloud-messaging/manage-tokens) -- Token-Staleness, Cleanup-Strategie
-- [Firebase: FCM Error Codes](https://firebase.google.com/docs/cloud-messaging/error-codes) -- Welche Errors Token-Loeschung erfordern
-- [Firebase Blog: Managing Cloud Messaging Tokens (2023)](https://firebase.blog/posts/2023/04/managing-cloud-messaging-tokens/) -- 60-Tage Staleness-Window
-- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) -- Registration, Listeners, Token-Handling
-- [TELUS Digital: iOS Badge Count Best Practices](https://www.willowtreeapps.com/craft/best-practices-for-driving-engagement-with-ios-app-notification-badges) -- Server-Side Badge Count, Engagement
-- [Braze: Utilizing Badge Count](https://www.braze.com/docs/user_guide/message_building_by_channel/push/ios/utilizing_badge_count) -- Badge-Sync Architektur
-- [Apple Developer Forums: Badge Count](https://developer.apple.com/forums/thread/122339) -- Server-Side Badge Berechnung
-- [DigitalOcean: node-cron Guide](https://www.digitalocean.com/community/tutorials/nodejs-cron-jobs-by-examples) -- Scheduled Jobs Pattern
-- Codebase-Analyse: pushService.js, backgroundService.js, AppContext.tsx, BadgeContext.tsx, notifications.js, auth.js, events.js
+- Codebase-Analyse: `DashboardView.tsx` (~1450 Zeilen, 6 Sections, Z.586-1450)
+- Codebase-Analyse: `ActivityRings.tsx` (350 Zeilen, 3 hardcoded Ringe, Props: totalPoints, gottesdienstPoints, gemeindePoints, gottesdienstGoal, gemeindeGoal)
+- Codebase-Analyse: `badges.js` (13 CRITERIA_TYPES, 4 punkte-basiert: total_points, gottesdienst_points, gemeinde_points, both_categories)
+- Codebase-Analyse: `settings.js` (Key-Value Store, org-scoped, target_gottesdienst/target_gemeinde/konfi_chat_permissions/waitlist_enabled/max_waitlist_size)
+- Codebase-Analyse: `jahrgaenge.js` (CRUD, aktuell nur name + confirmation_date + organization_id)
+- Codebase-Analyse: `AdminGoalsPage.tsx` (2 Stepper, laedt/speichert via GET/PUT /settings)
+- Codebase-Analyse: `KonfisView.tsx` (3 Progress-Bars pro Konfi, Z.292-334, targets aus settings)
+- Codebase-Analyse: `KonfiDetailView.tsx` (ActivityRings mit settings.target_gottesdienst/target_gemeinde, Z.499-500)
+- Codebase-Analyse: `konfi.js` Dashboard-Route (Z.32-240, Ranking, Level, Punkte aus konfi_profiles)
 
 ---
-*Feature-Research fuer: Konfi Quest v1.5 Push-Notifications*
-*Recherchiert: 2026-03-05*
+*Feature-Research fuer: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
+*Recherchiert: 2026-03-07*

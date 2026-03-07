@@ -1,577 +1,676 @@
 # Architecture Patterns
 
-**Domain:** Push-Notification-System Verbesserung fuer Ionic/Capacitor App
-**Researched:** 2026-03-05
-**Confidence:** HIGH (basiert auf direkter Codebase-Analyse aller relevanten Dateien)
+**Domain:** Konfigurierbare Punkte-Typen pro Jahrgang + Dashboard-Widget-Steuerung
+**Researched:** 2026-03-07
+**Confidence:** HIGH (basiert auf direkter Codebase-Analyse aller betroffenen Dateien)
 
-## Ist-Zustand: Bestehende Push-Architektur
+## Ist-Zustand: Betroffene Architektur
 
-### Komponenten-Uebersicht
-
-```
-Frontend (React 19 + Ionic 8 + Capacitor 7)
-  |-- AppContext.tsx ......... Token-Registrierung, Chat-Notifications State, Push-Permission
-  |-- BadgeContext.tsx ....... Device Badge Sync, WebSocket newMessage Listener
-  |-- websocket.ts .......... Socket.io Client (Singleton)
-
-Backend (Node.js Express + PostgreSQL)
-  |-- server.js ............. Socket.io Setup, Route Mounting, BackgroundService.startAllServices()
-  |-- push/firebase.js ...... Firebase Admin SDK, sendFirebasePushNotification()
-  |-- services/pushService.js PushService Klasse, 14 statische Methoden, 663 Zeilen
-  |-- services/backgroundService.js ... 3 setInterval-Services (Badge 5min, Reminder 15min, Pending 4h)
-  |-- routes/notifications.js ........ Token CRUD (POST/DELETE /device-token, POST /test-push)
-  |-- routes/chat.js ................. sendChatNotification + sendBadgeUpdate (2 Aufrufe)
-  |-- routes/events.js ............... 8 PushService Aufrufe
-  |-- routes/konfi.js ................ 4 PushService Aufrufe
-  |-- routes/activities.js ........... 2 PushService Aufrufe
-  |-- routes/badges.js ............... 1 PushService Aufruf (sendBadgeEarnedToKonfi)
-  |-- routes/konfi-managment.js ...... 1 PushService Aufruf (sendBonusPointsToKonfi)
-
-Datenbank (PostgreSQL)
-  |-- push_tokens ........... user_id, user_type, token, platform, device_id, updated_at
-  |-- event_reminders ....... event_id, user_id, reminder_type, sent_at (implizit, kein CREATE)
-  |-- chat_messages ......... Basis fuer Badge Count Berechnung
-  |-- chat_participants ..... last_read_at fuer Unread-Berechnung
-```
-
-### Alle 14 bestehenden Push-Flows
-
-| # | Flow | PushService Methode | Aufgerufen in |
-|---|------|---------------------|---------------|
-| 1 | Neuer Antrag -> Admins | sendNewActivityRequestToAdmins | konfi.js |
-| 2 | Antrag-Status -> Konfi | sendActivityRequestStatusToKonfi | activities.js |
-| 3 | Aktivitaet zugewiesen -> Konfi | sendActivityAssignedToKonfi | activities.js |
-| 4 | Bonuspunkte -> Konfi | sendBonusPointsToKonfi | konfi-managment.js |
-| 5 | Badge erhalten -> Konfi | sendBadgeEarnedToKonfi | badges.js |
-| 6 | Event-Anmeldung -> Konfi | sendEventRegisteredToKonfi | konfi.js |
-| 7 | Event-Abmeldung -> Konfi | sendEventUnregisteredToKonfi | konfi.js |
-| 8 | Event-Abmeldung -> Admins | sendEventUnregistrationToAdmins | konfi.js |
-| 9 | Warteliste aufgerueckt -> Konfi | sendWaitlistPromotionToKonfi | events.js, konfi.js |
-| 10 | Event abgesagt -> Konfis | sendEventCancellationToKonfis | events.js |
-| 11 | Neues Event -> Org-Konfis | sendNewEventToOrgKonfis | events.js |
-| 12 | Event-Anwesenheit -> Konfi | sendEventAttendanceToKonfi | events.js |
-| 13 | Event-Erinnerung -> Konfi | sendEventReminderToKonfi | backgroundService.js |
-| 14 | Events warten auf Verbuchung -> Admins | sendEventsPendingApprovalToAdmins | backgroundService.js |
-| -- | Chat-Nachricht -> User | sendChatNotification | chat.js |
-| -- | Badge Update (Silent) -> User | sendBadgeUpdate | chat.js, backgroundService.js |
-| -- | Level-Up -> Konfi | sendLevelUpToKonfi | **EXISTIERT aber wird NIRGENDS aufgerufen!** |
-
----
-
-## Ist-Analyse: Identifizierte Probleme
-
-### Problem 1: Badge Count -- 4 Quellen, keine Single Source of Truth
+### Punkte-System (aktuell)
 
 ```
-Quelle 1: BadgeContext.tsx
-  WebSocket 'newMessage' --> refreshFromAPI() --> GET /chat/rooms
-  --> Zaehlt unread_count pro Room --> Badge.set()
+Datenbank:
+  konfi_profiles.gottesdienst_points  -- immer vorhanden, integer
+  konfi_profiles.gemeinde_points      -- immer vorhanden, integer
+  settings: target_gottesdienst       -- Org-weites Ziel (key-value, int)
+  settings: target_gemeinde           -- Org-weites Ziel (key-value, int)
 
-Quelle 2: BackgroundService.updateAllUserBadges() [alle 5 Min]
-  SQL: COUNT chat_messages WHERE created_at > last_read_at
-  --> PushService.sendBadgeUpdate() --> Silent Push
+Backend:
+  getPointField(type)                 -- Whitelist: 'gottesdienst' -> 'gottesdienst_points'
+  activities.js                       -- Punkte addieren/subtrahieren via getPointField()
+  konfi-managment.js                  -- Bonus-Punkte, Aktivitaeten-Zuweisung
+  konfi.js /dashboard                 -- totalPoints = gottesdienst + gemeinde (IMMER)
+  konfi.js /dashboard ranking         -- ORDER BY (gottesdienst_points + gemeinde_points)
+  badges.js                           -- criteria_type: total_points, gottesdienst_points,
+                                         gemeinde_points, both_categories
+  levels.js                           -- Level basiert auf total_points (gottesdienst + gemeinde)
 
-Quelle 3: AppContext.tsx pushNotificationReceived Handler
-  Push mit type='badge_update' --> setzt chatNotifications.totalUnreadCount
-
-Quelle 4: chat.js Route POST /rooms/:roomId/mark-read
-  Eigene SQL Query fuer Badge Count --> PushService.sendBadgeUpdate()
-
-KONSEQUENZ: Race Conditions. Counts koennen divergieren.
+Frontend:
+  ActivityRings.tsx                   -- 3 Ringe: Total, Gottesdienst, Gemeinde
+  DashboardView.tsx                   -- Zeigt IMMER: Header+Rings, Konfirmation, Events,
+                                         Tageslosung, Badges, Ranking
+  KonfiDashboardPage.tsx              -- Laedt: /konfi/dashboard, /settings, /konfi/tageslosung,
+                                         /konfi/events, /konfi/badges
+  AdminGoalsPage.tsx                  -- Setzt target_gottesdienst, target_gemeinde
 ```
 
-### Problem 2: Token Lifecycle -- Lueckenhaft
+### Dashboard-Widgets (aktuell)
+
+Das Dashboard ist ein monolithischer View mit 6 fest eingebauten Sektionen:
 
 ```
-- Logout loescht nur exaktes device_id/platform Match
-- Fallback-IDs (Format: platform_timestamp_random) werden AKTIV ausgefiltert
-  in getTokensForUser() durch: device_id NOT LIKE '%\\_\\_%'
-  --> Tokens mit Fallback-IDs erhalten NIE Push-Notifications!
-- Kein Cleanup bei Firebase-Errors (ungueltige Tokens bleiben fuer immer)
-- Kein periodischer Cleanup veralteter Tokens
-- CREATE TABLE IF NOT EXISTS in notifications.js Route (bei JEDEM POST Request)
+DashboardView.tsx Sektionen (Reihenfolge fest):
+  1. Header Card + ActivityRings + Level Badge + Level Progress
+  2. Konfirmation Card (wenn confirmation_date vorhanden)
+  3. Events Section (wenn registrierte Events vorhanden)
+  4. Tageslosung (wenn API-Daten verfuegbar)
+  5. Badges Section (wenn Badges vorhanden)
+  6. Ranking Section (wenn Ranking-Daten vorhanden)
 ```
 
-### Problem 3: sendLevelUpToKonfi existiert aber wird nie aufgerufen
+Alle Sektionen sind hart kodiert. Es gibt KEINEN Mechanismus, einzelne Sektionen ein-/auszublenden.
 
-Die Methode ist in pushService.js definiert (Zeile 453-472) aber kein Route-Handler ruft sie auf. Weder in activities.js noch in konfi-managment.js noch in badges.js.
+### Settings-System (aktuell)
 
-### Problem 4: firebase.js gibt bei Fehlern kein `tokenInvalid` Flag zurueck
-
-```javascript
-// AKTUELL: Fehler werden nur geloggt
-} catch (error) {
-    console.error('Firebase notification error:', error);
-    return { success: false, error: error.message };
-}
-// --> Kein Unterschied zwischen ungueltigem Token und Netzwerk-Fehler
+```sql
+settings Tabelle:
+  - Key-Value Store mit organization_id
+  - Constraint: UNIQUE(organization_id, key)
+  - Bestehende Keys: target_gottesdienst, target_gemeinde,
+    konfi_chat_permissions, waitlist_enabled, max_waitlist_size
+  - UPSERT Pattern: INSERT ... ON CONFLICT DO UPDATE
 ```
 
 ---
 
-## Empfohlene Architektur: Neue Komponenten
+## Anforderung 1: Punkte-Typ pro Jahrgang auf 0 setzbar
 
-### Komponente 1: NotificationTypeRegistry (NEU)
+### Problem-Analyse
 
-**Datei:** `backend/config/notificationTypes.js`
-**Verantwortung:** Zentrale Definition aller Push-Notification-Types mit enabled/disabled Flags.
+"Auf 0 setzbar" bedeutet: Ein Jahrgang kann so konfiguriert werden, dass er NUR Gottesdienst-Punkte hat, NUR Gemeinde-Punkte hat, oder BEIDE. Das betrifft:
 
-```javascript
-const NOTIFICATION_TYPES = {
-  // Activities
-  new_activity_request:    { enabled: true, category: 'activities', target: 'admin' },
-  activity_request_status: { enabled: true, category: 'activities', target: 'konfi' },
-  activity_assigned:       { enabled: true, category: 'activities', target: 'konfi' },
-  // Bonus
-  bonus_points:            { enabled: true, category: 'points', target: 'konfi' },
-  // Badges
-  badge_earned:            { enabled: true, category: 'badges', target: 'konfi' },
-  // Events
-  event_registered:        { enabled: true, category: 'events', target: 'konfi' },
-  event_unregistered:      { enabled: true, category: 'events', target: 'konfi' },
-  event_unregistration:    { enabled: true, category: 'events', target: 'admin' },
-  waitlist_promotion:      { enabled: true, category: 'events', target: 'konfi' },
-  event_cancelled:         { enabled: true, category: 'events', target: 'konfi' },
-  new_event:               { enabled: true, category: 'events', target: 'konfi' },
-  event_attendance:        { enabled: true, category: 'events', target: 'konfi' },
-  event_reminder:          { enabled: true, category: 'events', target: 'konfi' },
-  events_pending_approval: { enabled: true, category: 'events', target: 'admin' },
-  // Chat
-  chat:                    { enabled: true, category: 'chat', target: 'all' },
-  badge_update:            { enabled: true, category: 'system', target: 'all' },
-  // NEU in v1.5
-  new_registration:        { enabled: true, category: 'admin', target: 'admin' },
-  level_up:                { enabled: true, category: 'progress', target: 'konfi' },
-  points_milestone:        { enabled: true, category: 'progress', target: 'konfi' },
-};
+1. **ActivityRings:** Deaktivierter Ring darf nicht angezeigt werden
+2. **Ranking:** Summe nur ueber aktive Punkte-Typen
+3. **Badges:** criteria_type `gottesdienst_points`, `gemeinde_points`, `both_categories` muessen reagieren
+4. **Fortschrittsbalken:** Level basiert auf Total Points -- nur aktive Typen zaehlen
+5. **Punkte-Vergabe:** Aktivitaeten mit deaktiviertem Typ duerfen keine Punkte vergeben
+6. **Ziele (AdminGoalsPage):** Deaktivierter Typ darf kein Ziel haben
 
-const isTypeEnabled = (type) => {
-  const config = NOTIFICATION_TYPES[type];
-  return config ? config.enabled : false;
-};
+### Wo speichern: Jahrgang-Tabelle (NICHT Settings)
+
+Die Konfiguration gehoert an die `jahrgaenge` Tabelle, weil sie pro Jahrgang gilt, nicht pro Organisation.
+
+**Gegen Settings-Tabelle:**
+- Settings ist Org-weit, Punkte-Typen sind Jahrgang-spezifisch
+- Eigene Keys wie `jahrgang_1_enable_gottesdienst` waeren ein Anti-Pattern im Key-Value-Store
+
+**Fuer jahrgaenge-Tabelle:**
+- Direkte Zuordnung: Jahrgang X hat Konfiguration Y
+- Kein JOIN noetig, Daten kommen mit dem Jahrgang-Query
+- Einfacheres Query-Pattern
+
+### DB-Aenderung: jahrgaenge Tabelle
+
+```sql
+ALTER TABLE jahrgaenge ADD COLUMN enable_gottesdienst BOOLEAN DEFAULT TRUE;
+ALTER TABLE jahrgaenge ADD COLUMN enable_gemeinde BOOLEAN DEFAULT TRUE;
 ```
 
-**Integration:** PushService.sendToUser() prueft `isTypeEnabled(notification.data.type)` vor dem Senden. Code-Level Config, kein DB-Backing -- reicht fuer v1.5 (CFG-01, CFG-02).
+**Defaults auf TRUE** -- bestehende Jahrgaenge behalten beide Punkte-Typen.
 
-### Komponente 2: BadgeCountService (NEU)
+**Validierung:** Mindestens ein Typ muss aktiv sein (Backend-Constraint).
 
-**Datei:** `backend/services/badgeCountService.js`
-**Verantwortung:** Einzige Quelle fuer Badge-Count-Berechnung. Alle anderen Stellen konsumieren diesen Service.
+### Backend-Aenderungen
+
+#### 1. jahrgaenge.js -- CRUD erweitern
 
 ```javascript
-class BadgeCountService {
-  static async calculateForUser(db, userId) {
-    const { rows: [result] } = await db.query(`
-      SELECT COALESCE(SUM(
-        CASE WHEN cm.created_at > COALESCE(cp.last_read_at, '1970-01-01')
-             AND cm.sender_id != $1
-        THEN 1 ELSE 0 END
-      ), 0)::int as total_unread
-      FROM chat_participants cp
-      JOIN chat_messages cm ON cm.room_id = cp.room_id
-      WHERE cp.user_id = $1
-    `, [userId]);
-    return result.total_unread;
-  }
+// POST/PUT: Neue Felder akzeptieren
+const { name, confirmation_date, enable_gottesdienst, enable_gemeinde } = req.body;
 
-  static async syncToDevices(db, userId) {
-    const count = await this.calculateForUser(db, userId);
-    await PushService.sendBadgeUpdate(db, userId, count);
-    return count;
-  }
+// Validierung: Mindestens ein Typ
+if (enable_gottesdienst === false && enable_gemeinde === false) {
+  return res.status(400).json({ error: 'Mindestens ein Punkte-Typ muss aktiv sein' });
 }
+
+// INSERT/UPDATE Queries um Felder erweitern
 ```
 
-**Konsumenten:**
-- BackgroundService.updateAllUserBadges() --> `BadgeCountService.syncToDevices()` (statt eigene Query)
-- chat.js mark-read Route --> `BadgeCountService.syncToDevices()` (statt eigene Query)
-- Neuer Endpoint GET /api/chat/badge-count --> `BadgeCountService.calculateForUser()` (statt /chat/rooms parsen)
+#### 2. konfi.js /dashboard -- Punkte-Typ-Konfiguration mitsenden
 
-### Komponente 3: TokenCleanupService (NEU)
-
-**Datei:** `backend/services/tokenCleanupService.js`
-**Verantwortung:** Ungueltige und verwaiste Tokens aus der DB entfernen.
-
-**Zwei Mechanismen:**
-
-1. **Reaktiv (bei jedem Send):** firebase.js gibt `tokenInvalid: true` zurueck bei:
-   - `messaging/registration-token-not-registered`
-   - `messaging/invalid-registration-token`
-   - `messaging/mismatched-credential`
-   --> PushService.sendToUser() loescht Token sofort aus DB
-
-2. **Proaktiv (alle 24h via BackgroundService):**
-   - Tokens mit `updated_at` aelter als 90 Tage loeschen
-   - Tokens von geloeschten Usern loeschen (LEFT JOIN users WHERE users.id IS NULL)
-   - Duplikat-Tokens (gleicher Token-Wert, verschiedene Zeilen) auf neueste reduzieren
-
----
-
-## Empfohlene Architektur: Modifikationen bestehender Komponenten
-
-### Modifikation 1: push/firebase.js -- Token-Invalidierung erkennen
+Die Dashboard-Query joined bereits `jahrgaenge j`. Erweiterung:
 
 ```javascript
-// AENDERUNG: Unterscheide ungueltige Tokens von anderen Fehlern
-} catch (error) {
-    const invalidTokenCodes = [
-      'messaging/registration-token-not-registered',
-      'messaging/invalid-registration-token',
-      'messaging/mismatched-credential'
-    ];
-    const tokenInvalid = invalidTokenCodes.includes(error.code);
-    return { success: false, error: error.message, tokenInvalid };
-}
-```
-
-### Modifikation 2: PushService.sendToUser() -- Type-Check + Token-Cleanup
-
-```javascript
-static async sendToUser(db, userId, notification) {
-  // NEU: Type-Check gegen Registry
-  const type = notification.data?.type;
-  if (type && !isTypeEnabled(type)) {
-    return { success: true, sent: 0, message: 'Type disabled' };
+// SELECT ... j.enable_gottesdienst, j.enable_gemeinde ... FROM ...
+// Im Response mitsenden:
+res.json({
+  // ... bestehende Daten ...
+  point_config: {
+    enable_gottesdienst: konfi.enable_gottesdienst,
+    enable_gemeinde: konfi.enable_gemeinde
   }
-
-  const tokens = await this.getTokensForUser(db, userId);
-  // ... bestehende Logik ...
-
-  for (const token of tokens) {
-    const result = await sendFirebasePushNotification(token.token, payload);
-    // NEU: Ungueltige Tokens sofort entfernen
-    if (result.tokenInvalid) {
-      await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
-    }
-  }
-}
-```
-
-### Modifikation 3: PushService.getTokensForUser() -- Fallback-ID-Filter entfernen
-
-```javascript
-// VORHER (filtert Fallback-IDs komplett aus):
-AND device_id NOT LIKE '%\\_\\_%'
-
-// NACHHER (alle Tokens senden, Fallback-IDs sind valide):
--- Filter komplett entfernt. Jeder Token wird versucht.
--- Ungueltige Tokens werden reaktiv per tokenInvalid geloescht.
-```
-
-**Begruendung:** Der Underscore-Filter schliesst alle Tokens mit Fallback-Device-IDs aus. Das ist der Kern von TKN-02 -- diese Tokens werden nie erreicht. Mit reaktivem Cleanup (Modifikation 2) braucht man den Filter nicht mehr.
-
-### Modifikation 4: notifications.js Route -- Logout + Table-Fix
-
-1. **CREATE TABLE entfernen:** push_tokens Tabelle gehoert in DB-Init, nicht in Route-Handler.
-2. **Logout erweitern:** DELETE loescht alle Tokens des Users auf dem Device (nicht nur exaktes Match).
-
-```javascript
-// VORHER: Loescht nur exaktes device_id + platform Match
-// NACHHER: Loescht ALLE Tokens des Users auf diesem Device
-router.delete('/device-token', verifyTokenRBAC, async (req, res) => {
-  const { device_id } = req.body;
-  const userId = req.user.id;
-  // Alle Plattform-Tokens fuer dieses Device entfernen
-  await db.query('DELETE FROM push_tokens WHERE user_id = $1 AND device_id = $2', [userId, device_id]);
-  res.json({ success: true });
 });
 ```
 
-### Modifikation 5: AppContext.tsx -- Logout Token Cleanup + Token-Uebergabe
-
-```typescript
-// Bei Logout: Device-Tokens loeschen BEVOR Token/Auth entfernt wird
-const handleLogout = async () => {
-  try {
-    const deviceInfo = await Device.getId();
-    await api.delete('/notifications/device-token', {
-      data: { device_id: deviceInfo.identifier }
-    });
-  } catch (err) { /* Fehler ignorieren */ }
-  // ... bestehende Logout-Logik ...
-};
-```
-
-### Modifikation 6: BadgeContext.tsx -- Vereinfachter API-Call
-
-```typescript
-// VORHER: Holt /chat/rooms und zaehlt manuell unread_count
-const refreshFromAPI = useCallback(async () => {
-  const response = await api.get('/chat/rooms');
-  let totalUnread = 0;
-  response.data.forEach((room: any) => { totalUnread += room.unread_count || 0; });
-  setBadgeCount(totalUnread);
-}, []);
-
-// NACHHER: Holt dezidierten Badge-Endpoint (Single Source of Truth)
-const refreshFromAPI = useCallback(async () => {
-  const response = await api.get('/chat/badge-count');
-  setBadgeCount(response.data.count);
-}, []);
-```
-
-### Modifikation 7: BackgroundService -- Cleanup-Intervall + Event-Reminder-Fix
+#### 3. konfi.js /dashboard -- Ranking anpassen
 
 ```javascript
-static startAllServices(db) {
-  this.startBadgeUpdateService(db);      // bestehend, 5 Min
-  this.startEventReminderService(db);    // bestehend, 15 Min -- event_reminders Tabelle absichern
-  this.startPendingEventsService(db);    // bestehend, 4h
-  this.startTokenCleanupService(db);     // NEU, 24h
+// AKTUELL:
+// (kp.gottesdienst_points + kp.gemeinde_points) as points
+
+// NEU (dynamisch basierend auf Jahrgang-Config):
+const pointsExpression = buildPointsExpression(jahrgang);
+
+function buildPointsExpression(jahrgang) {
+  if (jahrgang.enable_gottesdienst && jahrgang.enable_gemeinde) {
+    return '(kp.gottesdienst_points + kp.gemeinde_points)';
+  } else if (jahrgang.enable_gottesdienst) {
+    return 'kp.gottesdienst_points';
+  } else {
+    return 'kp.gemeinde_points';
+  }
 }
 ```
 
-**Event-Reminder-Fix:** Die event_reminders Tabelle wird im Code referenziert aber nirgends erstellt. CREATE TABLE IF NOT EXISTS muss beim Service-Start ausgefuehrt werden.
+**Wichtig:** `getPointField()` in validation.js muss NICHT geaendert werden. Die Whitelist bleibt. Die Deaktivierung passiert auf Anzeige-/Konfigurations-Ebene, nicht auf Feld-Ebene.
 
----
+#### 4. badges.js -- Deaktivierte Typen in Badge-Checks
 
-## Komponentengrenzen (Soll-Zustand)
-
-| Komponente | Verantwortung | Kommuniziert mit |
-|-----------|---------------|-------------------|
-| NotificationTypeRegistry | Type-Definitionen, enabled/disabled Flags | PushService (wird abgefragt vor Send) |
-| PushService (modifiziert) | Push senden, Token-Invalidierung, Type-Guard | firebase.js, NotificationTypeRegistry, DB |
-| BadgeCountService (neu) | Badge Count berechnen (Single Source of Truth) | DB (chat_messages, chat_participants) |
-| TokenCleanupService (neu) | Verwaiste/ungueltige Tokens loeschen | DB (push_tokens) |
-| BackgroundService (modifiziert) | Scheduling aller periodischen Tasks | BadgeCountService, TokenCleanupService, PushService |
-| BadgeContext (modifiziert) | Device Badge Sync via neuen Endpoint | GET /api/chat/badge-count, WebSocket |
-| AppContext (modifiziert) | Token-Registrierung, Logout-Cleanup | notifications.js Route |
-
----
-
-## Datenfluss: Badge Count (Soll) -- Single Source of Truth
-
-```
-                  BadgeCountService.calculateForUser(db, userId)
-                               |
-          +--------------------+--------------------+
-          |                    |                    |
-  BackgroundService     chat.js mark-read    GET /api/chat/badge-count
-  (alle 5 Min)          Route                (neuer Endpoint)
-          |                    |                    |
-  syncToDevices()       syncToDevices()       Return { count: N }
-  --> Silent Push       --> Silent Push             |
-                                              BadgeContext.tsx
-                                              --> Badge.set(count)
-                                              --> TabBar Badge Update
-
-  WebSocket 'newMessage' --> BadgeContext.refreshFromAPI()
-                         --> GET /api/chat/badge-count
-```
-
-**Vorher:** 4 unabhaengige Badge-Count-Berechnungen.
-**Nachher:** 1 Berechnung (BadgeCountService), 3 Konsumenten.
-
----
-
-## Datenfluss: Token Lifecycle (Soll) -- Vollstaendig
-
-```
-App Start / Login:
-  PushNotifications.register() --> registration Event
-  --> sendTokenToServer() --> POST /notifications/device-token
-  --> Upsert mit Device.getId() als device_id
-  --> Collision-Check: DELETE WHERE token=$1 AND user_id != $2
-
-Token Refresh (App Resume, max alle 12h):
-  appStateChange --> PushNotifications.register()
-  --> updated_at wird in push_tokens aktualisiert
-
-Logout:
-  handleLogout() --> DELETE /notifications/device-token (device_id)
-  --> Alle Tokens dieses Users auf diesem Device geloescht
-
-User-Wechsel auf gleichem Device:
-  Logout alter User --> Tokens geloescht
-  Login neuer User --> Neuer Token registriert
-  --> Token-Collision loescht evt. verwaiste Tokens
-
-Reaktiver Cleanup (bei jedem Send):
-  firebase.js --> tokenInvalid: true
-  --> PushService.sendToUser() --> DELETE FROM push_tokens WHERE id = X
-
-Proaktiver Cleanup (alle 24h):
-  TokenCleanupService.cleanup()
-  --> Tokens aelter 90 Tage
-  --> Tokens geloeschter User
-  --> Duplikat-Tokens konsolidieren
-```
-
----
-
-## DB-Aenderungen
-
-### Bestehende Tabellen
-
-```sql
--- push_tokens: Felder fuer Error-Tracking (fuer spaetere Erweiterung)
-ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS error_count INTEGER DEFAULT 0;
-ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS last_error_at TIMESTAMPTZ;
-```
-
-### Tabellen absichern
-
-```sql
--- event_reminders: Wird im Code referenziert aber nirgends erstellt
-CREATE TABLE IF NOT EXISTS event_reminders (
-  id SERIAL PRIMARY KEY,
-  event_id INTEGER NOT NULL,
-  user_id INTEGER NOT NULL,
-  reminder_type TEXT NOT NULL,
-  sent_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(event_id, user_id, reminder_type)
+```javascript
+// In checkAndAwardBadges(): Jahrgang-Config laden
+const { rows: [jahrgang] } = await db.query(
+  'SELECT enable_gottesdienst, enable_gemeinde FROM jahrgaenge WHERE id = $1',
+  [konfi.jahrgang_id]
 );
+
+// Badge-Criteria anpassen:
+case 'gottesdienst_points':
+  earned = jahrgang.enable_gottesdienst && konfi.gottesdienst_points >= badge.criteria_value;
+  break;
+case 'gemeinde_points':
+  earned = jahrgang.enable_gemeinde && konfi.gemeinde_points >= badge.criteria_value;
+  break;
+case 'both_categories':
+  // Nur pruefen was aktiv ist
+  const gCheck = !jahrgang.enable_gottesdienst || konfi.gottesdienst_points >= badge.criteria_value;
+  const mCheck = !jahrgang.enable_gemeinde || konfi.gemeinde_points >= badge.criteria_value;
+  earned = gCheck && mCheck;
+  break;
+case 'total_points':
+  // Total Points = Summe nur aktiver Typen
+  const total = (jahrgang.enable_gottesdienst ? konfi.gottesdienst_points : 0)
+              + (jahrgang.enable_gemeinde ? konfi.gemeinde_points : 0);
+  earned = total >= badge.criteria_value;
+  break;
 ```
 
-### push_tokens CREATE TABLE entfernen
-
-Die notifications.js Route fuehrt bei JEDEM POST /device-token ein CREATE TABLE IF NOT EXISTS aus. Das gehoert in die DB-Initialisierung (database.js oder Init-Script), nicht in den Route-Handler.
-
----
-
-## Fehlende Push-Flows (neu zu implementieren)
-
-### Flow: Admin-Push bei neuer Konfi-Registrierung (FLW-02)
-
-**Wo integrieren:** `backend/routes/auth.js` im Register-Endpoint, nach erfolgreichem User-Anlegen.
+#### 5. activities.js / konfi-managment.js -- Punkte-Vergabe blockieren
 
 ```javascript
-// Nach: INSERT INTO users ... mit role='konfi'
-await PushService.sendNewRegistrationToAdmins(db, organization_id, display_name);
-```
+// Vor Punkte-Vergabe: Pruefen ob Typ aktiv ist
+const { rows: [jahrgang] } = await db.query(
+  `SELECT j.enable_gottesdienst, j.enable_gemeinde
+   FROM jahrgaenge j
+   JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+   WHERE kp.user_id = $1`, [konfiId]
+);
 
-**Neue PushService Methode:** `sendNewRegistrationToAdmins()` -- analog zu `sendNewActivityRequestToAdmins()`.
-
-### Flow: Level-Up Push (FLW-03)
-
-**Wo integrieren:** `backend/routes/badges.js` in `checkAndAwardBadges()`, wo Levels berechnet werden. Oder in `activities.js` / `konfi-managment.js` nach Punkte-Vergabe, wo Level-Check passiert.
-
-**PushService Methode existiert bereits:** `sendLevelUpToKonfi()` -- muss nur aufgerufen werden.
-
-**Wichtig:** Level-Up muss erkannt werden = vorheriges Level speichern, nach Punkte-Aenderung vergleichen.
-
-### Flow: Punkte-Meilenstein Push (FLW-04)
-
-**Wo integrieren:** Nach jeder Punkte-Aenderung (activities.js, konfi-managment.js Bonus), pruefen ob Mindestpunkte fuer Gottesdienst oder Gemeinde erstmals erreicht.
-
-**Neue PushService Methode:** `sendPointsMilestoneToKonfi(db, konfiId, type, currentPoints, requiredPoints)`
-
-**Erkennung:** Settings-Tabelle hat `min_gottesdienst_points` und `min_gemeinde_points`. Vergleich vorher/nachher noetig.
-
----
-
-## Patterns to Follow
-
-### Pattern 1: Fire-and-Forget Push (BESTEHEND -- beibehalten)
-
-Push-Notifications werden mit try/catch gesendet, Fehler werden geloggt aber nicht propagiert. Push-Fehler sollen nie eine eigentliche Operation blockieren.
-
-```javascript
-// Bestehender Pattern in allen Route-Handlern:
-try {
-  await PushService.sendActivityAssignedToKonfi(db, konfiId, ...);
-} catch (pushErr) {
-  // Push-Fehler ignorieren, Operation war erfolgreich
+const pointField = getPointField(activity.type);
+if (pointField === 'gottesdienst_points' && !jahrgang.enable_gottesdienst) {
+  return res.status(400).json({ error: 'Gottesdienst-Punkte sind fuer diesen Jahrgang deaktiviert' });
+}
+if (pointField === 'gemeinde_points' && !jahrgang.enable_gemeinde) {
+  return res.status(400).json({ error: 'Gemeinde-Punkte sind fuer diesen Jahrgang deaktiviert' });
 }
 ```
 
-### Pattern 2: Background Service als setInterval (BESTEHEND -- erweitern)
+### Frontend-Aenderungen
 
-Periodische Tasks laufen als setInterval im Node.js-Prozess. Einzelne Docker-Instanz, kein Cluster, kein separater Scheduler noetig.
+#### 1. ActivityRings.tsx -- Dynamische Ring-Anzahl
 
-### Pattern 3: Centralized Type Guard (NEU)
+```typescript
+interface ActivityRingsProps {
+  totalPoints: number;
+  gottesdienstPoints: number;
+  gemeindePoints: number;
+  gottesdienstGoal: number;
+  gemeindeGoal: number;
+  enableGottesdienst?: boolean; // NEU
+  enableGemeinde?: boolean;     // NEU
+  size?: number;
+}
 
-Jeder Push geht durch isTypeEnabled() Check. Der Check passiert in sendToUser() und sendToMultipleUsers() -- nur an EINER Stelle. Route-Handler muessen sich nicht darum kuemmern.
+// Im Render: Nur aktive Ringe anzeigen
+// Wenn nur 1 Typ aktiv: 2 Ringe (Total + aktiver Typ)
+// Wenn beide aktiv: 3 Ringe (wie bisher)
+// Ring-Radien dynamisch berechnen basierend auf Anzahl aktiver Ringe
+```
 
-### Pattern 4: WebSocket fuer Foreground, Push fuer Background (BESTEHEND)
+**Ansatz:** Aktive Ringe in ein Array sammeln, Radien dynamisch basierend auf `activeRings.length` berechnen. Legende zeigt nur aktive Typen.
 
-Chat-Nachrichten nutzen beide Kanaele parallel. WebSocket ist schneller fuer Foreground-Updates, Push ist zuverlaessiger fuer Background-Notifications.
+#### 2. DashboardView.tsx -- point_config nutzen
+
+```typescript
+// DashboardData um point_config erweitern
+interface DashboardData {
+  // ... bestehend ...
+  point_config?: {
+    enable_gottesdienst: boolean;
+    enable_gemeinde: boolean;
+  };
+}
+
+// totalCurrentPoints nur aus aktiven Typen
+const enableG = dashboardData.point_config?.enable_gottesdienst ?? true;
+const enableM = dashboardData.point_config?.enable_gemeinde ?? true;
+const totalCurrentPoints =
+  (enableG ? gottesdienstPoints : 0) +
+  (enableM ? gemeindePoints : 0);
+
+// ActivityRings mit Config
+<ActivityRings
+  totalPoints={totalCurrentPoints}
+  gottesdienstPoints={enableG ? gottesdienstPoints : 0}
+  gemeindePoints={enableM ? gemeindePoints : 0}
+  gottesdienstGoal={enableG ? targetGottesdienst : 0}
+  gemeindeGoal={enableM ? targetGemeinde : 0}
+  enableGottesdienst={enableG}
+  enableGemeinde={enableM}
+/>
+```
+
+#### 3. AdminGoalsPage.tsx -- Nur aktive Typen konfigurierbar
+
+Muss Jahrgang-Konfiguration laden und deaktivierte Ziel-Felder ausblenden. Dazu muss der aktive Jahrgang bekannt sein oder die Goal-Seite muss die Jahrgang-Config mitladen.
+
+**Empfehlung:** Da Goals Org-weit sind, aber Punkte-Typen Jahrgang-spezifisch, sollte AdminGoalsPage einen Hinweis zeigen, wenn ein Jahrgang einen Typ deaktiviert hat. Die Goals bleiben Org-weit (Minimum), aber im Frontend wird klar kommuniziert.
+
+#### 4. Jahrgang-Bearbeitung -- UI fuer Punkte-Typ-Toggle
+
+In der bestehenden Jahrgang-Bearbeitungs-UI (vermutlich ein Modal in der Admin-Ansicht) muessen zwei Toggles hinzugefuegt werden:
+
+```
+Gottesdienst-Punkte: [An/Aus]
+Gemeinde-Punkte:     [An/Aus]
+```
+
+Mit Validierung: Mindestens einer muss aktiv sein.
 
 ---
 
-## Anti-Patterns to Avoid
+## Anforderung 2: Dashboard-Widget-Konfiguration
 
-### Anti-Pattern 1: Multiple Badge Count Berechnungen
+### Problem-Analyse
 
-**Was:** Badge Count wird an 4 Stellen unabhaengig berechnet.
-**Stattdessen:** BadgeCountService als Single Source of Truth.
+Org-Admin soll festlegen koennen, welche Dashboard-Widgets fuer Konfis sichtbar sind. Betrifft:
+- Tageslosung
+- Ranking
+- Badges (optional, da manche Gemeinden keine nutzen)
+- Events (optional)
+- Konfirmation-Countdown
 
-### Anti-Pattern 2: Token-Fehler ignorieren
+Der Header mit ActivityRings ist NICHT konfigurierbar -- das ist das Kern-Feature.
 
-**Was:** Firebase-Send-Fehler werden geloggt, Token bleibt in DB.
-**Stattdessen:** tokenInvalid Flag, sofortige Loeschung.
+### Wo speichern: Settings-Tabelle (Key-Value)
 
-### Anti-Pattern 3: CREATE TABLE in Route-Handler
+Dashboard-Widget-Sichtbarkeit ist Org-weit (nicht Jahrgang-spezifisch). Passt perfekt zum bestehenden Settings-Pattern.
 
-**Was:** notifications.js erstellt push_tokens Tabelle bei jedem POST.
-**Stattdessen:** Tabellen-Erstellung in DB-Init.
+```
+Settings-Key                    | Default | Typ
+dashboard_show_tageslosung      | true    | boolean
+dashboard_show_ranking          | true    | boolean
+dashboard_show_badges           | true    | boolean
+dashboard_show_events           | true    | boolean
+dashboard_show_konfirmation     | true    | boolean
+```
 
-### Anti-Pattern 4: Fallback Device-IDs ausfiltern
+### Backend-Aenderungen
 
-**Was:** getTokensForUser() filtert device_id NOT LIKE '%\\_\\_%' -- schliesst Fallback-IDs komplett aus.
-**Stattdessen:** Filter entfernen, ungueltige Tokens reaktiv per tokenInvalid loeschen.
+#### 1. settings.js -- Neue Keys akzeptieren
+
+```javascript
+// PUT /settings erweitern:
+const dashboardKeys = [
+  'dashboard_show_tageslosung',
+  'dashboard_show_ranking',
+  'dashboard_show_badges',
+  'dashboard_show_events',
+  'dashboard_show_konfirmation'
+];
+
+for (const key of dashboardKeys) {
+  if (req.body[key] !== undefined) {
+    await db.query(
+      `INSERT INTO settings (organization_id, key, value) VALUES ($1, $2, $3)
+       ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value`,
+      [orgId, key, String(req.body[key])]
+    );
+  }
+}
+
+// GET /settings: Boolean-Parsing erweitern
+const booleanKeys = ['waitlist_enabled', ...dashboardKeys];
+if (booleanKeys.includes(row.key)) {
+  settings[row.key] = row.value === 'true' || row.value === '1';
+}
+```
+
+#### 2. Validierung in settings.js
+
+```javascript
+// Neue Validierungsregeln
+for (const key of dashboardKeys) {
+  body(key).optional().isBoolean().withMessage(`${key} muss ein Boolean sein`);
+}
+```
+
+### Frontend-Aenderungen
+
+#### 1. KonfiDashboardPage.tsx -- Settings an DashboardView weiterreichen
+
+```typescript
+interface Settings {
+  target_gottesdienst?: number;
+  target_gemeinde?: number;
+  // NEU:
+  dashboard_show_tageslosung?: boolean;
+  dashboard_show_ranking?: boolean;
+  dashboard_show_badges?: boolean;
+  dashboard_show_events?: boolean;
+  dashboard_show_konfirmation?: boolean;
+}
+
+// DashboardView erhaelt dashboard_config
+<DashboardView
+  // ... bestehende Props ...
+  dashboardConfig={{
+    showTageslosung: settings.dashboard_show_tageslosung ?? true,
+    showRanking: settings.dashboard_show_ranking ?? true,
+    showBadges: settings.dashboard_show_badges ?? true,
+    showEvents: settings.dashboard_show_events ?? true,
+    showKonfirmation: settings.dashboard_show_konfirmation ?? true
+  }}
+/>
+```
+
+#### 2. DashboardView.tsx -- Bedingte Sektion-Anzeige
+
+```typescript
+interface DashboardConfig {
+  showTageslosung: boolean;
+  showRanking: boolean;
+  showBadges: boolean;
+  showEvents: boolean;
+  showKonfirmation: boolean;
+}
+
+interface DashboardViewProps {
+  // ... bestehend ...
+  dashboardConfig: DashboardConfig;
+}
+
+// In JSX: Jede Sektion mit Config-Guard wrappen
+{dashboardConfig.showKonfirmation && (dashboardData.days_to_confirmation ...) && (
+  <div className="app-dashboard-section app-dashboard-section--konfirmation">
+    ...
+  </div>
+)}
+
+{dashboardConfig.showEvents && regularEvents && regularEvents.length > 0 && (
+  <div className="app-dashboard-section app-dashboard-section--events">
+    ...
+  </div>
+)}
+
+{dashboardConfig.showTageslosung && !loadingVerse && actualDailyVerse && ... && (
+  <div className="app-dashboard-section app-dashboard-section--tageslosung">
+    ...
+  </div>
+)}
+
+{dashboardConfig.showBadges && (allBadges.available.length > 0 || ...) && (
+  <div className="app-dashboard-section app-dashboard-section--badges">
+    ...
+  </div>
+)}
+
+{dashboardConfig.showRanking && dashboardData.ranking && ... && (
+  <div className="app-dashboard-section app-dashboard-section--ranking">
+    ...
+  </div>
+)}
+```
+
+**Kein Performance-Impact:** Die betroffenen Daten werden trotzdem geladen (Tageslosung-API, Badges, etc.), nur nicht gerendert. Bei Bedarf koennte man die API-Calls ebenfalls skippen, aber fuer Beta-Phase ist das unnoetig.
+
+#### 3. Admin-UI: Dashboard-Konfig-Seite
+
+Neues Modal/Page in Admin-Settings, erreichbar ueber AdminSettingsPage.tsx:
+
+```
+Dashboard konfigurieren
+  [x] Tageslosung anzeigen
+  [x] Ranking anzeigen
+  [x] Badges anzeigen
+  [x] Events anzeigen
+  [x] Konfirmation-Countdown anzeigen
+```
+
+Implementierung als neues Modal (Pattern: useIonModal) analog zu AdminGoalsPage. Toggles als IonToggle-Items in einer IonList.
+
+**Platzierung in AdminSettingsPage:** Unter "Inhalt"-Kategorie (bereits vorhanden in der Settings-Struktur, Stichwort "Konto/Verwaltung/Inhalt" aus v1.3).
+
+---
+
+## Komponentengrenzen (Soll-Zustand v1.6)
+
+| Komponente | Verantwortung | Aenderung |
+|-----------|---------------|-----------|
+| jahrgaenge Tabelle | enable_gottesdienst, enable_gemeinde Flags | NEUE SPALTEN |
+| jahrgaenge.js Route | CRUD fuer Punkte-Typ-Config | MODIFIZIERT |
+| settings Tabelle | dashboard_show_* Keys | NEUE KEYS |
+| settings.js Route | CRUD fuer Dashboard-Widget-Config | MODIFIZIERT |
+| konfi.js /dashboard | point_config im Response, dynamisches Ranking | MODIFIZIERT |
+| badges.js | Badge-Checks respektieren deaktivierte Typen | MODIFIZIERT |
+| activities.js | Punkte-Vergabe fuer deaktivierte Typen blockieren | MODIFIZIERT |
+| konfi-managment.js | Bonus-Vergabe fuer deaktivierte Typen blockieren | MODIFIZIERT |
+| ActivityRings.tsx | Dynamische Ring-Anzahl | MODIFIZIERT |
+| DashboardView.tsx | Bedingte Sektion-Anzeige, point_config nutzen | MODIFIZIERT |
+| KonfiDashboardPage.tsx | dashboardConfig an View weiterreichen | MODIFIZIERT |
+| AdminGoalsPage.tsx | Hinweis bei deaktivierten Typen | MODIFIZIERT |
+| DashboardConfigModal.tsx | Toggle-UI fuer Dashboard-Widgets | NEU |
+| AdminSettingsPage.tsx | Link zu DashboardConfigModal | MODIFIZIERT |
+| Jahrgang-Modal | Toggles fuer Punkte-Typen | MODIFIZIERT |
+
+---
+
+## Datenfluss: Punkte-Typ-Konfiguration
+
+```
+Admin erstellt/bearbeitet Jahrgang
+  |
+  jahrgaenge.js PUT /api/jahrgaenge/:id
+  { enable_gottesdienst: true, enable_gemeinde: false }
+  |
+  UPDATE jahrgaenge SET enable_gottesdienst = $1, enable_gemeinde = $2
+  |
+  LiveUpdate an Admins (bestehend)
+  |
+  +---> Konfi oeffnet Dashboard
+  |       konfi.js GET /dashboard
+  |       Query joined jahrgaenge -> liest enable_* Flags
+  |       Response enthaelt point_config: { enable_gottesdienst, enable_gemeinde }
+  |       |
+  |       KonfiDashboardPage -> DashboardView
+  |       -> ActivityRings (dynamische Ringe)
+  |       -> Ranking (nur aktive Punkte-Typen)
+  |
+  +---> Admin vergibt Punkte
+  |       activities.js oder konfi-managment.js
+  |       Prueft Jahrgang-Config BEVOR Punkte vergeben werden
+  |       Blockiert wenn Typ deaktiviert
+  |
+  +---> Badge-Check laeuft
+          badges.js checkAndAwardBadges()
+          Laedt Jahrgang-Config
+          Deaktivierte Typen -> Badge nicht verdienbar (kein Fehler, einfach false)
+```
+
+## Datenfluss: Dashboard-Widget-Konfiguration
+
+```
+Org-Admin oeffnet Dashboard-Konfiguration
+  |
+  DashboardConfigModal laedt GET /settings
+  |
+  Admin toggled Widgets
+  |
+  PUT /settings { dashboard_show_ranking: false, ... }
+  |
+  settings Tabelle: UPSERT dashboard_show_ranking = 'false'
+  |
+  Konfi oeffnet Dashboard
+  |
+  KonfiDashboardPage laedt GET /settings (bestehender Call)
+  settings.dashboard_show_ranking === false
+  |
+  DashboardView erhaelt dashboardConfig.showRanking = false
+  |
+  Ranking-Sektion wird nicht gerendert
+```
 
 ---
 
 ## Build-Reihenfolge (Abhaengigkeiten beachtet)
 
 ```
-Phase 1: Foundation (keine Abhaengigkeiten)
-  |-- NotificationTypeRegistry erstellen (CFG-01, CFG-02)
-  |-- push_tokens: error_count/last_error_at Felder hinzufuegen
-  |-- event_reminders Tabelle absichern (CREATE IF NOT EXISTS)
-  |-- CREATE TABLE aus notifications.js Route entfernen
+Phase 1: DB-Schema + Backend-Foundation (keine Frontend-Abhaengigkeiten)
+  |-- jahrgaenge: ALTER TABLE ADD enable_gottesdienst, enable_gemeinde
+  |-- jahrgaenge.js: CRUD fuer neue Felder, Validierung
+  |-- settings.js: dashboard_show_* Keys akzeptieren + validieren
+  |-- konfi.js /dashboard: point_config im Response
 
-Phase 2: Token-Lifecycle (abhaengig von Phase 1)
-  |-- firebase.js: tokenInvalid Return-Wert (CLN-01)
-  |-- PushService.sendToUser(): Token-Invalidierung + Type-Check
-  |-- PushService.getTokensForUser(): Fallback-ID-Filter entfernen (TKN-02)
-  |-- notifications.js: Logout alle Tokens auf Device (TKN-01)
-  |-- AppContext.tsx: Logout Token Cleanup (TKN-01, TKN-04)
-  |-- Token-Refresh bei Resume verifizieren (TKN-03)
+Phase 2: Punkte-Logik anpassen (abhaengig von Phase 1)
+  |-- activities.js: Punkte-Vergabe blockieren wenn Typ deaktiviert
+  |-- konfi-managment.js: Bonus-Vergabe blockieren wenn Typ deaktiviert
+  |-- badges.js: Badge-Checks respektieren deaktivierte Typen
+  |-- konfi.js /dashboard: Ranking nur aktive Typen
+  |-- levels.js: Level-Berechnung nur aktive Typen (falls betroffen)
 
-Phase 3: Badge Count Single Source of Truth (abhaengig von Phase 1)
-  |-- BadgeCountService erstellen (BDG-01)
-  |-- Neuer Endpoint GET /api/chat/badge-count (BDG-02)
-  |-- BackgroundService: BadgeCountService nutzen
-  |-- chat.js mark-read: BadgeCountService nutzen
-  |-- BadgeContext.tsx: Neuen Endpoint nutzen (BDG-02)
-  |-- AppContext chatNotifications von BadgeContext speisen (BDG-03, BDG-04)
+Phase 3: Frontend Punkte-Anzeige (abhaengig von Phase 1+2)
+  |-- ActivityRings.tsx: Dynamische Ring-Anzahl
+  |-- DashboardView.tsx: point_config nutzen, Punkte-Anzeige anpassen
+  |-- KonfiDashboardPage.tsx: point_config durchreichen
+  |-- AdminGoalsPage.tsx: Hinweis bei deaktivierten Typen
 
-Phase 4: Fehlende Push-Flows (abhaengig von Phase 1+2)
-  |-- Level-Up Push aufrufen -- Methode existiert bereits (FLW-03)
-  |-- Admin-Push bei neuer Registrierung (FLW-02)
-  |-- Punkte-Meilenstein Push (FLW-04)
-  |-- Event-Reminder-Service verifizieren/fixen (FLW-01)
+Phase 4: Dashboard-Widget-Konfiguration (abhaengig von Phase 1)
+  |-- DashboardConfigModal.tsx: Neues Modal erstellen
+  |-- AdminSettingsPage.tsx: Link zum Modal
+  |-- KonfiDashboardPage.tsx: dashboardConfig an DashboardView
+  |-- DashboardView.tsx: Bedingte Sektion-Anzeige
 
-Phase 5: Token Cleanup + Vollstaendigkeit (abhaengig von Phase 2)
-  |-- TokenCleanupService erstellen (CLN-02)
-  |-- BackgroundService: Cleanup-Intervall (24h) hinzufuegen
-  |-- Alle 14+3 Push-Flows End-to-End verifizieren (CMP-01)
-  |-- TabBar Badges fuer Antraege, Events, Chat synchronisieren
+Phase 5: Jahrgang-UI + End-to-End-Test (abhaengig von Phase 1-4)
+  |-- Jahrgang-Modal: Punkte-Typ-Toggles
+  |-- End-to-End: Jahrgang mit 1 Typ -> Dashboard, Badges, Ranking korrekt
+  |-- Edge Cases: Typ deaktivieren wenn Konfis bereits Punkte haben
 ```
+
+---
+
+## Patterns to Follow
+
+### Pattern 1: Defaults auf aktiv (bestehende Daten schuetzen)
+
+```sql
+-- BOOLEAN DEFAULT TRUE: Bestehende Jahrgaenge behalten beide Typen
+ALTER TABLE jahrgaenge ADD COLUMN enable_gottesdienst BOOLEAN DEFAULT TRUE;
+```
+
+**Begruendung:** Keine Migration bestehender Daten noetig. Neue Spalten mit Defaults funktionieren transparent.
+
+### Pattern 2: Settings Key-Value UPSERT (bestehend -- beibehalten)
+
+```javascript
+INSERT INTO settings (organization_id, key, value) VALUES ($1, $2, $3)
+ON CONFLICT (organization_id, key) DO UPDATE SET value = EXCLUDED.value
+```
+
+Dashboard-Widget-Config nutzt exakt dasselbe Pattern. Keine neue Tabelle noetig.
+
+### Pattern 3: Frontend-Defaults mit Nullish Coalescing (bestehend)
+
+```typescript
+const targetGottesdienst = settings.target_gottesdienst || 10;
+// NEU:
+const showRanking = settings.dashboard_show_ranking ?? true;
+```
+
+**Wichtig:** `??` statt `||` fuer Booleans, da `false || true` zu `true` wuerde.
+
+### Pattern 4: Fire-and-Forget Config-Loading (bestehend)
+
+```typescript
+const [dashboardResponse, settingsResponse] = await Promise.all([
+  api.get('/konfi/dashboard'),
+  api.get('/settings').catch(() => ({ data: {} }))
+]);
+```
+
+Settings-Fehler blockieren nie das Dashboard. Fehlt die Config, greifen Defaults.
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Punkte bei Deaktivierung loeschen
+
+**Was passieren koennte:** Admin deaktiviert Gottesdienst-Punkte, System loescht bestehende Punkte.
+**Stattdessen:** Punkte bleiben in der DB. Deaktivierung betrifft nur Anzeige, Vergabe und Berechnung. Bei Reaktivierung sind die Punkte sofort wieder da.
+
+### Anti-Pattern 2: Separate Dashboard-Config-Tabelle
+
+**Was verlockend waere:** Eigene Tabelle `dashboard_config` mit Spalten je Widget.
+**Stattdessen:** Bestehende Settings-Tabelle nutzen. Key-Value-Store ist flexibel genug. Neue Tabelle wuerde das Pattern brechen und unnoetige Komplexitaet einfuehren.
+
+### Anti-Pattern 3: API-Calls basierend auf Dashboard-Config skippen
+
+**Was verlockend waere:** Wenn `showBadges = false`, keinen Badge-API-Call machen.
+**Stattdessen:** Daten trotzdem laden, nur nicht rendern. Vereinfacht Code, vermeidet Race Conditions bei Config-Aenderungen, und der Performance-Impact ist bei <100 Usern irrelevant.
+
+### Anti-Pattern 4: Punkte-Typ-Config in der Settings-Tabelle
+
+**Was verlockend waere:** `settings` Key wie `jahrgang_1_enable_gottesdienst`.
+**Stattdessen:** Spalten direkt an `jahrgaenge` Tabelle. Jahrgang-spezifische Config gehoert zum Jahrgang, nicht in ein Org-weites Key-Value-Store.
+
+### Anti-Pattern 5: Frontend-seitige Punkte-Filterung ohne Backend
+
+**Was gefaehrlich waere:** Backend liefert immer alle Punkte, Frontend filtert basierend auf Config.
+**Stattdessen:** Backend muss Ranking, Badge-Checks und Punkte-Vergabe ebenfalls respektieren. Frontend-only waere inkonsistent und manipulierbar.
 
 ---
 
 ## Skalierbarkeit
 
-| Aspekt | Aktuell (Beta, <20 User) | Bei 100 Usern | Bei 1000 Usern |
-|--------|--------------------------|---------------|----------------|
-| Push-Tokens | ~10-20 | ~100-200 | ~1000-2000 |
-| Badge Sync (5min) | Kein Problem | ~200 Firebase Calls/5min | Firebase Multicast nutzen |
-| Event Reminders | Funktioniert | Funktioniert | Bulk-Queries statt Einzel-Loop |
-| Token Cleanup | Nicht vorhanden | Leicht noetig | Wichtig gegen DB-Bloat |
+| Aspekt | Aktuell (Beta) | Impakt von v1.6 |
+|--------|---------------|-----------------|
+| Settings-Tabelle | ~5 Keys/Org | +5 Keys/Org (Dashboard-Config) -- vernachlaessigbar |
+| jahrgaenge-Tabelle | ~2-3/Org | +2 Spalten -- kein Impakt |
+| Dashboard-Query | 6 Queries | Unveraendert, +1 Feld in bestehender Query |
+| Badge-Check | Pro Konfi, pro Badge | +1 Query (Jahrgang-Config laden) -- cachebar |
+| ActivityRings Render | 3 Ringe | 2-3 Ringe dynamisch -- kein Impakt |
 
-**Fuer v1.5 nicht noetig:** Firebase Multicast, Redis-basierter Scheduler, Message Queues. setInterval reicht bei aktueller Nutzerzahl.
+---
+
+## Edge Cases
+
+### Edge Case 1: Typ deaktivieren wenn Konfis Punkte haben
+**Verhalten:** Punkte bleiben, werden nur nicht angezeigt/gewertet. Bei Reaktivierung sofort wieder sichtbar.
+
+### Edge Case 2: Beide Typen aktiv, ein Goal auf 0
+**Aktuelles Verhalten:** ActivityRings nutzt `effectiveGoal = goal > 0 ? goal : 10`. Das bleibt. Ein Goal von 0 bedeutet "kein Ziel" (Ring laeuft endlos), nicht "Typ deaktiviert".
+
+### Edge Case 3: Badge mit `both_categories` wenn ein Typ deaktiviert
+**Verhalten:** Badge prueft nur aktive Typen. Wenn nur Gottesdienst aktiv, reicht Gottesdienst-Punkte >= criteria_value fuer `both_categories`.
+
+### Edge Case 4: Dashboard-Config noch nicht gesetzt
+**Verhalten:** Frontend-Defaults (alle Widgets an). Kein Settings-Eintrag = Default `true`.
 
 ---
 
 ## Quellen
 
-- Direkte Codebase-Analyse: pushService.js (663 Zeilen, 14+2 Methoden), backgroundService.js (312 Zeilen, 3 Services), firebase.js (74 Zeilen), AppContext.tsx (584 Zeilen), BadgeContext.tsx (107 Zeilen), notifications.js (165 Zeilen), server.js (516 Zeilen)
-- Firebase Admin SDK: Error Codes fuer Token-Invalidierung (HIGH confidence -- dokumentierte Firebase-API)
-- Capacitor Push Notifications: Token-Lifecycle Verhalten (HIGH confidence -- im Code verifiziert)
+- Direkte Codebase-Analyse:
+  - konfi.js /dashboard Endpoint (Zeilen 32-272)
+  - DashboardView.tsx (1400+ Zeilen, 6 Sektionen)
+  - KonfiDashboardPage.tsx (305 Zeilen)
+  - ActivityRings.tsx (350 Zeilen, 3 hardcoded Ringe)
+  - settings.js (159 Zeilen, Key-Value UPSERT Pattern)
+  - jahrgaenge.js (193 Zeilen, CRUD)
+  - badges.js Badge-Checks (criteria_type Switch Statement)
+  - activities.js + konfi-managment.js (getPointField Usage)
+  - AdminGoalsPage.tsx (80 Zeilen, target_gottesdienst/target_gemeinde)
+  - AdminSettingsPage.tsx (Settings-Navigation)
 
 ---
-*Architecture research for: Konfi Quest v1.5 Push-Notifications*
-*Researched: 2026-03-05*
+*Architecture research for: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
+*Researched: 2026-03-07*

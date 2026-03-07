@@ -1,188 +1,171 @@
 # Project Research Summary
 
-**Project:** Konfi Quest v1.5 Push-Notifications
-**Domain:** Push-Notification-System Verbesserung (Token-Lifecycle, Badge-Sync, Scheduled Notifications)
-**Researched:** 2026-03-05
+**Project:** Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik
+**Domain:** Konfigurierbare Punkte-Typen pro Jahrgang + Dashboard-Widget-Steuerung
+**Researched:** 2026-03-07
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Konfi Quest hat bereits ein funktionierendes Push-Notification-System mit 14 aktiven Push-Flows, Firebase Admin SDK, Capacitor Push Notifications und einer push_tokens-Tabelle in PostgreSQL. Das System leidet jedoch unter drei strukturellen Problemen: Der Badge-Count wird von 4 unabhaengigen Systemen verwaltet ohne Single Source of Truth, ungueltige FCM-Tokens werden nie bereinigt (Firebase-Errors werden nur geloggt), und der Token-Lifecycle hat Luecken bei Logout und Fallback-Device-IDs. Alle 14 bestehenden Push-Flows funktionieren im Code, aber `sendLevelUpToKonfi` wird nirgends aufgerufen und Event-Erinnerungen referenzieren eine Tabelle die moeglicherweise nicht existiert.
+Konfi Quest v1.6 erweitert das bestehende Gamification-System um zwei orthogonale Features: (1) Punkte-Typen (Gottesdienst/Gemeinde) pro Jahrgang aktivierbar/deaktivierbar machen und (2) Dashboard-Widgets fuer Konfis per Org-Admin konfigurierbar machen. Beide Features bauen vollstaendig auf dem bestehenden Stack auf -- keine neuen Dependencies, keine Architektur-Umstellung. Das System bleibt bei 2 festen Punkte-Typen (kein generisches N-Typen-System), erlaubt aber 0, 1 oder 2 aktive Typen pro Jahrgang. Dashboard-Widgets werden ueber einfache Toggle-Schalter gesteuert, nicht ueber Drag-and-Drop oder Custom-Builder.
 
-Der empfohlene Ansatz ist konservativ: Nur eine neue Dependency (node-cron), keine Architektur-Umstellung, sondern gezielte Reparaturen an bestehenden Komponenten. Drei neue Services (BadgeCountService, TokenCleanupService, NotificationTypeRegistry) kapseln die fehlende Logik. Das bestehende setInterval-Pattern im BackgroundService bleibt erhalten. Firebase `sendEachForMulticast` wird fuer Batch-Szenarien genutzt (bereits in firebase-admin enthalten). Kein Redis, kein Bull, kein separater Worker-Prozess.
+Der empfohlene Ansatz nutzt zwei verschiedene Speicherstrategien: Punkte-Typ-Konfiguration als Boolean-Spalten direkt auf der `jahrgaenge`-Tabelle (weil jahrgangs-spezifisch), Dashboard-Widget-Konfiguration als Key-Value-Paare in der bestehenden `settings`-Tabelle (weil org-weit). Beide Strategien verwenden existierende Patterns -- UPSERT fuer Settings, ALTER TABLE mit DEFAULT TRUE fuer Jahrgaenge. Die Aenderungen betreffen 8 Backend-Routes und 6 Frontend-Komponenten, aber keine davon strukturell -- es sind Guards, Conditionals und Props-Erweiterungen.
 
-Die Hauptrisiken sind: (1) Badge-Count-Divergenz zwischen App-Icon, TabBar und Chat -- loesbar durch BadgeCountService als einzige Berechnungsquelle. (2) APNS-Header fuer Silent Pushes sind falsch konfiguriert (`apns-push-type: alert` statt `background` fuer Badge-Only Updates) -- iOS verwirft diese Pushes im Background. (3) Push-Listener in AppContext akkumulieren bei User-State-Changes weil kein Cleanup im useEffect existiert. Alle drei sind mit gezielten Code-Aenderungen behebbar.
+Die Hauptrisiken sind: (1) ActivityRings zeigt Phantom-Ringe fuer deaktivierte Typen wegen Fallback-Logik `goal > 0 ? goal : 10`. (2) Badge-Kriterien (`gottesdienst_points`, `both_categories`) werden unerreichbar aber bleiben sichtbar -- frustriert Konfis. (3) Ranking wird bei Typ-Aenderung mitten im Jahr unfair, weil alte Punkte mitzaehlen. Alle drei sind loesbar, aber die Ranking-Entscheidung (alte Punkte behalten vs. nur aktive Typen zaehlen) muss VOR der Implementierung getroffen werden.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Nur eine neue Dependency: **node-cron v3.0.3** fuer periodische Jobs (Event-Erinnerungen alle 15 Min, Token-Cleanup taeglich). Alle anderen benoetigten APIs sind bereits installiert und teilweise ungenutzt.
+Keine neuen Dependencies. Alle Features lassen sich mit PostgreSQL (Boolean-Spalten + KV-Store), Express + express-validator (Route-Erweiterungen), React 19 + Ionic 8 (Conditional Rendering) und dem bestehenden AppContext umsetzen. Alle Versionen sind aktuell.
 
-**Core technologies (bereits vorhanden, besser nutzen):**
-- **firebase-admin ^12.7.0:** `sendEachForMulticast()` fuer Batch-Versand (aktuell nicht genutzt, sendet sequentiell)
-- **firebase-admin Error-Codes:** Token-Invalidierung erkennen (`messaging/registration-token-not-registered`) -- aktuell werden Fehler nur geloggt
-- **@capawesome/capacitor-badge ^7.0.1:** Badge.set()/clear() -- funktioniert, aber Android-Workaround noetig (removeAllDeliveredNotifications vor Badge.set)
-- **node-cron ^3.0.3 (NEU):** Einzige neue Dependency -- leichtgewichtiger Cron-Scheduler im Express-Prozess
+**Core technologies (unveraendert):**
+- **PostgreSQL (pg ^8.16.3):** `jahrgaenge`-Tabelle um 2 Boolean-Spalten erweitern, `settings`-Tabelle fuer 5 neue Dashboard-Keys
+- **Express + express-validator:** Bestehende UPSERT- und Validierungs-Patterns erweitern, kein neues Pattern
+- **React 19 + Ionic 8:** Conditional Rendering fuer Dashboard-Sektionen, IonToggle fuer Admin-UI
 
-**Bewusst NICHT hinzugefuegt:** Redis/BullMQ (unnoetig bei <100 Usern), @capacitor-firebase/messaging (wuerde Custom FCM Plugin ersetzen), Web Push (App ist native-only), PM2/Worker-Prozesse (ein Docker-Container reicht).
+**Explizit abgelehnt:** react-grid-layout (Over-Engineering), zustand/redux (AppContext reicht), Feature-Flag-Services (5 Toggles rechtfertigen kein LaunchDarkly), JSONB-Spalten (2 Booleans sind klarer als JSON), react-hook-form (IonToggle + useState reicht).
 
 ### Expected Features
 
-**Must have (Table Stakes) -- 11 Requirements:**
-- Token-Cleanup bei Logout (TKN-01) -- Geraet erhaelt nach Logout weiter Pushes fuer alten User
-- Fallback-Device-ID Fix (TKN-02) -- Geraete mit Fallback-IDs erhalten NIE Pushes
-- Invalid-Token-Bereinigung nach Firebase-Error (CLN-01) -- tote Tokens bleiben fuer immer in DB
-- Periodischer Token-Cleanup (CLN-02) -- verwaiste Tokens bereinigen
-- Badge-Count Single Source of Truth (BDG-01) -- 4 Systeme verwalten Badge unabhaengig
-- App-Icon Badge korrekt (BDG-02) -- APNS setzt Badge aktuell immer auf "1"
-- Chat Unread-Counts pro Raum (BDG-03) -- last_read_at nicht immer korrekt
-- TabBar Badges konsistent (BDG-04) -- abhaengig von BDG-01
-- Bestehende 14 Push-Flows verifiziert (CMP-01) -- End-to-End auf echtem Geraet
+**Must have (Table Stakes) -- 11 Features:**
+- Punkte-Typ Toggle pro Jahrgang (gottesdienst_enabled, gemeinde_enabled)
+- ActivityRings dynamisch: 1-3 Ringe basierend auf aktiven Typen
+- Gesamt-Ring nur bei 2 aktiven Typen anzeigen (sonst redundant)
+- Legende und Progress-Bars dynamisch filtern
+- Badge-Check skip bei deaktiviertem Typ-Kriterium
+- Badge-Warnung beim Deaktivieren ("X Badges verwenden diesen Typ")
+- Dashboard-Endpoint liefert Jahrgang-Config mit
+- Dashboard-Widget-Toggles in Admin-Settings (5 Sektionen: Konfirmation, Losung, Badges, Ranking, Events)
+- DashboardView Conditional Rendering basierend auf Widget-Config
+- KonfiDetailView + KonfisView Ringe/Bars anpassen
+- Backend Punkte-Vergabe blockieren wenn Typ deaktiviert
 
-**Should have (Differentiators) -- 6 Requirements:**
-- Event-Erinnerungen verifizieren (FLW-01) -- bereits implementiert, braucht Verifikation + DB-Migration
-- Admin-Alert bei neuer Registrierung (FLW-02) -- auth.js erweitern
-- Level-Up Push (FLW-03) -- sendLevelUpToKonfi existiert, wird nie aufgerufen
-- Punkte-Meilenstein Push (FLW-04) -- neue Logik
-- Push-Type Registry (CFG-02) -- zentrale Type-Definition
-- Push-Types Toggle (CFG-01) -- Enable/Disable-Flags
+**Should have (Differentiators):**
+- Migration-Hinweis: "X Konfis haben bereits Y Punkte in diesem Typ"
+- Info-Text im Konfi-Dashboard: "Deine Gemeinde trackt nur Gottesdienst-Punkte"
 
 **Defer (v2+):**
-- User-Level Notification Preferences UI -- bei <100 Nutzern nicht noetig
-- Digest-Notifications (taegliche Zusammenfassung) -- Overkill
-- Rich Notifications mit Bildern/Actions -- erfordert Notification Service Extension
-- SMS/Email Fallback -- Push-Zuverlaessigkeit verbessern statt Fallback-Kanaele
+- Admin-Goals pro Jahrgang (statt org-weit) -- erst bei konkretem Bedarf
+- Dashboard-Widget-Reihenfolge (Drag-and-Drop)
+- Widget-Preview fuer Admins
+- Punkte-Typ umbenennen (massives Refactoring, >1000 Zeilen)
+- Dynamische N Punkte-Typen
 
 ### Architecture Approach
 
-Die Architektur erweitert das bestehende System um drei neue Services ohne die Grundstruktur zu aendern. PushService bleibt die zentrale Klasse fuer alle Push-Sends, wird aber um Type-Guard (NotificationTypeRegistry) und Token-Invalidierung (firebase.js tokenInvalid Flag) ergaenzt. BadgeCountService zentralisiert die Badge-Berechnung die aktuell an 4 Stellen unabhaengig passiert. TokenCleanupService implementiert reaktive (bei jedem Send) und proaktive (alle 24h) Token-Bereinigung.
+Zwei unabhaengige Feature-Streams die sich ein Frontend (DashboardView) teilen aber verschiedene Datenquellen nutzen. Punkte-Typ-Konfiguration fliesst von `jahrgaenge`-Tabelle ueber den Dashboard-Endpoint ins Frontend und beeinflusst ActivityRings, Ranking, Badge-Checks und Punkte-Vergabe. Dashboard-Widget-Konfiguration fliesst von der `settings`-Tabelle ueber den Settings-Endpoint ins Frontend und steuert Conditional Rendering der 5 abschaltbaren Dashboard-Sektionen. Header + ActivityRings bleiben immer sichtbar.
 
-**Neue Komponenten:**
-1. **NotificationTypeRegistry** (backend/config/notificationTypes.js) -- Zentrale Type-Definitionen mit enabled/disabled Flags
-2. **BadgeCountService** (backend/services/badgeCountService.js) -- Einzige Quelle fuer Badge-Count-Berechnung
-3. **TokenCleanupService** (backend/services/tokenCleanupService.js) -- Reaktive + proaktive Token-Bereinigung
-
-**Modifikationen an bestehenden Komponenten:**
-- firebase.js: tokenInvalid Return-Wert bei spezifischen Error-Codes
-- PushService.sendToUser(): Type-Check + Token-Invalidierung + sendEachForMulticast
-- PushService.getTokensForUser(): Fallback-ID-Filter entfernen
-- AppContext.tsx: Logout Token-Cleanup + Listener-Cleanup im useEffect
-- BadgeContext.tsx: Neuer /chat/badge-count Endpoint statt /chat/rooms parsen
-- BackgroundService: TokenCleanupService-Intervall hinzufuegen
-
-**DB-Aenderungen:**
-- push_tokens: error_count + last_error_at Spalten (fuer spaetere Erweiterung)
-- event_reminders: CREATE TABLE IF NOT EXISTS (wird referenziert aber nie erstellt)
-- CREATE TABLE aus notifications.js Route-Handler entfernen
+**Betroffene Komponenten:**
+1. **jahrgaenge-Tabelle + jahrgaenge.js** -- Neue Boolean-Spalten, CRUD erweitern
+2. **settings-Tabelle + settings.js** -- 5 neue dashboard_show_* Keys, UPSERT-Pattern
+3. **konfi.js /dashboard** -- point_config im Response, dynamisches Ranking
+4. **activities.js + konfi-managment.js + events.js** -- Punkte-Vergabe-Guard vor getPointField
+5. **badges.js** -- Badge-Checks respektieren deaktivierte Typen (hoechstes Risiko)
+6. **levels.js** -- Level-Berechnung nur mit aktiven Typen
+7. **ActivityRings.tsx** -- Dynamische Ring-Anzahl, neue Props enableGottesdienst/enableGemeinde
+8. **DashboardView.tsx** -- Conditional Rendering aller Sektionen + point_config
+9. **DashboardConfigModal.tsx (NEU)** -- Toggle-UI fuer Dashboard-Widgets
 
 ### Critical Pitfalls
 
-1. **Badge-Count ohne Single Source of Truth** -- 4 Systeme (BadgeContext, AppContext, PushService, Capacitor Badge) verwalten den Count unabhaengig. Loesung: BadgeCountService als einzige Berechnungsquelle, alle anderen konsumieren. APNS Payload muss echten Count enthalten (nicht hardcoded "1").
+1. **Phantom-Ringe in ActivityRings** -- Fallback `goal > 0 ? goal : 10` zeigt Ring mit falschem Ziel fuer deaktivierte Typen. Loesung: Explizite Props `enableGottesdienst`/`enableGemeinde`, Ring komplett ausblenden statt Goal auf 0.
 
-2. **Firebase-Errors bei ungueltigen Tokens werden ignoriert** -- Tokens bleiben fuer immer in der DB, jeder Push-Send an tote Tokens verbraucht Firebase-Quota und Latenz. Loesung: Error-Code-Parsing in firebase.js, sofortige Token-Loeschung bei `messaging/registration-token-not-registered`.
+2. **Unerreichbare Badges bleiben sichtbar** -- `gottesdienst_points`/`both_categories` Badge-Kriterien werden unmoeglich wenn Typ deaktiviert. Konfis sehen 0%-Fortschritt. Loesung: Badge-Sichtbarkeit filtern, Admin bei Deaktivierung warnen, Badges NICHT loeschen (Reaktivierung moeglich).
 
-3. **APNS-Header fuer Silent Pushes falsch** -- Badge-Only Updates nutzen `apns-push-type: alert` statt `background`. iOS verwirft diese im Background. Loesung: firebase.js muss zwischen Alert-Pushes und Silent-Pushes unterscheiden.
+3. **Unfaires Ranking bei Typ-Aenderung mitten im Jahr** -- Alte Punkte des deaktivierten Typs zaehlen weiter in der Summe. Loesung: Ranking-Query dynamisch bauen, nur aktive Typen summieren. ENTSCHEIDUNG VOR IMPLEMENTIERUNG treffen.
 
-4. **Push-Listener akkumulieren in AppContext** -- useEffect fuer setupPushNotifications hat keinen Cleanup. Listener stacken bei User-State-Changes. Loesung: removeAllListeners() im useEffect-Cleanup.
+4. **getPointField Error statt klarer Meldung** -- Punkte-Vergabe an deaktivierten Typ gibt 500er statt erklaerenden 400er. Loesung: Typ-Aktivierungspruefung VOR getPointField-Aufruf an allen 8 betroffenen Stellen.
 
-5. **Fallback-Device-IDs erzeugen Ghost-Tokens** -- Tokens mit Fallback-IDs werden per `NOT LIKE '%\\_\\_%'` ausgefiltert, bleiben aber in der DB. Loesung: Filter entfernen, reaktives Cleanup ueber tokenInvalid.
+5. **Dashboard-Config ohne Defaults** -- Bestehende Orgs haben keine Widget-Config in DB. Loesung: Frontend-Default = alles sichtbar (fehlender Key = true), kein Migrations-Script noetig wenn Code defensiv ist.
 
 ## Implications for Roadmap
 
-### Phase 1: Foundation + Konfiguration
-**Rationale:** Grundlagen die alle weiteren Phasen brauchen. NotificationTypeRegistry ist Voraussetzung fuer Type-Guards in PushService. DB-Aenderungen muessen vor Code-Aenderungen passieren.
-**Delivers:** NotificationTypeRegistry, DB-Schema-Fixes (event_reminders Tabelle, push_tokens Erweiterung, CREATE TABLE aus Route entfernen)
-**Addresses:** CFG-01, CFG-02
-**Avoids:** Pitfall 10 (Aenderungen an 3+ Stellen bei neuen Push-Flows)
-**Komplexitaet:** LOW -- neue Dateien + SQL-Statements
+### Phase 1: DB-Schema + Backend-Foundation
+**Rationale:** Alle weiteren Phasen haengen vom Datenmodell ab. Schema-Aenderungen muessen zuerst stehen. Die Ranking-Entscheidung muss hier fallen.
+**Delivers:** jahrgaenge-Tabelle mit enable_gottesdienst/enable_gemeinde, jahrgaenge.js CRUD erweitert, settings.js um dashboard_show_* Keys erweitert, konfi.js /dashboard liefert point_config
+**Addresses:** Jahrgang-Config Backend, Dashboard-Config Backend, Settings-Endpoints
+**Avoids:** Pitfall 7 (falsche Speicherstelle), Pitfall 5 (fehlende Defaults)
 
-### Phase 2: Token-Lifecycle reparieren
-**Rationale:** Ohne zuverlaessige Token-Zustellung sind alle weiteren Push-Verbesserungen wirkungslos. Dies ist die kritischste Phase.
-**Delivers:** Reaktive Token-Invalidierung (firebase.js), Fallback-ID-Filter entfernt, Logout-Cleanup robust, Push-Listener-Cleanup in AppContext
-**Addresses:** TKN-01, TKN-02, TKN-03, TKN-04, CLN-01
-**Avoids:** Pitfall 2 (Ghost-Tokens), Pitfall 3 (Firebase-Errors ignoriert), Pitfall 5 (Logout bei expired JWT), Pitfall 6 (Listener-Akkumulation)
-**Komplexitaet:** MEDIUM -- firebase.js, PushService, AppContext aendern
+### Phase 2: Punkte-Logik Backend
+**Rationale:** Backend-Guards muessen vor Frontend-Anpassungen stehen, sonst koennten Admins Punkte an deaktivierte Typen vergeben.
+**Delivers:** Punkte-Vergabe-Guards in activities.js, konfi-managment.js, events.js. Badge-Checks respektieren deaktivierte Typen. Ranking dynamisch. Level-Berechnung angepasst.
+**Addresses:** Punkte-Vergabe-Blockierung, Badge-Skip, Ranking-Fairness, Level-Konsistenz
+**Avoids:** Pitfall 4 (getPointField Error), Pitfall 3 (unfaires Ranking), Pitfall 2 (unerreichbare Badges)
 
-### Phase 3: Badge-Count Single Source of Truth
-**Rationale:** User-sichtbarste Verbesserung. Voraussetzung fuer korrekte Badge-Anzeige bei allen Push-Flows. Unabhaengig von Phase 2 implementierbar (parallel moeglich).
-**Delivers:** BadgeCountService, GET /chat/badge-count Endpoint, BadgeContext vereinfacht, AppContext Badge-Logik entfernt, APNS Silent Push korrekt
-**Addresses:** BDG-01, BDG-02, BDG-03, BDG-04
-**Avoids:** Pitfall 1 (4 Badge-Systeme), Pitfall 8 (APNS Silent Push Header)
-**Komplexitaet:** MEDIUM -- neuer Service + mehrere Dateien refactoren
+### Phase 3: Frontend Punkte-Anzeige
+**Rationale:** Backend liefert jetzt korrekte Daten und Config -- Frontend muss sie darstellen. ActivityRings ist die komplexeste Aenderung.
+**Delivers:** ActivityRings dynamisch (1-3 Ringe), DashboardView nutzt point_config, KonfisView Progress-Bars angepasst, KonfiDetailView Ringe angepasst, AdminGoalsPage Hinweise, Jahrgang-Edit-Modal mit Toggles + Badge-Warnung
+**Addresses:** Alle UI-seitigen Table-Stakes-Features
+**Avoids:** Pitfall 1 (Phantom-Ringe), Pitfall 6 (Fortschrittsbalken-Logik)
 
-### Phase 4: Fehlende Push-Flows
-**Rationale:** Neue Features auf dem jetzt zuverlaessigen Fundament. Level-Up und Admin-Alert sind LOW-Effort (Methoden existieren teilweise schon).
-**Delivers:** Level-Up Push aktiv (FLW-03), Admin-Alert bei Registrierung (FLW-02), Punkte-Meilenstein (FLW-04), Event-Erinnerungen verifiziert (FLW-01)
-**Addresses:** FLW-01, FLW-02, FLW-03, FLW-04
-**Avoids:** Pitfall 4 (Polling statt In-Memory-Scheduler fuer Event-Erinnerungen)
-**Komplexitaet:** LOW-MEDIUM -- FLW-03 ist nur ein Funktionsaufruf, FLW-04 braucht Meilenstein-Logik
+### Phase 4: Dashboard-Widget-Konfiguration
+**Rationale:** Unabhaengig von Punkte-Logik, kann parallel zu Phase 2+3 entwickelt werden. Eigenstaendiges Feature.
+**Delivers:** DashboardConfigModal.tsx (neues Modal mit IonToggle-Liste), AdminSettingsPage Link zum Modal, DashboardView Conditional Rendering aller 5 Sektionen, KonfiDashboardPage reicht dashboardConfig durch
+**Addresses:** Dashboard-Widget-Toggles, Conditional Rendering
+**Avoids:** Pitfall 8 (Over-Engineering), Pitfall 9 (zu viele KV-Paare)
 
-### Phase 5: Token-Cleanup + End-to-End Verifikation
-**Rationale:** Abschluss-Phase. Proaktiver Cleanup setzt reaktiven Cleanup (Phase 2) voraus. End-to-End-Verifikation aller 17 Flows (14 bestehende + 3 neue) als Abnahme.
-**Delivers:** TokenCleanupService, 24h-Cleanup-Job in BackgroundService, alle Push-Flows End-to-End verifiziert
-**Addresses:** CLN-02, CMP-01
-**Avoids:** Pitfall 7 (sequentielle Sends -- sendEachForMulticast fuer Batch)
-**Komplexitaet:** MEDIUM -- TokenCleanupService + umfassende Verifikation auf echtem Geraet
+### Phase 5: End-to-End-Test + Edge Cases
+**Rationale:** Integration aller Aenderungen, Edge-Case-Handling, Verifikation auf echtem Geraet.
+**Delivers:** End-to-End-Verifikation aller Szenarien (1 Typ aktiv, 0 Typen theoretisch, Typ mitten im Jahr deaktivieren, Widgets an/aus), Profil-Seite bereinigt, Push-Notification-Texte konsistent
+**Addresses:** Profil-Anzeige, Push-Texte, Edge Cases
+**Avoids:** Pitfall 10 (vergessene Admin-Views), Pitfall 12 (Push-Texte), Pitfall 13 (Profil)
 
 ### Phase Ordering Rationale
 
-- **Foundation vor allem:** DB-Schema und Type-Registry sind Voraussetzungen fuer alle Code-Aenderungen
-- **Token-Lifecycle vor neuen Flows:** Ohne zuverlaessige Zustellung sind neue Push-Flows nutzlos
-- **Badge-Sync parallel zu Token-Lifecycle moeglich:** Keine direkte Abhaengigkeit, aber sauberer wenn Token-Lifecycle zuerst steht
-- **Neue Flows erst auf solidem Fundament:** Level-Up, Meilenstein-Push etc. brauchen funktionierendes Token-System + Type-Registry
-- **Verifikation ganz am Ende:** Alle Flows muessen existieren bevor End-to-End-Tests sinnvoll sind
-- **Insgesamt 1 neue Dependency (node-cron):** Minimales Risiko, maximaler Fokus auf Code-Qualitaet
+- **DB-Schema zuerst:** Beide Features brauchen Schema-Aenderungen als Grundlage. ALTER TABLE jahrgaenge und neue Settings-Keys muessen vor Code-Aenderungen stehen.
+- **Backend vor Frontend:** Punkte-Guards muessen existieren bevor die UI sie beruecksichtigt. Sonst inkonsistenter Zustand moeglich.
+- **Punkte-Logik vor Dashboard-Widgets:** Punkte-Logik ist komplexer (8 Backend-Routes, Badge-Integration, Ranking) und hat mehr Abhaengigkeiten. Dashboard-Widgets sind isolierter.
+- **Phase 4 kann parallel zu Phase 2+3 laufen:** Dashboard-Widget-Config hat keine Abhaengigkeit zur Punkte-Typ-Logik. Nur DashboardView.tsx wird von beiden Phasen beruehrt.
+- **End-to-End ganz am Ende:** Alle Features muessen implementiert sein bevor Integrationstests sinnvoll sind.
 
 ### Research Flags
 
 Phasen die tiefere Research waehrend der Planung brauchen:
-- **Phase 3 (Badge-Count):** APNS Silent Push Header-Konfiguration muss auf echtem iOS-Geraet getestet werden. Android Badge-Verhalten (Badge.clear() vs System-Notification-Count) ist nur MEDIUM Confidence.
-- **Phase 4 (FLW-04 Punkte-Meilenstein):** Meilenstein-Schwellwerte muessen definiert werden (welche Punkte-Zahlen?). Level-Check-Logik muss im Code lokalisiert werden.
+- **Phase 2 (Punkte-Logik Backend):** Ranking-Entscheidung (alte Punkte behalten vs. nur aktive zaehlen) hat massive UX-Implikationen und muss mit dem Nutzer geklaert werden. Badge-Logic mit `both_categories` bei einem aktiven Typ braucht klare Semantik-Definition.
+- **Phase 3 (ActivityRings):** Ring-Radien-Berechnung bei dynamischer Anzahl ist visuelles Feintuning. Muss auf dem Geraet getestet werden.
 
 Phasen mit Standard-Patterns (keine Research noetig):
-- **Phase 1 (Foundation):** SQL CREATE TABLE, JS Config-Objekt -- trivial
-- **Phase 2 (Token-Lifecycle):** Firebase Error-Codes sind offiziell dokumentiert, Cleanup-Pattern ist Standard
-- **Phase 5 (Cleanup):** Periodischer DB-Cleanup ist etabliertes Pattern
+- **Phase 1 (DB-Schema):** ALTER TABLE, UPSERT-Pattern -- triviale SQL-Operationen
+- **Phase 4 (Dashboard-Widgets):** Conditional Rendering, IonToggle, Settings KV-Store -- alles etablierte Patterns in der Codebase
+- **Phase 5 (End-to-End):** Test-Checkliste abarbeiten, keine neue Architektur
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Nur 1 neue Dependency (node-cron), Rest existiert bereits. Firebase-APIs offiziell dokumentiert |
-| Features | HIGH | Basiert auf direkter Codebase-Analyse aller relevanten Dateien. 14 bestehende Flows verifiziert |
-| Architecture | HIGH | Alle Dateien analysiert (pushService.js 663 Zeilen, AppContext.tsx 584 Zeilen etc.). Probleme konkret identifiziert |
-| Pitfalls | HIGH | Firebase-Doku, Capacitor-Doku, Community-Issues. Alle Probleme im Code nachvollziehbar |
+| Stack | HIGH | Null neue Dependencies. Alle Empfehlungen basieren auf direkter Codebase-Analyse mit konkreten Zeilennummern |
+| Features | HIGH | Vollstaendige Bestandsaufnahme aller betroffenen Code-Stellen. Abhaengigkeitsgraph dokumentiert. Anti-Features klar begruendet |
+| Architecture | HIGH | Alle 15 Backend-Routes analysiert, alle relevanten Frontend-Komponenten mit Zeilennummern referenziert. Datenfluss-Diagramme vorhanden |
+| Pitfalls | HIGH | 13 Pitfalls identifiziert (5 kritisch, 5 moderat, 3 geringfuegig). Abhaengigkeits-Reihenfolge der Mitigationen dokumentiert |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Android Badge-Count Verhalten:** `Badge.clear()` hat keinen Einfluss auf System-Notification-Count. Workaround (removeAllDeliveredNotifications) muss auf Zielgeraeten getestet werden -- MEDIUM Confidence
-- **Punkte-Meilenstein Schwellwerte:** Welche Punkte-Zahlen loesen einen Meilenstein-Push aus? Settings-Tabelle hat `min_gottesdienst_points` und `min_gemeinde_points` -- muessen definiert werden
-- **Level-Check Lokalisierung:** Wo genau im Code passiert der Level-Check nach Punkte-Vergabe? Muss in activities.js / konfi-managment.js / badges.js identifiziert werden
-- **event_reminders Tabelle:** Wird im Code referenziert, existiert moeglicherweise nicht in der DB. Muss vor Phase 4 geprueft werden
-- **node-cron vs setInterval:** FEATURES.md listet node-cron als Anti-Feature (setInterval reicht), STACK.md empfiehlt node-cron. Empfehlung: setInterval beibehalten fuer bestehende Jobs, node-cron nur fuer neue Cron-spezifische Jobs falls noetig
+- **Ranking-Entscheidung:** Wie werden alte Punkte eines deaktivierten Typs im Ranking behandelt? Option A (nur aktive Typen zaehlen) ist empfohlen, muss aber mit dem Nutzer abgestimmt werden. Diese Entscheidung beeinflusst Level-Berechnung, Fortschrittsbalken und Total-Points-Anzeige.
+- **both_categories Badge-Semantik:** Wenn nur ein Typ aktiv ist -- reicht der eine aktive Typ fuer `both_categories`? Oder wird das Badge uebersprungen? Architecture empfiehlt: nur aktive Typen muessen das Kriterium erfuellen.
+- **AdminGoalsPage bei gemischten Jahrgaengen:** Goals sind org-weit, Punkte-Typen sind jahrgangs-spezifisch. Was passiert wenn Jahrgang A beide Typen hat und Jahrgang B nur einen? Goals-Seite muss das kommunizieren.
+- **Dashboard-Widget-Config als einzelne Keys vs. JSON:** PITFALLS.md empfiehlt ein JSON-Objekt, STACK.md und ARCHITECTURE.md empfehlen einzelne Keys. Empfehlung: Einzelne Keys sind konsistenter mit dem bestehenden Settings-Pattern (target_gottesdienst etc. sind auch einzelne Keys).
 
 ## Sources
 
-### Primary (HIGH confidence)
-- [Firebase Admin SDK: Send Messages](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk) -- sendEachForMulticast, Batch-APIs
-- [Firebase FCM Error Codes](https://firebase.google.com/docs/cloud-messaging/error-codes) -- Token-Invalidierung
-- [Firebase: Token Management Best Practices](https://firebase.google.com/docs/cloud-messaging/manage-tokens) -- 60-Tage Staleness
-- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) -- Token-Lifecycle, Listener-Management
-- [Capawesome Badge Plugin](https://capawesome.io/plugins/badge/) -- Badge.set/clear
-
-### Secondary (MEDIUM confidence)
-- [Android Badge Count Issue #203](https://github.com/capawesome-team/capacitor-plugins/issues/203) -- Badge.clear() vs System-Count
-- [Firebase sendMulticast Deprecation](https://community.flutterflow.io/discussions/post/the-messaging-sendmulticast-function-is-no-longer-supported-in-firebase-KVt3BAb65dNRhk6) -- sendEachForMulticast als Ersatz
-- [node-cron npm](https://www.npmjs.com/package/node-cron) -- v3.0.3 stable
-
-### Codebase-Analyse (HIGH confidence)
-- pushService.js (663 Zeilen, 14+2 Methoden), backgroundService.js (312 Zeilen), firebase.js (74 Zeilen)
-- AppContext.tsx (584 Zeilen), BadgeContext.tsx (107 Zeilen), notifications.js (165 Zeilen)
-- Alle Route-Handler: activities.js, auth.js, badges.js, chat.js, events.js, konfi.js, konfi-managment.js
+### Primary (HIGH confidence -- direkte Codebase-Analyse)
+- ActivityRings.tsx (350 Zeilen, 3 hardcoded Ringe, Fallback-Logik Z.36-38)
+- DashboardView.tsx (~1450 Zeilen, 6 Sektionen, Conditional-Rendering-Pattern vorhanden)
+- badges.js (504 Zeilen, 13 CRITERIA_TYPES, 4 punkte-basiert)
+- settings.js (159 Zeilen, UPSERT-Pattern Z.99-148)
+- jahrgaenge.js (193 Zeilen, CRUD, aktuell nur name + confirmation_date)
+- konfi.js (~900 Zeilen, Dashboard-Route Z.32-272, Ranking Z.97-107)
+- activities.js (~500 Zeilen, getPointField Usage Z.246, 320, 455)
+- konfi-managment.js (~700 Zeilen, getPointField Usage Z.476, 555, 609, 666)
+- levels.js (299 Zeilen, total_points Berechnung Z.226, 243)
+- validation.js (65 Zeilen, getPointField Whitelist Z.24-35)
+- AdminGoalsPage.tsx (80 Zeilen, 2 Stepper)
+- KonfisView.tsx (3 Progress-Bars Z.292-334)
+- KonfiDetailView.tsx (ActivityRings Z.499-500)
+- KonfiDashboardPage.tsx (305 Zeilen, Settings-Loading)
 
 ---
-*Research completed: 2026-03-05*
+*Research completed: 2026-03-07*
 *Ready for roadmap: yes*

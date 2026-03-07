@@ -1,376 +1,292 @@
-# Domain Pitfalls: v1.5 Push-Notifications
+# Domain Pitfalls: v1.6 Dashboard-Konfig + Punkte-Logik
 
-**Domain:** Push-Notification-System Verbesserungen (Token-Lifecycle, Scheduled Notifications, Badge-Count-Sync)
-**Researched:** 2026-03-05
-**Confidence:** HIGH (basierend auf Codebase-Analyse, Firebase-Dokumentation, Capacitor-Dokumentation, Community-Issues)
+**Domain:** Konfigurierbare Punkte-Typen und Dashboard-Widgets in bestehendem Gamification-System
+**Researched:** 2026-03-07
+**Confidence:** HIGH (basierend auf vollstaendiger Codebase-Analyse aller betroffenen Dateien)
 
-## Critical Pitfalls
+## Kritische Pitfalls
 
-Fehler die Rewrites oder schwerwiegende Probleme verursachen.
+Fehler die zu inkonsistentem Verhalten, falschen Punktestaenden oder Datenintegritaetsproblemen fuehren.
 
-### Pitfall 1: Badge-Count wird von 4 unabhaengigen Systemen verwaltet — kein Single Source of Truth
+### Pitfall 1: ActivityRings zeigt Phantom-Ringe fuer deaktivierte Punkte-Typen
 
-**What goes wrong:**
-Badge-Counts divergieren zwischen App-Icon, TabBar und Chat-Liste. User sieht "3" auf dem App-Icon aber "0" im Chat-Tab, oder umgekehrt. Schlimmstenfalls akkumulieren Badges endlos und zeigen unrealistische Zahlen (z.B. "47 ungelesen" obwohl alles gelesen wurde).
+**Was schiefgeht:** Wenn `targetGottesdienst` oder `targetGemeinde` auf 0 gesetzt wird, berechnet `ActivityRings.tsx` (Zeile 36-38) Fallback-Werte: `effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10`. Das zeigt einen Ring mit falschem Ziel 10 an, obwohl der Punkte-Typ deaktiviert ist. Der Gesamt-Ring (`effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal`) summiert den Fallback und zeigt falsches Ziel 20 statt z.B. 10.
 
-**Why it happens:**
-Aktuell verwalten 4 verschiedene Systeme den Badge-Count unabhaengig voneinander:
-1. **BadgeContext** (`BadgeContext.tsx`): Holt `unread_count` via `/chat/rooms` API, setzt Device-Badge via `@capawesome/capacitor-badge`
-2. **AppContext** (`AppContext.tsx`): Hat eigenen `chatNotifications` State mit `totalUnreadCount` und `unreadByRoom`, kommentierte Badge-Logik ("Badge logic removed - now handled by BadgeContext"), aber State wird trotzdem weiter aktualisiert
-3. **PushService** (`pushService.js`): Sendet `badge: 1` hardcoded bei den meisten Notifications, `sendBadgeUpdate` sendet beliebigen Count
-4. **Capacitor Badge Plugin**: Wird direkt in `BadgeContext` und indirekt ueber APNS Payload gesetzt
+**Warum es passiert:** ActivityRings wurde ausschliesslich fuer den Fall "beide Typen aktiv" gebaut. Der Fallback auf 10 war ein Safety-Net gegen Division-by-Zero, nicht ein Design fuer deaktivierte Typen.
 
-Die Systeme widersprechen sich: AppContext deaktiviert seine Badge-Logik ("Badge logic removed"), fuehrt aber weiterhin Badge-relevante Berechnungen durch (Zeile 308-313: liest Device-Badge bei Start und setzt es als `totalUnreadCount`). BadgeContext refresht via API bei jedem WebSocket `newMessage` Event. PushService sendet `badge: 1` als statischen Wert unabhaengig vom echten Count.
+**Konsequenzen:**
+- Konfis sehen einen Ring fuer einen Punkte-Typ den sie nicht sammeln koennen
+- Gesamt-Ring zeigt falschen Fortschritt
+- Legende (Zeile 285-308) zeigt drei Eintraege obwohl nur einer/zwei relevant sind
+- Zentrale Anzeige (Zeile 260-276) zeigt Total-Punkte die beide Typen summieren
 
-**Consequences:**
-- App-Icon zeigt falsche Zahl (APNS setzt Badge auf das was der Server sendet — aktuell immer "1")
-- TabBar-Badges und App-Icon-Badge sind nicht synchron
-- User oeffnet Chat, liest alles, App-Icon zeigt weiterhin Badge
-- Bei vielen Notifications akkumuliert der Badge-Count auf dem Icon nicht korrekt (jede Push setzt auf "1" statt zu inkrementieren)
+**Praevention:**
+- ActivityRings muss Ring-Anzahl dynamisch anpassen: 3 Ringe (beide aktiv), 2 Ringe (einer aktiv + Gesamt), 1 Ring (nur Gesamt wenn beide gleich)
+- Deaktivierter Typ: Ring komplett ausblenden, Legende ausblenden, Gesamt nur aktive Typen summieren
+- Ring-Radien (`ringRadii` Array, Zeile 94-98) muessen sich an Anzahl sichtbarer Ringe anpassen -- sonst entsteht eine Luecke
+- Props um `enabledTypes` erweitern statt implizit ueber goal=0 zu erkennen
 
-**Prevention:**
-- Badge-Count MUSS serverseitig berechnet werden — nur der Server kennt den echten Unread-Count
-- Ein einziges System (BadgeContext) konsumiert den serverseitigen Count
-- PushService muss den echten Count vom Server holen und in den APNS Payload einsetzen (nicht `badge: 1`)
-- AppContext-Badge-Logik komplett entfernen (nicht nur auskommentieren)
-- APNS Badge im Push-Payload ist der einzige Weg, den App-Icon Badge im Background zu aktualisieren
+**Erkennungszeichen:** Ring zeigt "0/10" fuer deaktivierten Typ. Gesamt-Ring zeigt doppeltes Ziel.
 
-**Detection:**
-- App-Icon Badge zeigt immer "1" unabhaengig von der tatsaechlichen Anzahl
-- Badge bleibt nach dem Lesen aller Nachrichten bestehen
-- Unterschiedliche Zahlen auf App-Icon vs. TabBar vs. Chat-Liste
-
-**Phase to address:** Fruehe Phase — vor allen neuen Push-Flows, weil jeder neue Flow den Badge-Count beeinflussen muss
+**Betroffene Phase:** Punkte-Logik-Anpassung (ActivityRings)
 
 ---
 
-### Pitfall 2: Fallback-Device-IDs erzeugen Ghost-Tokens die nie bereinigt werden
+### Pitfall 2: Badge-Kriterien werden unerreichbar aber bleiben sichtbar
 
-**What goes wrong:**
-Die `push_tokens`-Tabelle fuellt sich mit Token-Eintraegen, die nie wieder geloescht werden koennen. Push-Notifications werden an tote Tokens gesendet, was Firebase-Quota verbraucht und die Zustellung an echte Geraete verzoegert.
+**Was schiefgeht:** `checkAndAwardBadges` in `badges.js` (Zeile 124-136) prueft direkt `konfi.gottesdienst_points` und `konfi.gemeinde_points`. Vier Badge-Kriterientypen sind betroffen:
+- `gottesdienst_points`: Unerreichbar wenn Gottesdienst deaktiviert
+- `gemeinde_points`: Unerreichbar wenn Gemeinde deaktiviert
+- `both_categories`: IMMER unerreichbar wenn ein Typ fehlt (erfordert beide >= Wert)
+- `total_points`: Summe aus beiden, also unfair wenn ein Typ fehlt
 
-**Why it happens:**
-Der aktuelle Code hat zwei separate Device-ID-Quellen:
-1. **Capacitor `Device.getId()`** — liefert eine stabile, geraete-spezifische ID
-2. **Fallback-Generierung** (`AppContext.tsx` Zeile 42-43): `${platform}_${Date.now()}_${Math.random()...}` — generiert bei jedem Fehlschlag eine NEUE ID
+Alle diese Badges bleiben sichtbar im Badge-Tab und auf dem Dashboard.
 
-Das Fallback wird gespeichert in `localStorage`, aber:
-- Wenn `Device.getId()` einmal fehlschlaegt (z.B. Timing-Problem beim App-Start) wird eine Fallback-ID generiert
-- Beim naechsten App-Start funktioniert `Device.getId()` und liefert die echte ID
-- Jetzt existieren ZWEI Eintraege in `push_tokens`: einer mit der echten ID, einer mit der Fallback-ID
-- Die Fallback-ID wird beim Logout nie korrekt geloescht (Logout nutzt `Device.getId()`, nicht die Fallback-ID)
+**Warum es passiert:** Badge-Kriterien wurden unabhaengig von Punkte-Konfiguration designed. Es gibt keine Verbindung zwischen Jahrgang-Konfiguration und Badge-Erreichbarkeit.
 
-Zusaetzlich: `getTokensForUser` in `pushService.js` (Zeile 11) filtert Device-IDs mit Underscores via `AND device_id NOT LIKE '%\\_\\_%'` — das soll Fallback-IDs ausfiltern, filtert aber auch legitime Device-IDs mit Underscores. Diese gefilterten Tokens bleiben in der DB, werden nie genutzt, nie geloescht.
+**Konsequenzen:**
+- Unerreichbare Badges frustrieren Konfis
+- Badge-Fortschrittsanzeige in `konfi.js` (Zeile 832-863) zeigt 0% fuer deaktivierte Typen -- sieht nach Bug aus
+- Admin erstellt Badge mit `both_categories` Kriterium obwohl nur ein Typ aktiv ist -- kein Fehler, aber Badge wird nie vergeben
+- `CRITERIA_TYPES` Objekt (Zeile 9-84) bietet alle 13 Typen beim Erstellen an, auch irrelevante
 
-**Consequences:**
-- DB-Tabelle waechst unbegrenzt
-- Push-Sends an tote Tokens erzeugen Firebase-Errors die geloggt aber nicht behandelt werden
-- Logout loescht nur den Token zur aktuellen Device-ID, nicht den Fallback-Token
+**Praevention:**
+- Badge-Sichtbarkeit im Frontend filtern: Badges mit unerreichbarem Kriterientyp ausblenden oder als "nicht verfuegbar fuer deinen Jahrgang" markieren
+- Admin-Warnung: Beim Deaktivieren eines Punkte-Typs anzeigen welche Badges betroffen sind (Count + Liste)
+- Badge-Erstellungs-UI: `CRITERIA_TYPES` kontextabhaengig filtern -- nur erreichbare Typen anbieten
+- NICHT automatisch Badges loeschen oder deaktivieren -- Admin soll entscheiden, Typ koennte spaeter wieder aktiviert werden
 
-**Prevention:**
-- Fallback-Device-ID-Generierung entfernen — wenn `Device.getId()` fehlschlaegt, Push-Registrierung abbrechen und spaeter erneut versuchen
-- Token-Cleanup-Job der Tokens aelter als 60 Tage loescht
-- Bei Token-Registrierung alle alten Tokens des gleichen Users mit dem gleichen FCM-Token loeschen (nicht nur andere User)
-- `NOT LIKE '%\\_\\_%'` Filter entfernen und stattdessen explizit ungueltige Tokens markieren
-
-**Detection:**
-- `SELECT COUNT(*) FROM push_tokens GROUP BY user_id` zeigt User mit >2 Tokens pro Plattform
-- Firebase-Error-Logs zeigen wiederholt `messaging/registration-token-not-registered`
+**Betroffene Phase:** Punkte-Logik-Anpassung (Badge-Integration)
 
 ---
 
-### Pitfall 3: Firebase-Error bei ungueltigem Token wird geloggt aber Token nie aus DB entfernt
+### Pitfall 3: Ranking wird unfair bei Punkte-Typ-Aenderung mitten im Jahr
 
-**What goes wrong:**
-Einmal registrierte Tokens bleiben fuer immer in der Datenbank, auch wenn das Geraet die App deinstalliert hat, der FCM-Token expired ist, oder das APNS-Token ungueltig wurde. Jeder Push-Versuch an diese Tokens erzeugt einen Firebase-Error, kostet Latenz und verbraucht Firebase-Quota.
+**Was schiefgeht:** Das Ranking in `konfi.js` (Zeile 97-107) berechnet: `(kp.gottesdienst_points + kp.gemeinde_points) as points`. Wenn mitten im Jahr Gottesdienst-Punkte deaktiviert werden:
+- Konfi A hatte vorher 5 Gottesdienst + 5 Gemeinde = 10 Punkte
+- Konfi B ist neu dazugekommen und hat 8 Gemeinde = 8 Punkte
+- Ranking: A vor B, obwohl A seine 5 Gottesdienst-Punkte unter alten Regeln gesammelt hat
 
-**Why it happens:**
-In `pushService.js` werden Firebase-Errors nur geloggt:
-```javascript
-} catch (error) {
-  console.error('Push failed for token:', error.message);
-  errorCount++;
-}
-```
-Es gibt keine Pruefung des Error-Codes und keine Entfernung des Tokens aus der Datenbank.
+**Warum es passiert:** Das SQL ist hardcoded auf beide Spalten. Es gibt keine Logik die prueft welche Punktearten fuer das Ranking zaehlen. Die Level-Berechnung in `levels.js` (Zeile 226: `total_points`) hat dasselbe Problem.
 
-Firebase liefert spezifische Error-Codes die eine Bereinigung triggern sollten:
-- `messaging/registration-token-not-registered` — Token existiert nicht mehr (App deinstalliert)
-- `messaging/invalid-argument` — Token-Format ist ungueltig
-- `messaging/invalid-registration-token` — Token ist malformed
+**Konsequenzen:**
+- Unfaires Ranking nach Konfigurationsaenderung
+- Level-Berechnung (`levels.js` Zeile 243: `total_points`) basiert ebenfalls auf der Summe beider Typen
+- Level-Progress (Zeile 274-278) stimmt nicht mit der neuen Realitaet ueberein
+- Konfis unter neuen Regeln sind systematisch benachteiligt
 
-Laut [Firebase Best Practices](https://firebase.google.com/docs/cloud-messaging/manage-tokens): Tokens sollten bei diesen Errors sofort geloescht werden. Zusaetzlich sollten Tokens die >60 Tage nicht aktualisiert wurden als "stale" betrachtet werden.
+**Praevention:**
+- ENTSCHEIDUNG TREFFEN VOR IMPLEMENTIERUNG: Was passiert mit bestehenden Punkten?
+  - **Option A (empfohlen):** Alte Punkte BEHALTEN, aber nur aktive Typen fuer neues Ranking nutzen (SQL mit JOIN auf Jahrgang-Konfiguration)
+  - **Option B:** Alle Punkte immer zaehlen (einfacher, aber potenziell unfair)
+  - **Option C:** Punkte des deaktivierten Typs nullen (destruktiv, nicht empfohlen)
+- Ranking-Query dynamisch bauen basierend auf Jahrgang-Konfiguration
+- Level-Berechnung analog anpassen
+- Diese Entscheidung hat massive UX-Implikationen -- mit dem Nutzer klaeren
 
-**Consequences:**
-- Jeder Push-Send-Vorgang dauert laenger (sequentielle Sends an alle Tokens inkl. toter)
-- Firebase-Quota wird verschwendet
-- Error-Logs werden mit wiederholten Fehlern geflutet
-- Bei `sendToMultipleUsers` (z.B. Event-Notification an alle Konfis) multipliziert sich das Problem
-
-**Prevention:**
-- Error-Code-Pruefung in `sendFirebasePushNotification` oder im catch-Block von `sendToUser`:
-  - Bei `messaging/registration-token-not-registered`, `messaging/invalid-argument`: Token sofort aus DB loeschen
-  - Bei `messaging/internal-error`: Retry mit Backoff, Token behalten
-  - Bei `messaging/quota-exceeded`: Alle Sends pausieren
-- Periodischer Cleanup-Job (Cron, taeglich): Tokens loeschen deren `updated_at` aelter als 60 Tage ist
-- `sendFirebasePushNotification` in `firebase.js` muss den Error WERFEN (nicht `{ success: false }` returnen) damit der Caller den Error-Code pruefen kann — aktuell wird der Error geschluckt (Zeile 65-68)
-
-**Detection:**
-- `SELECT COUNT(*), MAX(updated_at) FROM push_tokens` — wenn aelteste Tokens Monate alt sind, fehlt Cleanup
-- Firebase Console zeigt hohe Error-Rate bei Cloud Messaging
+**Betroffene Phase:** Punkte-Logik-Anpassung (Ranking + Levels) -- frueh klaeren, da Entscheidung alle anderen Anpassungen beeinflusst
 
 ---
+
+### Pitfall 4: getPointField wirft Error bei Vergabe-Versuch an deaktivierten Typ
+
+**Was schiefgeht:** `getPointField()` in `validation.js` (Zeile 29-34) ist eine Sicherheits-Whitelist die nur `gottesdienst` und `gemeinde` akzeptiert und bei allem anderen einen Error wirft. Wenn ein Admin eine Aktivitaet vom Typ "Gottesdienst" an einen Konfi vergeben will, dessen Jahrgang Gottesdienst-Punkte deaktiviert hat, gibt es einen 500er-Fehler statt einer klaren Meldung.
+
+**Warum es passiert:** `getPointField` validiert den Typ-NAMEN, nicht ob der Typ fuer den Konfi AKTIV ist. Die Deaktivierung eines Typs muss VOR dem `getPointField`-Call geprueft werden. Betroffene Stellen:
+- `activities.js`: Zeile 246, 320, 455
+- `konfi-managment.js`: Zeile 476, 555, 609, 666
+
+**Konsequenzen:**
+- 500er-Fehler bei Punkte-Vergabe
+- Bonus-Punkte-Vergabe bricht ab
+- Aktivitaets-Requests werden mit generischem Fehler abgelehnt
+- Admin versteht nicht warum die Vergabe fehlschlaegt
+
+**Praevention:**
+- Validierung VOR `getPointField`: "Ist dieser Punkte-Typ fuer den Jahrgang dieses Konfis aktiv?"
+- Klare Fehlermeldung: "Gottesdienst-Punkte sind fuer diesen Jahrgang deaktiviert"
+- `getPointField` selbst NICHT aendern -- die Whitelist ist Sicherheitsinfrastruktur aus v1.0
+- Aktivitaeten-Erstellung/-Bearbeitung: Dropdown fuer Punkte-Typ nur aktive Typen anbieten
+- Bestehende Aktivitaeten mit deaktiviertem Typ: Weiterhin anzeigen aber Vergabe blockieren
+
+**Betroffene Phase:** Punkte-Logik-Anpassung (Backend-Validierung) -- frueher als UI-Arbeit
+
+---
+
+### Pitfall 5: Dashboard-Widget-Konfiguration ohne Default-Migration
+
+**Was schiefgeht:** Wenn Dashboard-Widgets per Konfiguration gesteuert werden, braucht jede bestehende Organisation einen Default-Eintrag. Ohne Migration sehen bestehende Organisationen entweder ein leeres Dashboard (wenn Default = nichts anzeigen) oder die Konfiguration wirkt nicht (wenn Code auf Existenz der Config prueft und ohne Config den alten Pfad nimmt).
+
+**Warum es passiert:** Neues Feature wird implementiert ohne bestehende Daten zu migrieren. Das `settings`-System (Key-Value in `settings` Tabelle mit `organization_id`) hat keine Default-Garantie.
+
+**Konsequenzen:**
+- Bestandskunden sehen nach Docker-Rebuild ploetzlich ein anderes Dashboard
+- Oder: Config-Seite zeigt alles an, Admin speichert ohne Aenderung, aber die Defaults waren nicht was der Admin erwartet
+- Race Condition: Admin oeffnet Config, sieht Default-State, aendert nichts, speichert -- jetzt sind explizite Defaults in der DB die ggf. nicht mit den Code-Defaults uebereinstimmen
+
+**Praevention:**
+- SQL-Migrationsskript (`init-scripts/XXX_dashboard_config.sql`) das fuer JEDE existierende Organisation Default-Widget-Konfiguration einfuegt
+- Backend-Fallback: Wenn keine Konfiguration existiert = ALLE Widgets sichtbar (nicht keine)
+- Frontend Default-State = alles sichtbar -- defensiver Default
+- Settings-Endpoint muss fehlende Keys mit Defaults auffuellen bevor er antwortet
+
+**Betroffene Phase:** Dashboard-Konfiguration (Datenmigration)
 
 ## Moderate Pitfalls
 
-### Pitfall 4: Scheduled Event-Erinnerungen ohne Persistenz — Server-Restart loescht alle Jobs
+### Pitfall 6: Fortschrittsbalken-Logik bei Einzel-Punkte-Typ
 
-**What goes wrong:**
-Event-Erinnerungen (FLW-01: "X Stunden vor Event-Beginn") werden als In-Memory Cron-Jobs geplant. Bei einem Server-Restart (Docker-Rebuild, Deployment) gehen alle geplanten Jobs verloren. Konfis erhalten keine Erinnerungen fuer bereits erstellte Events.
+**Was schiefgeht:** `DashboardView.tsx` berechnet `totalTarget = targetGottesdienst + targetGemeinde` (Zeile 544). Bei deaktiviertem Gottesdienst (target = 0) zeigt ein Konfi mit 10/10 Gemeinde-Punkten 100% Fortschritt -- das ist technisch korrekt. Aber: `totalCurrentPoints = gottesdienstPoints + gemeindePoints` (Zeile 545) zaehlt weiterhin alte Gottesdienst-Punkte mit, was den Fortschritt ueber 100% treiben kann obwohl der Konfi nur Gemeinde-Punkte hat.
 
-**Why it happens:**
-Node-Cron und aehnliche In-Memory-Scheduler verlieren ihren State bei Process-Restart. Docker-Container werden bei jedem `docker-compose up -d --build` neu erstellt. Das aktuelle Deployment-Pattern (`git pull && docker-compose down && docker-compose up -d --build`) garantiert einen Restart bei jedem Deploy.
+**Praevention:**
+- `totalTarget` und `totalCurrentPoints` nur aktive Punkte-Typen beruecksichtigen
+- Wenn Gottesdienst deaktiviert: `totalCurrentPoints = gemeindePoints` (nicht `gottesdienstPoints + gemeindePoints`)
+- Konsistenz mit Ranking-Entscheidung (Pitfall 3) sicherstellen
 
-**Prevention:**
-Zwei Ansaetze, nach Komplexitaet:
-
-**Einfacher Ansatz (empfohlen):** Polling-basiert statt Scheduler
-- Cron-Job laeuft alle 5 Minuten und prueft: "Welche Events beginnen in den naechsten 1h / 24h?"
-- Query: `SELECT * FROM events WHERE start_date BETWEEN NOW() AND NOW() + INTERVAL '1 hour' AND reminder_sent = false`
-- `reminder_sent` Boolean-Spalte in `events` oder separate `event_reminders` Tabelle
-- Ueberlebt Restarts automatisch weil der State in der Datenbank liegt
-
-**Komplexerer Ansatz:** Job-Queue (Bull/BullMQ mit Redis)
-- Overkill fuer diesen Use-Case, erfordert Redis-Setup
-
-**Detection:**
-- Event-Erinnerungen funktionieren nach Deploy nicht mehr
-- Keine Erinnerungen fuer Events die vor dem letzten Restart erstellt wurden
+**Betroffene Phase:** Punkte-Logik-Anpassung (Dashboard-Fortschritt)
 
 ---
 
-### Pitfall 5: Token-Cleanup bei Logout schlaegt fehl wenn JWT bereits expired ist
+### Pitfall 7: Punkte-Typ-Konfiguration an falscher Stelle gespeichert
 
-**What goes wrong:**
-Wenn ein Konfi die App laengere Zeit nicht oeffnet und der JWT (90 Tage Laufzeit) ablaeuft, kann der Token nicht mehr per API geloescht werden. Der Logout-Call in `auth.ts` (Zeile 81) `api.delete('/notifications/device-token')` benoetigt einen gueltigen JWT (`verifyTokenRBAC` Middleware). Bei expirtem JWT erhaelt der Call `401 Unauthorized`, der Push-Token bleibt in der DB.
+**Was schiefgeht:** Punkte-Typ-Konfiguration wird in der `settings` Tabelle gespeichert (wie `target_gottesdienst`/`target_gemeinde`). Aber die Anforderung ist "pro Jahrgang konfigurierbar" -- die `settings` Tabelle hat nur `organization_id`, nicht `jahrgang_id`.
 
-**Why it happens:**
-Das DELETE-Endpoint fuer Device-Tokens ist durch `verifyTokenRBAC` geschuetzt. Logisch korrekt (nur eigene Tokens loeschen), aber problematisch beim "erzwungenen Logout" nach Token-Expiry. Der Logout-Code faengt den Fehler ab (Zeile 88-98: "Logout sollte trotzdem funktionieren"), aber der Push-Token wird nicht entfernt.
+**Warum es passiert:** Naheliegende Wiederverwendung der bestehenden Settings-Infrastruktur. Aber Punkte-Typ-Konfiguration ist jahrgangs-spezifisch, nicht organisations-weit.
 
-**Consequences:**
-- Verwaiste Tokens in der DB die bei jedem Push-Send getestet werden
-- Nach Passwort-Reset und Neu-Login: Alter Token existiert noch parallel zum neuen
-- Bei User-Loeschung: Token verwaist komplett
+**Konsequenzen:**
+- Alle Jahrgaenge einer Organisation haben dieselbe Konfiguration
+- Aeltere Jahrgaenge (z.B. 2024/2025) koennen nicht anders konfiguriert werden als der aktuelle
+- Wenn ein Jahrgang archiviert wird (v1.9), geht seine Konfiguration verloren
 
-**Prevention:**
-- Token-Cleanup NICHT nur beim Logout machen, sondern auch:
-  1. Bei Token-Registrierung: Alle alten Tokens des gleichen Users auf dem gleichen Device loeschen (bereits teilweise implementiert via UPSERT)
-  2. Periodischer Server-Side Cleanup: Tokens von deaktivierten/geloeschten Usern entfernen
-  3. Tokens deren `updated_at` > 90 Tage (JWT-Laufzeit) alt ist automatisch loeschen
-- Alternative: Token-Delete-Endpoint OHNE Auth-Requirement, aber mit Device-ID + User-ID als Identifikation (Sicherheitsabwaegung)
+**Praevention:**
+- Punkte-Typ-Konfiguration in `jahrgaenge` Tabelle als Spalten speichern: `gottesdienst_enabled BOOLEAN DEFAULT true`, `gemeinde_enabled BOOLEAN DEFAULT true`
+- ODER: Separate Tabelle `jahrgang_config (jahrgang_id, key, value)` -- flexibler aber komplexer
+- Die `settings`-Tabelle fuer organisations-weite Dashboard-Widget-Konfiguration nutzen (das ist org-weit, nicht pro Jahrgang)
+
+**Betroffene Phase:** Punkte-Typ-Konfiguration (Datenmodell) -- muss zuerst entschieden werden
 
 ---
 
-### Pitfall 6: Push-Listener in AppContext werden bei jedem User-State-Change neu registriert
+### Pitfall 8: Dashboard-Widget-Konfiguration wird ueber-engineered
 
-**What goes wrong:**
-Push-Notification-Listener (`pushNotificationReceived`, `pushNotificationActionPerformed`, `registration`) werden mehrfach registriert. Notifications werden doppelt oder dreifach verarbeitet. Navigation bei Notification-Tap fuehrt zu falschem Ziel oder wird mehrfach ausgefuehrt.
+**Was schiefgeht:** Drag-and-Drop Sortierung, Widget-Groessen, benutzerdefinierte Farben, Widget-Positionen -- alles Features die niemand braucht aber Wochen kosten.
 
-**Why it happens:**
-In `AppContext.tsx` (Zeile 438-547) wird `setupPushNotifications` in einem `useEffect` mit Dependency `[user]` ausgefuehrt. Jedes Mal wenn `setUser()` aufgerufen wird (auch mit dem gleichen User-Objekt), werden neue Listener registriert. Die alten Listener werden NICHT entfernt — es gibt kein Cleanup in der Return-Funktion des `useEffect`.
+**Praevention:**
+- Maximal 5-7 Widgets als Toggle-Schalter: Punkte-Bereich (Rings + Level), Losung, Ranking, Badges, Events/Termine, Countdown
+- KEINE Drag-and-Drop-Sortierung -- feste Reihenfolge reicht
+- KEINE Widget-Groessen oder -Positionen
+- KEINE benutzerdefinierte Farben fuer Widgets
+- Einfache Toggles in der Settings-Seite, kein eigenes Dashboard-Builder-UI
 
-`PushNotifications.addListener` registriert Listener kumulativ. Ohne `removeAllListeners()` oder individuellem Listener-Cleanup stacken sich die Listener.
-
-Zusaetzlich: Das zweite `useEffect` (Zeile 344-378, `handleNativeFCMToken`) registriert einen `window.addEventListener('fcmToken', ...)` — dieser wird korrekt aufgeraeumt. Aber das dritte `useEffect` (Zeile 438-547) hat KEINEN Cleanup.
-
-**Consequences:**
-- Notification-Handler wird 2-3x aufgerufen pro Notification
-- Navigation bei Tap fuehrt zu Race-Conditions (mehrere `window.location.href` Zuweisungen)
-- Performance-Degradation durch Listener-Akkumulation
-
-**Prevention:**
-- `useEffect` Cleanup-Funktion muss alle registrierten Listener entfernen:
-  ```typescript
-  return () => {
-    PushNotifications.removeAllListeners();
-  };
-  ```
-- ABER: `removeAllListeners()` entfernt ALLE Listener global — auch die aus anderen Effects. Besser: Individuelle Listener-Referenzen speichern und einzeln entfernen
-- `pushAlreadyRegistered` Flag schuetzt nur vor doppelter Permission-Anfrage, nicht vor doppelten Listenern
-- Capacitor-Doku empfiehlt: Listener in einer zentralen Stelle registrieren, nicht in React-Lifecycle-Hooks
+**Betroffene Phase:** Dashboard-Konfiguration (UI-Design)
 
 ---
 
-### Pitfall 7: sendToMultipleUsers ist sequentiell — bei 100+ Konfis blockiert ein Push-Send minutenlang
+### Pitfall 9: Settings-Tabelle wird zum Chaos aus Key-Value-Paaren
 
-**What goes wrong:**
-Die Methode `sendToMultipleUsers` (Zeile 65-72) iteriert sequentiell ueber alle User-IDs. Fuer jeden User werden alle Tokens geladen (DB-Query) und dann sequentiell an Firebase gesendet. Bei einer Organisation mit 50 Konfis und je 2 Devices: 50 * 2 = 100 sequentielle Firebase-API-Calls.
+**Was schiefgeht:** Fuer jedes Widget ein eigener Key: `dashboard_widget_ranking_visible`, `dashboard_widget_losung_visible`, `dashboard_widget_badges_visible` etc. Bei 6 Widgets sind das 6 DB-Rows pro Organisation. Die Settings-API muss alle einzeln laden und zurueckgeben.
 
-**Why it happens:**
-Einfache `for...of` Loop ohne Parallelisierung:
-```javascript
-for (const userId of userIds) {
-  const result = await this.sendToUser(db, userId, notification);
-  results.push({ userId, ...result });
-}
+**Praevention:**
+- Dashboard-Widget-Konfiguration als EIN JSON-Objekt unter einem Key speichern: `dashboard_config = {"ranking": true, "losung": true, "badges": true, ...}`
+- Oder: Bitmask in einer Integer-Spalte (noch kompakter, aber weniger lesbar)
+- Backend gibt fehlende Keys mit Default `true` zurueck
+- Frontend sendet immer das komplette Objekt, nicht einzelne Keys
+
+**Betroffene Phase:** Dashboard-Konfiguration (Datenmodell)
+
+---
+
+### Pitfall 10: KonfiDetailView (Admin) vergisst Punkte-Typ-Konfiguration
+
+**Was schiefgeht:** `KonfiDetailView.tsx` laedt Settings separat (Zeile 180-181) und gibt sie an ActivityRings weiter (Zeile 499-500). Wenn die Punkte-Typ-Konfiguration im Jahrgang statt in Settings gespeichert wird, muss KonfiDetailView die Daten von einer anderen Quelle laden. Ausserdem zeigt es `gottesdienstPoints` und `gemeindePoints` getrennt an -- bei deaktiviertem Typ irrelevant.
+
+**Praevention:**
+- Liste aller Admin-Views die Settings/Goals nutzen: `KonfiDetailView.tsx`, `KonfisView.tsx`, `AdminGoalsPage.tsx`
+- Alle muessen auf die neue Datenquelle umgestellt werden
+- Bedingte Anzeige der Punkte-Spalten basierend auf Jahrgang-Konfiguration
+
+**Betroffene Phase:** Punkte-Logik-Anpassung (Admin-Views)
+
+## Geringfuegige Pitfalls
+
+### Pitfall 11: AdminGoalsPage erlaubt 0 als Ziel ohne klare Semantik
+
+**Was schiefgeht:** `AdminGoalsPage.tsx` erlaubt bereits `target_gottesdienst: 0` und `target_gemeinde: 0` ueber den Stepper. Aber der Wert 0 bedeutet aktuell "kein Ziel gesetzt", nicht "Punkte-Typ deaktiviert". Wenn 0 jetzt "deaktiviert" bedeuten soll, muss die UI das klar kommunizieren.
+
+**Praevention:**
+- Expliziter Toggle "Punkte-Typ aktiv/inaktiv" statt implizit ueber Zielwert 0
+- Oder: Wert 0 = deaktiviert, aber mit klarer visueller Indikation (ausgegraut, Label "Deaktiviert")
+- Backend: Wenn Typ deaktiviert, Stepper fuer Zielwert ausgrauen
+
+**Betroffene Phase:** Punkte-Typ-Konfiguration (UI-Semantik)
+
+---
+
+### Pitfall 12: Push-Notifications referenzieren deaktivierte Punkte-Typen
+
+**Was schiefgeht:** Level-Up-Notifications (v1.5) basieren auf `total_points`. Wenn Notification-Text "Du hast jetzt 15 Gesamtpunkte!" sagt aber nur Gemeinde-Punkte aktiv sind, ist das verwirrend. Badge-Earned-Notifications fuer unerreichbare Badges koennten theoretisch nicht auftreten, aber die Texte referenzieren trotzdem Punkte-Typen.
+
+**Praevention:** Notification-Texte dynamisch basierend auf aktiver Konfiguration generieren. Level-Up Berechnung konsistent mit Ranking/Dashboard halten.
+
+**Betroffene Phase:** Punkte-Logik-Anpassung (Notifications)
+
+---
+
+### Pitfall 13: Profil-Seite zeigt beide Punkte-Typen immer an
+
+**Was schiefgeht:** `ProfileView.tsx` und `KonfiProfilePage.tsx` zeigen `gottesdienst_points` und `gemeinde_points` getrennt an. Bei deaktiviertem Typ sieht der Konfi eine Zeile mit "Gottesdienst: 0" die nicht relevant ist.
+
+**Praevention:** Profil-Anzeige dynamisch filtern basierend auf Jahrgang-Konfiguration.
+
+**Betroffene Phase:** Punkte-Logik-Anpassung (UI-Bereinigung)
+
+## Phasen-spezifische Warnungen
+
+| Phase-Thema | Wahrscheinlicher Pitfall | Mitigation |
+|-------------|--------------------------|------------|
+| Datenmodell-Entscheidung | Punkte-Typ in `settings` statt `jahrgaenge` speichern (Pitfall 7) | Pro Jahrgang = Spalte/Config in `jahrgaenge` Tabelle |
+| Ranking-Entscheidung | Keine klare Regel fuer alte Punkte (Pitfall 3) | VOR Implementierung mit User klaeren: behalten vs. nur aktive zaehlen |
+| Backend-Validierung | `getPointField` Error statt klarer Meldung (Pitfall 4) | Typ-Check VOR getPointField in allen 8 betroffenen Stellen |
+| ActivityRings Anpassung | Nur Ring ausblenden, Legende und Zentral-Anzeige vergessen (Pitfall 1) | Alle drei Bereiche muessen konsistent reagieren |
+| Badge-Integration | Unerreichbare Badges sichtbar lassen (Pitfall 2) | Sichtbarkeit filtern, Admin warnen, NICHT loeschen |
+| Dashboard-Widget-System | Over-Engineering mit Drag-and-Drop (Pitfall 8) | Nur Toggle-Schalter, feste Reihenfolge |
+| Dashboard-Widget-Datenmodell | Viele einzelne Settings-Keys (Pitfall 9) | Ein JSON-Objekt unter einem Key |
+| Datenmigration | Bestehende Orgs ohne Defaults (Pitfall 5) | SQL-Migration mit Defaults fuer alle existierenden Organisationen |
+| Admin-Views | KonfiDetailView, KonfisView vergessen (Pitfall 10) | Checkliste aller Views die Settings/Goals nutzen abarbeiten |
+| Goals-UI Semantik | 0 = "kein Ziel" vs. 0 = "deaktiviert" (Pitfall 11) | Expliziter Toggle oder klare visuelle Unterscheidung |
+
+## Abhaengigkeits-Reihenfolge der Pitfall-Mitigationen
+
+```
+1. Datenmodell-Entscheidung (Pitfall 7) -- wo speichern?
+   |
+   v
+2. Ranking-Entscheidung (Pitfall 3) -- wie zaehlen?
+   |
+   v
+3. Backend-Validierung (Pitfall 4) -- Typ-Check vor getPointField
+   |
+   v
+4. Datenmigration (Pitfall 5) -- Defaults fuer bestehende Orgs
+   |
+   v
+5. Frontend-Anpassungen parallel:
+   - ActivityRings (Pitfall 1)
+   - Badge-Sichtbarkeit (Pitfall 2)
+   - Fortschrittsbalken (Pitfall 6)
+   - Admin-Views (Pitfall 10)
+   - Profil (Pitfall 13)
+   |
+   v
+6. Dashboard-Widget-System (Pitfall 8, 9) -- separates Feature, kann parallel
 ```
 
-**Consequences:**
-- Event-Erstellung blockiert den Express-Handler waehrend alle Pushes gesendet werden
-- API-Response an den Admin kommt erst nach allen Push-Sends zurueck
-- Bei Firebase-Timeout eines einzelnen Tokens blockiert der gesamte Vorgang
+## Quellen
 
-**Prevention:**
-- Push-Sends NICHT im Request-Handler ausfuehren — in eine Queue auslagern oder `setImmediate()` / `process.nextTick()` nutzen
-- `Promise.allSettled()` statt sequentiellem Loop fuer Parallelisierung
-- Firebase `sendEachForMulticast()` API nutzen fuer Batch-Sends (bis zu 500 Tokens pro Call)
-- Response an Admin sofort zurueckgeben, Pushes asynchron im Hintergrund senden
+- Direkte Code-Analyse: `ActivityRings.tsx` (350 Zeilen), `DashboardView.tsx` (~1400 Zeilen), `badges.js` (504 Zeilen), `levels.js` (299 Zeilen), `konfi.js` (~900 Zeilen), `konfi-managment.js` (~700 Zeilen), `activities.js` (~500 Zeilen), `validation.js` (65 Zeilen), `settings.js`, `AdminGoalsPage.tsx`, `KonfisView.tsx`, `KonfiDetailView.tsx`, `KonfiDashboardPage.tsx`
+- Projekt-Historie: v1.0 Security Hardening (getPointField-Whitelist), v1.2 ActivityRings 3-Runden-Design, v1.4 Badge-Logik-Debug (13 Kriterientypen), v1.5 Push-Notifications (Level-Up)
+- Architektur-Kontext: `PROJECT.md`, `CLAUDE.md`
 
 ---
-
-### Pitfall 8: APNS-spezifische Konfiguration fehlt fuer Silent Pushes und Badge-Only Updates
-
-**What goes wrong:**
-Badge-Count-Updates via `sendBadgeUpdate` (Zeile 156-187) senden eine Notification ohne `title` und `body`. iOS behandelt Notifications ohne Content als Silent Pushes, die spezielle APNS-Header benoetigen (`apns-push-type: background`, `content-available: 1`). Ohne diese Header wird die Notification von iOS verworfen.
-
-**Why it happens:**
-In `firebase.js` (Zeile 49-61) werden APNS-Header statisch gesetzt:
-```javascript
-headers: {
-  'apns-push-type': 'alert',
-  'apns-priority': '10',
-}
-```
-`apns-push-type: alert` erfordert einen sichtbaren Notification-Body. Badge-Only Updates sind kein "alert" — sie sollten `apns-push-type: background` mit `apns-priority: 5` und `content-available: 1` verwenden.
-
-**Consequences:**
-- Badge-Count-Updates kommen auf iOS nicht an
-- App-Icon Badge wird nicht aktualisiert wenn die App im Background ist
-- Nur bei App-Oeffnung wird der Badge korrekt gesetzt (via API-Call)
-
-**Prevention:**
-- `sendFirebasePushNotification` muss unterscheiden zwischen Alert-Pushes (mit title/body) und Silent-Pushes (badge-only)
-- Fuer Silent Pushes:
-  ```javascript
-  apns: {
-    headers: {
-      'apns-push-type': 'background',
-      'apns-priority': '5',
-    },
-    payload: {
-      aps: {
-        'content-available': 1,
-        badge: badgeCount,
-      }
-    }
-  }
-  ```
-- Android hat dieses Problem nicht — FCM auf Android setzt Data-Messages ohne Notification-Content korrekt zu
-
----
-
-## Minor Pitfalls
-
-### Pitfall 9: CREATE TABLE IF NOT EXISTS in Route-Handler statt Migration
-
-**What goes wrong:**
-`notifications.js` (Zeile 33-41) fuehrt `CREATE TABLE IF NOT EXISTS push_tokens` bei JEDEM `POST /device-token` Request aus. Bei parallelen Requests kann es zu Race-Conditions kommen. Schema-Aenderungen (z.B. neue Spalte `organization_id`) koennen nicht sauber durchgefuehrt werden.
-
-**Prevention:**
-- Schema-Definition in eine separate Migrations-Datei verschieben
-- `CREATE TABLE` aus dem Route-Handler entfernen
-- Neue Spalten via `ALTER TABLE` Migration hinzufuegen
-
----
-
-### Pitfall 10: Notification-Type Registry fehlt — neue Push-Flows erfordern Aenderungen an 3+ Stellen
-
-**What goes wrong:**
-Beim Hinzufuegen eines neuen Push-Flows (z.B. "Level-Up Notification") muessen Aenderungen an mehreren Stellen vorgenommen werden: PushService (neuen Method), Route (Call), Frontend Navigation Handler (`pushNotificationActionPerformed` Switch-Case in AppContext), ggf. BadgeContext. Wenn eine Stelle vergessen wird, fehlt die Navigation bei Tap oder der Badge-Count stimmt nicht.
-
-**Prevention:**
-- Zentrale Notification-Type Registry als Konfiguration:
-  ```javascript
-  const NOTIFICATION_TYPES = {
-    level_up: { enabled: true, navigateTo: (user) => user.type === 'admin' ? '/admin/konfis' : '/konfi/dashboard' },
-    // ...
-  };
-  ```
-- Frontend-Navigation-Handler liest aus dieser Registry statt hardcoded Switch-Case
-- Neue Types muessen nur an EINER Stelle registriert werden
-
----
-
-### Pitfall 11: Token-Registrierung sendet Platform als "web" auf Desktop-Browsern
-
-**What goes wrong:**
-Die Validierung in `notifications.js` erlaubt `platform: 'web'` (Zeile 12). Capacitor auf Desktop gibt `web` als Platform zurueck. Ein Token mit Platform `web` ist kein FCM-Token und kann nicht fuer Push-Notifications verwendet werden. Der Token wird gespeichert aber jeder Push-Versand an diesen Token schlaegt fehl.
-
-**Prevention:**
-- `web`-Platform aus der Validierung entfernen (oder separat behandeln)
-- Push-Registrierung nur auf nativen Plattformen ausfuehren (bereits durch `Capacitor.isNativePlatform()` Check im Frontend geschuetzt, aber Server-Side Defence-in-Depth fehlt)
-
----
-
-## Phase-Specific Warnings
-
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Badge-Count-Sync (BDG-*) | Pitfall 1: 4 Systeme verwalten Badge | Zuerst AppContext Badge-Logik komplett entfernen, dann BadgeContext als Single Source of Truth etablieren, dann PushService den echten Count senden lassen |
-| Token-Lifecycle (TKN-*) | Pitfall 2 + 5: Fallback-IDs + Logout bei expired JWT | Fallback-ID-Generierung entfernen, Server-Side Cleanup implementieren |
-| Token-Bereinigung (CLN-*) | Pitfall 3: Firebase-Errors nicht behandelt | Error-Code-Parsing in firebase.js, Token-Loeschung bei spezifischen Error-Codes |
-| Event-Erinnerungen (FLW-01) | Pitfall 4: In-Memory Scheduler verliert Jobs | Polling-basierter Ansatz mit DB-State statt Scheduler |
-| Neue Push-Flows (FLW-*) | Pitfall 10: Aenderungen an 3+ Stellen noetig | Notification-Type Registry als erstes erstellen, dann neue Flows hinzufuegen |
-| Push-Konfiguration (CFG-*) | Pitfall 10: Kein zentrales Type-Registry | CFG-02 (Notification-Type Registry) vor CFG-01 (Enable/Disable Flags) implementieren |
-| Push-Listener (CMP-01) | Pitfall 6: Listener-Akkumulation | Listener-Setup in AppContext reparieren bevor neue Notification-Types verifiziert werden |
-| Push-Send Performance | Pitfall 7: Sequentielle Sends | Bei Event-Notifications (alle Konfis einer Org) auf async/parallel umstellen |
-| Badge-Only Updates | Pitfall 8: Silent Push APNS Config | firebase.js um Push-Type-Unterscheidung erweitern |
-
-## Integration Gotchas (v1.5-spezifisch)
-
-| Integration | Common Mistake | Correct Approach |
-|-------------|----------------|------------------|
-| BadgeContext + AppContext | Beide Systeme zaehlen Badges, AppContext hat "removed" Badge-Logik die trotzdem noch State setzt | AppContext komplett von Badge-Management befreien, nur BadgeContext nutzen |
-| PushService + Badge Count | `badge: 1` hardcoded statt echtem Count | Server muss echten Unread-Count berechnen und in APNS Payload einsetzen |
-| Firebase Error + Token DB | Error wird geloggt, Token bleibt | Error-Code parsen, bei `not-registered`/`invalid-argument` Token aus DB loeschen |
-| Cron-Jobs + Docker | In-Memory Jobs gehen bei Container-Restart verloren | DB-basierter State fuer alle Scheduled Tasks |
-| Multiple Device Tokens + Logout | Logout loescht nur Token der aktuellen Device-ID | Server-Side Cleanup fuer verwaiste Tokens implementieren |
-| WebSocket (BadgeContext) + Push | Doppelte Updates: WebSocket `newMessage` Event UND Push Notification erhoehen Badge | Deduplizierung: Wenn App im Foreground (WebSocket aktiv), Push-Badge ignorieren |
-
-## "Looks Done But Isn't" Checklist (v1.5)
-
-- [ ] **AppContext Badge-Logik "entfernt":** Kommentare sagen "Badge logic removed - now handled by BadgeContext", aber `setChatNotifications` State wird weiter gepflegt und Device-Badge wird bei App-Start gelesen (Zeile 308-313)
-- [ ] **Push-Listener Cleanup:** `setupPushNotifications` useEffect (Zeile 438) hat KEINEN Cleanup — Listener akkumulieren bei User-State-Changes
-- [ ] **Fallback-Device-ID Filter:** `NOT LIKE '%\\_\\_%'` in PushService filtert Tokens, aber die gefilterten Tokens werden nie bereinigt
-- [ ] **Token-Loeschung bei Logout:** `auth.ts` loescht Token per API — funktioniert nur wenn JWT noch gueltig ist
-- [ ] **sendBadgeUpdate:** Methode existiert aber wird nirgendwo aufgerufen (nur der Method-Body existiert, kein Caller im Code)
-- [ ] **Event-Reminder Methode:** `sendEventReminderToKonfi` existiert in PushService, aber es gibt keinen Scheduler der sie aufruft
-- [ ] **firebase.js Error Handling:** `sendFirebasePushNotification` catcht den Error und returned `{ success: false }` — der Caller in PushService catcht ebenfalls und loggt nur. Doppeltes Error-Swallowing.
-
-## Recovery Strategies
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Badge-Count divergiert | LOW | `BadgeContext.refreshFromAPI()` manuell triggern, Device Badge via `Badge.clear()` zuruecksetzen |
-| DB voll mit Ghost-Tokens | LOW | `DELETE FROM push_tokens WHERE updated_at < NOW() - INTERVAL '90 days'` |
-| Firebase-Errors durch tote Tokens | LOW | Einmaliger Cleanup-Job + Error-Handler in PushService einbauen |
-| Event-Erinnerungen nach Restart weg | MEDIUM | Polling-Job nachtraeglich einbauen, `reminder_sent` Spalte migrieren |
-| Listener-Duplikate | LOW | `PushNotifications.removeAllListeners()` einmalig aufrufen, dann sauberen Setup |
-| Silent Push auf iOS funktioniert nicht | LOW | APNS Header in firebase.js anpassen, Unterscheidung alert/background einfuehren |
-
-## Sources
-
-- [Firebase Best Practices fuer Token Management](https://firebase.google.com/docs/cloud-messaging/manage-tokens) — Token-Freshness, Staleness Window, Cleanup
-- [Firebase FCM Error Codes](https://firebase.google.com/docs/cloud-messaging/error-codes) — Welche Errors Token-Loeschung triggern sollten
-- [Firebase Blog: Managing Cloud Messaging Tokens](https://firebase.blog/posts/2023/04/managing-cloud-messaging-tokens/) — Periodischer Token-Cleanup
-- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) — Listener-Management, Registration
-- [Capacitor Badge Plugin (capawesome)](https://github.com/capawesome-team/capacitor-badge) — autoClear, Persist-Optionen
-- [GitHub Issue #1301: iOS Badge Count Handling](https://github.com/ionic-team/capacitor/issues/1301) — Background Badge Updates
-- [GitHub Issue #1749: APNs vs FCM Token Confusion](https://github.com/ionic-team/capacitor/issues/1749) — Token-Lifecycle iOS
-- [GitHub Issue #24: Background Badge Count Update](https://github.com/capawesome-team/capacitor-badge/issues/24) — Listener fuer Background Notifications
-- [Node-Cron Patterns, Practices and Pitfalls](https://www.bomberbot.com/node/mastering-node-js-job-scheduling-with-node-cron-patterns-practices-and-pitfalls/) — Server-Restart verliert Jobs
-- Codebase-Analyse: `backend/services/pushService.js`, `backend/push/firebase.js`, `backend/routes/notifications.js`, `frontend/src/contexts/AppContext.tsx`, `frontend/src/contexts/BadgeContext.tsx`, `frontend/src/services/auth.ts`
-
----
-*Pitfalls research for: Konfi Quest v1.5 Push-Notifications*
-*Researched: 2026-03-05*
+*Pitfalls research for: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
+*Researched: 2026-03-07*

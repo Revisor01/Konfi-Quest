@@ -1,242 +1,220 @@
-# Technology Stack: v1.5 Push-Notifications
+# Technology Stack: v1.6 Dashboard-Konfig + Punkte-Logik
 
 **Project:** Konfi Quest
-**Researched:** 2026-03-05
-**Scope:** Stack-Ergaenzungen fuer Scheduled Push, Token-Lifecycle, Badge-Count-Sync
+**Researched:** 2026-03-07
+**Scope:** Punkte-Typen pro Jahrgang konfigurierbar, Dashboard-Widgets fuer Org-Admins steuerbar
 **Overall Confidence:** HIGH
 
 ---
 
-## Bestandsaufnahme (bereits installiert, NICHT aendern)
+## Empfehlung: Keine neuen Bibliotheken erforderlich
 
-| Technology | Version | Zweck |
-|------------|---------|-------|
-| firebase-admin | ^12.7.0 | FCM Push-Versand via `admin.messaging().send()` |
-| @capacitor/push-notifications | ^7.0.1 | Native Push-Registration und Token-Empfang |
-| @capawesome/capacitor-badge | ^7.0.1 | App-Icon Badge-Count (get/set/clear) |
-| @capacitor/device | ^7.0.1 | Device-ID fuer Token-Zuordnung |
-| @capacitor/app | 7.0.1 | App-Lifecycle Events (Resume/Pause) |
-| socket.io / socket.io-client | ^4.7.2 / ^4.8.1 | Echtzeit Chat + Badge-Updates |
-| pg | ^8.16.3 | PostgreSQL (push_tokens Tabelle) |
+v1.6 braucht **null neue Dependencies**. Alle Features lassen sich mit dem bestehenden Stack umsetzen. Die Architektur aus v1.0-v1.5 (Settings-KV-Store, RBAC, AppContext, getPointField-Whitelist) traegt die neuen Anforderungen vollstaendig.
 
 ---
 
-## Neue Dependencies
+## Bestehender Stack (unveraendert)
 
-### Backend: node-cron
-
-| Technology | Version | Zweck | Warum |
-|------------|---------|-------|-------|
-| node-cron | ^3.0.3 | Event-Erinnerungen (FLW-01), Token-Cleanup (CLN-02) | Leichtgewichtig, null externe Abhaengigkeiten, crontab-Syntax, laeuft im selben Express-Prozess |
-
-**Warum node-cron und nicht Alternativen:**
-
-| Kategorie | Empfohlen | Alternative | Warum nicht |
-|-----------|-----------|-------------|-------------|
-| Scheduler | node-cron | node-schedule | node-schedule ist Date-basiert, fuer minuetliches Polling Overkill |
-| Scheduler | node-cron | agenda | Braucht MongoDB. Massiv ueberengineered fuer 2 Cron-Jobs |
-| Scheduler | node-cron | bull / bullmq | Redis-Abhaengigkeit. Sinnvoll bei hohem Durchsatz, hier unnoetig |
-| Scheduler | node-cron | setTimeout-Ketten | Fragil, kein Cron-Ausdruck-Support, schwer zu warten |
-
-**Installation:**
-
-```bash
-cd backend && npm install node-cron@^3.0.3
-```
-
-**Confidence:** HIGH — node-cron ist De-facto-Standard fuer Node.js-Cron-Jobs. 2095+ abhaengige Packages im npm-Registry.
-
-### Frontend: Keine neuen Dependencies
-
-Alle benoetigten Plugins sind bereits installiert. Kein neues Package noetig.
+| Technologie | Version | Zweck im Milestone | Warum ausreichend |
+|-------------|---------|-------------------|-------------------|
+| PostgreSQL (pg) | ^8.16.3 | Settings-KV-Store, Jahrgang-Spalten | `settings`-Tabelle mit `(organization_id, key)` UPSERT-Pattern existiert bereits |
+| Express + express-validator | ^4.18.2 / ^7.3.1 | Neue Settings-Keys validieren und speichern | PUT `/settings` Route hat UPSERT-Pattern, einfach erweiterbar |
+| React 19 + Ionic 8 | 19.0.0 / ^8.5.0 | Bedingte Widget-Darstellung, Toggle-UIs | Conditional Rendering reicht voellig |
+| Axios | ^1.10.0 | Settings laden und speichern | Bestehender `api`-Service, keine Aenderung noetig |
+| Socket.io | ^4.7.2 / ^4.8.1 | Live-Updates bei Settings-Aenderungen | `liveUpdate`-Pattern aus jahrgaenge.js wiederverwendbar |
 
 ---
 
-## Bestehende APIs besser nutzen (kein Install noetig)
+## Datenbank-Strategie
 
-### 1. firebase-admin: sendEachForMulticast (Batch-Versand)
-
-**Status:** Bereits in firebase-admin ^12.7.0 enthalten, aktuell NICHT genutzt.
-
-**Aktuelles Problem:** `pushService.js` sendet Nachrichten einzeln in einer for-Schleife. Bei Event-Erinnerungen an 30+ Konfis wird das langsam.
-
-**Empfehlung:** `sendEachForMulticast` fuer Batch-Szenarien nutzen (bis zu 500 Tokens pro Aufruf):
-
-```javascript
-// AKTUELL (sequentiell, langsam):
-for (const token of tokens) {
-  await sendFirebasePushNotification(token.token, notification);
-}
-
-// BESSER (Batch, bis zu 500 Tokens):
-const message = {
-  tokens: tokenList,  // string[] mit FCM-Tokens
-  notification: { title, body },
-  data: { type: 'event_reminder', ... },
-  apns: { payload: { aps: { badge: badgeCount, sound: 'default' } } }
-};
-const response = await admin.messaging().sendEachForMulticast(message);
-// response.responses[i].success / response.responses[i].error
-```
-
-**Wichtig:** `sendMulticast()` ist deprecated seit firebase-admin v12. `sendEachForMulticast()` ist der aktuelle Ersatz.
-
-**Wann verwenden:** Event-Erinnerungen (FLW-01), neue Events an alle Konfis, Event-Absagen. NICHT fuer Einzel-Push (Chat, Badge-Earned etc.).
-
-**Confidence:** HIGH — Offizielle Firebase-Dokumentation.
-
-### 2. firebase-admin: Error-Codes fuer Token-Cleanup (CLN-01)
-
-Bereits in firebase-admin enthalten. Folgende Error-Codes identifizieren ungueltige Tokens:
-
-```javascript
-const INVALID_TOKEN_ERRORS = [
-  'messaging/invalid-registration-token',
-  'messaging/registration-token-not-registered'
-];
-```
-
-**Aktueller Zustand:** `firebase.js` loggt Fehler, loescht aber keine Tokens aus der DB. Jeder fehlgeschlagene Push an einen ungueltigen Token bleibt in der DB und erzeugt bei jedem Versand erneut einen Fehler.
-
-**Aenderung:** Nach jedem Push-Fehler Error-Code pruefen. Bei ungueltigem Token: DELETE FROM push_tokens WHERE token = $1.
-
-**Confidence:** HIGH — Firebase-Dokumentation listet Error-Codes explizit.
-
-### 3. @capawesome/capacitor-badge: Badge.set() und Badge.clear()
-
-**Bereits genutzt** in BadgeContext.tsx. Funktioniert korrekt auf iOS.
-
-**Android-Problem (dokumentiert):** Auf Android verwaltet das System den Badge-Count basierend auf Notification-Center-Eintraegen SEPARAT von `Badge.set()`. `Badge.clear()` hat keinen Einfluss auf den System-Notification-Count.
-
-**Workaround:** Beim App-Oeffnen `PushNotifications.removeAllDeliveredNotifications()` aufrufen (loescht Notification-Center), DANN `Badge.set({ count: serverCount })`. So stimmen System-Badge und App-Badge ueberein.
-
-**Confidence:** MEDIUM — Dokumentiert in capawesome GitHub Issues (#203), Workaround muss auf Zielgeraeten getestet werden.
-
----
-
-## Architektur-Entscheidungen fuer v1.5
-
-### 1. Cron-Jobs: Im Express-Prozess, KEIN separater Worker
-
-**Warum:** App laeuft in einem einzelnen Docker-Container. Separater Worker-Prozess waere Overhead ohne Nutzen. node-cron im Express-Prozess reicht fuer 2 Jobs.
-
-**Geplante Jobs:**
-
-| Job | Cron-Ausdruck | Zweck | Requirement |
-|-----|---------------|-------|-------------|
-| Event-Erinnerung | `*/15 * * * *` (alle 15 Min) | Prueft Events in den naechsten 24h/1h, sendet Push an angemeldete Konfis | FLW-01 |
-| Token-Cleanup | `0 3 * * *` (taeglich 03:00) | Loescht Tokens aelter als 60 Tage, Tokens von geloeschten Usern | CLN-02 |
-
-**Dateistruktur:**
-
-```
-backend/
-  cron/
-    index.js              # Startet alle Cron-Jobs
-    eventReminders.js     # Event-Erinnerungen Logik
-    tokenCleanup.js       # Token-Bereinigung Logik
-  config/
-    pushTypes.js          # Notification-Type Registry
-```
-
-### 2. Badge-Count: Server als Single Source of Truth (BDG-01)
-
-**Aktueller Zustand (3 unabhaengige Quellen):**
-- BadgeContext: Holt unread_count via `/chat/rooms` API
-- Device-Badge: Wird via `Badge.set()` gesetzt
-- Push-Payload: APNS badge-Count im Payload
-
-**Problem:** Diese drei koennen divergieren. BadgeContext refresht nur bei WebSocket-Event, Push-Payload hat statischen Wert, Device-Badge wird nur bei State-Change aktualisiert.
-
-**Loesung:**
-
-```
-PostgreSQL (chat_messages.read_at IS NULL) = Source of Truth
-
-Ausspielwege (alle nutzen denselben Server-Count):
-  1. Push-Payload: apns.payload.aps.badge = serverCount
-  2. WebSocket: badgeUpdate-Event mit serverCount
-  3. API: GET /chat/rooms liefert unread_count pro Raum
-
-Frontend:
-  - BadgeContext konsumiert Server-Count, berechnet NIE selbst
-  - Badge.set() wird NUR mit Server-Count aufgerufen
-  - Bei App-Resume: API-Refresh, dann Badge.set()
-```
-
-### 3. Token-Lifecycle: Bestehendes Schema reicht (TKN-01 bis TKN-04)
-
-Die `push_tokens` Tabelle hat bereits alle benoetigten Felder:
+### 1. Punkte-Typ-Konfiguration: Spalten auf `jahrgaenge`-Tabelle
 
 ```sql
-push_tokens (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL,
-  user_type TEXT NOT NULL,
-  token TEXT NOT NULL,
-  platform TEXT NOT NULL,
-  device_id TEXT NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, platform, device_id)
-)
+ALTER TABLE jahrgaenge
+  ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true,
+  ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true;
 ```
 
-**Keine Schema-Aenderung noetig.** Logik-Aenderungen:
+**Warum direkte Spalten statt Settings-KV:**
+- Punkte-Typ-Konfiguration ist jahrgangs-spezifisch, nicht organisations-global
+- Die bestehende `settings`-Tabelle hat keinen `jahrgang_id`-Bezug und ist fuer Org-weite Settings konzipiert
+- Direkte Boolean-Spalten sind einfacher abzufragen (`WHERE j.gottesdienst_enabled = true`) als KV-Lookups
+- Kein JSON-Parsing noetig, Boolean ist natuerlicher Datentyp fuer an/aus
+- Backend `jahrgaenge.js` hat bereits CREATE/UPDATE Routes mit Validierung -- 2 neue `body()`-Checks reichen
 
-| Requirement | Was fehlt | Wo aendern |
-|-------------|-----------|------------|
-| TKN-01 (Logout-Cleanup) | Frontend ruft DELETE /device-token nicht zuverlaessig auf | AppContext.tsx Logout-Flow |
-| TKN-02 (Fallback-ID) | `device_id NOT LIKE '%\\_\\_%'` filtert Fallback-IDs aus | pushService.js Query anpassen |
-| TKN-03 (Token-Refresh) | Logik existiert in AppContext (12h Check), braucht nur Verifizierung | AppContext.tsx |
-| TKN-04 (User-Wechsel) | DELETE WHERE token AND user_id != new_user existiert bereits | notifications.js (bereits korrekt) |
+**Warum NICHT Settings-Tabelle mit jahrgang_id:**
+- Wuerde neuen Composite Key `(organization_id, jahrgang_id, key)` brauchen
+- Ueberverkompliziert fuer 2 Boolean-Werte
+- Jeder Punkte-Query muesste zusaetzlichen JOIN auf settings machen
 
-### 4. Push-Type Registry: Code-Level Config (CFG-01, CFG-02)
+### 2. Dashboard-Widget-Konfiguration: Bestehende `settings`-Tabelle
 
-Kein neues Package noetig. Einfaches JavaScript-Objekt:
-
-```javascript
-// backend/config/pushTypes.js
-const PUSH_TYPES = {
-  chat_message:          { enabled: true,  label: 'Chat-Nachrichten' },
-  event_reminder_1day:   { enabled: true,  label: 'Event-Erinnerung (1 Tag)' },
-  event_reminder_1hour:  { enabled: true,  label: 'Event-Erinnerung (1 Stunde)' },
-  new_activity_request:  { enabled: true,  label: 'Neuer Aktivitaets-Antrag' },
-  activity_request_status: { enabled: true, label: 'Antrag genehmigt/abgelehnt' },
-  badge_earned:          { enabled: true,  label: 'Badge erhalten' },
-  level_up:              { enabled: true,  label: 'Level-Up' },
-  points_milestone:      { enabled: true,  label: 'Punkte-Meilenstein' },
-  new_event:             { enabled: true,  label: 'Neues Event' },
-  event_registered:      { enabled: true,  label: 'Event-Anmeldung' },
-  event_unregistered:    { enabled: true,  label: 'Event-Abmeldung' },
-  event_cancelled:       { enabled: true,  label: 'Event abgesagt' },
-  event_attendance:      { enabled: true,  label: 'Anwesenheit verbucht' },
-  waitlist_promotion:    { enabled: true,  label: 'Wartelisten-Nachrueecker' },
-  bonus_points:          { enabled: true,  label: 'Bonuspunkte' },
-  activity_assigned:     { enabled: true,  label: 'Aktivitaet zugewiesen' },
-  events_pending:        { enabled: true,  label: 'Events warten auf Verbuchung' },
-  new_registration:      { enabled: true,  label: 'Neue Konfi-Registrierung' },
-};
-
-module.exports = PUSH_TYPES;
+```sql
+-- Neue Settings-Keys (Organization-Level), Default-Werte im Code
+-- Kein Schema-Change noetig, nur neue Key-Value-Paare
+INSERT INTO settings (organization_id, key, value) VALUES
+  ($1, 'dashboard_show_losung', 'true'),
+  ($1, 'dashboard_show_ranking', 'true'),
+  ($1, 'dashboard_show_badges', 'true'),
+  ($1, 'dashboard_show_events', 'true'),
+  ($1, 'dashboard_show_level', 'true');
 ```
 
-**PushService nutzt Registry:** Vor jedem Push pruefen ob `PUSH_TYPES[type].enabled === true`.
+**Warum Settings-KV statt eigene Tabelle:**
+- Dashboard-Widgets sind org-weite Einstellungen -- genau der Scope der `settings`-Tabelle
+- UPSERT-Pattern (`ON CONFLICT ... DO UPDATE`) existiert bereits in `settings.js` (Zeile 99-113)
+- GET Route liefert alle Keys als flaches Objekt -- Frontend kann direkt pruefen
+- Kein Schema-Change noetig
+- Bestehende Validierung leicht erweiterbar: `body('dashboard_show_losung').optional().isBoolean()`
 
-**Warum kein DB-Config:** Per-User-Preferences sind out-of-scope fuer v1.5 (PREF-01/PREF-02 in Future Requirements). Code-Level Defaults reichen.
+**Defaults im Code, nicht in DB:**
+- Wenn ein Key nicht in der DB existiert, interpretiert das Frontend es als `true` (alles sichtbar)
+- Erst wenn OrgAdmin explizit etwas deaktiviert, wird ein Eintrag angelegt
+- Kein Seeding-Script noetig, keine Migration fuer bestehende Organisationen
 
 ---
 
-## Was NICHT hinzugefuegt werden soll
+## Frontend-Strategie
 
-| Technologie | Warum nicht |
-|-------------|-------------|
-| Redis / BullMQ | Kein Queue-System noetig. Max 50-100 Push-Nachrichten pro Event-Erinnerung. node-cron + Batch-Versand reicht. |
-| @capacitor-firebase/messaging | Wuerde bestehende Push-Integration (Custom FCM Plugin in AppDelegate.swift) komplett ersetzen. Zu grosses Risiko fuer v1.5. |
-| web-push | Out of scope — App ist native-only |
-| Notification-Preferences DB-Tabelle | Out of scope fuer v1.5, Code-Level Config reicht |
-| Separate Worker-Prozesse / PM2 | Ein Docker-Container, ein Prozess. Cron-Jobs sind CPU-leicht (DB-Query + HTTP-Calls). |
-| node-schedule | Bietet Date-basiertes Scheduling, aber Event-Erinnerungen brauchen Polling-Pattern (alle 15 Min pruefen), nicht punkt-genaue Ausfuehrung |
-| Firebase Cloud Functions | Backend laeuft self-hosted auf Hetzner, nicht auf Google Cloud. Cloud Functions waeren ein separates Deployment. |
+### Conditional Rendering (kein neues Pattern)
+
+Das Dashboard nutzt bereits bedingte Darstellung:
+
+```typescript
+// BESTEHENDES Pattern in DashboardView.tsx (Zeile 1237):
+{dashboardData.ranking && dashboardData.ranking.length > 0 && (
+  <div className="app-dashboard-section--ranking">...</div>
+)}
+
+// NEUES Pattern (identische Struktur):
+{settings.dashboard_show_ranking !== false && dashboardData.ranking?.length > 0 && (
+  <div className="app-dashboard-section--ranking">...</div>
+)}
+```
+
+**Kein State-Management-Tool noetig.** Der bestehende `AppContext` laedt Settings bereits. Die DashboardView bekommt die Widget-Flags als Props.
+
+### ActivityRings-Anpassung
+
+Die `ActivityRings`-Komponente bekommt aktuell `gottesdienstGoal` und `gemeindeGoal` als Props. Wenn ein Typ deaktiviert ist:
+- Goal auf 0 setzen und Ring visuell ausblenden
+- Bei nur einem aktiven Typ: Einziger Ring wird zum Haupt-Ring
+- Total-Ring (aeusserster) berechnet sich nur aus aktivierten Typen
+
+### Dashboard-Sektionen (identifiziert aus DashboardView.tsx)
+
+| Sektion | CSS-Klasse | Toggle-Key | Zeile |
+|---------|-----------|------------|-------|
+| Header + ActivityRings | `app-dashboard-header` | Immer sichtbar | 590 |
+| Level-Icons | (inline im Header) | `dashboard_show_level` | 647 |
+| Events | `app-dashboard-section--events` (implizit) | `dashboard_show_events` | ~780 |
+| Tageslosung | `app-dashboard-section--tageslosung` | `dashboard_show_losung` | 917 |
+| Badges | `app-dashboard-section--badges` | `dashboard_show_badges` | 964 |
+| Ranking | `app-dashboard-section--ranking` | `dashboard_show_ranking` | 1238 |
+
+**Header + ActivityRings bleiben immer sichtbar** -- sie sind das Kern-Element des Dashboards.
+
+---
+
+## Backend-Strategie
+
+### `getPointField()` bleibt unveraendert
+
+Die Whitelist-Funktion in `validation.js` (Zeile 24-35) validiert nur den Typ-String. Die Aenderung passiert an den Aufrufstellen -- vor der Punktevergabe wird geprueft ob der Punkte-Typ fuer den Jahrgang des Konfis aktiviert ist.
+
+### Betroffene Backend-Routes
+
+| Route | Aenderung | Risiko |
+|-------|-----------|--------|
+| `jahrgaenge.js` | Neue Boolean-Spalten in CREATE/UPDATE/GET | Niedrig |
+| `settings.js` | Neue `dashboard_show_*` Keys in Validierung und UPSERT | Niedrig |
+| `konfi.js` | Dashboard-Endpoint liefert Jahrgangs-Config + Widget-Settings mit | Mittel |
+| `activities.js` | Punkte-Typ-Check vor Vergabe (Zeile 246, 320, 455) | Mittel |
+| `konfi-managment.js` | Bonus-Punkte nur fuer aktivierte Typen (Zeile 476, 555, 609, 666) | Mittel |
+| `events.js` | Event-Punkte nur vergeben wenn Typ aktiviert (Zeile 1316-1328) | Mittel |
+| `badges.js` | Kriterien-Evaluation ignoriert deaktivierte Punkte-Typen | Hoch |
+| `levels.js` | Level-Berechnung nur mit aktivierten Punkt-Typen | Hoch |
+
+### Jahrgangs-Config an Punkte-Vergabe-Stellen
+
+```javascript
+// Pattern fuer alle Routes die Punkte vergeben:
+// 1. Konfi-ID → User holen → Jahrgang-ID
+// 2. Jahrgang laden → gottesdienst_enabled/gemeinde_enabled pruefen
+// 3. Wenn Typ deaktiviert → 400 "Dieser Punktetyp ist fuer diesen Jahrgang deaktiviert"
+
+const { rows: [jahrgang] } = await db.query(
+  `SELECT j.gottesdienst_enabled, j.gemeinde_enabled
+   FROM jahrgaenge j
+   JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
+   WHERE kp.user_id = $1`,
+  [konfiId]
+);
+
+if (pointType === 'gottesdienst' && !jahrgang.gottesdienst_enabled) {
+  return res.status(400).json({ error: 'Gottesdienst-Punkte sind fuer diesen Jahrgang deaktiviert' });
+}
+```
+
+---
+
+## Explizit NICHT hinzufuegen
+
+| Bibliothek | Warum nicht |
+|------------|------------|
+| react-grid-layout / react-beautiful-dnd | Drag-and-Drop Dashboard-Sortierung ist Over-Engineering. OrgAdmin braucht nur Toggles (an/aus), keine Reihenfolge. |
+| zustand / redux / jotai | State-Management unnoetig. AppContext + Props reicht fuer Settings-Propagation. 6 Milestones konsistent mit React Context. |
+| JSON Schema Validator (ajv) | Settings-Validierung laeuft ueber express-validator auf allen 15 Routes. |
+| Feature-Flag-Service (LaunchDarkly, Unleash) | Massiv ueberdimensioniert fuer 5-7 Boolean-Toggles. Settings-Tabelle ist der richtige Ort. |
+| react-hook-form / formik | Admin-Settings-UI hat wenige Toggle-Felder. IonToggle mit useState reicht. |
+| jsonb-Spalte auf jahrgaenge | 2 Boolean-Werte rechtfertigen kein JSONB. Explizite Spalten sind klarer und type-safe. |
+
+---
+
+## Integrationspunkte
+
+### Settings-Flow (Dashboard-Widgets)
+
+```
+OrgAdmin Settings-UI → PUT /api/settings → settings-Tabelle (org-scoped)
+                                                    ↓
+Konfi Dashboard Load → GET /api/settings → AppContext → DashboardView Props
+```
+
+### Punkte-Typ-Flow (Jahrgang)
+
+```
+Admin Jahrgang-Edit → PUT /api/jahrgaenge/:id → jahrgaenge-Tabelle
+                                                      ↓
+Punkte-Vergabe → Backend prueft jahrgang.gottesdienst_enabled/gemeinde_enabled
+                                                      ↓
+Dashboard → Konfi-Endpoint liefert enabled-Flags → ActivityRings passt sich an
+```
+
+### Betroffene Frontend-Komponenten
+
+| Komponente | Aenderung |
+|------------|-----------|
+| `DashboardView.tsx` | Conditional Rendering aller Sektionen basierend auf Settings |
+| `KonfiDashboardPage.tsx` | Widget-Settings laden und an DashboardView durchreichen |
+| `ActivityRings.tsx` | Ein-Ring-Modus wenn nur ein Punkt-Typ aktiv |
+| Admin Settings-View | Neue Sektion mit Dashboard-Toggles (IonToggle) |
+| Admin Jahrgang-Edit-Modal | Gottesdienst/Gemeinde-Toggle hinzufuegen |
+| `AppContext.tsx` | Settings-State um dashboard_show_* Flags erweitern |
+
+---
+
+## Versionen -- Alles aktuell
+
+Alle bestehenden Dependencies sind auf aktuellem Stand (geprueft gegen package.json):
+- React 19.0.0 -- aktuell
+- Ionic 8.5.0 -- aktuell
+- Capacitor 7.4.2 -- aktuell
+- pg 8.16.3 -- aktuell
+- Express 4.18.2 -- stabil (Express 5 ist noch nicht produktionsreif fuer Ionic-Backends)
+- express-validator 7.3.1 -- aktuell
+
+**Keine Updates noetig fuer v1.6.**
 
 ---
 
@@ -244,61 +222,44 @@ module.exports = PUSH_TYPES;
 
 ```
 Backend:
-  + npm install node-cron@^3.0.3    # Einzige neue Dependency
-  + backend/cron/index.js            # Cron-Job Starter
-  + backend/cron/eventReminders.js   # Event-Erinnerungen (FLW-01)
-  + backend/cron/tokenCleanup.js     # Token-Bereinigung (CLN-02)
-  + backend/config/pushTypes.js      # Notification-Type Registry (CFG-01, CFG-02)
-  ~ backend/push/firebase.js         # Error-Handling + Token-Cleanup (CLN-01)
-  ~ backend/services/pushService.js  # sendEachForMulticast + Badge-Count + Type-Check
-  ~ backend/routes/notifications.js  # Logout-Token-Cleanup robuster (TKN-01)
-  ~ backend/server.js                # Cron-Jobs starten
+  (keine neuen Dependencies)
+  ~ backend/routes/jahrgaenge.js      # 2 neue Boolean-Spalten, Validierung
+  ~ backend/routes/settings.js        # 5 neue dashboard_show_* Keys
+  ~ backend/routes/konfi.js           # Dashboard-Endpoint liefert Config mit
+  ~ backend/routes/activities.js      # Punkte-Typ-Guard vor Vergabe
+  ~ backend/routes/konfi-managment.js # Punkte-Typ-Guard vor Vergabe
+  ~ backend/routes/events.js          # Punkte-Typ-Guard vor Vergabe
+  ~ backend/routes/badges.js          # Kriterien ignorieren deaktivierte Typen
+  ~ backend/routes/levels.js          # Berechnung nur mit aktiven Typen
 
 Frontend:
   (keine neuen Dependencies)
-  ~ BadgeContext.tsx                  # Server als Source of Truth (BDG-01)
-  ~ AppContext.tsx                    # Logout: Token loeschen (TKN-01), Fallback-ID Fix (TKN-02)
+  ~ DashboardView.tsx                 # Conditional Rendering per Section
+  ~ KonfiDashboardPage.tsx            # Widget-Settings laden
+  ~ ActivityRings.tsx                 # Ein-Ring-Modus
+  ~ Admin Settings-View              # Dashboard-Toggle-UI
+  ~ Admin Jahrgang-Edit              # Punkte-Typ-Toggles
+  ~ AppContext.tsx                    # Settings-State erweitern
+
+Datenbank:
+  + ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true
+  + ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true
+  (settings-Tabelle: nur neue KV-Paare, kein Schema-Change)
 ```
-
----
-
-## Requirement-zu-Stack Mapping
-
-| Requirement | Stack-Komponente | Neue Dependency? |
-|-------------|------------------|------------------|
-| TKN-01 | AppContext.tsx + notifications.js | Nein |
-| TKN-02 | pushService.js Query-Fix | Nein |
-| TKN-03 | AppContext.tsx (bereits implementiert) | Nein |
-| TKN-04 | notifications.js (bereits implementiert) | Nein |
-| CLN-01 | firebase.js Error-Code Check | Nein |
-| CLN-02 | node-cron + tokenCleanup.js | **Ja: node-cron** |
-| FLW-01 | node-cron + eventReminders.js + sendEachForMulticast | **Ja: node-cron** |
-| FLW-02 | pushService.js (neuer Flow) | Nein |
-| FLW-03 | pushService.js (sendLevelUpToKonfi existiert bereits!) | Nein |
-| FLW-04 | pushService.js (neuer Flow, Meilenstein-Check) | Nein |
-| CFG-01 | config/pushTypes.js | Nein |
-| CFG-02 | config/pushTypes.js | Nein |
-| BDG-01 | Server-Side Count Berechnung | Nein |
-| BDG-02 | BadgeContext.tsx + APNS Payload | Nein |
-| BDG-03 | BadgeContext.tsx / AppContext.tsx | Nein |
-| BDG-04 | BadgeContext.tsx State-Sync | Nein |
-| CMP-01 | Audit bestehender Push-Flows | Nein |
-
-**Ergebnis:** 1 neue Dependency (node-cron). Rest sind Code-Aenderungen an bestehenden Dateien.
 
 ---
 
 ## Quellen
 
-- [node-cron npm](https://www.npmjs.com/package/node-cron) — v3.0.3 stable, aktiv gepflegt (Confidence: HIGH)
-- [Firebase Admin SDK: Send Messages](https://firebase.google.com/docs/cloud-messaging/send/admin-sdk) — sendEachForMulticast Dokumentation (Confidence: HIGH)
-- [Firebase Messaging API Reference](https://firebase.google.com/docs/reference/admin/node/firebase-admin.messaging.messaging) — Error-Codes, Batch-APIs (Confidence: HIGH)
-- [Capawesome Badge Plugin](https://capawesome.io/plugins/badge/) — Badge-Count Management (Confidence: HIGH)
-- [Capacitor Push Notifications API](https://capacitorjs.com/docs/apis/push-notifications) — Token-Registration, removeAllDeliveredNotifications (Confidence: HIGH)
-- [Android Badge Count Issue #203](https://github.com/capawesome-team/capacitor-plugins/issues/203) — Badge.clear() vs System-Count (Confidence: MEDIUM)
-- [Firebase sendMulticast Deprecation](https://community.flutterflow.io/discussions/post/the-messaging-sendmulticast-function-is-no-longer-supported-in-firebase-KVt3BAb65dNRhk6) — sendMulticast deprecated, sendEachForMulticast empfohlen (Confidence: HIGH)
+- Codebase-Analyse: `settings.js` UPSERT-Pattern (Zeile 99-148)
+- Codebase-Analyse: `jahrgaenge.js` CREATE/UPDATE Routes
+- Codebase-Analyse: `DashboardView.tsx` Sektions-Struktur (1400+ Zeilen)
+- Codebase-Analyse: `getPointField()` Whitelist in `validation.js`
+- Codebase-Analyse: `KonfiDashboardPage.tsx` Settings-Loading
+
+**Confidence: HIGH** -- Alle Empfehlungen basieren auf direkter Codebase-Analyse. Keine externen Abhaengigkeiten, keine unverifizierten Claims.
 
 ---
 
-*Stack research for: Konfi Quest v1.5 Push-Notifications*
-*Researched: 2026-03-05*
+*Stack research for: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
+*Researched: 2026-03-07*
