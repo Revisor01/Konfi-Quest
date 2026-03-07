@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
-status: planning
-last_updated: "2026-03-07"
+status: executing
+last_updated: "2026-03-07T13:25:42Z"
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -23,18 +23,22 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 ## Current Position
 
 Phase: 30 of 33 (DB-Schema + Backend-Endpoints)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-07 -- Phase 30 context gathered, Punkte-Config pro Jahrgang entschieden
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-03-07 -- Plan 30-01 (DB-Schema + Backend-Endpoints) abgeschlossen
 
-Progress: [..........] 0%
+Progress: [=====.....] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 63 (v1.0-v1.5)
+- Total plans completed: 64 (v1.0-v1.5 + 30-01)
 - Average duration: ~15 min
-- Total execution time: ~15.8 hours
+- Total execution time: ~15.9 hours
+
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 30    | 01   | 5min     | 2     | 3     |
 
 ## Accumulated Context
 
@@ -49,6 +53,8 @@ v1.6 Entscheidungen:
 - Dashboard-Widget-Toggles in settings-Tabelle (Key-Value)
 - Ranking summiert nur aktive Punkte-Typen
 - both_categories Badge: nur aktive Typen muessen Kriterium erfuellen
+- [Phase 30]: Punkte-Typ-Config als Spalten auf jahrgaenge-Tabelle, target-Werte automatisch migriert
+- [Phase 30]: Dashboard-Widget-Toggles als Key-Value in settings mit Default true, alte target_* Keys entfernt
 
 ### Pending Todos
 
@@ -62,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Phase 30 context gathered
-Resume file: .planning/phases/30-db-schema-backend-endpoints/30-CONTEXT.md
+Stopped at: Completed 30-01-PLAN.md
+Resume file: .planning/phases/30-db-schema-backend-endpoints/30-02-PLAN.md

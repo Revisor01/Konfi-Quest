@@ -9,9 +9,9 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 
 ### Punkte-Konfiguration
 
-- [ ] **PKT-01**: Org-Admin kann Gottesdienst-Punkte pro Jahrgang aktivieren/deaktivieren
-- [ ] **PKT-02**: Org-Admin kann Gemeinde-Punkte pro Jahrgang aktivieren/deaktivieren
-- [ ] **PKT-03**: Org-Admin kann Punkteziel (target) pro Jahrgang im laufenden Jahr aendern
+- [x] **PKT-01**: Org-Admin kann Gottesdienst-Punkte pro Jahrgang aktivieren/deaktivieren
+- [x] **PKT-02**: Org-Admin kann Gemeinde-Punkte pro Jahrgang aktivieren/deaktivieren
+- [x] **PKT-03**: Org-Admin kann Punkteziel (target) pro Jahrgang im laufenden Jahr aendern
 - [ ] **PKT-04**: Backend lehnt Punktevergabe fuer deaktivierte Typen ab
 - [ ] **PKT-05**: Warnung erscheint beim Deaktivieren wenn Konfis bereits Punkte dieses Typs haben
 
@@ -25,7 +25,7 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 
 ### Dashboard-Konfig
 
-- [ ] **DSH-01**: Org-Admin kann Dashboard-Sektionen ein/ausblenden (Losung, Ranking, Badges, Events, Konfirmation)
+- [x] **DSH-01**: Org-Admin kann Dashboard-Sektionen ein/ausblenden (Losung, Ranking, Badges, Events, Konfirmation)
 - [ ] **DSH-02**: Dashboard rendert nur aktivierte Sektionen
 - [ ] **DSH-03**: Konfig-Aenderungen wirken sofort fuer alle Konfis der Organisation
 
@@ -59,9 +59,9 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKT-01 | Phase 30 | Pending |
-| PKT-02 | Phase 30 | Pending |
-| PKT-03 | Phase 30 | Pending |
+| PKT-01 | Phase 30 | Complete |
+| PKT-02 | Phase 30 | Complete |
+| PKT-03 | Phase 30 | Complete |
 | PKT-04 | Phase 31 | Pending |
 | PKT-05 | Phase 31 | Pending |
 | PUI-01 | Phase 32 | Pending |
@@ -69,7 +69,7 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 | PUI-03 | Phase 32 | Pending |
 | PUI-04 | Phase 31 | Pending |
 | PUI-05 | Phase 32 | Pending |
-| DSH-01 | Phase 30 | Pending |
+| DSH-01 | Phase 30 | Complete |
 | DSH-02 | Phase 33 | Pending |
 | DSH-03 | Phase 33 | Pending |
 
