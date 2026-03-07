@@ -41,6 +41,7 @@ Progress: [==========] 100%
 | 30    | 01   | 5min     | 2     | 3     |
 | 30    | 02   | 3min     | 2     | 4     |
 | 31    | 01   | 2min     | 2     | 5     |
+| 31    | 02   | 4min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -63,6 +64,8 @@ v1.6 Entscheidungen:
 - [Phase 31-01]: Guard gibt 400 zurueck bei deaktiviertem Punkte-Typ, nicht 403
 - [Phase 31-01]: Event-Attendance Guard rollt Transaction zurueck bei deaktiviertem Typ
 - [Phase 31-01]: Warnung bei Deaktivierung ist Info-only (200 mit warnings-Array)
+- [Phase 31-02]: Jahrgang-Config wird pro checkAndAwardBadges-Aufruf geladen
+- [Phase 31-02]: Badge-Progress-Queries ebenfalls an aktive Typen angepasst (Deviation)
 
 ### Pending Todos
 
@@ -76,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 31-01-PLAN.md
-Resume file: Next plan in phase 31 or next phase (32)
+Stopped at: Completed 31-02-PLAN.md (Phase 31 complete)
+Resume file: Next phase (32)
