@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -12,6 +12,8 @@ import {
   IonList,
   IonListHeader,
   IonButton,
+  IonItem,
+  IonToggle,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -28,18 +30,66 @@ import {
   logOut,
   flash,
   notifications,
-  qrCode
+  qrCode,
+  appsOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { logout } from '../../../services/auth';
 import { useHistory } from 'react-router-dom';
+import api from '../../../services/api';
+
+interface DashboardConfig {
+  show_konfirmation: boolean;
+  show_events: boolean;
+  show_losung: boolean;
+  show_badges: boolean;
+  show_ranking: boolean;
+}
 
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
-  const { user, pushNotificationsPermission, requestPushPermissions } = useApp();
+  const { user, pushNotificationsPermission, requestPushPermissions, setError } = useApp();
   const [presentAlert] = useIonAlert();
   const history = useHistory();
+
+  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
+    show_konfirmation: true,
+    show_events: true,
+    show_losung: true,
+    show_badges: true,
+    show_ranking: true
+  });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await api.get('/settings');
+        const data = response.data;
+        setDashboardConfig({
+          show_konfirmation: data.dashboard_show_konfirmation ?? true,
+          show_events: data.dashboard_show_events ?? true,
+          show_losung: data.dashboard_show_losung ?? true,
+          show_badges: data.dashboard_show_badges ?? true,
+          show_ranking: data.dashboard_show_ranking ?? true
+        });
+      } catch {
+        // Defaults bleiben bestehen
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleDashboardToggle = async (key: keyof DashboardConfig, value: boolean) => {
+    setDashboardConfig(prev => ({ ...prev, [key]: value }));
+    try {
+      await api.put('/settings', { [`dashboard_${key}`]: value });
+    } catch {
+      // Revert bei Fehler
+      setDashboardConfig(prev => ({ ...prev, [key]: !value }));
+      setError('Fehler beim Speichern der Dashboard-Einstellung');
+    }
+  };
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -283,6 +333,59 @@ const AdminSettingsPage: React.FC = () => {
                     <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                   </div>
                 </div>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Dashboard-Konfiguration - nur für org_admin */}
+        {user?.role_name === 'org_admin' && (
+          <IonList inset={true} className="app-segment-wrapper">
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--users">
+                <IonIcon icon={appsOutline} />
+              </div>
+              <IonLabel>Dashboard-Konfiguration</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent>
+                <IonList style={{ background: 'transparent', padding: '0' }}>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel>Konfirmations-Countdown anzeigen</IonLabel>
+                    <IonToggle
+                      checked={dashboardConfig.show_konfirmation}
+                      onIonChange={(e) => handleDashboardToggle('show_konfirmation', e.detail.checked)}
+                    />
+                  </IonItem>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel>Events anzeigen</IonLabel>
+                    <IonToggle
+                      checked={dashboardConfig.show_events}
+                      onIonChange={(e) => handleDashboardToggle('show_events', e.detail.checked)}
+                    />
+                  </IonItem>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel>Tageslosung anzeigen</IonLabel>
+                    <IonToggle
+                      checked={dashboardConfig.show_losung}
+                      onIonChange={(e) => handleDashboardToggle('show_losung', e.detail.checked)}
+                    />
+                  </IonItem>
+                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                    <IonLabel>Badges anzeigen</IonLabel>
+                    <IonToggle
+                      checked={dashboardConfig.show_badges}
+                      onIonChange={(e) => handleDashboardToggle('show_badges', e.detail.checked)}
+                    />
+                  </IonItem>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel>Ranking anzeigen</IonLabel>
+                    <IonToggle
+                      checked={dashboardConfig.show_ranking}
+                      onIonChange={(e) => handleDashboardToggle('show_ranking', e.detail.checked)}
+                    />
+                  </IonItem>
+                </IonList>
               </IonCardContent>
             </IonCard>
           </IonList>
