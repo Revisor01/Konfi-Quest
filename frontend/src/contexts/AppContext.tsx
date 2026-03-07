@@ -365,6 +365,17 @@ useEffect(() => {
                 targetUrl = userType === 'admin' ? '/admin/konfis' : '/konfi/dashboard';
                 break;
 
+              case 'event_unregistration':
+              case 'events_pending_approval':
+                // Navigate to events page (Admin: Event-Abmeldungen / ausstehende Verbuchungen)
+                targetUrl = userType === 'admin' ? '/admin/events' : '/konfi/events';
+                break;
+
+              case 'new_konfi_registration':
+                // Navigate to konfis page (Admin: neue Registrierung)
+                targetUrl = userType === 'admin' ? '/admin/konfis' : '/konfi/dashboard';
+                break;
+
               default:
                 console.warn('Unbekannter Notification-Typ:', notificationType);
                 break;
