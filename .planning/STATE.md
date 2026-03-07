@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 Phase: 30 of 33 (DB-Schema + Backend-Endpoints)
 Plan: 0 of ? in current phase
 Status: Ready to plan
-Last activity: 2026-03-07 -- Roadmap erstellt, 4 Phasen (30-33), 13 Requirements gemappt
+Last activity: 2026-03-07 -- Phase 30 context gathered, Punkte-Config pro Jahrgang entschieden
 
 Progress: [..........] 0%
 
@@ -44,6 +44,8 @@ All v1.0-v1.5 decisions archived in PROJECT.md Key Decisions table.
 v1.6 Entscheidungen:
 - Punkte bleiben in DB bei Deaktivierung, werden in UI/Ranking ausgeblendet
 - Punkte-Typ-Config als Boolean-Spalten auf jahrgaenge-Tabelle
+- Punkteziele (target) von org-weit auf pro Jahrgang verschoben (Default 10)
+- Altes Punkte-Settings-UI komplett entfernen
 - Dashboard-Widget-Toggles in settings-Tabelle (Key-Value)
 - Ranking summiert nur aktive Punkte-Typen
 - both_categories Badge: nur aktive Typen muessen Kriterium erfuellen
@@ -60,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Roadmap erstellt, bereit fuer Phase 30 Planung
-Resume file: None
+Stopped at: Phase 30 context gathered
+Resume file: .planning/phases/30-db-schema-backend-endpoints/30-CONTEXT.md
