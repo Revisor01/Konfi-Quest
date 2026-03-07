@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
+const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -305,6 +306,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         return res.status(400).json({ error: 'Nur ausstehende Anträge können genehmigt oder abgelehnt werden' });
       }
 
+      // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist
+      if (status === 'approved') {
+        const { enabled, error } = await checkPointTypeEnabled(db, request.konfi_id, request.type);
+        if (!enabled) return res.status(400).json({ error });
+      }
+
       const client = await db.connect();
       let newBadges = 0;
       try {
@@ -445,6 +452,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
         }
       }
+
+      // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
+      const { enabled, error } = await checkPointTypeEnabled(db, konfiId, activity.type);
+      if (!enabled) return res.status(400).json({ error });
 
       const client = await db.connect();
       try {

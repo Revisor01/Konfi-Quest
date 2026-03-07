@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
 const { handleValidationErrors, commonValidations, getPointField } = require('../middleware/validation');
+const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -473,6 +474,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
 
         try {
+            // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
+            const { enabled, error } = await checkPointTypeEnabled(db, req.params.id, type);
+            if (!enabled) return res.status(400).json({ error });
+
             const updateField = getPointField(type);
 
             const client = await db.connect();
@@ -596,6 +601,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             if (!activity) {
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
+
+            // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
+            const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
+            if (!ptEnabled) return res.status(400).json({ error: ptError });
 
             const client = await db.connect();
             try {

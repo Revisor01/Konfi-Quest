@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
+const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -1311,9 +1312,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await db.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
       
       if (attendance_status === 'present' && eventData.points > 0) {
+        // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
+        const pointType = eventData.point_type || 'gemeinde';
+        const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, eventData.user_id, pointType);
+        if (!ptEnabled) {
+          await db.query('ROLLBACK');
+          return res.status(400).json({ error: ptError });
+        }
+
         // Use ON CONFLICT DO NOTHING to award points idempotently
         const description = `Event-Teilnahme: ${eventData.name}`;
-        const pointType = eventData.point_type || 'gemeinde';
         const awardPointsQuery = `
           INSERT INTO event_points (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id) 
           VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)
