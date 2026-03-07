@@ -143,8 +143,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 32-01: TBD
-- [ ] 32-02: TBD
+- [ ] 32-01-PLAN.md — Konfi-Dashboard: ActivityRings dynamisch, point_config nutzen, Stats/Ranking/Historie anpassen
+- [ ] 32-02-PLAN.md — Admin-Views: Backend Config-Spalten, KonfisView bedingte Bars, KonfiDetailView ausgegraut-Pattern
 
 ### Phase 33: Dashboard-Widget-Steuerung
 **Goal**: Dashboard rendert nur die vom Org-Admin aktivierten Sektionen
@@ -198,5 +198,5 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 1/1 | Complete | 2026-03-07 |
 | 30. DB-Schema + Backend-Endpoints | 2/2 | Complete    | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | 2/2 | Complete    | 2026-03-07 | - |
-| 32. Punkte-UI Frontend | v1.6 | 0/? | Not started | - |
+| 32. Punkte-UI Frontend | v1.6 | 0/2 | Not started | - |
 | 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |
