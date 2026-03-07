@@ -101,6 +101,15 @@ const checkAndAwardBadges = async (db, konfiId) => {
     const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
     if (!konfi) return 0;
 
+    // Jahrgang-Config laden (gottesdienst_enabled/gemeinde_enabled)
+    const jahrgangConfigQuery = `
+      SELECT j.gottesdienst_enabled, j.gemeinde_enabled
+      FROM konfi_profiles kp
+      JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+      WHERE kp.user_id = $1
+    `;
+    const { rows: [jahrgangConfig] } = await db.query(jahrgangConfigQuery, [konfiId]);
+
     // Get badges for this organization only
     const { rows: badges } = await db.query(
       "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1", 
@@ -122,16 +131,28 @@ const checkAndAwardBadges = async (db, konfiId) => {
       const criteria = JSON.parse(badge.criteria_extra || '{}');
       
       switch (badge.criteria_type) {
-        case 'total_points':
-          earned = (konfi.gottesdienst_points + konfi.gemeinde_points) >= badge.criteria_value;
+        case 'total_points': {
+          // Nur aktive Punkte-Typen summieren
+          if (!jahrgangConfig) { earned = false; break; }
+          let total = 0;
+          if (jahrgangConfig.gottesdienst_enabled) total += konfi.gottesdienst_points;
+          if (jahrgangConfig.gemeinde_enabled) total += konfi.gemeinde_points;
+          earned = total >= badge.criteria_value;
           break;
+        }
         case 'gottesdienst_points':
+          // Uebersprungen wenn Gottesdienst deaktiviert
+          if (!jahrgangConfig?.gottesdienst_enabled) { earned = false; break; }
           earned = konfi.gottesdienst_points >= badge.criteria_value;
           break;
         case 'gemeinde_points':
+          // Uebersprungen wenn Gemeinde deaktiviert
+          if (!jahrgangConfig?.gemeinde_enabled) { earned = false; break; }
           earned = konfi.gemeinde_points >= badge.criteria_value;
           break;
         case 'both_categories':
+          // Braucht BEIDE Typen aktiv
+          if (!jahrgangConfig?.gottesdienst_enabled || !jahrgangConfig?.gemeinde_enabled) { earned = false; break; }
           earned = konfi.gottesdienst_points >= badge.criteria_value && konfi.gemeinde_points >= badge.criteria_value;
           break;
         
