@@ -4,9 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current State
+## Current Milestone: v1.6 Dashboard-Konfig + Punkte-Logik
 
-v1.5 Push-Notifications shipped (2026-03-07). Naechster Milestone: v1.6 Dashboard-Konfig + Punkte-Logik.
+**Goal:** Punkte-Typen pro Jahrgang konfigurierbar machen und Dashboard-Widgets fuer Org-Admins steuerbar machen.
 
 ## Core Value
 
@@ -76,7 +76,12 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Next milestone: v1.6 Dashboard-Konfig + Punkte-Logik — see /gsd:new-milestone)
+<!-- v1.6 Dashboard-Konfig + Punkte-Logik -->
+
+- [ ] Punkte-Typ (Gottesdienst und/oder Gemeinde) pro Jahrgang auf 0 setzbar
+- [ ] Logik-Anpassung: Ringe, Badges, Aktivitaeten, Fortschrittsbalken reagieren korrekt auf deaktivierte Punktearten
+- [ ] Dashboard-Konfig: Org-Admin legt fest welche Widgets sichtbar sind (Losung, Ranking, etc.)
+- [ ] Dashboard rendert nur konfigurierte Widgets
 
 ### Out of Scope
 
@@ -145,4 +150,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
 
 ---
-*Last updated: 2026-03-07 after v1.5 milestone completion*
+*Last updated: 2026-03-07 after v1.6 milestone started*
