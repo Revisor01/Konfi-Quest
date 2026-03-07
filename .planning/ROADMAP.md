@@ -149,17 +149,17 @@ Plans:
 - [ ] 28-02-PLAN.md — Level-Up Push Helper + Integration an 4 Punkte-Vergabe-Stellen (FLW-03, FLW-04 covered)
 
 ### Phase 29: Token-Cleanup + End-to-End Verifikation
-**Goal**: Das Push-System ist selbstreinigend und alle 17 Push-Flows (14 bestehende + 3 neue) funktionieren End-to-End auf echtem Geraet
+**Goal**: Das Push-System ist selbstreinigend und alle 18 Push-Flows funktionieren konsistent mit korrektem Error-Handling und Tap-Navigation
 **Depends on**: Phase 26, Phase 27, Phase 28
 **Requirements**: CLN-02, CMP-01
 **Success Criteria** (what must be TRUE):
-  1. Verwaiste Tokens (User geloescht, Token aelter als 60 Tage) werden automatisch alle 24h bereinigt
-  2. Alle 14 bestehenden Push-Flows senden erfolgreich an ein echtes iOS-Geraet
-  3. Alle 3 neuen Push-Flows (Level-Up, Admin-Alert, Meilenstein) senden erfolgreich an ein echtes iOS-Geraet
-**Plans**: TBD
+  1. Verwaiste Tokens (User geloescht, Token aelter als 30 Tage, error_count >= 10) werden automatisch alle 6h bereinigt
+  2. Alle Push-Methoden verwenden konsistentes Result-Pattern (error_count Tracking, fatale Token-Loeschung)
+  3. Alle Push-Types haben funktionierende Frontend-Tap-Navigation (ausser silent notifications)
+**Plans**: 1 plan
 
 Plans:
-- [ ] 29-01: TBD
+- [ ] 29-01-PLAN.md — Token-Cleanup Service, sendBadgeUpdate Result-Pattern Fix, fehlende Frontend-Navigation-Cases
 
 ## Progress
 
@@ -196,5 +196,5 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 25. Foundation + Konfiguration | v1.5 | 1/1 | Complete | 2026-03-05 |
 | 26. Token-Lifecycle | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
-| 28. Fehlende Push-Flows | 2/2 | Complete    | 2026-03-06 | - |
-| 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/? | Not started | - |
+| 28. Fehlende Push-Flows | v1.5 | 2/2 | Complete | 2026-03-06 |
+| 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/1 | Not started | - |
