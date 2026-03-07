@@ -94,13 +94,15 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         badges = badgeResults;
       }
 
-      // Get ranking for jahrgang
+      // Get ranking for jahrgang (nur aktive Punkte-Typen)
       const rankingQuery = `
-        SELECT u.id, u.display_name, 
-               (kp.gottesdienst_points + kp.gemeinde_points) as points
+        SELECT u.id, u.display_name,
+               (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+               + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as points
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN roles r ON u.role_id = r.id
+        JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
         ORDER BY points DESC
         LIMIT 3
@@ -120,23 +122,28 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       );
       const bonusPointsTotal = parseInt(bonusPointsResult.bonus_total, 10) || 0;
 
-      // Total points: konfi_profiles contains gottesdienst + gemeinde (inkl. Events UND Bonus)
+      // Total points: nur aktive Punkte-Typen summieren
       // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren
-      const totalPoints = (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0);
+      const totalPoints = (konfi.gottesdienst_enabled ? (konfi.gottesdienst_points || 0) : 0)
+                        + (konfi.gemeinde_enabled ? (konfi.gemeinde_points || 0) : 0);
       const userRankingQuery = `
         WITH MyRank AS (
-          SELECT 
-            (kp.gottesdienst_points + kp.gemeinde_points) as total_points,
-            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY (kp.gottesdienst_points + kp.gemeinde_points) DESC) as rank_in_jahrgang
+          SELECT
+            (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+            + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total_points,
+            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY
+              (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+              + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) DESC) as rank_in_jahrgang
           FROM users u
           JOIN konfi_profiles kp ON u.id = kp.user_id
           JOIN roles r ON u.role_id = r.id
+          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
         ), TotalCount AS (
-           SELECT COUNT(*) as total_in_jahrgang 
-           FROM users u2 
-           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id 
-           JOIN roles r2 ON u2.role_id = r2.id 
+           SELECT COUNT(*) as total_in_jahrgang
+           FROM users u2
+           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
+           JOIN roles r2 ON u2.role_id = r2.id
            WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi'
         )
         SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
@@ -310,7 +317,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       const query = `
         SELECT u.id, u.display_name, u.email, u.username, u.created_at, kp.gottesdienst_points, kp.gemeinde_points, 
-               kp.jahrgang_id, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date
+               kp.jahrgang_id, kp.bible_translation, j.name as jahrgang_name, j.confirmation_date,
+               j.gottesdienst_enabled, j.gemeinde_enabled
         FROM users u
         JOIN konfi_profiles kp ON u.id = kp.user_id
         JOIN jahrgaenge j ON kp.jahrgang_id = j.id
@@ -392,25 +400,30 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         // Fall back to jahrgang confirmation_date if no event found
       }
 
-      // Get ranking position
+      // Get ranking position (nur aktive Punkte-Typen)
       // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren
       const gottesdienstPoints = parseInt(konfi.gottesdienst_points || 0);
       const gemeindePoints = parseInt(konfi.gemeinde_points || 0);
-      const totalPoints = gottesdienstPoints + gemeindePoints;
+      const totalPoints = (konfi.gottesdienst_enabled ? gottesdienstPoints : 0)
+                        + (konfi.gemeinde_enabled ? gemeindePoints : 0);
       const rankingQuery = `
         WITH MyRank AS (
-          SELECT 
-            (kp.gottesdienst_points + kp.gemeinde_points) as total_points,
-            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY (kp.gottesdienst_points + kp.gemeinde_points) DESC) as rank_in_jahrgang
+          SELECT
+            (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+            + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total_points,
+            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY
+              (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+              + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) DESC) as rank_in_jahrgang
           FROM users u
           JOIN konfi_profiles kp ON u.id = kp.user_id
           JOIN roles r ON u.role_id = r.id
+          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
           WHERE kp.jahrgang_id = $1 AND r.name = 'konfi'
         ), TotalCount AS (
-           SELECT COUNT(*) as total_in_jahrgang 
-           FROM users u2 
-           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id 
-           JOIN roles r2 ON u2.role_id = r2.id 
+           SELECT COUNT(*) as total_in_jahrgang
+           FROM users u2
+           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
+           JOIN roles r2 ON u2.role_id = r2.id
            WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi'
         )
         SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
@@ -857,40 +870,54 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         
         try {
           switch (badge.criteria_type) {
-            case 'total_points':
+            case 'total_points': {
               const { rows: [totalPointsResult] } = await db.query(
-                'SELECT (kp.gottesdienst_points + kp.gemeinde_points) as total FROM konfi_profiles kp WHERE user_id = $1',
+                `SELECT
+                  (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+                  + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total
+                FROM konfi_profiles kp
+                JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+                WHERE kp.user_id = $1`,
                 [konfiId]
               );
               progress.current = totalPointsResult?.total || 0;
               break;
-              
-            case 'gottesdienst_points':
+            }
+            case 'gottesdienst_points': {
               const { rows: [gottesdienstResult] } = await db.query(
-                'SELECT gottesdienst_points FROM konfi_profiles WHERE user_id = $1',
+                `SELECT CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END as gottesdienst_points
+                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
                 [konfiId]
               );
               progress.current = gottesdienstResult?.gottesdienst_points || 0;
               break;
-              
-            case 'gemeinde_points':
+            }
+            case 'gemeinde_points': {
               const { rows: [gemeindeResult] } = await db.query(
-                'SELECT gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+                `SELECT CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END as gemeinde_points
+                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
                 [konfiId]
               );
               progress.current = gemeindeResult?.gemeinde_points || 0;
               break;
-              
-            case 'both_categories':
+            }
+            case 'both_categories': {
               // For both_categories, show progress as minimum of both categories
               const { rows: [bothCatResult] } = await db.query(
-                'SELECT gottesdienst_points, gemeinde_points FROM konfi_profiles WHERE user_id = $1',
+                `SELECT kp.gottesdienst_points, kp.gemeinde_points, j.gottesdienst_enabled, j.gemeinde_enabled
+                FROM konfi_profiles kp JOIN jahrgaenge j ON kp.jahrgang_id = j.id WHERE kp.user_id = $1`,
                 [konfiId]
               );
-              const gottesdienstPts = bothCatResult?.gottesdienst_points || 0;
-              const gemeindePts = bothCatResult?.gemeinde_points || 0;
-              progress.current = Math.min(gottesdienstPts, gemeindePts);
+              const gottesdienstPts = bothCatResult?.gottesdienst_enabled ? (bothCatResult?.gottesdienst_points || 0) : 0;
+              const gemeindePts = bothCatResult?.gemeinde_enabled ? (bothCatResult?.gemeinde_points || 0) : 0;
+              // Wenn nicht beide Typen aktiv, Progress = 0
+              if (!bothCatResult?.gottesdienst_enabled || !bothCatResult?.gemeinde_enabled) {
+                progress.current = 0;
+              } else {
+                progress.current = Math.min(gottesdienstPts, gemeindePts);
+              }
               break;
+            }
               
             case 'activity_count':
               const { rows: [activityCountResult] } = await db.query(
