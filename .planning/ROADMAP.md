@@ -125,11 +125,11 @@ Plans:
   2. Beim Deaktivieren eines Punkte-Typs erscheint eine Warnung mit der Anzahl betroffener Konfis die bereits Punkte haben
   3. Badge-Vergabe ueberspringt Kriterien die einen deaktivierten Punkte-Typ erfordern (gottesdienst_points, gemeinde_points, both_categories)
   4. Ranking-Query summiert nur aktive Punkte-Typen des jeweiligen Jahrgangs
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 31-01: TBD
-- [ ] 31-02: TBD
+- [ ] 31-01-PLAN.md — Guard-Funktion + 5 Eintrittspunkte + Warnung bei Deaktivierung
+- [ ] 31-02-PLAN.md — Badge-Logik + Ranking-Queries fuer aktive Punkte-Typen
 
 ### Phase 32: Punkte-UI Frontend
 **Goal**: Alle Punkte-bezogenen UI-Elemente reagieren korrekt auf deaktivierte Punkte-Typen
@@ -140,7 +140,7 @@ Plans:
   2. Fortschrittsbalken in KonfisView und KonfiDetailView blenden deaktivierte Punkte-Typen komplett aus
   3. Ranking-Liste im Dashboard zeigt nur die Summe der aktiven Punkte-Typen an
   4. Punkte-Historie filtert Eintraege deaktivierter Punkte-Typen aus der Anzeige
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 32-01: TBD
@@ -153,7 +153,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. DashboardView blendet deaktivierte Sektionen (Losung, Ranking, Badges, Events, Konfirmation) komplett aus
   2. Aenderungen an der Dashboard-Konfiguration wirken sofort fuer alle Konfis der Organisation ohne App-Neustart
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 33-01: TBD
