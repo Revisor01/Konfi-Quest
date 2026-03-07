@@ -197,4 +197,4 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 26. Token-Lifecycle | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 28. Fehlende Push-Flows | v1.5 | 2/2 | Complete | 2026-03-06 |
-| 29. Token-Cleanup + End-to-End Verifikation | 1/1 | Complete   | 2026-03-07 | - |
+| 29. Token-Cleanup + End-to-End Verifikation | 1/1 | Complete    | 2026-03-07 | - |
