@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Push-Notifications
-status: unknown
-last_updated: "2026-03-06T19:06:14.521Z"
+status: milestone-complete
+last_updated: "2026-03-07T00:26:19.582Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.5 Push-Notifications — Phase 28 complete
+**Current focus:** v1.5 Push-Notifications — Milestone complete
 
 ## Current Position
 
-Phase: 28 of 29 (fehlende-push-flows)
-Plan: 2 of 2 complete
-Status: Phase 28 complete
-Last activity: 2026-03-06 — Phase 28 Plan 02 (Level-Up Push) ausgefuehrt
+Phase: 29 of 29 (token-cleanup-end-to-end-verifikation)
+Plan: 1 of 1 complete
+Status: Phase 29 complete — Milestone v1.5 complete
+Last activity: 2026-03-07 — Phase 29 Plan 01 (Token-Cleanup + End-to-End Verifikation) ausgefuehrt
 
-Progress: [#######░░░] 70%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ Progress: [#######░░░] 70%
 | 27    | 02   | 1min     | 1     | 1     |
 | 28    | 01   | 1min     | 2     | 2     |
 | 28    | 02   | 1min     | 2     | 4     |
+| 29    | 01   | 2min     | 2     | 3     |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ All v1.0-v1.4 decisions archived in PROJECT.md Key Decisions table.
 - [28-01] Push nach COMMIT aber vor res.json() mit fehlschlagsicherem try/catch
 - [Phase 28]: checkAndSendLevelUp als wiederverwendbare Helper-Methode, Level-Down erkannt aber nicht gepusht
 - [Phase 28]: FLW-04 als covered by existing badge system markiert
+- [29-01] cleanupStaleTokens als drei separate DELETE-Queries fuer bessere Nachvollziehbarkeit
+- [29-01] Result-Pattern: Alle Push-Send-Methoden muessen result.success auswerten statt try/catch
 
 ### Research Findings (v1.5)
 
@@ -89,6 +92,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-06
-Stopped at: Completed 28-02-PLAN.md
-Resume file: .planning/phases/28-fehlende-push-flows/28-02-SUMMARY.md
+Last session: 2026-03-07
+Stopped at: Completed 29-01-PLAN.md — Milestone v1.5 complete
+Resume file: .planning/phases/29-token-cleanup-end-to-end-verifikation/29-01-SUMMARY.md

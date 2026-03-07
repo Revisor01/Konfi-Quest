@@ -17,7 +17,7 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 ### Token-Bereinigung
 
 - [x] **CLN-01**: Ungueltige Tokens werden nach Firebase-Error aus DB entfernt
-- [ ] **CLN-02**: Periodischer Cleanup von verwaisten Tokens (User geloescht, Token veraltet)
+- [x] **CLN-02**: Periodischer Cleanup von verwaisten Tokens (User geloescht, Token veraltet)
 
 ### Fehlende Push-Flows
 
@@ -40,7 +40,7 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 
 ### Vollstaendigkeit
 
-- [ ] **CMP-01**: Alle bestehenden 14 Push-Flows verifiziert und funktionsfaehig
+- [x] **CMP-01**: Alle bestehenden 14 Push-Flows verifiziert und funktionsfaehig
 
 ## Future Requirements
 
@@ -72,7 +72,7 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 | TKN-03 | Phase 26 | Complete |
 | TKN-04 | Phase 26 | Complete |
 | CLN-01 | Phase 26 | Complete |
-| CLN-02 | Phase 29 | Pending |
+| CLN-02 | Phase 29 | Complete |
 | FLW-01 | Phase 28 | Complete |
 | FLW-02 | Phase 28 | Complete |
 | FLW-03 | Phase 28 | Complete |
@@ -83,7 +83,7 @@ Requirements fuer Push-Notifications Milestone. Jedes mapped auf Roadmap-Phasen.
 | BDG-02 | Phase 27 | Complete |
 | BDG-03 | Phase 27 | Complete |
 | BDG-04 | Phase 27 | Complete |
-| CMP-01 | Phase 29 | Pending |
+| CMP-01 | Phase 29 | Complete |
 
 **Coverage:**
 - v1.5 requirements: 17 total

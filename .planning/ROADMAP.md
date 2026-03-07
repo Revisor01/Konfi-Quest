@@ -84,7 +84,7 @@ Phase 24: Chat-Logik Debug (1 plan, complete)
 - [x] **Phase 26: Token-Lifecycle** - Token-Zustellung zuverlaessig machen (Logout, Fallback-ID, Refresh, Wechsel, Invalidierung) (completed 2026-03-06)
 - [x] **Phase 27: Badge-Count Single Source of Truth** - BadgeCountService als einzige Berechnungsquelle, korrekte Badge-Anzeige ueberall (completed 2026-03-06)
 - [x] **Phase 28: Fehlende Push-Flows** - Event-Erinnerungen, Admin-Alert, Level-Up, Punkte-Meilenstein (completed 2026-03-06)
-- [ ] **Phase 29: Token-Cleanup + End-to-End Verifikation** - Proaktiver Cleanup, alle 17 Push-Flows verifiziert
+- [x] **Phase 29: Token-Cleanup + End-to-End Verifikation** - Proaktiver Cleanup, alle 17 Push-Flows verifiziert (completed 2026-03-07)
 
 ## Phase Details
 
@@ -197,4 +197,4 @@ Phases execute in numeric order: 25 -> 26 -> 27 -> 28 -> 29
 | 26. Token-Lifecycle | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 28. Fehlende Push-Flows | v1.5 | 2/2 | Complete | 2026-03-06 |
-| 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 0/1 | Not started | - |
+| 29. Token-Cleanup + End-to-End Verifikation | 1/1 | Complete   | 2026-03-07 | - |
