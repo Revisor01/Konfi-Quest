@@ -238,22 +238,44 @@ class PushService {
       }
 
       let successCount = 0;
+      let errorCount = 0;
+
       for (const token of tokens) {
-        try {
-          await sendFirebasePushNotification(token.token, {
-            badge: badgeCount,
-            data: {
-              type: 'badge_update',
-              count: badgeCount.toString()
-            }
-          });
+        const result = await sendFirebasePushNotification(token.token, {
+          badge: badgeCount,
+          data: {
+            type: 'badge_update',
+            count: badgeCount.toString()
+          }
+        });
+
+        if (result.success) {
           successCount++;
-        } catch (error) {
- console.error('Badge update failed:', error);
+          if (token.error_count > 0) {
+            await db.query(
+              'UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = $1',
+              [token.id]
+            );
+          }
+        } else {
+          const fatalCodes = [
+            'messaging/registration-token-not-registered',
+            'messaging/invalid-registration-token'
+          ];
+          if (fatalCodes.includes(result.errorCode)) {
+            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+            console.warn(`Token ${token.id} geloescht (${result.errorCode})`);
+          } else {
+            await db.query(
+              'UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1',
+              [token.id]
+            );
+          }
+          errorCount++;
         }
       }
 
-      return { success: true, sent: successCount, total: tokens.length };
+      return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);

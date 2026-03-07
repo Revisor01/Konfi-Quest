@@ -4,6 +4,7 @@ class BackgroundService {
   static badgeUpdateInterval = null;
   static eventReminderInterval = null;
   static pendingEventsInterval = null;
+  static tokenCleanupInterval = null;
 
   /**
    * Startet regelmaessige Badge Updates fuer alle User (alle 5 Minuten)
@@ -304,6 +305,77 @@ class BackgroundService {
   }
 
   // ====================================================================
+  // TOKEN CLEANUP SERVICE
+  // ====================================================================
+
+  /**
+   * Startet den Token-Cleanup Service (alle 6 Stunden)
+   * Bereinigt fehlerhafte, inaktive und verwaiste Push-Tokens
+   */
+  static startTokenCleanupService(db) {
+    if (this.tokenCleanupInterval) {
+      return;
+    }
+
+    // Sofort einmal ausfuehren
+    this.cleanupStaleTokens(db);
+
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    this.tokenCleanupInterval = setInterval(async () => {
+      try {
+        await this.cleanupStaleTokens(db);
+      } catch (error) {
+        console.error('Token cleanup service failed:', error);
+      }
+    }, SIX_HOURS);
+  }
+
+  /**
+   * Stoppt den Token-Cleanup Service
+   */
+  static stopTokenCleanupService() {
+    if (this.tokenCleanupInterval) {
+      clearInterval(this.tokenCleanupInterval);
+      this.tokenCleanupInterval = null;
+    }
+  }
+
+  /**
+   * Bereinigt verwaiste und fehlerhafte Push-Tokens
+   * - error_count >= 10: Token hat zu viele Fehler
+   * - updated_at > 30 Tage: Token ist inaktiv
+   * - user_id nicht in users: User wurde geloescht
+   */
+  static async cleanupStaleTokens(db) {
+    try {
+      // 1. Fehlerhafte Tokens (error_count >= 10)
+      const { rows: errorTokens } = await db.query(
+        'DELETE FROM push_tokens WHERE error_count >= 10 RETURNING id'
+      );
+
+      // 2. Inaktive Tokens (aelter als 30 Tage)
+      const { rows: inactiveTokens } = await db.query(
+        "DELETE FROM push_tokens WHERE updated_at < NOW() - INTERVAL '30 days' RETURNING id"
+      );
+
+      // 3. Verwaiste Tokens (User existiert nicht mehr)
+      const { rows: orphanedTokens } = await db.query(
+        'DELETE FROM push_tokens WHERE user_id NOT IN (SELECT id FROM users) RETURNING id'
+      );
+
+      const totalDeleted = errorTokens.length + inactiveTokens.length + orphanedTokens.length;
+      if (totalDeleted > 0) {
+        console.log(`Token cleanup: ${errorTokens.length} error tokens, ${inactiveTokens.length} inactive tokens, ${orphanedTokens.length} orphaned tokens deleted`);
+      }
+
+      return { errorTokens: errorTokens.length, inactiveTokens: inactiveTokens.length, orphanedTokens: orphanedTokens.length };
+    } catch (error) {
+      console.error('Error in cleanupStaleTokens:', error);
+      throw error;
+    }
+  }
+
+  // ====================================================================
   // START ALL SERVICES
   // ====================================================================
 
@@ -314,6 +386,7 @@ class BackgroundService {
     this.startBadgeUpdateService(db);
     this.startEventReminderService(db);
     this.startPendingEventsService(db);
+    this.startTokenCleanupService(db);
   }
 
   /**
@@ -323,6 +396,7 @@ class BackgroundService {
     this.stopBadgeUpdateService();
     this.stopEventReminderService();
     this.stopPendingEventsService();
+    this.stopTokenCleanupService();
   }
 }
 
