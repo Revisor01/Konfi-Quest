@@ -94,7 +94,7 @@ Phase 29: Token-Cleanup + End-to-End Verifikation (1 plan, complete)
 
 **Milestone Goal:** Punkte-Typen pro Jahrgang konfigurierbar machen und Dashboard-Widgets fuer Org-Admins steuerbar machen.
 
-- [ ] **Phase 30: DB-Schema + Backend-Endpoints** - Jahrgang-Config und Dashboard-Settings als Datengrundlage
+- [x] **Phase 30: DB-Schema + Backend-Endpoints** - Jahrgang-Config und Dashboard-Settings als Datengrundlage (completed 2026-03-07)
 - [ ] **Phase 31: Punkte-Logik Backend** - Guards, Badge-Skip und Warnung bei Deaktivierung
 - [ ] **Phase 32: Punkte-UI Frontend** - Ringe, Bars, Ranking und Historie reagieren auf deaktivierte Typen
 - [ ] **Phase 33: Dashboard-Widget-Steuerung** - Org-Admin steuert Dashboard-Sektionen fuer Konfis
@@ -196,7 +196,7 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 27. Badge-Count Single Source of Truth | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 28. Fehlende Push-Flows | v1.5 | 2/2 | Complete | 2026-03-06 |
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 1/1 | Complete | 2026-03-07 |
-| 30. DB-Schema + Backend-Endpoints | 1/2 | In Progress|  | - |
+| 30. DB-Schema + Backend-Endpoints | 2/2 | Complete   | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | v1.6 | 0/? | Not started | - |
 | 32. Punkte-UI Frontend | v1.6 | 0/? | Not started | - |
 | 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |

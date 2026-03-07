@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
 status: executing
-last_updated: "2026-03-07T13:25:42Z"
+last_updated: "2026-03-07T13:27:33Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-03-07)
 
 ## Current Position
 
-Phase: 30 of 33 (DB-Schema + Backend-Endpoints)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-07 -- Plan 30-01 (DB-Schema + Backend-Endpoints) abgeschlossen
+Phase: 30 of 33 (DB-Schema + Backend-Endpoints) -- COMPLETE
+Plan: 2 of 2 in current phase (all done)
+Status: Phase 30 complete
+Last activity: 2026-03-07 -- Plan 30-02 (Frontend Punkte-Config + Dashboard-Toggles) abgeschlossen
 
-Progress: [=====.....] 50%
+Progress: [==========] 100%
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Progress: [=====.....] 50%
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 30    | 01   | 5min     | 2     | 3     |
+| 30    | 02   | 3min     | 2     | 4     |
 
 ## Accumulated Context
 
@@ -55,6 +56,9 @@ v1.6 Entscheidungen:
 - both_categories Badge: nur aktive Typen muessen Kriterium erfuellen
 - [Phase 30]: Punkte-Typ-Config als Spalten auf jahrgaenge-Tabelle, target-Werte automatisch migriert
 - [Phase 30]: Dashboard-Widget-Toggles als Key-Value in settings mit Default true, alte target_* Keys entfernt
+- [Phase 30-02]: Dashboard-Widget-Toggles nur fuer org_admin sichtbar
+- [Phase 30-02]: Optimistisches Update mit Revert bei API-Fehler fuer Dashboard-Toggles
+- [Phase 30-02]: Punkte-Ziel-Inputs bedingt gerendert (nur wenn jeweiliger Typ enabled)
 
 ### Pending Todos
 
@@ -68,5 +72,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-07
-Stopped at: Completed 30-01-PLAN.md
-Resume file: .planning/phases/30-db-schema-backend-endpoints/30-02-PLAN.md
+Stopped at: Completed 30-02-PLAN.md (Phase 30 complete)
+Resume file: Next phase (31)
