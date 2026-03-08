@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
 status: in-progress
-last_updated: "2026-03-08T07:14:01Z"
+last_updated: "2026-03-08T07:25:57Z"
 progress:
   total_phases: 7
   completed_phases: 7
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.6 Phase 32 - Punkte-UI Frontend
+**Current focus:** v1.6 Phase 32 complete - ready for Phase 33
 
 ## Current Position
 
 Phase: 32 of 33 (Punkte-UI Frontend)
-Plan: 1 of 2 in current phase (32-01 done)
-Status: Phase 32 in progress
-Last activity: 2026-03-08 -- Plan 32-01 (Konfi-Dashboard Punkte-UI) abgeschlossen
+Plan: 2 of 2 in current phase (32-02 done)
+Status: Phase 32 complete
+Last activity: 2026-03-08 -- Plan 32-02 (Admin-Views Punkte-Typ-Config) abgeschlossen
 
-Progress: [=========.] 93%
+Progress: [==========] 100%
 
 ## Performance Metrics
 
@@ -43,6 +43,7 @@ Progress: [=========.] 93%
 | 31    | 01   | 2min     | 2     | 5     |
 | 31    | 02   | 4min     | 2     | 2     |
 | 32    | 01   | 5min     | 2     | 4     |
+| 32    | 02   | 8min     | 2     | 3     |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ v1.6 Entscheidungen:
 - [Phase 32-01]: ActivityRings enabled-Props default true via !== false Check
 - [Phase 32-01]: Bei 1 aktivem Typ einzelner Ring auf aeusserem Radius
 - [Phase 32-01]: Settings-API-Aufruf entfernt, point_config aus Dashboard-Response
+- [Phase 32-02]: Pro-Konfi Targets aus Backend-Response statt globalem Settings-Abruf
+- [Phase 32-02]: Deaktivierte Typen: opacity 0.4 + grayscale(100%) + (deaktiviert) Label
+- [Phase 32-02]: loadSettings() in KonfiDetailView entfernt
 
 ### Pending Todos
 
@@ -83,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed 32-01-PLAN.md
-Resume file: 32-02-PLAN.md
+Stopped at: Completed 32-02-PLAN.md
+Resume file: 33-01-PLAN.md

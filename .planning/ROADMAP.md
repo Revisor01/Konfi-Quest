@@ -96,7 +96,7 @@ Phase 29: Token-Cleanup + End-to-End Verifikation (1 plan, complete)
 
 - [x] **Phase 30: DB-Schema + Backend-Endpoints** - Jahrgang-Config und Dashboard-Settings als Datengrundlage (completed 2026-03-07)
 - [x] **Phase 31: Punkte-Logik Backend** - Guards, Badge-Skip und Warnung bei Deaktivierung (completed 2026-03-07)
-- [ ] **Phase 32: Punkte-UI Frontend** - Ringe, Bars, Ranking und Historie reagieren auf deaktivierte Typen
+- [x] **Phase 32: Punkte-UI Frontend** - Ringe, Bars, Ranking und Historie reagieren auf deaktivierte Typen (completed 2026-03-08)
 - [ ] **Phase 33: Dashboard-Widget-Steuerung** - Org-Admin steuert Dashboard-Sektionen fuer Konfis
 
 ## Phase Details
@@ -198,5 +198,5 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 1/1 | Complete | 2026-03-07 |
 | 30. DB-Schema + Backend-Endpoints | 2/2 | Complete    | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | 2/2 | Complete    | 2026-03-07 | - |
-| 32. Punkte-UI Frontend | 1/2 | In Progress|  | - |
+| 32. Punkte-UI Frontend | 2/2 | Complete   | 2026-03-08 | - |
 | 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |
