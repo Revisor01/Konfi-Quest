@@ -38,6 +38,10 @@ interface Konfi {
   jahrgang_name?: string;
   gottesdienst_points?: number;
   gemeinde_points?: number;
+  gottesdienst_enabled?: boolean;
+  gemeinde_enabled?: boolean;
+  target_gottesdienst?: number;
+  target_gemeinde?: number;
   points?: {
     gottesdienst: number;
     gemeinde: number;
@@ -113,10 +117,6 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     return result;
   })();
 
-  const targetGottesdienst = parseInt(settings.target_gottesdienst || '10');
-  const targetGemeinde = parseInt(settings.target_gemeinde || '10');
-  const targetTotal = targetGottesdienst + targetGemeinde;
-
   const getInitials = (name: string) => {
     const words = name.trim().split(/\s+/);
     if (words.length === 1) {
@@ -125,11 +125,22 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     return (words[0][0] + words[words.length - 1][0]).toUpperCase();
   };
 
-  // Farbe: Lila für alle auf dem Weg, Grün für fertige
+  // Pro-Konfi Targets aus Jahrgang-Config
+  const getKonfiTargets = (konfi: Konfi) => {
+    const godiEnabled = konfi.gottesdienst_enabled !== false;
+    const gemEnabled = konfi.gemeinde_enabled !== false;
+    const targetGodi = konfi.target_gottesdienst || 10;
+    const targetGem = konfi.target_gemeinde || 10;
+    const targetTotal = (godiEnabled ? targetGodi : 0) + (gemEnabled ? targetGem : 0);
+    return { godiEnabled, gemEnabled, targetGodi, targetGem, targetTotal };
+  };
+
+  // Farbe: Lila fuer alle auf dem Weg, Gruen fuer fertige
   const getStatusColor = (konfi: Konfi) => {
+    const { targetTotal } = getKonfiTargets(konfi);
     const total = getTotalPoints(konfi);
     const percent = targetTotal > 0 ? (total / targetTotal) * 100 : 0;
-    if (percent >= 100) return '#059669'; // Dunkelgrün - Ziel erreicht
+    if (percent >= 100) return '#059669'; // Dunkelgruen - Ziel erreicht
     return '#5b21b6'; // Lila - Auf dem Weg (Sektionsfarbe)
   };
 
@@ -215,9 +226,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   const totalPoints = getTotalPoints(konfi);
                   const godiPoints = getGottesdienstPoints(konfi);
                   const gemPoints = getGemeindePoints(konfi);
+                  const { godiEnabled, gemEnabled, targetGodi, targetGem, targetTotal } = getKonfiTargets(konfi);
                   const percentTotal = targetTotal > 0 ? Math.round((totalPoints / targetTotal) * 100) : 0;
-                  const percentGodi = targetGottesdienst > 0 ? Math.round((godiPoints / targetGottesdienst) * 100) : 0;
-                  const percentGem = targetGemeinde > 0 ? Math.round((gemPoints / targetGemeinde) * 100) : 0;
+                  const percentGodi = targetGodi > 0 ? Math.round((godiPoints / targetGodi) * 100) : 0;
+                  const percentGem = targetGem > 0 ? Math.round((gemPoints / targetGem) * 100) : 0;
                   const isComplete = percentTotal >= 100;
 
                   return (
@@ -289,52 +301,58 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                             </div>
                           </div>
 
-                          {/* 3 Progress Bars - Godi + Gemeinde nebeneinander, Gesamt darunter */}
+                          {/* Progress Bars - nur aktive Typen */}
                           <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {/* Gottesdienst + Gemeinde nebeneinander */}
+                            {/* Gottesdienst + Gemeinde nebeneinander (wenn beide aktiv) oder einzeln */}
                             <div style={{ display: 'flex', gap: '8px' }}>
-                              {/* Gottesdienst */}
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                  <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
-                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGottesdienst}</span>
+                              {/* Gottesdienst - nur wenn aktiviert */}
+                              {godiEnabled && (
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
+                                    <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGodi}</span>
+                                  </div>
+                                  <div className="app-progress-bar">
+                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="app-progress-bar">
-                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
-                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                              )}
+
+                              {/* Gemeinde - nur wenn aktiviert */}
+                              {gemEnabled && (
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
+                                    <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGem}</span>
+                                  </div>
+                                  <div className="app-progress-bar">
+                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Gesamt - nur wenn beide Typen aktiv */}
+                            {godiEnabled && gemEnabled && (
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                  <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
+                                  <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
+                                    {totalPoints}/{targetTotal}
+                                    {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
+                                  </span>
+                                </div>
+                                <div className="app-progress-bar app-progress-bar--thick">
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
+                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
                                   </div>
                                 </div>
                               </div>
-
-                              {/* Gemeinde */}
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                  <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
-                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGemeinde}</span>
-                                </div>
-                                <div className="app-progress-bar">
-                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
-                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Gesamt - Lila */}
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
-                                <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
-                                  {totalPoints}/{targetTotal}
-                                  {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
-                                </span>
-                              </div>
-                              <div className="app-progress-bar app-progress-bar--thick">
-                                <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
-                                  <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
-                                </div>
-                              </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </IonItem>

@@ -52,6 +52,10 @@ interface Konfi {
   jahrgang_name?: string;
   gottesdienst_points?: number;
   gemeinde_points?: number;
+  gottesdienst_enabled?: boolean;
+  gemeinde_enabled?: boolean;
+  target_gottesdienst?: number;
+  target_gemeinde?: number;
   points?: {
     gottesdienst: number;
     gemeinde: number;
@@ -93,10 +97,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [settings, setSettings] = useState<{ target_gottesdienst: number; target_gemeinde: number }>({
-    target_gottesdienst: 10,
-    target_gemeinde: 10
-  });
 
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
@@ -166,24 +166,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
   useEffect(() => {
     loadKonfiData();
-    loadSettings();
   }, [konfiId]);
 
   useEffect(() => {
     setPresentingElement(pageRef.current);
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const response = await api.get('/settings');
-      setSettings({
-        target_gottesdienst: response.data.target_gottesdienst || 0,
-        target_gemeinde: response.data.target_gemeinde || 0
-      });
-    } catch (err) {
- console.warn('Could not load settings:', err);
-    }
-  };
 
   const loadKonfiData = async () => {
     setLoading(true);
@@ -496,8 +483,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             totalPoints={getTotalPoints()}
             gottesdienstPoints={getGottesdienstPoints()}
             gemeindePoints={getGemeindePoints()}
-            gottesdienstGoal={settings.target_gottesdienst}
-            gemeindeGoal={settings.target_gemeinde}
+            gottesdienstGoal={currentKonfi?.target_gottesdienst || 10}
+            gemeindeGoal={currentKonfi?.target_gemeinde || 10}
+            gottesdienstEnabled={currentKonfi?.gottesdienst_enabled}
+            gemeindeEnabled={currentKonfi?.gemeinde_enabled}
             size={160}
           />
 
@@ -541,7 +530,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 </div>
               ) : (
                 <IonList className="app-list-inner" lines="none">
-                  {bonusEntries.map((bonus: any, index: number) => (
+                  {bonusEntries.map((bonus: any, index: number) => {
+                    const isTypeDisabled = (bonus.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
+                      || (bonus.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
+                    return (
                     <IonItemSliding key={bonus.id || index} style={{ marginBottom: index < bonusEntries.length - 1 ? '8px' : '0' }}>
                       <IonItem
                         className="app-item-transparent"
@@ -551,7 +543,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         <div
                           className="app-list-item app-list-item--bonus"
                           style={{
-                            borderLeftColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                            borderLeftColor: bonus.type === 'gottesdienst' ? '#3b82f6' : '#059669',
+                            ...(isTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                           }}
                         >
                           {/* Corner Badge für Punkte */}
@@ -576,6 +569,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               <div className="app-list-item__content">
                                 <div className="app-list-item__title app-list-item__title--badge-space">
                                   {bonus.description || 'Bonuspunkte'}
+                                  {isTypeDisabled && (
+                                    <span style={{ fontSize: '0.7rem', color: '#999', fontWeight: '400', marginLeft: '6px' }}>(deaktiviert)</span>
+                                  )}
                                 </div>
                                 <div className="app-list-item__meta">
                                   <span className="app-list-item__meta-item">
@@ -600,7 +596,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         </IonItemOption>
                       </IonItemOptions>
                     </IonItemSliding>
-                  ))}
+                  );
+                  })}
                 </IonList>
               )}
               <IonButton
@@ -635,13 +632,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 </div>
               ) : (
                 <IonList className="app-list-inner" lines="none">
-                  {eventPoints.map((eventPoint: any, index: number) => (
+                  {eventPoints.map((eventPoint: any, index: number) => {
+                    const isEventTypeDisabled = (eventPoint.point_type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
+                      || (eventPoint.point_type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false);
+                    return (
                     <div
                       key={eventPoint.id || index}
                       className="app-list-item app-list-item--events"
                       style={{
                         marginBottom: index < eventPoints.length - 1 ? '8px' : '0',
-                        borderLeftColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669'
+                        borderLeftColor: eventPoint.point_type === 'gottesdienst' ? '#3b82f6' : '#059669',
+                        ...(isEventTypeDisabled ? { opacity: 0.4, filter: 'grayscale(100%)' } : {})
                       }}
                     >
                       {/* Corner Badge für Punkte */}
@@ -666,6 +667,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                           <div className="app-list-item__content">
                             <div className="app-list-item__title app-list-item__title--badge-space">
                               {eventPoint.event_name || 'Event'}
+                              {isEventTypeDisabled && (
+                                <span style={{ fontSize: '0.7rem', color: '#999', fontWeight: '400', marginLeft: '6px' }}>(deaktiviert)</span>
+                              )}
                             </div>
                             <div className="app-list-item__meta">
                               <span className="app-list-item__meta-item">
@@ -682,7 +686,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                  })}
                 </IonList>
               )}
             </IonCardContent>
@@ -705,7 +710,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                 </div>
               ) : (
                 <IonList className="app-list-inner" lines="none">
-                  {activities.slice(0, 10).map((activity, index) => (
+                  {activities.slice(0, 10).map((activity, index) => {
+                    const isActivityTypeDisabled = !activity.isPending
+                      && ((activity.type === 'gottesdienst' && currentKonfi?.gottesdienst_enabled === false)
+                      || (activity.type === 'gemeinde' && currentKonfi?.gemeinde_enabled === false));
+                    return (
                     <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
                       <IonItem
                         className="app-item-transparent"
@@ -722,7 +731,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                               : activity.type === 'gottesdienst'
                               ? '#3b82f6'
                               : '#059669',
-                            opacity: activity.isPending ? 0.8 : 1
+                            opacity: activity.isPending ? 0.8 : isActivityTypeDisabled ? 0.4 : 1,
+                            ...(isActivityTypeDisabled ? { filter: 'grayscale(100%)' } : {})
                           }}
                         >
                           {/* Corner Badge für Punkte */}
@@ -763,6 +773,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                                   }}
                                 >
                                   {activity.name}
+                                  {isActivityTypeDisabled && (
+                                    <span style={{ fontSize: '0.7rem', color: '#999', fontWeight: '400' }}>(deaktiviert)</span>
+                                  )}
                                   {activity.hasPhoto && (
                                     <IonIcon icon={image} className="app-icon-color--category" style={{ fontSize: '0.8rem', opacity: 0.7 }} />
                                   )}
@@ -792,7 +805,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                         </IonItemOptions>
                       )}
                     </IonItemSliding>
-                  ))}
+                  );
+                  })}
                 </IonList>
               )}
               <IonButton
