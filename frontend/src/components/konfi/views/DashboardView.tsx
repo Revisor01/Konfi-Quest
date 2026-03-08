@@ -398,6 +398,8 @@ interface DashboardViewProps {
   upcomingEvents: DashboardEvent[];
   targetGottesdienst: number;
   targetGemeinde: number;
+  gottesdienstEnabled?: boolean;
+  gemeindeEnabled?: boolean;
   onOpenPointsHistory?: () => void;
 }
 
@@ -422,6 +424,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   upcomingEvents,
   targetGottesdienst,
   targetGemeinde,
+  gottesdienstEnabled = true,
+  gemeindeEnabled = true,
   onOpenPointsHistory
 }) => {
   const history = useHistory();

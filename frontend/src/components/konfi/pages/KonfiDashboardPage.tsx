@@ -16,6 +16,13 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import DashboardView from '../views/DashboardView';
 import PointsHistoryModal from '../modals/PointsHistoryModal';
 
+interface PointConfig {
+  gottesdienst_enabled: boolean;
+  gemeinde_enabled: boolean;
+  target_gottesdienst: number;
+  target_gemeinde: number;
+}
+
 interface DashboardData {
   konfi: {
     id: number;
@@ -34,6 +41,7 @@ interface DashboardData {
   ranking: any[];
   days_to_confirmation?: number;
   confirmation_date?: string;
+  point_config?: PointConfig;
 }
 
 interface Event {
@@ -45,11 +53,6 @@ interface Event {
   location?: string;
   registered: boolean;
   is_registered?: boolean;
-}
-
-interface Settings {
-  target_gottesdienst?: number;
-  target_gemeinde?: number;
 }
 
 interface BadgeStats {
@@ -78,7 +81,6 @@ interface DailyVerse {
 const KonfiDashboardPage: React.FC = () => {
   const { user, setError } = useApp();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [settings, setSettings] = useState<Settings>({});
   const [dailyVerse, setDailyVerse] = useState<DailyVerse | null>(null);
   const [showLehrtext, setShowLehrtext] = useState(false);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
@@ -89,7 +91,8 @@ const KonfiDashboardPage: React.FC = () => {
 
   // Points History Modal
   const [presentPointsHistoryModal, dismissPointsHistoryModal] = useIonModal(PointsHistoryModal, {
-    onClose: () => dismissPointsHistoryModal()
+    onClose: () => dismissPointsHistoryModal(),
+    pointConfig: dashboardData?.point_config
   });
 
   const openPointsHistory = () => {
@@ -119,16 +122,11 @@ const KonfiDashboardPage: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [dashboardResponse, settingsResponse] = await Promise.all([
-        api.get('/konfi/dashboard'),
-        api.get('/settings').catch(() => ({ data: {} }))
-      ]);
-      
+      const dashboardResponse = await api.get('/konfi/dashboard');
       setDashboardData(dashboardResponse.data);
-      setSettings(settingsResponse.data);
     } catch (err) {
       setError('Fehler beim Laden der Dashboard-Daten');
- console.error('Error loading dashboard:', err);
+      console.error('Error loading dashboard:', err);
     } finally {
       setLoading(false);
     }
@@ -258,8 +256,11 @@ const KonfiDashboardPage: React.FC = () => {
     );
   }
 
-  const targetGottesdienst = settings.target_gottesdienst || 10;
-  const targetGemeinde = settings.target_gemeinde || 10;
+  const pointConfig = dashboardData.point_config;
+  const targetGottesdienst = pointConfig?.target_gottesdienst || 10;
+  const targetGemeinde = pointConfig?.target_gemeinde || 10;
+  const gottesdienstEnabled = pointConfig?.gottesdienst_enabled !== false;
+  const gemeindeEnabled = pointConfig?.gemeinde_enabled !== false;
 
   return (
     <IonPage ref={pageRef}>
@@ -295,6 +296,8 @@ const KonfiDashboardPage: React.FC = () => {
           upcomingEvents={upcomingEvents}
           targetGottesdienst={targetGottesdienst}
           targetGemeinde={targetGemeinde}
+          gottesdienstEnabled={gottesdienstEnabled}
+          gemeindeEnabled={gemeindeEnabled}
           onOpenPointsHistory={openPointsHistory}
         />
       </IonContent>

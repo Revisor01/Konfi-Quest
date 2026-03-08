@@ -7,6 +7,8 @@ interface ActivityRingsProps {
   gottesdienstGoal: number;
   gemeindeGoal: number;
   size?: number;
+  gottesdienstEnabled?: boolean;
+  gemeindeEnabled?: boolean;
 }
 
 /**
@@ -19,8 +21,20 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   gemeindePoints,
   gottesdienstGoal,
   gemeindeGoal,
-  size = 160
+  size = 160,
+  gottesdienstEnabled: gottesdienstEnabledProp,
+  gemeindeEnabled: gemeindeEnabledProp
 }) => {
+  // Defaults: wenn nicht gesetzt, beide aktiv (Abwaertskompatibilitaet)
+  const gottesdienstEnabled = gottesdienstEnabledProp !== false;
+  const gemeindeEnabled = gemeindeEnabledProp !== false;
+
+  // Aktive Typen bestimmen
+  const activeTypes: ('gottesdienst' | 'gemeinde')[] = [];
+  if (gottesdienstEnabled) activeTypes.push('gottesdienst');
+  if (gemeindeEnabled) activeTypes.push('gemeinde');
+  const showTotal = activeTypes.length === 2;
+
   // Animierte Werte (starten bei 0)
   const [animatedValues, setAnimatedValues] = useState({
     total: 0,
@@ -35,12 +49,12 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   // Zielwerte berechnen
   const effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10;
   const effectiveGemeindeGoal = gemeindeGoal > 0 ? gemeindeGoal : 10;
-  const effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal;
+  const effectiveTotalGoal = showTotal ? effectiveGottesdienstGoal + effectiveGemeindeGoal : 0;
 
   const targetPercents = {
-    total: Math.min((totalPoints / effectiveTotalGoal) * 100, 300),
-    gottesdienst: Math.min((gottesdienstPoints / effectiveGottesdienstGoal) * 100, 300),
-    gemeinde: Math.min((gemeindePoints / effectiveGemeindeGoal) * 100, 300)
+    total: showTotal ? Math.min((totalPoints / effectiveTotalGoal) * 100, 300) : 0,
+    gottesdienst: gottesdienstEnabled ? Math.min((gottesdienstPoints / effectiveGottesdienstGoal) * 100, 300) : 0,
+    gemeinde: gemeindeEnabled ? Math.min((gemeindePoints / effectiveGemeindeGoal) * 100, 300) : 0
   };
 
   // Animation starten wenn Werte sich ändern
@@ -228,32 +242,54 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
         alignItems: 'center'
       }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {/* Außenring - Gesamt */}
-          <Ring
-            radius={ringRadii[0]}
-            percent={animatedValues.total}
-            color={colors.total}
-            colorDark={colors.totalDark}
-            colorBright={colors.totalBright}
-          />
-
-          {/* Mittlerer Ring - Gottesdienst */}
-          <Ring
-            radius={ringRadii[1]}
-            percent={animatedValues.gottesdienst}
-            color={colors.gottesdienst}
-            colorDark={colors.gottesdienstDark}
-            colorBright={colors.gottesdienstBright}
-          />
-
-          {/* Innenring - Gemeinde */}
-          <Ring
-            radius={ringRadii[2]}
-            percent={animatedValues.gemeinde}
-            color={colors.gemeinde}
-            colorDark={colors.gemeindeDark}
-            colorBright={colors.gemeindeBright}
-          />
+          {activeTypes.length === 0 ? null : showTotal ? (
+            <>
+              {/* 3-Ring-Modus: Total aussen, Godi mitte, Gemeinde innen */}
+              <Ring
+                radius={ringRadii[0]}
+                percent={animatedValues.total}
+                color={colors.total}
+                colorDark={colors.totalDark}
+                colorBright={colors.totalBright}
+              />
+              <Ring
+                radius={ringRadii[1]}
+                percent={animatedValues.gottesdienst}
+                color={colors.gottesdienst}
+                colorDark={colors.gottesdienstDark}
+                colorBright={colors.gottesdienstBright}
+              />
+              <Ring
+                radius={ringRadii[2]}
+                percent={animatedValues.gemeinde}
+                color={colors.gemeinde}
+                colorDark={colors.gemeindeDark}
+                colorBright={colors.gemeindeBright}
+              />
+            </>
+          ) : (
+            <>
+              {/* 1-Ring-Modus: einzelner Ring auf aeusserem Radius */}
+              {gottesdienstEnabled && (
+                <Ring
+                  radius={ringRadii[0]}
+                  percent={animatedValues.gottesdienst}
+                  color={colors.gottesdienst}
+                  colorDark={colors.gottesdienstDark}
+                  colorBright={colors.gottesdienstBright}
+                />
+              )}
+              {gemeindeEnabled && (
+                <Ring
+                  radius={ringRadii[0]}
+                  percent={animatedValues.gemeinde}
+                  color={colors.gemeinde}
+                  colorDark={colors.gemeindeDark}
+                  colorBright={colors.gemeindeBright}
+                />
+              )}
+            </>
+          )}
         </svg>
 
         {/* Zentrale Anzeige */}
@@ -265,48 +301,62 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
           textAlign: 'center',
           color: 'white'
         }}>
-          <div style={{
-            fontSize: size * 0.22,
-            fontWeight: '800',
-            lineHeight: 1
-          }}>
-            {totalPoints}
-          </div>
+          {activeTypes.length === 0 ? (
+            <div style={{ fontSize: size * 0.08, opacity: 0.7 }}>
+              Keine Punkte-Typen aktiv
+            </div>
+          ) : (
+            <div style={{
+              fontSize: size * 0.22,
+              fontWeight: '800',
+              lineHeight: 1
+            }}>
+              {showTotal ? totalPoints : (gottesdienstEnabled ? gottesdienstPoints : gemeindePoints)}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Legende */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        justifyContent: 'center',
-        flexWrap: 'wrap'
-      }}>
-        <LegendItem
-          color={colors.total}
-          label="Gesamt"
-          value={totalPoints}
-          goal={effectiveTotalGoal}
-          percent={targetPercents.total}
-          hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
-        />
-        <LegendItem
-          color={colors.gottesdienst}
-          label="Gottesdienst"
-          value={gottesdienstPoints}
-          goal={effectiveGottesdienstGoal}
-          percent={targetPercents.gottesdienst}
-          hasGoal={gottesdienstGoal > 0}
-        />
-        <LegendItem
-          color={colors.gemeinde}
-          label="Gemeinde"
-          value={gemeindePoints}
-          goal={effectiveGemeindeGoal}
-          percent={targetPercents.gemeinde}
-          hasGoal={gemeindeGoal > 0}
-        />
-      </div>
+      {/* Legende - nur aktive Typen */}
+      {activeTypes.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
+          {showTotal && (
+            <LegendItem
+              color={colors.total}
+              label="Gesamt"
+              value={totalPoints}
+              goal={effectiveTotalGoal}
+              percent={targetPercents.total}
+              hasGoal={gottesdienstGoal > 0 || gemeindeGoal > 0}
+            />
+          )}
+          {gottesdienstEnabled && (
+            <LegendItem
+              color={colors.gottesdienst}
+              label="Gottesdienst"
+              value={gottesdienstPoints}
+              goal={effectiveGottesdienstGoal}
+              percent={targetPercents.gottesdienst}
+              hasGoal={gottesdienstGoal > 0}
+            />
+          )}
+          {gemeindeEnabled && (
+            <LegendItem
+              color={colors.gemeinde}
+              label="Gemeinde"
+              value={gemeindePoints}
+              goal={effectiveGemeindeGoal}
+              percent={targetPercents.gemeinde}
+              hasGoal={gemeindeGoal > 0}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
