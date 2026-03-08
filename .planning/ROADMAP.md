@@ -198,5 +198,5 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 29. Token-Cleanup + End-to-End Verifikation | v1.5 | 1/1 | Complete | 2026-03-07 |
 | 30. DB-Schema + Backend-Endpoints | 2/2 | Complete    | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | 2/2 | Complete    | 2026-03-07 | - |
-| 32. Punkte-UI Frontend | v1.6 | 0/2 | Not started | - |
+| 32. Punkte-UI Frontend | 1/2 | In Progress|  | - |
 | 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |

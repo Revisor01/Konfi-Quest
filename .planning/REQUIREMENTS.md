@@ -17,11 +17,11 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 
 ### Punkte-UI
 
-- [ ] **PUI-01**: ActivityRings zeigen nur aktive Punkte-Typen (dynamische Ring-Anzahl)
+- [x] **PUI-01**: ActivityRings zeigen nur aktive Punkte-Typen (dynamische Ring-Anzahl)
 - [ ] **PUI-02**: Progress-Bars/Fortschrittsbalken blenden deaktivierte Typen aus
-- [ ] **PUI-03**: Ranking beruecksichtigt nur aktive Punkte-Typen
+- [x] **PUI-03**: Ranking beruecksichtigt nur aktive Punkte-Typen
 - [x] **PUI-04**: Badge-Vergabe ueberspringt Kriterien die deaktivierte Punkte-Typen erfordern
-- [ ] **PUI-05**: Punkte-Historie blendet deaktivierte Typen aus
+- [x] **PUI-05**: Punkte-Historie blendet deaktivierte Typen aus
 
 ### Dashboard-Konfig
 
@@ -64,11 +64,11 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 | PKT-03 | Phase 30 | Complete |
 | PKT-04 | Phase 31 | Complete |
 | PKT-05 | Phase 31 | Complete |
-| PUI-01 | Phase 32 | Pending |
+| PUI-01 | Phase 32 | Complete |
 | PUI-02 | Phase 32 | Pending |
-| PUI-03 | Phase 32 | Pending |
+| PUI-03 | Phase 32 | Complete |
 | PUI-04 | Phase 31 | Complete |
-| PUI-05 | Phase 32 | Pending |
+| PUI-05 | Phase 32 | Complete |
 | DSH-01 | Phase 30 | Complete |
 | DSH-02 | Phase 33 | Pending |
 | DSH-03 | Phase 33 | Pending |

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
-status: unknown
-last_updated: "2026-03-07T20:14:18.401Z"
+status: in-progress
+last_updated: "2026-03-08T07:14:01Z"
 progress:
   total_phases: 7
   completed_phases: 7
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 14
+  completed_plans: 13
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.6 Phase 31 - Punkte-Logik Backend
+**Current focus:** v1.6 Phase 32 - Punkte-UI Frontend
 
 ## Current Position
 
-Phase: 31 of 33 (Punkte-Logik Backend) -- COMPLETE
-Plan: 2 of 2 in current phase (all done)
-Status: Phase 31 complete
-Last activity: 2026-03-07 -- Plan 31-02 (Badge-Logik + Ranking-Queries) abgeschlossen
+Phase: 32 of 33 (Punkte-UI Frontend)
+Plan: 1 of 2 in current phase (32-01 done)
+Status: Phase 32 in progress
+Last activity: 2026-03-08 -- Plan 32-01 (Konfi-Dashboard Punkte-UI) abgeschlossen
 
-Progress: [==========] 100%
+Progress: [=========.] 93%
 
 ## Performance Metrics
 
@@ -42,6 +42,7 @@ Progress: [==========] 100%
 | 30    | 02   | 3min     | 2     | 4     |
 | 31    | 01   | 2min     | 2     | 5     |
 | 31    | 02   | 4min     | 2     | 2     |
+| 32    | 01   | 5min     | 2     | 4     |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ v1.6 Entscheidungen:
 - [Phase 31-01]: Warnung bei Deaktivierung ist Info-only (200 mit warnings-Array)
 - [Phase 31-02]: Jahrgang-Config wird pro checkAndAwardBadges-Aufruf geladen
 - [Phase 31-02]: Badge-Progress-Queries ebenfalls an aktive Typen angepasst (Deviation)
+- [Phase 32-01]: ActivityRings enabled-Props default true via !== false Check
+- [Phase 32-01]: Bei 1 aktivem Typ einzelner Ring auf aeusserem Radius
+- [Phase 32-01]: Settings-API-Aufruf entfernt, point_config aus Dashboard-Response
 
 ### Pending Todos
 
@@ -78,6 +82,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-07
-Stopped at: Completed 31-02-PLAN.md (Phase 31 complete)
-Resume file: Next phase (32)
+Last session: 2026-03-08
+Stopped at: Completed 32-01-PLAN.md
+Resume file: 32-02-PLAN.md
