@@ -545,8 +545,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   const gottesdienstPoints = dashboardData.konfi.gottesdienst_points || 0;
   const gemeindePoints = dashboardData.konfi.gemeinde_points || 0;
-  const totalTarget = targetGottesdienst + targetGemeinde;
-  const totalCurrentPoints = gottesdienstPoints + gemeindePoints;
+  const showBothTypes = gottesdienstEnabled && gemeindeEnabled;
+  const totalTarget = showBothTypes ? targetGottesdienst + targetGemeinde : (gottesdienstEnabled ? targetGottesdienst : targetGemeinde);
+  const totalCurrentPoints = (gottesdienstEnabled ? gottesdienstPoints : 0) + (gemeindeEnabled ? gemeindePoints : 0);
 
   // Filter nur Events wo Konfi angemeldet ist (confirmed oder waitlist)
   const myRegisteredEvents = useMemo(() => upcomingEvents
@@ -643,6 +644,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               gemeindePoints={gemeindePoints}
               gottesdienstGoal={targetGottesdienst}
               gemeindeGoal={targetGemeinde}
+              gottesdienstEnabled={gottesdienstEnabled}
+              gemeindeEnabled={gemeindeEnabled}
               size={180}
             />
           </div>

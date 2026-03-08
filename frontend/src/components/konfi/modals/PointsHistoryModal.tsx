@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -28,6 +28,10 @@ import api from '../../../services/api';
 
 interface PointsHistoryModalProps {
   onClose: () => void;
+  pointConfig?: {
+    gottesdienst_enabled: boolean;
+    gemeinde_enabled: boolean;
+  };
 }
 
 interface PointEntry {
@@ -46,10 +50,14 @@ interface PointsTotals {
   total: number;
 }
 
-const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
+const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
   const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
+
+  // Enabled-Flags mit Fallback (Abwaertskompatibilitaet)
+  const gottesdienstEnabled = pointConfig?.gottesdienst_enabled !== false;
+  const gemeindeEnabled = pointConfig?.gemeinde_enabled !== false;
 
   useEffect(() => {
     loadHistory();
@@ -77,6 +85,26 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
       year: 'numeric'
     });
   };
+
+  // Gefilterte Historie: deaktivierte Typen ausblenden
+  const filteredHistory = useMemo(() => {
+    return history.filter(entry => {
+      if (entry.category === 'gottesdienst' && !gottesdienstEnabled) return false;
+      if (entry.category === 'gemeinde' && !gemeindeEnabled) return false;
+      return true;
+    });
+  }, [history, gottesdienstEnabled, gemeindeEnabled]);
+
+  // Angepasste Totals: nur aktive Typen
+  const filteredTotals = useMemo(() => {
+    const godi = gottesdienstEnabled ? totals.gottesdienst : 0;
+    const gem = gemeindeEnabled ? totals.gemeinde : 0;
+    return {
+      gottesdienst: godi,
+      gemeinde: gem,
+      total: godi + gem
+    };
+  }, [totals, gottesdienstEnabled, gemeindeEnabled]);
 
   // Farbe basierend auf category (gottesdienst=blau, gemeinde=grün)
   const getCategoryColor = (category: string) => {
@@ -125,9 +153,10 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
     }
   };
 
-  // Event- und Bonus-Anzahl aus History berechnen (nur Zaehler, keine Punkte)
-  const eventCount = history.filter(h => h.source_type === 'event').length;
-  const bonusCount = history.filter(h => h.source_type === 'bonus').length;
+  // Event- und Bonus-Anzahl aus gefilterter History berechnen
+  const eventCount = filteredHistory.filter(h => h.source_type === 'event').length;
+  const bonusCount = filteredHistory.filter(h => h.source_type === 'bonus').length;
+  const showBothTypes = gottesdienstEnabled && gemeindeEnabled;
 
   return (
     <IonPage>
@@ -172,18 +201,26 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
 
               {/* Stats Boxen - 3 oben + 2 unten */}
               <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* Erste Reihe: Gesamt, Gottesdienst, Gemeinde */}
+                {/* Erste Reihe: Punkte-Typ-Stats (nur aktive Typen) */}
                 <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px' }}>
-                  {[
-                    { value: totals.total, label: 'GESAMT' },
-                    { value: totals.gottesdienst, label: 'GOTTESDIENST' },
-                    { value: totals.gemeinde, label: 'GEMEINDE' }
-                  ].map((stat) => (
-                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
-                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
-                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
+                  {showBothTypes && (
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.total}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
                     </div>
-                  ))}
+                  )}
+                  {gottesdienstEnabled && (
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gottesdienst}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GOTTESDIENST</div>
+                    </div>
+                  )}
+                  {gemeindeEnabled && (
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gemeinde}</div>
+                      <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEMEINDE</div>
+                    </div>
+                  )}
                 </div>
                 {/* Zweite Reihe: Events, Bonus */}
                 <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
@@ -206,17 +243,17 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose }) => {
                 <div className="app-section-icon app-section-icon--purple">
                   <IonIcon icon={timeOutline} />
                 </div>
-                <IonLabel>Verlauf ({history.length} {history.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
+                <IonLabel>Verlauf ({filteredHistory.length} {filteredHistory.length === 1 ? 'Eintrag' : 'Einträge'})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
-                <IonCardContent style={{ padding: history.length === 0 ? '16px' : '8px' }}>
-                  {history.length === 0 ? (
+                <IonCardContent style={{ padding: filteredHistory.length === 0 ? '16px' : '8px' }}>
+                  {filteredHistory.length === 0 ? (
                     <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
                       Noch keine Einträge vorhanden
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {history.map((entry) => {
+                      {filteredHistory.map((entry) => {
                         const categoryColor = getCategoryColor(entry.category);
                         const typeBadgeColor = getTypeBadgeColor(entry.source_type);
                         const typeBadgeLabel = getTypeBadgeLabel(entry.source_type);
