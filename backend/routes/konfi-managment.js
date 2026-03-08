@@ -70,6 +70,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 SELECT u.id, u.display_name as name, u.username,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
+                       j.gottesdienst_enabled, j.gemeinde_enabled,
+                       j.target_gottesdienst, j.target_gemeinde,
                        (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
@@ -94,6 +96,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 SELECT u.id, u.display_name as name, u.username,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
+                       j.gottesdienst_enabled, j.gemeinde_enabled,
+                       j.target_gottesdienst, j.target_gemeinde,
                        (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
@@ -397,7 +401,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         try {
             const konfiQuery = `
                 SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points,
-                       j.name as jahrgang_name, j.id as jahrgang_id
+                       j.name as jahrgang_name, j.id as jahrgang_id,
+                       j.gottesdienst_enabled, j.gemeinde_enabled,
+                       j.target_gottesdienst, j.target_gemeinde
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
