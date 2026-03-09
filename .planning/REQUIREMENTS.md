@@ -23,10 +23,10 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 ### QR-Check-in
 
 - [x] **QRC-01**: Admin kann einen signierten QR-Code pro Event generieren und im Fullscreen anzeigen
-- [ ] **QRC-02**: Konfi kann QR-Code scannen und wird automatisch als "anwesend" markiert (Self-Check-in)
+- [x] **QRC-02**: Konfi kann QR-Code scannen und wird automatisch als "anwesend" markiert (Self-Check-in)
 - [x] **QRC-03**: QR-Code ist nur 30 Minuten vor bis 30 Minuten nach Event-Start gueltig (Zeitfenster)
 - [x] **QRC-04**: Admin kann Anwesenheit manuell korrigieren (present/absent), auch nach QR-Check-in
-- [ ] **QRC-05**: Admin kann QR-Code aus dem QR-Modal heraus drucken (druckfreundliches Layout)
+- [x] **QRC-05**: Admin kann QR-Code aus dem QR-Modal heraus drucken (druckfreundliches Layout)
 
 ### Event-UI
 
@@ -83,10 +83,10 @@ Zurueckgestellt fuer spaetere Milestones.
 | OPT-02 | Phase 35 | Complete |
 | OPT-03 | Phase 35 | Complete |
 | QRC-01 | Phase 36 | Complete |
-| QRC-02 | Phase 36 | Pending |
+| QRC-02 | Phase 36 | Complete |
 | QRC-03 | Phase 36 | Complete |
 | QRC-04 | Phase 36 | Complete |
-| QRC-05 | Phase 36 | Pending |
+| QRC-05 | Phase 36 | Complete |
 | EUI-02 | Phase 37 | Pending |
 | EUI-03 | Phase 37 | Pending |
 | ANW-01 | Phase 37 | Pending |

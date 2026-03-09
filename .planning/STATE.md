@@ -23,18 +23,18 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 36 of 37 (QR-Code Check-in)
-Plan: 1 of 2
-Status: Plan 36-01 complete
-Last activity: 2026-03-09 -- Plan 36-01 abgeschlossen (QR-Code Check-in Backend + EventModal)
+Plan: 2 of 2
+Status: Plan 36-02 complete
+Last activity: 2026-03-09 -- Plan 36-02 abgeschlossen (QR-Code Frontend Modals + View-Integration)
 
-Progress: [############--------] 60%
+Progress: [################----] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 19min
-- Total execution time: 96min
+- Total plans completed: 6
+- Average duration: 17min
+- Total execution time: 99min
 
 **By Phase:**
 
@@ -42,7 +42,7 @@ Progress: [############--------] 60%
 |-------|-------|-------|----------|
 | 34 | 2/2 | 88min | 44min |
 | 35 | 2/2 | 5min | 2.5min |
-| 36 | 1/2 | 3min | 3min |
+| 36 | 2/2 | 6min | 3min |
 
 *Updated after each plan completion*
 
@@ -68,6 +68,9 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 36-01] QR-Token ohne expiresIn, Zeitfenster ueber event_date + checkin_window
 - [Phase 36-01] Duplikat-Check gibt 200 mit already_checked_in statt Fehler
 - [Phase 36-01] Check-in-Fenster bei allen Event-Typen sichtbar (Pflicht + freiwillig)
+- [Phase 36-02] Android CAMERA Permission uebersprungen (kein android-Ordner vorhanden)
+- [Phase 36-02] Scanner-Feedback als inline Banners ueber Video-Feed statt Toast
+- [Phase 36-02] QR-Display-Button im Admin-Header neben Edit-Button platziert
 
 ### Pending Todos
 
@@ -82,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 36-01-PLAN.md
-Resume file: .planning/phases/36-qr-code-check-in/36-01-SUMMARY.md
+Stopped at: Completed 36-02-PLAN.md
+Resume file: .planning/phases/36-qr-code-check-in/36-02-SUMMARY.md
