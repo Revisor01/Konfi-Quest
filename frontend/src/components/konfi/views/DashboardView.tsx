@@ -390,6 +390,14 @@ interface AllBadgesData {
   earned: Badge[];
 }
 
+interface DashboardConfig {
+  show_konfirmation: boolean;
+  show_events: boolean;
+  show_losung: boolean;
+  show_badges: boolean;
+  show_ranking: boolean;
+}
+
 interface DashboardViewProps {
   dashboardData: DashboardData;
   dailyVerse: DailyVerse | null;
@@ -401,6 +409,7 @@ interface DashboardViewProps {
   gottesdienstEnabled?: boolean;
   gemeindeEnabled?: boolean;
   onOpenPointsHistory?: () => void;
+  dashboardConfig?: DashboardConfig;
 }
 
 const getGreeting = (name: string): string => {
@@ -426,7 +435,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   targetGemeinde,
   gottesdienstEnabled = true,
   gemeindeEnabled = true,
-  onOpenPointsHistory
+  onOpenPointsHistory,
+  dashboardConfig
 }) => {
   const history = useHistory();
   const [presentAlert] = useIonAlert();
@@ -450,9 +460,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Load Tageslosung directly from backend
   useEffect(() => {
+    if (dashboardConfig?.show_losung === false) {
+      setLoadingVerse(false);
+      setActualDailyVerse(null);
+      return;
+    }
+
     // Wechsle bei jedem Reload zwischen AT und NT
     setShowLosung(Math.random() > 0.5);
-    
+
     const loadTageslosung = async () => {
       try {
         const response = await api.get('/konfi/tageslosung');
@@ -478,7 +494,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     };
 
     loadTageslosung();
-  }, [dailyVerse]);
+  }, [dailyVerse, dashboardConfig?.show_losung]);
 
   const getInitials = (name: string) => {
     return name
@@ -750,7 +766,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Konfirmation Card */}
-      {(dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent ? (
+      {dashboardConfig?.show_konfirmation !== false && ((dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent) ? (
         <div className="app-dashboard-section app-dashboard-section--konfirmation">
           {/* Background Text */}
           <div className="app-dashboard-section__bg-text">
@@ -808,7 +824,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       ) : null}
 
       {/* Events Section - direkt nach Konfirmation */}
-      {regularEvents && regularEvents.length > 0 && (
+      {dashboardConfig?.show_events !== false && regularEvents && regularEvents.length > 0 && (
         <div className="app-dashboard-section app-dashboard-section--events">
           {/* Background Text */}
           <div className="app-dashboard-section__bg-text">
@@ -920,7 +936,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Tageslosung - nur wenn echte API-Daten verfügbar */}
-      {!loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
+      {dashboardConfig?.show_losung !== false && !loadingVerse && actualDailyVerse && (actualDailyVerse.losungstext || actualDailyVerse.lehrtext) && (
         <div className="app-dashboard-section app-dashboard-section--tageslosung">
           {/* Background Text */}
           <div className="app-dashboard-section__bg-text">
@@ -967,7 +983,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Badges Section - Level-artiges Design mit Icons */}
-      {(allBadges.available.length > 0 || allBadges.earned.length > 0) && (
+      {dashboardConfig?.show_badges !== false && (allBadges.available.length > 0 || allBadges.earned.length > 0) && (
         <div className="app-dashboard-section app-dashboard-section--badges">
           {/* Background Text */}
           <div className="app-dashboard-section__bg-text">
@@ -1241,7 +1257,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Ranking Section */}
-      {dashboardData.ranking && dashboardData.ranking.length > 0 && (
+      {dashboardConfig?.show_ranking !== false && dashboardData.ranking && dashboardData.ranking.length > 0 && (
         <div className="app-dashboard-section app-dashboard-section--ranking">
           {/* Background Text */}
           <div className="app-dashboard-section__bg-text">
