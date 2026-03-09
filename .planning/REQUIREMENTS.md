@@ -75,28 +75,28 @@ Zurueckgestellt fuer spaetere Milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PFL-01 | — | Pending |
-| PFL-02 | — | Pending |
-| PFL-03 | — | Pending |
-| PFL-04 | — | Pending |
-| OPT-01 | — | Pending |
-| OPT-02 | — | Pending |
-| OPT-03 | — | Pending |
-| QRC-01 | — | Pending |
-| QRC-02 | — | Pending |
-| QRC-03 | — | Pending |
-| QRC-04 | — | Pending |
-| EUI-01 | — | Pending |
-| EUI-02 | — | Pending |
-| EUI-03 | — | Pending |
-| ANW-01 | — | Pending |
-| ANW-02 | — | Pending |
+| PFL-01 | Phase 34 | Pending |
+| PFL-02 | Phase 34 | Pending |
+| PFL-03 | Phase 34 | Pending |
+| PFL-04 | Phase 34 | Pending |
+| EUI-01 | Phase 34 | Pending |
+| OPT-01 | Phase 35 | Pending |
+| OPT-02 | Phase 35 | Pending |
+| OPT-03 | Phase 35 | Pending |
+| QRC-01 | Phase 36 | Pending |
+| QRC-02 | Phase 36 | Pending |
+| QRC-03 | Phase 36 | Pending |
+| QRC-04 | Phase 36 | Pending |
+| EUI-02 | Phase 37 | Pending |
+| EUI-03 | Phase 37 | Pending |
+| ANW-01 | Phase 37 | Pending |
+| ANW-02 | Phase 37 | Pending |
 
 **Coverage:**
 - v1.7 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation*

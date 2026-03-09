@@ -9,6 +9,7 @@
 - Shipped **v1.4 Logik-Debug** - Phases 20-24 (shipped 2026-03-05)
 - Shipped **v1.5 Push-Notifications** - Phases 25-29 (shipped 2026-03-07)
 - Shipped **v1.6 Dashboard-Konfig + Punkte-Logik** - Phases 30-33 (shipped 2026-03-09)
+- Current **v1.7 Unterricht + Pflicht-Events** - Phases 34-37 (in progress)
 
 ## Phases
 
@@ -101,3 +102,87 @@ Phase 32: Punkte-UI Frontend (2 plans, complete)
 Phase 33: Dashboard-Widget-Steuerung (1 plan, complete)
 
 </details>
+
+### v1.7 Unterricht + Pflicht-Events (In Progress)
+
+**Milestone Goal:** Pflicht-Events mit Auto-Enrollment, Opt-out mit Begruendung, QR-Code Check-in, Anwesenheitsstatistik und Dashboard-Widget.
+
+- [ ] **Phase 34: Pflicht-Event-Grundlagen** - Mandatory-Flag, Auto-Enrollment, bring_items-Feld, Punkte-Guard
+- [ ] **Phase 35: Opt-out-Flow** - Abmeldung mit Begruendung, Admin-Uebersicht, Push bei Opt-out
+- [ ] **Phase 36: QR-Code Check-in** - QR-Generierung, Scanner, Zeitfenster-Validierung, manuelle Korrektur
+- [ ] **Phase 37: Dashboard-Widget + Anwesenheitsstatistik** - Naechstes-Event-Widget, pro-Konfi Statistik
+
+## Phase Details
+
+### Phase 34: Pflicht-Event-Grundlagen
+**Goal**: Admin kann Pflicht-Events erstellen, die automatisch alle Jahrgangs-Konfis anmelden, keine Punkte vergeben und ein optionales "Was mitbringen"-Feld haben
+**Depends on**: Phase 33 (v1.6 abgeschlossen)
+**Requirements**: PFL-01, PFL-02, PFL-03, PFL-04, EUI-01
+**Success Criteria** (what must be TRUE):
+  1. Admin kann im EventModal ein Event als "verpflichtend" markieren und beim Speichern werden alle Konfis der zugewiesenen Jahrgaenge automatisch als angemeldet eingetragen
+  2. Pflicht-Events vergeben keine Punkte -- das Punkte-Feld ist im Modal ausgeblendet und das Backend verhindert Punktevergabe
+  3. Admin kann ein optionales "Was mitbringen"-Textfeld beim Event-Erstellen ausfuellen, das in der Event-Detail-Ansicht angezeigt wird
+  4. Konfis erhalten eine Push-Benachrichtigung wenn ein neues Pflicht-Event fuer ihren Jahrgang erstellt wird
+  5. Konfis die nach Event-Erstellung einem Jahrgang zugewiesen werden, werden automatisch nachgetragen
+**Plans**: TBD
+
+Plans:
+- [ ] 34-01: TBD
+- [ ] 34-02: TBD
+
+### Phase 35: Opt-out-Flow
+**Goal**: Konfis koennen sich mit Begruendung von Pflicht-Events abmelden und Admins haben volle Transparenz ueber alle Abmeldungen
+**Depends on**: Phase 34
+**Requirements**: OPT-01, OPT-02, OPT-03
+**Success Criteria** (what must be TRUE):
+  1. Konfi sieht bei Pflicht-Events einen "Abmelden"-Button und kann eine Freitext-Begruendung eingeben, die gespeichert wird
+  2. Admin sieht in der Event-Teilnehmerliste alle Opt-out-Eintraege mit der jeweiligen Begruendung
+  3. Admin erhaelt eine Push-Benachrichtigung wenn ein Konfi sich von einem Pflicht-Event abmeldet
+**Plans**: TBD
+
+Plans:
+- [ ] 35-01: TBD
+- [ ] 35-02: TBD
+
+### Phase 36: QR-Code Check-in
+**Goal**: Anwesenheit wird ueber QR-Code-Scan erfasst mit Zeitfenster-Validierung und manueller Admin-Korrektur als Fallback
+**Depends on**: Phase 34
+**Requirements**: QRC-01, QRC-02, QRC-03, QRC-04
+**Success Criteria** (what must be TRUE):
+  1. Admin kann pro Event einen QR-Code im Fullscreen anzeigen, den angemeldete Konfis mit der App scannen
+  2. Konfi wird nach erfolgreichem QR-Scan automatisch als "anwesend" markiert und sieht eine Bestaetigung
+  3. QR-Code-Scan wird abgelehnt wenn er ausserhalb des Zeitfensters (30 Min vor bis 30 Min nach Event-Start) stattfindet
+  4. Admin kann die Anwesenheit einzelner Konfis manuell auf "anwesend" oder "abwesend" korrigieren, unabhaengig vom QR-Check-in
+**Plans**: TBD
+
+Plans:
+- [ ] 36-01: TBD
+- [ ] 36-02: TBD
+
+### Phase 37: Dashboard-Widget + Anwesenheitsstatistik
+**Goal**: Konfis sehen ihr naechstes Event im Dashboard und Admins haben eine pro-Konfi Anwesenheitsuebersicht
+**Depends on**: Phase 34, Phase 35, Phase 36
+**Requirements**: EUI-02, EUI-03, ANW-01, ANW-02
+**Success Criteria** (what must be TRUE):
+  1. Konfi-Dashboard zeigt ein Widget "Naechstes Event" mit Titel, Datum, Ort und Was-mitbringen-Info (falls vorhanden)
+  2. Dashboard-Widget ist ueber DashboardConfig (show_next_event Toggle) vom Org-Admin ein/ausblendbar
+  3. Admin sieht pro Konfi eine Anwesenheitsquote fuer Pflicht-Events (z.B. "7/10 anwesend, 70%")
+  4. Admin sieht pro Konfi eine Liste der verpassten Pflicht-Events mit Opt-out-Grund oder "Nicht erschienen"
+
+**Plans**: TBD
+
+Plans:
+- [ ] 37-01: TBD
+- [ ] 37-02: TBD
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 34 -> 35 -> 36 -> 37
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 34. Pflicht-Event-Grundlagen | v1.7 | 0/2 | Not started | - |
+| 35. Opt-out-Flow | v1.7 | 0/2 | Not started | - |
+| 36. QR-Code Check-in | v1.7 | 0/2 | Not started | - |
+| 37. Dashboard-Widget + Anwesenheitsstatistik | v1.7 | 0/2 | Not started | - |
