@@ -1,53 +1,55 @@
-# Feature Landscape: Dashboard-Konfig + Punkte-Logik v1.6
+# Feature Landscape: Pflicht-Events, QR-Check-in, Anwesenheitsstatistik v1.7
 
-**Domain:** Konfigurierbare Punkte-Typen + Dashboard-Widget-System fuer Konfi Quest
-**Researched:** 2026-03-07
-**Confidence:** HIGH (basiert auf vollstaendiger Codebase-Analyse, keine externen Abhaengigkeiten)
+**Domain:** Pflicht-Event-Verwaltung mit Anwesenheits-Tracking fuer Konfirmanden-App
+**Researched:** 2026-03-09
+**Confidence:** HIGH (Codebase vollstaendig analysiert, UX-Patterns aus Church/School-Management-Tools verifiziert)
 
 ## Ist-Zustand Analyse
 
-### Punkte-System (aktuell)
+### Event-System (bestehend)
 
-| Komponente | Ort | Verhalten |
-|-----------|-----|-----------|
-| Punkte-Ziele | `settings`-Tabelle (Key-Value, org-scoped) | `target_gottesdienst` + `target_gemeinde`, global pro Organisation |
-| Punkte-Speicherung | `konfi_profiles` (Spalten `gottesdienst_points`, `gemeinde_points`) | Immer zwei Spalten, werden summiert |
-| Aktivitaeten-Typ | `activities.type` = `gottesdienst` ODER `gemeinde` | Hardcoded 2 Typen, Whitelist in `getPointField()` |
-| Ranking | `konfi.js` Z.97-107 | `SUM(gottesdienst_points + gemeinde_points)` |
-| ActivityRings | `ActivityRings.tsx` | 3 Ringe hardcoded: Gesamt (Gold), Gottesdienst (Blau), Gemeinde (Gruen) |
-| Progress-Bars | `KonfisView.tsx` Z.292-334 | 3 Bars: Gottesdienst, Gemeinde, Gesamt |
-| Admin-Ziele | `AdminGoalsPage.tsx` | 2 Stepper (Gottesdienst + Gemeinde), laedt/speichert via `/settings` |
-| Badge-Kriterien | `badges.js` (13 CRITERIA_TYPES) | 4 punkte-basiert: `total_points`, `gottesdienst_points`, `gemeinde_points`, `both_categories` |
+| Komponente | Status | Details |
+|-----------|--------|---------|
+| Event-CRUD | Fertig | Titel, Datum, Endzeit, Ort, Maps-URL, Beschreibung, Kategorien, Punkte, Punkt-Typ |
+| Opt-in Buchung | Fertig | `event_bookings` mit status `confirmed`/`waitlist`/`pending` |
+| Abmeldung mit Grund | Fertig | `UnregisterModal` mit Freitext-Pflichtfeld, 2-Tage-Frist |
+| Timeslots | Fertig | `event_timeslots` Tabelle, ActionSheet-Auswahl |
+| Warteliste | Fertig | `waitlist_enabled`, `max_waitlist_size`, Nachrueck-Logik |
+| Registrierungsfenster | Fertig | `registration_opens_at`, `registration_closes_at` |
+| Attendance-Tracking (Admin) | Fertig | `attendance_status` auf `event_bookings` (`present`/`absent`/NULL) |
+| Punkte-Vergabe | Fertig | Automatisch bei `present`, Abzug bei `absent`, transaktionssicher |
+| Jahrgang-Zuweisung | Fertig | `event_jahrgang_assignments` -- Events fuer bestimmte Jahrgaenge |
+| Push-Erinnerungen | Fertig | 24h + 1h vor Event via `backgroundService.js` |
+| Dashboard-Events | Fertig | `show_events` Toggle in `DashboardConfig` (5 Widget-Toggles) |
+| Kategorien | Fertig | `event_categories` Verknuepfungstabelle |
 
-### Dashboard-Sections (aktuell in DashboardView.tsx, ~1450 Zeilen)
+### Was FEHLT fuer v1.7
 
-| Section | Zeilen | Inhalt | Abschaltbar? |
-|---------|--------|--------|-------------|
-| Header + ActivityRings | Z.586-743 | Begruessing, Ringe, Level-Badge, Level-Progress | Nein (Kern-Element) |
-| Konfirmation | Z.745-912 | Countdown + Events | Nicht konfigurierbar |
-| Tageslosung | Z.915-960 | AT/NT Bibelvers wechselnd | Nicht konfigurierbar |
-| Badges | Z.962-1234 | Badge-Sammlung, Stats, Secret-Badges | Nicht konfigurierbar |
-| Ranking | Z.1236-1450 | Jahrgangs-Platzierung, Top 3 + Nachbarn | Nicht konfigurierbar |
-| Events | Z.830-912 | Angemeldete Events | Nicht konfigurierbar |
+| Fehlend | Auswirkung |
+|---------|-----------|
+| Pflicht-Flag auf Events | Alle Events sind opt-in, keine Auto-Enrollment-Logik |
+| QR-Code Check-in | Attendance nur manuell durch Admin in Teilnehmerliste |
+| "Was mitbringen" Feld | Kein strukturiertes Feld, nur Freitext in `description` |
+| Naechstes-Event Widget | Dashboard zeigt nur angemeldete Events, kein prominentes naechstes Event |
+| Pro-Konfi Anwesenheitsstatistik | Keine aggregierte Anwesenheits-Uebersicht pro Konfi |
+| Opt-out statt Opt-in fuer Pflicht-Events | Konfi muss sich aktiv anmelden, kein Auto-Enrollment |
 
 ## Table Stakes
 
-Features die fuer v1.6 erwartet werden. Ohne diese ist das Feature unvollstaendig.
+Features ohne die v1.7 unvollstaendig ist.
 
 | Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten | Notes |
 |---------|---------------|-------------|-----------------|-------|
-| Punkte-Typ Aktivierung/Deaktivierung pro Jahrgang | Kern-Anforderung: Manche Gemeinden nutzen nur einen Punktetyp. Muss jahrgangs-spezifisch sein, nicht org-weit | Med | `jahrgaenge` Tabelle erweitern, `jahrgaenge.js`, Jahrgang-Edit-Modal | Aktuell hat `jahrgaenge` nur `name` + `confirmation_date`. Neue Spalten: `gottesdienst_enabled BOOLEAN DEFAULT true`, `gemeinde_enabled BOOLEAN DEFAULT true` |
-| ActivityRings dynamisch (1-3 Ringe) | Ohne Anpassung zeigen Ringe leere/sinnlose Rings fuer deaktivierten Typ | Med | `ActivityRings.tsx` (Props erweitern um `showGottesdienst`, `showGemeinde`) | Bei 1 Typ: 1 Ring. Bei 0 Typen: Ringe komplett ausblenden |
-| Gesamt-Ring-Logik bei einem Typ | Gesamt-Ring = Summe beider Typen. Bei einem Typ ist Gesamt identisch mit dem aktiven Typ -> redundant | Low | `ActivityRings.tsx` | Gesamt-Ring nur anzeigen wenn beide Typen aktiv |
-| Legende dynamisch | LegendItem zeigt aktuell immer alle 3 Labels | Low | `ActivityRings.tsx` LegendItem-Komponente | Nur aktive Typen in Legende |
-| Progress-Bars in KonfisView anpassen | Admin sieht 0/0 Bars fuer deaktivierte Typen | Low | `KonfisView.tsx` Z.292-334 | Deaktivierte Bar ausblenden, bei 1 Typ: Gesamt = aktiver Typ |
-| KonfiDetailView ActivityRings anpassen | Admin-Konfi-Detail zeigt identische Ringe wie Dashboard | Low | `KonfiDetailView.tsx` Z.499-500 | Gleiche Logik wie Dashboard-Ringe, braucht Jahrgang-Config |
-| Badge-Kriterien Warnung bei Typ-Deaktivierung | Badges mit `gottesdienst_points`/`gemeinde_points`/`both_categories` werden unerreichbar wenn Typ deaktiviert | High | `badges.js`, `checkAndAwardBadges()`, Jahrgang-Edit-Modal | Admin muss beim Deaktivieren gewarnt werden: "X Badges verwenden diesen Punktetyp" |
-| Badge-Check skip bei deaktiviertem Typ | `checkAndAwardBadges` darf Badges mit deaktiviertem Typ-Kriterium nicht als "nicht erreicht" zaehlen | Med | `badges.js` checkAndAwardBadges, Jahrgang-Config | Badge wird uebersprungen, nicht als fehlend gewertet |
-| Backend: Jahrgang-Config im Dashboard-Endpoint | Frontend braucht die enabled/disabled Info pro Typ | Low | `konfi.js` Dashboard-Route Z.32-62 | JOIN mit `jahrgaenge` liefert bereits `jahrgang_name`, muss `gottesdienst_enabled` + `gemeinde_enabled` hinzufuegen |
-| Dashboard-Widget-Konfiguration (Org-Admin UI) | Org-Admin bestimmt welche Widgets Konfis sehen | Med | `settings.js` (Key-Value Store erweitern), neuer Admin-Settings-Bereich | Neuer Settings-Key `dashboard_widgets` als JSON |
-| Dashboard rendert nur aktive Widgets | Konfi sieht nur konfigurierte Sections | Med | `DashboardView.tsx` (5 abschaltbare Sections) | Conditional Rendering basierend auf Widget-Config |
-| Backend: Widget-Config im Dashboard-Daten | Frontend braucht Widget-Config bei jedem Dashboard-Load | Low | `konfi.js` Dashboard-Route, `settings`-Tabelle | Settings-Query erweitern um `dashboard_widgets` Key |
+| Pflicht-Flag (`mandatory`) auf Events | Kern-Anforderung: Unterscheidung Pflicht vs. freiwillig. Bestimmt gesamte Buchungs-Logik | Low | `events` Tabelle: neue Spalte `mandatory BOOLEAN DEFAULT false` | Nur im EventModal als Toggle, aendert Buchungs-Flow komplett |
+| Auto-Enrollment aller Jahrgangs-Konfis | Bei mandatory=true: Alle Konfis der zugewiesenen Jahrgaenge werden automatisch als `confirmed` eingetragen | Med | `event_jahrgang_assignments` (schon da), `konfi_profiles.jahrgang_id`, `event_bookings` | Beim Event-Erstellen/-Bearbeiten: INSERT INTO event_bookings fuer alle Konfis des Jahrgangs. Neue Konfis im Jahrgang? -> Trigger oder manueller Sync |
+| Opt-out mit Freitext-Begruendung | Bei Pflicht-Events: Konfis sind angemeldet, koennen sich mit Grund abmelden. Admin sieht Gruende | Med | `event_bookings`: neue Spalte `opt_out_reason TEXT`, Status wechselt zu `opted_out` | Bestehender `UnregisterModal` kann erweitert werden. Wichtig: Opt-out ist NICHT gleich "absent" -- Konfi meldet sich VOR dem Event ab |
+| Keine Punkte fuer Pflicht-Events | Pflicht-Events tracken nur Anwesenheit, vergeben KEINE Punkte | Low | Backend: `events.points` = 0 bei mandatory, oder Guard in Attendance-Route | EventModal: Punkte-Feld ausblenden/deaktivieren wenn mandatory=true. Backend: Skip Punkte-Vergabe |
+| QR-Code generiert pro Event | Admin zeigt QR-Code, Konfis scannen beim Betreten | Med | Neue Route `GET /events/:id/qr` die signiertes Token generiert. Frontend: QR-Anzeige im Admin EventDetail | QR-Inhalt: JWT/signierter Payload mit event_id + Zeitstempel. KEIN statischer QR (Missbrauch) |
+| QR-Scan im Konfi-Frontend | Konfi scannt QR-Code mit Kamera, wird als "present" markiert | Med | Capacitor BarcodeScanner Plugin (bereits QR-Scan fuer Onboarding vorhanden!), neue Route `POST /konfi/events/:id/checkin` | Wiederverwende bestehende QR-Scan-Infrastruktur vom Onboarding. Validierung: Ist Konfi fuer Event angemeldet? Ist Event heute? |
+| Manuelle Admin-Korrektur | Admin kann Attendance nachtraeglich aendern (present/absent) -- auch nach QR-Check-in | Low | `PUT /events/:id/participants/:pid/attendance` existiert bereits! | Bestehende Route reicht. UI zeigt QR-Check-in-Status + manuelle Override-Moeglichkeit |
+| "Was mitbringen" Textfeld | Optionales Feld auf allen Events fuer Materialien/Mitbring-Info | Low | `events` Tabelle: neue Spalte `bring_items TEXT` | EventModal: neues IonTextarea. EventDetailView (Konfi + Admin): Anzeige wenn nicht leer |
+| Dashboard-Widget "Naechstes Event" | Prominente Card auf dem Dashboard mit naechstem anstehenden Event + Was-mitbringen | Med | `DashboardView.tsx`, Dashboard-Daten-Endpoint erweitern | Zeigt: Titel, Datum/Uhrzeit, Ort, "Was mitbringen". Nur fuer Events wo Konfi angemeldet ist. Neuer Toggle `show_next_event` in DashboardConfig |
+| Pro-Konfi Anwesenheitsstatistik (Admin-Sicht) | Admin sieht pro Konfi: Anwesenheitsquote, Fehlzeiten, Gruende | Med | `event_bookings` JOIN `events` WHERE mandatory=true, gruppiert pro Konfi | KonfiDetailView: Neue Section "Anwesenheit" mit Quote (X/Y anwesend), Liste der Fehlzeiten mit Opt-out-Gruenden |
 
 ## Differentiators
 
@@ -55,10 +57,13 @@ Features die ueber das Minimum hinausgehen, aber echten Mehrwert bieten.
 
 | Feature | Wertversprechen | Komplexitaet | Notes |
 |---------|----------------|-------------|-------|
-| Migration-Hinweis bei Typ-Deaktivierung | "X Konfis haben bereits Y Punkte in diesem Typ" -- verhindert versehentliches Deaktivieren | Low | Ein COUNT-Query beim Toggle genuegt. Guter UX-Schutz |
-| Info-Text im Konfi-Dashboard | Kurzer Text "Deine Gemeinde trackt nur Gottesdienst-Punkte" wenn ein Typ deaktiviert | Low | Hilft Konfis zu verstehen warum nur ein Ring sichtbar ist |
-| Admin-Goals pro Jahrgang | Statt org-weite Targets: Unterschiedliche Ziele pro Jahrgang | Med | Wuerde `target_gottesdienst`/`target_gemeinde` von `settings` nach `jahrgaenge` verschieben. Sinnvoll wenn Jahrgaenge verschiedene Anforderungen haben |
-| Preview der Widget-Konfiguration | Admin sieht Vorschau wie Dashboard fuer Konfis aussieht | Med | Nett, aber bei 5 einfachen Toggles uebertrieben |
+| Zeitfenster fuer QR-Check-in | QR-Code nur X Minuten vor/nach Event-Start gueltig. Verhindert fruehes/spaetes Scannen | Low | Backend-Validierung: `event_date - 30min <= NOW <= event_date + 30min`. Konfigurierbar? Nein, fester Wert reicht |
+| Push-Benachrichtigung bei Opt-out | Admin erhaelt Push wenn ein Konfi sich von Pflicht-Event abmeldet | Low | PushService.sendToOrgAdmins existiert. Trigger bei Opt-out |
+| Anwesenheits-Badge-Kriterien | Neue Badge-Criteria: `mandatory_attendance_rate` (z.B. >=90% Anwesenheit) oder `mandatory_streak` | Med | `badges.js` CRITERIA_TYPES erweitern. Sinnvoll fuer Engagement-Tracking ohne Punkte |
+| Bulk-Attendance (Admin) | Admin markiert mehrere Konfis gleichzeitig als present/absent statt einzeln | Med | Neue Route `PUT /events/:id/bulk-attendance`. UI: Checkbox-Liste + "Alle anwesend" Button |
+| Anwesenheits-Uebersicht Jahrgang | Tabelle: Alle Konfis eines Jahrgangs mit Anwesenheitsquote ueber alle Pflicht-Events | Med | Aggregations-Query. Nett fuer Elterngespraeche/Konfi-Gespraeche |
+| Opt-out-Frist | Opt-out nur bis X Tage vor Event moeglich (wie bestehende Abmelde-Frist) | Low | Bestehende `canUnregister` Logik (2-Tage-Frist) kann wiederverwendet werden |
+| QR-Code als PDF druckbar | Admin kann QR-Code als PDF exportieren zum Aushaengen | Low | Canvas-to-PDF im Frontend. Spart Admin das Screenshot-Machen |
 
 ## Anti-Features
 
@@ -66,170 +71,214 @@ Features die explizit NICHT gebaut werden sollen.
 
 | Anti-Feature | Warum vermeiden | Stattdessen |
 |-------------|----------------|-------------|
-| Punkte loeschen bei Typ-Deaktivierung | Datenverlust, Admin-Fehler nicht reversibel | Punkte bleiben in DB, werden nur nicht angezeigt/gewertet. Reaktivierung stellt alles wieder her |
-| Dynamische Anzahl Punkte-Typen (N Typen) | System ist auf 2 Typen (Gottesdienst + Gemeinde) gebaut -- DB-Spalten, Variablennamen, UI-Texte. Generische N Typen waere massives Refactoring (>1000 Zeilen) | Bleibe bei 2 festen Typen, erlaube 0/1/2 aktiv |
-| Widget-Konfiguration pro Jahrgang | Zu granular, ueberfordert Admins. Verschiedene Jahrgaenge gleicher Org sehen verschiedene Dashboards? Verwirrend | Dashboard-Config gilt org-weit |
-| Punkte-Typ umbenennen | "Gottesdienst" und "Gemeinde" sind in der gesamten Codebase hardcoded: DB-Spalten (`gottesdienst_points`, `gemeinde_points`), getPointField-Whitelist, ActivityRings-Farben, LegendItems, Badge-Criteria | Labels bleiben fest. Umbenennung waere ein eigenes Refactoring |
-| Custom Dashboard-Widgets | Admin erstellt beliebige Dashboard-Widgets mit eigenem Inhalt | Festes Widget-Set (5 Stueck) mit Toggle reicht. Konfis sind keine Power-User |
-| Drag & Drop Widget-Reihenfolge | Admin sortiert Widgets per Drag & Drop | Feste Reihenfolge. Reihenfolge ist durchdacht (Header -> Konfirmation -> Losung -> Badges -> Ranking -> Events) |
-| Aktivitaeten bei deaktiviertem Typ blockieren | Gemeinde-Aktivitaeten nicht mehr erfassbar wenn Gemeinde deaktiviert | Aktivitaeten bleiben erfassbar, Punkte werden weiterhin gespeichert. Nur Anzeige (Ring/Bar/Ziel) entfaellt. Ermoegllicht spaetere Reaktivierung |
+| GPS/Geofencing Check-in | Uebermaessig komplex, Privacy-Bedenken, unzuverlaessig in Kirchengebaeuden (dicke Waende) | QR-Code reicht. Physische Anwesenheit wird durch Scan im Raum bestaetigt |
+| Automatische Absent-Markierung | Event vorbei + kein Check-in = auto-absent? Gefaehrlich weil Admin vergessen haben koennte QR anzuzeigen | Admin markiert manuell oder bulk. Unverarbeitete Bookings bleiben `attendance_status = NULL` (bestehendes Verhalten) |
+| Eltern-Benachrichtigung bei Fehlen | DSGVO-komplex, braucht Eltern-Accounts, Einverstaendniserklaerungen | Admin kommuniziert bei Bedarf direkt mit Eltern (ausserhalb der App) |
+| NFC Check-in | Hardware-Abhaengigkeit, nicht jedes Geraet hat NFC-Writer | QR-Code ist universell, benoetigt nur Kamera |
+| Entschuldigung hochladen (Bild/PDF) | Dokumenten-Management ist ein eigenes System. Storage, Datenschutz, Aufbewahrungsfristen | Freitext-Grund reicht. Bei Bedarf kann Admin Notizen machen |
+| Punkte-Vergabe fuer Pflicht-Events als Option | "Manche Pflicht-Events koennten doch Punkte geben" -- Verwischt die klare Trennung. Pflicht = Anwesenheit, Freiwillig = Punkte | Trennung beibehalten. Wenn ein Event Punkte geben soll, ist es kein Pflicht-Event |
+| Wiederholende Events (Recurring) | Event-Serien (jeden Sonntag) -- massiv komplex: Ausnahmen, einzelne Absagen, unterschiedliche Teilnehmer | Admin erstellt Events einzeln. Bei Bedarf: "Event duplizieren" Button (v1.8+) |
+| Self-Attendance ohne QR (Button-Check-in) | Konfi drueckt einfach "Ich bin da" ohne physischen QR-Scan -- trivial zu faelschen | QR-Scan ist der Beweis der physischen Anwesenheit |
+| Konfi sieht eigene Anwesenheitsstatistik | Konfi-Dashboard zeigt Fehlzeiten-Quote -- erzeugt Druck/Angst statt Motivation | Anwesenheit ist Admin-only. Konfi sieht nur ob angemeldet/abgemeldet |
 
 ## Feature-Abhaengigkeiten
 
 ```
-Jahrgang-Tabelle erweitern (gottesdienst_enabled, gemeinde_enabled)
-  |-> Backend: Dashboard-Endpoint liefert Jahrgang-Config mit
-  |     |-> ActivityRings dynamisch (1-3 Ringe)
-  |     |-> Progress-Bars anpassen (KonfisView)
-  |     |-> KonfiDetailView Ringe anpassen
-  |     |-> Badge-Check skip bei deaktiviertem Typ
-  |-> Jahrgang-Edit-Modal: Toggles fuer Punkte-Typen
-  |     |-> Badge-Warnung bei Deaktivierung (Alert im Modal)
-  |     |-> Migration-Hinweis (optional)
-
-Dashboard-Widget-Config in Settings-Tabelle
-  |-> Admin Settings UI: Widget-Toggles
-  |-> Backend: Widget-Config im Dashboard-Daten
-  |     |-> DashboardView Conditional Rendering
+events-Tabelle erweitern (mandatory, bring_items)
+  |-> EventModal: Pflicht-Toggle + "Was mitbringen" Feld
+  |     |-> Bei mandatory=true: Punkte-Feld ausblenden, Auto-Enrollment Logik
+  |     |-> Bei mandatory=true: Registrierungsfenster irrelevant (alle sind enrolled)
+  |
+  |-> Auto-Enrollment (Backend)
+  |     |-> INSERT event_bookings fuer alle Jahrgangs-Konfis bei Event-Erstellung
+  |     |-> Neuer Status 'opted_out' in event_bookings + opt_out_reason Spalte
+  |     |-> Push an betroffene Konfis ("Neues Pflicht-Event: [Titel]")
+  |
+  |-> Opt-out Flow (Konfi-Frontend)
+  |     |-> EventDetailView: "Abmelden" Button mit Pflicht-Grund-Modal
+  |     |-> Bestehender UnregisterModal erweitern (Kontext: Pflicht vs. Freiwillig)
+  |
+  |-> QR-Code Check-in (unabhaengig von Pflicht, fuer ALLE Events nutzbar)
+  |     |-> Backend: QR-Token-Generierung (signiert, zeitlich begrenzt)
+  |     |-> Admin EventDetailView: QR-Code anzeigen Button
+  |     |-> Konfi: QR-Scanner (bestehende Capacitor-Infrastruktur)
+  |     |-> Backend: Check-in Validierung (angemeldet? heute? Zeitfenster?)
+  |
+  |-> "Was mitbringen" Anzeige
+  |     |-> Konfi EventDetailView: Neue Info-Row
+  |     |-> Dashboard "Naechstes Event" Widget: bring_items anzeigen
+  |
+  |-> Dashboard-Widget "Naechstes Event"
+  |     |-> DashboardConfig: show_next_event Toggle (6. konfigurierbares Widget)
+  |     |-> Dashboard-Endpoint: Naechstes Event mit bring_items liefern
+  |     |-> DashboardView: Neue Section zwischen Header und Konfirmation
+  |
+  |-> Pro-Konfi Anwesenheitsstatistik (abhaengig von mandatory Events)
+       |-> Backend: Aggregations-Endpoint fuer Anwesenheitsquote
+       |-> KonfiDetailView (Admin): Neue "Anwesenheit" Section
+       |-> Fehlzeiten-Liste mit Opt-out-Gruenden
 ```
 
-## Bestandsaufnahme: Betroffene Code-Stellen
+## UX-Pattern-Analyse
 
-### Was passiert wenn `gottesdienst_enabled = false`?
+### Pflicht-Event Enrollment: Default-Enrolled mit Opt-out
 
-| Stelle | Datei | Aktuelles Verhalten | Neues Verhalten |
-|--------|-------|-------------------|-----------------|
-| ActivityRings | `ActivityRings.tsx` | 3 Ringe: Gesamt (Gold), Gottesdienst (Blau), Gemeinde (Gruen) | 1 Ring: Gemeinde (Gruen). Gesamt-Ring entfaellt (= Gemeinde) |
-| ActivityRings Props | `DashboardView.tsx` Z.636-643 | Alle 3 Werte uebergeben | `showGottesdienst={false}` |
-| Legende | `ActivityRings.tsx` LegendItem | 3 Labels | 1 Label (Gemeinde) |
-| Admin-Konfi-Liste | `KonfisView.tsx` Z.292-334 | 3 Progress-Bars | 2 Bars (Gemeinde + Gesamt, wobei identisch -> 1 Bar) |
-| Admin-Konfi-Detail | `KonfiDetailView.tsx` Z.499-500 | Alle Goals | `gottesdienstGoal={0}` |
-| Badge-Check | `badges.js` checkAndAwardBadges | Prueft `gottesdienst_points` Kriterium | Skip Badges mit `gottesdienst_points`/`both_categories` Kriterium |
-| Ranking | `konfi.js` Z.97-107 | `SUM(godi + gem)` | Bleibt: Summe ist weiterhin korrekt (Godi = 0) |
-| Punkte-Ziel Stepper | `AdminGoalsPage.tsx` | 2 Stepper immer sichtbar | Gottesdienst-Stepper ausgegraut oder unsichtbar wenn Typ deaktiviert fuer alle Jahrgaenge |
+**Pattern aus Church/School Management (Planning Center, ChurchTrac, MinHub):**
+- Pflicht-Events werden automatisch fuer alle betroffenen Teilnehmer gebucht
+- Teilnehmer sehen Event sofort in ihrer Liste als "Angemeldet"
+- Abmeldung erfordert aktive Handlung + Begruendung
+- Admin sieht Abmeldungen separat von No-Shows
 
-### Was passiert wenn BEIDE Typen deaktiviert?
+**Fuer Konfi Quest:**
+- Konfi oeffnet Events-Tab -> sieht Pflicht-Event mit Label "Pflicht" und Status "Angemeldet"
+- "Abmelden" Button ist vorhanden, oeffnet Modal mit Pflicht-Grund-Textfeld
+- Nach Abmeldung: Status wechselt zu "Entschuldigt" (nicht "Nicht angemeldet")
+- Admin-EventDetail: Drei Spalten: Anwesend / Entschuldigt / Nicht erschienen
 
-| Stelle | Verhalten |
-|--------|-----------|
-| ActivityRings | Komplett ausblenden. Nur Begruessing + Level sichtbar |
-| Progress-Bars | Komplett ausblenden |
-| Ranking | Bleibt (alle haben 0 Punkte, Platz 1 geteilt) -- ODER ausblenden |
-| Badge-Checks | Punkte-basierte Badges uebersprungen, andere Kriterien (activity_count, event_count, streak, etc.) funktionieren weiterhin |
-| Level-Progress | Basiert auf Gesamtpunkten = 0 -> kein Fortschritt. Progress-Bar ausblenden |
+### QR-Code Check-in: Scan-to-Confirm
 
-**Empfehlung:** Beide-deaktiviert ist ein Edge Case der funktionieren muss, aber nicht optimiert werden muss. Ringe + Level-Progress ausblenden, Rest bleibt.
+**Pattern aus QR-Attendance-Apps (OneTap, Grow Numbers, AttendMe):**
+- Admin generiert/zeigt QR-Code (am Beamer, ausgedruckt, auf Tablet)
+- Teilnehmer scannen mit eigenem Geraet
+- System bestaetigt sofort: Gruener Haken + kurze Vibration
+- Admin sieht Live-Counter der eingecheckten Teilnehmer
+- Zeitfenster: QR nur gueltig waehrend des Events
 
-### Dashboard-Widgets: Konfigurierbare Sections
+**Fuer Konfi Quest:**
+- Admin oeffnet Event -> "QR-Check-in starten" Button -> Fullscreen QR-Anzeige
+- Konfi oeffnet Events-Tab oder scannt direkt (Quick-Action?)
+- Nach Scan: Sofort-Feedback "Eingecheckt!" mit gruener Bestaetigung
+- Admin EventDetail: Live-Aktualisierung der Anwesenheitsliste
+- Zeitfenster: 30 Minuten vor bis 30 Minuten nach Event-Start
 
-| Widget-ID | Section | Default | Kann deaktiviert werden? |
-|-----------|---------|---------|------------------------|
-| `header` | Header mit ActivityRings, Begruessing, Level | aktiv | NEIN -- enthaelt Kern-Identitaet der App |
-| `konfirmation` | Countdown zur Konfirmation | aktiv | JA |
-| `tageslosung` | Tageslosung (AT/NT wechselnd) | aktiv | JA |
-| `badges` | Badge-Sammlung mit Stats | aktiv | JA |
-| `ranking` | Jahrgangs-Ranking | aktiv | JA |
-| `events` | Angemeldete Events | aktiv | JA |
+### "Naechstes Event" Dashboard-Widget
+
+**Pattern aus Event-Apps und Kirchengemeinde-Tools:**
+- Prominente Card oben im Dashboard
+- Zeigt: Titel, Datum (relativ: "Morgen", "In 3 Tagen"), Uhrzeit, Ort
+- Optionale Zusatzinfo (hier: "Was mitbringen")
+- Tap navigiert zur Event-Detail-Seite
+- Verschwindet wenn kein zukuenftiges Event vorhanden
+
+**Fuer Konfi Quest:**
+- Position: Nach Header, vor Konfirmation (oder als Teil der Events-Section)
+- Card-Design konsistent mit bestehenden Dashboard-Cards
+- Icon: calendar (Events-Farbe Rot)
+- Zeigt nur Events wo Konfi angemeldet ist (inkl. Pflicht-Events)
+- "Was mitbringen" als Unter-Info wenn vorhanden
+
+### Anwesenheitsstatistik: Quote + Fehlzeiten-Details
+
+**Pattern aus Schulverwaltungs-Software (Orah, Aeries, Canvas):**
+- Prozentuale Anwesenheitsquote prominent angezeigt
+- Farbcodierung: Gruen (>90%), Gelb (75-90%), Rot (<75%)
+- Detail-Liste: Datum + Grund der Abwesenheit
+- Unterscheidung: Entschuldigt vs. Unentschuldigt
+
+**Fuer Konfi Quest:**
+- KonfiDetailView (Admin): Neue Section "Anwesenheit bei Pflicht-Events"
+- Donut/Progress als Quote: "8/10 anwesend (80%)"
+- Darunter: Liste der verpassten Events mit Opt-out-Grund oder "Nicht erschienen"
+- Keine separate Seite noetig -- Section in bestehender KonfiDetailView reicht
 
 ## Datenmodell-Empfehlung
 
-### Punkte-Typ-Konfiguration: Spalten auf `jahrgaenge`
+### Neue Spalten auf `events`
 
 ```sql
-ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true;
-ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true;
+ALTER TABLE events ADD COLUMN mandatory BOOLEAN DEFAULT false;
+ALTER TABLE events ADD COLUMN bring_items TEXT;
 ```
 
-**Warum auf `jahrgaenge` statt `settings`:**
-- Punkte-Typen sind jahrgangs-spezifisch: Jahrgang 2025 kann Gottesdienst-frei sein, Jahrgang 2026 nicht
-- `settings`-Tabelle ist org-weit (kein Jahrgang-Bezug)
-- Jahrgang-Edit-Modal ist der natuerliche Ort fuer diese Konfiguration
-- Kein neues Datenmodell noetig, nur 2 Spalten
-
-**Targets bleiben in `settings`:** `target_gottesdienst` und `target_gemeinde` sind weiterhin org-weite Zielwerte. Die `enabled`-Flags auf dem Jahrgang bestimmen nur, OB ein Typ angezeigt/gewertet wird.
-
-### Dashboard-Widget-Config: JSON in `settings`
+### Erweiterung `event_bookings`
 
 ```sql
--- In bestehender settings-Tabelle (Key-Value):
-INSERT INTO settings (organization_id, key, value)
-VALUES (1, 'dashboard_widgets', '{"konfirmation":true,"tageslosung":true,"badges":true,"ranking":true,"events":true}');
+-- Neuer Status-Wert 'opted_out' neben 'confirmed', 'waitlist', 'pending'
+-- Kein ENUM-Aenderung noetig wenn status VARCHAR ist (pruefen!)
+ALTER TABLE event_bookings ADD COLUMN opt_out_reason TEXT;
 ```
 
-**Warum:** Passt in bestehendes Key-Value-Pattern. JSON-Wert mit Widget-IDs und boolean. Default wenn Key fehlt: alle aktiv.
+### QR-Check-in: Keine neue Tabelle noetig
 
-## Kritische Entscheidung: ActivityRings bei einem Typ
+- QR-Token wird per JWT signiert (event_id + expiry), nicht persistiert
+- Check-in setzt `attendance_status = 'present'` auf bestehender `event_bookings` Zeile
+- Optional: `checked_in_at TIMESTAMPTZ` auf event_bookings fuer Audit
 
-**Option A: 2 Ringe (Gesamt + aktiver Typ)**
-- Gesamt-Ring ist identisch mit aktivem Typ -> redundant und verwirrend
-
-**Option B: 1 Ring (nur aktiver Typ) -- EMPFOHLEN**
-- Klar und eindeutig
-- Zentrale Zahl zeigt weiterhin Gesamtpunkte
-- Legende zeigt nur aktiven Typ
-- Wenig Code-Aenderung: neue optionale Props `showGottesdienst`, `showGemeinde`
-
-**Option C: 2 Ringe mit angepassten Radien (aktiver Typ aussen, Gesamt innen)**
-- Visuell ansprechender als 1 Ring
-- Aber: immer noch redundant bei 1 Typ
-
-**Empfehlung:** Option B. ActivityRings bekommt `showGottesdienst?: boolean` und `showGemeinde?: boolean` Props (default: true). Nicht uebergebene Ringe werden nicht gerendert. Radien der verbleibenden Ringe werden angepasst damit sie zentriert aussehen.
+```sql
+ALTER TABLE event_bookings ADD COLUMN checked_in_at TIMESTAMPTZ;
+ALTER TABLE event_bookings ADD COLUMN checked_in_via VARCHAR(20); -- 'qr' oder 'manual'
+```
 
 ## MVP-Empfehlung
 
-### Phase 1: Punkte-Logik (Backend + Datenmodell)
-1. Jahrgang-Tabelle erweitern (`gottesdienst_enabled`, `gemeinde_enabled`)
-2. Jahrgang-CRUD Endpoints anpassen (neue Felder lesen/schreiben)
-3. Dashboard-Endpoint: Jahrgang-Config mitliefern
-4. Badge-Check: Deaktivierte Typ-Kriterien skippen
+### Priorisiere in dieser Reihenfolge:
 
-### Phase 2: Punkte-UI (Frontend-Anpassungen)
-5. ActivityRings: Dynamische Props, 1-3 Ringe
-6. Jahrgang-Edit-Modal: Toggles fuer Punkte-Typen + Badge-Warnung
-7. KonfisView Progress-Bars anpassen
-8. KonfiDetailView Ringe anpassen
-9. AdminGoalsPage: Deaktivierte Typen markieren
+1. **Pflicht-Flag + Auto-Enrollment** (Kern-Feature, aendert Event-Semantik)
+   - DB-Migration: `mandatory`, `bring_items` auf events
+   - Auto-Enrollment-Logik im Backend
+   - EventModal: Pflicht-Toggle
 
-### Phase 3: Dashboard-Konfiguration
-10. Settings-Endpoint um `dashboard_widgets` erweitern
-11. Admin-UI: Widget-Toggles in Settings (Checkbox-Liste)
-12. DashboardView: Conditional Rendering basierend auf Widget-Config
-13. Backend: Widget-Config im Dashboard-Daten mitliefern
+2. **Opt-out Flow** (direkt abhaengig von Pflicht-Events)
+   - `opt_out_reason` Spalte
+   - UnregisterModal-Erweiterung
+   - Admin sieht Opt-out-Gruende
+
+3. **QR-Code Check-in** (unabhaengig von Pflicht, aber hoher Nutzen)
+   - QR-Token-Generierung
+   - Admin QR-Anzeige
+   - Konfi QR-Scan (bestehende Infrastruktur)
+   - Check-in Validierung
+
+4. **"Was mitbringen" + Dashboard-Widget** (UI-Features)
+   - bring_items Anzeige in EventDetails
+   - Dashboard "Naechstes Event" Card
+   - DashboardConfig erweitern
+
+5. **Anwesenheitsstatistik** (Reporting, braucht Daten von 1+2+3)
+   - Aggregations-Query
+   - KonfiDetailView Section
 
 **Zurueckstellen:**
-- Widget-Reihenfolge (feste Reihenfolge reicht)
-- Preview (unnoetig bei einfachen Toggles)
-- Info-Banner fuer Konfis (nice-to-have, kann spaeter kommen)
-- Admin-Goals pro Jahrgang (erst bei konkretem Bedarf)
+- Bulk-Attendance (nett, aber manuelles Einzeln-Marking funktioniert)
+- Anwesenheits-Badges (v1.8+ wenn Badge-System erweitert wird)
+- QR-Code PDF-Export (Screenshot reicht erstmal)
+- Jahrgangs-Anwesenheits-Uebersicht (spaeter, braucht mehr Daten)
 
 ## Feature-Priorisierungs-Matrix
 
 | Feature | Nutzer-Wert | Implementierungskosten | Prioritaet |
 |---------|------------|----------------------|-----------|
-| Punkte-Typ toggle pro Jahrgang | HIGH | MED | P1 |
-| ActivityRings dynamisch | HIGH | MED | P1 |
-| Badge-Warnung bei Deaktivierung | HIGH | MED | P1 |
-| Badge-Check skip | HIGH | MED | P1 |
-| Dashboard-Widget-Toggles (Admin) | MED | MED | P1 |
-| Dashboard Conditional Rendering | MED | MED | P1 |
-| Progress-Bars anpassen | MED | LOW | P1 |
-| KonfiDetailView Ringe | MED | LOW | P1 |
-| Backend Config-Endpoints | MED | LOW | P1 |
-| Migration-Hinweis bei Deaktivierung | LOW | LOW | P2 |
-| Info-Text im Konfi-Dashboard | LOW | LOW | P2 |
+| Pflicht-Flag auf Events | HIGH | LOW | P1 |
+| Auto-Enrollment Jahrgangs-Konfis | HIGH | MED | P1 |
+| Opt-out mit Begruendung | HIGH | MED | P1 |
+| Keine Punkte bei Pflicht-Events | HIGH | LOW | P1 |
+| QR-Code Check-in (Admin zeigt) | HIGH | MED | P1 |
+| QR-Scan (Konfi scannt) | HIGH | MED | P1 |
+| "Was mitbringen" Textfeld | MED | LOW | P1 |
+| Manuelle Admin-Korrektur | MED | LOW (existiert!) | P1 |
+| Dashboard "Naechstes Event" | MED | MED | P1 |
+| Pro-Konfi Anwesenheitsstatistik | MED | MED | P1 |
+| Zeitfenster QR-Check-in | MED | LOW | P1 |
+| Push bei Opt-out | LOW | LOW | P2 |
+| Opt-out-Frist | LOW | LOW | P2 |
+| Bulk-Attendance | LOW | MED | P2 |
+| Anwesenheits-Badges | LOW | MED | P3 |
 
 ## Quellen
 
-- Codebase-Analyse: `DashboardView.tsx` (~1450 Zeilen, 6 Sections, Z.586-1450)
-- Codebase-Analyse: `ActivityRings.tsx` (350 Zeilen, 3 hardcoded Ringe, Props: totalPoints, gottesdienstPoints, gemeindePoints, gottesdienstGoal, gemeindeGoal)
-- Codebase-Analyse: `badges.js` (13 CRITERIA_TYPES, 4 punkte-basiert: total_points, gottesdienst_points, gemeinde_points, both_categories)
-- Codebase-Analyse: `settings.js` (Key-Value Store, org-scoped, target_gottesdienst/target_gemeinde/konfi_chat_permissions/waitlist_enabled/max_waitlist_size)
-- Codebase-Analyse: `jahrgaenge.js` (CRUD, aktuell nur name + confirmation_date + organization_id)
-- Codebase-Analyse: `AdminGoalsPage.tsx` (2 Stepper, laedt/speichert via GET/PUT /settings)
-- Codebase-Analyse: `KonfisView.tsx` (3 Progress-Bars pro Konfi, Z.292-334, targets aus settings)
-- Codebase-Analyse: `KonfiDetailView.tsx` (ActivityRings mit settings.target_gottesdienst/target_gemeinde, Z.499-500)
-- Codebase-Analyse: `konfi.js` Dashboard-Route (Z.32-240, Ranking, Level, Punkte aus konfi_profiles)
+- Codebase-Analyse: `events.js` (1430 Zeilen, vollstaendiges Event-CRUD, Attendance-Route Z.1289-1431)
+- Codebase-Analyse: `EventModal.tsx` (Event-Erstellungs-Modal mit allen Feldern)
+- Codebase-Analyse: `EventDetailView.tsx` (Konfi, 710 Zeilen, Buchungs-Flow, UnregisterModal)
+- Codebase-Analyse: `DashboardView.tsx` + `KonfiDashboardPage.tsx` (DashboardConfig mit 5 Widget-Toggles)
+- Codebase-Analyse: `event_bookings` Schema (status, attendance_status, bestehende Attendance-Logik)
+- Codebase-Analyse: QR-Onboarding (bestehende Capacitor BarcodeScanner Nutzung)
+- [Church Check-in Systems (Breeze ChMS)](https://www.breezechms.com/blog/check-in-systems-for-churches) -- QR-Check-in Patterns
+- [MinHub Youth App](https://apps.apple.com/us/app/minhub-youth/id910303883) -- Youth Ministry Attendance mit QR Kiosk Mode
+- [QR Code Attendance Best Practices (Verifyed)](https://www.verifyed.io/blog/qr-code-attendance) -- Zeitfenster, Validierung
+- [OneTap QR Attendance](https://www.onetapcheckin.com/qr-code-attendance-app) -- Self-Check-in Patterns
+- [Orah Attendance Dashboard](https://success.orah.com/en/articles/9924908-attendance-insights-dashboard-all-widgets) -- Statistik-Widgets
+- [Aeries Attendance Dashboard](https://support.aeries.com/support/solutions/articles/14000128314-attendance-dashboard) -- Fehlzeiten-Visualisierung
 
 ---
-*Feature-Research fuer: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
-*Recherchiert: 2026-03-07*
+*Feature-Research fuer: Konfi Quest v1.7 Pflicht-Events + QR-Check-in + Anwesenheitsstatistik*
+*Recherchiert: 2026-03-09*

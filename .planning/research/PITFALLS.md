@@ -1,292 +1,395 @@
-# Domain Pitfalls: v1.6 Dashboard-Konfig + Punkte-Logik
+# Domain Pitfalls: v1.7 Pflicht-Events, QR-Check-in, Auto-Enrollment, Anwesenheitsstatistik
 
-**Domain:** Konfigurierbare Punkte-Typen und Dashboard-Widgets in bestehendem Gamification-System
-**Researched:** 2026-03-07
-**Confidence:** HIGH (basierend auf vollstaendiger Codebase-Analyse aller betroffenen Dateien)
+**Domain:** Pflicht-Event-Management mit Anwesenheitsverfolgung in bestehendem Event-System
+**Researched:** 2026-03-09
+**Confidence:** HIGH (basierend auf vollstaendiger Analyse von events.js, konfi.js, 01-create-schema.sql und bestehendem Booking-Flow)
 
 ## Kritische Pitfalls
 
-Fehler die zu inkonsistentem Verhalten, falschen Punktestaenden oder Datenintegritaetsproblemen fuehren.
+Fehler die zu Datenverlust, inkonsistenter Anwesenheit oder gebrochener bestehender Event-Logik fuehren.
 
-### Pitfall 1: ActivityRings zeigt Phantom-Ringe fuer deaktivierte Punkte-Typen
+### Pitfall 1: Status-CHECK-Constraint blockiert neue Booking-Stati
 
-**Was schiefgeht:** Wenn `targetGottesdienst` oder `targetGemeinde` auf 0 gesetzt wird, berechnet `ActivityRings.tsx` (Zeile 36-38) Fallback-Werte: `effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10`. Das zeigt einen Ring mit falschem Ziel 10 an, obwohl der Punkte-Typ deaktiviert ist. Der Gesamt-Ring (`effectiveTotalGoal = effectiveGottesdienstGoal + effectiveGemeindeGoal`) summiert den Fallback und zeigt falsches Ziel 20 statt z.B. 10.
+**Was schiefgeht:** Die `event_bookings` Tabelle hat einen CHECK-Constraint in der Schema-Definition (Zeile 387): `CHECK (status IN ('confirmed', 'pending', 'cancelled'))`. Der Code verwendet aber bereits `'waitlist'` statt `'pending'` -- das funktioniert nur weil die DB offensichtlich nachtraeglich angepasst wurde (ALTER TABLE oder kein strikter Check). Wenn fuer Pflicht-Events ein neuer Status wie `'enrolled'` oder `'opted_out'` eingefuehrt wird, MUSS der CHECK-Constraint explizit aktualisiert werden, sonst scheitern INSERTs mit einem Constraint-Violation-Error.
 
-**Warum es passiert:** ActivityRings wurde ausschliesslich fuer den Fall "beide Typen aktiv" gebaut. Der Fallback auf 10 war ein Safety-Net gegen Division-by-Zero, nicht ein Design fuer deaktivierte Typen.
+**Warum es passiert:** Schema-Datei (`01-create-schema.sql`) ist nicht synchron mit der tatsaechlichen DB. Entwickler testen gegen die Live-DB (die bereits modifiziert wurde) und vergessen den CHECK-Constraint in der Schema-Datei zu aktualisieren. Beim naechsten Fresh-Setup (neuer Docker-Container, neue Organisation) greifen die alten Constraints.
 
 **Konsequenzen:**
-- Konfis sehen einen Ring fuer einen Punkte-Typ den sie nicht sammeln koennen
-- Gesamt-Ring zeigt falschen Fortschritt
-- Legende (Zeile 285-308) zeigt drei Eintraege obwohl nur einer/zwei relevant sind
-- Zentrale Anzeige (Zeile 260-276) zeigt Total-Punkte die beide Typen summieren
+- Neue Docker-Setups brechen beim ersten Pflicht-Event-Enrollment
+- `waitlist` Status funktioniert in der Live-DB aber nicht in frischen Setups (bereits ein latenter Bug)
+- Auto-Enrollment mit neuem Status schlaegt fehl mit kryptischem `23514 check_violation` Error
 
 **Praevention:**
-- ActivityRings muss Ring-Anzahl dynamisch anpassen: 3 Ringe (beide aktiv), 2 Ringe (einer aktiv + Gesamt), 1 Ring (nur Gesamt wenn beide gleich)
-- Deaktivierter Typ: Ring komplett ausblenden, Legende ausblenden, Gesamt nur aktive Typen summieren
-- Ring-Radien (`ringRadii` Array, Zeile 94-98) muessen sich an Anzahl sichtbarer Ringe anpassen -- sonst entsteht eine Luecke
-- Props um `enabledTypes` erweitern statt implizit ueber goal=0 zu erkennen
+- ZUERST Schema-Datei mit tatsaechlicher DB synchronisieren -- `waitlist` in CHECK aufnehmen
+- Dann neue Stati in einer Migration hinzufuegen: `ALTER TABLE event_bookings DROP CONSTRAINT ...; ALTER TABLE event_bookings ADD CONSTRAINT ... CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'enrolled'));`
+- ENTSCHEIDUNG ob Pflicht-Event-Bookings einen eigenen Status brauchen oder `confirmed` wiederverwendet wird mit einem `enrollment_type` Feld (empfohlen: `enrollment_type` statt neuer Status)
+- Migrations-Skript MUSS idempotent sein (IF NOT EXISTS Pattern)
 
-**Erkennungszeichen:** Ring zeigt "0/10" fuer deaktivierten Typ. Gesamt-Ring zeigt doppeltes Ziel.
+**Erkennungszeichen:** `INSERT INTO event_bookings` schlaegt fehl bei frischem Docker-Setup, funktioniert aber in der bestehenden DB.
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (ActivityRings)
+**Betroffene Phase:** Datenmodell/Migration (allererster Schritt)
 
 ---
 
-### Pitfall 2: Badge-Kriterien werden unerreichbar aber bleiben sichtbar
+### Pitfall 2: Auto-Enrollment erzeugt Konflikte mit UNIQUE-Constraint
 
-**Was schiefgeht:** `checkAndAwardBadges` in `badges.js` (Zeile 124-136) prueft direkt `konfi.gottesdienst_points` und `konfi.gemeinde_points`. Vier Badge-Kriterientypen sind betroffen:
-- `gottesdienst_points`: Unerreichbar wenn Gottesdienst deaktiviert
-- `gemeinde_points`: Unerreichbar wenn Gemeinde deaktiviert
-- `both_categories`: IMMER unerreichbar wenn ein Typ fehlt (erfordert beide >= Wert)
-- `total_points`: Summe aus beiden, also unfair wenn ein Typ fehlt
+**Was schiefgeht:** `event_bookings` hat einen UNIQUE-Constraint (Zeile 395): `UNIQUE (user_id, event_id)`. Wenn ein Pflicht-Event erstellt wird und Auto-Enrollment alle Jahrgangs-Konfis eintraegt, kann es Konflikte geben wenn:
+1. Ein Konfi sich bereits manuell fuer dasselbe Event angemeldet hatte (vor dem Pflicht-Flag)
+2. Admin setzt nachtraeglich das `mandatory`-Flag auf ein bestehendes Event -- Konfis die schon gebucht haben erzeugen UNIQUE-Violations
+3. Serien-Events: Auto-Enrollment fuer Serien-Events muss fuer JEDES Einzel-Event separat laufen
 
-Alle diese Badges bleiben sichtbar im Badge-Tab und auf dem Dashboard.
-
-**Warum es passiert:** Badge-Kriterien wurden unabhaengig von Punkte-Konfiguration designed. Es gibt keine Verbindung zwischen Jahrgang-Konfiguration und Badge-Erreichbarkeit.
+**Warum es passiert:** Die bestehende Buchungslogik prueft `existingBooking` nur im Kontext einer einzelnen Buchung. Massenhafte Auto-Enrollment-INSERTs ueberspringen diese Pruefung.
 
 **Konsequenzen:**
-- Unerreichbare Badges frustrieren Konfis
-- Badge-Fortschrittsanzeige in `konfi.js` (Zeile 832-863) zeigt 0% fuer deaktivierte Typen -- sieht nach Bug aus
-- Admin erstellt Badge mit `both_categories` Kriterium obwohl nur ein Typ aktiv ist -- kein Fehler, aber Badge wird nie vergeben
-- `CRITERIA_TYPES` Objekt (Zeile 9-84) bietet alle 13 Typen beim Erstellen an, auch irrelevante
+- Enrollment-Transaktion rollt komplett zurueck wenn EIN Konfi bereits gebucht ist
+- Kein Konfi wird eingetragen obwohl nur einer das Problem hat
+- Bei Serien-Events: eine einzige fehlgeschlagene Enrollment blockiert die ganze Serie
 
 **Praevention:**
-- Badge-Sichtbarkeit im Frontend filtern: Badges mit unerreichbarem Kriterientyp ausblenden oder als "nicht verfuegbar fuer deinen Jahrgang" markieren
-- Admin-Warnung: Beim Deaktivieren eines Punkte-Typs anzeigen welche Badges betroffen sind (Count + Liste)
-- Badge-Erstellungs-UI: `CRITERIA_TYPES` kontextabhaengig filtern -- nur erreichbare Typen anbieten
-- NICHT automatisch Badges loeschen oder deaktivieren -- Admin soll entscheiden, Typ koennte spaeter wieder aktiviert werden
+- `INSERT INTO event_bookings ... ON CONFLICT (user_id, event_id) DO UPDATE SET enrollment_type = 'mandatory'` -- bestehende Buchungen auf mandatory upgraden statt Fehler
+- ODER: `ON CONFLICT DO NOTHING` und danach die bereits gebuchten separat taggen
+- Serien-Events: Auto-Enrollment pro Einzel-Event, nicht in einer einzigen Transaktion
+- Edge Case "Pflicht-Flag nachtraeglich setzen": Alle Konfis des Jahrgangs pruefen, nur fehlende nachbuchen, bestehende Buchungen als `mandatory` markieren
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (Badge-Integration)
+**Betroffene Phase:** Auto-Enrollment-Logik (Backend)
 
 ---
 
-### Pitfall 3: Ranking wird unfair bei Punkte-Typ-Aenderung mitten im Jahr
+### Pitfall 3: Opt-out loescht Booking statt Status zu aendern
 
-**Was schiefgeht:** Das Ranking in `konfi.js` (Zeile 97-107) berechnet: `(kp.gottesdienst_points + kp.gemeinde_points) as points`. Wenn mitten im Jahr Gottesdienst-Punkte deaktiviert werden:
-- Konfi A hatte vorher 5 Gottesdienst + 5 Gemeinde = 10 Punkte
-- Konfi B ist neu dazugekommen und hat 8 Gemeinde = 8 Punkte
-- Ranking: A vor B, obwohl A seine 5 Gottesdienst-Punkte unter alten Regeln gesammelt hat
+**Was schiefgeht:** Der bestehende Abmelde-Flow (`konfi.js` Zeile 1718-1830) LOESCHT die Booking (`DELETE FROM event_bookings`) und erstellt einen Eintrag in `event_unregistrations`. Bei Pflicht-Events ist das fatal:
+1. Geloeschte Booking = kein Anwesenheits-Tracking moeglich
+2. Wenn Admin den Opt-out ablehnen will, muss er den Konfi manuell wieder eintragen
+3. Die Statistik "Wer hat sich abgemeldet vs. wer ist nicht erschienen" geht verloren
 
-**Warum es passiert:** Das SQL ist hardcoded auf beide Spalten. Es gibt keine Logik die prueft welche Punktearten fuer das Ranking zaehlen. Die Level-Berechnung in `levels.js` (Zeile 226: `total_points`) hat dasselbe Problem.
+**Warum es passiert:** Der Abmelde-Flow wurde fuer freiwillige Events designed. "Abmeldung" = "will nicht mehr teilnehmen" = Buchung loeschen. Bei Pflicht-Events bedeutet "Opt-out" aber "kann nicht, mit Begruendung" -- die Buchung muss BESTEHEN BLEIBEN mit neuem Status.
 
 **Konsequenzen:**
-- Unfaires Ranking nach Konfigurationsaenderung
-- Level-Berechnung (`levels.js` Zeile 243: `total_points`) basiert ebenfalls auf der Summe beider Typen
-- Level-Progress (Zeile 274-278) stimmt nicht mit der neuen Realitaet ueberein
-- Konfis unter neuen Regeln sind systematisch benachteiligt
+- Opt-out Konfi verschwindet aus der Teilnehmerliste -- Admin sieht ihn nicht mehr
+- Anwesenheitsstatistik fehlen die abgemeldeten Konfis -- "100% anwesend" obwohl 3 sich abgemeldet haben
+- Waitlist-Nachrueck-Logik (`cancel booking` Zeile 856-884) wird bei Pflicht-Events ausgeloest obwohl es keine Kapazitaetsbegrenzung gibt
+- `event_unregistrations` Tabelle ist nicht in der Schema-Datei definiert (nur im Code referenziert)
 
 **Praevention:**
-- ENTSCHEIDUNG TREFFEN VOR IMPLEMENTIERUNG: Was passiert mit bestehenden Punkten?
-  - **Option A (empfohlen):** Alte Punkte BEHALTEN, aber nur aktive Typen fuer neues Ranking nutzen (SQL mit JOIN auf Jahrgang-Konfiguration)
-  - **Option B:** Alle Punkte immer zaehlen (einfacher, aber potenziell unfair)
-  - **Option C:** Punkte des deaktivierten Typs nullen (destruktiv, nicht empfohlen)
-- Ranking-Query dynamisch bauen basierend auf Jahrgang-Konfiguration
-- Level-Berechnung analog anpassen
-- Diese Entscheidung hat massive UX-Implikationen -- mit dem Nutzer klaeren
+- Pflicht-Event-Opt-out als STATUS-Aenderung implementieren (`status = 'opted_out'`), NICHT als DELETE
+- Bestehenden Abmelde-Flow (`DELETE /events/:id/book`) NICHT fuer Pflicht-Events verwenden
+- Neuer Endpoint: `PUT /events/:id/opt-out` mit `reason` Body -- aendert Status, loescht nicht
+- Die `event_unregistrations` Tabelle PARALLEL als Audit-Log behalten (Grund + Zeitstempel)
+- Kapazitaets-/Waitlist-Logik fuer Pflicht-Events komplett ueberspringen (Pflicht = keine Kapazitaet)
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (Ranking + Levels) -- frueh klaeren, da Entscheidung alle anderen Anpassungen beeinflusst
+**Betroffene Phase:** Opt-out-Flow (Backend + Frontend), muss VOR Anwesenheitsstatistik fertig sein
 
 ---
 
-### Pitfall 4: getPointField wirft Error bei Vergabe-Versuch an deaktivierten Typ
+### Pitfall 4: QR-Check-in ohne Offline-Fallback und Replay-Schutz
 
-**Was schiefgeht:** `getPointField()` in `validation.js` (Zeile 29-34) ist eine Sicherheits-Whitelist die nur `gottesdienst` und `gemeinde` akzeptiert und bei allem anderen einen Error wirft. Wenn ein Admin eine Aktivitaet vom Typ "Gottesdienst" an einen Konfi vergeben will, dessen Jahrgang Gottesdienst-Punkte deaktiviert hat, gibt es einen 500er-Fehler statt einer klaren Meldung.
+**Was schiefgeht:** QR-Code Check-in auf einem Smartphone erfordert:
+1. Kamera-Zugriff (nicht immer genehmigt)
+2. Netzwerk-Verbindung (Kirche/Gemeindehaus oft schlecht)
+3. Schutz gegen Weitergabe des QR-Codes (Konfi fotografiert QR, gibt ihn weiter)
 
-**Warum es passiert:** `getPointField` validiert den Typ-NAMEN, nicht ob der Typ fuer den Konfi AKTIV ist. Die Deaktivierung eines Typs muss VOR dem `getPointField`-Call geprueft werden. Betroffene Stellen:
-- `activities.js`: Zeile 246, 320, 455
-- `konfi-managment.js`: Zeile 476, 555, 609, 666
+**Warum es passiert:** QR-Check-in wird als simples "QR scannen = anwesend" implementiert. In der Praxis scheitert es an physischen Gegebenheiten und der Kreativitaet von 14-Jaehrigen.
 
 **Konsequenzen:**
-- 500er-Fehler bei Punkte-Vergabe
-- Bonus-Punkte-Vergabe bricht ab
-- Aktivitaets-Requests werden mit generischem Fehler abgelehnt
-- Admin versteht nicht warum die Vergabe fehlschlaegt
+- Kein Internet: QR-Scan schlaegt fehl, Admin muss manuell eintragen, QR-System verliert Glaubwuerdigkeit
+- QR-Code-Weitergabe: Konfi ist "anwesend" obwohl er zu Hause ist
+- Kamera-Permission-Dialog bei jedem Check-in auf iOS (wenn nicht persistent gespeichert)
+- Admin-Geraet als Scanner: Flaschenhals wenn 30 Konfis gleichzeitig einchecken
 
 **Praevention:**
-- Validierung VOR `getPointField`: "Ist dieser Punkte-Typ fuer den Jahrgang dieses Konfis aktiv?"
-- Klare Fehlermeldung: "Gottesdienst-Punkte sind fuer diesen Jahrgang deaktiviert"
-- `getPointField` selbst NICHT aendern -- die Whitelist ist Sicherheitsinfrastruktur aus v1.0
-- Aktivitaeten-Erstellung/-Bearbeitung: Dropdown fuer Punkte-Typ nur aktive Typen anbieten
-- Bestehende Aktivitaeten mit deaktiviertem Typ: Weiterhin anzeigen aber Vergabe blockieren
+- **Architektur-Entscheidung zuerst:** Wer scannt wen?
+  - **Option A (empfohlen):** Admin/Teamer scannt QR-Codes der Konfis -- ein Geraet, kontrolliert
+  - **Option B:** Konfis scannen einen Event-QR-Code -- 30 Geraete parallel, aber Weitergabe-Risiko
+  - **Option C:** Beides optional -- mehr Code, mehr Edge Cases
+- **Admin-scannt-Konfi-QR:** Konfi-App zeigt persistent einen QR-Code (Konfi-ID + HMAC-Signatur). Admin scannt, Backend validiert. Kein Replay-Problem weil Admin physisch neben dem Konfi steht
+- **Konfi-scannt-Event-QR:** Event-QR als TOTP (zeitbasiert, rotierend alle 30s) -- verhindert Screenshot-Weitergabe. ABER: braucht Internet auf Konfi-Geraet
+- **Manueller Fallback IMMER:** Bestehende Admin-Attendance-UI (`PUT /events/:id/participants/:id/attendance`) bleibt als Fallback. QR ist Beschleunigung, nicht Ersatz
+- Capacitor Camera-Plugin fuer QR-Scanning, NICHT HTML5 getUserMedia (Performance, Permissions)
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (Backend-Validierung) -- frueher als UI-Arbeit
+**Betroffene Phase:** QR-Check-in (eigene Phase, nach Basis-Anwesenheit)
 
 ---
 
-### Pitfall 5: Dashboard-Widget-Konfiguration ohne Default-Migration
+### Pitfall 5: Punkte-Vergabe wird bei Pflicht-Events faelschlich ausgeloest
 
-**Was schiefgeht:** Wenn Dashboard-Widgets per Konfiguration gesteuert werden, braucht jede bestehende Organisation einen Default-Eintrag. Ohne Migration sehen bestehende Organisationen entweder ein leeres Dashboard (wenn Default = nichts anzeigen) oder die Konfiguration wirkt nicht (wenn Code auf Existenz der Config prueft und ohne Config den alten Pfad nimmt).
+**Was schiefgeht:** Der bestehende Attendance-Endpunkt (`PUT /events/:id/participants/:id/attendance`, events.js Zeile 1288-1432) vergibt automatisch Punkte wenn `attendance_status === 'present' && eventData.points > 0`. Die Anforderung fuer v1.7 ist explizit: "Keine Punkte fuer Pflicht-Events, nur Anwesenheits-Tracking". Wenn der bestehende Endpunkt wiederverwendet wird OHNE Guard:
+1. Admin setzt Anwesenheit -> Punkte werden vergeben -> widerspricht der Anforderung
+2. Wenn `points = 0` gesetzt wird: funktioniert, ABER Admin koennte versehentlich Punkte konfigurieren
+3. Level-Up-Notifications werden ausgeloest obwohl keine Punkte vergeben werden sollen
 
-**Warum es passiert:** Neues Feature wird implementiert ohne bestehende Daten zu migrieren. Das `settings`-System (Key-Value in `settings` Tabelle mit `organization_id`) hat keine Default-Garantie.
+**Warum es passiert:** Der Attendance-Flow ist fest mit der Punkte-Vergabe gekoppelt (Zeile 1314-1385). Es gibt keine Trennung zwischen "Anwesenheit erfassen" und "Punkte vergeben".
 
 **Konsequenzen:**
-- Bestandskunden sehen nach Docker-Rebuild ploetzlich ein anderes Dashboard
-- Oder: Config-Seite zeigt alles an, Admin speichert ohne Aenderung, aber die Defaults waren nicht was der Admin erwartet
-- Race Condition: Admin oeffnet Config, sieht Default-State, aendert nichts, speichert -- jetzt sind explizite Defaults in der DB die ggf. nicht mit den Code-Defaults uebereinstimmen
+- Punkte fuer Unterricht/Pflicht-Events verfaelschen Ranking und Level
+- Badge-Check (`checkAndAwardBadges`, Zeile 1343) laeuft unnoetig
+- Push-Notification "Du hast X Punkte erhalten" obwohl es ein Pflicht-Event ohne Punkte ist
 
 **Praevention:**
-- SQL-Migrationsskript (`init-scripts/XXX_dashboard_config.sql`) das fuer JEDE existierende Organisation Default-Widget-Konfiguration einfuegt
-- Backend-Fallback: Wenn keine Konfiguration existiert = ALLE Widgets sichtbar (nicht keine)
-- Frontend Default-State = alles sichtbar -- defensiver Default
-- Settings-Endpoint muss fehlende Keys mit Defaults auffuellen bevor er antwortet
+- Guard im Attendance-Endpunkt: `if (event.mandatory && eventData.points > 0) { /* skip points */ }`
+- ODER besser: `events` Tabelle bekommt `mandatory BOOLEAN DEFAULT false` -- und wenn `mandatory = true`, wird `points` auf 0 erzwungen (DB-Level: `CHECK (NOT mandatory OR points = 0)`)
+- Attendance-Endpunkt in zwei logische Bloecke trennen: (1) Status setzen, (2) Punkte vergeben (nur wenn nicht mandatory)
+- Badge-Check und Level-Check nur ausfuehren wenn Punkte vergeben wurden
 
-**Betroffene Phase:** Dashboard-Konfiguration (Datenmigration)
+**Betroffene Phase:** Backend-Anpassung (Attendance-Flow) -- muss vor Frontend-Arbeit stehen
+
+---
+
+### Pitfall 6: Multi-Tenant-Isolation bei Auto-Enrollment durchbrochen
+
+**Was schiefgeht:** Auto-Enrollment muss alle Konfis eines Jahrgangs eintragen. Die Query dafuer muesste sein:
+```sql
+SELECT u.id FROM users u
+JOIN konfi_profiles kp ON u.id = kp.user_id
+WHERE kp.jahrgang_id = $1 AND u.organization_id = $2 AND u.is_active = true
+```
+Wenn `organization_id` im WHERE vergessen wird, werden Konfis aus ANDEREN Organisationen eingetragen die zufaellig dieselbe Jahrgang-ID haben (Jahrgaenge sind pro Organisation, aber IDs sind global).
+
+**Warum es passiert:** `jahrgang_id` klingt eindeutig, ist es aber nicht -- verschiedene Organisationen koennen Jahrgaenge mit gleicher ID haben (SERIAL-Counter). Bestehende Event-Queries filtern immer auf `organization_id`, aber eine neue Auto-Enrollment-Query koennte es vergessen.
+
+**Konsequenzen:**
+- Konfis aus Organisation A erscheinen in Pflicht-Events von Organisation B
+- Datenschutz-Verstoss (DSGVO-relevant)
+- Push-Notifications an falsche Konfis
+
+**Praevention:**
+- JEDE Enrollment-Query MUSS `organization_id` im WHERE haben
+- Jahrgang-Lookup: IMMER `jahrgaenge.organization_id = req.user.organization_id` pruefen
+- Test-Case: Zwei Organisationen mit Jahrgang-ID 1 -- darf NICHT cross-enrollen
+- Review-Checkliste: Jede neue Query auf `organization_id` Filter pruefen
+
+**Betroffene Phase:** Auto-Enrollment-Logik (Backend) -- Code-Review-Fokus
 
 ## Moderate Pitfalls
 
-### Pitfall 6: Fortschrittsbalken-Logik bei Einzel-Punkte-Typ
+### Pitfall 7: Bestehende Konfi-Event-UI verwirrt bei Pflicht-Events
 
-**Was schiefgeht:** `DashboardView.tsx` berechnet `totalTarget = targetGottesdienst + targetGemeinde` (Zeile 544). Bei deaktiviertem Gottesdienst (target = 0) zeigt ein Konfi mit 10/10 Gemeinde-Punkten 100% Fortschritt -- das ist technisch korrekt. Aber: `totalCurrentPoints = gottesdienstPoints + gemeindePoints` (Zeile 545) zaehlt weiterhin alte Gottesdienst-Punkte mit, was den Fortschritt ueber 100% treiben kann obwohl der Konfi nur Gemeinde-Punkte hat.
+**Was schiefgeht:** Die Konfi-EventsView zeigt aktuell "Anmelden"/"Abmelden"-Buttons. Bei Pflicht-Events soll es keinen "Anmelden"-Button geben (automatisch eingetragen), aber einen "Abmelden mit Grund"-Button. Wenn die UI nicht klar zwischen freiwilligen und Pflicht-Events unterscheidet:
+1. Konfi sieht "Abmelden" und denkt er kann sich einfach abmelden (ohne Grund)
+2. Konfi sieht kein visuelles Kennzeichen dass das Event Pflicht ist
+3. Bestehender "Stornieren"-Flow wird fuer Opt-out missbraucht (loescht Booking, siehe Pitfall 3)
 
 **Praevention:**
-- `totalTarget` und `totalCurrentPoints` nur aktive Punkte-Typen beruecksichtigen
-- Wenn Gottesdienst deaktiviert: `totalCurrentPoints = gemeindePoints` (nicht `gottesdienstPoints + gemeindePoints`)
-- Konsistenz mit Ranking-Entscheidung (Pitfall 3) sicherstellen
+- Visuelles Kennzeichen fuer Pflicht-Events: Icon/Badge "Pflicht" neben dem Event-Titel
+- "Abmelden"-Button durch "Abmelden mit Begruendung"-Button ersetzen (oeffnet Modal mit Textfeld)
+- "Anmelden"-Button bei Pflicht-Events komplett ausblenden (statt disabled)
+- Registrierungsfenster-Logik (`registration_opens_at`/`registration_closes_at`) fuer Pflicht-Events ueberspringen
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (Dashboard-Fortschritt)
+**Betroffene Phase:** Frontend Konfi-EventsView
 
 ---
 
-### Pitfall 7: Punkte-Typ-Konfiguration an falscher Stelle gespeichert
+### Pitfall 8: Anwesenheitsstatistik zaehlt Opt-outs falsch
 
-**Was schiefgeht:** Punkte-Typ-Konfiguration wird in der `settings` Tabelle gespeichert (wie `target_gottesdienst`/`target_gemeinde`). Aber die Anforderung ist "pro Jahrgang konfigurierbar" -- die `settings` Tabelle hat nur `organization_id`, nicht `jahrgang_id`.
+**Was schiefgeht:** Die Statistik "3 von 20 Konfis fehlten" muss klar unterscheiden:
+- **Entschuldigt abwesend:** Hat sich vorher per Opt-out abgemeldet (mit Grund)
+- **Unentschuldigt abwesend:** War einfach nicht da (kein Opt-out, kein Check-in)
+- **Anwesend:** Check-in erfolgt
 
-**Warum es passiert:** Naheliegende Wiederverwendung der bestehenden Settings-Infrastruktur. Aber Punkte-Typ-Konfiguration ist jahrgangs-spezifisch, nicht organisations-weit.
+Wenn Opt-outs als "absent" gezaehlt werden (wie im bestehenden `attendance_status`), gibt es keine Unterscheidung. Der Admin sieht "5 absent" aber weiss nicht ob 3 davon sich abgemeldet haben.
+
+**Warum es passiert:** Bestehendes `attendance_status` Feld hat nur zwei Werte: `'present'` und `'absent'`. Ein dritter Wert wie `'excused'` fehlt.
+
+**Praevention:**
+- `attendance_status` um `'excused'` erweitern (CHECK-Constraint aktualisieren)
+- ODER: Opt-out-Status in `event_bookings.status = 'opted_out'` speichern und `attendance_status` nur fuer tatsaechlich Anwesende/Abwesende nutzen (empfohlen -- sauberere Trennung)
+- Statistik-Query: `COUNT(CASE WHEN status = 'confirmed' AND attendance_status = 'present')` vs. `COUNT(CASE WHEN status = 'opted_out')` vs. `COUNT(CASE WHEN status = 'confirmed' AND attendance_status = 'absent')`
+- Dashboard-Widget: Drei Zahlen statt zwei (anwesend / entschuldigt / unentschuldigt)
+
+**Betroffene Phase:** Anwesenheitsstatistik (Datenmodell-Entscheidung VOR Frontend)
+
+---
+
+### Pitfall 9: QR-Code-System Kollision mit bestehendem Invite-QR
+
+**Was schiefgeht:** Das bestehende QR-Code-System (`AdminInvitePage.tsx`) generiert QR-Codes die auf `https://konfi-quest.de/register?code=XXXXXXXX` verweisen. Wenn der neue Event-Check-in-QR aehnlich aussieht, scannt ein Konfi versehentlich einen Invite-QR als Check-in oder umgekehrt.
+
+**Warum es passiert:** Beide QR-Systeme verwenden dieselbe Library (`qrcode`), sehen visuell identisch aus, und die App muss entscheiden was mit dem gescannten Inhalt passieren soll.
 
 **Konsequenzen:**
-- Alle Jahrgaenge einer Organisation haben dieselbe Konfiguration
-- Aeltere Jahrgaenge (z.B. 2024/2025) koennen nicht anders konfiguriert werden als der aktuelle
-- Wenn ein Jahrgang archiviert wird (v1.9), geht seine Konfiguration verloren
+- Falscher QR-Typ wird gescannt -> Fehler oder unerwartete Aktion
+- App versucht Check-in-QR als Invite zu interpretieren -> "Ungültiger Einladungscode"
+- Verwirrung bei Admins die beide QR-Typen nutzen
 
 **Praevention:**
-- Punkte-Typ-Konfiguration in `jahrgaenge` Tabelle als Spalten speichern: `gottesdienst_enabled BOOLEAN DEFAULT true`, `gemeinde_enabled BOOLEAN DEFAULT true`
-- ODER: Separate Tabelle `jahrgang_config (jahrgang_id, key, value)` -- flexibler aber komplexer
-- Die `settings`-Tabelle fuer organisations-weite Dashboard-Widget-Konfiguration nutzen (das ist org-weit, nicht pro Jahrgang)
+- QR-Code-Inhalt mit Typ-Prefix: `konfiquest://invite/XXXXXXXX` vs. `konfiquest://checkin/EVENT_ID/HMAC`
+- Scanner-UI erkennt den Typ und leitet entsprechend weiter
+- Visuell unterscheidbar: Invite-QR mit anderem Farbschema als Check-in-QR
+- Deeplink-Handler in der App der beide Typen dispatcht
 
-**Betroffene Phase:** Punkte-Typ-Konfiguration (Datenmodell) -- muss zuerst entschieden werden
+**Betroffene Phase:** QR-Check-in (Datenformat-Design)
 
 ---
 
-### Pitfall 8: Dashboard-Widget-Konfiguration wird ueber-engineered
+### Pitfall 10: Neue Konfis nach Event-Erstellung werden nicht nachgetragen
 
-**Was schiefgeht:** Drag-and-Drop Sortierung, Widget-Groessen, benutzerdefinierte Farben, Widget-Positionen -- alles Features die niemand braucht aber Wochen kosten.
+**Was schiefgeht:** Auto-Enrollment findet beim Erstellen des Events statt. Ein Konfi der DANACH dem Jahrgang beitritt (spaete Registrierung, Jahrgang-Wechsel), wird nicht automatisch fuer bestehende Pflicht-Events eingetragen.
+
+**Warum es passiert:** Enrollment ist ein einmaliger Akt bei Event-Erstellung, kein reaktives System. Es gibt keinen Trigger "neuer Konfi im Jahrgang -> alle zukuenftigen Pflicht-Events buchen".
+
+**Konsequenzen:**
+- Neue Konfis fehlen in allen bestehenden Pflicht-Events
+- Admin merkt es erst bei der Anwesenheitspruefung
+- Statistik "15 von 20 anwesend" obwohl es 22 Konfis im Jahrgang gibt
 
 **Praevention:**
-- Maximal 5-7 Widgets als Toggle-Schalter: Punkte-Bereich (Rings + Level), Losung, Ranking, Badges, Events/Termine, Countdown
-- KEINE Drag-and-Drop-Sortierung -- feste Reihenfolge reicht
-- KEINE Widget-Groessen oder -Positionen
-- KEINE benutzerdefinierte Farben fuer Widgets
-- Einfache Toggles in der Settings-Seite, kein eigenes Dashboard-Builder-UI
+- **Trigger-basiert (empfohlen):** Wenn ein Konfi einem Jahrgang zugewiesen wird (Registrierung oder Jahrgang-Wechsel), alle zukuenftigen Pflicht-Events dieses Jahrgangs finden und Auto-Enrollment ausfuehren
+- Betroffene Stellen: `auth.js` (Konfi-Registrierung mit Invite-Code), `konfi-managment.js` (Jahrgang-Zuweisung durch Admin)
+- `ON CONFLICT DO NOTHING` verwenden damit doppelte Enrollments keine Fehler erzeugen
+- NICHT nur bei Event-Erstellung enrollen, sondern auch bei Jahrgang-Aenderung
 
-**Betroffene Phase:** Dashboard-Konfiguration (UI-Design)
+**Betroffene Phase:** Auto-Enrollment-Logik (Backend) -- leicht zu vergessen, schwer nachtraeglich zu fixen
 
 ---
 
-### Pitfall 9: Settings-Tabelle wird zum Chaos aus Key-Value-Paaren
+### Pitfall 11: "Was mitbringen"-Feld bricht bestehende Event-Erstellung
 
-**Was schiefgeht:** Fuer jedes Widget ein eigener Key: `dashboard_widget_ranking_visible`, `dashboard_widget_losung_visible`, `dashboard_widget_badges_visible` etc. Bei 6 Widgets sind das 6 DB-Rows pro Organisation. Die Settings-API muss alle einzeln laden und zurueckgeben.
+**Was schiefgeht:** Das neue optionale Textfeld "Was mitbringen" (`bring_items` o.ae.) auf Events muss:
+1. In der `events` Tabelle als Spalte hinzugefuegt werden (Migration)
+2. Im Event-Erstellen-Modal eingefuegt werden (Frontend)
+3. Im Event-Update-Endpunkt (`PUT /events/:id`) mit aufgenommen werden
+4. In der Konfi-Event-Ansicht und im Dashboard-Widget angezeigt werden
+
+Wenn nur 1-3 gemacht werden aber 4 vergessen wird, sehen Admins das Feld aber Konfis nicht. Wenn nur 1 und 4 gemacht werden, kann es nie befuellt werden.
 
 **Praevention:**
-- Dashboard-Widget-Konfiguration als EIN JSON-Objekt unter einem Key speichern: `dashboard_config = {"ranking": true, "losung": true, "badges": true, ...}`
-- Oder: Bitmask in einer Integer-Spalte (noch kompakter, aber weniger lesbar)
-- Backend gibt fehlende Keys mit Default `true` zurueck
-- Frontend sendet immer das komplette Objekt, nicht einzelne Keys
+- Checkliste: Neue Event-Spalte -> 5 Stellen anpassen: Schema, CREATE, UPDATE, GET (Admin), GET (Konfi), Dashboard-Widget
+- Migration-Skript: `ALTER TABLE events ADD COLUMN bring_items TEXT;` (nullable, kein Default noetig)
+- Event-Validation: KEIN required-Check -- Feld ist optional fuer alle Events
 
-**Betroffene Phase:** Dashboard-Konfiguration (Datenmodell)
+**Betroffene Phase:** Event-Model-Erweiterung (fruehe Phase, geringe Komplexitaet)
 
 ---
 
-### Pitfall 10: KonfiDetailView (Admin) vergisst Punkte-Typ-Konfiguration
+### Pitfall 12: Kapazitaetsprufung-Logik greift bei Pflicht-Events
 
-**Was schiefgeht:** `KonfiDetailView.tsx` laedt Settings separat (Zeile 180-181) und gibt sie an ActivityRings weiter (Zeile 499-500). Wenn die Punkte-Typ-Konfiguration im Jahrgang statt in Settings gespeichert wird, muss KonfiDetailView die Daten von einer anderen Quelle laden. Ausserdem zeigt es `gottesdienstPoints` und `gemeindePoints` getrennt an -- bei deaktiviertem Typ irrelevant.
+**Was schiefgeht:** Der bestehende Booking-Flow (`POST /events/:id/book`, Zeile 730-828) prueft:
+- Registrierungsfenster (`registration_opens_at`/`registration_closes_at`)
+- Kapazitaet (`max_participants`)
+- Waitlist-Verfuegbarkeit
+
+Pflicht-Events mit Auto-Enrollment DUERFEN diese Pruefungen nicht durchlaufen. Wenn Auto-Enrollment den bestehenden Book-Endpunkt aufruft statt direkt in die DB zu schreiben:
+- `max_participants` blockiert das Enrollment wenn mehr Konfis als Plaetze existieren
+- Registrierungsfenster blockiert Enrollment ausserhalb des Zeitraums
+- Waitlist-Logik wird unnoetig ausgeloest
 
 **Praevention:**
-- Liste aller Admin-Views die Settings/Goals nutzen: `KonfiDetailView.tsx`, `KonfisView.tsx`, `AdminGoalsPage.tsx`
-- Alle muessen auf die neue Datenquelle umgestellt werden
-- Bedingte Anzeige der Punkte-Spalten basierend auf Jahrgang-Konfiguration
+- Auto-Enrollment NICHT ueber den Book-Endpunkt routen
+- Direkte DB-Inserts mit `ON CONFLICT DO NOTHING`
+- `max_participants` bei Pflicht-Events auf 0 setzen (0 = unbegrenzt im bestehenden Code, Zeile 798: `if (totalCapacity > 0 && ...)`)
+- ODER: Kapazitaetspruefung explizit ueberspringen wenn `event.mandatory = true`
+- Registrierungsfenster bei Pflicht-Events ignorieren (immer "offen" fuer Auto-Enrollment)
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (Admin-Views)
+**Betroffene Phase:** Auto-Enrollment-Logik (Backend-Architektur)
 
 ## Geringfuegige Pitfalls
 
-### Pitfall 11: AdminGoalsPage erlaubt 0 als Ziel ohne klare Semantik
+### Pitfall 13: Push-Notification-Spam bei Massen-Enrollment
 
-**Was schiefgeht:** `AdminGoalsPage.tsx` erlaubt bereits `target_gottesdienst: 0` und `target_gemeinde: 0` ueber den Stepper. Aber der Wert 0 bedeutet aktuell "kein Ziel gesetzt", nicht "Punkte-Typ deaktiviert". Wenn 0 jetzt "deaktiviert" bedeuten soll, muss die UI das klar kommunizieren.
+**Was schiefgeht:** Wenn 30 Konfis gleichzeitig per Auto-Enrollment eingetragen werden und jedes Enrollment eine Push-Notification ausloest, erhaelt jeder Konfi eine Nachricht. Bei Serien-Events mit 10 Terminen = 300 Notifications auf einmal.
 
 **Praevention:**
-- Expliziter Toggle "Punkte-Typ aktiv/inaktiv" statt implizit ueber Zielwert 0
-- Oder: Wert 0 = deaktiviert, aber mit klarer visueller Indikation (ausgegraut, Label "Deaktiviert")
-- Backend: Wenn Typ deaktiviert, Stepper fuer Zielwert ausgrauen
+- EINE Push-Notification pro Konfi bei Pflicht-Event-Erstellung: "Du wurdest fuer [Event-Name] eingetragen"
+- Bei Serien-Events: "Du wurdest fuer [Serien-Name] (10 Termine) eingetragen" -- EINE Nachricht
+- Batch-Versand: PushService.sendToJahrgangKonfis() statt Einzel-Notifications in Schleife
+- Rate-Limiter fuer Push nicht triggern (bestehender Rate-Limiter: 10 Fehlversuche / 15 Min Cooldown)
 
-**Betroffene Phase:** Punkte-Typ-Konfiguration (UI-Semantik)
-
----
-
-### Pitfall 12: Push-Notifications referenzieren deaktivierte Punkte-Typen
-
-**Was schiefgeht:** Level-Up-Notifications (v1.5) basieren auf `total_points`. Wenn Notification-Text "Du hast jetzt 15 Gesamtpunkte!" sagt aber nur Gemeinde-Punkte aktiv sind, ist das verwirrend. Badge-Earned-Notifications fuer unerreichbare Badges koennten theoretisch nicht auftreten, aber die Texte referenzieren trotzdem Punkte-Typen.
-
-**Praevention:** Notification-Texte dynamisch basierend auf aktiver Konfiguration generieren. Level-Up Berechnung konsistent mit Ranking/Dashboard halten.
-
-**Betroffene Phase:** Punkte-Logik-Anpassung (Notifications)
+**Betroffene Phase:** Auto-Enrollment (Push-Integration)
 
 ---
 
-### Pitfall 13: Profil-Seite zeigt beide Punkte-Typen immer an
+### Pitfall 14: Anwesenheitsstatistik ohne Zeitraum-Filter
 
-**Was schiefgeht:** `ProfileView.tsx` und `KonfiProfilePage.tsx` zeigen `gottesdienst_points` und `gemeinde_points` getrennt an. Bei deaktiviertem Typ sieht der Konfi eine Zeile mit "Gottesdienst: 0" die nicht relevant ist.
+**Was schiefgeht:** "Anwesenheitsstatistik pro Konfi" ohne Zeitraum-Filter zeigt ALLE Events seit Beginn. Bei aktiven Gemeinden mit 2+ Events pro Woche wird die Liste schnell unuebersichtlich und die Anwesenheitsquote (z.B. 85%) hat keinen Kontext.
 
-**Praevention:** Profil-Anzeige dynamisch filtern basierend auf Jahrgang-Konfiguration.
+**Praevention:**
+- Default-Zeitraum: Aktuelles Konfirmationsjahr (vom Jahrgangs-Startdatum bis heute)
+- Filteroption: Letzter Monat, letztes Quartal, gesamt
+- Nur Pflicht-Events in die Anwesenheitsquote einrechnen (freiwillige Events verfaelschen die Quote)
+- Gruppenstatistik pro Jahrgang: Durchschnittliche Anwesenheitsquote
 
-**Betroffene Phase:** Punkte-Logik-Anpassung (UI-Bereinigung)
+**Betroffene Phase:** Anwesenheitsstatistik (Frontend)
+
+---
+
+### Pitfall 15: Event-Loeschen mit Auto-Enrollment-Bookings
+
+**Was schiefgeht:** Der bestehende Loesch-Flow (`DELETE /events/:id`, Zeile 616-728) verhindert das Loeschen wenn `confirmed` Bookings existieren (Zeile 630-634). Bei Pflicht-Events haben IMMER alle Konfis eine Booking -> Event kann NIE geloescht werden.
+
+**Praevention:**
+- Loesch-Guard fuer Pflicht-Events anpassen: Enrolled-Bookings zaehlen nicht als Blocker
+- ODER: Pflicht-Events koennen nur abgesagt werden (bestehendes Cancel-Feature, `PUT /events/:id/cancel`), nicht geloescht
+- Cancel-Flow bei Pflicht-Events: Alle Enrollments auf `cancelled` setzen + Push an alle Konfis
+
+**Betroffene Phase:** Backend-Anpassung (Event-Lifecycle)
 
 ## Phasen-spezifische Warnungen
 
 | Phase-Thema | Wahrscheinlicher Pitfall | Mitigation |
 |-------------|--------------------------|------------|
-| Datenmodell-Entscheidung | Punkte-Typ in `settings` statt `jahrgaenge` speichern (Pitfall 7) | Pro Jahrgang = Spalte/Config in `jahrgaenge` Tabelle |
-| Ranking-Entscheidung | Keine klare Regel fuer alte Punkte (Pitfall 3) | VOR Implementierung mit User klaeren: behalten vs. nur aktive zaehlen |
-| Backend-Validierung | `getPointField` Error statt klarer Meldung (Pitfall 4) | Typ-Check VOR getPointField in allen 8 betroffenen Stellen |
-| ActivityRings Anpassung | Nur Ring ausblenden, Legende und Zentral-Anzeige vergessen (Pitfall 1) | Alle drei Bereiche muessen konsistent reagieren |
-| Badge-Integration | Unerreichbare Badges sichtbar lassen (Pitfall 2) | Sichtbarkeit filtern, Admin warnen, NICHT loeschen |
-| Dashboard-Widget-System | Over-Engineering mit Drag-and-Drop (Pitfall 8) | Nur Toggle-Schalter, feste Reihenfolge |
-| Dashboard-Widget-Datenmodell | Viele einzelne Settings-Keys (Pitfall 9) | Ein JSON-Objekt unter einem Key |
-| Datenmigration | Bestehende Orgs ohne Defaults (Pitfall 5) | SQL-Migration mit Defaults fuer alle existierenden Organisationen |
-| Admin-Views | KonfiDetailView, KonfisView vergessen (Pitfall 10) | Checkliste aller Views die Settings/Goals nutzen abarbeiten |
-| Goals-UI Semantik | 0 = "kein Ziel" vs. 0 = "deaktiviert" (Pitfall 11) | Expliziter Toggle oder klare visuelle Unterscheidung |
+| Datenmodell/Migration | CHECK-Constraint blockiert neue Stati (Pitfall 1) | Schema-Datei zuerst synchronisieren, dann erweitern |
+| Auto-Enrollment | UNIQUE-Violations bei Massen-Insert (Pitfall 2) | ON CONFLICT DO NOTHING/UPDATE verwenden |
+| Auto-Enrollment | Neue Konfis nicht nachgetragen (Pitfall 10) | Trigger bei Jahrgang-Zuweisung, nicht nur bei Event-Erstellung |
+| Auto-Enrollment | Kapazitaetspruefung greift (Pitfall 12) | Direkte DB-Inserts, nicht ueber Book-Endpunkt |
+| Opt-out-Flow | Booking wird geloescht statt Status geaendert (Pitfall 3) | Neuer Endpoint PUT statt bestehendes DELETE |
+| QR-Check-in | Kein Offline-Fallback (Pitfall 4) | Admin-scannt-Konfi als Default, manueller Fallback immer |
+| QR-Check-in | Kollision mit Invite-QR (Pitfall 9) | Typ-Prefix im QR-Inhalt |
+| Attendance-Backend | Punkte werden bei Pflicht-Events vergeben (Pitfall 5) | Guard: mandatory -> keine Punkte |
+| Anwesenheitsstatistik | Opt-outs nicht von Abwesenheit unterscheidbar (Pitfall 8) | Drei-Werte-Modell: anwesend/entschuldigt/unentschuldigt |
+| Multi-Tenant | organization_id im Enrollment vergessen (Pitfall 6) | Code-Review-Checkliste |
+| Event-Lifecycle | Pflicht-Event nicht loeschbar (Pitfall 15) | Cancel statt Delete, oder Guard anpassen |
 
 ## Abhaengigkeits-Reihenfolge der Pitfall-Mitigationen
 
 ```
-1. Datenmodell-Entscheidung (Pitfall 7) -- wo speichern?
+1. Datenmodell-Entscheidungen (Pitfall 1, 8)
+   - CHECK-Constraint synchronisieren
+   - Status-Modell festlegen: enrolled/opted_out/excused
+   - mandatory-Spalte auf events
+   - bring_items-Spalte auf events (Pitfall 11)
    |
    v
-2. Ranking-Entscheidung (Pitfall 3) -- wie zaehlen?
+2. Auto-Enrollment-Backend (Pitfall 2, 6, 10, 12, 13)
+   - Enrollment-Logik mit ON CONFLICT
+   - Tenant-Isolation sicherstellen
+   - Trigger bei Jahrgang-Zuweisung
+   - Kapazitaetspruefung ueberspringen
+   - Push-Batch statt Einzel-Notifications
    |
    v
-3. Backend-Validierung (Pitfall 4) -- Typ-Check vor getPointField
+3. Opt-out-Flow (Pitfall 3)
+   - Neuer Endpunkt, Status-Aenderung statt DELETE
+   - Audit-Log in event_unregistrations beibehalten
    |
    v
-4. Datenmigration (Pitfall 5) -- Defaults fuer bestehende Orgs
+4. Attendance-Backend (Pitfall 5)
+   - Punkte-Guard fuer mandatory Events
+   - Badge/Level-Check ueberspringen
    |
    v
-5. Frontend-Anpassungen parallel:
-   - ActivityRings (Pitfall 1)
-   - Badge-Sichtbarkeit (Pitfall 2)
-   - Fortschrittsbalken (Pitfall 6)
-   - Admin-Views (Pitfall 10)
-   - Profil (Pitfall 13)
+5. Frontend parallel:
+   - Konfi-Event-UI (Pitfall 7)
+   - Anwesenheitsstatistik (Pitfall 8, 14)
+   - Dashboard-Widget "Naechstes Event"
    |
    v
-6. Dashboard-Widget-System (Pitfall 8, 9) -- separates Feature, kann parallel
+6. QR-Check-in (Pitfall 4, 9)
+   - Eigene Phase, kann spaeter kommen
+   - QR-Format mit Typ-Prefix
+   - Scanner-UI mit Fallback
+   |
+   v
+7. Event-Lifecycle (Pitfall 15)
+   - Loesch-Guard anpassen
+   - Cancel-Flow fuer Pflicht-Events
 ```
 
 ## Quellen
 
-- Direkte Code-Analyse: `ActivityRings.tsx` (350 Zeilen), `DashboardView.tsx` (~1400 Zeilen), `badges.js` (504 Zeilen), `levels.js` (299 Zeilen), `konfi.js` (~900 Zeilen), `konfi-managment.js` (~700 Zeilen), `activities.js` (~500 Zeilen), `validation.js` (65 Zeilen), `settings.js`, `AdminGoalsPage.tsx`, `KonfisView.tsx`, `KonfiDetailView.tsx`, `KonfiDashboardPage.tsx`
-- Projekt-Historie: v1.0 Security Hardening (getPointField-Whitelist), v1.2 ActivityRings 3-Runden-Design, v1.4 Badge-Logik-Debug (13 Kriterientypen), v1.5 Push-Notifications (Level-Up)
-- Architektur-Kontext: `PROJECT.md`, `CLAUDE.md`
+- Direkte Code-Analyse: `events.js` (1500+ Zeilen, alle CRUD- und Booking-Endpunkte), `konfi.js` (Unregistration-Flow Zeile 1718-1830), `01-create-schema.sql` (event_bookings CHECK-Constraints Zeile 387), `AdminInvitePage.tsx` (QR-Code-System)
+- Bestehende Datenmodelle: `event_bookings` (status, attendance_status, UNIQUE-Constraint), `events` (Kapazitaet, Registration-Windows, Series), `event_unregistrations` (nur im Code, nicht in Schema)
+- Projekt-Historie: v1.4 Event-Logik transaktionssicher (Race Conditions, Waitlist-Nachruecken), v1.5 Push-Notifications (18 Types), v1.6 Punkte-Typ-Konfiguration
+- Architektur-Kontext: `PROJECT.md` (v1.7 Active Requirements), `CLAUDE.md` (RBAC, Multi-Tenant-Isolation)
 
 ---
-*Pitfalls research for: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
-*Researched: 2026-03-07*
+*Pitfalls research for: Konfi Quest v1.7 Pflicht-Events, QR-Check-in, Auto-Enrollment, Anwesenheitsstatistik*
+*Researched: 2026-03-09*

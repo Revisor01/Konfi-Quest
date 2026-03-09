@@ -1,159 +1,246 @@
-# Technology Stack: v1.6 Dashboard-Konfig + Punkte-Logik
+# Technology Stack: v1.7 Unterricht + Pflicht-Events
 
 **Project:** Konfi Quest
-**Researched:** 2026-03-07
-**Scope:** Punkte-Typen pro Jahrgang konfigurierbar, Dashboard-Widgets fuer Org-Admins steuerbar
+**Researched:** 2026-03-09
+**Scope:** Pflicht-Events mit Auto-Enrollment, Opt-out mit Begruendung, QR-Code Self-Check-in, Anwesenheitsstatistik
 **Overall Confidence:** HIGH
 
 ---
 
-## Empfehlung: Keine neuen Bibliotheken erforderlich
+## Empfehlung: Eine neue Dependency (QR-Scanner)
 
-v1.6 braucht **null neue Dependencies**. Alle Features lassen sich mit dem bestehenden Stack umsetzen. Die Architektur aus v1.0-v1.5 (Settings-KV-Store, RBAC, AppContext, getPointField-Whitelist) traegt die neuen Anforderungen vollstaendig.
+v1.7 braucht **eine neue Frontend-Dependency** fuer den QR-Code-Scan auf dem Geraet. Alles andere (QR-Generierung, DB-Patterns, Attendance-Tracking, Push) existiert bereits.
 
 ---
 
-## Bestehender Stack (unveraendert)
+## Neue Dependency
 
-| Technologie | Version | Zweck im Milestone | Warum ausreichend |
-|-------------|---------|-------------------|-------------------|
-| PostgreSQL (pg) | ^8.16.3 | Settings-KV-Store, Jahrgang-Spalten | `settings`-Tabelle mit `(organization_id, key)` UPSERT-Pattern existiert bereits |
-| Express + express-validator | ^4.18.2 / ^7.3.1 | Neue Settings-Keys validieren und speichern | PUT `/settings` Route hat UPSERT-Pattern, einfach erweiterbar |
-| React 19 + Ionic 8 | 19.0.0 / ^8.5.0 | Bedingte Widget-Darstellung, Toggle-UIs | Conditional Rendering reicht voellig |
-| Axios | ^1.10.0 | Settings laden und speichern | Bestehender `api`-Service, keine Aenderung noetig |
-| Socket.io | ^4.7.2 / ^4.8.1 | Live-Updates bei Settings-Aenderungen | `liveUpdate`-Pattern aus jahrgaenge.js wiederverwendbar |
+### Frontend: `@capacitor/barcode-scanner`
+
+| Eigenschaft | Wert |
+|-------------|------|
+| **Package** | `@capacitor/barcode-scanner` |
+| **Version** | `@latest-7` (Capacitor-7-kompatible Version) |
+| **Zweck** | QR-Code scannen auf Konfi-Geraet fuer Self-Check-in |
+| **Plattformen** | iOS, Android, Web (Fallback) |
+| **Confidence** | HIGH |
+
+**Warum dieses Plugin:**
+- Offizielles Capacitor-Plugin (nicht Community) -- beste Wartungsgarantie
+- `@capacitor-community/barcode-scanner` ist deprecated (letzte Version vor 3 Jahren)
+- Capacitor 7 Support via `npm install @capacitor/barcode-scanner@latest-7`
+- API: `scanBarcode()` mit `CapacitorBarcodeScannerTypeHint.QR_CODE` -- eine Methode, fertig
+- Unterstuetzt QR-Code explizit als Format-Hint
+- Web-Fallback vorhanden (dev-tauglich)
+
+**Warum NICHT `@capacitor-mlkit/barcode-scanning`:**
+- ML Kit ist Overkill fuer reinen QR-Scan (groessere Binary, mehr Konfiguration)
+- Offizielles Plugin reicht voellig
+- ML Kit waere relevant wenn multi-format Barcodes (EAN, UPC etc.) gescannt werden muessten
+
+**Installation:**
+```bash
+cd frontend && npm install @capacitor/barcode-scanner@latest-7
+```
+
+**Android-Hinweis:** Minimum SDK Target 26 erforderlich. Das Projekt verwendet Capacitor 7.4.2 mit Android 7.4.4 -- sollte bereits SDK 26+ sein, aber in `android/variables.gradle` pruefen.
+
+**iOS-Hinweis:** Camera-Permission (`NSCameraUsageDescription`) ist bereits konfiguriert (existiert fuer `@capacitor/camera`).
+
+---
+
+## Bestehender Stack (unveraendert, aber erweitert genutzt)
+
+| Technologie | Version | Neue Nutzung in v1.7 | Warum ausreichend |
+|-------------|---------|---------------------|-------------------|
+| `qrcode` | ^1.5.4 | QR-Code Generierung fuer Check-in-Token pro Event | Bereits fuer Invite-Codes genutzt (`AdminInvitePage.tsx`), `QRCode.toDataURL()` Pattern existiert |
+| PostgreSQL (pg) | ^8.16.3 | Neue Spalten auf `events` + `event_bookings`, Opt-out-Tabelle | Bestehende Tabellen erweitern, kein neues Pattern |
+| Express + express-validator | ^4.18.2 / ^7.3.1 | Neue Endpoints fuer Check-in, Opt-out, Auto-Enrollment | Bestehende Route-Patterns in `events.js` wiederverwenden |
+| Socket.io | ^4.7.2 / ^4.8.1 | Live-Update bei Check-in (Admin sieht sofort wer da ist) | `liveUpdate.sendToOrgAdmins()` Pattern existiert |
+| Push (firebase-admin) | ^12.7.0 | Neuer Push-Typ fuer Pflicht-Event-Erinnerung | `PushService` hat bereits 18 Push-Types, ein weiterer ist trivial |
+| `crypto` (Node built-in) | -- | Check-in-Token generieren (`crypto.randomBytes`) | Pattern bereits in `auth.js` Zeile 33, 347 |
+| Axios | ^1.10.0 | Neue API-Calls fuer Check-in, Opt-out | Bestehender `api`-Service |
 
 ---
 
 ## Datenbank-Strategie
 
-### 1. Punkte-Typ-Konfiguration: Spalten auf `jahrgaenge`-Tabelle
+### 1. Events-Tabelle: Neue Spalten
 
 ```sql
-ALTER TABLE jahrgaenge
-  ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true,
-  ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true;
+ALTER TABLE events
+  ADD COLUMN mandatory BOOLEAN DEFAULT false,
+  ADD COLUMN bring_items TEXT;  -- "Was mitbringen" Freitext
 ```
 
-**Warum direkte Spalten statt Settings-KV:**
-- Punkte-Typ-Konfiguration ist jahrgangs-spezifisch, nicht organisations-global
-- Die bestehende `settings`-Tabelle hat keinen `jahrgang_id`-Bezug und ist fuer Org-weite Settings konzipiert
-- Direkte Boolean-Spalten sind einfacher abzufragen (`WHERE j.gottesdienst_enabled = true`) als KV-Lookups
-- Kein JSON-Parsing noetig, Boolean ist natuerlicher Datentyp fuer an/aus
-- Backend `jahrgaenge.js` hat bereits CREATE/UPDATE Routes mit Validierung -- 2 neue `body()`-Checks reichen
+**Warum `mandatory` als Boolean:**
+- Einfachste Semantik: Event ist entweder Pflicht oder freiwillig
+- Pflicht-Events haben grundlegend andere Logik (kein Opt-in, kein Punkte, Auto-Enrollment)
+- Boolean steuert die Verzweigung in der Business-Logik
 
-**Warum NICHT Settings-Tabelle mit jahrgang_id:**
-- Wuerde neuen Composite Key `(organization_id, jahrgang_id, key)` brauchen
-- Ueberverkompliziert fuer 2 Boolean-Werte
-- Jeder Punkte-Query muesste zusaetzlichen JOIN auf settings machen
+**Warum `bring_items` als TEXT (nicht JSONB):**
+- Einfacher Freitext ("Bibel, Stift, Block"), kein strukturierter Datentyp
+- Wird nur angezeigt, nicht gefiltert/gesucht
+- Optional (NULL = nichts mitbringen)
+- Fuer ALLE Events verfuegbar, nicht nur Pflicht-Events
 
-### 2. Dashboard-Widget-Konfiguration: Bestehende `settings`-Tabelle
+### 2. Event-Bookings: Neue Spalten fuer Opt-out
 
 ```sql
--- Neue Settings-Keys (Organization-Level), Default-Werte im Code
--- Kein Schema-Change noetig, nur neue Key-Value-Paare
-INSERT INTO settings (organization_id, key, value) VALUES
-  ($1, 'dashboard_show_losung', 'true'),
-  ($1, 'dashboard_show_ranking', 'true'),
-  ($1, 'dashboard_show_badges', 'true'),
-  ($1, 'dashboard_show_events', 'true'),
-  ($1, 'dashboard_show_level', 'true');
+ALTER TABLE event_bookings
+  ADD COLUMN opt_out_reason TEXT,
+  ADD COLUMN checked_in_at TIMESTAMP,
+  ADD COLUMN check_in_method VARCHAR(20) CHECK (check_in_method IN ('qr', 'manual'));
 ```
 
-**Warum Settings-KV statt eigene Tabelle:**
-- Dashboard-Widgets sind org-weite Einstellungen -- genau der Scope der `settings`-Tabelle
-- UPSERT-Pattern (`ON CONFLICT ... DO UPDATE`) existiert bereits in `settings.js` (Zeile 99-113)
-- GET Route liefert alle Keys als flaches Objekt -- Frontend kann direkt pruefen
-- Kein Schema-Change noetig
-- Bestehende Validierung leicht erweiterbar: `body('dashboard_show_losung').optional().isBoolean()`
+**Bestehende Spalten die weiterverwendet werden:**
+- `status`: 'confirmed' (auto-enrolled), 'cancelled' (opted-out)
+- `attendance_status`: 'present' / 'absent' (bleibt wie gehabt fuer Admin-Korrektur)
 
-**Defaults im Code, nicht in DB:**
-- Wenn ein Key nicht in der DB existiert, interpretiert das Frontend es als `true` (alles sichtbar)
-- Erst wenn OrgAdmin explizit etwas deaktiviert, wird ein Eintrag angelegt
-- Kein Seeding-Script noetig, keine Migration fuer bestehende Organisationen
+**Flow fuer Pflicht-Events:**
+```
+Event erstellt (mandatory=true) → Auto-Enrollment aller Jahrgangs-Konfis
+  → event_bookings mit status='confirmed' fuer jeden Konfi
 
----
+Konfi moechte nicht kommen → Opt-out:
+  → status='cancelled', opt_out_reason='Familienfest'
 
-## Frontend-Strategie
+Konfi scannt QR am Event → Check-in:
+  → attendance_status='present', checked_in_at=NOW(), check_in_method='qr'
 
-### Conditional Rendering (kein neues Pattern)
-
-Das Dashboard nutzt bereits bedingte Darstellung:
-
-```typescript
-// BESTEHENDES Pattern in DashboardView.tsx (Zeile 1237):
-{dashboardData.ranking && dashboardData.ranking.length > 0 && (
-  <div className="app-dashboard-section--ranking">...</div>
-)}
-
-// NEUES Pattern (identische Struktur):
-{settings.dashboard_show_ranking !== false && dashboardData.ranking?.length > 0 && (
-  <div className="app-dashboard-section--ranking">...</div>
-)}
+Admin korrigiert → Manueller Check-in:
+  → attendance_status='present', checked_in_at=NOW(), check_in_method='manual'
 ```
 
-**Kein State-Management-Tool noetig.** Der bestehende `AppContext` laedt Settings bereits. Die DashboardView bekommt die Widget-Flags als Props.
+**Warum kein separates `event_attendance`-Tabelle:**
+- `event_bookings` hat bereits `attendance_status` (present/absent)
+- Zusaetzliche Felder (`opt_out_reason`, `checked_in_at`, `check_in_method`) passen semantisch auf die Booking-Zeile
+- Ein Booking = ein Konfi pro Event -- genau die richtige Granularitaet
+- Unique Constraint `(user_id, event_id)` existiert bereits -- verhindert Doppel-Check-ins
 
-### ActivityRings-Anpassung
+### 3. Check-in-Tokens: Kein persistentes Speichern
 
-Die `ActivityRings`-Komponente bekommt aktuell `gottesdienstGoal` und `gemeindeGoal` als Props. Wenn ein Typ deaktiviert ist:
-- Goal auf 0 setzen und Ring visuell ausblenden
-- Bei nur einem aktiven Typ: Einziger Ring wird zum Haupt-Ring
-- Total-Ring (aeusserster) berechnet sich nur aus aktivierten Typen
+```sql
+-- NICHT noetig: Keine separate Tabelle fuer QR-Tokens
+-- Token wird dynamisch generiert: HMAC(event_id + secret)
+-- oder einfach: crypto.randomBytes() gespeichert in-memory/Redis
+```
 
-### Dashboard-Sektionen (identifiziert aus DashboardView.tsx)
-
-| Sektion | CSS-Klasse | Toggle-Key | Zeile |
-|---------|-----------|------------|-------|
-| Header + ActivityRings | `app-dashboard-header` | Immer sichtbar | 590 |
-| Level-Icons | (inline im Header) | `dashboard_show_level` | 647 |
-| Events | `app-dashboard-section--events` (implizit) | `dashboard_show_events` | ~780 |
-| Tageslosung | `app-dashboard-section--tageslosung` | `dashboard_show_losung` | 917 |
-| Badges | `app-dashboard-section--badges` | `dashboard_show_badges` | 964 |
-| Ranking | `app-dashboard-section--ranking` | `dashboard_show_ranking` | 1238 |
-
-**Header + ActivityRings bleiben immer sichtbar** -- sie sind das Kern-Element des Dashboards.
-
----
-
-## Backend-Strategie
-
-### `getPointField()` bleibt unveraendert
-
-Die Whitelist-Funktion in `validation.js` (Zeile 24-35) validiert nur den Typ-String. Die Aenderung passiert an den Aufrufstellen -- vor der Punktevergabe wird geprueft ob der Punkte-Typ fuer den Jahrgang des Konfis aktiviert ist.
-
-### Betroffene Backend-Routes
-
-| Route | Aenderung | Risiko |
-|-------|-----------|--------|
-| `jahrgaenge.js` | Neue Boolean-Spalten in CREATE/UPDATE/GET | Niedrig |
-| `settings.js` | Neue `dashboard_show_*` Keys in Validierung und UPSERT | Niedrig |
-| `konfi.js` | Dashboard-Endpoint liefert Jahrgangs-Config + Widget-Settings mit | Mittel |
-| `activities.js` | Punkte-Typ-Check vor Vergabe (Zeile 246, 320, 455) | Mittel |
-| `konfi-managment.js` | Bonus-Punkte nur fuer aktivierte Typen (Zeile 476, 555, 609, 666) | Mittel |
-| `events.js` | Event-Punkte nur vergeben wenn Typ aktiviert (Zeile 1316-1328) | Mittel |
-| `badges.js` | Kriterien-Evaluation ignoriert deaktivierte Punkte-Typen | Hoch |
-| `levels.js` | Level-Berechnung nur mit aktivierten Punkt-Typen | Hoch |
-
-### Jahrgangs-Config an Punkte-Vergabe-Stellen
+**Empfehlung: Event-basierter statischer Token**
 
 ```javascript
-// Pattern fuer alle Routes die Punkte vergeben:
-// 1. Konfi-ID → User holen → Jahrgang-ID
-// 2. Jahrgang laden → gottesdienst_enabled/gemeinde_enabled pruefen
-// 3. Wenn Typ deaktiviert → 400 "Dieser Punktetyp ist fuer diesen Jahrgang deaktiviert"
+// Backend generiert Token bei Event-Erstellung oder auf Abruf
+const crypto = require('crypto');
+const token = crypto.createHmac('sha256', process.env.JWT_SECRET)
+  .update(`event-checkin-${eventId}`)
+  .digest('hex')
+  .substring(0, 12);
 
-const { rows: [jahrgang] } = await db.query(
-  `SELECT j.gottesdienst_enabled, j.gemeinde_enabled
-   FROM jahrgaenge j
-   JOIN konfi_profiles kp ON kp.jahrgang_id = j.id
-   WHERE kp.user_id = $1`,
-  [konfiId]
-);
+// QR-Code Inhalt: https://konfi-quest.de/checkin/{token}
+// oder App-Deep-Link: konfiquest://checkin/{token}
+```
 
-if (pointType === 'gottesdienst' && !jahrgang.gottesdienst_enabled) {
-  return res.status(400).json({ error: 'Gottesdienst-Punkte sind fuer diesen Jahrgang deaktiviert' });
+**Warum HMAC statt Random-Token in DB:**
+- Deterministisch: Gleicher Event = gleicher Token (kein DB-Lookup zum Generieren)
+- Sicher: Ohne JWT_SECRET nicht erratbar
+- Kein Cleanup noetig (keine Token-Tabelle die waechst)
+- Admin kann QR jederzeit neu generieren (kommt immer derselbe raus)
+- Validierung: Backend berechnet erwarteten Token und vergleicht
+
+**Alternative (einfacher, auch valide):** Token als Spalte auf `events`-Tabelle (`checkin_token VARCHAR(24)`), einmal bei Erstellung generiert. Vorteil: Explizit in DB sichtbar. Nachteil: Migration, eine Spalte mehr.
+
+**Empfehlung: HMAC-Ansatz** -- zero DB-Change, zero Cleanup, deterministisch.
+
+### 4. Pflicht-Events: Interaktion mit `max_participants` und Points
+
+```sql
+-- Pflicht-Events MUESSEN:
+-- max_participants: Wird ignoriert oder auf Jahrgangs-Groesse gesetzt
+-- points: MUSS 0 sein (keine Punkte fuer Pflicht-Events)
+-- registration_opens_at / registration_closes_at: Irrelevant (Auto-Enrollment)
+-- waitlist_enabled: false (alle sind enrolled)
+
+-- Backend-Constraint (Code, nicht DB):
+-- IF mandatory THEN points = 0 AND waitlist_enabled = false
+```
+
+---
+
+## QR-Code Check-in Flow
+
+### Generierung (Admin-Seite, bestehendes Pattern)
+
+```typescript
+// Bestehendes Pattern aus AdminInvitePage.tsx:
+import QRCode from 'qrcode';
+
+const qrDataUrl = await QRCode.toDataURL(checkinUrl, {
+  width: 300,
+  margin: 2,
+  color: { dark: '#000000', light: '#ffffff' }
+});
+```
+
+Keine neue Library noetig. `qrcode` ^1.5.4 ist bereits installiert.
+
+### Scanning (Konfi-Geraet, neue Dependency)
+
+```typescript
+import { BarcodeScanner, CapacitorBarcodeScannerTypeHint } from '@capacitor/barcode-scanner';
+
+const result = await BarcodeScanner.scanBarcode({
+  hint: CapacitorBarcodeScannerTypeHint.QR_CODE
+});
+
+if (result.ScanResult) {
+  // Token extrahieren und an Backend senden
+  const token = extractTokenFromUrl(result.ScanResult);
+  await api.post(`/events/checkin/${token}`);
 }
+```
+
+### Check-in Endpoint (Backend)
+
+```javascript
+// POST /events/checkin/:token
+router.post('/checkin/:token', rbacVerifier, async (req, res) => {
+  // 1. Token validieren (HMAC-Vergleich ueber alle Events der Org)
+  // 2. Event finden
+  // 3. Pruefen ob User enrolled ist (event_bookings Eintrag)
+  // 4. attendance_status = 'present', checked_in_at = NOW(), check_in_method = 'qr'
+  // 5. Live-Update an Admins
+  // 6. Push an Konfi: "Check-in erfolgreich"
+});
+```
+
+### Echtzeit-Updates bei Check-in
+
+```
+Konfi scannt QR → POST /events/checkin/:token
+  → Backend: attendance_status = 'present'
+  → Socket.io: liveUpdate.sendToOrgAdmins(..., 'events', 'update', { eventId, action: 'checkin' })
+  → Admin-UI: Teilnehmerliste aktualisiert sich sofort
+```
+
+Bestehender `liveUpdate`-Mechanismus reicht. Kein neues Socket-Event noetig -- das `events.update` Pattern existiert bereits (events.js Zeile 1369).
+
+---
+
+## Anwesenheitsstatistik
+
+Reine SQL-Aggregation ueber bestehende Tabellen. Keine neue Infrastruktur.
+
+```sql
+-- Pro-Konfi Statistik
+SELECT
+  COUNT(*) FILTER (WHERE e.mandatory = true) as total_pflicht,
+  COUNT(*) FILTER (WHERE e.mandatory = true AND eb.attendance_status = 'present') as anwesend,
+  COUNT(*) FILTER (WHERE e.mandatory = true AND eb.attendance_status = 'absent') as abwesend,
+  COUNT(*) FILTER (WHERE e.mandatory = true AND eb.status = 'cancelled') as entschuldigt,
+  COUNT(*) FILTER (WHERE e.mandatory = true AND eb.attendance_status IS NULL AND eb.status = 'confirmed') as ausstehend
+FROM event_bookings eb
+JOIN events e ON eb.event_id = e.id
+WHERE eb.user_id = $1 AND e.organization_id = $2;
 ```
 
 ---
@@ -162,59 +249,82 @@ if (pointType === 'gottesdienst' && !jahrgang.gottesdienst_enabled) {
 
 | Bibliothek | Warum nicht |
 |------------|------------|
-| react-grid-layout / react-beautiful-dnd | Drag-and-Drop Dashboard-Sortierung ist Over-Engineering. OrgAdmin braucht nur Toggles (an/aus), keine Reihenfolge. |
-| zustand / redux / jotai | State-Management unnoetig. AppContext + Props reicht fuer Settings-Propagation. 6 Milestones konsistent mit React Context. |
-| JSON Schema Validator (ajv) | Settings-Validierung laeuft ueber express-validator auf allen 15 Routes. |
-| Feature-Flag-Service (LaunchDarkly, Unleash) | Massiv ueberdimensioniert fuer 5-7 Boolean-Toggles. Settings-Tabelle ist der richtige Ort. |
-| react-hook-form / formik | Admin-Settings-UI hat wenige Toggle-Felder. IonToggle mit useState reicht. |
-| jsonb-Spalte auf jahrgaenge | 2 Boolean-Werte rechtfertigen kein JSONB. Explizite Spalten sind klarer und type-safe. |
+| `@capacitor-mlkit/barcode-scanning` | ML Kit ist Overkill fuer reinen QR-Scan. Groessere App-Size, mehr native Config. Offizielles Plugin reicht. |
+| `@capacitor-community/barcode-scanner` | Deprecated seit 3 Jahren. Kein Capacitor 7 Support. |
+| Redis / In-Memory Store | Check-in-Tokens sind HMAC-basiert (deterministisch berechnet), brauchen keinen Cache. Rate-Limiter laeuft bereits in-memory. |
+| `uuid` | Check-in-Tokens brauchen keine UUIDs. HMAC oder `crypto.randomBytes` reicht (Pattern existiert). |
+| `date-fns` / `dayjs` | Zeitvergleiche (Event-Datum, Check-in-Fenster) funktionieren mit nativem `Date` und PostgreSQL `NOW()`. Kein Date-Library noetig. |
+| `react-qr-reader` / `html5-qrcode` | Web-only QR-Scanner. Capacitor-Plugin ist besser fuer native App-Experience (Kamera-Overlay, Performance). |
+| Separate Attendance-Tabelle | `event_bookings` hat bereits `attendance_status`. Neue Spalten (`opt_out_reason`, `checked_in_at`, `check_in_method`) gehoeren semantisch dorthin. |
+| WebSocket-Room pro Event | Nicht noetig. `liveUpdate.sendToOrgAdmins()` reicht fuer Check-in-Updates. Admins sehen alle Events ihrer Org. |
 
 ---
 
-## Integrationspunkte
+## Integrationspunkte mit bestehendem System
 
-### Settings-Flow (Dashboard-Widgets)
-
-```
-OrgAdmin Settings-UI → PUT /api/settings → settings-Tabelle (org-scoped)
-                                                    ↓
-Konfi Dashboard Load → GET /api/settings → AppContext → DashboardView Props
-```
-
-### Punkte-Typ-Flow (Jahrgang)
+### QR-System (bestehendes Invite-Pattern wiederverwenden)
 
 ```
-Admin Jahrgang-Edit → PUT /api/jahrgaenge/:id → jahrgaenge-Tabelle
-                                                      ↓
-Punkte-Vergabe → Backend prueft jahrgang.gottesdienst_enabled/gemeinde_enabled
-                                                      ↓
-Dashboard → Konfi-Endpoint liefert enabled-Flags → ActivityRings passt sich an
+Bestehend (Invite):                    Neu (Check-in):
+AdminInvitePage                        AdminEventDetail
+  → QRCode.toDataURL(inviteUrl)          → QRCode.toDataURL(checkinUrl)
+  → Konfi scannt mit Kamera               → Konfi scannt mit BarcodeScanner
+  → Browser oeffnet URL                    → App verarbeitet Token intern
+  → auth.js registriert User              → events.js markiert present
 ```
 
-### Betroffene Frontend-Komponenten
+**Unterschied:** Invite-QR oeffnet eine URL im Browser (Registrierung). Check-in-QR wird IN der App gescannt und intern verarbeitet (kein Browser). Deshalb braucht es den nativen BarcodeScanner.
 
-| Komponente | Aenderung |
-|------------|-----------|
-| `DashboardView.tsx` | Conditional Rendering aller Sektionen basierend auf Settings |
-| `KonfiDashboardPage.tsx` | Widget-Settings laden und an DashboardView durchreichen |
-| `ActivityRings.tsx` | Ein-Ring-Modus wenn nur ein Punkt-Typ aktiv |
-| Admin Settings-View | Neue Sektion mit Dashboard-Toggles (IonToggle) |
-| Admin Jahrgang-Edit-Modal | Gottesdienst/Gemeinde-Toggle hinzufuegen |
-| `AppContext.tsx` | Settings-State um dashboard_show_* Flags erweitern |
+### Event-System (bestehende attendance erweitern)
+
+```
+Bestehend:                             Neu:
+Admin markiert manuell present/absent  Konfi scannt QR → auto-present
+  → PUT /events/:id/participants/        → POST /events/checkin/:token
+       :participantId/attendance              (gleiche DB-Updates)
+  → Points werden vergeben               → Keine Points (mandatory=true → points=0)
+```
+
+Die bestehende `PUT .../attendance` Route bleibt fuer Admin-Korrekturen. Die neue `POST /checkin/:token` Route macht dasselbe ohne Punkte.
+
+### Push-System (neuer Push-Type)
+
+```javascript
+// pushService.js: Neuer Typ hinzufuegen
+// Typ 19: pflicht_event_reminder
+// Typ 20: checkin_confirmed
+static async sendPflichtEventReminder(db, konfiId, eventName, eventDate) { ... }
+static async sendCheckinConfirmed(db, konfiId, eventName) { ... }
+```
+
+Bestehende Push-Infrastruktur (18 Types, Token-Management, FCM/APNS) wird nur um 2 Types erweitert.
+
+### Auto-Enrollment (bestehende event_bookings nutzen)
+
+```
+Event erstellt (mandatory=true, jahrgang_ids=[2,5])
+  → Backend: SELECT user_id FROM konfi_profiles WHERE jahrgang_id IN (2,5)
+  → INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+      SELECT $1, kp.user_id, 'confirmed', $2
+      FROM konfi_profiles kp WHERE kp.jahrgang_id = ANY($3)
+      ON CONFLICT (user_id, event_id) DO NOTHING
+```
+
+Keine neue Tabelle. Nutzt `event_bookings` mit bestehendem Unique Constraint.
 
 ---
 
-## Versionen -- Alles aktuell
+## Installation
 
-Alle bestehenden Dependencies sind auf aktuellem Stand (geprueft gegen package.json):
-- React 19.0.0 -- aktuell
-- Ionic 8.5.0 -- aktuell
-- Capacitor 7.4.2 -- aktuell
-- pg 8.16.3 -- aktuell
-- Express 4.18.2 -- stabil (Express 5 ist noch nicht produktionsreif fuer Ionic-Backends)
-- express-validator 7.3.1 -- aktuell
+```bash
+# Einzige neue Dependency
+cd frontend && npm install @capacitor/barcode-scanner@latest-7
 
-**Keine Updates noetig fuer v1.6.**
+# Danach: Capacitor sync (fuer native Projekte)
+npx cap sync
+```
+
+**Backend: Null neue Dependencies.**
 
 ---
 
@@ -223,43 +333,45 @@ Alle bestehenden Dependencies sind auf aktuellem Stand (geprueft gegen package.j
 ```
 Backend:
   (keine neuen Dependencies)
-  ~ backend/routes/jahrgaenge.js      # 2 neue Boolean-Spalten, Validierung
-  ~ backend/routes/settings.js        # 5 neue dashboard_show_* Keys
-  ~ backend/routes/konfi.js           # Dashboard-Endpoint liefert Config mit
-  ~ backend/routes/activities.js      # Punkte-Typ-Guard vor Vergabe
-  ~ backend/routes/konfi-managment.js # Punkte-Typ-Guard vor Vergabe
-  ~ backend/routes/events.js          # Punkte-Typ-Guard vor Vergabe
-  ~ backend/routes/badges.js          # Kriterien ignorieren deaktivierte Typen
-  ~ backend/routes/levels.js          # Berechnung nur mit aktiven Typen
+  ~ backend/routes/events.js          # mandatory-Flag, Auto-Enrollment, Check-in-Endpoint, bring_items
+  + backend/routes/events.js          # POST /checkin/:token (neuer Endpoint)
+  ~ backend/services/pushService.js   # 2 neue Push-Types
+  ~ backend/routes/konfi.js           # Anwesenheitsstatistik-Endpoint
 
 Frontend:
-  (keine neuen Dependencies)
-  ~ DashboardView.tsx                 # Conditional Rendering per Section
-  ~ KonfiDashboardPage.tsx            # Widget-Settings laden
-  ~ ActivityRings.tsx                 # Ein-Ring-Modus
-  ~ Admin Settings-View              # Dashboard-Toggle-UI
-  ~ Admin Jahrgang-Edit              # Punkte-Typ-Toggles
-  ~ AppContext.tsx                    # Settings-State erweitern
+  + @capacitor/barcode-scanner        # NEUE DEPENDENCY
+  ~ AdminEventCreateModal             # mandatory Toggle, bring_items Feld
+  ~ AdminEventDetailView              # QR-Code anzeigen, Opt-out-Gruende sehen, Attendance-Uebersicht
+  + KonfiQRScanPage/Modal             # NEUES UI: Scanner fuer Check-in
+  ~ KonfiEventsView                   # Opt-out Button mit Begruendung, "Was mitbringen" anzeigen
+  ~ KonfiDashboardPage                # Widget "Naechstes Pflicht-Event"
+  + KonfiAttendanceView               # NEUES UI: Eigene Anwesenheitsstatistik
 
 Datenbank:
-  + ALTER TABLE jahrgaenge ADD COLUMN gottesdienst_enabled BOOLEAN DEFAULT true
-  + ALTER TABLE jahrgaenge ADD COLUMN gemeinde_enabled BOOLEAN DEFAULT true
-  (settings-Tabelle: nur neue KV-Paare, kein Schema-Change)
+  + ALTER TABLE events ADD COLUMN mandatory BOOLEAN DEFAULT false
+  + ALTER TABLE events ADD COLUMN bring_items TEXT
+  + ALTER TABLE event_bookings ADD COLUMN opt_out_reason TEXT
+  + ALTER TABLE event_bookings ADD COLUMN checked_in_at TIMESTAMP
+  + ALTER TABLE event_bookings ADD COLUMN check_in_method VARCHAR(20)
 ```
 
 ---
 
 ## Quellen
 
-- Codebase-Analyse: `settings.js` UPSERT-Pattern (Zeile 99-148)
-- Codebase-Analyse: `jahrgaenge.js` CREATE/UPDATE Routes
-- Codebase-Analyse: `DashboardView.tsx` Sektions-Struktur (1400+ Zeilen)
-- Codebase-Analyse: `getPointField()` Whitelist in `validation.js`
-- Codebase-Analyse: `KonfiDashboardPage.tsx` Settings-Loading
+- [Capacitor Barcode Scanner Plugin Docs](https://capacitorjs.com/docs/apis/barcode-scanner) -- Offizielles Plugin, Capacitor 7 Support via `@latest-7` Tag
+- [@capacitor/barcode-scanner npm](https://www.npmjs.com/package/@capacitor/barcode-scanner) -- Version 3.0.1 (latest), `latest-7` fuer Cap 7
+- [Ionic Blog: Introducing Capacitor Barcode Scanner](https://ionic.io/blog/introducing-capacitor-barcode-scanner-plugin) -- Offizielles Plugin-Announcement
+- Codebase-Analyse: `AdminInvitePage.tsx` -- QR-Generierung mit `qrcode` ^1.5.4 (Zeile 40, 110, 143, 204)
+- Codebase-Analyse: `events.js` -- Attendance-Route (Zeile 1288-1432), Event-Queries mit attendance_status
+- Codebase-Analyse: `auth.js` -- `crypto.randomBytes` Pattern (Zeile 33, 347)
+- Codebase-Analyse: `01-create-schema.sql` -- events/event_bookings Schema (Zeile 289-404)
+- Codebase-Analyse: `liveUpdate` Pattern in events.js (Zeile 1369)
+- Codebase-Analyse: `pushService.js` -- 18 bestehende Push-Types
 
-**Confidence: HIGH** -- Alle Empfehlungen basieren auf direkter Codebase-Analyse. Keine externen Abhaengigkeiten, keine unverifizierten Claims.
+**Confidence: HIGH** -- Einzige neue Dependency ist das offizielle Capacitor-Plugin. Alle anderen Empfehlungen basieren auf direkter Codebase-Analyse und bestehenden Patterns.
 
 ---
 
-*Stack research for: Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik*
-*Researched: 2026-03-07*
+*Stack research for: Konfi Quest v1.7 Unterricht + Pflicht-Events*
+*Researched: 2026-03-09*

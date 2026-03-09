@@ -1,171 +1,179 @@
 # Project Research Summary
 
-**Project:** Konfi Quest v1.6 Dashboard-Konfig + Punkte-Logik
-**Domain:** Konfigurierbare Punkte-Typen pro Jahrgang + Dashboard-Widget-Steuerung
-**Researched:** 2026-03-07
+**Project:** Konfi Quest v1.7 -- Unterricht + Pflicht-Events
+**Domain:** Pflicht-Event-Management mit Anwesenheits-Tracking fuer Konfirmanden-App
+**Researched:** 2026-03-09
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Konfi Quest v1.6 erweitert das bestehende Gamification-System um zwei orthogonale Features: (1) Punkte-Typen (Gottesdienst/Gemeinde) pro Jahrgang aktivierbar/deaktivierbar machen und (2) Dashboard-Widgets fuer Konfis per Org-Admin konfigurierbar machen. Beide Features bauen vollstaendig auf dem bestehenden Stack auf -- keine neuen Dependencies, keine Architektur-Umstellung. Das System bleibt bei 2 festen Punkte-Typen (kein generisches N-Typen-System), erlaubt aber 0, 1 oder 2 aktive Typen pro Jahrgang. Dashboard-Widgets werden ueber einfache Toggle-Schalter gesteuert, nicht ueber Drag-and-Drop oder Custom-Builder.
+Konfi Quest v1.7 erweitert das bestehende Event-System um Pflicht-Events mit Auto-Enrollment, QR-Code-basiertem Check-in und Anwesenheitsstatistik. Die Codebase ist ausgereift (15 vollstaendig migrierte Routes, funktionierendes Event-Booking-System mit Attendance-Tracking, Push-Infrastruktur mit 18 Types) und bietet solide Grundlagen: `event_bookings` mit `attendance_status`, `event_jahrgang_assignments` fuer Jahrgangs-Zuweisung, QR-Generierung via `qrcode`-Library und Socket.io-basierte Live-Updates. Die einzige neue externe Dependency ist `@capacitor/barcode-scanner` fuer den nativen QR-Scan auf Konfi-Geraeten.
 
-Der empfohlene Ansatz nutzt zwei verschiedene Speicherstrategien: Punkte-Typ-Konfiguration als Boolean-Spalten direkt auf der `jahrgaenge`-Tabelle (weil jahrgangs-spezifisch), Dashboard-Widget-Konfiguration als Key-Value-Paare in der bestehenden `settings`-Tabelle (weil org-weit). Beide Strategien verwenden existierende Patterns -- UPSERT fuer Settings, ALTER TABLE mit DEFAULT TRUE fuer Jahrgaenge. Die Aenderungen betreffen 8 Backend-Routes und 6 Frontend-Komponenten, aber keine davon strukturell -- es sind Guards, Conditionals und Props-Erweiterungen.
+Der empfohlene Ansatz: Events-Tabelle um ein `mandatory`-Boolean und ein `bring_items`-Textfeld erweitern, Auto-Enrollment via Batch-INSERT mit `ON CONFLICT DO NOTHING`, Opt-out als separate `event_optouts`-Tabelle (analog zum bestehenden `event_unregistrations`-Pattern), QR-Check-in via signierte JWTs (stateless, kein Token-Management), und Anwesenheitsstatistik als reine SQL-Aggregation. Pflicht-Events vergeben keine Punkte (Guard im bestehenden Attendance-Endpunkt) und ueberspringen die Kapazitaets-/Waitlist-Logik.
 
-Die Hauptrisiken sind: (1) ActivityRings zeigt Phantom-Ringe fuer deaktivierte Typen wegen Fallback-Logik `goal > 0 ? goal : 10`. (2) Badge-Kriterien (`gottesdienst_points`, `both_categories`) werden unerreichbar aber bleiben sichtbar -- frustriert Konfis. (3) Ranking wird bei Typ-Aenderung mitten im Jahr unfair, weil alte Punkte mitzaehlen. Alle drei sind loesbar, aber die Ranking-Entscheidung (alte Punkte behalten vs. nur aktive Typen zaehlen) muss VOR der Implementierung getroffen werden.
+Die Hauptrisiken liegen in der Integration mit bestehendem Code: Der CHECK-Constraint auf `event_bookings.status` muss vor jeder anderen Arbeit synchronisiert werden (blockiert sonst alle Inserts bei frischen Setups). Der bestehende Abmelde-Flow LOESCHT Bookings statt den Status zu aendern -- bei Pflicht-Events fatal, weil die Anwesenheits-Tracking-Grundlage verloren geht. Multi-Tenant-Isolation muss bei jeder Auto-Enrollment-Query explizit geprueft werden (Jahrgangs-IDs sind global, nicht org-spezifisch). Alle diese Risiken sind durch saubere Architektur-Entscheidungen vor der Implementierung vermeidbar.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Keine neuen Dependencies. Alle Features lassen sich mit PostgreSQL (Boolean-Spalten + KV-Store), Express + express-validator (Route-Erweiterungen), React 19 + Ionic 8 (Conditional Rendering) und dem bestehenden AppContext umsetzen. Alle Versionen sind aktuell.
+Keine signifikanten Stack-Aenderungen. Eine neue Frontend-Dependency, null Backend-Dependencies. Details in [STACK.md](STACK.md).
 
-**Core technologies (unveraendert):**
-- **PostgreSQL (pg ^8.16.3):** `jahrgaenge`-Tabelle um 2 Boolean-Spalten erweitern, `settings`-Tabelle fuer 5 neue Dashboard-Keys
-- **Express + express-validator:** Bestehende UPSERT- und Validierungs-Patterns erweitern, kein neues Pattern
-- **React 19 + Ionic 8:** Conditional Rendering fuer Dashboard-Sektionen, IonToggle fuer Admin-UI
+**Neue Technologie:**
+- `@capacitor/barcode-scanner@latest-7`: Nativer QR-Scanner fuer Konfi-Geraete -- offizielles Capacitor-Plugin, Capacitor 7 Support, Web-Fallback
 
-**Explizit abgelehnt:** react-grid-layout (Over-Engineering), zustand/redux (AppContext reicht), Feature-Flag-Services (5 Toggles rechtfertigen kein LaunchDarkly), JSONB-Spalten (2 Booleans sind klarer als JSON), react-hook-form (IonToggle + useState reicht).
+**Bestehender Stack (erweitert genutzt):**
+- `qrcode` (v1.5.4): QR-Generierung fuer Check-in-Tokens -- Pattern aus AdminInvitePage wiederverwendbar
+- PostgreSQL + `pg` (v8.16.3): Neue Spalten auf events/event_bookings, neue event_optouts-Tabelle
+- Socket.io (v4.7/4.8): Live-Updates bei Check-in -- bestehendes `liveUpdate.sendToOrgAdmins()` Pattern
+- firebase-admin (v12.7): 2 neue Push-Types (pflicht_event_reminder, checkin_confirmed)
+- JWT (jsonwebtoken): QR-Check-in-Tokens als signierte JWTs -- stateless Validierung
+
+**Explizit NICHT hinzufuegen:** ML Kit (Overkill), Redis (nicht noetig), date-fns/dayjs (natives Date reicht), html5-qrcode (Capacitor-Plugin besser).
 
 ### Expected Features
 
-**Must have (Table Stakes) -- 11 Features:**
-- Punkte-Typ Toggle pro Jahrgang (gottesdienst_enabled, gemeinde_enabled)
-- ActivityRings dynamisch: 1-3 Ringe basierend auf aktiven Typen
-- Gesamt-Ring nur bei 2 aktiven Typen anzeigen (sonst redundant)
-- Legende und Progress-Bars dynamisch filtern
-- Badge-Check skip bei deaktiviertem Typ-Kriterium
-- Badge-Warnung beim Deaktivieren ("X Badges verwenden diesen Typ")
-- Dashboard-Endpoint liefert Jahrgang-Config mit
-- Dashboard-Widget-Toggles in Admin-Settings (5 Sektionen: Konfirmation, Losung, Badges, Ranking, Events)
-- DashboardView Conditional Rendering basierend auf Widget-Config
-- KonfiDetailView + KonfisView Ringe/Bars anpassen
-- Backend Punkte-Vergabe blockieren wenn Typ deaktiviert
+Details in [FEATURES.md](FEATURES.md).
+
+**Must have (Table Stakes):**
+- Pflicht-Flag (`mandatory`) auf Events mit Auto-Enrollment aller Jahrgangs-Konfis
+- Opt-out mit Pflicht-Begruendung (Status-Aenderung, nicht Booking-Loeschung)
+- Keine Punkte fuer Pflicht-Events (nur Anwesenheits-Tracking)
+- QR-Code Check-in (Admin zeigt QR, Konfi scannt)
+- Manuelle Admin-Korrektur der Anwesenheit (bestehende Route reicht)
+- "Was mitbringen" Textfeld auf Events
+- Dashboard-Widget "Naechstes Event"
+- Pro-Konfi Anwesenheitsstatistik (Admin-Sicht)
 
 **Should have (Differentiators):**
-- Migration-Hinweis: "X Konfis haben bereits Y Punkte in diesem Typ"
-- Info-Text im Konfi-Dashboard: "Deine Gemeinde trackt nur Gottesdienst-Punkte"
+- Zeitfenster fuer QR-Check-in (30 Min vor/nach Event-Start)
+- Push bei Opt-out an Admin
+- Opt-out-Frist (bestehende 2-Tage-Logik wiederverwendbar)
+- QR-Code als druckbares PDF
 
-**Defer (v2+):**
-- Admin-Goals pro Jahrgang (statt org-weit) -- erst bei konkretem Bedarf
-- Dashboard-Widget-Reihenfolge (Drag-and-Drop)
-- Widget-Preview fuer Admins
-- Punkte-Typ umbenennen (massives Refactoring, >1000 Zeilen)
-- Dynamische N Punkte-Typen
+**Defer (v1.8+):**
+- Bulk-Attendance (mehrere Konfis gleichzeitig markieren)
+- Anwesenheits-Badges (`mandatory_attendance_rate` Kriterium)
+- Jahrgangs-Anwesenheits-Uebersicht (Tabelle aller Konfis)
+
+**Anti-Features (NICHT bauen):**
+- GPS/Geofencing Check-in, NFC Check-in, Self-Button-Check-in (ohne QR)
+- Automatische Absent-Markierung, Eltern-Benachrichtigung
+- Punkte-Option fuer Pflicht-Events, Recurring Events
+- Konfi sieht eigene Anwesenheitsstatistik (erzeugt Druck statt Motivation)
 
 ### Architecture Approach
 
-Zwei unabhaengige Feature-Streams die sich ein Frontend (DashboardView) teilen aber verschiedene Datenquellen nutzen. Punkte-Typ-Konfiguration fliesst von `jahrgaenge`-Tabelle ueber den Dashboard-Endpoint ins Frontend und beeinflusst ActivityRings, Ranking, Badge-Checks und Punkte-Vergabe. Dashboard-Widget-Konfiguration fliesst von der `settings`-Tabelle ueber den Settings-Endpoint ins Frontend und steuert Conditional Rendering der 5 abschaltbaren Dashboard-Sektionen. Header + ActivityRings bleiben immer sichtbar.
+Die Architektur erweitert das bestehende Event-System um vier Saeulen: mandatory-Flag mit Auto-Enrollment, Opt-out via separate Tabelle, JWT-basierte QR-Codes (stateless), und Aggregations-basierte Statistik. Keine neuen Infrastruktur-Komponenten noetig. Details in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Betroffene Komponenten:**
-1. **jahrgaenge-Tabelle + jahrgaenge.js** -- Neue Boolean-Spalten, CRUD erweitern
-2. **settings-Tabelle + settings.js** -- 5 neue dashboard_show_* Keys, UPSERT-Pattern
-3. **konfi.js /dashboard** -- point_config im Response, dynamisches Ranking
-4. **activities.js + konfi-managment.js + events.js** -- Punkte-Vergabe-Guard vor getPointField
-5. **badges.js** -- Badge-Checks respektieren deaktivierte Typen (hoechstes Risiko)
-6. **levels.js** -- Level-Berechnung nur mit aktiven Typen
-7. **ActivityRings.tsx** -- Dynamische Ring-Anzahl, neue Props enableGottesdienst/enableGemeinde
-8. **DashboardView.tsx** -- Conditional Rendering aller Sektionen + point_config
-9. **DashboardConfigModal.tsx (NEU)** -- Toggle-UI fuer Dashboard-Widgets
+**Hauptkomponenten:**
+1. `events.js` (Backend) -- Pflicht-Event CRUD, Auto-Enrollment-Logik, QR-Token-Generierung, Check-in-Endpunkt
+2. `konfi.js` (Backend) -- Konfi-Event-Ansicht mit Pflicht-Status, Opt-out-Route, Dashboard-Erweiterung
+3. `konfi-managment.js` (Backend) -- Anwesenheitsstatistik-Route pro Konfi
+4. `EventModal.tsx` (Admin) -- Mandatory-Toggle, Feld-Ausblendung bei mandatory
+5. `EventDetailView.tsx` (Admin/Konfi) -- QR-Anzeige/Scanner, Opt-out-UI, Bring-Items
+6. `DashboardView.tsx` (Konfi) -- "Naechstes Event"-Widget
+
+**Schluessel-Patterns:**
+- Batch-INSERT mit ON CONFLICT fuer Auto-Enrollment (1 Query statt N)
+- JWT-signierte QR-Tokens (kein DB-State, selbst-verifizierend)
+- Bestehende Attendance-Route fuer Admin-Korrektur (points=0 Guard greift automatisch)
+- `event_optouts`-Tabelle nach Vorbild von `event_unregistrations`
+- Dashboard-Widget ueber bestehende Settings-KV-Steuerung
 
 ### Critical Pitfalls
 
-1. **Phantom-Ringe in ActivityRings** -- Fallback `goal > 0 ? goal : 10` zeigt Ring mit falschem Ziel fuer deaktivierte Typen. Loesung: Explizite Props `enableGottesdienst`/`enableGemeinde`, Ring komplett ausblenden statt Goal auf 0.
+Top 6 aus [PITFALLS.md](PITFALLS.md), nach Schwere geordnet:
 
-2. **Unerreichbare Badges bleiben sichtbar** -- `gottesdienst_points`/`both_categories` Badge-Kriterien werden unmoeglich wenn Typ deaktiviert. Konfis sehen 0%-Fortschritt. Loesung: Badge-Sichtbarkeit filtern, Admin bei Deaktivierung warnen, Badges NICHT loeschen (Reaktivierung moeglich).
-
-3. **Unfaires Ranking bei Typ-Aenderung mitten im Jahr** -- Alte Punkte des deaktivierten Typs zaehlen weiter in der Summe. Loesung: Ranking-Query dynamisch bauen, nur aktive Typen summieren. ENTSCHEIDUNG VOR IMPLEMENTIERUNG treffen.
-
-4. **getPointField Error statt klarer Meldung** -- Punkte-Vergabe an deaktivierten Typ gibt 500er statt erklaerenden 400er. Loesung: Typ-Aktivierungspruefung VOR getPointField-Aufruf an allen 8 betroffenen Stellen.
-
-5. **Dashboard-Config ohne Defaults** -- Bestehende Orgs haben keine Widget-Config in DB. Loesung: Frontend-Default = alles sichtbar (fehlender Key = true), kein Migrations-Script noetig wenn Code defensiv ist.
+1. **CHECK-Constraint blockiert neue Booking-Stati** -- Schema-Datei ist nicht synchron mit Live-DB. ZUERST `01-create-schema.sql` aktualisieren, dann Migration mit aktualisierten Constraints ausfuehren. Betrifft die allererste Aktion.
+2. **Opt-out loescht Booking statt Status zu aendern** -- Bestehender Abmelde-Flow (`DELETE FROM event_bookings`) zerstoert das Anwesenheits-Tracking. Neuen Opt-out-Endpunkt als Status-Aenderung implementieren, bestehenden DELETE-Flow NICHT wiederverwenden.
+3. **Multi-Tenant-Isolation bei Auto-Enrollment** -- `organization_id` in jeder Enrollment-Query pflichtmaessig filtern. Jahrgangs-IDs sind global (SERIAL), nicht org-spezifisch. DSGVO-relevant bei Verletzung.
+4. **Punkte-Vergabe bei Pflicht-Events** -- Bestehender Attendance-Endpunkt vergibt automatisch Punkte. Guard noetig: `if (event.mandatory) skip points/badges/level-check`. Alternativ: points=0 erzwingen bei mandatory=true.
+5. **Neue Konfis nach Event-Erstellung nicht nachgetragen** -- Auto-Enrollment ist einmalig bei Event-Erstellung. Trigger bei Jahrgang-Zuweisung (auth.js, konfi-managment.js) noetig um Nachzuegler zu enrollen.
+6. **QR-Code-Kollision mit bestehendem Invite-QR** -- Typ-Prefix im QR-Inhalt verwenden (`konfiquest://checkin/...` vs. `konfiquest://invite/...`), um Verwechslung zu verhindern.
 
 ## Implications for Roadmap
 
-### Phase 1: DB-Schema + Backend-Foundation
-**Rationale:** Alle weiteren Phasen haengen vom Datenmodell ab. Schema-Aenderungen muessen zuerst stehen. Die Ranking-Entscheidung muss hier fallen.
-**Delivers:** jahrgaenge-Tabelle mit enable_gottesdienst/enable_gemeinde, jahrgaenge.js CRUD erweitert, settings.js um dashboard_show_* Keys erweitert, konfi.js /dashboard liefert point_config
-**Addresses:** Jahrgang-Config Backend, Dashboard-Config Backend, Settings-Endpoints
-**Avoids:** Pitfall 7 (falsche Speicherstelle), Pitfall 5 (fehlende Defaults)
+### Phase 1: Datenmodell + Pflicht-Event-Erstellung + Auto-Enrollment
+**Rationale:** Alles andere baut auf dem mandatory-Flag und der Auto-Enrollment-Logik auf. Ohne diese Basis kein Opt-out, kein Check-in, keine Statistik. Schema-Synchronisation (Pitfall 1) muss der allererste Schritt sein.
+**Delivers:** Admin kann Pflicht-Events erstellen, Konfis werden automatisch enrolled, bring_items-Feld verfuegbar
+**Addresses:** Pflicht-Flag, Auto-Enrollment, "Was mitbringen", keine Punkte bei Pflicht-Events
+**Avoids:** Pitfall 1 (CHECK-Constraint), Pitfall 2 (UNIQUE-Violations), Pitfall 5 (Punkte-Vergabe), Pitfall 6 (Multi-Tenant), Pitfall 12 (Kapazitaetspruefung)
+**Umfang:** DB-Migration, POST/PUT/GET events erweitern, EventModal.tsx anpassen, Auto-Enrollment-Logik, Punkte-Guard
 
-### Phase 2: Punkte-Logik Backend
-**Rationale:** Backend-Guards muessen vor Frontend-Anpassungen stehen, sonst koennten Admins Punkte an deaktivierte Typen vergeben.
-**Delivers:** Punkte-Vergabe-Guards in activities.js, konfi-managment.js, events.js. Badge-Checks respektieren deaktivierte Typen. Ranking dynamisch. Level-Berechnung angepasst.
-**Addresses:** Punkte-Vergabe-Blockierung, Badge-Skip, Ranking-Fairness, Level-Konsistenz
-**Avoids:** Pitfall 4 (getPointField Error), Pitfall 3 (unfaires Ranking), Pitfall 2 (unerreichbare Badges)
+### Phase 2: Opt-out-Flow + Konfi-UI fuer Pflicht-Events
+**Rationale:** Haengt von Phase 1 ab (Events + Bookings muessen existieren). Konfis muessen sich vor dem Event-Tag abmelden koennen. Frontend muss Pflicht- und freiwillige Events klar unterscheiden.
+**Delivers:** Konfis koennen sich mit Begruendung abmelden, Admin sieht Opt-out-Gruende, Pflicht-Badge in Event-Liste
+**Addresses:** Opt-out mit Begruendung, Konfi-Event-UI, Admin-Opt-out-Uebersicht
+**Avoids:** Pitfall 3 (Booking-Loeschung), Pitfall 7 (UI-Verwirrung), Pitfall 8 (falsche Statistik-Zaehlung)
+**Umfang:** event_optouts-Tabelle, POST /konfi/events/:id/optout, OptOutModal.tsx, EventsView.tsx Pflicht-Badge, EventDetailView.tsx Opt-out-Button
 
-### Phase 3: Frontend Punkte-Anzeige
-**Rationale:** Backend liefert jetzt korrekte Daten und Config -- Frontend muss sie darstellen. ActivityRings ist die komplexeste Aenderung.
-**Delivers:** ActivityRings dynamisch (1-3 Ringe), DashboardView nutzt point_config, KonfisView Progress-Bars angepasst, KonfiDetailView Ringe angepasst, AdminGoalsPage Hinweise, Jahrgang-Edit-Modal mit Toggles + Badge-Warnung
-**Addresses:** Alle UI-seitigen Table-Stakes-Features
-**Avoids:** Pitfall 1 (Phantom-Ringe), Pitfall 6 (Fortschrittsbalken-Logik)
+### Phase 3: QR-Code Check-in
+**Rationale:** Unabhaengig von Opt-out (Phase 2), aber abhaengig von Phase 1 (Bookings muessen existieren). Kann theoretisch parallel zu Phase 2 gebaut werden. Einzige neue externe Dependency (`@capacitor/barcode-scanner`).
+**Delivers:** Admin zeigt QR-Code, Konfi scannt und wird als anwesend markiert, Live-Update an Admin
+**Addresses:** QR-Generierung, QR-Scan, Check-in-Validierung, Zeitfenster
+**Avoids:** Pitfall 4 (Offline-Fallback -- manueller Fallback bleibt), Pitfall 9 (QR-Kollision -- Typ-Prefix)
+**Umfang:** Capacitor Plugin installieren, GET /events/:id/qr-token, POST /events/:id/checkin, QrDisplayModal.tsx, QrScannerModal.tsx
 
-### Phase 4: Dashboard-Widget-Konfiguration
-**Rationale:** Unabhaengig von Punkte-Logik, kann parallel zu Phase 2+3 entwickelt werden. Eigenstaendiges Feature.
-**Delivers:** DashboardConfigModal.tsx (neues Modal mit IonToggle-Liste), AdminSettingsPage Link zum Modal, DashboardView Conditional Rendering aller 5 Sektionen, KonfiDashboardPage reicht dashboardConfig durch
-**Addresses:** Dashboard-Widget-Toggles, Conditional Rendering
-**Avoids:** Pitfall 8 (Over-Engineering), Pitfall 9 (zu viele KV-Paare)
-
-### Phase 5: End-to-End-Test + Edge Cases
-**Rationale:** Integration aller Aenderungen, Edge-Case-Handling, Verifikation auf echtem Geraet.
-**Delivers:** End-to-End-Verifikation aller Szenarien (1 Typ aktiv, 0 Typen theoretisch, Typ mitten im Jahr deaktivieren, Widgets an/aus), Profil-Seite bereinigt, Push-Notification-Texte konsistent
-**Addresses:** Profil-Anzeige, Push-Texte, Edge Cases
-**Avoids:** Pitfall 10 (vergessene Admin-Views), Pitfall 12 (Push-Texte), Pitfall 13 (Profil)
+### Phase 4: Dashboard-Widget + Anwesenheitsstatistik
+**Rationale:** Braucht Attendance-Daten aus Phase 1-3. Darstellungslogik als letztes, weil sie von den Daten abhaengt die die vorherigen Phasen produzieren.
+**Delivers:** "Naechstes Event"-Widget im Dashboard, pro-Konfi Anwesenheitsstatistik fuer Admin
+**Addresses:** Dashboard-Widget, Anwesenheitsstatistik, DashboardConfig-Erweiterung, Push-Erinnerungen
+**Avoids:** Pitfall 14 (fehlender Zeitraum-Filter -- Default auf Konfirmationsjahr)
+**Umfang:** Dashboard-Endpoint erweitern, DashboardView.tsx Widget, settings.js Toggle, GET /konfi-management/:id/attendance, AttendanceStatsView.tsx
 
 ### Phase Ordering Rationale
 
-- **DB-Schema zuerst:** Beide Features brauchen Schema-Aenderungen als Grundlage. ALTER TABLE jahrgaenge und neue Settings-Keys muessen vor Code-Aenderungen stehen.
-- **Backend vor Frontend:** Punkte-Guards muessen existieren bevor die UI sie beruecksichtigt. Sonst inkonsistenter Zustand moeglich.
-- **Punkte-Logik vor Dashboard-Widgets:** Punkte-Logik ist komplexer (8 Backend-Routes, Badge-Integration, Ranking) und hat mehr Abhaengigkeiten. Dashboard-Widgets sind isolierter.
-- **Phase 4 kann parallel zu Phase 2+3 laufen:** Dashboard-Widget-Config hat keine Abhaengigkeit zur Punkte-Typ-Logik. Nur DashboardView.tsx wird von beiden Phasen beruehrt.
-- **End-to-End ganz am Ende:** Alle Features muessen implementiert sein bevor Integrationstests sinnvoll sind.
+- **Abhaengigkeitskette:** Datenmodell -> Enrollment -> Opt-out -> Check-in -> Statistik. Jede Phase baut auf der vorherigen auf.
+- **Risiko-First:** Die kritischsten Pitfalls (CHECK-Constraint, Booking-Loeschung, Multi-Tenant) werden in Phase 1-2 adressiert, bevor das System komplexer wird.
+- **Einzelne externe Dependency:** `@capacitor/barcode-scanner` wird erst in Phase 3 benoetigt -- fruehe Phasen brauchen keine Installation/Konfiguration.
+- **Inkrementelle Lieferbarkeit:** Nach Phase 1 ist das System bereits nutzbar (Admin erstellt Pflicht-Events, Konfis sind enrolled). Nach Phase 2 koennen Konfis sich abmelden. Phase 3 beschleunigt den Check-in. Phase 4 liefert Reporting.
 
 ### Research Flags
 
-Phasen die tiefere Research waehrend der Planung brauchen:
-- **Phase 2 (Punkte-Logik Backend):** Ranking-Entscheidung (alte Punkte behalten vs. nur aktive zaehlen) hat massive UX-Implikationen und muss mit dem Nutzer geklaert werden. Badge-Logic mit `both_categories` bei einem aktiven Typ braucht klare Semantik-Definition.
-- **Phase 3 (ActivityRings):** Ring-Radien-Berechnung bei dynamischer Anzahl ist visuelles Feintuning. Muss auf dem Geraet getestet werden.
+Phasen die tiefere Recherche waehrend der Planung benoetigen:
+- **Phase 3 (QR-Check-in):** Architektur-Entscheidung "Wer scannt wen?" (Admin scannt Konfi-QR vs. Konfi scannt Event-QR) hat signifikante UX- und Sicherheits-Implikationen. Die Research-Dateien empfehlen unterschiedliche Ansaetze (STACK.md: Konfi scannt Event-QR; PITFALLS.md: Admin scannt Konfi-QR als sicherere Option). Diese Entscheidung muss vor der Implementierung fallen.
 
-Phasen mit Standard-Patterns (keine Research noetig):
-- **Phase 1 (DB-Schema):** ALTER TABLE, UPSERT-Pattern -- triviale SQL-Operationen
-- **Phase 4 (Dashboard-Widgets):** Conditional Rendering, IonToggle, Settings KV-Store -- alles etablierte Patterns in der Codebase
-- **Phase 5 (End-to-End):** Test-Checkliste abarbeiten, keine neue Architektur
+Phasen mit etablierten Patterns (keine Phase-Research noetig):
+- **Phase 1:** Batch-INSERT mit ON CONFLICT, Boolean-Spalten auf bestehender Tabelle -- Standard-PostgreSQL-Patterns.
+- **Phase 2:** Opt-out-Tabelle folgt exakt dem bestehenden `event_unregistrations`-Pattern. useIonModal fuer OptOutModal.
+- **Phase 4:** Dashboard-Widget folgt dem bestehenden 5-Widget-Pattern aus v1.6. Settings-KV identisch.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Null neue Dependencies. Alle Empfehlungen basieren auf direkter Codebase-Analyse mit konkreten Zeilennummern |
-| Features | HIGH | Vollstaendige Bestandsaufnahme aller betroffenen Code-Stellen. Abhaengigkeitsgraph dokumentiert. Anti-Features klar begruendet |
-| Architecture | HIGH | Alle 15 Backend-Routes analysiert, alle relevanten Frontend-Komponenten mit Zeilennummern referenziert. Datenfluss-Diagramme vorhanden |
-| Pitfalls | HIGH | 13 Pitfalls identifiziert (5 kritisch, 5 moderat, 3 geringfuegig). Abhaengigkeits-Reihenfolge der Mitigationen dokumentiert |
+| Stack | HIGH | Einzige neue Dependency ist offizielles Capacitor-Plugin. Alle anderen Empfehlungen basieren auf direkter Codebase-Analyse bestehender Patterns. |
+| Features | HIGH | Feature-Landscape vollstaendig aus bestehendem Event-System abgeleitet. UX-Patterns aus Church/School-Management-Tools verifiziert. |
+| Architecture | HIGH | Alle Komponenten, Routen und Queries mit Zeilennummern referenziert. Datenfluss-Aenderungen an bestehenden Code-Stellen verifiziert. |
+| Pitfalls | HIGH | Pitfalls aus direkter Code-Analyse identifiziert (CHECK-Constraints, DELETE-Flow, Kapazitaetspruefung). Keine spekulativen Risiken. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Ranking-Entscheidung:** Wie werden alte Punkte eines deaktivierten Typs im Ranking behandelt? Option A (nur aktive Typen zaehlen) ist empfohlen, muss aber mit dem Nutzer abgestimmt werden. Diese Entscheidung beeinflusst Level-Berechnung, Fortschrittsbalken und Total-Points-Anzeige.
-- **both_categories Badge-Semantik:** Wenn nur ein Typ aktiv ist -- reicht der eine aktive Typ fuer `both_categories`? Oder wird das Badge uebersprungen? Architecture empfiehlt: nur aktive Typen muessen das Kriterium erfuellen.
-- **AdminGoalsPage bei gemischten Jahrgaengen:** Goals sind org-weit, Punkte-Typen sind jahrgangs-spezifisch. Was passiert wenn Jahrgang A beide Typen hat und Jahrgang B nur einen? Goals-Seite muss das kommunizieren.
-- **Dashboard-Widget-Config als einzelne Keys vs. JSON:** PITFALLS.md empfiehlt ein JSON-Objekt, STACK.md und ARCHITECTURE.md empfehlen einzelne Keys. Empfehlung: Einzelne Keys sind konsistenter mit dem bestehenden Settings-Pattern (target_gottesdienst etc. sind auch einzelne Keys).
+- **QR-Scan-Richtung:** STACK.md empfiehlt "Konfi scannt Event-QR", PITFALLS.md warnt vor Weitergabe-Risiko und empfiehlt "Admin scannt Konfi-QR". Entscheidung muss in Phase-3-Planung fallen. Empfehlung: Konfi scannt Event-QR (einfacher, skaliert besser fuer 30 Konfis gleichzeitig) mit Zeitfenster-Validierung als Missbrauchsschutz.
+- **Nachtrags-Enrollment bei Jahrgangs-Wechsel:** PITFALLS.md identifiziert das Problem (Pitfall 10), aber die konkrete Implementierung (Trigger in auth.js + konfi-managment.js) braucht Code-Analyse waehrend Phase-1-Planung.
+- **event_unregistrations-Tabelle:** Existiert im Code aber nicht in `01-create-schema.sql`. Schema-Synchronisation muss das klaeren (Pitfall 1 erweitert).
+- **Capacitor Barcode Scanner Version:** `@latest-7` Tag muss bei Installation geprueft werden -- konkrete Versionsnummer zum Build-Zeitpunkt festhalten.
 
 ## Sources
 
 ### Primary (HIGH confidence -- direkte Codebase-Analyse)
-- ActivityRings.tsx (350 Zeilen, 3 hardcoded Ringe, Fallback-Logik Z.36-38)
-- DashboardView.tsx (~1450 Zeilen, 6 Sektionen, Conditional-Rendering-Pattern vorhanden)
-- badges.js (504 Zeilen, 13 CRITERIA_TYPES, 4 punkte-basiert)
-- settings.js (159 Zeilen, UPSERT-Pattern Z.99-148)
-- jahrgaenge.js (193 Zeilen, CRUD, aktuell nur name + confirmation_date)
-- konfi.js (~900 Zeilen, Dashboard-Route Z.32-272, Ranking Z.97-107)
-- activities.js (~500 Zeilen, getPointField Usage Z.246, 320, 455)
-- konfi-managment.js (~700 Zeilen, getPointField Usage Z.476, 555, 609, 666)
-- levels.js (299 Zeilen, total_points Berechnung Z.226, 243)
-- validation.js (65 Zeilen, getPointField Whitelist Z.24-35)
-- AdminGoalsPage.tsx (80 Zeilen, 2 Stepper)
-- KonfisView.tsx (3 Progress-Bars Z.292-334)
-- KonfiDetailView.tsx (ActivityRings Z.499-500)
-- KonfiDashboardPage.tsx (305 Zeilen, Settings-Loading)
+- events.js (1500+ Zeilen, 15 Routen, Attendance Zeile 1289-1432)
+- konfi.js (1800+ Zeilen, Events-Query Zeile 1117-1215, Unregistration Zeile 1718-1830)
+- 01-create-schema.sql (event_bookings CHECK-Constraint Zeile 387, UNIQUE Zeile 395)
+- AdminInvitePage.tsx (QR-Generierung mit qrcode v1.5.4)
+- pushService.js (18 bestehende Push-Types)
+- DashboardView.tsx (6 konfigurierbare Sektionen, Settings-KV)
+- [Capacitor Barcode Scanner Plugin Docs](https://capacitorjs.com/docs/apis/barcode-scanner)
+
+### Secondary (MEDIUM confidence -- UX-Patterns aus Church/School-Tools)
+- [Church Check-in Systems (Breeze ChMS)](https://www.breezechms.com/blog/check-in-systems-for-churches)
+- [QR Code Attendance Best Practices (Verifyed)](https://www.verifyed.io/blog/qr-code-attendance)
+- [Orah Attendance Dashboard](https://success.orah.com/en/articles/9924908-attendance-insights-dashboard-all-widgets)
+- [MinHub Youth App](https://apps.apple.com/us/app/minhub-youth/id910303883)
 
 ---
-*Research completed: 2026-03-07*
+*Research completed: 2026-03-09*
 *Ready for roadmap: yes*
