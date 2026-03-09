@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.7 Unterricht + Pflicht-Events (Shipped: 2026-03-09)
+
+**Phases completed:** 4 Phasen (34-37), 8 Plans
+**Timeline:** 2026-03-09 (1 Tag)
+**Stats:** 23 files changed, 2312 insertions, 523 deletions
+**Requirements:** 17/17 (PFL: 4, OPT: 3, QRC: 5, EUI: 3, ANW: 2)
+
+**Key accomplishments:**
+- Pflicht-Events mit Auto-Enrollment aller Jahrgangs-Konfis, Punkte-Guard und Nachtrags-Hooks bei Jahrgang-Wechsel
+- Opt-out-Flow mit Freitext-Begruendung (min. 5 Zeichen), Admin-Uebersicht und Push-Benachrichtigung bei Abmeldung
+- QR-Code Check-in mit signiertem JWT-Token, konfigurierbarem Zeitfenster (5-120 Min) und Live-Zaehler im Admin-Modal
+- Manuelle Anwesenheitskorrektur und druckfreundlicher QR-Code mit Print-CSS
+- Pro-Konfi Anwesenheitsstatistik mit farbiger IonProgressBar (gruen/gelb/rot) und verpasste-Events-Liste
+- Dashboard Events-Widget mit Was-mitbringen-Info (bagHandle-Icon) und Admin-Toggle (show_events)
+
+---
+
 ## v1.6 Dashboard-Konfig + Punkte-Logik (Shipped: 2026-03-09)
 
 **Phases completed:** 4 Phasen (30-33), 7 Plans, 14 Tasks
@@ -89,8 +106,6 @@
 
 ## Geplante Milestones
 
-- **v1.6 Dashboard-Konfig + Punkte-Logik** -- SHIPPED 2026-03-09
-- **v1.7 Unterricht** -- Kategorie "Unterricht" mit Auto-Enrollment, Opt-out, Anwesenheitsuebersicht
 - **v1.8 Teamer** -- Neue Rolle, professionelleres Dashboard, Konfi-zu-Teamer Transition, Teamer-Badges/Events/Chat
 - **v1.9 Datenschutz + Archivierung** -- Jahrgaenge archivieren, Loeschfristen, DSGVO
 - **Konfi Wrapped** -- Spotify-Wrapped-Style Rueckblick vor Konfirmation

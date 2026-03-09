@@ -4,9 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.7 Unterricht + Pflicht-Events
+## Current Status
 
-**Goal:** Pflicht-Events mit Auto-Enrollment, Opt-out mit Begruendung, QR-Code Check-in, Anwesenheitsstatistik und Dashboard-Widget fuer naechstes Event.
+v1.7 shipped. Naechster Milestone wird ueber `/gsd:new-milestone` definiert.
 
 ## Core Value
 
@@ -77,16 +77,15 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Backend-Guard verhindert Punktevergabe fuer deaktivierte Typen, Badge-Logik ueberspringt deaktivierte Kriterien -- v1.6
 - ActivityRings dynamisch (1-3 Ringe), Ranking/Historie/Progress-Bars reagieren auf deaktivierte Typen -- v1.6
 - Dashboard-Widget-Steuerung: 5 Sektionen vom Org-Admin ein/ausblendbar, Tageslosung-API optimiert -- v1.6
+- Pflicht-Events mit Auto-Enrollment, Punkte-Guard und Nachtrags-Hooks -- v1.7
+- Opt-out mit Freitext-Begruendung, Admin-Uebersicht und Push-Benachrichtigung -- v1.7
+- QR-Code Self-Check-in mit Zeitfenster-Validierung und manuelle Admin-Korrektur -- v1.7
+- "Was mitbringen"-Textfeld auf Events mit Dashboard-Widget-Integration -- v1.7
+- Pro-Konfi Anwesenheitsstatistik mit Farbcodierung und verpasste-Events-Liste -- v1.7
 
 ### Active
 
-- [ ] Pflicht-Flag (mandatory) auf Events mit Auto-Enrollment aller Jahrgangs-Konfis
-- [ ] Opt-out mit Freitext-Begruendung statt Opt-in fuer Pflicht-Events
-- [ ] QR-Code Self-Check-in + manuelle Admin-Korrektur fuer Anwesenheit
-- [ ] "Was mitbringen"-Textfeld auf Events (optional, fuer alle Events)
-- [ ] Dashboard-Widget "Naechstes Event" mit "Was mitbringen"-Info
-- [ ] Pro-Konfi Anwesenheitsstatistik (Fehlzeiten, Gruende, Ueberblick)
-- [ ] Keine Punkte fuer Pflicht-Events, nur Anwesenheits-Tracking
+(Wird mit naechstem Milestone definiert)
 
 ### Out of Scope
 
@@ -107,7 +106,8 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.4 shipped: Logik-Debug (5 Phasen, 9 Plans, 24 Requirements, 50 Dateien, +3397/-1552 Zeilen)
 - v1.5 shipped: Push-Notifications (5 Phasen, 8 Plans, 17 Requirements, 16 Dateien, +647/-406 Zeilen)
 - v1.6 shipped: Dashboard-Konfig + Punkte-Logik (4 Phasen, 7 Plans, 13 Requirements, 18 Dateien, +866/-524 Zeilen)
-- Gesamt: 34 Phasen, 70 Plans ueber 7 Milestones shipped
+- v1.7 shipped: Unterricht + Pflicht-Events (4 Phasen, 8 Plans, 17 Requirements, 23 Dateien, +2312/-523 Zeilen)
+- Gesamt: 38 Phasen, 78 Plans ueber 8 Milestones shipped
 - Codebase: ~34.259 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
@@ -158,6 +158,12 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Dashboard-Widget-Toggles in settings KV | Bestehende Settings-Tabelle nutzen statt neue Tabelle | Bestaetigt v1.6 |
 | Deaktivierte Punkte bleiben in DB | UI/Ranking blendet aus, historische Daten erhalten | Bestaetigt v1.6 |
 | Dashboard-Widgets komplett ausblenden | Kein Platzhalter, nachfolgende Widgets ruecken auf | Bestaetigt v1.6 |
+| Punkte-Guard: mandatory erzwingt points=0 | Unabhaengig vom Frontend-Input, Backend verhindert Punktevergabe | Bestaetigt v1.7 |
+| Opt-out als Status-Wechsel statt Booking loeschen | confirmed -> opted_out, opt_out_reason bleibt bei Opt-in erhalten | Bestaetigt v1.7 |
+| QR_SECRET faellt auf JWT_SECRET zurueck | Einfache Konfiguration, separates Secret optional | Bestaetigt v1.7 |
+| Konfi scannt Event-QR (nicht umgekehrt) | Skaliert besser, ein QR-Code fuer alle Konfis | Bestaetigt v1.7 |
+| Check-in-Fenster bei allen Event-Typen | Pflicht + freiwillig, konfigurierbar 5-120 Min | Bestaetigt v1.7 |
+| Scanner-Feedback als inline Banners | Ueber Video-Feed statt Toast, bessere UX | Bestaetigt v1.7 |
 
 ---
-*Last updated: 2026-03-09 after v1.7 milestone start*
+*Last updated: 2026-03-09 after v1.7 milestone*

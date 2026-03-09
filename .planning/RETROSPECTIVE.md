@@ -228,6 +228,71 @@
 
 ---
 
+## Milestone: v1.6 -- Dashboard-Konfig + Punkte-Logik
+
+**Shipped:** 2026-03-09
+**Phases:** 4 | **Plans:** 7
+
+### What Was Built
+- Punkte-Typ-Konfiguration pro Jahrgang: Gottesdienst/Gemeinde einzeln aktivierbar mit eigenen Zielwerten
+- Backend-Guard verhindert Punktevergabe fuer deaktivierte Typen mit 400er-Fehler
+- ActivityRings dynamisch (1-3 Ringe), Ranking/Historie/Progress-Bars reagieren auf deaktivierte Typen
+- Dashboard-Widget-Steuerung: 5 Sektionen vom Org-Admin ein/ausblendbar
+- Tageslosung-API-Call-Optimierung bei deaktivierter Losung
+
+### What Worked
+- Boolean-Spalten auf jahrgaenge-Tabelle statt separate Konfigurationstabelle -- einfach und performant
+- Settings KV-Store fuer Dashboard-Toggles wiederverwendet statt neue Tabelle
+- Deaktivierte Punkte bleiben in DB (historische Daten erhalten), nur UI blendet aus
+
+### Key Lessons
+1. Bestehende Tabellen erweitern ist oft besser als neue Tabellen erstellen
+2. UI-Ausblendung statt Datenlöschung schützt historische Daten
+
+---
+
+## Milestone: v1.7 -- Unterricht + Pflicht-Events
+
+**Shipped:** 2026-03-09
+**Phases:** 4 | **Plans:** 8
+
+### What Was Built
+- Pflicht-Events mit Auto-Enrollment aller Jahrgangs-Konfis, Punkte-Guard und Nachtrags-Hooks
+- Opt-out-Flow mit Freitext-Begruendung (min. 5 Zeichen), Admin-Uebersicht und Push bei Abmeldung
+- QR-Code Check-in mit signiertem JWT-Token, konfigurierbarem Zeitfenster und Live-Zaehler
+- Manuelle Anwesenheitskorrektur und druckfreundlicher QR-Code mit Print-CSS
+- Pro-Konfi Anwesenheitsstatistik mit farbiger IonProgressBar und verpasste-Events-Liste
+- Dashboard Events-Widget mit Was-mitbringen-Info und Admin-Toggle
+
+### What Worked
+- Klare Feature-Trennung: Pflicht-Grundlagen -> Opt-out -> QR -> Statistik -- jede Phase baut auf der vorherigen auf
+- Integration-Checker: 17/17 Requirements verdrahtet, 5/5 E2E-Flows komplett, 0 gebrochene Verbindungen
+- Opt-out als Status-Wechsel statt Booking-Loeschung -- erhaltung der Begruendung bei Opt-in
+- QR-Secret Fallback auf JWT_SECRET vereinfacht Konfiguration fuer Single-Server-Setups
+
+### What Was Inefficient
+- Phase 34 VERIFICATION.md fehlte -- erst im Milestone-Audit als "unverified phase" aufgefallen
+- TypeScript-Interfaces in KonfiEventsPage.tsx nicht aktualisiert mit neuen Feldern -- Quick-Fix noetig
+
+### Patterns Established
+- Status-Wechsel-Pattern fuer reversible Aktionen (confirmed -> opted_out -> confirmed)
+- JWT-signierte QR-Tokens mit DB-Abgleich fuer Double-Verification
+- IonProgressBar Farbcodierung (gruen >=80%, gelb >=50%, rot <50%) fuer Quoten-Anzeige
+- Print-CSS mit @media print fuer druckfreundliche Modal-Inhalte
+
+### Key Lessons
+1. VERIFICATION.md sollte fuer JEDE Phase erstellt werden, nicht nur optional
+2. TypeScript-Interfaces beim Hinzufuegen neuer DB-Spalten sofort aktualisieren -- nicht erst im Audit finden
+3. Status-Wechsel ist robuster als Loeschen (Datenerhaltung, Audit-Trail)
+4. QR-Code Self-Check-in skaliert besser als Admin-scannt-Konfi (ein Code fuer alle)
+
+### Cost Observations
+- Model mix: ~85% opus (execution), ~15% sonnet (verification)
+- Sessions: 1 Session an 1 Tag
+- Notable: 8 Plans in ~103min (Durchschnitt ~13min/Plan), komplexere Features als vorherige Milestones
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -240,6 +305,8 @@
 | v1.3 | ~6 | 9 | 18 | ~1.4min | Kleine fokussierte Plans, systematischer Audit |
 | v1.4 | ~4 | 5 | 9 | ~2min | Logik-Debug nach Bereichen, Transaktionssicherheit |
 | v1.5 | ~6 | 5 | 8 | ~1.8min | Push-System E2E, Integration-Checker ohne Luecken |
+| v1.6 | ~2 | 4 | 7 | ~3min | Punkte-Typ-Config, Dashboard-Widget-Steuerung |
+| v1.7 | 1 | 4 | 8 | ~13min | Pflicht-Events, QR-Check-in, Anwesenheitsstatistik |
 
 ### Top Lessons (Verified Across Milestones)
 
