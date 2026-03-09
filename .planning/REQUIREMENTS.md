@@ -17,7 +17,7 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 ### Opt-out
 
 - [x] **OPT-01**: Konfi kann sich von einem Pflicht-Event mit Freitext-Begruendung abmelden (Opt-out statt Abmeldung)
-- [ ] **OPT-02**: Admin sieht alle Opt-out-Begruendungen in der Event-Teilnehmerliste
+- [x] **OPT-02**: Admin sieht alle Opt-out-Begruendungen in der Event-Teilnehmerliste
 - [x] **OPT-03**: Admin erhaelt Push-Benachrichtigung wenn ein Konfi sich von einem Pflicht-Event abmeldet
 
 ### QR-Check-in
@@ -81,7 +81,7 @@ Zurueckgestellt fuer spaetere Milestones.
 | PFL-04 | Phase 34 | Complete |
 | EUI-01 | Phase 34 | Complete |
 | OPT-01 | Phase 35 | Complete |
-| OPT-02 | Phase 35 | Pending |
+| OPT-02 | Phase 35 | Complete |
 | OPT-03 | Phase 35 | Complete |
 | QRC-01 | Phase 36 | Pending |
 | QRC-02 | Phase 36 | Pending |

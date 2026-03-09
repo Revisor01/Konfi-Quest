@@ -108,7 +108,7 @@ Phase 33: Dashboard-Widget-Steuerung (1 plan, complete)
 **Milestone Goal:** Pflicht-Events mit Auto-Enrollment, Opt-out mit Begruendung, QR-Code Check-in, Anwesenheitsstatistik und Dashboard-Widget.
 
 - [x] **Phase 34: Pflicht-Event-Grundlagen** - Mandatory-Flag, Auto-Enrollment, bring_items-Feld, Punkte-Guard (completed 2026-03-09)
-- [ ] **Phase 35: Opt-out-Flow** - Abmeldung mit Begruendung, Admin-Uebersicht, Push bei Opt-out
+- [x] **Phase 35: Opt-out-Flow** - Abmeldung mit Begruendung, Admin-Uebersicht, Push bei Opt-out (completed 2026-03-09)
 - [ ] **Phase 36: QR-Code Check-in** - QR-Generierung, Scanner, Zeitfenster-Validierung, manuelle Korrektur
 - [ ] **Phase 37: Dashboard-Widget + Anwesenheitsstatistik** - Naechstes-Event-Widget, pro-Konfi Statistik
 
@@ -183,6 +183,6 @@ Phases execute in numeric order: 34 -> 35 -> 36 -> 37
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 34. Pflicht-Event-Grundlagen | 2/2 | Complete   | 2026-03-09 | - |
-| 35. Opt-out-Flow | 1/2 | In Progress|  | - |
+| 35. Opt-out-Flow | 2/2 | Complete   | 2026-03-09 | - |
 | 36. QR-Code Check-in | v1.7 | 0/2 | Not started | - |
 | 37. Dashboard-Widget + Anwesenheitsstatistik | v1.7 | 0/2 | Not started | - |

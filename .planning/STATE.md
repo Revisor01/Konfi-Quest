@@ -8,7 +8,7 @@ progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -23,25 +23,25 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 35 of 37 (Opt-out-Flow)
-Plan: 1 of 2
-Status: Executing Phase 35
-Last activity: 2026-03-09 -- Plan 35-01 abgeschlossen (Opt-out Backend API)
+Plan: 2 of 2
+Status: Phase 35 complete
+Last activity: 2026-03-09 -- Plan 35-02 abgeschlossen (Opt-out Frontend UI)
 
-Progress: [########------------] 38%
+Progress: [##########----------] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 30min
-- Total execution time: 90min
+- Total plans completed: 4
+- Average duration: 24min
+- Total execution time: 93min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 34 | 2/2 | 88min | 44min |
-| 35 | 1/2 | 2min | 2min |
+| 35 | 2/2 | 5min | 2.5min |
 
 *Updated after each plan completion*
 
@@ -60,6 +60,9 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 35-01] Opt-out als Status-Wechsel (confirmed -> opted_out) statt Booking loeschen
 - [Phase 35-01] opt_out_reason bleibt bei Opt-in erhalten (per User-Decision)
 - [Phase 35-01] DELETE-Guard verhindert Abmeldung von Pflicht-Events ueber alten Endpoint
+- [Phase 35-02] Separater useIonModal-Hook fuer Opt-out Modal mit mandatory=true
+- [Phase 35-02] X/Y Zaehler bei Pflicht-Events: confirmed/gesamt (entspricht Jahrgangs-Groesse)
+- [Phase 35-02] Opted_out Teilnehmer bleiben inline in Teilnehmerliste (keine separate Sektion)
 
 ### Pending Todos
 
@@ -74,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 35-01-PLAN.md
+Stopped at: Completed 35-02-PLAN.md (Phase 35 complete)
 Resume file: none
