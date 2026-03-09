@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 Phase: 37 of 37 (Dashboard-Widget + Anwesenheitsstatistik)
 Plan: 2 of 2
 Status: Phase 37 complete -- v1.7 Milestone complete
-Last activity: 2026-03-09 -- Plan 37-02 abgeschlossen (Anwesenheitsstatistik UI + Dashboard Verifikation)
+Last activity: 2026-03-09 - Completed quick task 2: KonfiEventsPage.tsx TypeScript Interface um fehlende v1.7 Felder ergaenzen
 
 Progress: [####################] 100%
 
@@ -83,6 +83,12 @@ None.
 - Research-Flag Phase 36: QR-Scan-Richtung muss entschieden werden (Konfi scannt Event-QR vs. Admin scannt Konfi-QR). Research empfiehlt: Konfi scannt Event-QR (skaliert besser).
 - ERLEDIGT: CHECK-Constraint auf event_bookings.status wurde in Phase 34-01 synchronisiert.
 - ERLEDIGT: Opt-out-Endpunkt gebaut (Phase 35-01), DELETE-Guard verhindert Missbrauch bei Pflicht-Events.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 2 | KonfiEventsPage.tsx TypeScript Interface um fehlende v1.7 Felder ergaenzen | 2026-03-09 | b090734 | [2-konfieventspage-tsx-typescript-interface](./quick/2-konfieventspage-tsx-typescript-interface/) |
 
 ## Session Continuity
 
