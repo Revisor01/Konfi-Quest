@@ -15,12 +15,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     body('title').trim().notEmpty().withMessage('Titel ist erforderlich')
       .isLength({ max: 200 }).withMessage('Titel darf maximal 200 Zeichen lang sein'),
     body('date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
+    body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
+    body('bring_items').optional().isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
 
   const validateUpdateEvent = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('title').trim().notEmpty().withMessage('Titel ist erforderlich'),
+    body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
+    body('bring_items').optional().isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
 
@@ -367,33 +371,45 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
-      waitlist_enabled, max_waitlist_size, timeslots, is_series, series_id
+      waitlist_enabled, max_waitlist_size, timeslots, is_series, series_id,
+      mandatory, bring_items
     } = req.body;
-    
-    if (!name || !event_date || !max_participants) {
+
+    if (!name || !event_date || (!mandatory && !max_participants)) {
       return res.status(400).json({ error: 'Name, Datum und maximale Teilnehmerzahl sind erforderlich' });
     }
-    
+
+    // Pflicht-Events benoetigen mindestens einen Jahrgang
+    if (mandatory && (!jahrgang_ids || jahrgang_ids.length === 0)) {
+      return res.status(400).json({ error: 'Pflicht-Events benötigen mindestens einen Jahrgang' });
+    }
+
+    // Guards fuer Pflicht-Events
+    const effectivePoints = mandatory ? 0 : (points || 0);
+    const effectiveMaxParticipants = mandatory ? 0 : max_participants;
+    const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
+
     // NOTE: For transactions with pg-pool, a client must be checked out.
     // As per the instructions, we use db.query for everything. This is safe
     // as long as the logic is encapsulated inside a single route handler.
     try {
-      
+
       const insertEventQuery = `
         INSERT INTO events (
-          name, description, event_date, event_end_time, location, location_maps_url, 
-          points, point_type, type, max_participants, registration_opens_at, 
-          registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size, 
-          is_series, series_id, created_by, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+          name, description, event_date, event_end_time, location, location_maps_url,
+          points, point_type, type, max_participants, registration_opens_at,
+          registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
+          is_series, series_id, mandatory, bring_items, created_by, organization_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
         RETURNING id
       `;
       const { rows: [newEvent] } = await db.query(insertEventQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
-        points || 0, point_type || 'gemeinde', type || 'event', max_participants,
+        effectivePoints, point_type || 'gemeinde', type || 'event', effectiveMaxParticipants,
         registration_opens_at, registration_closes_at, has_timeslots || false,
-        waitlist_enabled !== undefined ? waitlist_enabled : true, max_waitlist_size || 10,
-        is_series || false, series_id, req.user.id, req.user.organization_id
+        effectiveWaitlist, max_waitlist_size || 10,
+        is_series || false, series_id, mandatory || false, bring_items || null,
+        req.user.id, req.user.organization_id
       ]);
       
       const eventId = newEvent.id;
@@ -421,16 +437,53 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await Promise.all(promises);
 
+      // Auto-Enrollment fuer Pflicht-Events
+      if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+        const enrollQuery = `
+          INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+          SELECT $1, u.id, 'confirmed', NOW(), $3
+          FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = ANY($2::int[])
+            AND u.organization_id = $3
+            AND r.name = 'konfi'
+          ON CONFLICT (user_id, event_id) DO NOTHING
+        `;
+        await db.query(enrollQuery, [eventId, jahrgang_ids, req.user.organization_id]);
+      }
+
       res.status(201).json({ id: eventId, message: 'Event erfolgreich erstellt' });
 
       // Live Update: Notify all konfis and admins about the new event
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'create', { eventId });
 
-      // Push Notification: Notify all konfis about the new event
+      // Push Notification
       try {
-        await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date);
+        if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+          // Push nur an tatsaechlich enrollte Konfis (jahrgangs-spezifisch)
+          const { rows: enrolledUsers } = await db.query(`
+            SELECT u.id FROM users u
+            JOIN konfi_profiles kp ON u.id = kp.user_id
+            JOIN roles r ON u.role_id = r.id
+            WHERE kp.jahrgang_id = ANY($1::int[])
+              AND u.organization_id = $2
+              AND r.name = 'konfi'
+          `, [jahrgang_ids, req.user.organization_id]);
+
+          if (enrolledUsers.length > 0) {
+            const userIds = enrolledUsers.map(u => u.id);
+            await PushService.sendToMultipleUsers(db, userIds, {
+              title: 'Neues Pflicht-Event',
+              body: `${name} am ${new Date(event_date).toLocaleDateString('de-DE')}`,
+              data: { type: 'mandatory_event_created', eventId: String(eventId) }
+            });
+          }
+        } else {
+          await PushService.sendNewEventToOrgKonfis(db, req.user.organization_id, name, event_date);
+        }
       } catch (pushErr) {
- console.error('Push notification failed for new event:', pushErr);
+        console.error('Push notification failed for new event:', pushErr);
       }
 
     } catch (err) {
@@ -450,27 +503,38 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       name, description, event_date, event_end_time, location, location_maps_url,
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
-      waitlist_enabled, max_waitlist_size, timeslots
+      waitlist_enabled, max_waitlist_size, timeslots,
+      mandatory, bring_items
     } = req.body;
-    
+
+    // Guards fuer Pflicht-Events
+    const effectivePoints = mandatory ? 0 : points;
+    const effectiveMaxParticipants = mandatory ? 0 : max_participants;
+    const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
+
     // For robust transactions, a dedicated client from the pool is best practice.
     // Adhering to the prompt, we use `db.query` for BEGIN/COMMIT/ROLLBACK.
     await db.query('BEGIN');
     try {
-      
+
+      // Alten mandatory-Wert lesen fuer bedingte Auto-Enrollment-Logik
+      const { rows: [oldEvent] } = await db.query('SELECT mandatory FROM events WHERE id = $1', [id]);
+
       const updateQuery = `
-        UPDATE events SET 
-          name = $1, description = $2, event_date = $3, event_end_time = $4, location = $5, 
-          location_maps_url = $6, points = $7, point_type = $8, type = $9, 
+        UPDATE events SET
+          name = $1, description = $2, event_date = $3, event_end_time = $4, location = $5,
+          location_maps_url = $6, points = $7, point_type = $8, type = $9,
           max_participants = $10, registration_opens_at = $11, registration_closes_at = $12,
-          has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15
-        WHERE id = $16 AND organization_id = $17
+          has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15,
+          mandatory = $16, bring_items = $17
+        WHERE id = $18 AND organization_id = $19
       `;
       const { rowCount } = await db.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
-        points, point_type, type, max_participants, registration_opens_at,
-        registration_closes_at, has_timeslots || false, 
-        waitlist_enabled !== undefined ? waitlist_enabled : true, max_waitlist_size || 10,
+        effectivePoints, point_type, type, effectiveMaxParticipants, registration_opens_at,
+        registration_closes_at, has_timeslots || false,
+        effectiveWaitlist, max_waitlist_size || 10,
+        mandatory || false, bring_items || null,
         id, req.user.organization_id
       ]);
       
@@ -491,6 +555,22 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
         const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
         await db.query(jahrgangQuery, [id, jahrgang_ids]);
+      }
+
+      // Auto-Enrollment bei Umwandlung zu Pflicht-Event
+      if (mandatory && oldEvent && !oldEvent.mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
+        const enrollQuery = `
+          INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+          SELECT $1, u.id, 'confirmed', NOW(), $3
+          FROM users u
+          JOIN konfi_profiles kp ON u.id = kp.user_id
+          JOIN roles r ON u.role_id = r.id
+          WHERE kp.jahrgang_id = ANY($2::int[])
+            AND u.organization_id = $3
+            AND r.name = 'konfi'
+          ON CONFLICT (user_id, event_id) DO NOTHING
+        `;
+        await db.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
       }
 
       // Handle timeslots - intelligent update to preserve booking references
@@ -1078,7 +1158,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       const query = `
-        SELECT eb.*, eb.status, e.name as event_name, e.event_date, e.location
+        SELECT eb.*, eb.status, e.name as event_name, e.event_date, e.location, e.mandatory, e.bring_items
         FROM event_bookings eb
         JOIN events e ON eb.event_id = e.id
         WHERE eb.user_id = $1 AND eb.status IN ('confirmed', 'waitlist')
@@ -1298,8 +1378,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     try {
       
       const eventDataQuery = `
-        SELECT e.name, e.points, e.point_type, eb.user_id
-        FROM events e 
+        SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id
+        FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE e.id = $1 AND eb.id = $2 AND e.organization_id = $3
       `;
@@ -1311,7 +1391,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       await db.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
       
-      if (attendance_status === 'present' && eventData.points > 0) {
+      if (attendance_status === 'present' && eventData.points > 0 && !eventData.mandatory) {
         // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
         const pointType = eventData.point_type || 'gemeinde';
         const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, eventData.user_id, pointType);

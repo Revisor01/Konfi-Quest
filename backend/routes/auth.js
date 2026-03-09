@@ -610,6 +610,25 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
           console.error('Push for new registration failed:', pushErr);
         }
 
+        // Auto-Enrollment fuer zukuenftige Pflicht-Events
+        try {
+          const enrollFutureEventsQuery = `
+            INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+            SELECT e.id, $1, 'confirmed', NOW(), $2
+            FROM events e
+            JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+            WHERE eja.jahrgang_id = $3
+              AND e.mandatory = true
+              AND e.event_date > NOW()
+              AND e.organization_id = $2
+              AND e.cancelled IS NOT TRUE
+            ON CONFLICT (user_id, event_id) DO NOTHING
+          `;
+          await db.query(enrollFutureEventsQuery, [newUser.id, invite.organization_id, invite.jahrgang_id]);
+        } catch (enrollErr) {
+          console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
+        }
+
         // Auto-Login: JWT Token generieren
         const token = jwt.sign({
           id: newUser.id,
