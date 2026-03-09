@@ -787,6 +787,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                     </div>
                                   </div>
                                 </IonItem>
+                                {!eventData?.mandatory && (
                                 <IonItemOptions className="app-swipe-actions" side="end">
                                   <IonItemOption
                                     className="app-swipe-action"
@@ -805,6 +806,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                     </div>
                                   </IonItemOption>
                                 </IonItemOptions>
+                                )}
                               </IonItemSliding>
                             );
                           })}
@@ -996,6 +998,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           </div>
                         </div>
                       </IonItem>
+                      {!eventData?.mandatory && (
                       <IonItemOptions className="app-swipe-actions" side="end">
                         {participant.status === 'confirmed' && (
                           <IonItemOption
@@ -1016,6 +1019,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                           </div>
                         </IonItemOption>
                       </IonItemOptions>
+                      )}
                     </IonItemSliding>
                   );
                 })}
