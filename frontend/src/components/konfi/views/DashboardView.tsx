@@ -61,7 +61,8 @@ import {
   helpCircle,
   alertCircle,
   hammer,
-  chevronForward
+  chevronForward,
+  bagHandle
 } from 'ionicons/icons';
 import { Badge, DashboardEvent, RankingEntry } from '../../../types/dashboard';
 
@@ -926,6 +927,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           </>
                         )}
                       </div>
+                      {event.bring_items && (
+                        <div className="app-dashboard-meta" style={{ marginTop: '4px', color: 'rgba(255,255,255,0.9)' }}>
+                          <IonIcon icon={bagHandle} style={{ fontSize: '0.9rem', color: '#c4b5fd' }} />
+                          <span style={{ fontWeight: '600' }}>Mitbringen: {event.bring_items}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

@@ -494,11 +494,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           subtitle={getStatusText()}
           icon={calendar}
           colors={getStatusColors()}
-          stats={[
-            { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
-            { value: eventData?.points || 0, label: 'Punkte' },
-            { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' }
-          ]}
+          stats={eventData?.mandatory
+            ? [
+                { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
+                { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' },
+                { value: participants.filter(p => p.attendance_status === 'absent').length, label: 'Abwesend' }
+              ]
+            : [
+                { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
+                { value: eventData?.points || 0, label: 'Punkte' },
+                { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' }
+              ]
+          }
         />
 
         {/* Event Details */}
