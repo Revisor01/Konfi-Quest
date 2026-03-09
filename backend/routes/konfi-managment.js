@@ -494,6 +494,70 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // GET attendance stats for konfi (mandatory events)
+    router.get('/:id/attendance-stats', rbacVerifier, requireAdmin, async (req, res) => {
+        const konfiId = req.params.id;
+
+        try {
+            // Jahrgang des Konfis ermitteln
+            const jahrgangResult = await db.query(
+                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+                [konfiId]
+            );
+
+            if (jahrgangResult.rows.length === 0) {
+                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+            }
+
+            const jahrgangId = jahrgangResult.rows[0].jahrgang_id;
+
+            if (!jahrgangId) {
+                return res.json({ total_mandatory: 0, attended: 0, percentage: 100, missed_events: [] });
+            }
+
+            // Alle vergangenen Pflicht-Events des Jahrgangs mit Booking-Status
+            const { rows } = await db.query(`
+                SELECT
+                    e.id as event_id,
+                    e.name as event_name,
+                    e.event_date,
+                    e.location,
+                    eb.status as booking_status,
+                    eb.attendance_status,
+                    eb.opt_out_reason
+                FROM events e
+                JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+                LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
+                WHERE eja.jahrgang_id = $2
+                    AND e.mandatory = true
+                    AND e.event_date < NOW()
+                    AND (e.cancelled IS NOT TRUE)
+                    AND e.organization_id = $3
+                ORDER BY e.event_date DESC
+            `, [konfiId, jahrgangId, req.user.organization_id]);
+
+            const total_mandatory = rows.length;
+            const attended = rows.filter(r => r.attendance_status === 'present').length;
+            const percentage = total_mandatory > 0 ? Math.round((attended / total_mandatory) * 100) : 100;
+
+            const missed_events = rows
+                .filter(r => r.attendance_status !== 'present')
+                .map(r => ({
+                    event_id: r.event_id,
+                    event_name: r.event_name,
+                    event_date: r.event_date,
+                    location: r.location,
+                    status: r.booking_status === 'opted_out' ? 'opted_out' : 'absent',
+                    opt_out_reason: r.booking_status === 'opted_out' ? r.opt_out_reason : null
+                }));
+
+            res.json({ total_mandatory, attended, percentage, missed_events });
+        } catch (err) {
+            console.error('Database error in GET /konfis/:id/attendance-stats:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        }
+    });
+
     // POST bonus points for a konfi
     router.post('/:id/bonus-points', rbacVerifier, requireTeamer, validateBonusPoints, async (req, res) => {
         const { points, type, description } = req.body;
