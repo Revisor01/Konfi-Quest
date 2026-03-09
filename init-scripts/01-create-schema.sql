@@ -297,7 +297,9 @@ CREATE TABLE events (
     points INTEGER DEFAULT 0 CHECK (points >= 0),
     point_type VARCHAR(20) DEFAULT 'gemeinde' CHECK (point_type IN ('gottesdienst', 'gemeinde')),
     type VARCHAR(50) DEFAULT 'event',
-    max_participants INTEGER NOT NULL CHECK (max_participants > 0),
+    max_participants INTEGER NOT NULL DEFAULT 0 CHECK (max_participants >= 0),
+    mandatory BOOLEAN DEFAULT false,
+    bring_items TEXT,
     registration_opens_at TIMESTAMP,
     registration_closes_at TIMESTAMP,
     has_timeslots BOOLEAN DEFAULT false,
@@ -384,7 +386,7 @@ CREATE TABLE event_bookings (
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     timeslot_id INTEGER REFERENCES event_timeslots(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'pending', 'cancelled')),
+    status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'opted_out')),
     attendance_status VARCHAR(20) CHECK (attendance_status IN ('present', 'absent')),
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -559,5 +561,14 @@ CREATE TRIGGER update_konfi_profiles_updated_at BEFORE UPDATE ON konfi_profiles
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings 
+CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Migration v1.7 Phase 34 (auf Live-DB ausfuehren):
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS mandatory BOOLEAN DEFAULT false;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS bring_items TEXT;
+-- ALTER TABLE events ALTER COLUMN max_participants SET DEFAULT 0;
+-- ALTER TABLE events DROP CONSTRAINT IF EXISTS events_max_participants_check;
+-- ALTER TABLE events ADD CONSTRAINT events_max_participants_check CHECK (max_participants >= 0);
+-- ALTER TABLE event_bookings DROP CONSTRAINT IF EXISTS event_bookings_status_check;
+-- ALTER TABLE event_bookings ADD CONSTRAINT event_bookings_status_check CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'opted_out'));
