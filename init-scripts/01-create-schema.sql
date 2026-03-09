@@ -399,6 +399,7 @@ ALTER TABLE event_bookings ADD CONSTRAINT event_bookings_user_event_unique UNIQU
 -- Indexes für Booking Queries
 CREATE INDEX idx_event_bookings_event ON event_bookings (event_id);
 CREATE INDEX idx_event_bookings_user ON event_bookings (user_id);
+CREATE UNIQUE INDEX idx_event_bookings_user_event ON event_bookings (user_id, event_id);
 CREATE INDEX idx_event_bookings_timeslot ON event_bookings (timeslot_id);
 CREATE INDEX idx_event_bookings_status ON event_bookings (status);
 CREATE INDEX idx_event_bookings_attendance ON event_bookings (attendance_status);
