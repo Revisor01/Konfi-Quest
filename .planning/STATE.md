@@ -8,7 +8,7 @@ progress:
   total_phases: 11
   completed_phases: 11
   total_plans: 19
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -22,19 +22,19 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 35 of 37 (Opt-out-Flow)
-Plan: 2 of 2
-Status: Phase 35 complete
-Last activity: 2026-03-09 -- Plan 35-02 abgeschlossen (Opt-out Frontend UI)
+Phase: 36 of 37 (QR-Code Check-in)
+Plan: 1 of 2
+Status: Plan 36-01 complete
+Last activity: 2026-03-09 -- Plan 36-01 abgeschlossen (QR-Code Check-in Backend + EventModal)
 
-Progress: [##########----------] 50%
+Progress: [############--------] 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 24min
-- Total execution time: 93min
+- Total plans completed: 5
+- Average duration: 19min
+- Total execution time: 96min
 
 **By Phase:**
 
@@ -42,6 +42,7 @@ Progress: [##########----------] 50%
 |-------|-------|-------|----------|
 | 34 | 2/2 | 88min | 44min |
 | 35 | 2/2 | 5min | 2.5min |
+| 36 | 1/2 | 3min | 3min |
 
 *Updated after each plan completion*
 
@@ -63,6 +64,10 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 35-02] Separater useIonModal-Hook fuer Opt-out Modal mit mandatory=true
 - [Phase 35-02] X/Y Zaehler bei Pflicht-Events: confirmed/gesamt (entspricht Jahrgangs-Groesse)
 - [Phase 35-02] Opted_out Teilnehmer bleiben inline in Teilnehmerliste (keine separate Sektion)
+- [Phase 36-01] QR_SECRET faellt auf JWT_SECRET zurueck wenn nicht separat gesetzt
+- [Phase 36-01] QR-Token ohne expiresIn, Zeitfenster ueber event_date + checkin_window
+- [Phase 36-01] Duplikat-Check gibt 200 mit already_checked_in statt Fehler
+- [Phase 36-01] Check-in-Fenster bei allen Event-Typen sichtbar (Pflicht + freiwillig)
 
 ### Pending Todos
 
@@ -77,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Phase 36 context gathered
-Resume file: .planning/phases/36-qr-code-check-in/36-CONTEXT.md
+Stopped at: Completed 36-01-PLAN.md
+Resume file: .planning/phases/36-qr-code-check-in/36-01-SUMMARY.md

@@ -185,5 +185,5 @@ Phases execute in numeric order: 34 -> 35 -> 36 -> 37
 |-------|-----------|----------------|--------|-----------|
 | 34. Pflicht-Event-Grundlagen | 2/2 | Complete   | 2026-03-09 | - |
 | 35. Opt-out-Flow | 2/2 | Complete    | 2026-03-09 | - |
-| 36. QR-Code Check-in | v1.7 | 0/2 | Not started | - |
+| 36. QR-Code Check-in | 1/2 | In Progress|  | - |
 | 37. Dashboard-Widget + Anwesenheitsstatistik | v1.7 | 0/2 | Not started | - |
