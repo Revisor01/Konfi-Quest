@@ -300,6 +300,8 @@ CREATE TABLE events (
     max_participants INTEGER NOT NULL DEFAULT 0 CHECK (max_participants >= 0),
     mandatory BOOLEAN DEFAULT false,
     bring_items TEXT,
+    qr_token TEXT DEFAULT NULL,
+    checkin_window INTEGER DEFAULT 30,
     registration_opens_at TIMESTAMP,
     registration_closes_at TIMESTAMP,
     has_timeslots BOOLEAN DEFAULT false,
@@ -579,3 +581,7 @@ CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
 -- Migration v1.7 Phase 35 (auf Live-DB ausfuehren):
 -- ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS opt_out_reason TEXT;
 -- ALTER TABLE event_bookings ADD COLUMN IF NOT EXISTS opt_out_date TIMESTAMP;
+
+-- Migration v1.7 Phase 36: QR-Code Check-in (auf Live-DB ausfuehren):
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS qr_token TEXT DEFAULT NULL;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS checkin_window INTEGER DEFAULT 30;

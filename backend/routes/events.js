@@ -3,8 +3,11 @@ const router = express.Router();
 const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
+const jwt = require('jsonwebtoken');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
+
+const QR_SECRET = process.env.QR_SECRET || process.env.JWT_SECRET;
 
 // Events routes
 // Events: Teamer darf alles (view, create, edit, delete, manage_bookings)
@@ -212,6 +215,240 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     }
   });
   
+  // ====================================================================
+  // QR-CODE CHECK-IN ENDPOINTS
+  // WICHTIG: Diese muessen VOR den parametrisierten /:id Routes stehen,
+  // damit Express "qr-checkin" nicht als :id Parameter interpretiert.
+  // ====================================================================
+
+  // QR-Check-in: Konfi checkt sich selbst ein via QR-Token
+  router.post('/qr-checkin', rbacVerifier, async (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Token fehlt', error_type: 'missing_token' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, QR_SECRET);
+    } catch (err) {
+      return res.status(400).json({ error: 'Ungültiger QR-Code', error_type: 'invalid_token' });
+    }
+
+    const eventId = decoded.eid;
+    const userId = req.user.id;
+
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+
+      // Event laden und qr_token abgleichen
+      const { rows: [event] } = await client.query(
+        `SELECT id, name, event_date, checkin_window, mandatory, points, point_type, qr_token, organization_id
+         FROM events WHERE id = $1 AND qr_token = $2`,
+        [eventId, token]
+      );
+
+      if (!event) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Ungültiger QR-Code', error_type: 'invalid_token' });
+      }
+
+      // Organization-Check
+      if (event.organization_id !== req.user.organization_id) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(403).json({ error: 'Kein Zugriff auf dieses Event', error_type: 'wrong_organization' });
+      }
+
+      // Zeitfenster-Pruefung (komplett in PostgreSQL fuer korrekte Zeitzonen)
+      const { rows: [timeCheck] } = await client.query(
+        `SELECT NOW() BETWEEN (event_date - ($1 || ' minutes')::interval) AND (event_date + ($1 || ' minutes')::interval) AS in_window,
+                NOW() < (event_date - ($1 || ' minutes')::interval) AS too_early,
+                NOW() > (event_date + ($1 || ' minutes')::interval) AS too_late
+         FROM events WHERE id = $2`,
+        [event.checkin_window, eventId]
+      );
+
+      if (timeCheck.too_early) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({
+          error: 'Check-in ist noch nicht möglich',
+          error_type: 'too_early',
+          event_date: event.event_date,
+          checkin_window: event.checkin_window
+        });
+      }
+      if (timeCheck.too_late) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({
+          error: 'Der Check-in-Zeitraum ist abgelaufen',
+          error_type: 'too_late'
+        });
+      }
+
+      // Booking pruefen
+      const { rows: [booking] } = await client.query(
+        `SELECT id, status, attendance_status FROM event_bookings WHERE event_id = $1 AND user_id = $2`,
+        [eventId, userId]
+      );
+
+      if (!booking) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Du bist nicht für dieses Event angemeldet', error_type: 'not_registered' });
+      }
+      if (booking.status === 'opted_out') {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Du hast dich von diesem Event abgemeldet', error_type: 'opted_out' });
+      }
+      if (booking.status !== 'confirmed') {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(400).json({ error: 'Deine Anmeldung ist nicht bestätigt', error_type: 'not_confirmed' });
+      }
+
+      // Duplikat-Check
+      if (booking.attendance_status === 'present') {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.json({
+          message: 'Du bist bereits eingecheckt',
+          already_checked_in: true,
+          event_name: event.name,
+          event_id: event.id
+        });
+      }
+
+      // Attendance setzen
+      await client.query("UPDATE event_bookings SET attendance_status = 'present' WHERE id = $1", [booking.id]);
+
+      // Punkte-Vergabe (gleiche Logik wie manuelle Attendance-Route)
+      let pointsAwarded = false;
+      if (event.points > 0 && !event.mandatory) {
+        const pointType = event.point_type || 'gemeinde';
+        const { enabled: ptEnabled } = await checkPointTypeEnabled(client, userId, pointType);
+
+        if (ptEnabled) {
+          const description = `Event-Teilnahme: ${event.name}`;
+          const { rowCount } = await client.query(
+            `INSERT INTO event_points (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id)
+             VALUES ($1, $2, $3, $4, $5, NOW(), NULL, $6)
+             ON CONFLICT (konfi_id, event_id) DO NOTHING`,
+            [userId, eventId, event.points, pointType, description, req.user.organization_id]
+          );
+
+          if (rowCount > 0) {
+            const updateProfileQuery = pointType === 'gottesdienst'
+              ? "UPDATE konfi_profiles SET gottesdienst_points = gottesdienst_points + $1 WHERE user_id = $2"
+              : "UPDATE konfi_profiles SET gemeinde_points = gemeinde_points + $1 WHERE user_id = $2";
+            await client.query(updateProfileQuery, [event.points, userId]);
+
+            try {
+              await checkAndAwardBadges(client, userId);
+            } catch (badgeErr) {
+              console.error('Error checking badges after QR check-in:', badgeErr);
+            }
+
+            pointsAwarded = true;
+          }
+        }
+      }
+
+      await client.query('COMMIT');
+      client.release();
+
+      // Push und LiveUpdate NACH COMMIT
+      try {
+        if (pointsAwarded) {
+          try { await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', event.points); } catch (e) { console.error('Push notification failed:', e); }
+          liveUpdate.sendToUser('konfi', userId, 'dashboard', 'update', { points: event.points });
+        } else {
+          try { await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', 0); } catch (e) { console.error('Push notification failed:', e); }
+        }
+        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+      } catch (notifyErr) {
+        console.error('Post-commit notification error:', notifyErr);
+      }
+
+      res.json({
+        message: 'Erfolgreich eingecheckt',
+        event_name: event.name,
+        event_id: event.id,
+        points_awarded: pointsAwarded
+      });
+
+    } catch (err) {
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error('Database error in POST /events/qr-checkin:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Generate QR token for event (Admin/Teamer)
+  router.post('/:id/generate-qr', rbacVerifier, requireTeamer, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows: [event] } = await db.query(
+        "SELECT id, qr_token FROM events WHERE id = $1 AND organization_id = $2",
+        [id, req.user.organization_id]
+      );
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Wenn Token bereits existiert: direkt zurueckgeben
+      if (event.qr_token) {
+        return res.json({ qr_token: event.qr_token });
+      }
+
+      // Neuen Token generieren (kein expiresIn - Zeitfenster laeuft ueber event_date)
+      const token = jwt.sign(
+        { eid: parseInt(id), oid: req.user.organization_id },
+        QR_SECRET,
+        { algorithm: 'HS256' }
+      );
+
+      await db.query("UPDATE events SET qr_token = $1 WHERE id = $2", [token, id]);
+
+      res.json({ qr_token: token });
+    } catch (err) {
+      console.error(`Database error in POST /events/${id}/generate-qr:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Get attendance count for live polling (Admin/Teamer)
+  router.get('/:id/attendance-count', rbacVerifier, requireTeamer, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const { rows: [counts] } = await db.query(
+        `SELECT
+           COUNT(*) FILTER (WHERE eb.attendance_status = 'present') AS checked_in,
+           COUNT(*) AS total
+         FROM event_bookings eb
+         JOIN events e ON eb.event_id = e.id
+         WHERE eb.event_id = $1 AND eb.status = 'confirmed' AND e.organization_id = $2`,
+        [id, req.user.organization_id]
+      );
+
+      res.json({
+        checked_in: parseInt(counts.checked_in) || 0,
+        total: parseInt(counts.total) || 0
+      });
+    } catch (err) {
+      console.error(`Database error in GET /events/${id}/attendance-count:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Get timeslots for an event
   router.get('/:id/timeslots', rbacVerifier, async (req, res) => {
     const eventId = req.params.id;
@@ -374,8 +611,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots, is_series, series_id,
-      mandatory, bring_items
+      mandatory, bring_items, checkin_window
     } = req.body;
+
+    // checkin_window validieren (5-120, Default 30)
+    const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
 
     if (!name || !event_date || (!mandatory && !max_participants)) {
       return res.status(400).json({ error: 'Name, Datum und maximale Teilnehmerzahl sind erforderlich' });
@@ -401,8 +641,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           name, description, event_date, event_end_time, location, location_maps_url,
           points, point_type, type, max_participants, registration_opens_at,
           registration_closes_at, has_timeslots, waitlist_enabled, max_waitlist_size,
-          is_series, series_id, mandatory, bring_items, created_by, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+          is_series, series_id, mandatory, bring_items, checkin_window, created_by, organization_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
         RETURNING id
       `;
       const { rows: [newEvent] } = await db.query(insertEventQuery, [
@@ -411,7 +651,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         registration_opens_at, registration_closes_at, has_timeslots || false,
         effectiveWaitlist, max_waitlist_size || 10,
         is_series || false, series_id, mandatory || false, bring_items || null,
-        req.user.id, req.user.organization_id
+        effectiveCheckinWindow, req.user.id, req.user.organization_id
       ]);
       
       const eventId = newEvent.id;
@@ -506,8 +746,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       points, point_type, category_ids, jahrgang_ids, type, max_participants,
       registration_opens_at, registration_closes_at, has_timeslots,
       waitlist_enabled, max_waitlist_size, timeslots,
-      mandatory, bring_items
+      mandatory, bring_items, checkin_window
     } = req.body;
+
+    // checkin_window validieren (5-120, Default 30)
+    const effectiveCheckinWindow = Math.max(5, Math.min(120, parseInt(checkin_window) || 30));
 
     // Guards fuer Pflicht-Events
     const effectivePoints = mandatory ? 0 : points;
@@ -527,8 +770,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           location_maps_url = $6, points = $7, point_type = $8, type = $9,
           max_participants = $10, registration_opens_at = $11, registration_closes_at = $12,
           has_timeslots = $13, waitlist_enabled = $14, max_waitlist_size = $15,
-          mandatory = $16, bring_items = $17
-        WHERE id = $18 AND organization_id = $19
+          mandatory = $16, bring_items = $17, checkin_window = $18
+        WHERE id = $19 AND organization_id = $20
       `;
       const { rowCount } = await client.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
@@ -536,7 +779,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         registration_closes_at, has_timeslots || false,
         effectiveWaitlist, max_waitlist_size || 10,
         mandatory || false, bring_items || null,
-        id, req.user.organization_id
+        effectiveCheckinWindow, id, req.user.organization_id
       ]);
 
       if (rowCount === 0) {
