@@ -18,7 +18,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.7 Phase 35 -- Opt-out-Flow
+**Current focus:** v1.7 Phase 36 -- QR-Code Check-in
 
 ## Current Position
 
@@ -77,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 35-02-PLAN.md (Phase 35 complete)
-Resume file: none
+Stopped at: Phase 36 context gathered
+Resume file: .planning/phases/36-qr-code-check-in/36-CONTEXT.md
