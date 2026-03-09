@@ -259,7 +259,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       
       // Get participants
       const participantsQuery = `
-        SELECT eb.*, u.display_name as participant_name, kp.jahrgang_id,
+        SELECT eb.*, eb.opt_out_reason, eb.opt_out_date,
+                u.display_name as participant_name, kp.jahrgang_id,
                 j.name as jahrgang_name, et.start_time as timeslot_start_time,
                 et.end_time as timeslot_end_time
         FROM event_bookings eb

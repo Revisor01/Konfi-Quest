@@ -26,6 +26,8 @@ const { sendFirebasePushNotification } = require('../push/firebase');
  * event_attendance            | sendEventAttendanceToKonfi           | Konfi           | ja
  * events_pending_approval     | sendEventsPendingApprovalToAdmins    | Org-Admins      | ja
  * new_konfi_registration      | sendNewKonfiRegistrationToAdmins     | Jahrgangs-Admins| ja
+ * event_opt_out               | sendEventOptOutToAdmins              | Org-Admins      | ja
+ * event_opt_in                | sendEventOptInToAdmins               | Org-Admins      | ja
  *
  * Helper-Methoden (nicht direkt als Push-Type):
  * - getTokensForUser(db, userId)
@@ -860,6 +862,81 @@ class PushService {
       return await this.sendToMultipleUsers(db, adminIds, notification);
     } catch (error) {
       console.error('sendNewKonfiRegistrationToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // ====================================================================
+  // OPT-OUT / OPT-IN NOTIFICATIONS
+  // ====================================================================
+
+  /**
+   * Konfi hat sich von Pflicht-Event abgemeldet (Opt-out) - Push an alle Admins der Organisation
+   */
+  static async sendEventOptOutToAdmins(db, organizationId, konfiName, eventName, reason) {
+    try {
+      const { rows: admins } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+        [organizationId]
+      );
+
+      if (admins.length === 0) {
+        console.warn('Keine Admins für Organisation gefunden');
+        return { success: false, message: 'No admins found' };
+      }
+
+      const adminIds = admins.map(a => a.id);
+      const notification = {
+        title: `Abmeldung: ${eventName}`,
+        body: `${konfiName} hat sich von '${eventName}' abgemeldet. Grund: ${reason}`,
+        data: {
+          type: 'event_opt_out',
+          event_name: eventName,
+          konfi_name: konfiName,
+          reason: reason
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('sendEventOptOutToAdmins error:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Konfi hat Opt-out zurückgenommen (wieder angemeldet) - Push an alle Admins der Organisation
+   */
+  static async sendEventOptInToAdmins(db, organizationId, konfiName, eventName) {
+    try {
+      const { rows: admins } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE r.name IN ('admin', 'org_admin') AND u.organization_id = $1`,
+        [organizationId]
+      );
+
+      if (admins.length === 0) {
+        console.warn('Keine Admins für Organisation gefunden');
+        return { success: false, message: 'No admins found' };
+      }
+
+      const adminIds = admins.map(a => a.id);
+      const notification = {
+        title: `Wieder angemeldet: ${eventName}`,
+        body: `${konfiName} hat sich wieder für '${eventName}' angemeldet`,
+        data: {
+          type: 'event_opt_in',
+          event_name: eventName,
+          konfi_name: konfiName
+        }
+      };
+
+      return await this.sendToMultipleUsers(db, adminIds, notification);
+    } catch (error) {
+      console.error('sendEventOptInToAdmins error:', error);
       return { success: false, error: error.message };
     }
   }
