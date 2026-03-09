@@ -1544,61 +1544,66 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     const { notification_message = 'Das Event wurde abgesagt.' } = req.body;
     
-    await db.query('BEGIN');
+    const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+
       // Get event details
-      const { rows: [event] } = await db.query(
-        "SELECT name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2", 
+      const { rows: [event] } = await client.query(
+        "SELECT name, event_date, cancelled FROM events WHERE id = $1 AND organization_id = $2",
         [eventId, req.user.organization_id]
       );
-      
+
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
+
       if (event.cancelled) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({ error: 'Event ist bereits abgesagt' });
       }
-      
+
       // Mark event as cancelled
-      await db.query(
-        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1", 
+      await client.query(
+        "UPDATE events SET cancelled = TRUE, cancelled_at = NOW() WHERE id = $1",
         [eventId]
       );
-      
+
       // Get all participants to notify
-      const { rows: participants } = await db.query(`
+      const { rows: participants } = await client.query(`
         SELECT DISTINCT eb.user_id, u.display_name, u.username
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
         WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist')
       `, [eventId]);
-      
-      // Send push notifications to all participants
+
+      await client.query('COMMIT');
+      client.release();
+
+      // Push und LiveUpdate NACH COMMIT und client.release()
       const userIds = participants.map(p => p.user_id);
       const eventDateFormatted = new Date(event.event_date).toLocaleDateString('de-DE');
       if (userIds.length > 0) {
-        await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted);
+        try { await PushService.sendEventCancellationToKonfis(db, userIds, event.name, eventDateFormatted); } catch (e) { console.error('Push notification failed:', e); }
       }
 
-      await db.query('COMMIT');
       res.json({
         message: `Event "${event.name}" wurde abgesagt`,
         participants_notified: participants.length,
         notification_message
       });
 
-      // Live Update: Notify all konfis and admins about the event cancellation
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId, action: 'cancelled' });
 
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
       res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
     }
-  });
   
   return router;
 };
