@@ -166,7 +166,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Anwesend
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Gefehlt
     else if (isMandatory && isPastEvent) statusColor = '#fd7e14'; // Orange - Ausstehend
-    else if (isMandatory) statusColor = '#dc2626'; // Rot - Pflicht
+    else if (isMandatory) statusColor = '#007aff'; // Blau - Pflicht (angemeldet)
     else if (isKonfirmationEvent && !isPastEvent) statusColor = '#5b21b6'; // Lila - Konfirmation (immer, auch wenn angemeldet)
     else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Verbucht
     else if (isParticipated && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Verpasst
@@ -186,7 +186,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
     else if (isMandatory && isPastEvent) statusText = 'Ausstehend';
-    else if (isMandatory) statusText = 'Angemeldet';
+    else if (isMandatory) statusText = 'Pflicht';
     else if (isKonfirmationEvent && !isPastEvent) statusText = event.is_registered ? 'Angemeldet' : 'Konfirmation'; // Konfirmation Text
     else if (isParticipated && attendanceStatus === 'present') statusText = 'Verbucht';
     else if (isParticipated && attendanceStatus === 'absent') statusText = 'Verpasst';
@@ -322,15 +322,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                       {statusText}
                     </div>
                   )}
-                  {/* Pflicht Corner Badge (links oben) */}
-                  {event.mandatory && (
-                    <div
-                      className="app-corner-badge"
-                      style={{ backgroundColor: '#dc2626', left: 0, right: 'auto', borderRadius: '10px 0 10px 0' }}
-                    >
-                      Pflicht
-                    </div>
-                  )}
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
@@ -356,14 +347,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {event.name}
                         </div>
 
-                        {/* Zeile 2: Pflicht-Badge + Buchungen + Warteliste + Punkte */}
+                        {/* Zeile 2: Buchungen + Warteliste + Punkte */}
                         <div className="app-list-item__meta">
-                          {event.mandatory && (
-                            <span className="app-list-item__meta-item" style={{ color: '#dc2626', fontWeight: '600' }}>
-                              <IonIcon icon={shieldCheckmark} style={{ color: '#dc2626' }} />
-                              Pflicht
-                            </span>
-                          )}
                           {!event.mandatory && (
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />

@@ -234,6 +234,9 @@ const EventsView: React.FC<EventsViewProps> = ({
               // Farbe basierend auf Status - Konfirmation in Lila!
               const statusColor = (() => {
                 if (isCancelled) return '#dc3545';
+                if (event.mandatory && isPastEvent && hasUnprocessedBookings) return '#007aff';
+                if (event.mandatory && isPastEvent) return '#6c757d';
+                if (event.mandatory) return '#dc2626'; // Rot - Pflicht
                 if (isKonfirmationEvent && !isPastEvent) return '#5b21b6'; // Lila für Konfirmation
                 if (isFullyProcessed) return '#6c757d';
                 if (hasUnprocessedBookings) return '#007aff'; // Blau für Verbuchen
@@ -248,6 +251,9 @@ const EventsView: React.FC<EventsViewProps> = ({
               // Status-Text
               const statusText = (() => {
                 if (isCancelled) return 'Abgesagt';
+                if (event.mandatory && hasUnprocessedBookings) return 'Verbuchen';
+                if (event.mandatory && isFullyProcessed) return 'Verbucht';
+                if (event.mandatory) return 'Pflicht';
                 if (hasUnprocessedBookings) return 'Verbuchen';
                 if (isFullyProcessed) return 'Verbucht';
                 if (isKonfirmationEvent && !isPastEvent) return 'Konfirmation';
@@ -262,6 +268,7 @@ const EventsView: React.FC<EventsViewProps> = ({
               // Icon basierend auf Status
               const statusIcon = (() => {
                 if (isCancelled) return close;
+                if (event.mandatory && !isPastEvent) return shieldCheckmark;
                 if (isFullyProcessed) return checkmarkCircle;
                 if (hasUnprocessedBookings) return flash; // Blitz-Icon für "Verbuchen"
                 if (isPastEvent) return checkmarkCircle;
@@ -304,15 +311,6 @@ const EventsView: React.FC<EventsViewProps> = ({
                     >
                       {statusText}
                     </div>
-                    {/* Pflicht Corner Badge (links oben) */}
-                    {event.mandatory && (
-                      <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: '#dc2626', left: 0, right: 'auto', borderRadius: '10px 0 10px 0' }}
-                      >
-                        Pflicht
-                      </div>
-                    )}
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         {/* Icon */}
@@ -345,18 +343,13 @@ const EventsView: React.FC<EventsViewProps> = ({
 
                           {/* Zeile 2: Buchungen + Warteliste + Punkte */}
                           <div className="app-list-item__meta">
-                            {event.mandatory && (
-                              <span className="app-list-item__meta-item" style={{ color: '#dc2626', fontWeight: '600' }}>
-                                <IonIcon icon={shieldCheckmark} style={{ color: '#dc2626' }} />
-                                {event.registered_count} Konfis
-                              </span>
-                            )}
-                            {!event.mandatory && (
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
-                              {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
+                              {event.mandatory
+                                ? `${event.registered_count} Konfis`
+                                : `${event.registered_count}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
+                              }
                             </span>
-                            )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
