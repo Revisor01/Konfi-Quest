@@ -124,11 +124,11 @@ Phase 33: Dashboard-Widget-Steuerung (1 plan, complete)
   3. Admin kann ein optionales "Was mitbringen"-Textfeld beim Event-Erstellen ausfuellen, das in der Event-Detail-Ansicht angezeigt wird
   4. Konfis erhalten eine Push-Benachrichtigung wenn ein neues Pflicht-Event fuer ihren Jahrgang erstellt wird
   5. Konfis die nach Event-Erstellung einem Jahrgang zugewiesen werden, werden automatisch nachgetragen
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 34-01: TBD
-- [ ] 34-02: TBD
+- [ ] 34-01-PLAN.md -- DB-Schema + Backend: mandatory/bring_items Spalten, Auto-Enrollment, Punkte-Guard, Push, Nachtrags-Hooks
+- [ ] 34-02-PLAN.md -- Frontend: EventModal Pflicht-Toggle + bring_items, Detail-Views, Pflicht-Indikator
 
 ### Phase 35: Opt-out-Flow
 **Goal**: Konfis koennen sich mit Begruendung von Pflicht-Events abmelden und Admins haben volle Transparenz ueber alle Abmeldungen
