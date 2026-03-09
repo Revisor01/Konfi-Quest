@@ -19,7 +19,8 @@ import {
   trophy,
   listOutline,
   calendarOutline,
-  lockOpenOutline
+  lockOpenOutline,
+  shieldCheckmarkOutline
 } from 'ionicons/icons';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -58,6 +59,8 @@ interface Event {
   waitlist_position?: number;
   registration_status_detail?: string;
   booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
+  mandatory?: boolean;
+  bring_items?: string;
 }
 
 interface EventsViewProps {
@@ -331,12 +334,20 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {event.name}
                         </div>
 
-                        {/* Zeile 2: Buchungen + Warteliste + Punkte (wie Admin) */}
+                        {/* Zeile 2: Pflicht-Badge + Buchungen + Warteliste + Punkte */}
                         <div className="app-list-item__meta">
+                          {event.mandatory && (
+                            <span className="app-list-item__meta-item" style={{ color: '#dc2626', fontWeight: '600' }}>
+                              <IonIcon icon={shieldCheckmarkOutline} style={{ color: '#dc2626' }} />
+                              Pflicht
+                            </span>
+                          )}
+                          {!event.mandatory && (
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
                             {event.registered_count}/{event.max_participants}
                           </span>
+                          )}
                           {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />

@@ -29,6 +29,8 @@ export interface DashboardEvent {
   max_participants?: number;
   cancelled?: boolean;
   category_names?: string;
+  mandatory?: boolean;
+  bring_items?: string;
 }
 
 export interface RankingEntry {

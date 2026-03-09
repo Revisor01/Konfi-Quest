@@ -17,7 +17,8 @@ import {
   IonRefresherContent,
   useIonAlert,
   useIonModal,
-  useIonActionSheet
+  useIonActionSheet,
+  IonNote
 } from '@ionic/react';
 import {
   arrowBack,
@@ -34,7 +35,9 @@ import {
   listOutline,
   home,
   pricetag,
-  personOutline
+  personOutline,
+  shieldCheckmarkOutline,
+  bagHandleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -76,6 +79,8 @@ interface Event {
   registration_status_detail?: string;
   booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
   has_timeslots?: boolean;
+  mandatory?: boolean;
+  bring_items?: string;
   booked_timeslot_id?: number;
   booked_timeslot_start?: string;
   booked_timeslot_end?: string;
@@ -543,7 +548,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* Anmeldezeitraum */}
+              {/* Pflicht-Badge */}
+              {eventData.mandatory && (
+                <div className="app-info-row">
+                  <IonIcon icon={shieldCheckmarkOutline} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <div className="app-info-row__content" style={{ fontWeight: '600', color: '#dc2626' }}>
+                    Pflicht-Event
+                  </div>
+                </div>
+              )}
+
+              {/* Was mitbringen */}
+              {eventData.bring_items && (
+                <div className="app-info-row">
+                  <IonIcon icon={bagHandleOutline} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                  <div>
+                    <div className="app-info-row__content app-list-item__title">Was mitbringen</div>
+                    <div className="app-info-row__sublabel">{eventData.bring_items}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Anmeldezeitraum - nicht bei Pflicht-Events */}
+              {!eventData.mandatory && (
               <div className="app-info-row app-info-row--top">
                 <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
                 <div className="app-info-row__content">
@@ -559,6 +586,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   )}
                 </div>
               </div>
+              )}
 
             </IonCardContent>
           </IonCard>
@@ -620,7 +648,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Action Buttons */}
         <div className="app-event-detail__action-area">
-          {eventData.is_registered ? (
+          {eventData.mandatory ? (
+            <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
+              <IonIcon icon={shieldCheckmarkOutline} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+              Du bist automatisch angemeldet
+            </IonNote>
+          ) : eventData.is_registered ? (
             <div>
               {canUnregister(eventData) ? (
                 <IonButton

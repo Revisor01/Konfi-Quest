@@ -41,7 +41,9 @@ import {
   pricetag,
   returnUpBack,
   trophy,
-  informationCircle
+  informationCircle,
+  shieldCheckmarkOutline,
+  bagHandleOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -78,6 +80,8 @@ interface Event {
   participants: Participant[];
   timeslots?: Timeslot[];
   has_timeslots?: boolean;
+  mandatory?: boolean;
+  bring_items?: string;
   is_series?: boolean;
   series_id?: string;
   series_events?: Event[];
@@ -604,7 +608,29 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
+              {/* Pflicht-Badge */}
+              {eventData?.mandatory && (
+                <div className="app-info-row">
+                  <IonIcon icon={shieldCheckmarkOutline} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                  <div className="app-info-row__content" style={{ fontWeight: '600', color: '#dc2626' }}>
+                    Pflicht-Event
+                  </div>
+                </div>
+              )}
+
+              {/* Was mitbringen */}
+              {eventData?.bring_items && (
+                <div className="app-info-row">
+                  <IonIcon icon={bagHandleOutline} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
+                  <div>
+                    <div className="app-info-row__content app-list-item__title">Was mitbringen</div>
+                    <div className="app-info-row__sublabel">{eventData.bring_items}</div>
+                  </div>
+                </div>
+              )}
+
               {/* Anmeldezeitraum */}
+              {!eventData?.mandatory && (
               <div className="app-info-row app-info-row--top">
                 <IonIcon icon={time} className="app-info-row__icon app-icon-color--events app-event-detail__icon--align-top-sm" />
                 <div className="app-info-row__content">
@@ -620,6 +646,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   )}
                 </div>
               </div>
+              )}
 
               {/* Jahrgang */}
               {eventData?.jahrgaenge && eventData.jahrgaenge.length > 0 && (
