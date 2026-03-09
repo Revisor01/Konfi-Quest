@@ -37,13 +37,15 @@ import {
   pricetag,
   personOutline,
   shieldCheckmark,
-  bagHandle
+  bagHandle,
+  qrCodeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
+import QRScannerModal from '../modals/QRScannerModal';
 
 interface Category {
   id: number;
@@ -187,6 +189,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     onUnregister: handleOptOut,
     dismiss: (data?: string, role?: string) => {
       dismissOptOutModal(data, role);
+    }
+  });
+
+  const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
+    onClose: () => dismissScannerModal(),
+    onSuccess: (eventId: number, eventName: string) => {
+      dismissScannerModal();
+      loadEventData();
+      setSuccess('Erfolgreich eingecheckt!');
     }
   });
 
@@ -476,6 +487,43 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             { value: eventData.registered_count, label: 'Dabei' }
           ]}
         />
+
+        {/* QR Check-in Status / Button */}
+        {eventData.attendance_status === 'present' ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            margin: '0 16px 8px 16px',
+            backgroundColor: 'rgba(52, 199, 89, 0.12)',
+            borderRadius: '12px',
+            color: '#34c759',
+            fontWeight: '600',
+            fontSize: '1rem'
+          }}>
+            <IonIcon icon={checkmarkCircle} style={{ fontSize: '1.3rem' }} />
+            Anwesend
+          </div>
+        ) : (eventData.booking_status === 'confirmed' && !eventData.attendance_status) && (
+          <div style={{ padding: '0 16px', marginBottom: '8px' }}>
+            <IonButton
+              expand="block"
+              onClick={() => presentScannerModal({
+                presentingElement: pageRef.current || undefined
+              })}
+              style={{
+                '--background': '#007aff',
+                '--background-activated': '#0066d6',
+                '--color': 'white'
+              }}
+            >
+              <IonIcon icon={qrCodeOutline} slot="start" />
+              Einchecken
+            </IonButton>
+          </div>
+        )}
 
         {/* Event Details - 1:1 wie Admin */}
         <IonList className="app-section-inset" inset={true}>

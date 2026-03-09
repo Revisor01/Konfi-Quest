@@ -43,7 +43,8 @@ import {
   trophy,
   informationCircle,
   shieldCheckmark,
-  bagHandle
+  bagHandle,
+  qrCodeOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -52,6 +53,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
+import QRDisplayModal from '../modals/QRDisplayModal';
 
 interface Category {
   id: number;
@@ -149,6 +151,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       handleEditSuccess();
     },
     dismiss: () => dismissEventModalHook()
+  });
+
+  // QR Display Modal
+  const [presentQRDisplayModal, dismissQRDisplayModal] = useIonModal(QRDisplayModal, {
+    eventId: eventId,
+    eventName: eventData?.name || '',
+    eventDate: eventData?.event_date || '',
+    onClose: () => dismissQRDisplayModal()
   });
 
   // Participant Management Modal
@@ -479,6 +489,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           </IonButtons>
           <IonTitle>{eventData?.name || 'Event Details'}</IonTitle>
           <IonButtons slot="end">
+            <IonButton onClick={() => presentQRDisplayModal({ presentingElement: presentingElement || undefined })}>
+              <IonIcon icon={qrCodeOutline} />
+            </IonButton>
             <IonButton onClick={() => presentEventModalHook({ presentingElement: presentingElement || undefined })}>
               <IonIcon icon={createOutline} />
             </IonButton>
