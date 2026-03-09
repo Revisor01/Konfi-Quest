@@ -153,10 +153,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. DashboardView blendet deaktivierte Sektionen (Losung, Ranking, Badges, Events, Konfirmation) komplett aus
   2. Aenderungen an der Dashboard-Konfiguration wirken sofort fuer alle Konfis der Organisation ohne App-Neustart
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
-- [ ] 33-01: TBD
+- [ ] 33-01-PLAN.md — dashboard_config Props-Weitergabe + bedingte Widget-Renders in DashboardView
 
 ## Progress
 
@@ -199,4 +199,4 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 30. DB-Schema + Backend-Endpoints | 2/2 | Complete    | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | 2/2 | Complete    | 2026-03-07 | - |
 | 32. Punkte-UI Frontend | 2/2 | Complete    | 2026-03-08 | - |
-| 33. Dashboard-Widget-Steuerung | v1.6 | 0/? | Not started | - |
+| 33. Dashboard-Widget-Steuerung | v1.6 | 0/1 | Not started | - |
