@@ -85,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 36-02-PLAN.md
-Resume file: .planning/phases/36-qr-code-check-in/36-02-SUMMARY.md
+Stopped at: Phase 37 context gathered
+Resume file: .planning/phases/37-dashboard-widget-anwesenheitsstatistik/37-CONTEXT.md
