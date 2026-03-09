@@ -20,7 +20,8 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  useIonAlert
+  useIonAlert,
+  IonProgressBar
 } from '@ionic/react';
 import {
   arrowBack,
@@ -36,7 +37,9 @@ import {
   image,
   close,
   podium,
-  personOutline
+  personOutline,
+  closeCircle,
+  eyeOff
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -97,6 +100,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [attendanceStats, setAttendanceStats] = useState<{
+    total_mandatory: number;
+    attended: number;
+    percentage: number;
+    missed_events: Array<{
+      event_id: number;
+      event_name: string;
+      event_date: string;
+      location: string;
+      status: 'opted_out' | 'absent';
+      opt_out_reason: string | null;
+    }>;
+  } | null>(null);
 
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
@@ -201,6 +217,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         setEventPoints(eventPointsRes.data || []);
       } catch (eventPointsError) {
         setEventPoints([]);
+      }
+
+      try {
+        const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
+        setAttendanceStats(attendanceRes.data);
+      } catch (attendanceError) {
+        setAttendanceStats(null);
       }
 
       const enhancedActivities = allActivities.map((activity: any) => ({
@@ -693,6 +716,112 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Anwesenheit - Pflicht-Events */}
+        {attendanceStats && attendanceStats.total_mandatory > 0 && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon" style={{ backgroundColor: '#6366f1' }}>
+                <IonIcon icon={calendar} />
+              </div>
+              <IonLabel>Anwesenheit</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {/* Quote Summary */}
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px'
+                  }}>
+                    <span style={{ fontWeight: '600', fontSize: '0.95rem' }}>
+                      {attendanceStats.attended}/{attendanceStats.total_mandatory} anwesend
+                    </span>
+                    <span style={{
+                      fontWeight: '700',
+                      fontSize: '1.1rem',
+                      color: attendanceStats.percentage >= 80 ? '#059669' :
+                             attendanceStats.percentage >= 50 ? '#f59e0b' : '#ef4444'
+                    }}>
+                      {attendanceStats.percentage}%
+                    </span>
+                  </div>
+                  <IonProgressBar
+                    value={attendanceStats.percentage / 100}
+                    color={attendanceStats.percentage >= 80 ? 'success' :
+                           attendanceStats.percentage >= 50 ? 'warning' : 'danger'}
+                    style={{ borderRadius: '4px', height: '8px' }}
+                  />
+                </div>
+
+                {/* Verpasste Events Liste */}
+                {attendanceStats.missed_events.length > 0 && (
+                  <>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      fontWeight: '600',
+                      color: '#999',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      marginBottom: '8px'
+                    }}>
+                      Verpasste Pflicht-Events
+                    </div>
+                    <IonList className="app-list-inner" lines="none">
+                      {attendanceStats.missed_events.map((event, index) => (
+                        <div
+                          key={event.event_id}
+                          className="app-list-item"
+                          style={{
+                            marginBottom: index < attendanceStats!.missed_events.length - 1 ? '8px' : '0',
+                            borderLeftColor: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
+                          }}
+                        >
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div
+                                className="app-icon-circle"
+                                style={{
+                                  backgroundColor: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
+                                }}
+                              >
+                                <IonIcon icon={event.status === 'opted_out' ? eyeOff : closeCircle} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">
+                                  {event.event_name}
+                                </div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendar} className="app-icon-color--events" />
+                                    {new Date(event.event_date).toLocaleDateString('de-DE', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric'
+                                    })}
+                                  </span>
+                                  <span className="app-list-item__meta-item" style={{
+                                    color: event.status === 'opted_out' ? '#f59e0b' : '#ef4444'
+                                  }}>
+                                    {event.status === 'opted_out'
+                                      ? `Opt-out: ${event.opt_out_reason || 'Ohne Begründung'}`
+                                      : 'Nicht erschienen'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </IonList>
+                  </>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {/* Aktivitäten - iOS26 Pattern - Grün als Hauptfarbe */}
         <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
