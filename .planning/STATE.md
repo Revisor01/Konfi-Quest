@@ -8,7 +8,7 @@ progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 8
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,29 +18,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.7 Phase 34 -- Pflicht-Event-Grundlagen
+**Current focus:** v1.7 Phase 35 -- Opt-out-Flow
 
 ## Current Position
 
-Phase: 34 of 37 (Pflicht-Event-Grundlagen)
-Plan: 2 of 2 (completed)
-Status: Phase 34 complete
-Last activity: 2026-03-09 -- Plan 34-02 abgeschlossen (Pflicht-Event Frontend-UI)
+Phase: 35 of 37 (Opt-out-Flow)
+Plan: 1 of 2
+Status: Executing Phase 35
+Last activity: 2026-03-09 -- Plan 35-01 abgeschlossen (Opt-out Backend API)
 
-Progress: [#####---------------] 25%
+Progress: [########------------] 38%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 44min
-- Total execution time: 88min
+- Total plans completed: 3
+- Average duration: 30min
+- Total execution time: 90min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 34 | 2/2 | 88min | 44min |
+| 35 | 1/2 | 2min | 2min |
 
 *Updated after each plan completion*
 
@@ -56,6 +57,9 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 34-02] Pflicht-Toggle blendet 6 Felder aus (Punkte, TN, Zeitfenster, Warteliste, Anmeldezeitraum)
 - [Phase 34-02] Konfi sieht "automatisch angemeldet" statt Anmelde-Button bei Pflicht-Events
 - [Phase 34-02] Solid Icons (shieldCheckmark, bagHandle) fuer Pflicht/Mitbringen-Indikatoren
+- [Phase 35-01] Opt-out als Status-Wechsel (confirmed -> opted_out) statt Booking loeschen
+- [Phase 35-01] opt_out_reason bleibt bei Opt-in erhalten (per User-Decision)
+- [Phase 35-01] DELETE-Guard verhindert Abmeldung von Pflicht-Events ueber alten Endpoint
 
 ### Pending Todos
 
@@ -65,10 +69,10 @@ None.
 
 - Research-Flag Phase 36: QR-Scan-Richtung muss entschieden werden (Konfi scannt Event-QR vs. Admin scannt Konfi-QR). Research empfiehlt: Konfi scannt Event-QR (skaliert besser).
 - ERLEDIGT: CHECK-Constraint auf event_bookings.status wurde in Phase 34-01 synchronisiert.
-- Pitfall: Bestehender Abmelde-Flow loescht Bookings (DELETE) -- bei Pflicht-Events NICHT wiederverwenden, sondern neuen Opt-out-Endpunkt bauen.
+- ERLEDIGT: Opt-out-Endpunkt gebaut (Phase 35-01), DELETE-Guard verhindert Missbrauch bei Pflicht-Events.
 
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 34-02-PLAN.md (Phase 34 complete)
+Stopped at: Completed 35-01-PLAN.md
 Resume file: none
