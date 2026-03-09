@@ -4,9 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: None (v1.6 shipped)
+## Current Milestone: v1.7 Unterricht + Pflicht-Events
 
-**v1.6 shipped:** Punkte-Typen pro Jahrgang konfigurierbar, Dashboard-Widgets fuer Org-Admins steuerbar.
+**Goal:** Pflicht-Events mit Auto-Enrollment, Opt-out mit Begruendung, QR-Code Check-in, Anwesenheitsstatistik und Dashboard-Widget fuer naechstes Event.
 
 ## Core Value
 
@@ -80,7 +80,13 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Kein aktiver Milestone -- naechster: v1.7 Unterricht)
+- [ ] Pflicht-Flag (mandatory) auf Events mit Auto-Enrollment aller Jahrgangs-Konfis
+- [ ] Opt-out mit Freitext-Begruendung statt Opt-in fuer Pflicht-Events
+- [ ] QR-Code Self-Check-in + manuelle Admin-Korrektur fuer Anwesenheit
+- [ ] "Was mitbringen"-Textfeld auf Events (optional, fuer alle Events)
+- [ ] Dashboard-Widget "Naechstes Event" mit "Was mitbringen"-Info
+- [ ] Pro-Konfi Anwesenheitsstatistik (Fehlzeiten, Gruende, Ueberblick)
+- [ ] Keine Punkte fuer Pflicht-Events, nur Anwesenheits-Tracking
 
 ### Out of Scope
 
@@ -154,4 +160,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Dashboard-Widgets komplett ausblenden | Kein Platzhalter, nachfolgende Widgets ruecken auf | Bestaetigt v1.6 |
 
 ---
-*Last updated: 2026-03-09 after v1.6 milestone complete*
+*Last updated: 2026-03-09 after v1.7 milestone start*
