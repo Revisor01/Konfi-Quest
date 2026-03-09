@@ -23,6 +23,14 @@ interface PointConfig {
   target_gemeinde: number;
 }
 
+interface DashboardConfig {
+  show_konfirmation: boolean;
+  show_events: boolean;
+  show_losung: boolean;
+  show_badges: boolean;
+  show_ranking: boolean;
+}
+
 interface DashboardData {
   konfi: {
     id: number;
@@ -42,6 +50,7 @@ interface DashboardData {
   days_to_confirmation?: number;
   confirmation_date?: string;
   point_config?: PointConfig;
+  dashboard_config?: DashboardConfig;
 }
 
 interface Event {
@@ -262,6 +271,14 @@ const KonfiDashboardPage: React.FC = () => {
   const gottesdienstEnabled = pointConfig?.gottesdienst_enabled !== false;
   const gemeindeEnabled = pointConfig?.gemeinde_enabled !== false;
 
+  const dashboardConfig: DashboardConfig = {
+    show_konfirmation: dashboardData.dashboard_config?.show_konfirmation !== false,
+    show_events: dashboardData.dashboard_config?.show_events !== false,
+    show_losung: dashboardData.dashboard_config?.show_losung !== false,
+    show_badges: dashboardData.dashboard_config?.show_badges !== false,
+    show_ranking: dashboardData.dashboard_config?.show_ranking !== false,
+  };
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -299,6 +316,7 @@ const KonfiDashboardPage: React.FC = () => {
           gottesdienstEnabled={gottesdienstEnabled}
           gemeindeEnabled={gemeindeEnabled}
           onOpenPointsHistory={openPointsHistory}
+          dashboardConfig={dashboardConfig}
         />
       </IonContent>
     </IonPage>
