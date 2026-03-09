@@ -1152,7 +1152,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                eb_konfi.timeslot_id as booked_timeslot_id,
                et_booked.start_time as booked_timeslot_start,
                et_booked.end_time as booked_timeslot_end,
-               CASE WHEN eb_konfi.id IS NOT NULL THEN true ELSE false END as is_registered,
+               CASE WHEN eb_konfi.status = 'confirmed' THEN true ELSE false END as is_registered,
+               CASE WHEN eb_konfi.status = 'opted_out' THEN true ELSE false END as is_opted_out,
                CASE 
                  WHEN e.cancelled = true THEN false
                  WHEN eb_konfi.id IS NOT NULL THEN false
@@ -1741,7 +1742,16 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const konfiId = req.user.id;
       const eventId = req.params.id;
       const { reason } = req.body;
-      
+
+      // Guard: Pflicht-Events können nicht über DELETE abgemeldet werden
+      const { rows: [eventCheck] } = await db.query(
+        'SELECT mandatory FROM events WHERE id = $1',
+        [eventId]
+      );
+      if (eventCheck && eventCheck.mandatory) {
+        return res.status(400).json({ error: 'Pflicht-Events können nur über Opt-out abgemeldet werden' });
+      }
+
       // Check if konfi is registered
       const { rows: [registration] } = await db.query(
         'SELECT * FROM event_bookings WHERE user_id = $1 AND event_id = $2',
@@ -1845,6 +1855,134 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
     } catch (err) {
  console.error('Database error in DELETE /events/:id/register:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Opt-out from mandatory event
+  router.post('/events/:id/opt-out', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    }
+
+    try {
+      const konfiId = req.user.id;
+      const eventId = req.params.id;
+      const { reason } = req.body;
+
+      // Validierung: Begründung muss mindestens 5 Zeichen haben
+      if (!reason || reason.trim().length < 5) {
+        return res.status(400).json({ error: 'Begründung muss mindestens 5 Zeichen haben' });
+      }
+
+      // Event laden
+      const { rows: [event] } = await db.query(
+        'SELECT name, event_date, mandatory, organization_id FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, req.user.organization_id]
+      );
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Guard: Nur bei Pflicht-Events
+      if (!event.mandatory) {
+        return res.status(400).json({ error: 'Opt-out nur bei Pflicht-Events möglich' });
+      }
+
+      // Guard: Event darf nicht vorbei sein
+      if (new Date(event.event_date) <= new Date()) {
+        return res.status(400).json({ error: 'Event ist bereits vorbei' });
+      }
+
+      // Status-Wechsel: confirmed -> opted_out
+      const { rowCount } = await db.query(
+        `UPDATE event_bookings SET status = 'opted_out', opt_out_reason = $3, opt_out_date = NOW()
+         WHERE user_id = $1 AND event_id = $2 AND status = 'confirmed'`,
+        [konfiId, eventId, reason.trim()]
+      );
+
+      if (rowCount === 0) {
+        return res.status(400).json({ error: 'Keine aktive Anmeldung gefunden' });
+      }
+
+      res.json({ message: 'Abmeldung erfolgreich' });
+
+      // Push an Admins (fire-and-forget)
+      try {
+        const konfiName = req.user.display_name || req.user.username;
+        await PushService.sendEventOptOutToAdmins(db, req.user.organization_id, konfiName, event.name, reason.trim());
+      } catch (pushErr) {
+        console.error('Opt-out push error:', pushErr);
+      }
+
+      // Live-Update
+      liveUpdate.sendToKonfi(konfiId, 'events', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
+
+    } catch (err) {
+      console.error('Database error in POST /events/:id/opt-out:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Opt-in back to mandatory event (reverse opt-out)
+  router.post('/events/:id/opt-in', verifyTokenRBAC, async (req, res) => {
+    if (req.user.type !== 'konfi') {
+      return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
+    }
+
+    try {
+      const konfiId = req.user.id;
+      const eventId = req.params.id;
+
+      // Event laden
+      const { rows: [event] } = await db.query(
+        'SELECT name, event_date, mandatory, organization_id FROM events WHERE id = $1 AND organization_id = $2',
+        [eventId, req.user.organization_id]
+      );
+
+      if (!event) {
+        return res.status(404).json({ error: 'Event nicht gefunden' });
+      }
+
+      // Guard: Nur bei Pflicht-Events
+      if (!event.mandatory) {
+        return res.status(400).json({ error: 'Opt-in nur bei Pflicht-Events möglich' });
+      }
+
+      // Guard: Event darf nicht vorbei sein
+      if (new Date(event.event_date) <= new Date()) {
+        return res.status(400).json({ error: 'Event ist bereits vorbei' });
+      }
+
+      // Status-Wechsel: opted_out -> confirmed (opt_out_reason bleibt erhalten)
+      const { rowCount } = await db.query(
+        `UPDATE event_bookings SET status = 'confirmed'
+         WHERE user_id = $1 AND event_id = $2 AND status = 'opted_out'`,
+        [konfiId, eventId]
+      );
+
+      if (rowCount === 0) {
+        return res.status(400).json({ error: 'Keine Opt-out-Anmeldung gefunden' });
+      }
+
+      res.json({ message: 'Wieder angemeldet' });
+
+      // Push an Admins (fire-and-forget)
+      try {
+        const konfiName = req.user.display_name || req.user.username;
+        await PushService.sendEventOptInToAdmins(db, req.user.organization_id, konfiName, event.name);
+      } catch (pushErr) {
+        console.error('Opt-in push error:', pushErr);
+      }
+
+      // Live-Update
+      liveUpdate.sendToKonfi(konfiId, 'events', 'update');
+      liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
+
+    } catch (err) {
+      console.error('Database error in POST /events/:id/opt-in:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
