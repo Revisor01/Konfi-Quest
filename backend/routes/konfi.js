@@ -1551,14 +1551,17 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       const { timeslot_id } = req.body; // Optional timeslot for timeslot events
 
       // Transaktion starten fuer Race-Condition-Schutz
-      await db.query('BEGIN');
+      const client = await db.getClient();
+      try {
+      await client.query('BEGIN');
 
       // Check if already registered
       const checkQuery = 'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2';
-      const { rows: [existing] } = await db.query(checkQuery, [konfiId, eventId]);
+      const { rows: [existing] } = await client.query(checkQuery, [konfiId, eventId]);
 
       if (existing) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
       }
 
@@ -1570,7 +1573,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         JOIN categories c ON ec.category_id = c.id
         WHERE e.id = $1 AND LOWER(c.name) LIKE '%konfirmation%'
       `;
-      const { rows: [isKonfirmation] } = await db.query(isKonfirmationQuery, [eventId]);
+      const { rows: [isKonfirmation] } = await client.query(isKonfirmationQuery, [eventId]);
 
       if (isKonfirmation) {
         // Check if user already has a confirmed konfirmation booking
@@ -1585,10 +1588,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
             AND LOWER(c.name) LIKE '%konfirmation%'
             AND e.organization_id = $2
         `;
-        const { rows: [existingKonfirmation] } = await db.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
+        const { rows: [existingKonfirmation] } = await client.query(existingKonfirmationQuery, [konfiId, req.user.organization_id]);
 
         if (existingKonfirmation) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(409).json({
             error: 'Du hast bereits einen Konfirmationstermin gebucht. Bitte melde dich zuerst vom bisherigen Termin ab.'
           });
@@ -1606,21 +1610,24 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         GROUP BY e.id
         FOR UPDATE OF e
       `;
-      const { rows: [event] } = await db.query(eventQuery, [eventId, req.user.organization_id]);
+      const { rows: [event] } = await client.query(eventQuery, [eventId, req.user.organization_id]);
 
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
       // Registrierungsfenster pruefen
       const now = new Date();
       if (event.registration_opens_at && now < new Date(event.registration_opens_at)) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({ error: 'Anmeldung noch nicht geoeffnet' });
       }
       if (event.registration_closes_at && now > new Date(event.registration_closes_at)) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({ error: 'Anmeldung bereits geschlossen' });
       }
 
@@ -1632,18 +1639,20 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       if (event.has_timeslots) {
         if (!timeslot_id) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: 'Bitte wähle einen Zeitslot aus' });
         }
 
         // Validate timeslot exists and belongs to this event
-        const { rows: [timeslot] } = await db.query(
+        const { rows: [timeslot] } = await client.query(
           'SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2',
           [timeslot_id, eventId]
         );
 
         if (!timeslot) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
         }
 
@@ -1657,7 +1666,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           FROM event_bookings
           WHERE timeslot_id = $1
         `;
-        const { rows: [timeslotCounts] } = await db.query(timeslotCountQuery, [timeslot_id]);
+        const { rows: [timeslotCounts] } = await client.query(timeslotCountQuery, [timeslot_id]);
         confirmedCount = parseInt(timeslotCounts.confirmed_count) || 0;
         waitlistCount = parseInt(timeslotCounts.waitlist_count) || 0;
         maxCapacity = timeslot.max_participants;
@@ -1670,7 +1679,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       } else if (event.waitlist_enabled && waitlistCount < (event.max_waitlist_size || 10)) {
         status = 'waitlist';
       } else {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({
           error: 'Event ist voll und Warteliste ist auch voll'
         });
@@ -1682,10 +1692,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         VALUES ($1, $2, $3, $4, NOW())
         RETURNING id
       `;
-      const { rows: [newBooking] } = await db.query(insertQuery, [konfiId, eventId, timeslot_id || null, status]);
+      const { rows: [newBooking] } = await client.query(insertQuery, [konfiId, eventId, timeslot_id || null, status]);
 
       // Transaktion abschliessen
-      await db.query('COMMIT');
+      await client.query('COMMIT');
+      client.release();
 
       const message = status === 'confirmed'
         ? 'Erfolgreich angemeldet'
@@ -1708,8 +1719,13 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update');
+
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        client.release();
+        throw err;
+      }
     } catch (err) {
-      await db.query('ROLLBACK').catch(() => {});
       console.error('Database error in POST /events/:id/register:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }

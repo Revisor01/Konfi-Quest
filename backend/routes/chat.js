@@ -1096,33 +1096,36 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         expiresAt = new Date(Date.now() + expires_in_hours * 60 * 60 * 1000);
       }
       
-      await db.query('BEGIN');
-      
+      const client = await db.getClient();
+      try {
+      await client.query('BEGIN');
+
       // First create the message
       const messageQuery = `
         INSERT INTO chat_messages (room_id, user_id, user_type, message_type, content, created_at)
         VALUES ($1, $2, $3, 'poll', $4, NOW())
         RETURNING id
       `;
-      const { rows: [newMessage] } = await db.query(messageQuery, [roomId, userId, userType, question]);
+      const { rows: [newMessage] } = await client.query(messageQuery, [roomId, userId, userType, question]);
       const messageId = newMessage.id;
-      
+
       // Then create the poll
       const pollQuery = `
         INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, created_at)
         VALUES ($1, $2, $3, $4, $5, NOW())
         RETURNING id
       `;
-      const { rows: [newPoll] } = await db.query(pollQuery, [
-        messageId, 
-        question, 
+      const { rows: [newPoll] } = await client.query(pollQuery, [
+        messageId,
+        question,
         JSON.stringify(validOptions),
         multiple_choice,
         expiresAt
       ]);
-      
-      await db.query('COMMIT');
-      
+
+      await client.query('COMMIT');
+      client.release();
+
       // Return the created poll
       res.status(201).json({
         id: newPoll.id,
@@ -1133,10 +1136,15 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         expires_at: expiresAt,
         votes: []
       });
-      
+
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        client.release();
+        console.error('Database error in POST /rooms/:roomId/polls:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
     } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
- console.error('Database error in POST /rooms/:roomId/polls:', err);
+      console.error('Database error in POST /rooms/:roomId/polls:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1207,25 +1215,28 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
       }
       
-      await db.query('BEGIN');
-      
+      const client = await db.getClient();
+      try {
+      await client.query('BEGIN');
+
       // Use the actual poll.id from database, not the request pollId (which might be message_id)
       const actualPollId = poll.id;
-      
+
       // Check if user already voted for this specific option
-      const { rows: [existingVote] } = await db.query(
+      const { rows: [existingVote] } = await client.query(
         "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
         [actualPollId, userId, userType, option_index]
       );
-      
+
       if (existingVote) {
         // If already voted for this option, remove the vote (toggle off)
-        await db.query(
+        await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
           [actualPollId, userId, userType, option_index]
         );
-        await db.query('COMMIT');
-        return res.json({ 
+        await client.query('COMMIT');
+        client.release();
+        return res.json({
           message: 'Stimme erfolgreich entfernt',
           poll_id: actualPollId,
           option_index: option_index,
@@ -1233,34 +1244,40 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           action: 'removed'
         });
       }
-      
+
       // For single choice polls, remove any existing votes before adding new one
       if (!poll.multiple_choice) {
-        await db.query(
+        await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
           [actualPollId, userId, userType]
         );
       }
-      
+
       // Add the new vote
-      await db.query(
+      await client.query(
         "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
         [actualPollId, userId, userType, option_index]
       );
-      
-      await db.query('COMMIT');
-      
-      res.json({ 
+
+      await client.query('COMMIT');
+      client.release();
+
+      res.json({
         message: 'Stimme erfolgreich abgegeben',
         poll_id: actualPollId,
         option_index: option_index,
         user_id: userId,
         action: 'added'
       });
-      
+
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        client.release();
+        throw err;
+      }
+
     } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
- console.error('Database error in POST /polls/:pollId/vote:', err);
+      console.error('Database error in POST /polls/:pollId/vote:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1368,46 +1385,55 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
         return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
       }
       
-      await db.query('BEGIN');
-      
+      const client = await db.getClient();
+      try {
+      await client.query('BEGIN');
+
       // For single choice polls, remove existing vote
       if (!poll.multiple_choice) {
-        await db.query(
+        await client.query(
           "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
           [poll.id, userId, userType]
         );
       } else {
         // For multiple choice, check if user already voted for this option
-        const { rows: [existingVote] } = await db.query(
+        const { rows: [existingVote] } = await client.query(
           "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
           [poll.id, userId, userType, option_index]
         );
-        
+
         if (existingVote) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: 'Du hast bereits für diese Option abgestimmt' });
         }
       }
-      
+
       // Add the new vote
-      await db.query(
+      await client.query(
         "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
         [poll.id, userId, userType, option_index]
       );
-      
-      await db.query('COMMIT');
-      
-      res.json({ 
+
+      await client.query('COMMIT');
+      client.release();
+
+      res.json({
         message: 'Stimme erfolgreich abgegeben',
         poll_id: poll.id,
         message_id: parseInt(messageId),
         option_index: option_index,
         user_id: userId
       });
-      
+
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        client.release();
+        throw err;
+      }
+
     } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
- console.error('Database error in POST /messages/:messageId/vote:', err);
+      console.error('Database error in POST /messages/:messageId/vote:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1450,46 +1476,48 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       
       // Direct chats can be deleted by admins (no restrictions)
       
-      await db.query('BEGIN');
-      
+      const client = await db.getClient();
+      try {
+      await client.query('BEGIN');
+
       // If force delete or no messages, proceed with deletion
       if (forceDelete || messageCount.count === 0) {
         // Get all files before deleting messages (for file cleanup)
-        const { rows: filesForDeletion } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [roomId]);
-        
+        const { rows: filesForDeletion } = await client.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [roomId]);
+
         // Delete in correct order due to foreign keys
         // 1. Delete poll votes first (polls are linked via message_id, not room_id)
-        await db.query(`
+        await client.query(`
           DELETE FROM chat_poll_votes WHERE poll_id IN (
-            SELECT cp.id FROM chat_polls cp 
-            JOIN chat_messages cm ON cp.message_id = cm.id 
+            SELECT cp.id FROM chat_polls cp
+            JOIN chat_messages cm ON cp.message_id = cm.id
             WHERE cm.room_id = $1
           )
         `, [roomId]);
-        
+
         // 2. Delete polls (via message_id)
-        await db.query(`
+        await client.query(`
           DELETE FROM chat_polls WHERE message_id IN (
             SELECT id FROM chat_messages WHERE room_id = $1
           )
         `, [roomId]);
-        
+
         // 3. Delete read status
-        await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [roomId]);
-        
+        await client.query("DELETE FROM chat_read_status WHERE room_id = $1", [roomId]);
+
         // 4. Delete messages
-        await db.query("DELETE FROM chat_messages WHERE room_id = $1", [roomId]);
-        
+        await client.query("DELETE FROM chat_messages WHERE room_id = $1", [roomId]);
+
         // 5. Delete participants
-        await db.query("DELETE FROM chat_participants WHERE room_id = $1", [roomId]);
-        
+        await client.query("DELETE FROM chat_participants WHERE room_id = $1", [roomId]);
+
         // 6. Delete room itself
-        await db.query("DELETE FROM chat_rooms WHERE id = $1", [roomId]);
-        
+        await client.query("DELETE FROM chat_rooms WHERE id = $1", [roomId]);
+
         // 7. Clean up files from filesystem (best effort, don't fail if files don't exist)
         const fs = require('fs').promises;
         const path = require('path');
-        
+
         for (const fileRecord of filesForDeletion) {
           try {
             const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
@@ -1500,13 +1528,20 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
           }
         }
       }
-      
-      await db.query('COMMIT');
+
+      await client.query('COMMIT');
+      client.release();
+
       res.json({ message: 'Chat-Raum erfolgreich gelöscht' });
-      
+
+      } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+        client.release();
+        throw err;
+      }
+
     } catch (err) {
- await db.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
- console.error(`Database error in DELETE /rooms/${roomId}:`, err);
+      console.error(`Database error in DELETE /rooms/${roomId}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

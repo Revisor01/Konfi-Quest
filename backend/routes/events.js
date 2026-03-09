@@ -513,13 +513,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const effectiveMaxParticipants = mandatory ? 0 : max_participants;
     const effectiveWaitlist = mandatory ? false : (waitlist_enabled !== undefined ? waitlist_enabled : true);
 
-    // For robust transactions, a dedicated client from the pool is best practice.
-    // Adhering to the prompt, we use `db.query` for BEGIN/COMMIT/ROLLBACK.
-    await db.query('BEGIN');
+    const client = await db.getClient();
     try {
+      await client.query('BEGIN');
 
       // Alten mandatory-Wert lesen fuer bedingte Auto-Enrollment-Logik
-      const { rows: [oldEvent] } = await db.query('SELECT mandatory FROM events WHERE id = $1', [id]);
+      const { rows: [oldEvent] } = await client.query('SELECT mandatory FROM events WHERE id = $1', [id]);
 
       const updateQuery = `
         UPDATE events SET
@@ -530,7 +529,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           mandatory = $16, bring_items = $17
         WHERE id = $18 AND organization_id = $19
       `;
-      const { rowCount } = await db.query(updateQuery, [
+      const { rowCount } = await client.query(updateQuery, [
         name, description, event_date, event_end_time, location, location_maps_url,
         effectivePoints, point_type, type, effectiveMaxParticipants, registration_opens_at,
         registration_closes_at, has_timeslots || false,
@@ -538,24 +537,25 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         mandatory || false, bring_items || null,
         id, req.user.organization_id
       ]);
-      
+
       if (rowCount === 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden oder keine Berechtigung' });
       }
-      
+
       // Clear and re-add categories and jahrgaenge
-      await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
-      await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
+      await client.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
+      await client.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
 
       // Add categories and jahrgaenge back sequentially
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
         const categoryQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-        await db.query(categoryQuery, [id, category_ids]);
+        await client.query(categoryQuery, [id, category_ids]);
       }
       if (jahrgang_ids && Array.isArray(jahrgang_ids) && jahrgang_ids.length > 0) {
         const jahrgangQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-        await db.query(jahrgangQuery, [id, jahrgang_ids]);
+        await client.query(jahrgangQuery, [id, jahrgang_ids]);
       }
 
       // Auto-Enrollment bei Umwandlung zu Pflicht-Event
@@ -571,13 +571,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             AND r.name = 'konfi'
           ON CONFLICT (user_id, event_id) DO NOTHING
         `;
-        await db.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
+        await client.query(enrollQuery, [id, jahrgang_ids, req.user.organization_id]);
       }
 
       // Handle timeslots - intelligent update to preserve booking references
       if (has_timeslots && timeslots && Array.isArray(timeslots) && timeslots.length > 0) {
         // Get existing timeslot IDs
-        const { rows: existingSlots } = await db.query(
+        const { rows: existingSlots } = await client.query(
           "SELECT id FROM event_timeslots WHERE event_id = $1", [id]
         );
         const existingIds = new Set(existingSlots.map(s => s.id));
@@ -589,11 +589,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         for (const existingId of existingIds) {
           if (!newIds.has(existingId)) {
             // Check if this timeslot has bookings
-            const { rows: [bookingCheck] } = await db.query(
+            const { rows: [bookingCheck] } = await client.query(
               "SELECT COUNT(*)::int as count FROM event_bookings WHERE timeslot_id = $1", [existingId]
             );
             if (bookingCheck.count === 0) {
-              await db.query("DELETE FROM event_timeslots WHERE id = $1", [existingId]);
+              await client.query("DELETE FROM event_timeslots WHERE id = $1", [existingId]);
             }
             // If has bookings, keep the timeslot but it won't show in the UI
           }
@@ -603,13 +603,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         for (const slot of timeslots) {
           if (slot.id && existingIds.has(slot.id)) {
             // Update existing timeslot
-            await db.query(
+            await client.query(
               "UPDATE event_timeslots SET start_time = $1, end_time = $2, max_participants = $3 WHERE id = $4",
               [slot.start_time, slot.end_time, slot.max_participants, slot.id]
             );
           } else {
             // Insert new timeslot
-            await db.query(
+            await client.query(
               "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)",
               [id, slot.start_time, slot.end_time, slot.max_participants, req.user.organization_id]
             );
@@ -617,11 +617,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       } else if (!has_timeslots) {
         // Only delete timeslots if event no longer has timeslots AND no bookings reference them
-        const { rows: [bookingCheck] } = await db.query(
+        const { rows: [bookingCheck] } = await client.query(
           "SELECT COUNT(*)::int as count FROM event_bookings eb JOIN event_timeslots et ON eb.timeslot_id = et.id WHERE et.event_id = $1", [id]
         );
         if (bookingCheck.count === 0) {
-          await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
+          await client.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
         }
       }
 
@@ -631,42 +631,43 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Bei Timeslot-Events: Fuer jeden Timeslot separat pruefen
         for (const slot of timeslots) {
           if (!slot.id) continue; // Nur bestehende Timeslots pruefen
-          const { rows: [tsCapacity] } = await db.query(
+          const { rows: [tsCapacity] } = await client.query(
             "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'confirmed'",
             [slot.id]
           );
           const freeSlots = slot.max_participants - tsCapacity.confirmed_count;
           if (freeSlots > 0) {
-            const { rows: waitlistEntries } = await db.query(
+            const { rows: waitlistEntries } = await client.query(
               "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND timeslot_id = $2 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $3",
               [id, slot.id, freeSlots]
             );
             for (const entry of waitlistEntries) {
-              await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
+              await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
               promotedUsers.push(entry.user_id);
             }
           }
         }
       } else if (max_participants > 0) {
         // Bei normalen Events: Gesamtkapazitaet pruefen
-        const { rows: [currentCounts] } = await db.query(
+        const { rows: [currentCounts] } = await client.query(
           "SELECT COUNT(*)::int as confirmed_count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'",
           [id]
         );
         const freeSlots = max_participants - currentCounts.confirmed_count;
         if (freeSlots > 0) {
-          const { rows: waitlistEntries } = await db.query(
+          const { rows: waitlistEntries } = await client.query(
             "SELECT id, user_id FROM event_bookings WHERE event_id = $1 AND status = 'waitlist' ORDER BY created_at ASC LIMIT $2",
             [id, freeSlots]
           );
           for (const entry of waitlistEntries) {
-            await db.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
+            await client.query("UPDATE event_bookings SET status = 'confirmed' WHERE id = $1", [entry.id]);
             promotedUsers.push(entry.user_id);
           }
         }
       }
 
-      await db.query('COMMIT');
+      await client.query('COMMIT');
+      client.release();
 
       // Push-Notifications und Live-Updates fuer nachgerueckte Konfis (nach COMMIT)
       if (promotedUsers.length > 0) {
@@ -687,8 +688,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
 
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in PUT /events/${id}:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in PUT /events/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -697,87 +699,92 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.delete('/:id', rbacVerifier, requireTeamer, validateEventId, async (req, res) => {
     const { id } = req.params;
     
-    await db.query('BEGIN');
+    const client = await db.getClient();
     try {
-      
+      await client.query('BEGIN');
+
       // First, verify the event belongs to the organization
-      const { rows: [event] } = await db.query("SELECT id, name FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
+      const { rows: [event] } = await client.query("SELECT id, name FROM events WHERE id = $1 AND organization_id = $2", [id, req.user.organization_id]);
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
+
       // Check if there are bookings (confirmed participants)
-      const { rows: [bookingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
-      
+      const { rows: [bookingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [id]);
+
       if (bookingUsage.count > 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${bookingUsage.count} bestätigte Anmeldung(en) vorhanden.` });
       }
-      
+
       // Check for pending bookings (waitlist)
-      const { rows: [pendingUsage] } = await db.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
-      
+      const { rows: [pendingUsage] } = await client.query("SELECT COUNT(*)::int as count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'", [id]);
+
       if (pendingUsage.count > 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: `Event kann nicht gelöscht werden: ${pendingUsage.count} Wartelisten-Anmeldung(en) vorhanden.` });
       }
-      
+
       // Check for chat rooms with messages
-      const { rows: [chatUsage] } = await db.query(`
+      const { rows: [chatUsage] } = await client.query(`
         SELECT cr.id, (SELECT COUNT(*) FROM chat_messages WHERE room_id = cr.id)::int as message_count
-        FROM chat_rooms cr 
+        FROM chat_rooms cr
         WHERE cr.event_id = $1
       `, [id]);
-      
+
       if (chatUsage && chatUsage.message_count > 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: `Event kann nicht gelöscht werden: Event-Chat enthält ${chatUsage.message_count} Nachricht(en).` });
       }
-      
+
       // Get event chat rooms and their files before deletion
-      const { rows: eventChatRooms } = await db.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
+      const { rows: eventChatRooms } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [id]);
       const allFiles = [];
-      
+
       for (const room of eventChatRooms) {
-        const { rows: roomFiles } = await db.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
+        const { rows: roomFiles } = await client.query("SELECT file_path FROM chat_messages WHERE room_id = $1 AND file_path IS NOT NULL", [room.id]);
         allFiles.push(...roomFiles);
       }
-      
+
       // Proceed with deletions. Order matters due to foreign keys.
       // 1. Delete chat data first
       for (const room of eventChatRooms) {
         // Delete poll votes first (polls are linked via message_id, not room_id)
-        await db.query(`
+        await client.query(`
           DELETE FROM chat_poll_votes WHERE poll_id IN (
-            SELECT cp.id FROM chat_polls cp 
-            JOIN chat_messages cm ON cp.message_id = cm.id 
+            SELECT cp.id FROM chat_polls cp
+            JOIN chat_messages cm ON cp.message_id = cm.id
             WHERE cm.room_id = $1
           )
         `, [room.id]);
-        
+
         // Delete polls (via message_id)
-        await db.query(`
+        await client.query(`
           DELETE FROM chat_polls WHERE message_id IN (
             SELECT id FROM chat_messages WHERE room_id = $1
           )
         `, [room.id]);
-        await db.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
-        await db.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
-        await db.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
+        await client.query("DELETE FROM chat_read_status WHERE room_id = $1", [room.id]);
+        await client.query("DELETE FROM chat_messages WHERE room_id = $1", [room.id]);
+        await client.query("DELETE FROM chat_participants WHERE room_id = $1", [room.id]);
       }
-      await db.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]);
-      
+      await client.query("DELETE FROM chat_rooms WHERE event_id = $1", [id]);
+
       // 2. Delete event-specific data
-      await db.query("DELETE FROM event_bookings WHERE event_id = $1", [id]);
-      await db.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
-      await db.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
-      await db.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
-      
+      await client.query("DELETE FROM event_bookings WHERE event_id = $1", [id]);
+      await client.query("DELETE FROM event_timeslots WHERE event_id = $1", [id]);
+      await client.query("DELETE FROM event_categories WHERE event_id = $1", [id]);
+      await client.query("DELETE FROM event_jahrgang_assignments WHERE event_id = $1", [id]);
+
       // 3. Clean up files from filesystem (best effort)
       const fs = require('fs').promises;
       const path = require('path');
-      
+
       for (const fileRecord of allFiles) {
         try {
           const fullPath = path.join(__dirname, '..', 'uploads', 'chat', fileRecord.file_path);
@@ -786,24 +793,28 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
  console.warn(`Could not delete file ${fileRecord.file_path}:`, fileErr.message);
         }
       }
-      
+
       // Finally, delete the event itself
-      const { rowCount } = await db.query("DELETE FROM events WHERE id = $1", [id]);
-      
+      const { rowCount } = await client.query("DELETE FROM events WHERE id = $1", [id]);
+
       if (rowCount === 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
-      await db.query('COMMIT');
+
+      await client.query('COMMIT');
+      client.release();
+
       res.json({ message: 'Event erfolgreich gelöscht' });
 
       // Live Update: Notify all konfis and admins about the event deletion
       liveUpdate.sendToOrg(req.user.organization_id, 'events', 'delete', { eventId: id });
 
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in DELETE /events/${id}:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in DELETE /events/${id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -818,45 +829,50 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(403).json({ error: 'Nur Konfis können Events buchen' });
     }
 
+    const client = await db.getClient();
     try {
 
       // Transaktion starten für Race-Condition-Schutz
-      await db.query('BEGIN');
+      await client.query('BEGIN');
 
       // 1. Check if event exists and registration is open (FOR UPDATE sperrt die Zeile)
-      const { rows: [event] } = await db.query(
+      const { rows: [event] } = await client.query(
         "SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
         [eventId, req.user.organization_id]
       );
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
       const now = new Date();
       if (now < new Date(event.registration_opens_at)) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({ error: 'Anmeldung noch nicht geöffnet' });
       }
       if (now > new Date(event.registration_closes_at)) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(400).json({ error: 'Anmeldung bereits geschlossen' });
       }
 
       // 2. Check if already booked
-      const { rows: [existingBooking] } = await db.query(
+      const { rows: [existingBooking] } = await client.query(
         "SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2",
         [eventId, konfiId]
       );
       if (existingBooking) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: 'Du bist bereits für dieses Event angemeldet' });
       }
 
       // 3. Check available spots and waitlist
       let totalCapacity = event.max_participants;
       if (event.has_timeslots) {
-        const { rows: timeslots } = await db.query(
+        const { rows: timeslots } = await client.query(
           "SELECT SUM(max_participants) as total_capacity FROM event_timeslots WHERE event_id = $1",
           [eventId]
         );
@@ -865,7 +881,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
       }
 
-      const { rows: [counts] } = await db.query(
+      const { rows: [counts] } = await client.query(
         "SELECT COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_count, COUNT(*) FILTER (WHERE status = 'waitlist') as waitlist_count FROM event_bookings WHERE event_id = $1",
         [eventId]
       );
@@ -878,11 +894,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Only check capacity if totalCapacity > 0 (0 means unlimited)
       if (totalCapacity > 0 && confirmedCount >= totalCapacity) {
         if (!event.waitlist_enabled) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: 'Das Event ist leider bereits ausgebucht' });
         }
         if (waitlistCount >= event.max_waitlist_size) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: 'Das Event und die Warteliste sind leider voll' });
         }
         bookingStatus = 'waitlist';
@@ -891,10 +909,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 4. Create booking
       const insertBookingQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
-      const { rows: [newBooking] } = await db.query(insertBookingQuery, [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id]);
+      const { rows: [newBooking] } = await client.query(insertBookingQuery, [eventId, konfiId, timeslot_id, bookingStatus, req.user.organization_id]);
 
       // Transaktion abschließen
-      await db.query('COMMIT');
+      await client.query('COMMIT');
+      client.release();
 
       res.status(201).json({ id: newBooking.id, message, status: bookingStatus });
 
@@ -903,8 +922,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'booking' });
 
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in POST /events/${eventId}/book:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in POST /events/${eventId}/book:`, err);
       res.status(500).json({ error: 'Datenbankfehler bei der Anmeldung' });
     }
   });
@@ -981,21 +1001,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     const eventId = req.params.id;
     const { user_id, status = 'auto', timeslot_id = null } = req.body;
 
+    const client = await db.getClient();
     try {
       // Transaktion starten fuer Race-Condition-Schutz
-      await db.query('BEGIN');
+      await client.query('BEGIN');
 
       // 1. Get event details (FOR UPDATE sperrt die Zeile)
-      const { rows: [event] } = await db.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
+      const { rows: [event] } = await client.query("SELECT * FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE", [eventId, req.user.organization_id]);
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
 
       // 2. Validate user
-      const { rows: [user] } = await db.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
+      const { rows: [user] } = await client.query("SELECT id FROM users WHERE id = $1 AND organization_id = $2", [user_id, req.user.organization_id]);
       if (!user) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Benutzer nicht gefunden' });
       }
 
@@ -1003,21 +1026,24 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       let timeslot = null;
       if (event.has_timeslots) {
         if (!timeslot_id) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: 'Zeitslot-Auswahl für dieses Event erforderlich' });
         }
-        const { rows: [ts] } = await db.query("SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
+        const { rows: [ts] } = await client.query("SELECT * FROM event_timeslots WHERE id = $1 AND event_id = $2 AND organization_id = $3", [timeslot_id, eventId, req.user.organization_id]);
         if (!ts) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(404).json({ error: 'Zeitslot nicht gefunden' });
         }
         timeslot = ts;
       }
 
       // 4. Check if already booked
-      const { rows: [existing] } = await db.query("SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2", [eventId, user_id]);
+      const { rows: [existing] } = await client.query("SELECT id FROM event_bookings WHERE event_id = $1 AND user_id = $2", [eventId, user_id]);
       if (existing) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: 'Benutzer ist bereits für dieses Event angemeldet' });
       }
 
@@ -1031,7 +1057,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const capacityParam = isTimeslotBooking ? timeslot.id : eventId;
         const maxCapacity = isTimeslotBooking ? timeslot.max_participants : event.max_participants;
 
-        const { rows: [capacityResult] } = await db.query(capacityQuery, [capacityParam]);
+        const { rows: [capacityResult] } = await client.query(capacityQuery, [capacityParam]);
         const confirmedCount = parseInt(capacityResult.confirmed_count, 10);
 
         // Only check capacity if maxCapacity > 0 (0 means unlimited)
@@ -1040,16 +1066,18 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             const waitlistQuery = isTimeslotBooking
             ? "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE timeslot_id = $1 AND status = 'waitlist'"
             : "SELECT COUNT(*) as waitlist_count FROM event_bookings WHERE event_id = $1 AND status = 'waitlist'";
-            const { rows: [waitlistResult] } = await db.query(waitlistQuery, [capacityParam]);
+            const { rows: [waitlistResult] } = await client.query(waitlistQuery, [capacityParam]);
             const waitlistCount = parseInt(waitlistResult.waitlist_count, 10);
 
             if (waitlistCount >= event.max_waitlist_size) {
-              await db.query('ROLLBACK');
+              await client.query('ROLLBACK');
+              client.release();
               return res.status(409).json({ error: 'Event und Warteliste sind voll' });
             }
             finalStatus = 'waitlist';
           } else {
-            await db.query('ROLLBACK');
+            await client.query('ROLLBACK');
+            client.release();
             return res.status(409).json({ error: 'Event ist voll und Warteliste ist deaktiviert' });
           }
         } else {
@@ -1059,10 +1087,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       // 6. Create booking
       const insertQuery = "INSERT INTO event_bookings (event_id, user_id, timeslot_id, status, booking_date, organization_id) VALUES ($1, $2, $3, $4, NOW(), $5) RETURNING id";
-      const { rows: [newBooking] } = await db.query(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id]);
+      const { rows: [newBooking] } = await client.query(insertQuery, [eventId, user_id, timeslot_id, finalStatus, req.user.organization_id]);
 
       // Transaktion abschliessen
-      await db.query('COMMIT');
+      await client.query('COMMIT');
+      client.release();
 
       const responseMessage = timeslot
       ? `Participant added to timeslot ${new Date(timeslot.start_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} - ${new Date(timeslot.end_time).toLocaleTimeString('de-DE', {hour: '2-digit', minute: '2-digit'})} ${finalStatus === 'waitlist' ? '(waitlist)' : 'successfully'}`
@@ -1080,8 +1109,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
 
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in POST /events/${req.params.id}/participants:`, err);
       if (err.code === '23505') { // unique_violation
         return res.status(409).json({ error: 'Dieser Benutzer ist bereits für dieses Event angemeldet.' });
       }
@@ -1187,8 +1217,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       return res.status(400).json({ error: 'Name, Datum und Serienanzahl (min. 2) sind erforderlich' });
     }
     
-    await db.query('BEGIN');
+    const client = await db.getClient();
     try {
+      await client.query('BEGIN');
+
       const generateSeriesDates = (startDate, count, interval) => {
         const dates = [];
         let currentDate = new Date(startDate);
@@ -1202,15 +1234,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         }
         return dates;
       };
-      
+
       const seriesDates = generateSeriesDates(event_date, series_count, series_interval);
       let seriesId = null; // Will be set to the first event's ID
-      
-      
+
+
       for (let i = 0; i < seriesDates.length; i++) {
         const date = seriesDates[i];
         const eventName = `${name} #${i + 1}`;
-        
+
         // Calculate dates for this specific event in series
         const eventStartDate = new Date(date);
         const eventEndDate = event_end_time ? new Date(date) : null;
@@ -1218,7 +1250,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           const endTime = new Date(event_end_time);
           eventEndDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
         }
-        
+
         // Calculate registration dates for this event
         const regOpens = registration_opens_at ? new Date(date) : null;
         if (regOpens && registration_opens_at) {
@@ -1226,64 +1258,64 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           regOpens.setHours(openTime.getHours(), openTime.getMinutes(), 0, 0);
           regOpens.setDate(regOpens.getDate() - (new Date(event_date).getDate() - new Date(registration_opens_at).getDate()));
         }
-        
+
         const regCloses = registration_closes_at ? new Date(date) : null;
         if (regCloses && registration_closes_at) {
           const closeTime = new Date(registration_closes_at);
           regCloses.setHours(closeTime.getHours(), closeTime.getMinutes(), 0, 0);
           regCloses.setDate(regCloses.getDate() - (new Date(event_date).getDate() - new Date(registration_closes_at).getDate()));
         }
-        
+
         let eventId;
-        
+
         // First event: create without series_id, then use its ID as series_id
         if (i === 0) {
           const eventQuery = `
             INSERT INTO events (
-              name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
-              type, max_participants, registration_opens_at, registration_closes_at, 
+              name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
+              type, max_participants, registration_opens_at, registration_closes_at,
               has_timeslots, waitlist_enabled, max_waitlist_size, is_series, created_by, organization_id
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17)
             RETURNING id
           `;
-          const { rows: [newEvent] } = await db.query(eventQuery, [
-            eventName, description, eventStartDate.toISOString(), 
+          const { rows: [newEvent] } = await client.query(eventQuery, [
+            eventName, description, eventStartDate.toISOString(),
             eventEndDate ? eventEndDate.toISOString() : null,
             location, location_maps_url,
             points || 0, point_type || 'gemeinde', type || 'event', max_participants,
-            regOpens ? regOpens.toISOString() : null, 
-            regCloses ? regCloses.toISOString() : null, 
-            has_timeslots || false, 
+            regOpens ? regOpens.toISOString() : null,
+            regCloses ? regCloses.toISOString() : null,
+            has_timeslots || false,
             waitlist_enabled !== undefined ? waitlist_enabled : true,
             max_waitlist_size || 10,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;
           seriesId = eventId; // Use first event's ID as series_id
-          
+
           // Update first event to set its own series_id
-          await db.query("UPDATE events SET series_id = $1 WHERE id = $2", [seriesId, eventId]);
+          await client.query("UPDATE events SET series_id = $1 WHERE id = $2", [seriesId, eventId]);
         } else {
           // Subsequent events: create with series_id
           const eventQuery = `
             INSERT INTO events (
-              name, description, event_date, event_end_time, location, location_maps_url, points, point_type, 
-              type, max_participants, registration_opens_at, registration_closes_at, 
+              name, description, event_date, event_end_time, location, location_maps_url, points, point_type,
+              type, max_participants, registration_opens_at, registration_closes_at,
               has_timeslots, waitlist_enabled, max_waitlist_size, is_series, series_id, created_by, organization_id
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17, $18)
             RETURNING id
           `;
-          const { rows: [newEvent] } = await db.query(eventQuery, [
-            eventName, description, eventStartDate.toISOString(), 
+          const { rows: [newEvent] } = await client.query(eventQuery, [
+            eventName, description, eventStartDate.toISOString(),
             eventEndDate ? eventEndDate.toISOString() : null,
             location, location_maps_url,
             points || 0, point_type || 'gemeinde', type || 'event', max_participants,
-            regOpens ? regOpens.toISOString() : null, 
-            regCloses ? regCloses.toISOString() : null, 
-            has_timeslots || false, 
+            regOpens ? regOpens.toISOString() : null,
+            regCloses ? regCloses.toISOString() : null,
+            has_timeslots || false,
             waitlist_enabled !== undefined ? waitlist_enabled : true,
             max_waitlist_size || 10,
-            seriesId, 
+            seriesId,
             req.user.id, req.user.organization_id
           ]);
           eventId = newEvent.id;
@@ -1294,11 +1326,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         const relationPromises = [];
         if (category_ids && category_ids.length) {
           const catQuery = "INSERT INTO event_categories (event_id, category_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-          relationPromises.push(db.query(catQuery, [eventId, category_ids]));
+          relationPromises.push(client.query(catQuery, [eventId, category_ids]));
         }
         if (jahrgang_ids && jahrgang_ids.length) {
           const jahrQuery = "INSERT INTO event_jahrgang_assignments (event_id, jahrgang_id) SELECT $1, unnest($2::int[]) ON CONFLICT DO NOTHING";
-          relationPromises.push(db.query(jahrQuery, [eventId, jahrgang_ids]));
+          relationPromises.push(client.query(jahrQuery, [eventId, jahrgang_ids]));
         }
         if (has_timeslots && timeslots && timeslots.length) {
           const tsQuery = "INSERT INTO event_timeslots (event_id, start_time, end_time, max_participants, organization_id) VALUES ($1, $2, $3, $4, $5)";
@@ -1312,7 +1344,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
             adjustedStart.setHours(slotStart.getHours(), slotStart.getMinutes(), 0, 0);
             adjustedEnd.setHours(slotEnd.getHours(), slotEnd.getMinutes(), 0, 0);
 
-            relationPromises.push(db.query(tsQuery, [
+            relationPromises.push(client.query(tsQuery, [
               eventId,
               adjustedStart.toISOString(),
               adjustedEnd.toISOString(),
@@ -1324,17 +1356,20 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         // Wait for all relations of THIS event to be created before moving to next event
         await Promise.all(relationPromises);
       }
-      
-      await db.query('COMMIT');
-      res.status(201).json({ 
-        message: 'Serien-Events erfolgreich erstellt', 
+
+      await client.query('COMMIT');
+      client.release();
+
+      res.status(201).json({
+        message: 'Serien-Events erfolgreich erstellt',
         series_id: seriesId,
         events_created: seriesDates.length
       });
-      
+
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error('Database error in POST /events/series:', err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error('Database error in POST /events/series:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
@@ -1494,47 +1529,54 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.post('/:id/chat', rbacVerifier, requireTeamer, async (req, res) => {
     const eventId = req.params.id;
     
-    await db.query('BEGIN');
+    const client = await db.getClient();
     try {
-      const { rows: [event] } = await db.query("SELECT name FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
+      await client.query('BEGIN');
+
+      const { rows: [event] } = await client.query("SELECT name FROM events WHERE id = $1 AND organization_id = $2", [eventId, req.user.organization_id]);
       if (!event) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event nicht gefunden' });
       }
-      
-      const { rows: [existingChat] } = await db.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]);
+
+      const { rows: [existingChat] } = await client.query("SELECT id FROM chat_rooms WHERE event_id = $1", [eventId]);
       if (existingChat) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(409).json({ error: 'Chat existiert bereits für dieses Event' });
       }
-      
+
       const chatName = `${event.name} - Chat`;
-      const { rows: [newChat] } = await db.query("INSERT INTO chat_rooms (name, type, event_id, created_by) VALUES ($1, 'group', $2, $3) RETURNING id", [chatName, eventId, req.user.id]);
+      const { rows: [newChat] } = await client.query("INSERT INTO chat_rooms (name, type, event_id, created_by) VALUES ($1, 'group', $2, $3) RETURNING id", [chatName, eventId, req.user.id]);
       const chatRoomId = newChat.id;
-      
-      await db.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'admin')", [chatRoomId, req.user.id]);
-      
-      const { rows: participants } = await db.query("SELECT DISTINCT user_id FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [eventId]);
-      
+
+      await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'admin')", [chatRoomId, req.user.id]);
+
+      const { rows: participants } = await client.query("SELECT DISTINCT user_id FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [eventId]);
+
       if (participants.length > 0) {
         const participantInsertQuery = `
           INSERT INTO chat_participants (room_id, user_id, user_type)
           SELECT $1, p.user_id, 'konfi' FROM unnest($2::int[]) AS p(user_id)
         `;
         const participantIds = participants.map(p => p.user_id);
-        await db.query(participantInsertQuery, [chatRoomId, participantIds]);
+        await client.query(participantInsertQuery, [chatRoomId, participantIds]);
       }
-      
-      await db.query('COMMIT');
-      res.status(201).json({ 
-        chat_room_id: chatRoomId, 
+
+      await client.query('COMMIT');
+      client.release();
+
+      res.status(201).json({
+        chat_room_id: chatRoomId,
         message: 'Chat erstellt und Teilnehmer erfolgreich hinzugefügt',
         participants_added: participants.length
       });
-      
+
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in POST /events/${eventId}/chat:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in POST /events/${eventId}/chat:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

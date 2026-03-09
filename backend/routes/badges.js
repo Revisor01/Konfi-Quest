@@ -490,31 +490,31 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
   
   router.delete('/:id', rbacVerifier, requireAdmin, validateBadgeId, async (req, res) => {
+    const client = await db.getClient();
     try {
-      await db.query('BEGIN');
-      
-      await db.query("DELETE FROM konfi_badges WHERE badge_id = $1", [req.params.id]);
-      
-      const { rowCount } = await db.query("DELETE FROM custom_badges WHERE id = $1 AND organization_id = $2", [req.params.id, req.user.organization_id]);
-      
+      await client.query('BEGIN');
+
+      await client.query("DELETE FROM konfi_badges WHERE badge_id = $1", [req.params.id]);
+
+      const { rowCount } = await client.query("DELETE FROM custom_badges WHERE id = $1 AND organization_id = $2", [req.params.id, req.user.organization_id]);
+
       if (rowCount === 0) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Badge nicht gefunden oder keine Berechtigung' });
       }
-      
-      await db.query('COMMIT');
+
+      await client.query('COMMIT');
+      client.release();
+
       res.json({ message: 'Badge erfolgreich gelöscht' });
 
       // Live-Update an alle Admins senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'badges', 'delete');
     } catch (err) {
-      // Attempt to rollback transaction on error
-      try {
-        await db.query('ROLLBACK');
-      } catch (rollbackErr) {
- console.error('Failed to rollback transaction:', rollbackErr);
-      }
- console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in DELETE /api/badges/${req.params.id}:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
