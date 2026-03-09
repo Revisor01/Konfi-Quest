@@ -4,9 +4,20 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Status
+## Current Milestone: v1.8 Teamer
 
-v1.7 shipped. Naechster Milestone wird ueber `/gsd:new-milestone` definiert.
+**Goal:** Teamer als vollwertige Rolle mit eigenem Dashboard, Event-Teilnahme, Badge-System und Material-Bereich einfuehren.
+
+**Target features:**
+- Teamer-Rolle mit manueller Transition (Admin befoerdert Ex-Konfi)
+- Eigenes Dashboard (kein Ranking, Konfi-Uebersicht, naechste Events)
+- Zugriff auf: Punkte vergeben, Anwesenheit feststellen, Chat-Raeume erstellen
+- Events: "Teamer gesucht"-Toggle bei Konfi-Events + reine Teamer-Events
+- Teamer-Aktivitaeten (manuell vergeben: Jugendreise, JuLeiCa, Teamer-Card)
+- Teamer-Badges (frei konfigurierbar): Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge
+- Zertifikat-Anzeige im Profil (JuLeiCa, Teamer-Card mit Datum, aehnlich Konfi-Level)
+- Konfi-Badges bleiben als Historie erhalten
+- Material-Bereich mit Datei-Uploads fuer Teamer im Jahrgang
 
 ## Core Value
 
@@ -85,7 +96,16 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-(Wird mit naechstem Milestone definiert)
+- [ ] Teamer-Rolle mit RBAC-Integration und manueller Transition durch Admin
+- [ ] Eigenes Teamer-Dashboard ohne Ranking mit Konfi-Uebersicht
+- [ ] Teamer-Zugriff: Punkte vergeben, Anwesenheit, Chat-Raeume erstellen
+- [ ] "Teamer gesucht"-Toggle bei bestehenden Events
+- [ ] Reine Teamer-Events (nur fuer Teamer sichtbar/buchbar)
+- [ ] Teamer-Aktivitaeten (manuell durch Admin)
+- [ ] Teamer-Badges: Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge
+- [ ] Zertifikat-Anzeige (JuLeiCa, Teamer-Card) im Profil
+- [ ] Konfi-Badge-Historie bei Transition erhalten
+- [ ] Material-Bereich mit Datei-Uploads
 
 ### Out of Scope
 
@@ -166,4 +186,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Scanner-Feedback als inline Banners | Ueber Video-Feed statt Toast, bessere UX | Bestaetigt v1.7 |
 
 ---
-*Last updated: 2026-03-09 after v1.7 milestone*
+*Last updated: 2026-03-09 after v1.8 milestone start*

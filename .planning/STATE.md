@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: completed
-milestone_name: v1.7 shipped
-status: between_milestones
-last_updated: "2026-03-09T20:30:00.000Z"
+milestone: v1.8
+milestone_name: Teamer
+status: defining_requirements
+last_updated: "2026-03-09T21:00:00.000Z"
 progress:
   total_phases: 0
   completed_phases: 0
@@ -18,21 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.7 shipped -- naechster Milestone ueber /gsd:new-milestone
+**Current focus:** v1.8 Teamer -- Rolle, Dashboard, Events, Badges, Material
 
 ## Current Position
 
-Status: v1.7 Unterricht + Pflicht-Events shipped (2026-03-09)
-Last activity: 2026-03-09 - Milestone v1.7 completed and archived
-
-Progress: Between milestones
-
-## Performance Metrics
-
-**v1.7 Velocity:**
-- Total plans completed: 8
-- Average duration: 13min
-- Total execution time: 103min
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-09 — Milestone v1.8 started
 
 ## Accumulated Context
 
@@ -57,5 +50,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: v1.7 milestone completed and archived
-Resume file: .planning/MILESTONES.md
+Stopped at: Milestone v1.8 started, defining requirements
+Resume file: .planning/REQUIREMENTS.md
