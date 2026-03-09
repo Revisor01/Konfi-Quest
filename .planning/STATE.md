@@ -8,7 +8,7 @@ progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 8
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,24 +23,24 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 34 of 37 (Pflicht-Event-Grundlagen)
-Plan: 2 of 2
-Status: Executing
-Last activity: 2026-03-09 -- Plan 34-01 abgeschlossen (Pflicht-Event Backend-API)
+Plan: 2 of 2 (completed)
+Status: Phase 34 complete
+Last activity: 2026-03-09 -- Plan 34-02 abgeschlossen (Pflicht-Event Frontend-UI)
 
-Progress: [##------------------] 12%
+Progress: [#####---------------] 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 4min
-- Total execution time: 4min
+- Total plans completed: 2
+- Average duration: 44min
+- Total execution time: 88min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 34 | 1/2 | 4min | 4min |
+| 34 | 2/2 | 88min | 44min |
 
 *Updated after each plan completion*
 
@@ -53,6 +53,9 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 34-01] Punkte-Guard: mandatory Events erzwingen immer points=0, unabhaengig vom Frontend-Input
 - [Phase 34-01] Auto-Enrollment nach COMMIT mit db.query statt client.query fuer Nachtrags-Hooks
 - [Phase 34-01] max_participants=0 bedeutet unbegrenzte Teilnehmer bei Pflicht-Events
+- [Phase 34-02] Pflicht-Toggle blendet 6 Felder aus (Punkte, TN, Zeitfenster, Warteliste, Anmeldezeitraum)
+- [Phase 34-02] Konfi sieht "automatisch angemeldet" statt Anmelde-Button bei Pflicht-Events
+- [Phase 34-02] Solid Icons (shieldCheckmark, bagHandle) fuer Pflicht/Mitbringen-Indikatoren
 
 ### Pending Todos
 
@@ -67,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 34-01-PLAN.md
+Stopped at: Completed 34-02-PLAN.md (Phase 34 complete)
 Resume file: none
