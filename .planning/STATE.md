@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Unterricht + Pflicht-Events
-status: complete
-last_updated: "2026-03-09T19:40:00.000Z"
+status: unknown
+last_updated: "2026-03-09T19:41:52.880Z"
 progress:
   total_phases: 13
   completed_phases: 13
