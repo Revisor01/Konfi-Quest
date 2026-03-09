@@ -31,8 +31,8 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 ### Event-UI
 
 - [x] **EUI-01**: Events haben ein optionales "Was mitbringen"-Textfeld, das in der Event-Detail-Ansicht angezeigt wird
-- [ ] **EUI-02**: Dashboard zeigt Widget "Naechstes Event" mit Titel, Datum, Ort und Was-mitbringen-Info
-- [ ] **EUI-03**: Dashboard-Widget ist ueber DashboardConfig (show_next_event Toggle) vom Org-Admin steuerbar
+- [x] **EUI-02**: Dashboard zeigt Widget "Naechstes Event" mit Titel, Datum, Ort und Was-mitbringen-Info
+- [x] **EUI-03**: Dashboard-Widget ist ueber DashboardConfig (show_next_event Toggle) vom Org-Admin steuerbar
 
 ### Anwesenheitsstatistik
 
@@ -87,8 +87,8 @@ Zurueckgestellt fuer spaetere Milestones.
 | QRC-03 | Phase 36 | Complete |
 | QRC-04 | Phase 36 | Complete |
 | QRC-05 | Phase 36 | Complete |
-| EUI-02 | Phase 37 | Pending |
-| EUI-03 | Phase 37 | Pending |
+| EUI-02 | Phase 37 | Complete |
+| EUI-03 | Phase 37 | Complete |
 | ANW-01 | Phase 37 | Complete |
 | ANW-02 | Phase 37 | Complete |
 
