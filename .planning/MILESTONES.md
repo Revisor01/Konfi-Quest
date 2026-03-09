@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.6 Dashboard-Konfig + Punkte-Logik (Shipped: 2026-03-09)
+
+**Phases completed:** 4 Phasen (30-33), 7 Plans, 14 Tasks
+**Timeline:** 2026-03-07 bis 2026-03-09 (3 Tage)
+**Stats:** 18 files changed, 866 insertions, 524 deletions
+**Requirements:** 13/13 (PKT: 5, PUI: 5, DSH: 3)
+
+**Key accomplishments:**
+- Punkte-Typ-Konfiguration pro Jahrgang: Gottesdienst und Gemeinde einzeln aktivierbar/deaktivierbar mit individuellen Zielwerten
+- Backend-Guard verhindert Punktevergabe fuer deaktivierte Typen mit 400er-Fehler und Warnung bei Deaktivierung
+- ActivityRings dynamisch: 1 oder 3 Ringe basierend auf aktiven Punkte-Typen, Ranking/Badges/Historie angepasst
+- Admin-Views mit ausgegraut-Pattern: deaktivierte Typen sichtbar bei 40% Opacity mit "(deaktiviert)" Label
+- Dashboard-Widget-Steuerung: 5 Sektionen (Konfirmation, Events, Losung, Badges, Ranking) vom Org-Admin ein/ausblendbar
+- Tageslosung-API-Call-Optimierung: bei deaktivierter Losung wird kein Netzwerk-Request gemacht
+
+---
+
 ## v1.5 Push-Notifications (Shipped: 2026-03-07)
 
 **Phases completed:** 5 phases (25-29), 8 plans, 16 tasks
@@ -72,7 +89,7 @@
 
 ## Geplante Milestones
 
-- **v1.6 Dashboard-Konfig + Punkte-Logik** -- Punkte-Typ auf 0 setzbar (per Jahrgang), Dashboard-Konfig fuer Org-Admins
+- **v1.6 Dashboard-Konfig + Punkte-Logik** -- SHIPPED 2026-03-09
 - **v1.7 Unterricht** -- Kategorie "Unterricht" mit Auto-Enrollment, Opt-out, Anwesenheitsuebersicht
 - **v1.8 Teamer** -- Neue Rolle, professionelleres Dashboard, Konfi-zu-Teamer Transition, Teamer-Badges/Events/Chat
 - **v1.9 Datenschutz + Archivierung** -- Jahrgaenge archivieren, Loeschfristen, DSGVO

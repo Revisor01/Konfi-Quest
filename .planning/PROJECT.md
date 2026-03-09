@@ -4,9 +4,9 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.6 Dashboard-Konfig + Punkte-Logik
+## Current Milestone: None (v1.6 shipped)
 
-**Goal:** Punkte-Typen pro Jahrgang konfigurierbar machen und Dashboard-Widgets fuer Org-Admins steuerbar machen.
+**v1.6 shipped:** Punkte-Typen pro Jahrgang konfigurierbar, Dashboard-Widgets fuer Org-Admins steuerbar.
 
 ## Core Value
 
@@ -73,15 +73,14 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - Push-Flows: Event-Erinnerungen, Admin-Alert bei Registrierung, Level-Up-Notifications -- v1.5
 - Selbstreinigendes Token-System mit 6h-Cleanup fuer verwaiste/fehlerhafte Tokens -- v1.5
 - Konsistentes Result-Pattern in allen Push-Send-Methoden mit error_count Tracking -- v1.5
+- Punkte-Typ pro Jahrgang konfigurierbar: Gottesdienst/Gemeinde einzeln aktivierbar mit eigenen Zielwerten -- v1.6
+- Backend-Guard verhindert Punktevergabe fuer deaktivierte Typen, Badge-Logik ueberspringt deaktivierte Kriterien -- v1.6
+- ActivityRings dynamisch (1-3 Ringe), Ranking/Historie/Progress-Bars reagieren auf deaktivierte Typen -- v1.6
+- Dashboard-Widget-Steuerung: 5 Sektionen vom Org-Admin ein/ausblendbar, Tageslosung-API optimiert -- v1.6
 
 ### Active
 
-<!-- v1.6 Dashboard-Konfig + Punkte-Logik -->
-
-- [ ] Punkte-Typ (Gottesdienst und/oder Gemeinde) pro Jahrgang auf 0 setzbar
-- [ ] Logik-Anpassung: Ringe, Badges, Aktivitaeten, Fortschrittsbalken reagieren korrekt auf deaktivierte Punktearten
-- [ ] Dashboard-Konfig: Org-Admin legt fest welche Widgets sichtbar sind (Losung, Ranking, etc.)
-- [ ] Dashboard rendert nur konfigurierte Widgets
+(Kein aktiver Milestone -- naechster: v1.7 Unterricht)
 
 ### Out of Scope
 
@@ -101,7 +100,8 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.3 shipped: Layout-Polishing (9 Phasen, 18 Plans, 48 Requirements, 65 Dateien geaendert)
 - v1.4 shipped: Logik-Debug (5 Phasen, 9 Plans, 24 Requirements, 50 Dateien, +3397/-1552 Zeilen)
 - v1.5 shipped: Push-Notifications (5 Phasen, 8 Plans, 17 Requirements, 16 Dateien, +647/-406 Zeilen)
-- Gesamt: 30 Phasen, 63 Plans ueber 6 Milestones shipped
+- v1.6 shipped: Dashboard-Konfig + Punkte-Logik (4 Phasen, 7 Plans, 13 Requirements, 18 Dateien, +866/-524 Zeilen)
+- Gesamt: 34 Phasen, 70 Plans ueber 7 Milestones shipped
 - Codebase: ~34.259 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
@@ -148,6 +148,10 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Kategorien Sky-Blue #0ea5e9 | Eigene Farbe statt Activities/Badges fuer Abgrenzung | Bestaetigt v1.3 |
 | Super-Admin ohne IonTabs | Nur IonRouterOutlet fuer tabfreies Vollbild-Layout | Bestaetigt v1.3 |
 | Organisationen mattes Blau #667eea | Identisch mit users-Preset, semantische Icon-Farben | Bestaetigt v1.3 |
+| Punkte-Typ-Config auf jahrgaenge-Tabelle | Boolean-Spalten statt separate Tabelle, pro Jahrgang konfigurierbar | Bestaetigt v1.6 |
+| Dashboard-Widget-Toggles in settings KV | Bestehende Settings-Tabelle nutzen statt neue Tabelle | Bestaetigt v1.6 |
+| Deaktivierte Punkte bleiben in DB | UI/Ranking blendet aus, historische Daten erhalten | Bestaetigt v1.6 |
+| Dashboard-Widgets komplett ausblenden | Kein Platzhalter, nachfolgende Widgets ruecken auf | Bestaetigt v1.6 |
 
 ---
-*Last updated: 2026-03-07 after v1.6 milestone started*
+*Last updated: 2026-03-09 after v1.6 milestone complete*
