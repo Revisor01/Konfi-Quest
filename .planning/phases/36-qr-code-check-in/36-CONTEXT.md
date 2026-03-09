@@ -36,6 +36,7 @@ Anwesenheitserfassung per QR-Code-Scan fuer ALLE Events (Pflicht und freiwillig)
 - Oeffnet Fullscreen-Modal mit: Event-Name, Datum/Uhrzeit, grosser QR-Code, Hinweistext
 - Live-Zaehler unter QR-Code: "X/Y eingecheckt" mit Polling (alle 10 Sekunden)
 - Beamer-tauglich (grosser QR, minimales UI drumherum)
+- Drucken-Button im QR-Modal: oeffnet Druck-Dialog mit druckfreundlichem Layout (QR gross, Event-Name, Datum, Hinweistext)
 
 ### Manuelle Korrektur
 - Bestehende Tap -> ActionSheet -> Anwesend/Abwesend Logik bleibt unveraendert
@@ -110,7 +111,6 @@ Anwesenheitserfassung per QR-Code-Scan fuer ALLE Events (Pflicht und freiwillig)
 ## Deferred Ideas
 
 - Onboarding-QR-Scanner auf In-App-Scanner umstellen (aktuell Standard-Kamera via Deep Link) — einheitliches Scanner-Erlebnis
-- QR-Code als druckbares PDF exportieren (QRC-05, v2 Requirement)
 
 </deferred>
 

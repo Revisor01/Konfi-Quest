@@ -109,7 +109,7 @@ Phase 33: Dashboard-Widget-Steuerung (1 plan, complete)
 
 - [x] **Phase 34: Pflicht-Event-Grundlagen** - Mandatory-Flag, Auto-Enrollment, bring_items-Feld, Punkte-Guard (completed 2026-03-09)
 - [x] **Phase 35: Opt-out-Flow** - Abmeldung mit Begruendung, Admin-Uebersicht, Push bei Opt-out (completed 2026-03-09)
-- [ ] **Phase 36: QR-Code Check-in** - QR-Generierung, Scanner, Zeitfenster-Validierung, manuelle Korrektur
+- [ ] **Phase 36: QR-Code Check-in** - QR-Generierung, Scanner, Zeitfenster-Validierung, manuelle Korrektur, QR-Druck
 - [ ] **Phase 37: Dashboard-Widget + Anwesenheitsstatistik** - Naechstes-Event-Widget, pro-Konfi Statistik
 
 ## Phase Details
@@ -147,12 +147,13 @@ Plans:
 ### Phase 36: QR-Code Check-in
 **Goal**: Anwesenheit wird ueber QR-Code-Scan erfasst mit Zeitfenster-Validierung und manueller Admin-Korrektur als Fallback
 **Depends on**: Phase 34
-**Requirements**: QRC-01, QRC-02, QRC-03, QRC-04
+**Requirements**: QRC-01, QRC-02, QRC-03, QRC-04, QRC-05
 **Success Criteria** (what must be TRUE):
   1. Admin kann pro Event einen QR-Code im Fullscreen anzeigen, den angemeldete Konfis mit der App scannen
   2. Konfi wird nach erfolgreichem QR-Scan automatisch als "anwesend" markiert und sieht eine Bestaetigung
   3. QR-Code-Scan wird abgelehnt wenn er ausserhalb des Zeitfensters (30 Min vor bis 30 Min nach Event-Start) stattfindet
   4. Admin kann die Anwesenheit einzelner Konfis manuell auf "anwesend" oder "abwesend" korrigieren, unabhaengig vom QR-Check-in
+  5. Admin kann den QR-Code aus dem QR-Modal heraus drucken (druckfreundliches Layout mit Event-Info)
 **Plans**: TBD
 
 Plans:
