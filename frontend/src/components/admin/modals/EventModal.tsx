@@ -25,7 +25,7 @@ import {
   IonDatetimeButton,
   useIonAlert
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmark, bagHandle } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmark, bagHandle, scanOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -48,6 +48,7 @@ interface Event {
   has_timeslots?: boolean;
   mandatory?: boolean;
   bring_items?: string;
+  checkin_window?: number;
 }
 
 interface Jahrgang {
@@ -133,7 +134,8 @@ const EventModal: React.FC<EventModalProps> = ({
     series_count: 1,
     series_interval: 'week',
     mandatory: false,
-    bring_items: ''
+    bring_items: '',
+    checkin_window: 30
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
@@ -189,7 +191,8 @@ const EventModal: React.FC<EventModalProps> = ({
         series_count: 1,
         series_interval: 'week',
         mandatory: (event as any).mandatory || false,
-        bring_items: (event as any).bring_items || ''
+        bring_items: (event as any).bring_items || '',
+        checkin_window: (event as any).checkin_window || 30
       });
       // Load timeslots if editing existing event
       if (event.has_timeslots) {
@@ -255,7 +258,8 @@ const EventModal: React.FC<EventModalProps> = ({
         series_count: 1,
         series_interval: 'week',
         mandatory: false,
-        bring_items: ''
+        bring_items: '',
+        checkin_window: 30
       });
       setTimeslots([]);
     }
@@ -375,7 +379,8 @@ const EventModal: React.FC<EventModalProps> = ({
         series_count: formData.is_series ? formData.series_count : undefined,
         series_interval: formData.is_series ? formData.series_interval : undefined,
         mandatory: formData.mandatory,
-        bring_items: formData.bring_items.trim() || null
+        bring_items: formData.bring_items.trim() || null,
+        checkin_window: formData.checkin_window
       };
 
       if (event && event.id && event.id > 0) {
@@ -520,6 +525,72 @@ const EventModal: React.FC<EventModalProps> = ({
                   disabled={loading}
                 />
               </IonItem>
+            </IonList>
+          </IonCardContent>
+          </IonCard>
+        </IonList>
+
+        {/* QR CHECK-IN FENSTER */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={scanOutline} />
+            </div>
+            <IonLabel>QR Check-in</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="none">
+                <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Check-in-Fenster (Minuten)</IonLabel>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.checkin_window <= 5}
+                    onClick={() => setFormData({ ...formData, checkin_window: Math.max(5, formData.checkin_window - 5) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={removeOutline} />
+                  </IonButton>
+                  <IonInput
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.checkin_window.toString()}
+                    onIonInput={(e) => {
+                      const value = e.detail.value!;
+                      if (value === '') {
+                        setFormData({ ...formData, checkin_window: 30 });
+                      } else {
+                        const num = parseInt(value);
+                        if (!isNaN(num) && num >= 5 && num <= 120) {
+                          setFormData({ ...formData, checkin_window: num });
+                        }
+                      }
+                    }}
+                    placeholder="30"
+                    disabled={loading}
+                    style={{ textAlign: 'center', flex: 1 }}
+                  />
+                  <IonButton
+                    fill="outline"
+                    size="small"
+                    disabled={loading || formData.checkin_window >= 120}
+                    onClick={() => setFormData({ ...formData, checkin_window: Math.min(120, formData.checkin_window + 5) })}
+                    style={{ '--border-radius': '8px', minWidth: '40px', height: '40px' }}
+                  >
+                    <IonIcon icon={addOutline} />
+                  </IonButton>
+                </div>
+              </IonItem>
+              <p style={{
+                fontSize: '0.8rem',
+                color: '#888',
+                margin: '4px 16px 8px 16px',
+                lineHeight: '1.4'
+              }}>
+                QR-Code Check-in ist {formData.checkin_window} Min. vor bis {formData.checkin_window} Min. nach Event-Start möglich
+              </p>
             </IonList>
           </IonCardContent>
           </IonCard>
