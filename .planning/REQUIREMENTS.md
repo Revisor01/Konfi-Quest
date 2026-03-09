@@ -88,44 +88,44 @@ Deferred. Nicht in aktuellem Roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROL-01 | — | Pending |
-| ROL-02 | — | Pending |
-| ROL-03 | — | Pending |
-| ROL-04 | — | Pending |
-| DSH-01 | — | Pending |
-| DSH-02 | — | Pending |
-| DSH-03 | — | Pending |
-| DSH-04 | — | Pending |
-| EVT-01 | — | Pending |
-| EVT-02 | — | Pending |
-| EVT-03 | — | Pending |
-| EVT-04 | — | Pending |
-| EVT-05 | — | Pending |
-| EVT-06 | — | Pending |
-| BDG-01 | — | Pending |
-| BDG-02 | — | Pending |
-| BDG-03 | — | Pending |
-| BDG-04 | — | Pending |
-| BDG-05 | — | Pending |
-| BDG-06 | — | Pending |
-| BDG-07 | — | Pending |
-| ZRT-01 | — | Pending |
-| ZRT-02 | — | Pending |
-| ZRT-03 | — | Pending |
-| MAT-01 | — | Pending |
-| MAT-02 | — | Pending |
-| MAT-03 | — | Pending |
-| PRF-01 | — | Pending |
-| PRF-02 | — | Pending |
-| PRF-03 | — | Pending |
-| CHT-01 | — | Pending |
-| CHT-02 | — | Pending |
+| ROL-01 | Phase 38 | Pending |
+| ROL-02 | Phase 38 | Pending |
+| ROL-03 | Phase 38 | Pending |
+| ROL-04 | Phase 38 | Pending |
+| DSH-01 | Phase 41 | Pending |
+| DSH-02 | Phase 41 | Pending |
+| DSH-03 | Phase 41 | Pending |
+| DSH-04 | Phase 41 | Pending |
+| EVT-01 | Phase 39 | Pending |
+| EVT-02 | Phase 39 | Pending |
+| EVT-03 | Phase 39 | Pending |
+| EVT-04 | Phase 39 | Pending |
+| EVT-05 | Phase 39 | Pending |
+| EVT-06 | Phase 39 | Pending |
+| BDG-01 | Phase 40 | Pending |
+| BDG-02 | Phase 40 | Pending |
+| BDG-03 | Phase 40 | Pending |
+| BDG-04 | Phase 40 | Pending |
+| BDG-05 | Phase 40 | Pending |
+| BDG-06 | Phase 40 | Pending |
+| BDG-07 | Phase 40 | Pending |
+| ZRT-01 | Phase 41 | Pending |
+| ZRT-02 | Phase 41 | Pending |
+| ZRT-03 | Phase 41 | Pending |
+| MAT-01 | Phase 42 | Pending |
+| MAT-02 | Phase 42 | Pending |
+| MAT-03 | Phase 42 | Pending |
+| PRF-01 | Phase 43 | Pending |
+| PRF-02 | Phase 43 | Pending |
+| PRF-03 | Phase 43 | Pending |
+| CHT-01 | Phase 43 | Pending |
+| CHT-02 | Phase 43 | Pending |
 
 **Coverage:**
 - v1.8 requirements: 32 total
-- Mapped to phases: 0
-- Unmapped: 32
+- Mapped to phases: 32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after initial definition*
+*Last updated: 2026-03-09 after roadmap creation*
