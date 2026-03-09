@@ -25,7 +25,7 @@ import {
   IonDatetimeButton,
   useIonAlert
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmarkOutline, bagHandleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -46,6 +46,8 @@ interface Event {
   registration_opens_at?: string;
   registration_closes_at?: string;
   has_timeslots?: boolean;
+  mandatory?: boolean;
+  bring_items?: string;
 }
 
 interface Jahrgang {
@@ -129,7 +131,9 @@ const EventModal: React.FC<EventModalProps> = ({
     max_waitlist_size: 3,
     is_series: false,
     series_count: 1,
-    series_interval: 'week'
+    series_interval: 'week',
+    mandatory: false,
+    bring_items: ''
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
@@ -183,7 +187,9 @@ const EventModal: React.FC<EventModalProps> = ({
         max_waitlist_size: (event as any).max_waitlist_size || 3,
         is_series: (event as any).is_series || false,
         series_count: 1,
-        series_interval: 'week'
+        series_interval: 'week',
+        mandatory: (event as any).mandatory || false,
+        bring_items: (event as any).bring_items || ''
       });
       // Load timeslots if editing existing event
       if (event.has_timeslots) {
@@ -247,7 +253,9 @@ const EventModal: React.FC<EventModalProps> = ({
         max_waitlist_size: 3,
         is_series: false,
         series_count: 1,
-        series_interval: 'week'
+        series_interval: 'week',
+        mandatory: false,
+        bring_items: ''
       });
       setTimeslots([]);
     }
@@ -347,25 +355,27 @@ const EventModal: React.FC<EventModalProps> = ({
         event_date: toBackendTimestamp(formData.event_date),
         event_end_time: toBackendTimestamp(formData.event_end_time),
         location: formData.location.trim() || null,
-        points: formData.points,
+        points: formData.mandatory ? 0 : formData.points,
         point_type: formData.point_type,
         category_ids: formData.category_ids,
         jahrgang_ids: formData.jahrgang_ids,
         type: formData.type,
-        max_participants: formData.max_participants,
-        registration_opens_at: toBackendTimestamp(formData.registration_opens_at),
-        registration_closes_at: toBackendTimestamp(formData.registration_closes_at),
-        has_timeslots: formData.has_timeslots,
-        waitlist_enabled: formData.waitlist_enabled,
-        max_waitlist_size: formData.max_waitlist_size,
-        timeslots: formData.has_timeslots ? timeslots.map(ts => ({
+        max_participants: formData.mandatory ? 0 : formData.max_participants,
+        registration_opens_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_opens_at),
+        registration_closes_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_closes_at),
+        has_timeslots: formData.mandatory ? false : formData.has_timeslots,
+        waitlist_enabled: formData.mandatory ? false : formData.waitlist_enabled,
+        max_waitlist_size: formData.mandatory ? 0 : formData.max_waitlist_size,
+        timeslots: !formData.mandatory && formData.has_timeslots ? timeslots.map(ts => ({
           ...ts,
           start_time: toBackendTimestamp(ts.start_time),
           end_time: toBackendTimestamp(ts.end_time)
         })) : [],
         is_series: formData.is_series,
         series_count: formData.is_series ? formData.series_count : undefined,
-        series_interval: formData.is_series ? formData.series_interval : undefined
+        series_interval: formData.is_series ? formData.series_interval : undefined,
+        mandatory: formData.mandatory,
+        bring_items: formData.bring_items.trim() || null
       };
 
       if (event && event.id && event.id > 0) {
@@ -397,7 +407,7 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const isFormValid = formData.name.trim().length > 0 && formData.event_date;
+  const isFormValid = formData.name.trim().length > 0 && formData.event_date && (!formData.mandatory || formData.jahrgang_ids.length > 0);
 
   return (
     <IonPage>
@@ -480,6 +490,41 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonCard>
         </IonList>
 
+        {/* PFLICHT-EVENT & WAS MITBRINGEN */}
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--events">
+              <IonIcon icon={shieldCheckmarkOutline} />
+            </div>
+            <IonLabel>Pflicht-Event</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+          <IonCardContent>
+            <IonList>
+              <IonItem lines="inset">
+                <IonLabel>Pflicht-Event</IonLabel>
+                <IonToggle
+                  slot="end"
+                  checked={formData.mandatory}
+                  onIonChange={(e) => setFormData({ ...formData, mandatory: e.detail.checked })}
+                  disabled={loading}
+                />
+              </IonItem>
+              <IonItem lines="none">
+                <IonLabel position="stacked">Was mitbringen (optional)</IonLabel>
+                <IonTextarea
+                  value={formData.bring_items}
+                  onIonInput={(e) => setFormData({ ...formData, bring_items: e.detail.value || '' })}
+                  placeholder="z.B. Bibel, Stift, Block"
+                  rows={2}
+                  disabled={loading}
+                />
+              </IonItem>
+            </IonList>
+          </IonCardContent>
+          </IonCard>
+        </IonList>
+
         {/* DATUM & ZEIT */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
@@ -501,21 +546,26 @@ const EventModal: React.FC<EventModalProps> = ({
                 <IonDatetimeButton datetime="end-time-picker" />
               </IonItem>
 
-              <IonItem lines="none" >
-                <IonLabel position="stacked">Anmeldung ab</IonLabel>
-                <IonDatetimeButton datetime="registration-opens-picker" />
-              </IonItem>
+              {!formData.mandatory && (
+                <>
+                  <IonItem lines="none" >
+                    <IonLabel position="stacked">Anmeldung ab</IonLabel>
+                    <IonDatetimeButton datetime="registration-opens-picker" />
+                  </IonItem>
 
-              <IonItem lines="none" >
-                <IonLabel position="stacked">Anmeldeschluss</IonLabel>
-                <IonDatetimeButton datetime="registration-closes-picker" />
-              </IonItem>
+                  <IonItem lines="none" >
+                    <IonLabel position="stacked">Anmeldeschluss</IonLabel>
+                    <IonDatetimeButton datetime="registration-closes-picker" />
+                  </IonItem>
+                </>
+              )}
             </IonList>
           </IonCardContent>
           </IonCard>
         </IonList>
 
         {/* ZEITFENSTER - VOR Punkte & Teilnehmer */}
+        {!formData.mandatory && (<>
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
@@ -681,8 +731,10 @@ const EventModal: React.FC<EventModalProps> = ({
             </IonCard>
           </IonList>
         ))}
+        </>)}
 
         {/* PUNKTE & TEILNEHMER */}
+        {!formData.mandatory && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
@@ -838,6 +890,7 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
         {/* KATEGORIEN & ZIELGRUPPE */}
         <IonList inset={true} className="app-modal-section">
@@ -909,8 +962,8 @@ const EventModal: React.FC<EventModalProps> = ({
               )}
 
               <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
-                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>
-                  Jahrgänge (mehrere möglich) *
+                <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.mandatory && formData.jahrgang_ids.length === 0 ? '#dc3545' : '#666' }}>
+                  Jahrgänge (mehrere möglich) *{formData.mandatory && formData.jahrgang_ids.length === 0 ? ' (Pflicht bei Pflicht-Events)' : ''}
                   {formData.jahrgang_ids.length > 0 && (
                     <span style={{
                       marginLeft: '8px',
@@ -961,6 +1014,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* WARTELISTE */}
+        {!formData.mandatory && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
@@ -1031,6 +1085,7 @@ const EventModal: React.FC<EventModalProps> = ({
           </IonCardContent>
           </IonCard>
         </IonList>
+        )}
 
         {/* SERIEN-EVENT - Nur beim Erstellen anzeigen, nicht beim Bearbeiten */}
         {!event && (
