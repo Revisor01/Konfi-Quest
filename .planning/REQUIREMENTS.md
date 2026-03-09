@@ -26,8 +26,8 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 ### Dashboard-Konfig
 
 - [x] **DSH-01**: Org-Admin kann Dashboard-Sektionen ein/ausblenden (Losung, Ranking, Badges, Events, Konfirmation)
-- [ ] **DSH-02**: Dashboard rendert nur aktivierte Sektionen
-- [ ] **DSH-03**: Konfig-Aenderungen wirken sofort fuer alle Konfis der Organisation
+- [x] **DSH-02**: Dashboard rendert nur aktivierte Sektionen
+- [x] **DSH-03**: Konfig-Aenderungen wirken sofort fuer alle Konfis der Organisation
 
 ## Entscheidungen
 
@@ -70,8 +70,8 @@ Requirements fuer Milestone v1.6 Dashboard-Konfig + Punkte-Logik.
 | PUI-04 | Phase 31 | Complete |
 | PUI-05 | Phase 32 | Complete |
 | DSH-01 | Phase 30 | Complete |
-| DSH-02 | Phase 33 | Pending |
-| DSH-03 | Phase 33 | Pending |
+| DSH-02 | Phase 33 | Complete |
+| DSH-03 | Phase 33 | Complete |
 
 **Coverage:**
 - v1.6 requirements: 13 total

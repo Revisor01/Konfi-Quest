@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
-status: unknown
-last_updated: "2026-03-08T07:35:53.128Z"
+status: complete
+last_updated: "2026-03-09T11:32:01Z"
 progress:
   total_phases: 8
   completed_phases: 8
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 15
+  completed_plans: 15
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-07)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.6 Phase 32 complete - ready for Phase 33
+**Current focus:** v1.6 komplett -- alle Phasen (30-33) abgeschlossen
 
 ## Current Position
 
-Phase: 32 of 33 (Punkte-UI Frontend)
-Plan: 2 of 2 in current phase (32-02 done)
-Status: Phase 32 complete
-Last activity: 2026-03-08 -- Plan 32-02 (Admin-Views Punkte-Typ-Config) abgeschlossen
+Phase: 33 of 33 (Dashboard-Widget-Steuerung)
+Plan: 1 of 1 in current phase (33-01 done)
+Status: v1.6 Milestone complete
+Last activity: 2026-03-09 -- Plan 33-01 (Dashboard-Widget-Steuerung) abgeschlossen
 
 Progress: [==========] 100%
 
@@ -44,6 +44,7 @@ Progress: [==========] 100%
 | 31    | 02   | 4min     | 2     | 2     |
 | 32    | 01   | 5min     | 2     | 4     |
 | 32    | 02   | 8min     | 2     | 3     |
+| 33    | 01   | 2min     | 2     | 2     |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ v1.6 Entscheidungen:
 - [Phase 32-02]: Pro-Konfi Targets aus Backend-Response statt globalem Settings-Abruf
 - [Phase 32-02]: Deaktivierte Typen: opacity 0.4 + grayscale(100%) + (deaktiviert) Label
 - [Phase 32-02]: loadSettings() in KonfiDetailView entfernt
+- [Phase 33-01]: !== false Pattern fuer alle 5 Widget-Toggles (Default: sichtbar)
+- [Phase 33-01]: Tageslosung-API-Call komplett uebersprungen bei show_losung=false
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-08
-Stopped at: Completed 32-02-PLAN.md
-Resume file: 33-01-PLAN.md
+Last session: 2026-03-09
+Stopped at: Completed 33-01-PLAN.md (v1.6 Milestone complete)
+Resume file: none (v1.6 complete)
