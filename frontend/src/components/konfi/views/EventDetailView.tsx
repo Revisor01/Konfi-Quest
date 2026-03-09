@@ -77,7 +77,8 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
+  is_opted_out?: boolean;
   has_timeslots?: boolean;
   mandatory?: boolean;
   bring_items?: string;
@@ -116,6 +117,35 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
 
+  const handleOptOut = async (reason: string) => {
+    if (!eventData || reason.trim().length < 5) {
+      setError('Bitte gib einen Grund für die Abmeldung an (mind. 5 Zeichen)');
+      return;
+    }
+
+    try {
+      await api.post(`/konfi/events/${eventData.id}/opt-out`, { reason: reason.trim() });
+      setSuccess(`Von "${eventData.name}" abgemeldet`);
+      await loadEventData();
+      window.dispatchEvent(new CustomEvent('events-updated'));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler bei der Abmeldung');
+    }
+  };
+
+  const handleOptIn = async () => {
+    if (!eventData) return;
+
+    try {
+      await api.post(`/konfi/events/${eventData.id}/opt-in`);
+      setSuccess(`Wieder für "${eventData.name}" angemeldet`);
+      await loadEventData();
+      window.dispatchEvent(new CustomEvent('events-updated'));
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Fehler bei der Wiederanmeldung');
+    }
+  };
+
   const handleUnregister = async (reason: string) => {
     if (!eventData || !reason.trim()) {
       setError('Bitte gib einen Grund für die Abmeldung an');
@@ -145,6 +175,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     dismiss: (data?: string, role?: string) => {
       dismissUnregisterModal(data, role);
       loadEventData();
+    }
+  });
+
+  const [presentOptOutModal, dismissOptOutModal] = useIonModal(UnregisterModal, {
+    eventName: eventData?.name || '',
+    mandatory: true,
+    onClose: () => {
+      dismissOptOutModal();
+    },
+    onUnregister: handleOptOut,
+    dismiss: (data?: string, role?: string) => {
+      dismissOptOutModal(data, role);
     }
   });
 
@@ -314,6 +356,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
     if (eventData.cancelled) return { primary: '#dc3545', secondary: '#c82333' };
+    if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return { primary: '#dc2626', secondary: '#b91c1c' };
     if (isKonfi && !isPastEvent) return { primary: '#5b21b6', secondary: '#4c1d95' };
     if (isPastEvent && eventData.attendance_status === 'present') return { primary: '#34c759', secondary: '#2db84d' };
     if (isPastEvent && eventData.attendance_status === 'absent') return { primary: '#dc3545', secondary: '#c82333' };
@@ -337,6 +380,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
 
     if (eventData.cancelled) return 'Abgesagt';
+    if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return 'Abgemeldet';
     if (isKonfi && !isPastEvent) return eventData.is_registered ? 'Angemeldet' : 'Konfirmation';
     if (isPastEvent && eventData.attendance_status === 'present') return 'Verbucht';
     if (isPastEvent && eventData.attendance_status === 'absent') return 'Verpasst';
@@ -649,10 +693,65 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {/* Action Buttons */}
         <div className="app-event-detail__action-area">
           {eventData.mandatory ? (
-            <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
-              <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-              Du bist automatisch angemeldet
-            </IonNote>
+            (() => {
+              const isPastEvent = new Date(eventData.event_date) < new Date();
+              const isOptedOut = eventData.is_opted_out || eventData.booking_status === 'opted_out';
+
+              if (isPastEvent) {
+                return (
+                  <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
+                    <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                    Pflicht-Event (vergangen)
+                  </IonNote>
+                );
+              }
+
+              if (isOptedOut) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: '#dc2626', fontWeight: 600, fontSize: '0.95rem', marginBottom: '12px' }}>
+                      <IonIcon icon={closeCircle} />
+                      Du hast dich abgemeldet
+                    </div>
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      style={{
+                        '--background': '#34c759',
+                        '--background-activated': '#2da84e',
+                        '--background-hover': '#30b853',
+                        '--color': 'white'
+                      }}
+                      onClick={handleOptIn}
+                    >
+                      <IonIcon icon={checkmarkCircle} slot="start" />
+                      Wieder anmelden
+                    </IonButton>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ textAlign: 'center', padding: '12px 16px' }}>
+                  <IonNote color="medium" style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem' }}>
+                    <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                    Du bist automatisch angemeldet
+                  </IonNote>
+                  <IonButton
+                    className="app-action-button"
+                    expand="block"
+                    fill="outline"
+                    color="danger"
+                    onClick={() => presentOptOutModal({
+                      presentingElement: pageRef.current || undefined
+                    })}
+                  >
+                    <IonIcon icon={closeCircle} slot="start" />
+                    Abmelden
+                  </IonButton>
+                </div>
+              );
+            })()
           ) : eventData.is_registered ? (
             <div>
               {canUnregister(eventData) ? (

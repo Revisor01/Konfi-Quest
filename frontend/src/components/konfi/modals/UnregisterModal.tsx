@@ -25,6 +25,7 @@ import {
 
 interface UnregisterModalProps {
   eventName: string;
+  mandatory?: boolean;
   onClose: () => void;
   onUnregister: (reason: string) => void;
   dismiss: (data?: string, role?: string) => void;
@@ -32,14 +33,18 @@ interface UnregisterModalProps {
 
 const UnregisterModal: React.FC<UnregisterModalProps> = ({
   eventName,
+  mandatory,
   onClose,
   onUnregister,
   dismiss
 }) => {
   const [reason, setReason] = useState('');
 
+  const minLength = mandatory ? 5 : 1;
+  const isValid = reason.trim().length >= minLength;
+
   const handleSubmit = () => {
-    if (!reason.trim()) {
+    if (!isValid) {
       return;
     }
     onUnregister(reason.trim());
@@ -61,7 +66,7 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!reason.trim()}>
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid}>
               <IonIcon icon={checkmarkOutline} />
             </IonButton>
           </IonButtons>
@@ -96,6 +101,11 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
+              {mandatory && (
+                <p style={{ color: 'var(--ion-color-medium)', fontSize: '0.85rem', margin: '0 0 8px 0', padding: '0 4px' }}>
+                  Dies ist ein Pflicht-Event. Bitte gib einen Grund für deine Abmeldung an.
+                </p>
+              )}
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
                   <IonTextarea
@@ -107,6 +117,11 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
                   />
                 </IonItem>
               </IonList>
+              {mandatory && reason.trim().length < 5 && (
+                <p style={{ color: 'var(--ion-color-danger)', fontSize: '0.75rem', margin: '4px 0 0 4px' }}>
+                  {reason.trim().length}/5 Zeichen
+                </p>
+              )}
             </IonCardContent>
           </IonCard>
         </IonList>
