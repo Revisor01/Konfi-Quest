@@ -9,10 +9,10 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 
 ### Pflicht-Events
 
-- [ ] **PFL-01**: Admin kann ein Event als "verpflichtend" markieren (mandatory-Toggle im EventModal)
-- [ ] **PFL-02**: Bei Pflicht-Event werden alle Konfis der zugewiesenen Jahrgaenge automatisch als angemeldet eingetragen (Auto-Enrollment)
-- [ ] **PFL-03**: Pflicht-Events vergeben keine Punkte (Punkte-Feld wird ausgeblendet/deaktiviert, Backend-Guard)
-- [ ] **PFL-04**: Konfis erhalten Push-Benachrichtigung wenn ein neues Pflicht-Event erstellt wird
+- [x] **PFL-01**: Admin kann ein Event als "verpflichtend" markieren (mandatory-Toggle im EventModal)
+- [x] **PFL-02**: Bei Pflicht-Event werden alle Konfis der zugewiesenen Jahrgaenge automatisch als angemeldet eingetragen (Auto-Enrollment)
+- [x] **PFL-03**: Pflicht-Events vergeben keine Punkte (Punkte-Feld wird ausgeblendet/deaktiviert, Backend-Guard)
+- [x] **PFL-04**: Konfis erhalten Push-Benachrichtigung wenn ein neues Pflicht-Event erstellt wird
 
 ### Opt-out
 
@@ -29,7 +29,7 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 
 ### Event-UI
 
-- [ ] **EUI-01**: Events haben ein optionales "Was mitbringen"-Textfeld, das in der Event-Detail-Ansicht angezeigt wird
+- [x] **EUI-01**: Events haben ein optionales "Was mitbringen"-Textfeld, das in der Event-Detail-Ansicht angezeigt wird
 - [ ] **EUI-02**: Dashboard zeigt Widget "Naechstes Event" mit Titel, Datum, Ort und Was-mitbringen-Info
 - [ ] **EUI-03**: Dashboard-Widget ist ueber DashboardConfig (show_next_event Toggle) vom Org-Admin steuerbar
 
@@ -75,11 +75,11 @@ Zurueckgestellt fuer spaetere Milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PFL-01 | Phase 34 | Pending |
-| PFL-02 | Phase 34 | Pending |
-| PFL-03 | Phase 34 | Pending |
-| PFL-04 | Phase 34 | Pending |
-| EUI-01 | Phase 34 | Pending |
+| PFL-01 | Phase 34 | Complete |
+| PFL-02 | Phase 34 | Complete |
+| PFL-03 | Phase 34 | Complete |
+| PFL-04 | Phase 34 | Complete |
+| EUI-01 | Phase 34 | Complete |
 | OPT-01 | Phase 35 | Pending |
 | OPT-02 | Phase 35 | Pending |
 | OPT-03 | Phase 35 | Pending |

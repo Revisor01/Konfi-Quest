@@ -182,7 +182,7 @@ Phases execute in numeric order: 34 -> 35 -> 36 -> 37
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 34. Pflicht-Event-Grundlagen | v1.7 | 0/2 | Not started | - |
+| 34. Pflicht-Event-Grundlagen | 1/2 | In Progress|  | - |
 | 35. Opt-out-Flow | v1.7 | 0/2 | Not started | - |
 | 36. QR-Code Check-in | v1.7 | 0/2 | Not started | - |
 | 37. Dashboard-Widget + Anwesenheitsstatistik | v1.7 | 0/2 | Not started | - |

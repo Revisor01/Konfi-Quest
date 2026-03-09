@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Unterricht + Pflicht-Events
-status: ready_to_plan
+status: executing
 last_updated: "2026-03-09"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 8
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,24 +23,24 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 34 of 37 (Pflicht-Event-Grundlagen)
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-09 -- Roadmap erstellt, 4 Phasen mit 16 Requirements
+Plan: 2 of 2
+Status: Executing
+Last activity: 2026-03-09 -- Plan 34-01 abgeschlossen (Pflicht-Event Backend-API)
 
-Progress: [--------------------] 0%
+Progress: [##------------------] 12%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: --
-- Total execution time: --
+- Total plans completed: 1
+- Average duration: 4min
+- Total execution time: 4min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 34 | 1/2 | 4min | 4min |
 
 *Updated after each plan completion*
 
@@ -50,6 +50,10 @@ Progress: [--------------------] 0%
 
 All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 
+- [Phase 34-01] Punkte-Guard: mandatory Events erzwingen immer points=0, unabhaengig vom Frontend-Input
+- [Phase 34-01] Auto-Enrollment nach COMMIT mit db.query statt client.query fuer Nachtrags-Hooks
+- [Phase 34-01] max_participants=0 bedeutet unbegrenzte Teilnehmer bei Pflicht-Events
+
 ### Pending Todos
 
 None.
@@ -57,11 +61,11 @@ None.
 ### Blockers/Concerns
 
 - Research-Flag Phase 36: QR-Scan-Richtung muss entschieden werden (Konfi scannt Event-QR vs. Admin scannt Konfi-QR). Research empfiehlt: Konfi scannt Event-QR (skaliert besser).
-- Pitfall: CHECK-Constraint auf event_bookings.status muss vor Phase 34 synchronisiert werden.
+- ERLEDIGT: CHECK-Constraint auf event_bookings.status wurde in Phase 34-01 synchronisiert.
 - Pitfall: Bestehender Abmelde-Flow loescht Bookings (DELETE) -- bei Pflicht-Events NICHT wiederverwenden, sondern neuen Opt-out-Endpunkt bauen.
 
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Roadmap erstellt, bereit fuer Phase 34 Planung
+Stopped at: Completed 34-01-PLAN.md
 Resume file: none
