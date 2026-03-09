@@ -170,11 +170,11 @@ Plans:
   3. Admin sieht pro Konfi eine Anwesenheitsquote fuer Pflicht-Events (z.B. "7/10 anwesend, 70%")
   4. Admin sieht pro Konfi eine Liste der verpassten Pflicht-Events mit Opt-out-Grund oder "Nicht erschienen"
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 37-01: TBD
-- [ ] 37-02: TBD
+- [ ] 37-01-PLAN.md -- Backend: Attendance-Stats Endpoint (GET /admin/konfis/:id/attendance-stats) mit Pflicht-Event-Quote und verpassten Events
+- [ ] 37-02-PLAN.md -- Frontend: Anwesenheits-Sektion in KonfiDetailView + Verifikation Dashboard Events-Widget (EUI-02/EUI-03)
 
 ## Progress
 
