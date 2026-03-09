@@ -386,7 +386,7 @@ CREATE TABLE event_bookings (
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     timeslot_id INTEGER REFERENCES event_timeslots(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'opted_out')),
+    status VARCHAR(20) DEFAULT 'confirmed' CHECK (status IN ('confirmed', 'pending', 'waitlist', 'cancelled', 'opted_out')),
     attendance_status VARCHAR(20) CHECK (attendance_status IN ('present', 'absent')),
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     organization_id INTEGER NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -571,4 +571,4 @@ CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
 -- ALTER TABLE events DROP CONSTRAINT IF EXISTS events_max_participants_check;
 -- ALTER TABLE events ADD CONSTRAINT events_max_participants_check CHECK (max_participants >= 0);
 -- ALTER TABLE event_bookings DROP CONSTRAINT IF EXISTS event_bookings_status_check;
--- ALTER TABLE event_bookings ADD CONSTRAINT event_bookings_status_check CHECK (status IN ('confirmed', 'waitlist', 'cancelled', 'opted_out'));
+-- ALTER TABLE event_bookings ADD CONSTRAINT event_bookings_status_check CHECK (status IN ('confirmed', 'pending', 'waitlist', 'cancelled', 'opted_out'));
