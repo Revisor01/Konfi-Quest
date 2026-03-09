@@ -36,8 +36,8 @@ Requirements fuer Milestone v1.7: Unterricht + Pflicht-Events.
 
 ### Anwesenheitsstatistik
 
-- [ ] **ANW-01**: Admin sieht pro Konfi eine Anwesenheitsquote fuer Pflicht-Events (X/Y anwesend, Prozent)
-- [ ] **ANW-02**: Admin sieht pro Konfi eine Liste der verpassten Pflicht-Events mit Opt-out-Grund oder "Nicht erschienen"
+- [x] **ANW-01**: Admin sieht pro Konfi eine Anwesenheitsquote fuer Pflicht-Events (X/Y anwesend, Prozent)
+- [x] **ANW-02**: Admin sieht pro Konfi eine Liste der verpassten Pflicht-Events mit Opt-out-Grund oder "Nicht erschienen"
 
 ## v2 Requirements
 
@@ -89,8 +89,8 @@ Zurueckgestellt fuer spaetere Milestones.
 | QRC-05 | Phase 36 | Complete |
 | EUI-02 | Phase 37 | Pending |
 | EUI-03 | Phase 37 | Pending |
-| ANW-01 | Phase 37 | Pending |
-| ANW-02 | Phase 37 | Pending |
+| ANW-01 | Phase 37 | Complete |
+| ANW-02 | Phase 37 | Complete |
 
 **Coverage:**
 - v1.7 requirements: 17 total

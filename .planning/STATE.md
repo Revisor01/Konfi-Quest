@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Unterricht + Pflicht-Events
 status: unknown
-last_updated: "2026-03-09T18:57:58.194Z"
+last_updated: "2026-03-09T19:35:48.374Z"
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 12
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 23
+  completed_plans: 22
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.7 Phase 36 -- QR-Code Check-in
+**Current focus:** v1.7 Phase 37 -- Dashboard-Widget + Anwesenheitsstatistik
 
 ## Current Position
 
-Phase: 36 of 37 (QR-Code Check-in)
-Plan: 2 of 2
-Status: Plan 36-02 complete
-Last activity: 2026-03-09 -- Plan 36-02 abgeschlossen (QR-Code Frontend Modals + View-Integration)
+Phase: 37 of 37 (Dashboard-Widget + Anwesenheitsstatistik)
+Plan: 1 of 2
+Status: Plan 37-01 complete
+Last activity: 2026-03-09 -- Plan 37-01 abgeschlossen (Attendance-Stats Backend Endpoint)
 
-Progress: [################----] 80%
+Progress: [###################-] 95%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 17min
-- Total execution time: 99min
+- Total plans completed: 7
+- Average duration: 14min
+- Total execution time: 100min
 
 **By Phase:**
 
@@ -43,6 +43,7 @@ Progress: [################----] 80%
 | 34 | 2/2 | 88min | 44min |
 | 35 | 2/2 | 5min | 2.5min |
 | 36 | 2/2 | 6min | 3min |
+| 37 | 1/2 | 1min | 1min |
 
 *Updated after each plan completion*
 
@@ -71,6 +72,7 @@ All v1.0-v1.6 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 36-02] Android CAMERA Permission uebersprungen (kein android-Ordner vorhanden)
 - [Phase 36-02] Scanner-Feedback als inline Banners ueber Video-Feed statt Toast
 - [Phase 36-02] QR-Display-Button im Admin-Header neben Edit-Button platziert
+- [Phase 37-01] requireAdmin middleware statt manueller type-Check fuer attendance-stats Endpoint
 
 ### Pending Todos
 
@@ -85,5 +87,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Phase 37 context gathered
-Resume file: .planning/phases/37-dashboard-widget-anwesenheitsstatistik/37-CONTEXT.md
+Stopped at: Completed 37-01-PLAN.md
+Resume file: .planning/phases/37-dashboard-widget-anwesenheitsstatistik/37-01-SUMMARY.md
