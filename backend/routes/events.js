@@ -1646,6 +1646,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       console.error(`Database error in PUT /events/${eventId}/cancel:`, err);
       res.status(500).json({ error: 'Datenbankfehler beim Absagen des Events' });
     }
-  
+  });
+
   return router;
 };
