@@ -1370,147 +1370,125 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
   router.put('/:id/participants/:participantId/attendance', rbacVerifier, requireTeamer, async (req, res) => {
     const { id: eventId, participantId } = req.params;
     const { attendance_status } = req.body;
-    
+
     if (!['present', 'absent'].includes(attendance_status)) {
       return res.status(400).json({ error: 'Ungültiger Anwesenheitsstatus' });
     }
-    
-    await db.query('BEGIN');
+
+    // Dedizierter Client fuer Transaction - pool.query() kann verschiedene
+    // Connections nutzen, was BEGIN/COMMIT auf unterschiedliche Connections verteilt!
+    const client = await db.getClient();
     try {
-      
+      await client.query('BEGIN');
+
       const eventDataQuery = `
         SELECT e.name, e.points, e.point_type, e.mandatory, eb.user_id
         FROM events e
         JOIN event_bookings eb ON e.id = eb.event_id
         WHERE e.id = $1 AND eb.id = $2 AND e.organization_id = $3
       `;
-      const { rows: [eventData] } = await db.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
+      const { rows: [eventData] } = await client.query(eventDataQuery, [eventId, participantId, req.user.organization_id]);
       if (!eventData) {
-        await db.query('ROLLBACK');
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(404).json({ error: 'Event oder Teilnehmer nicht gefunden, oder Zugriff verweigert' });
       }
-      
-      await db.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
-      
+
+      await client.query("UPDATE event_bookings SET attendance_status = $1 WHERE id = $2", [attendance_status, participantId]);
+
+      let responseData = { message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false };
+      let pointsAwarded = false;
+      let pointsRemoved = false;
+      let removedPointsAmount = 0;
+
       if (attendance_status === 'present' && eventData.points > 0 && !eventData.mandatory) {
-        // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
         const pointType = eventData.point_type || 'gemeinde';
-        const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, eventData.user_id, pointType);
+        const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(client, eventData.user_id, pointType);
         if (!ptEnabled) {
-          await db.query('ROLLBACK');
+          await client.query('ROLLBACK');
+          client.release();
           return res.status(400).json({ error: ptError });
         }
 
-        // Use ON CONFLICT DO NOTHING to award points idempotently
         const description = `Event-Teilnahme: ${eventData.name}`;
         const awardPointsQuery = `
-          INSERT INTO event_points (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id) 
+          INSERT INTO event_points (konfi_id, event_id, points, point_type, description, awarded_date, admin_id, organization_id)
           VALUES ($1, $2, $3, $4, $5, NOW(), $6, $7)
           ON CONFLICT (konfi_id, event_id) DO NOTHING
         `;
-        const { rowCount } = await db.query(awardPointsQuery, [
-          eventData.user_id, eventId, eventData.points, pointType, description, 
+        const { rowCount } = await client.query(awardPointsQuery, [
+          eventData.user_id, eventId, eventData.points, pointType, description,
           req.user.id, req.user.organization_id
         ]);
-        
-        if (rowCount > 0) { // Points were actually inserted
-          const updateProfileQuery = pointType === 'gottesdienst' 
+
+        if (rowCount > 0) {
+          const updateProfileQuery = pointType === 'gottesdienst'
           ? "UPDATE konfi_profiles SET gottesdienst_points = gottesdienst_points + $1 WHERE user_id = $2"
           : "UPDATE konfi_profiles SET gemeinde_points = gemeinde_points + $1 WHERE user_id = $2";
-          await db.query(updateProfileQuery, [eventData.points, eventData.user_id]);
-          
-          // Check for new badges after event points are awarded
+          await client.query(updateProfileQuery, [eventData.points, eventData.user_id]);
+
           try {
-            const newBadges = await checkAndAwardBadges(db, eventData.user_id);
-            if (newBadges > 0) {
-            }
+            await checkAndAwardBadges(client, eventData.user_id);
           } catch (badgeErr) {
- console.error('Error checking badges after event attendance:', badgeErr);
-            // Don't fail the request if badge checking fails
-          }
-          
-          await db.query('COMMIT');
-
-          // Level-Check NACH COMMIT und Badge-Check
-          try {
-            await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id);
-          } catch (levelErr) {
-            console.error('Level-up check failed:', levelErr);
+            console.error('Error checking badges after event attendance:', badgeErr);
           }
 
-          // Push-Notification: Teilnahme bestätigt mit Punkten
-          try {
-            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points);
-          } catch (pushErr) {
- console.error('Push notification failed:', pushErr);
-          }
-
-          // Live Update: Notify konfi about dashboard (points) and admins about event
-          liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
-          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
-
-          return res.json({ message: `Anwesenheit aktualisiert und ${eventData.points} ${pointType}-Punkte vergeben`, points_awarded: true });
+          pointsAwarded = true;
+          responseData = { message: `Anwesenheit aktualisiert und ${eventData.points} ${pointType}-Punkte vergeben`, points_awarded: true };
         } else {
-          await db.query('COMMIT');
-
-          // Push-Notification: Teilnahme bestätigt (Punkte bereits vergeben)
-          try {
-            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0);
-          } catch (pushErr) {
- console.error('Push notification failed:', pushErr);
-          }
-
-          // Live Update: Notify admins about event attendance change
-          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
-
-          return res.json({ message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false });
+          responseData = { message: 'Anwesenheit aktualisiert (Punkte bereits vergeben)', points_awarded: false };
         }
-        
+
       } else if (attendance_status === 'absent') {
-        const { rows: [existingPoints] } = await db.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
-        
+        const { rows: [existingPoints] } = await client.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [eventData.user_id, eventId]);
+
         if (existingPoints) {
-          await db.query("DELETE FROM event_points WHERE id = $1", [existingPoints.id]);
-          const updateProfileQuery = existingPoints.point_type === 'gottesdienst' 
+          await client.query("DELETE FROM event_points WHERE id = $1", [existingPoints.id]);
+          const updateProfileQuery = existingPoints.point_type === 'gottesdienst'
           ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
           : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
-          await db.query(updateProfileQuery, [existingPoints.points, eventData.user_id]);
-          await db.query('COMMIT');
-
-          // Push-Notification: Nicht erschienen (Punkte entfernt)
-          try {
-            await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
-          } catch (pushErr) {
- console.error('Push notification failed:', pushErr);
-          }
-
-          // Live Update: Notify konfi about dashboard (points removed) and admins about event
-          liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -existingPoints.points });
-          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
-
-          return res.json({ message: `Attendance updated and ${existingPoints.points} points removed`, points_removed: true });
+          await client.query(updateProfileQuery, [existingPoints.points, eventData.user_id]);
+          pointsRemoved = true;
+          removedPointsAmount = existingPoints.points;
+          responseData = { message: `Anwesenheit aktualisiert und ${existingPoints.points} Punkte entfernt`, points_removed: true };
         }
-
-        // Push-Notification: Nicht erschienen (keine Punkte vergeben gewesen)
-        try {
-          await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0);
-        } catch (pushErr) {
- console.error('Push notification failed:', pushErr);
-        }
-
-        // Live Update: Notify admins about event attendance change
-        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
       }
 
-      await db.query('COMMIT');
-      res.json({ message: 'Anwesenheit aktualisiert', points_awarded: false, points_removed: false });
-      
+      await client.query('COMMIT');
+      client.release();
+
+      // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client
+      try {
+        if (attendance_status === 'present') {
+          if (pointsAwarded) {
+            try { await PushService.checkAndSendLevelUp(db, eventData.user_id, req.user.organization_id); } catch (e) { console.error('Level-up check failed:', e); }
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', eventData.points); } catch (e) { console.error('Push notification failed:', e); }
+            liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: eventData.points });
+          } else {
+            try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'present', 0); } catch (e) { console.error('Push notification failed:', e); }
+          }
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+        } else if (attendance_status === 'absent') {
+          try { await PushService.sendEventAttendanceToKonfi(db, eventData.user_id, eventData.name, 'absent', 0); } catch (e) { console.error('Push notification failed:', e); }
+          if (pointsRemoved) {
+            liveUpdate.sendToUser('konfi', eventData.user_id, 'dashboard', 'update', { points: -removedPointsAmount });
+          }
+          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
+        }
+      } catch (notifyErr) {
+        console.error('Post-commit notification error:', notifyErr);
+      }
+
+      res.json(responseData);
+
     } catch (err) {
-      await db.query('ROLLBACK');
- console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/attendance:`, err);
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      client.release();
+      console.error(`Database error in PUT /events/${eventId}/participants/${participantId}/attendance:`, err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
   
   // Create group chat for event
   router.post('/:id/chat', rbacVerifier, requireTeamer, async (req, res) => {

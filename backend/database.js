@@ -25,7 +25,12 @@ pool.query('SELECT NOW()')
 module.exports = {
   // Die primäre Methode zum Ausführen von Abfragen
   query: (text, params) => pool.query(text, params),
-  
+
+  // Dedizierter Client für Transaktionen (BEGIN/COMMIT/ROLLBACK)
+  // pool.query() kann verschiedene Connections nutzen - bei Transaktionen
+  // MUSS alles auf derselben Connection laufen!
+  getClient: () => pool.connect(),
+
   // Wir exportieren auch die 'end'-Methode des Pools,
   // damit wir die Verbindungen beim Herunterfahren des Servers sauber beenden können.
   end: () => pool.end(),
