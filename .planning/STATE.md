@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: Dashboard-Konfig + Punkte-Logik
-status: complete
-last_updated: "2026-03-09T11:32:01Z"
+status: unknown
+last_updated: "2026-03-09T11:35:07.772Z"
 progress:
-  total_phases: 8
-  completed_phases: 8
+  total_phases: 9
+  completed_phases: 9
   total_plans: 15
   completed_plans: 15
 ---

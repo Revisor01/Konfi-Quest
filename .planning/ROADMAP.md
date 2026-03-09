@@ -199,4 +199,4 @@ Note: Phase 32 und 33 haengen beide nur von Phase 30 ab und koennten parallel au
 | 30. DB-Schema + Backend-Endpoints | 2/2 | Complete    | 2026-03-07 | - |
 | 31. Punkte-Logik Backend | 2/2 | Complete    | 2026-03-07 | - |
 | 32. Punkte-UI Frontend | 2/2 | Complete    | 2026-03-08 | - |
-| 33. Dashboard-Widget-Steuerung | 1/1 | Complete   | 2026-03-09 | - |
+| 33. Dashboard-Widget-Steuerung | 1/1 | Complete    | 2026-03-09 | - |
