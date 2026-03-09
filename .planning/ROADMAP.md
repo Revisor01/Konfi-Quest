@@ -138,11 +138,11 @@ Plans:
   1. Konfi sieht bei Pflicht-Events einen "Abmelden"-Button und kann eine Freitext-Begruendung eingeben, die gespeichert wird
   2. Admin sieht in der Event-Teilnehmerliste alle Opt-out-Eintraege mit der jeweiligen Begruendung
   3. Admin erhaelt eine Push-Benachrichtigung wenn ein Konfi sich von einem Pflicht-Event abmeldet
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 35-01: TBD
-- [ ] 35-02: TBD
+- [ ] 35-01-PLAN.md -- DB-Schema + Backend: opt_out_reason/opt_out_date Spalten, Opt-out/Opt-in Endpoints, DELETE-Guard, Push-Methoden, Participants-Query
+- [ ] 35-02-PLAN.md -- Frontend: UnregisterModal mandatory-Prop, Konfi Opt-out/Opt-in UI, Event-Liste Markierung, Admin Teilnehmerliste + Zaehler
 
 ### Phase 36: QR-Code Check-in
 **Goal**: Anwesenheit wird ueber QR-Code-Scan erfasst mit Zeitfenster-Validierung und manueller Admin-Korrektur als Fallback
