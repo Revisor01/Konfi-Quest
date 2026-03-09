@@ -99,10 +99,12 @@ interface Participant {
   participant_name: string;
   jahrgang_name?: string;
   created_at: string;
-  status?: 'confirmed' | 'pending';
+  status?: 'confirmed' | 'pending' | 'opted_out';
   attendance_status?: 'present' | 'absent' | null;
   timeslot_start_time?: string;
   timeslot_end_time?: string;
+  opt_out_reason?: string;
+  opt_out_date?: string;
 }
 
 interface Timeslot {
@@ -503,9 +505,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           colors={getStatusColors()}
           stats={eventData?.mandatory
             ? [
-                { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
+                { value: participants.filter(p => p.status === 'confirmed').length, label: `von ${participants.length} TN` },
                 { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' },
-                { value: participants.filter(p => p.attendance_status === 'absent').length, label: 'Abwesend' }
+                { value: participants.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
               ]
             : [
                 { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
@@ -558,7 +560,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-info-row">
                 <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                 <div className="app-info-row__content">
-                  {eventData?.registered_count || 0} / {(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '∞'} Teilnehmer:innen
+                  {eventData?.mandatory
+                    ? `${participants.filter(p => p.status === 'confirmed').length}/${participants.length} Teilnehmer:innen`
+                    : `${eventData?.registered_count || 0} / ${(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E'} Teilnehmer:innen`
+                  }
                 </div>
               </div>
 
@@ -922,6 +927,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             } else {
               headerText = `Warteliste (${waitlistParticipants.length})`;
             }
+          } else if (eventData?.mandatory) {
+            const totalParticipants = participants.length;
+            headerText = `Teilnehmer:innen (${confirmedParticipants.length}/${totalParticipants})`;
           } else {
             headerText = `Teilnehmer:innen (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
           }
@@ -939,19 +947,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <IonCardContent className="app-card-content">
                 {displayParticipants.map((participant, index) => {
                   const isWaitlist = participant.status === 'pending';
+                  const isOptedOut = participant.status === 'opted_out';
                   // Strich-Farbe matcht Status-Farbe
-                  const listItemClass = participant.attendance_status === 'present' ? 'app-list-item--success' :
+                  const listItemClass = isOptedOut ? 'app-list-item--danger' :
+                                        participant.attendance_status === 'present' ? 'app-list-item--success' :
                                         participant.attendance_status === 'absent' ? 'app-list-item--danger' :
                                         isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
-                  const iconCircleClass = participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                  const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
+                                          participant.attendance_status === 'present' ? 'app-icon-circle--success' :
                                           participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
                                           isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
-                  const statusIcon = participant.attendance_status === 'present' ? checkmarkCircle :
+                  const statusIcon = isOptedOut ? closeCircle :
+                                     participant.attendance_status === 'present' ? checkmarkCircle :
                                      participant.attendance_status === 'absent' ? closeCircle : people;
-                  const statusText = participant.attendance_status === 'present' ? 'Anwesend' :
+                  const statusText = isOptedOut ? 'Abgemeldet' :
+                                     participant.attendance_status === 'present' ? 'Anwesend' :
                                      participant.attendance_status === 'absent' ? 'Abwesend' :
                                      isWaitlist ? 'Warteliste' : 'Gebucht';
-                  const cornerBadgeClass = participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                  const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
+                                           participant.attendance_status === 'present' ? 'app-corner-badge--success' :
                                            participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
                                            isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
 
@@ -1000,6 +1014,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                                     <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
                                   )}
                                 </div>
+                                {isOptedOut && participant.opt_out_reason && (
+                                  <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+                                    {participant.opt_out_reason}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

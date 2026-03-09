@@ -21,7 +21,8 @@ import {
   calendarOutline,
   lockOpenOutline,
   shieldCheckmark,
-  bagHandle
+  bagHandle,
+  closeCircle
 } from 'ionicons/icons';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -59,7 +60,8 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
+  is_opted_out?: boolean;
   mandatory?: boolean;
   bring_items?: string;
 }
@@ -159,10 +161,12 @@ const EventsView: React.FC<EventsViewProps> = ({
 
     // Pflicht-Events: eigene Status-Logik
     const isMandatory = event.mandatory;
+    const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
 
     // Bestimme Farbe - Konfirmation IMMER Lila (auch wenn angemeldet)
     let statusColor = '#fd7e14'; // Default: Orange
     if (isCancelled) statusColor = '#dc3545'; // Rot
+    else if (isMandatory && isOptedOut) statusColor = '#dc2626'; // Rot - Abgemeldet
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Anwesend
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Gefehlt
     else if (isMandatory && isPastEvent) statusColor = '#fd7e14'; // Orange - Ausstehend
@@ -183,6 +187,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Bestimme Text
     let statusText = 'Offen';
     if (isCancelled) statusText = 'Abgesagt';
+    else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
     else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
     else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
     else if (isMandatory && isPastEvent) statusText = 'Ausstehend';
@@ -203,6 +208,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Bestimme Icon
     let statusIcon = calendar;
     if (isCancelled) statusIcon = close;
+    else if (isMandatory && isOptedOut) statusIcon = closeCircle;
     else if (isMandatory) statusIcon = shieldCheckmark;
     else if (isParticipated && attendanceStatus === 'present') statusIcon = checkmarkCircle;
     else if (isParticipated && attendanceStatus === 'absent') statusIcon = close;
@@ -284,7 +290,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         {filteredEvents.map((event, index) => {
           const { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated } = getEventStatusInfo(event);
           const isCancelled = event.cancelled;
-          const showBadge = !isPastEvent || isParticipated || isCancelled;
+          const isOptedOut = event.is_opted_out || event.booking_status === 'opted_out';
+          const showBadge = !isPastEvent || isParticipated || isCancelled || isOptedOut;
 
           return (
             <IonItemSliding key={event.id} style={{ marginBottom: index < filteredEvents.length - 1 ? '8px' : '0' }}>
