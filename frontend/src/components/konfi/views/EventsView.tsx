@@ -20,7 +20,8 @@ import {
   listOutline,
   calendarOutline,
   lockOpenOutline,
-  shieldCheckmarkOutline
+  shieldCheckmark,
+  bagHandle
 } from 'ionicons/icons';
 import { SectionHeader, ListSection } from '../../shared';
 
@@ -156,11 +157,18 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
     const isAusstehend = isPastEvent && event.is_registered && !isOnWaitlist && !attendanceStatus;
 
+    // Pflicht-Events: eigene Status-Logik
+    const isMandatory = event.mandatory;
+
     // Bestimme Farbe - Konfirmation IMMER Lila (auch wenn angemeldet)
     let statusColor = '#fd7e14'; // Default: Orange
     if (isCancelled) statusColor = '#dc3545'; // Rot
+    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Anwesend
+    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Gefehlt
+    else if (isMandatory && isPastEvent) statusColor = '#fd7e14'; // Orange - Ausstehend
+    else if (isMandatory) statusColor = '#dc2626'; // Rot - Pflicht
     else if (isKonfirmationEvent && !isPastEvent) statusColor = '#5b21b6'; // Lila - Konfirmation (immer, auch wenn angemeldet)
-    else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759'; // Grün - Verbucht
+    else if (isParticipated && attendanceStatus === 'present') statusColor = '#34c759'; // Gruen - Verbucht
     else if (isParticipated && attendanceStatus === 'absent') statusColor = '#dc3545'; // Rot - Verpasst
     else if (isAusstehend) statusColor = '#fd7e14'; // Orange - Ausstehend (auf Verbuchung wartend)
     else if (isOnWaitlist) statusColor = '#fd7e14'; // Orange - Warteliste
@@ -168,13 +176,17 @@ const EventsView: React.FC<EventsViewProps> = ({
     else if (isPastEvent) statusColor = '#6c757d'; // Grau - Vergangen
     else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants && event.waitlist_enabled) statusColor = '#fd7e14'; // Orange - Warteliste
     else if (event.registration_status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) statusColor = '#dc3545'; // Rot - Ausgebucht
-    else if (event.registration_status === 'open') statusColor = '#34c759'; // Grün - Offen
+    else if (event.registration_status === 'open') statusColor = '#34c759'; // Gruen - Offen
     else if (event.registration_status === 'upcoming') statusColor = '#fd7e14'; // Orange - Bald
     else statusColor = '#dc3545'; // Rot - Geschlossen
 
     // Bestimme Text
     let statusText = 'Offen';
     if (isCancelled) statusText = 'Abgesagt';
+    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
+    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
+    else if (isMandatory && isPastEvent) statusText = 'Ausstehend';
+    else if (isMandatory) statusText = 'Angemeldet';
     else if (isKonfirmationEvent && !isPastEvent) statusText = event.is_registered ? 'Angemeldet' : 'Konfirmation'; // Konfirmation Text
     else if (isParticipated && attendanceStatus === 'present') statusText = 'Verbucht';
     else if (isParticipated && attendanceStatus === 'absent') statusText = 'Verpasst';
@@ -191,6 +203,7 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Bestimme Icon
     let statusIcon = calendar;
     if (isCancelled) statusIcon = close;
+    else if (isMandatory) statusIcon = shieldCheckmark;
     else if (isParticipated && attendanceStatus === 'present') statusIcon = checkmarkCircle;
     else if (isParticipated && attendanceStatus === 'absent') statusIcon = close;
     else if (isAusstehend) statusIcon = hourglass;
@@ -309,6 +322,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                       {statusText}
                     </div>
                   )}
+                  {/* Pflicht Corner Badge (links oben) */}
+                  {event.mandatory && (
+                    <div
+                      className="app-corner-badge"
+                      style={{ backgroundColor: '#dc2626', left: 0, right: 'auto', borderRadius: '10px 0 10px 0' }}
+                    >
+                      Pflicht
+                    </div>
+                  )}
 
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
@@ -338,7 +360,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                         <div className="app-list-item__meta">
                           {event.mandatory && (
                             <span className="app-list-item__meta-item" style={{ color: '#dc2626', fontWeight: '600' }}>
-                              <IonIcon icon={shieldCheckmarkOutline} style={{ color: '#dc2626' }} />
+                              <IonIcon icon={shieldCheckmark} style={{ color: '#dc2626' }} />
                               Pflicht
                             </span>
                           )}
@@ -380,6 +402,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
                               {event.location}
+                            </span>
+                          </div>
+                        )}
+                        {/* Zeile 5: Was mitbringen */}
+                        {event.bring_items && (
+                          <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                            <span className="app-list-item__meta-item" style={{ color: '#8b5cf6', fontWeight: '500' }}>
+                              <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
+                              {event.bring_items}
                             </span>
                           </div>
                         )}

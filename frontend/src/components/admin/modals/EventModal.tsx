@@ -25,7 +25,7 @@ import {
   IonDatetimeButton,
   useIonAlert
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmarkOutline, bagHandleOutline } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, add, trash, create, calendar, people, time, location, copy, removeOutline, addOutline, shieldCheckmark, bagHandle } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -494,7 +494,7 @@ const EventModal: React.FC<EventModalProps> = ({
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
-              <IonIcon icon={shieldCheckmarkOutline} />
+              <IonIcon icon={shieldCheckmark} />
             </div>
             <IonLabel>Pflicht-Event</IonLabel>
           </IonListHeader>

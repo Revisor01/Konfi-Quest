@@ -54,6 +54,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ',') as jahrgang_names,
                 CASE
+                  WHEN e.mandatory THEN 'mandatory'
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
                   WHEN NOW() > e.registration_closes_at THEN 'closed'
                   WHEN (

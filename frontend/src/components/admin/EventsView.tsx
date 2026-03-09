@@ -24,7 +24,9 @@ import {
   trophy,
   listOutline,
   calendarOutline,
-  lockOpenOutline
+  lockOpenOutline,
+  shieldCheckmark,
+  bagHandle
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -60,6 +62,8 @@ interface Event {
   series_id?: number;
   waitlist_count?: number;
   pending_bookings_count?: number;
+  mandatory?: boolean;
+  bring_items?: string;
 }
 
 interface EventsViewProps {
@@ -300,6 +304,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                     >
                       {statusText}
                     </div>
+                    {/* Pflicht Corner Badge (links oben) */}
+                    {event.mandatory && (
+                      <div
+                        className="app-corner-badge"
+                        style={{ backgroundColor: '#dc2626', left: 0, right: 'auto', borderRadius: '10px 0 10px 0' }}
+                      >
+                        Pflicht
+                      </div>
+                    )}
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         {/* Icon */}
@@ -332,10 +345,18 @@ const EventsView: React.FC<EventsViewProps> = ({
 
                           {/* Zeile 2: Buchungen + Warteliste + Punkte */}
                           <div className="app-list-item__meta">
+                            {event.mandatory && (
+                              <span className="app-list-item__meta-item" style={{ color: '#dc2626', fontWeight: '600' }}>
+                                <IonIcon icon={shieldCheckmark} style={{ color: '#dc2626' }} />
+                                {event.registered_count} Konfis
+                              </span>
+                            )}
+                            {!event.mandatory && (
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
                               {event.registered_count}/{(event.max_participants || 0) > 0 ? event.max_participants : '∞'}
                             </span>
+                            )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
@@ -368,6 +389,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={location} style={{ color: shouldGrayOut ? '#999' : '#007aff' }} />
                                 {event.location}
+                              </span>
+                            </div>
+                          )}
+                          {/* Zeile 5: Was mitbringen */}
+                          {event.bring_items && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <span className="app-list-item__meta-item" style={{ color: '#8b5cf6', fontWeight: '500' }}>
+                                <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
+                                {event.bring_items}
                               </span>
                             </div>
                           )}
