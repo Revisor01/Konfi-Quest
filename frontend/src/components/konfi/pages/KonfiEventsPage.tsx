@@ -51,7 +51,15 @@ interface Event {
   waitlist_count?: number;
   waitlist_position?: number;
   registration_status_detail?: string;
-  booking_status?: 'confirmed' | 'waitlist' | 'pending' | null;
+  booking_status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out' | null;
+  mandatory?: boolean;
+  bring_items?: string;
+  is_opted_out?: boolean;
+  point_type?: 'gottesdienst' | 'gemeinde';
+  has_timeslots?: boolean;
+  booked_timeslot_id?: number;
+  booked_timeslot_start?: string;
+  booked_timeslot_end?: string;
 }
 
 const KonfiEventsPage: React.FC = () => {
