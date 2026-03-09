@@ -323,6 +323,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   };
 
   const handleAttendanceUpdate = async (participant: Participant, status: 'present' | 'absent') => {
+    // Optimistisches UI-Update: sofort anzeigen
+    setParticipants(prev => prev.map(p =>
+      p.id === participant.id ? { ...p, attendance_status: status } : p
+    ));
+
     try {
       // Update attendance status using new API
       const response = await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
@@ -338,11 +343,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         setSuccess(`Anwesenheit ${status === 'present' ? 'bestätigt' : 'als abwesend markiert'}`);
       }
 
-      await loadEventData(); // Reload to update status
-
       // Trigger events update for main list
       window.dispatchEvent(new CustomEvent('events-updated'));
     } catch (error) {
+      // Rollback bei Fehler
+      setParticipants(prev => prev.map(p =>
+        p.id === participant.id ? { ...p, attendance_status: participant.attendance_status } : p
+      ));
       setError('Fehler beim Aktualisieren der Anwesenheit');
     }
   };
