@@ -154,11 +154,11 @@ Plans:
   3. QR-Code-Scan wird abgelehnt wenn er ausserhalb des Zeitfensters (30 Min vor bis 30 Min nach Event-Start) stattfindet
   4. Admin kann die Anwesenheit einzelner Konfis manuell auf "anwesend" oder "abwesend" korrigieren, unabhaengig vom QR-Check-in
   5. Admin kann den QR-Code aus dem QR-Modal heraus drucken (druckfreundliches Layout mit Event-Info)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 36-01: TBD
-- [ ] 36-02: TBD
+- [ ] 36-01-PLAN.md -- DB-Schema + Backend: qr_token/checkin_window Spalten, generate-qr/qr-checkin/attendance-count Endpoints, EventModal Check-in-Fenster
+- [ ] 36-02-PLAN.md -- Frontend: QRScannerModal (Konfi), QRDisplayModal (Admin) mit Live-Zaehler + Druck, View-Integration (Buttons, FAB, Status)
 
 ### Phase 37: Dashboard-Widget + Anwesenheitsstatistik
 **Goal**: Konfis sehen ihr naechstes Event im Dashboard und Admins haben eine pro-Konfi Anwesenheitsuebersicht
