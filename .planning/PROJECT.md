@@ -96,16 +96,16 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] Teamer-Rolle mit RBAC-Integration und manueller Transition durch Admin
-- [ ] Eigenes Teamer-Dashboard ohne Ranking mit Konfi-Uebersicht
-- [ ] Teamer-Zugriff: Punkte vergeben, Anwesenheit, Chat-Raeume erstellen
-- [ ] "Teamer gesucht"-Toggle bei bestehenden Events
-- [ ] Reine Teamer-Events (nur fuer Teamer sichtbar/buchbar)
-- [ ] Teamer-Aktivitaeten (manuell durch Admin)
+- [ ] Manuelle Konfi-zu-Teamer Transition durch Admin mit Badge-Historie-Erhalt
+- [ ] Eigene Teamer-UI: 5 Tabs (Dashboard, Events, Chat, Material, Profil)
+- [ ] Teamer-Dashboard mit Begruessing, Zertifikaten, naechsten Events
+- [ ] "Teamer gesucht"-Toggle bei Konfi-Events + reine Teamer-Events
+- [ ] Teamer bucht sich in Events ein, kann Anwesenheit bestaetigen
+- [ ] Teamer-Aktivitaeten (manuell durch Admin vergeben)
 - [ ] Teamer-Badges: Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge
-- [ ] Zertifikat-Anzeige (JuLeiCa, Teamer-Card) im Profil
-- [ ] Konfi-Badge-Historie bei Transition erhalten
-- [ ] Material-Bereich mit Datei-Uploads
+- [ ] Zertifikat-Anzeige (JuLeiCa, Teamer-Card mit Datum) im Dashboard
+- [ ] Profil mit Antraege stellen, Badges-Uebersicht und Badge-Historie
+- [ ] Material-Bereich mit Datei-Uploads pro Jahrgang
 
 ### Out of Scope
 
