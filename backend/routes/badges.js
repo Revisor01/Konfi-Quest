@@ -101,6 +101,13 @@ const checkAndAwardBadges = async (db, konfiId) => {
     const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
     if (!konfi) return 0;
 
+    // Teamer ueberspringen - keine neuen Konfi-Badges nach Transition
+    const roleCheckQuery = `SELECT r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`;
+    const { rows: [roleCheck] } = await db.query(roleCheckQuery, [konfiId]);
+    if (roleCheck && roleCheck.role_name === 'teamer') {
+      return { count: 0, badges: [] };
+    }
+
     // Jahrgang-Config laden (gottesdienst_enabled/gemeinde_enabled)
     const jahrgangConfigQuery = `
       SELECT j.gottesdienst_enabled, j.gemeinde_enabled

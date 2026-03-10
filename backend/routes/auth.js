@@ -117,7 +117,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       // last_login_at nur beim echten Login aktualisieren (nicht in Middleware)
       await db.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [user.id]);
 
-      const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
+      const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
       const token = jwt.sign({
@@ -289,7 +289,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       const { rows: [user] } = await db.query(query, [email]);
       
       if (user) {
-        const userType = user.role_name === 'konfi' ? 'konfi' : 'admin';
+        const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
         const token = generateResetToken();
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 

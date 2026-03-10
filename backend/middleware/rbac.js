@@ -94,7 +94,7 @@ const verifyTokenRBAC = (db) => {
         organization_slug: user.organization_slug,
         assigned_jahrgaenge: assignedJahrgaenge,
         // Backward compatibility
-        type: user.role_name === 'konfi' ? 'konfi' : 'admin',
+        type: user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin',
         // is_super_admin: Rolle ODER DB-Flag
         is_super_admin: user.role_name === 'super_admin' || user.is_super_admin === true,
         is_org_admin: user.role_name === 'org_admin'
