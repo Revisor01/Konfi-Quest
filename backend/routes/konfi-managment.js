@@ -869,9 +869,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             // 5. Offene Antraege loeschen
             await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND status = 'pending'", [konfiId]);
 
-            // 6. konfi_profiles BLEIBT bestehen
-            // 7. konfi_badges BLEIBEN bestehen
-            // 8. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
+            // 6. Jahrgang aus konfi_profiles in user_jahrgang_assignments uebertragen
+            const { rows: [konfiProfile] } = await client.query(
+                'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1', [konfiId]
+            );
+            if (konfiProfile && konfiProfile.jahrgang_id) {
+                const { rows: [existing] } = await client.query(
+                    'SELECT id FROM user_jahrgang_assignments WHERE user_id = $1 AND jahrgang_id = $2',
+                    [konfiId, konfiProfile.jahrgang_id]
+                );
+                if (!existing) {
+                    await client.query(
+                        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit) VALUES ($1, $2, true, true)',
+                        [konfiId, konfiProfile.jahrgang_id]
+                    );
+                }
+            }
+
+            // 7. konfi_profiles BLEIBT bestehen
+            // 8. konfi_badges BLEIBEN bestehen
+            // 9. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
             await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
 
