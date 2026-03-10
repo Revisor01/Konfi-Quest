@@ -153,7 +153,7 @@ Plans:
   2. Admin kann reine Teamer-Events erstellen die nur fuer Teamer sichtbar und buchbar sind
   3. Teamer sieht Events-Tab mit 3 Segmenten (Meine, Alle, Team) und kann sich in Teamer-gesucht-Events und Teamer-Events einbuchen
   4. Teamer kann bei Events wo er eingeteilt ist seine Anwesenheit bestaetigen
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 39-01-PLAN.md -- Backend: DB-Schema, Booking, Filter, Check-in fuer Teamer
@@ -224,7 +224,7 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
-| 39. Events | 0/2 | Not started | - |
+| 39. Events | 1/2 | In Progress|  |
 | 40. Badges + Aktivitaeten | 0/2 | Not started | - |
 | 41. Zertifikate + Dashboard | 0/2 | Not started | - |
 | 42. Material | 0/1 | Not started | - |

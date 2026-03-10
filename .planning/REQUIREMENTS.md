@@ -23,11 +23,11 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 
 ### Events (EVT)
 
-- [ ] **EVT-01**: Admin kann bei Konfi-Events einen "Teamer gesucht"-Toggle setzen
-- [ ] **EVT-02**: Teamer sieht Events mit "Teamer gesucht" und kann sich einbuchen
-- [ ] **EVT-03**: Admin kann reine Teamer-Events erstellen (nur fuer Teamer sichtbar/buchbar)
-- [ ] **EVT-04**: Teamer kann Anwesenheit bei Events bestaetigen wo er eingeteilt ist
-- [ ] **EVT-05**: Teamer sieht alle fuer ihn relevanten Events (Teamer-gesucht + Teamer-Events)
+- [x] **EVT-01**: Admin kann bei Konfi-Events einen "Teamer gesucht"-Toggle setzen
+- [x] **EVT-02**: Teamer sieht Events mit "Teamer gesucht" und kann sich einbuchen
+- [x] **EVT-03**: Admin kann reine Teamer-Events erstellen (nur fuer Teamer sichtbar/buchbar)
+- [x] **EVT-04**: Teamer kann Anwesenheit bei Events bestaetigen wo er eingeteilt ist
+- [x] **EVT-05**: Teamer sieht alle fuer ihn relevanten Events (Teamer-gesucht + Teamer-Events)
 - [ ] **EVT-06**: Events-Tab mit 3 Segmenten: Meine (gebucht), Alle (Jahrgangs-Uebersicht), Team (buchbar als Supporter + Teamer-Events)
 
 ### Badges + Aktivitaeten (BDG)
@@ -96,11 +96,11 @@ Deferred. Nicht in aktuellem Roadmap.
 | DSH-02 | Phase 41 | Pending |
 | DSH-03 | Phase 41 | Pending |
 | DSH-04 | Phase 41 | Pending |
-| EVT-01 | Phase 39 | Pending |
-| EVT-02 | Phase 39 | Pending |
-| EVT-03 | Phase 39 | Pending |
-| EVT-04 | Phase 39 | Pending |
-| EVT-05 | Phase 39 | Pending |
+| EVT-01 | Phase 39 | Complete |
+| EVT-02 | Phase 39 | Complete |
+| EVT-03 | Phase 39 | Complete |
+| EVT-04 | Phase 39 | Complete |
+| EVT-05 | Phase 39 | Complete |
 | EVT-06 | Phase 39 | Pending |
 | BDG-01 | Phase 40 | Pending |
 | BDG-02 | Phase 40 | Pending |
