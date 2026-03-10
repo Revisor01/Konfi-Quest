@@ -515,8 +515,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       // Get participants
       const participantsQuery = `
         SELECT eb.*, eb.opt_out_reason, eb.opt_out_date,
-                u.display_name as participant_name, kp.jahrgang_id,
-                COALESCE(j.name, (SELECT STRING_AGG(DISTINCT j2.name, ', ' ORDER BY j2.name) FROM user_jahrgang_assignments uja2 JOIN jahrgaenge j2 ON uja2.jahrgang_id = j2.id WHERE uja2.user_id = u.id)) as jahrgang_name,
+                u.display_name as participant_name,
+                CASE
+                  WHEN r.name = 'teamer' THEN (SELECT STRING_AGG(DISTINCT j2.name, ', ' ORDER BY j2.name) FROM user_jahrgang_assignments uja2 JOIN jahrgaenge j2 ON uja2.jahrgang_id = j2.id WHERE uja2.user_id = u.id)
+                  ELSE j.name
+                END as jahrgang_name,
+                kp.jahrgang_id,
                 et.start_time as timeslot_start_time,
                 et.end_time as timeslot_end_time,
                 r.name as role_name
