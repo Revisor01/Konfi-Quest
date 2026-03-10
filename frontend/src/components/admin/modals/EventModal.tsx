@@ -49,6 +49,8 @@ interface Event {
   mandatory?: boolean;
   bring_items?: string;
   checkin_window?: number;
+  teamer_needed?: boolean;
+  teamer_only?: boolean;
 }
 
 interface Jahrgang {
@@ -139,6 +141,7 @@ const EventModal: React.FC<EventModalProps> = ({
   });
 
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
+  const [teamerAccess, setTeamerAccess] = useState<'normal' | 'teamer_needed' | 'teamer_only'>('normal');
   const initializedRef = useRef(false);
 
   // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
@@ -194,6 +197,14 @@ const EventModal: React.FC<EventModalProps> = ({
         bring_items: (event as any).bring_items || '',
         checkin_window: (event as any).checkin_window || 30
       });
+      // Teamer-Zugang aus Event-Daten ableiten
+      if ((event as any).teamer_only) {
+        setTeamerAccess('teamer_only');
+      } else if ((event as any).teamer_needed) {
+        setTeamerAccess('teamer_needed');
+      } else {
+        setTeamerAccess('normal');
+      }
       // Load timeslots if editing existing event
       if (event.has_timeslots) {
         loadTimeslots(event.id);
@@ -262,6 +273,7 @@ const EventModal: React.FC<EventModalProps> = ({
         checkin_window: 30
       });
       setTimeslots([]);
+      setTeamerAccess('normal');
     }
     // Nach Initialisierung isDirty-Tracking aktivieren
     setTimeout(() => { initializedRef.current = true; }, 100);
@@ -380,7 +392,9 @@ const EventModal: React.FC<EventModalProps> = ({
         series_interval: formData.is_series ? formData.series_interval : undefined,
         mandatory: formData.mandatory,
         bring_items: formData.bring_items.trim() || null,
-        checkin_window: formData.checkin_window
+        checkin_window: formData.checkin_window,
+        teamer_needed: teamerAccess === 'teamer_needed',
+        teamer_only: teamerAccess === 'teamer_only'
       };
 
       if (event && event.id && event.id > 0) {
@@ -515,7 +529,7 @@ const EventModal: React.FC<EventModalProps> = ({
                   disabled={loading}
                 />
               </IonItem>
-              <IonItem lines="none">
+              <IonItem lines="inset">
                 <IonLabel position="stacked">Was mitbringen (optional)</IonLabel>
                 <IonTextarea
                   value={formData.bring_items}
@@ -524,6 +538,18 @@ const EventModal: React.FC<EventModalProps> = ({
                   rows={2}
                   disabled={loading}
                 />
+              </IonItem>
+              <IonItem lines="none">
+                <IonSelect
+                  label="Teamer-Zugang"
+                  value={teamerAccess}
+                  onIonChange={(e) => setTeamerAccess(e.detail.value)}
+                  disabled={loading}
+                >
+                  <IonSelectOption value="normal">Nur Konfis</IonSelectOption>
+                  <IonSelectOption value="teamer_needed">Teamer:innen gesucht</IonSelectOption>
+                  <IonSelectOption value="teamer_only">Nur Teamer:innen</IonSelectOption>
+                </IonSelect>
               </IonItem>
             </IonList>
           </IonCardContent>

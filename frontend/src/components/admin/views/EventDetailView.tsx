@@ -84,6 +84,8 @@ interface Event {
   has_timeslots?: boolean;
   mandatory?: boolean;
   bring_items?: string;
+  teamer_needed?: boolean;
+  teamer_only?: boolean;
   is_series?: boolean;
   series_id?: string;
   series_events?: Event[];
@@ -100,6 +102,7 @@ interface Participant {
   user_id?: number;
   participant_name: string;
   jahrgang_name?: string;
+  role_name?: string;
   created_at: string;
   status?: 'confirmed' | 'pending' | 'opted_out';
   attendance_status?: 'present' | 'absent' | null;
@@ -650,6 +653,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
+              {/* Teamer-Zugang Badge */}
+              {(eventData?.teamer_needed || eventData?.teamer_only) && (
+                <div className="app-info-row">
+                  <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                  <div className="app-info-row__content" style={{ fontWeight: '600', color: '#5b21b6' }}>
+                    {eventData?.teamer_only ? 'Nur Teamer:innen' : 'Teamer:innen gesucht'}
+                  </div>
+                </div>
+              )}
+
               {/* Was mitbringen */}
               {eventData?.bring_items && (
                 <div className="app-info-row">
@@ -893,10 +906,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
         {/* Participants List */}
         {(() => {
+          // Teilnehmer nach Rolle aufteilen
+          const konfiParticipants = participants.filter(p => p.role_name !== 'teamer');
+          const teamerParticipants = participants.filter(p => p.role_name === 'teamer');
+
           // Bei Timeslot-Events: zeige Teilnehmer ohne Slot-Zuordnung + Warteliste
-          // Bei normalen Events: zeige alle Teilnehmer
-          const confirmedParticipants = participants.filter(p => p.status === 'confirmed');
-          const waitlistParticipants = participants.filter(p => p.status === 'pending');
+          // Bei normalen Events: zeige alle Konfis
+          const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
+          const waitlistParticipants = konfiParticipants.filter(p => p.status === 'pending');
 
           // Bei Timeslot-Events: Teilnehmer ohne Slot-Zuordnung finden
           const unassignedParticipants = eventData?.has_timeslots
@@ -905,13 +922,117 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
           const displayParticipants = eventData?.has_timeslots
             ? [...unassignedParticipants, ...waitlistParticipants]
-            : participants;
+            : konfiParticipants;
 
           const hasWaitlist = (eventData as any)?.waitlist_enabled && waitlistParticipants.length > 0;
           const hasUnassigned = unassignedParticipants.length > 0;
 
+          // Helper: Einzelnen Teilnehmer rendern
+          const renderParticipant = (participant: Participant) => {
+            const isWaitlist = participant.status === 'pending';
+            const isOptedOut = participant.status === 'opted_out';
+            const listItemClass = isOptedOut ? 'app-list-item--danger' :
+                                  participant.attendance_status === 'present' ? 'app-list-item--success' :
+                                  participant.attendance_status === 'absent' ? 'app-list-item--danger' :
+                                  isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
+            const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
+                                    participant.attendance_status === 'present' ? 'app-icon-circle--success' :
+                                    participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
+                                    isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
+            const statusIcon = isOptedOut ? closeCircle :
+                               participant.attendance_status === 'present' ? checkmarkCircle :
+                               participant.attendance_status === 'absent' ? closeCircle : people;
+            const statusText = isOptedOut ? 'Abgemeldet' :
+                               participant.attendance_status === 'present' ? 'Anwesend' :
+                               participant.attendance_status === 'absent' ? 'Abwesend' :
+                               isWaitlist ? 'Warteliste' : 'Gebucht';
+            const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
+                                     participant.attendance_status === 'present' ? 'app-corner-badge--success' :
+                                     participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
+                                     isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
+
+            return (
+              <IonItemSliding
+                key={participant.id}
+                ref={(el) => {
+                  if (el) {
+                    slidingRefs.current.set(participant.id, el);
+                  } else {
+                    slidingRefs.current.delete(participant.id);
+                  }
+                }}
+                className="app-event-detail__sliding-item"
+              >
+                <IonItem
+                  className="app-item-transparent"
+                  button
+                  detail={false}
+                  lines="none"
+                  onClick={() => {
+                    if (participant.status === 'confirmed') {
+                      showAttendanceActionSheet(participant);
+                    } else if (participant.status === 'pending') {
+                      showWaitlistActionSheet(participant);
+                    }
+                  }}
+                >
+                  <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
+                    <div className={`app-corner-badge ${cornerBadgeClass}`}>
+                      {statusText}
+                    </div>
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className={`app-icon-circle ${iconCircleClass}`}>
+                          <IonIcon icon={statusIcon} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title app-list-item__title--badge-space-lg">
+                            {participant.participant_name}
+                          </div>
+                          <div className="app-list-item__subtitle">
+                            {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
+                            {participant.timeslot_start_time && participant.timeslot_end_time && (
+                              <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
+                            )}
+                          </div>
+                          {isOptedOut && participant.opt_out_reason && (
+                            <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
+                              {participant.opt_out_reason}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </IonItem>
+                {!eventData?.mandatory && (
+                <IonItemOptions className="app-swipe-actions" side="end">
+                  {participant.status === 'confirmed' && (
+                    <IonItemOption
+                      className="app-swipe-action"
+                      onClick={() => handleDemoteParticipant(participant)}
+                    >
+                      <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
+                        <IonIcon icon={returnUpBack} />
+                      </div>
+                    </IonItemOption>
+                  )}
+                  <IonItemOption
+                    className="app-swipe-action"
+                    onClick={() => handleRemoveParticipant(participant)}
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                      <IonIcon icon={trash} />
+                    </div>
+                  </IonItemOption>
+                </IonItemOptions>
+                )}
+              </IonItemSliding>
+            );
+          };
+
           // Wenn keine Teilnehmer und keine Warteliste, nur Button zeigen
-          if (displayParticipants.length === 0) {
+          if (displayParticipants.length === 0 && teamerParticipants.length === 0) {
             return (
               <IonList className="app-section-inset" inset={true}>
                 <IonCard className="app-card">
@@ -930,152 +1051,86 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             );
           }
 
-          // Header-Text bestimmen
-          let headerText = '';
+          // Konfis Header-Text bestimmen
+          let konfiHeaderText = '';
           if (eventData?.has_timeslots) {
             if (hasUnassigned && hasWaitlist) {
-              headerText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
+              konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length}) + Warteliste (${waitlistParticipants.length})`;
             } else if (hasUnassigned) {
-              headerText = `Nicht zugeordnet (${unassignedParticipants.length})`;
+              konfiHeaderText = `Nicht zugeordnet (${unassignedParticipants.length})`;
             } else {
-              headerText = `Warteliste (${waitlistParticipants.length})`;
+              konfiHeaderText = `Warteliste (${waitlistParticipants.length})`;
             }
           } else if (eventData?.mandatory) {
-            const totalParticipants = participants.length;
-            headerText = `Teilnehmer:innen (${confirmedParticipants.length}/${totalParticipants})`;
+            konfiHeaderText = `Konfis (${confirmedParticipants.length}/${konfiParticipants.length})`;
           } else {
-            headerText = `Teilnehmer:innen (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
+            konfiHeaderText = `Konfis (${confirmedParticipants.length}${waitlistParticipants.length > 0 ? ` + ${waitlistParticipants.length}` : ''})`;
           }
 
           return (
-            <IonList className="app-section-inset" inset={true}>
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--events">
-                  <IonIcon icon={people} />
-                </div>
-                <IonLabel>{headerText}</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-              {(
-              <IonCardContent className="app-card-content">
-                {displayParticipants.map((participant, index) => {
-                  const isWaitlist = participant.status === 'pending';
-                  const isOptedOut = participant.status === 'opted_out';
-                  // Strich-Farbe matcht Status-Farbe
-                  const listItemClass = isOptedOut ? 'app-list-item--danger' :
-                                        participant.attendance_status === 'present' ? 'app-list-item--success' :
-                                        participant.attendance_status === 'absent' ? 'app-list-item--danger' :
-                                        isWaitlist ? 'app-list-item--warning' : 'app-list-item--info';
-                  const iconCircleClass = isOptedOut ? 'app-icon-circle--danger' :
-                                          participant.attendance_status === 'present' ? 'app-icon-circle--success' :
-                                          participant.attendance_status === 'absent' ? 'app-icon-circle--danger' :
-                                          isWaitlist ? 'app-icon-circle--warning' : 'app-icon-circle--info';
-                  const statusIcon = isOptedOut ? closeCircle :
-                                     participant.attendance_status === 'present' ? checkmarkCircle :
-                                     participant.attendance_status === 'absent' ? closeCircle : people;
-                  const statusText = isOptedOut ? 'Abgemeldet' :
-                                     participant.attendance_status === 'present' ? 'Anwesend' :
-                                     participant.attendance_status === 'absent' ? 'Abwesend' :
-                                     isWaitlist ? 'Warteliste' : 'Gebucht';
-                  const cornerBadgeClass = isOptedOut ? 'app-corner-badge--danger' :
-                                           participant.attendance_status === 'present' ? 'app-corner-badge--success' :
-                                           participant.attendance_status === 'absent' ? 'app-corner-badge--danger' :
-                                           isWaitlist ? 'app-corner-badge--warning' : 'app-corner-badge--info';
-
-                  return (
-                    <IonItemSliding
-                      key={participant.id}
-                      ref={(el) => {
-                        if (el) {
-                          slidingRefs.current.set(participant.id, el);
-                        } else {
-                          slidingRefs.current.delete(participant.id);
-                        }
-                      }}
-                      className="app-event-detail__sliding-item"
-                    >
-                      <IonItem
-                        className="app-item-transparent"
-                        button
-                        detail={false}
-                        lines="none"
-                        onClick={() => {
-                          if (participant.status === 'confirmed') {
-                            showAttendanceActionSheet(participant);
-                          } else if (participant.status === 'pending') {
-                            showWaitlistActionSheet(participant);
-                          }
-                        }}
-                      >
-                        <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
-                          {/* Eselsohr-Style Status Badge */}
-                          <div className={`app-corner-badge ${cornerBadgeClass}`}>
-                            {statusText}
-                          </div>
-                          <div className="app-list-item__row">
-                            <div className="app-list-item__main">
-                              <div className={`app-icon-circle ${iconCircleClass}`}>
-                                <IonIcon icon={statusIcon} />
-                              </div>
-                              <div className="app-list-item__content">
-                                <div className="app-list-item__title app-list-item__title--badge-space-lg">
-                                  {participant.participant_name}
-                                </div>
-                                <div className="app-list-item__subtitle">
-                                  {participant.jahrgang_name && <>{participant.jahrgang_name}</>}
-                                  {participant.timeslot_start_time && participant.timeslot_end_time && (
-                                    <>{participant.jahrgang_name ? ' | ' : ''}{formatTime(participant.timeslot_start_time)} - {formatTime(participant.timeslot_end_time)}</>
-                                  )}
-                                </div>
-                                {isOptedOut && participant.opt_out_reason && (
-                                  <div style={{ color: '#666', fontSize: '0.8rem', marginTop: '2px' }}>
-                                    {participant.opt_out_reason}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </IonItem>
-                      {!eventData?.mandatory && (
-                      <IonItemOptions className="app-swipe-actions" side="end">
-                        {participant.status === 'confirmed' && (
-                          <IonItemOption
-                            className="app-swipe-action"
-                            onClick={() => handleDemoteParticipant(participant)}
-                          >
-                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--warning">
-                              <IonIcon icon={returnUpBack} />
-                            </div>
-                          </IonItemOption>
-                        )}
-                        <IonItemOption
-                          className="app-swipe-action"
-                          onClick={() => handleRemoveParticipant(participant)}
+            <>
+              {/* Konfis Sektion */}
+              {displayParticipants.length > 0 && (
+                <IonList className="app-section-inset" inset={true}>
+                  <IonListHeader>
+                    <div className="app-section-icon app-section-icon--events">
+                      <IonIcon icon={people} />
+                    </div>
+                    <IonLabel>{konfiHeaderText}</IonLabel>
+                  </IonListHeader>
+                  <IonCard className="app-card">
+                    <IonCardContent className="app-card-content">
+                      {displayParticipants.map(renderParticipant)}
+                      <div className="app-event-detail__add-button-wrapper">
+                        <IonButton
+                          expand="block"
+                          fill="outline"
+                          onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
                         >
-                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                            <IonIcon icon={trash} />
-                          </div>
-                        </IonItemOption>
-                      </IonItemOptions>
-                      )}
-                    </IonItemSliding>
-                  );
-                })}
-                <div className="app-event-detail__add-button-wrapper">
-                  <IonButton
-                    expand="block"
-                    fill="outline"
-                    onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
-                  >
-                    <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                    Teilnehmer:in hinzufügen
-                  </IonButton>
-                </div>
-              </IonCardContent>
+                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          Teilnehmer:in hinzufügen
+                        </IonButton>
+                      </div>
+                    </IonCardContent>
+                  </IonCard>
+                </IonList>
               )}
-              </IonCard>
-            </IonList>
+
+              {/* Teamer:innen Sektion */}
+              {teamerParticipants.length > 0 && (
+                <IonList className="app-section-inset" inset={true}>
+                  <IonListHeader>
+                    <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+                      <IonIcon icon={people} />
+                    </div>
+                    <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>
+                  </IonListHeader>
+                  <IonCard className="app-card">
+                    <IonCardContent className="app-card-content">
+                      {teamerParticipants.map(renderParticipant)}
+                    </IonCardContent>
+                  </IonCard>
+                </IonList>
+              )}
+
+              {/* Button wenn keine Konfis aber Teamer vorhanden */}
+              {displayParticipants.length === 0 && teamerParticipants.length > 0 && (
+                <IonList className="app-section-inset" inset={true}>
+                  <IonCard className="app-card">
+                    <IonCardContent className="app-card-content">
+                      <IonButton
+                        expand="block"
+                        fill="outline"
+                        onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                      >
+                        <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                        Teilnehmer:in hinzufügen
+                      </IonButton>
+                    </IonCardContent>
+                  </IonCard>
+                </IonList>
+              )}
+            </>
           );
         })()}
 
