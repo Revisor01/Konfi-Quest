@@ -299,6 +299,7 @@ useEffect(() => {
     if (!user) return;
 
     const setupPushNotifications = async () => {
+      if (!Capacitor.isNativePlatform()) return;
       try {
         // WICHTIG: Registration Listener fuer Android (und iOS Fallback)
         PushNotifications.addListener('registration', (token) => {

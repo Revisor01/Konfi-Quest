@@ -33,6 +33,7 @@ import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 import { AppProvider, useApp } from './contexts/AppContext';
 import { BadgeProvider, useBadge } from './contexts/BadgeContext';
 import { LiveUpdateProvider } from './contexts/LiveUpdateContext';
+import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import LoginView from './components/auth/LoginView';
 import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
@@ -95,6 +96,7 @@ const AppContent: React.FC = () => {
     // Badge-Counts werden bereits vom BadgeContext initialisiert
     // Push-Listener fuer sofortiges Refresh bei eingehender Notification
     const setupListeners = async () => {
+      if (!Capacitor.isNativePlatform()) return;
       await PushNotifications.removeAllListeners();
 
       const pushListener = await PushNotifications.addListener('pushNotificationReceived',
