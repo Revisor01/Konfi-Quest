@@ -32,13 +32,13 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 
 ### Badges + Aktivitaeten (BDG)
 
-- [ ] **BDG-01**: Admin kann Teamer-spezifische Aktivitaeten erstellen und manuell vergeben
+- [x] **BDG-01**: Admin kann Teamer-spezifische Aktivitaeten erstellen und manuell vergeben
 - [ ] **BDG-02**: Teamer-Badges vom Typ Aktivitaeten-Anzahl (X Aktivitaeten gesamt oder pro Kategorie)
 - [ ] **BDG-03**: Teamer-Badges vom Typ Event-Teilnahme (X Events gesamt oder pro Kategorie)
 - [ ] **BDG-04**: Teamer-Badges vom Typ Streak (X Events hintereinander)
 - [ ] **BDG-05**: Teamer-Badges vom Typ Sammel-Badge (alle Badges einer Gruppe)
 - [ ] **BDG-06**: Teamer-Badges vom Typ Jahres-Badge (aktiv im X. Teamer-Jahr)
-- [ ] **BDG-07**: Admin kann Teamer-Badge-Typen und Kriterien frei konfigurieren
+- [x] **BDG-07**: Admin kann Teamer-Badge-Typen und Kriterien frei konfigurieren
 
 ### Zertifikate (ZRT)
 
@@ -102,13 +102,13 @@ Deferred. Nicht in aktuellem Roadmap.
 | EVT-04 | Phase 39 | Complete |
 | EVT-05 | Phase 39 | Complete |
 | EVT-06 | Phase 39 | Pending |
-| BDG-01 | Phase 40 | Pending |
+| BDG-01 | Phase 40 | Complete |
 | BDG-02 | Phase 40 | Pending |
 | BDG-03 | Phase 40 | Pending |
 | BDG-04 | Phase 40 | Pending |
 | BDG-05 | Phase 40 | Pending |
 | BDG-06 | Phase 40 | Pending |
-| BDG-07 | Phase 40 | Pending |
+| BDG-07 | Phase 40 | Complete |
 | ZRT-01 | Phase 41 | Pending |
 | ZRT-02 | Phase 41 | Pending |
 | ZRT-03 | Phase 41 | Pending |

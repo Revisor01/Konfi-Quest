@@ -168,7 +168,7 @@ Plans:
   2. Teamer erhaelt automatisch Badges basierend auf 5 Kriterien-Typen (Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge)
   3. Admin kann Badge-Typen und deren Kriterien frei konfigurieren (Schwellenwerte, Kategorien, Gruppen)
   4. Vergebene Badges erscheinen im Dashboard und Profil des Teamers
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 40-01-PLAN.md -- DB-Migration und Backend-Route-Anpassung (Tabellen umbenennen, target_role)
@@ -226,7 +226,7 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 |-------|----------------|--------|-----------|
 | 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
 | 39. Events | 2/2 | Complete | 2026-03-10 |
-| 40. Badges + Aktivitaeten | 0/3 | Not started | - |
+| 40. Badges + Aktivitaeten | 1/3 | In Progress|  |
 | 41. Zertifikate + Dashboard | 0/2 | Not started | - |
 | 42. Material | 0/1 | Not started | - |
 | 43. Profil + Chat | 0/2 | Not started | - |
