@@ -76,10 +76,17 @@ const CRITERIA_TYPES = {
   },
   
   // === SPEZIAL-KRITERIEN (Selten verwendet) ===
-  bonus_points: { 
-    label: "Bonuspunkte", 
+  bonus_points: {
+    label: "Bonuspunkte",
     description: "Anzahl erhaltener Bonuspunkte",
     help: "Badge wird vergeben, wenn die angegebene Anzahl von Bonuspunkt-Vergaben erhalten wurde (es zählt die Anzahl der Vergaben, nicht die Punktesumme). Beispiel: Wert 2 = mindestens 2 Bonuspunkt-Vergaben erhalten."
+  },
+
+  // === TEAMER-SPEZIFISCH ===
+  teamer_year: {
+    label: "Teamer-Jahr",
+    description: "Aktive Teamer-Jahre",
+    help: "Badge wird vergeben wenn der Teamer in X verschiedenen Jahren aktiv war (mind. 1 Aktivitaet oder Event pro Jahr). Inaktive Jahre werden uebersprungen."
   }
 };
 
@@ -89,24 +96,34 @@ function getISOWeeksInYear(year) {
   return Math.ceil((dayOfYear - (dec28.getUTCDay() || 7) + 10) / 7);
 }
 
-const checkAndAwardBadges = async (db, konfiId) => {
+const checkAndAwardBadges = async (db, userId) => {
   try {
-    // First get konfi's organization
+    // Rolle des Users pruefen
+    const roleCheckQuery = `SELECT u.organization_id, u.display_name as name, r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`;
+    const { rows: [userInfo] } = await db.query(roleCheckQuery, [userId]);
+    if (!userInfo) return { count: 0, badges: [] };
+
+    const isTeamer = userInfo.role_name === 'teamer';
+    const organizationId = userInfo.organization_id;
+
+    // =====================================================================
+    // TEAMER-BRANCH
+    // =====================================================================
+    if (isTeamer) {
+      return await checkAndAwardTeamerBadges(db, userId, organizationId);
+    }
+
+    // =====================================================================
+    // KONFI-BRANCH (bestehende Logik)
+    // =====================================================================
     const konfiQuery = `
       SELECT kp.*, u.display_name as name, u.organization_id
       FROM konfi_profiles kp
       JOIN users u ON kp.user_id = u.id
       WHERE kp.user_id = $1
     `;
-    const { rows: [konfi] } = await db.query(konfiQuery, [konfiId]);
-    if (!konfi) return 0;
-
-    // Teamer ueberspringen - keine neuen Konfi-Badges nach Transition
-    const roleCheckQuery = `SELECT r.name as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`;
-    const { rows: [roleCheck] } = await db.query(roleCheckQuery, [konfiId]);
-    if (roleCheck && roleCheck.role_name === 'teamer') {
-      return { count: 0, badges: [] };
-    }
+    const { rows: [konfi] } = await db.query(konfiQuery, [userId]);
+    if (!konfi) return { count: 0, badges: [] };
 
     // Jahrgang-Config laden (gottesdienst_enabled/gemeinde_enabled)
     const jahrgangConfigQuery = `
@@ -115,31 +132,30 @@ const checkAndAwardBadges = async (db, konfiId) => {
       JOIN jahrgaenge j ON kp.jahrgang_id = j.id
       WHERE kp.user_id = $1
     `;
-    const { rows: [jahrgangConfig] } = await db.query(jahrgangConfigQuery, [konfiId]);
+    const { rows: [jahrgangConfig] } = await db.query(jahrgangConfigQuery, [userId]);
 
-    // Get badges for this organization only
+    // Nur Konfi-Badges laden
     const { rows: badges } = await db.query(
-      "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1", 
+      "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'konfi'",
       [konfi.organization_id]
     );
-    if (badges.length === 0) return 0;
-    
-    const { rows: earned } = await db.query("SELECT badge_id FROM user_badges WHERE user_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
+    if (badges.length === 0) return { count: 0, badges: [] };
+
+    const { rows: earned } = await db.query("SELECT badge_id FROM user_badges WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]);
     const alreadyEarned = earned.map(e => e.badge_id);
-    
+
     let newBadges = 0;
     const earnedBadgeIds = [];
     const earnedBadgeDetails = [];
-    
+
     for (const badge of badges) {
       if (alreadyEarned.includes(badge.id)) continue;
-      
+
       let earned = false;
       const criteria = JSON.parse(badge.criteria_extra || '{}');
-      
+
       switch (badge.criteria_type) {
         case 'total_points': {
-          // Nur aktive Punkte-Typen summieren
           if (!jahrgangConfig) { earned = false; break; }
           let total = 0;
           if (jahrgangConfig.gottesdienst_enabled) total += konfi.gottesdienst_points;
@@ -148,37 +164,34 @@ const checkAndAwardBadges = async (db, konfiId) => {
           break;
         }
         case 'gottesdienst_points':
-          // Uebersprungen wenn Gottesdienst deaktiviert
           if (!jahrgangConfig?.gottesdienst_enabled) { earned = false; break; }
           earned = konfi.gottesdienst_points >= badge.criteria_value;
           break;
         case 'gemeinde_points':
-          // Uebersprungen wenn Gemeinde deaktiviert
           if (!jahrgangConfig?.gemeinde_enabled) { earned = false; break; }
           earned = konfi.gemeinde_points >= badge.criteria_value;
           break;
         case 'both_categories':
-          // Braucht BEIDE Typen aktiv
           if (!jahrgangConfig?.gottesdienst_enabled || !jahrgangConfig?.gemeinde_enabled) { earned = false; break; }
           earned = konfi.gottesdienst_points >= badge.criteria_value && konfi.gemeinde_points >= badge.criteria_value;
           break;
-        
+
         case 'specific_activity':
           if (criteria.required_activity_name) {
-            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.name = $2 AND a.organization_id = $3`, [konfiId, criteria.required_activity_name, konfi.organization_id]);
+            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.name = $2 AND a.organization_id = $3`, [userId, criteria.required_activity_name, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
           }
           break;
-        
+
         case 'activity_combination':
           if (criteria.required_activities) {
-            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.organization_id = $2`, [konfiId, konfi.organization_id]);
+            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.organization_id = $2`, [userId, konfi.organization_id]);
             const completedActivities = results.map(r => r.name);
             const matchCount = criteria.required_activities.filter(req => completedActivities.includes(req)).length;
             earned = matchCount >= badge.criteria_value;
           }
           break;
-        
+
         case 'category_activities':
           if (criteria.required_category) {
             const categoryCountQuery = `
@@ -197,14 +210,13 @@ const checkAndAwardBadges = async (db, konfiId) => {
                 WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3
               ) as combined
             `;
-            const { rows: [result] } = await db.query(categoryCountQuery, [konfiId, criteria.required_category, konfi.organization_id]);
+            const { rows: [result] } = await db.query(categoryCountQuery, [userId, criteria.required_category, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
           }
           break;
-        
+
         case 'time_based':
           {
-            // Unterstützt sowohl "days" als auch "weeks" Format
             const days = criteria.days || (criteria.weeks ? criteria.weeks * 7 : null);
             if (days) {
               const timeBasedQuery = `
@@ -215,7 +227,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
                 WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
                 ORDER BY date DESC
               `;
-              const { rows: results } = await db.query(timeBasedQuery, [konfiId, konfi.organization_id]);
+              const { rows: results } = await db.query(timeBasedQuery, [userId, konfi.organization_id]);
               const now = new Date();
               const cutoff = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
               const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
@@ -223,84 +235,45 @@ const checkAndAwardBadges = async (db, konfiId) => {
             }
           }
           break;
-        
-        case 'activity_count':
+
+        case 'activity_count': {
           const activityCountQuery = `
             SELECT (
               (SELECT COUNT(*) FROM user_activities WHERE user_id = $1 AND organization_id = $2) +
               (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
             ) as count
           `;
-          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [konfiId, konfi.organization_id]);
+          const { rows: [activityCountResult] } = await db.query(activityCountQuery, [userId, konfi.organization_id]);
           earned = activityCountResult && parseInt(activityCountResult.count) >= badge.criteria_value;
           break;
+        }
 
-        case 'event_count':
+        case 'event_count': {
           const { rows: [eventCountResult] } = await db.query(
             "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
-            [konfiId, konfi.organization_id]
+            [userId, konfi.organization_id]
           );
           earned = eventCountResult && parseInt(eventCountResult.count) >= badge.criteria_value;
           break;
-        
-        case 'bonus_points':
-          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
+        }
+
+        case 'bonus_points': {
+          const { rows: [bonusResult] } = await db.query("SELECT COUNT(*) as count FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, konfi.organization_id]);
           earned = bonusResult && parseInt(bonusResult.count) >= badge.criteria_value;
           break;
+        }
 
-        case 'unique_activities':
-          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
+        case 'unique_activities': {
+          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, konfi.organization_id]);
           earned = uniqueResults.length >= badge.criteria_value;
           break;
-        
+        }
+
         case 'streak':
-          const streakQuery = `
-            SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
-            UNION ALL
-            SELECT e.event_date as date FROM event_bookings eb
-            JOIN events e ON eb.event_id = e.id
-            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
-            ORDER BY date DESC
-          `;
-          const { rows: streakResults } = await db.query(streakQuery, [konfiId, konfi.organization_id]);
-
-          function getYearWeek(date) {
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-            return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
-          }
-
-          const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(week => week && !week.includes('NaN')));
-          const sortedWeeks = Array.from(activityWeeks).sort().reverse();
-          
-          let currentStreak = 0;
-          if (sortedWeeks.length > 0) {
-            currentStreak = 1;
-            for (let i = 0; i < sortedWeeks.length - 1; i++) {
-              const thisWeek = sortedWeeks[i];
-              const nextWeek = sortedWeeks[i + 1];
-              const [year, week] = thisWeek.split('-W').map(Number);
-              let expectedYear = year;
-              let expectedWeek = week - 1;
-              if (expectedWeek === 0) {
-                expectedYear -= 1;
-                expectedWeek = getISOWeeksInYear(expectedYear);
-              }
-              const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
-              if (nextWeek === expectedWeekStr) {
-                currentStreak++;
-              } else {
-                break;
-              }
-            }
-          }
-          earned = currentStreak >= badge.criteria_value;
+          earned = await checkStreakCriteria(db, userId, konfi.organization_id, badge.criteria_value);
           break;
       }
-      
+
       if (earned) {
         earnedBadgeIds.push(badge.id);
         earnedBadgeDetails.push({
@@ -312,50 +285,345 @@ const checkAndAwardBadges = async (db, konfiId) => {
         newBadges++;
       }
     }
-    
+
     if (earnedBadgeIds.length > 0) {
-      const insertPromises = earnedBadgeIds.map(badgeId => 
-        db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [konfiId, badgeId, konfi.organization_id])
-      );
-      await Promise.all(insertPromises);
-
-      // Send push notifications for new badges
-      try {
-        for (const badge of earnedBadgeDetails) {
-          await db.query(
-            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
-            [
-              konfiId,
-              `Neues Badge erhalten! ${badge.icon}`,
-              `Herzlichen Glückwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
-              'badge_earned',
-              JSON.stringify({
-                badge_id: badge.id,
-                badge_name: badge.name,
-                badge_icon: badge.icon,
-                badge_description: badge.description
-              }),
-              konfi.organization_id
-            ]
-          );
-        }
-
-        // Send push notifications for each badge
-        for (const badge of earnedBadgeDetails) {
-          await PushService.sendBadgeEarnedToKonfi(db, konfiId, badge.name, badge.icon, badge.description);
-        }
-      } catch (notifErr) {
- console.error('Error sending badge notifications:', notifErr);
-        // Don't fail the badge award if notification fails
-      }
+      await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails);
     }
-    
+
     return { count: newBadges, badges: earnedBadgeDetails };
   } catch (err) {
- console.error('Error in checkAndAwardBadges:', err);
-    throw err; // Re-throw the error to be handled by the caller
+    console.error('Error in checkAndAwardBadges:', err);
+    throw err;
   }
 };
+
+// =====================================================================
+// Teamer-Badge-Pruefung
+// =====================================================================
+async function checkAndAwardTeamerBadges(db, userId, organizationId) {
+  // Teamer-Badges laden
+  const { rows: badges } = await db.query(
+    "SELECT * FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'teamer'",
+    [organizationId]
+  );
+  if (badges.length === 0) return { count: 0, badges: [] };
+
+  const { rows: earned } = await db.query("SELECT badge_id FROM user_badges WHERE user_id = $1 AND organization_id = $2", [userId, organizationId]);
+  const alreadyEarned = earned.map(e => e.badge_id);
+
+  // Punkte-basierte Kriterien-Typen die fuer Teamer irrelevant sind
+  const pointsCriteria = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
+
+  let newBadges = 0;
+  const earnedBadgeIds = [];
+  const earnedBadgeDetails = [];
+
+  for (const badge of badges) {
+    if (alreadyEarned.includes(badge.id)) continue;
+
+    // Punkte-basierte Kriterien sofort ueberspringen
+    if (pointsCriteria.includes(badge.criteria_type)) continue;
+
+    let badgeEarned = false;
+    const criteria = JSON.parse(badge.criteria_extra || '{}');
+
+    switch (badge.criteria_type) {
+      case 'activity_count': {
+        // Teamer-Aktivitaeten + Events zaehlen
+        const actCountQuery = `
+          SELECT (
+            (SELECT COUNT(*) FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+             WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer') +
+            (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
+          ) as count
+        `;
+        const { rows: [actResult] } = await db.query(actCountQuery, [userId, organizationId]);
+        badgeEarned = actResult && parseInt(actResult.count) >= badge.criteria_value;
+        break;
+      }
+
+      case 'event_count': {
+        const { rows: [evResult] } = await db.query(
+          "SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2",
+          [userId, organizationId]
+        );
+        badgeEarned = evResult && parseInt(evResult.count) >= badge.criteria_value;
+        break;
+      }
+
+      case 'streak':
+        badgeEarned = await checkStreakCriteria(db, userId, organizationId, badge.criteria_value);
+        break;
+
+      case 'activity_combination': {
+        let allMet = true;
+
+        // Aktivitaeten-Namen pruefen
+        if (criteria.required_activities && criteria.required_activities.length > 0) {
+          const { rows: completedActs } = await db.query(
+            `SELECT DISTINCT a.name FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+             WHERE ua.user_id = $1 AND a.organization_id = $2 AND a.target_role = 'teamer'`,
+            [userId, organizationId]
+          );
+          const actNames = completedActs.map(r => r.name);
+          const actMatch = criteria.required_activities.filter(req => actNames.includes(req)).length;
+          if (actMatch < criteria.required_activities.length) allMet = false;
+        }
+
+        // Event-Namen pruefen (falls vorhanden)
+        if (allMet && criteria.required_events && criteria.required_events.length > 0) {
+          const { rows: attendedEvents } = await db.query(
+            `SELECT DISTINCT e.title FROM event_bookings eb
+             JOIN events e ON eb.event_id = e.id
+             WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
+            [userId, organizationId]
+          );
+          const evNames = attendedEvents.map(r => r.title);
+          const evMatch = criteria.required_events.filter(req => evNames.includes(req)).length;
+          if (evMatch < criteria.required_events.length) allMet = false;
+        }
+
+        badgeEarned = allMet && (criteria.required_activities || criteria.required_events);
+        break;
+      }
+
+      case 'teamer_year': {
+        // Transition-Datum ermitteln (Fallback-Kette)
+        let startYear = null;
+
+        // 1. Versuch: user_role_history (falls Tabelle existiert)
+        try {
+          const { rows: [roleHistory] } = await db.query(
+            "SELECT created_at FROM user_role_history WHERE user_id = $1 AND new_role = 'teamer' ORDER BY created_at ASC LIMIT 1",
+            [userId]
+          );
+          if (roleHistory) {
+            startYear = new Date(roleHistory.created_at).getFullYear();
+          }
+        } catch (e) {
+          // Tabelle existiert nicht - Fallback
+        }
+
+        // 2. Fallback: aelteste Teamer-Aktivitaet
+        if (!startYear) {
+          const { rows: [firstAct] } = await db.query(
+            `SELECT MIN(ua.completed_date) as min_date FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+             WHERE ua.user_id = $1 AND a.target_role = 'teamer'`,
+            [userId]
+          );
+          if (firstAct && firstAct.min_date) {
+            startYear = new Date(firstAct.min_date).getFullYear();
+          }
+        }
+
+        // Kein Startjahr gefunden -> 0 aktive Jahre
+        if (!startYear) {
+          badgeEarned = false;
+          break;
+        }
+
+        // Alle Aktivitaets- und Event-Daten sammeln
+        const { rows: allDates } = await db.query(
+          `SELECT ua.completed_date as date FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           WHERE ua.user_id = $1 AND a.target_role = 'teamer'
+           UNION ALL
+           SELECT e.event_date as date FROM event_bookings eb
+           JOIN events e ON eb.event_id = e.id
+           WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2`,
+          [userId, organizationId]
+        );
+
+        // Jahre zaehlen in denen mind. 1 Eintrag existiert
+        const activeYears = new Set();
+        for (const row of allDates) {
+          if (row.date) {
+            activeYears.add(new Date(row.date).getFullYear());
+          }
+        }
+        // Nur Jahre ab Transition zaehlen
+        const relevantYears = Array.from(activeYears).filter(y => y >= startYear);
+        badgeEarned = relevantYears.length >= badge.criteria_value;
+        break;
+      }
+
+      case 'specific_activity':
+        if (criteria.required_activity_name) {
+          const { rows: [result] } = await db.query(
+            `SELECT COUNT(*) as count FROM user_activities ua
+             JOIN activities a ON ua.activity_id = a.id
+             WHERE ua.user_id = $1 AND a.name = $2 AND a.organization_id = $3 AND a.target_role = 'teamer'`,
+            [userId, criteria.required_activity_name, organizationId]
+          );
+          badgeEarned = result && parseInt(result.count) >= badge.criteria_value;
+        }
+        break;
+
+      case 'category_activities':
+        if (criteria.required_category) {
+          const catQuery = `
+            SELECT COUNT(*) as count FROM (
+              SELECT ua.id FROM user_activities ua
+              JOIN activities a ON ua.activity_id = a.id
+              JOIN activity_categories ac ON a.id = ac.activity_id
+              JOIN categories c ON ac.category_id = c.id
+              WHERE ua.user_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3 AND a.target_role = 'teamer'
+
+              UNION ALL
+
+              SELECT eb.id FROM event_bookings eb
+              JOIN event_categories ec ON eb.event_id = ec.event_id
+              JOIN categories c ON ec.category_id = c.id
+              WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND c.name = $2 AND c.organization_id = $3
+            ) as combined
+          `;
+          const { rows: [result] } = await db.query(catQuery, [userId, criteria.required_category, organizationId]);
+          badgeEarned = result && parseInt(result.count) >= badge.criteria_value;
+        }
+        break;
+
+      case 'unique_activities': {
+        const { rows: uniqueResults } = await db.query(
+          `SELECT DISTINCT ua.activity_id FROM user_activities ua
+           JOIN activities a ON ua.activity_id = a.id
+           WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'`,
+          [userId, organizationId]
+        );
+        badgeEarned = uniqueResults.length >= badge.criteria_value;
+        break;
+      }
+
+      case 'time_based': {
+        const days = criteria.days || (criteria.weeks ? criteria.weeks * 7 : null);
+        if (days) {
+          const tbQuery = `
+            SELECT ua.completed_date as date FROM user_activities ua
+            JOIN activities a ON ua.activity_id = a.id
+            WHERE ua.user_id = $1 AND ua.organization_id = $2 AND a.target_role = 'teamer'
+            UNION ALL
+            SELECT e.event_date as date FROM event_bookings eb
+            JOIN events e ON eb.event_id = e.id
+            WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+            ORDER BY date DESC
+          `;
+          const { rows: results } = await db.query(tbQuery, [userId, organizationId]);
+          const now = new Date();
+          const cutoff = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000));
+          const recentCount = results.filter(r => new Date(r.date) >= cutoff).length;
+          badgeEarned = recentCount >= badge.criteria_value;
+        }
+        break;
+      }
+    }
+
+    if (badgeEarned) {
+      earnedBadgeIds.push(badge.id);
+      earnedBadgeDetails.push({
+        id: badge.id,
+        name: badge.name,
+        icon: badge.icon,
+        description: badge.description
+      });
+      newBadges++;
+    }
+  }
+
+  if (earnedBadgeIds.length > 0) {
+    await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails);
+  }
+
+  return { count: newBadges, badges: earnedBadgeDetails };
+}
+
+// =====================================================================
+// Shared: Streak-Pruefung (Konfi + Teamer)
+// =====================================================================
+async function checkStreakCriteria(db, userId, organizationId, criteriaValue) {
+  const streakQuery = `
+    SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
+    UNION ALL
+    SELECT e.event_date as date FROM event_bookings eb
+    JOIN events e ON eb.event_id = e.id
+    WHERE eb.user_id = $1 AND eb.attendance_status = 'present' AND eb.organization_id = $2
+    ORDER BY date DESC
+  `;
+  const { rows: streakResults } = await db.query(streakQuery, [userId, organizationId]);
+
+  function getYearWeek(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${weekNo.toString().padStart(2, '0')}`;
+  }
+
+  const activityWeeks = new Set(streakResults.map(r => getYearWeek(new Date(r.date))).filter(week => week && !week.includes('NaN')));
+  const sortedWeeks = Array.from(activityWeeks).sort().reverse();
+
+  let currentStreak = 0;
+  if (sortedWeeks.length > 0) {
+    currentStreak = 1;
+    for (let i = 0; i < sortedWeeks.length - 1; i++) {
+      const thisWeek = sortedWeeks[i];
+      const nextWeek = sortedWeeks[i + 1];
+      const [year, week] = thisWeek.split('-W').map(Number);
+      let expectedYear = year;
+      let expectedWeek = week - 1;
+      if (expectedWeek === 0) {
+        expectedYear -= 1;
+        expectedWeek = getISOWeeksInYear(expectedYear);
+      }
+      const expectedWeekStr = `${expectedYear}-W${expectedWeek.toString().padStart(2, '0')}`;
+      if (nextWeek === expectedWeekStr) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+  }
+  return currentStreak >= criteriaValue;
+}
+
+// =====================================================================
+// Shared: Badges einfuegen und Notifications senden
+// =====================================================================
+async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails) {
+  const insertPromises = earnedBadgeIds.map(badgeId =>
+    db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [userId, badgeId, organizationId])
+  );
+  await Promise.all(insertPromises);
+
+  try {
+    for (const badge of earnedBadgeDetails) {
+      await db.query(
+        "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+        [
+          userId,
+          `Neues Badge erhalten! ${badge.icon}`,
+          `Herzlichen Glueckwunsch! Du hast das Badge "${badge.name}" erhalten: ${badge.description}`,
+          'badge_earned',
+          JSON.stringify({
+            badge_id: badge.id,
+            badge_name: badge.name,
+            badge_icon: badge.icon,
+            badge_description: badge.description
+          }),
+          organizationId
+        ]
+      );
+    }
+
+    for (const badge of earnedBadgeDetails) {
+      await PushService.sendBadgeEarnedToKonfi(db, userId, badge.name, badge.icon, badge.description);
+    }
+  } catch (notifErr) {
+    console.error('Error sending badge notifications:', notifErr);
+  }
+}
 
 
 // Migration: Tabellen umbenennen und Spalten hinzufuegen (idempotent)
