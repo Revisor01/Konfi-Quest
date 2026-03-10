@@ -17,12 +17,13 @@ import {
   IonButton,
   useIonAlert
 } from '@ionic/react';
-import { person, trophy, star, flash, logOutOutline } from 'ionicons/icons';
+import { person, trophy, star, flash, logOutOutline, ribbon } from 'ionicons/icons';
 import { logout } from '../../../services/auth';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import TeamerBadgesView from '../views/TeamerBadgesView';
 
 interface TeamerProfile {
   user: {
@@ -209,6 +210,17 @@ const TeamerProfilePage: React.FC = () => {
               )}
             </IonCardContent>
           </IonCard>
+        </IonList>
+
+        {/* Teamer-Badges */}
+        <IonList className="app-section-inset" inset={true}>
+          <IonListHeader>
+            <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+              <IonIcon icon={ribbon} />
+            </div>
+            <IonLabel>Teamer-Badges</IonLabel>
+          </IonListHeader>
+          <TeamerBadgesView />
         </IonList>
 
         {/* Konfi-Punkte */}
