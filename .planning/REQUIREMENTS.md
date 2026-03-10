@@ -12,7 +12,7 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 - [x] **ROL-01**: Admin kann einen Konfi manuell zum Teamer befoerdern
 - [x] **ROL-02**: Bei Transition bleiben Konfi-Badges als Historie erhalten
 - [x] **ROL-03**: Bei Transition werden Konfi-Punkte und Level eingefroren (sichtbar aber nicht aktiv)
-- [ ] **ROL-04**: Teamer bekommt eigene TabBar-UI mit 5 Tabs (Dashboard, Events, Chat, Material, Profil)
+- [x] **ROL-04**: Teamer bekommt eigene TabBar-UI mit 5 Tabs (Dashboard, Events, Chat, Material, Profil)
 
 ### Dashboard (DSH)
 
@@ -91,7 +91,7 @@ Deferred. Nicht in aktuellem Roadmap.
 | ROL-01 | Phase 38 | Complete |
 | ROL-02 | Phase 38 | Complete |
 | ROL-03 | Phase 38 | Complete |
-| ROL-04 | Phase 38 | Pending |
+| ROL-04 | Phase 38 | Complete |
 | DSH-01 | Phase 41 | Pending |
 | DSH-02 | Phase 41 | Pending |
 | DSH-03 | Phase 41 | Pending |

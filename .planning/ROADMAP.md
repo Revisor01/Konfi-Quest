@@ -120,7 +120,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 
 **Milestone Goal:** Teamer als vollwertige Rolle mit eigenem Dashboard, Event-Teilnahme, Badge-System und Material-Bereich einfuehren.
 
-- [ ] **Phase 38: Rolle + App-Shell** - Teamer-Transition und eigene 5-Tab-UI aufbauen
+- [x] **Phase 38: Rolle + App-Shell** - Teamer-Transition und eigene 5-Tab-UI aufbauen (completed 2026-03-10)
 - [ ] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung
 - [ ] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration
 - [ ] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events
@@ -138,7 +138,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
   2. Nach Transition sieht der Ex-Konfi eine eigene TabBar mit 5 Tabs (Dashboard, Events, Chat, Material, Profil)
   3. Konfi-Badges und Konfi-Punkte/Level bleiben nach Transition erhalten und sind im Teamer-Profil sichtbar (eingefroren)
   4. Teamer kann sich einloggen und sieht ausschliesslich die Teamer-UI, nicht die Konfi- oder Admin-UI
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 38-01-PLAN.md -- Backend: Transition-Endpoint, user.type-Erweiterung, Badge-Skip
@@ -223,7 +223,7 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 38. Rolle + App-Shell | 1/2 | In Progress|  |
+| 38. Rolle + App-Shell | 2/2 | Complete   | 2026-03-10 |
 | 39. Events | 0/2 | Not started | - |
 | 40. Badges + Aktivitaeten | 0/2 | Not started | - |
 | 41. Zertifikate + Dashboard | 0/2 | Not started | - |
