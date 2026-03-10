@@ -89,6 +89,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // GET all teamers for the admin's organization
+    router.get('/teamer', rbacVerifier, requireTeamer, async (req, res) => {
+        try {
+            const query = `
+                SELECT u.id, u.display_name as name, u.username
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE r.name = 'teamer' AND u.organization_id = $1
+                ORDER BY u.display_name
+            `;
+            const { rows } = await db.query(query, [req.user.organization_id]);
+            res.json(rows);
+        } catch (err) {
+            console.error('Database error in GET /konfis/teamer:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        }
+    });
+
     // GET a single konfi by ID with full details
     router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
         try {

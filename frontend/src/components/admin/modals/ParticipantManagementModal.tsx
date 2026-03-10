@@ -27,6 +27,7 @@ interface Konfi {
   name: string;
   jahrgang_id?: number;
   jahrgang_name?: string;
+  role_name?: string;
 }
 
 interface Participant {
@@ -117,15 +118,20 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
   const loadAvailableKonfis = async (participantsList?: Participant[]) => {
     try {
-      const response = await api.get('/admin/konfis');
-      const allKonfis = response.data;
+      const [konfisRes, teamerRes] = await Promise.all([
+        api.get('/admin/konfis'),
+        api.get('/admin/konfis/teamer')
+      ]);
+      const allKonfis = konfisRes.data.map((k: any) => ({ ...k, role_name: 'konfi' }));
+      const teamerUsers = teamerRes.data.map((u: any) => ({ ...u, role_name: 'teamer' }));
+      const allPersons = [...allKonfis, ...teamerUsers];
 
       // Aktuelle Participants nutzen (Parameter oder State)
       const activeParticipants = participantsList || currentParticipants;
 
       // Filter out already registered participants based on user_id (not booking id)
       const participantUserIds = activeParticipants.map(p => p.user_id || p.id);
-      const available = allKonfis.filter((konfi: Konfi) => !participantUserIds.includes(konfi.id));
+      const available = allPersons.filter((p: Konfi) => !participantUserIds.includes(p.id));
 
       // Extract available Jahrgaenge (wird nur fuer Dropdown gebraucht wenn Event keine Jahrgaenge hat)
       const jahrgaenge = [...new Set(
@@ -137,7 +143,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
 
       setAvailableKonfis(available);
     } catch (error) {
-      setError('Fehler beim Laden der Konfis');
+      setError('Fehler beim Laden der Personen');
     }
   };
 
@@ -356,7 +362,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                     color: '#666'
                   }}>
                     <IonIcon icon={search} style={{ fontSize: '3rem', opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Konfis gefunden</p>
+                    <p style={{ margin: '0', fontSize: '1rem' }}>Keine Personen gefunden</p>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -383,9 +389,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{konfi.name}</div>
-                              {konfi.jahrgang_name && (
-                                <div className="app-list-item__subtitle">{konfi.jahrgang_name}</div>
-                              )}
+                              <div className="app-list-item__subtitle">
+                                {konfi.role_name === 'teamer' ? 'Teamer:in' : (konfi.jahrgang_name || '')}
+                              </div>
                             </div>
                           </div>
                         </div>
