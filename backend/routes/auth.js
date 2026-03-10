@@ -578,7 +578,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
       const passwordHash = await bcrypt.hash(password, 10);
 
       // Create user in transaction
-      const client = await db.connect();
+      const client = await db.getClient();
       try {
         await client.query('BEGIN');
 

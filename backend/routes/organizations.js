@@ -316,7 +316,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Delete organization (super admin only) - Vollständige CASCADE-Löschkette
   router.delete('/:id', rbacVerifier, requireSuperAdmin, validateOrgId, async (req, res) => {
-    const client = await db.connect();
+    const client = await db.getClient();
     try {
       const { id } = req.params;
       await client.query('BEGIN');

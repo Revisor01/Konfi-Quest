@@ -236,7 +236,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const oldStatus = request.status;
       if (oldStatus === 'pending') return res.status(400).json({ error: 'Antrag ist bereits ausstehend' });
 
-      const client = await db.connect();
+      const client = await db.getClient();
       try {
         await client.query('BEGIN');
 
@@ -312,7 +312,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         if (!enabled) return res.status(400).json({ error });
       }
 
-      const client = await db.connect();
+      const client = await db.getClient();
       let newBadges = 0;
       try {
         await client.query('BEGIN');
@@ -457,7 +457,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       const { enabled, error } = await checkPointTypeEnabled(db, konfiId, activity.type);
       if (!enabled) return res.status(400).json({ error });
 
-      const client = await db.connect();
+      const client = await db.getClient();
       try {
         await client.query('BEGIN');
 

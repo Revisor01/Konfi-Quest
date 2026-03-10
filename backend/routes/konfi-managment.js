@@ -156,7 +156,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const hashedPassword = bcrypt.hashSync(password, 10);
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -237,7 +237,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
         const username = name.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.äöüß]/g, '');
 
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -337,7 +337,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     // DELETE a konfi
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -387,7 +387,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         const newPassword = generateBiblicalPassword();
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -572,7 +572,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             const updateField = getPointField(type);
 
-            const client = await db.connect();
+            const client = await db.getClient();
             try {
                 await client.query('BEGIN');
 
@@ -636,7 +636,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
     // DELETE bonus points
     router.delete('/:id/bonus-points/:bonusId', rbacVerifier, requireAdmin, async (req, res) => {
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -698,7 +698,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
             if (!ptEnabled) return res.status(400).json({ error: ptError });
 
-            const client = await db.connect();
+            const client = await db.getClient();
             try {
                 await client.query('BEGIN');
 
@@ -746,7 +746,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
     // DELETE activity for a konfi
     router.delete('/:id/activities/:activityId', rbacVerifier, requireAdmin, async (req, res) => {
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
@@ -799,7 +799,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.post('/:id/promote-teamer', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const konfiId = parseInt(req.params.id);
 
-        const client = await db.connect();
+        const client = await db.getClient();
         try {
             await client.query('BEGIN');
 
