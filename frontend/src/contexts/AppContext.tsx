@@ -59,7 +59,7 @@ const sendTokenToServer = async (token: string) => {
 
 interface User {
   id: number;
-  type: 'admin' | 'konfi' | 'user';
+  type: 'admin' | 'konfi' | 'teamer' | 'user';
   display_name: string;
   username?: string;
   email?: string;
@@ -322,6 +322,7 @@ useEffect(() => {
 
           const notificationType = action.notification.data?.type;
           const userType = user?.type || 'konfi';
+          const routePrefix = userType === 'admin' ? '/admin' : userType === 'teamer' ? '/teamer' : '/konfi';
 
           // Use timeout to ensure navigation happens after app is fully loaded
           setTimeout(() => {
@@ -331,20 +332,19 @@ useEffect(() => {
               case 'chat':
                 // Navigate to specific chat room
                 if (action.notification.data?.roomId) {
-                  const chatUrl = userType === 'admin' ? '/admin/chat' : '/konfi/chat';
-                  targetUrl = `${chatUrl}?room=${action.notification.data.roomId}`;
+                  targetUrl = `${routePrefix}/chat?room=${action.notification.data.roomId}`;
                 }
                 break;
 
               case 'activity_request_status':
               case 'new_activity_request':
-                // Navigate to requests page
-                targetUrl = userType === 'admin' ? '/admin/requests' : '/konfi/requests';
+                // Navigate to requests page (Teamer hat keine Requests-Page, Dashboard stattdessen)
+                targetUrl = userType === 'admin' ? '/admin/requests' : userType === 'teamer' ? '/teamer/dashboard' : '/konfi/requests';
                 break;
 
               case 'badge_earned':
-                // Navigate to badges page
-                targetUrl = userType === 'admin' ? '/admin/badges' : '/konfi/badges';
+                // Navigate to badges page (Teamer hat keine Badges-Page, Profil stattdessen)
+                targetUrl = userType === 'admin' ? '/admin/badges' : userType === 'teamer' ? '/teamer/profile' : '/konfi/badges';
                 break;
 
               case 'event_registered':
@@ -355,25 +355,25 @@ useEffect(() => {
               case 'event_reminder':
               case 'event_cancelled':
                 // Navigate to events page
-                targetUrl = userType === 'admin' ? '/admin/events' : '/konfi/events';
+                targetUrl = `${routePrefix}/events`;
                 break;
 
               case 'level_up':
               case 'activity_assigned':
               case 'bonus_points':
                 // Navigate to dashboard (points/level related)
-                targetUrl = userType === 'admin' ? '/admin/konfis' : '/konfi/dashboard';
+                targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
                 break;
 
               case 'event_unregistration':
               case 'events_pending_approval':
                 // Navigate to events page (Admin: Event-Abmeldungen / ausstehende Verbuchungen)
-                targetUrl = userType === 'admin' ? '/admin/events' : '/konfi/events';
+                targetUrl = userType === 'admin' ? '/admin/events' : `${routePrefix}/events`;
                 break;
 
               case 'new_konfi_registration':
                 // Navigate to konfis page (Admin: neue Registrierung)
-                targetUrl = userType === 'admin' ? '/admin/konfis' : '/konfi/dashboard';
+                targetUrl = userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
                 break;
 
               default:

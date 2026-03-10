@@ -367,6 +367,7 @@ const adminKonfisRoutes = require('./routes/konfi-managment');
 const adminJahrgaengeRoutes = require('./routes/jahrgaenge');
 const adminCategoriesRoutes = require('./routes/categories');
 
+const teamerRoutes = require('./routes/teamer');
 const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
@@ -430,6 +431,7 @@ app.use('/api/roles', rolesRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, roleHelpers));
 
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/teamer', teamerRoutes(db, rbacVerifier, roleHelpers));
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION

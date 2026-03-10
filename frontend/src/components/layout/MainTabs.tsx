@@ -54,6 +54,10 @@ import KonfiEventDetailPage from '../konfi/pages/KonfiEventDetailPage';
 import KonfiBadgesPage from '../konfi/pages/KonfiBadgesPage';
 import KonfiRequestsPage from '../konfi/pages/KonfiRequestsPage';
 import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
+import TeamerDashboardPage from '../teamer/pages/TeamerDashboardPage';
+import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
+import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
+import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
@@ -93,7 +97,7 @@ const MainTabs: React.FC = () => {
   // Funktion, um zu prüfen, ob die Tab-Bar angezeigt werden soll
   const isTabBarHidden = (path: string) => {
     // Verstecke die Tab-Bar, wenn der Pfad ein Chat-Raum ist
-    return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/');
+    return path.startsWith('/admin/chat/room/') || path.startsWith('/konfi/chat/room/') || path.startsWith('/teamer/chat/room/');
   };
 
   return isSuperAdmin ? (
@@ -180,6 +184,54 @@ const MainTabs: React.FC = () => {
             <IonTabButton tab="admin-settings" href="/admin/settings">
               <IonIcon icon={ellipsisHorizontal} />
               <IonLabel>Mehr</IonLabel>
+            </IonTabButton>
+          </IonTabBar>
+        )}
+      </IonTabs>
+    </ModalProvider>
+  ) : user.type === 'teamer' ? (
+    // Teamer Tabs
+    <ModalProvider>
+      <IonTabs>
+        <IonRouterOutlet>
+          <Route exact path="/teamer" render={() => <Redirect to="/teamer/dashboard" />} />
+          <Route exact path="/teamer/dashboard" component={TeamerDashboardPage} />
+          <Route exact path="/teamer/chat" component={ChatOverviewPage} />
+          <Route path="/teamer/chat/room/:roomId" render={(props) => {
+            const roomId = parseInt(props.match.params.roomId);
+            return <ChatRoomView roomId={roomId} onBack={() => props.history.goBack()} />;
+          }} />
+          <Route exact path="/teamer/events" component={TeamerEventsPage} />
+          <Route exact path="/teamer/material" component={TeamerMaterialPage} />
+          <Route exact path="/teamer/profile" component={TeamerProfilePage} />
+          <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
+        </IonRouterOutlet>
+        {!isTabBarHidden(location.pathname) && (
+          <IonTabBar slot="bottom">
+            <IonTabButton tab="teamer-dashboard" href="/teamer/dashboard">
+              <IonIcon icon={home} />
+              <IonLabel>Start</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="teamer-chat" href="/teamer/chat">
+              <IonIcon icon={chatbubbles} />
+              <IonLabel>Chat</IonLabel>
+              {chatUnreadTotal > 0 && (
+                <IonBadge color="danger">
+                  {chatUnreadTotal > 9 ? '9+' : chatUnreadTotal}
+                </IonBadge>
+              )}
+            </IonTabButton>
+            <IonTabButton tab="teamer-events" href="/teamer/events">
+              <IonIcon icon={calendar} />
+              <IonLabel>Events</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="teamer-material" href="/teamer/material">
+              <IonIcon icon={documentIcon} />
+              <IonLabel>Material</IonLabel>
+            </IonTabButton>
+            <IonTabButton tab="teamer-profile" href="/teamer/profile">
+              <IonIcon icon={person} />
+              <IonLabel>Profil</IonLabel>
             </IonTabButton>
           </IonTabBar>
         )}

@@ -26,7 +26,7 @@ import LazyImage from './LazyImage';
 
 interface MessageBubbleUser {
   id: number;
-  type: 'admin' | 'konfi' | 'user';
+  type: 'admin' | 'konfi' | 'teamer' | 'user';
   display_name: string;
   role_name?: string;
 }
