@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   IonCard,
   IonCardContent,
@@ -25,10 +25,12 @@ import {
   ribbonOutline,
   filterOutline,
   search,
-  calendarOutline
+  calendarOutline,
+  ribbon
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
+import api from '../../services/api';
 
 interface Konfi {
   id: number;
@@ -82,6 +84,27 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
+  const [teamers, setTeamers] = useState<any[]>([]);
+  const [teamerLoading, setTeamerLoading] = useState(false);
+
+  // Teamer laden wenn "Teamer:innen" ausgewaehlt wird
+  useEffect(() => {
+    if (selectedJahrgang === 'teamer') {
+      const loadTeamers = async () => {
+        setTeamerLoading(true);
+        try {
+          const response = await api.get('/konfi-managment/teamer');
+          setTeamers(response.data || []);
+        } catch (err) {
+          console.error('Error loading teamers:', err);
+          setTeamers([]);
+        } finally {
+          setTeamerLoading(false);
+        }
+      };
+      loadTeamers();
+    }
+  }, [selectedJahrgang]);
 
   const getTotalPoints = (konfi: Konfi) => {
     const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
@@ -190,6 +213,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
               {jahrgaenge.map(jg => (
                 <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
               ))}
+              <IonSelectOption value="teamer">Teamer:innen</IonSelectOption>
             </IonSelect>
           </IonItem>
           {/* Sortierung */}
@@ -209,7 +233,83 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Konfis Liste */}
+      {/* Teamer-Liste */}
+      {selectedJahrgang === 'teamer' ? (
+        <ListSection
+          icon={ribbon}
+          title="Teamer:innen"
+          count={filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).length}
+          iconColorClass="primary"
+          isEmpty={filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).length === 0}
+          emptyIcon={ribbon}
+          emptyTitle="Keine Teamer:innen gefunden"
+          emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
+          emptyIconColor="#5b21b6"
+        >
+          {filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
+            <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
+              <IonItem
+                button
+                onClick={() => onSelectKonfi(teamer)}
+                detail={false}
+                lines="none"
+                style={{
+                  '--background': 'transparent',
+                  '--padding-start': '0',
+                  '--padding-end': '0',
+                  '--inner-padding-end': '0',
+                  '--inner-border-width': '0',
+                  '--border-style': 'none',
+                  '--min-height': 'auto'
+                }}
+              >
+                <div
+                  className="app-list-item app-list-item--primary"
+                  style={{
+                    width: '100%',
+                    borderLeftColor: '#5b21b6',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div
+                    className="app-corner-badge"
+                    style={{ backgroundColor: '#5b21b6' }}
+                  >
+                    TEAM
+                  </div>
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                      <div
+                        className="app-icon-circle app-icon-circle--lg"
+                        style={{ backgroundColor: '#5b21b6', color: 'white', fontWeight: '600' }}
+                      >
+                        {(teamer.display_name || teamer.name || '??').trim().split(/\s+/).length === 1
+                          ? (teamer.display_name || teamer.name || '??').substring(0, 2).toUpperCase()
+                          : ((teamer.display_name || teamer.name || '??').trim().split(/\s+/)[0][0] +
+                             (teamer.display_name || teamer.name || '??').trim().split(/\s+/).slice(-1)[0][0]).toUpperCase()
+                        }
+                      </div>
+                      <div className="app-list-item__content">
+                        <div className="app-list-item__title">
+                          {teamer.display_name || teamer.name}
+                        </div>
+                        <div className="app-list-item__meta">
+                          <span className="app-list-item__meta-item">
+                            <IonIcon icon={ribbonOutline} style={{ color: '#5b21b6' }} />
+                            {teamer.badge_count || teamer.badgeCount || 0} Badges
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </IonItem>
+            </IonItemSliding>
+          ))}
+        </ListSection>
+      ) : (
+      /* Konfis Liste */
       <ListSection
         icon={peopleOutline}
         title="Konfirmanden"
@@ -371,6 +471,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                   );
                 })}
       </ListSection>
+      )}
     </>
   );
 };

@@ -40,6 +40,7 @@ interface Category {
 interface ActivityManagementModalProps {
   activity?: Activity | null;
   activityId?: number | null;
+  targetRole?: 'konfi' | 'teamer';
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
@@ -48,6 +49,7 @@ interface ActivityManagementModalProps {
 const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   activity,
   activityId,
+  targetRole = 'konfi',
   onClose,
   onSuccess,
   dismiss
@@ -86,9 +88,10 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
   const [formData, setFormData] = useState({
     name: '',
-    points: 1,
-    type: 'gottesdienst' as 'gottesdienst' | 'gemeinde',
-    category_ids: [] as number[]
+    points: targetRole === 'teamer' ? 0 : 1,
+    type: (targetRole === 'teamer' ? '' : 'gottesdienst') as string,
+    category_ids: [] as number[],
+    target_role: targetRole
   });
 
   // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
@@ -112,7 +115,8 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
           name: activityData.name,
           points: activityData.points,
           type: activityData.type,
-          category_ids: categoryIds
+          category_ids: categoryIds,
+          target_role: activityData.target_role || targetRole
         });
       } else {
  console.error('Activity not found with ID:', id);
@@ -140,16 +144,18 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
             name: activity.name,
             points: activity.points,
             type: activity.type,
-            category_ids: activity.categories?.map((cat: Category) => cat.id) || []
+            category_ids: activity.categories?.map((cat: Category) => cat.id) || [],
+            target_role: (activity as any).target_role || targetRole
           });
         } else {
           // Reset form for new activity
           setCurrentActivity(null);
           setFormData({
             name: '',
-            points: 1,
-            type: 'gottesdienst',
-            category_ids: []
+            points: targetRole === 'teamer' ? 0 : 1,
+            type: targetRole === 'teamer' ? '' : 'gottesdienst',
+            category_ids: [],
+            target_role: targetRole
           });
         }
       } catch (error) {
@@ -186,11 +192,12 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
     setLoading(true);
     try {
-      const payload = {
+      const payload: any = {
         name: formData.name.trim(),
-        points: formData.points,
-        type: formData.type,
-        category_ids: formData.category_ids
+        points: formData.target_role === 'teamer' ? 0 : formData.points,
+        type: formData.target_role === 'teamer' ? null : formData.type,
+        category_ids: formData.category_ids,
+        target_role: formData.target_role
       };
 
       if (currentActivity) {
@@ -271,6 +278,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   />
                 </IonItem>
 
+                {formData.target_role !== 'teamer' && (
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel position="stacked" style={{ marginBottom: '8px' }}>Punkte *</IonLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '8px 0' }}>
@@ -313,45 +321,50 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     </IonButton>
                   </div>
                 </IonItem>
+                )}
 
-                <IonItem lines="none" style={{ '--background': 'transparent', paddingTop: '8px' }}>
-                  <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666' }}>Typ *</IonLabel>
-                </IonItem>
               </IonList>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div
-                  className="app-list-item"
-                  onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
-                  style={{
-                    cursor: loading ? 'default' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '0',
-                    borderLeftColor: '#3b82f6',
-                    background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
-                  }}
-                >
-                  <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+              {formData.target_role !== 'teamer' && (
+              <>
+                <div style={{ padding: '8px 0 0' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', padding: '0 16px' }}>Typ *</span>
                 </div>
-                <div
-                  className="app-list-item"
-                  onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
-                  style={{
-                    cursor: loading ? 'default' : 'pointer',
-                    opacity: loading ? 0.6 : 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '0',
-                    borderLeftColor: '#059669',
-                    background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
-                  }}
-                >
-                  <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div
+                    className="app-list-item"
+                    onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
+                    style={{
+                      cursor: loading ? 'default' : 'pointer',
+                      opacity: loading ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0',
+                      borderLeftColor: '#3b82f6',
+                      background: formData.type === 'gottesdienst' ? 'rgba(59, 130, 246, 0.1)' : undefined
+                    }}
+                  >
+                    <span style={{ fontWeight: '500', color: '#333' }}>Gottesdienst</span>
+                  </div>
+                  <div
+                    className="app-list-item"
+                    onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
+                    style={{
+                      cursor: loading ? 'default' : 'pointer',
+                      opacity: loading ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: '0',
+                      borderLeftColor: '#059669',
+                      background: formData.type === 'gemeinde' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                    }}
+                  >
+                    <span style={{ fontWeight: '500', color: '#333' }}>Gemeinde</span>
+                  </div>
                 </div>
-              </div>
+              </>
+              )}
             </IonCardContent>
         </IonCard>
       </IonList>

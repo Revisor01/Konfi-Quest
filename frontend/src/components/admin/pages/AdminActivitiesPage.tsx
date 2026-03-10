@@ -10,6 +10,9 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -39,17 +42,19 @@ const AdminActivitiesPage: React.FC = () => {
   // State
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
+
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
 
-  // Modal mit useIonModal Hook 
+  // Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityManagementModal, {
     activity: selectedActivity,
     activityId: selectedActivity?.id || null,
+    targetRole: selectedRole,
     onClose: () => dismissActivityModalHook(),
     onSuccess: () => {
       dismissActivityModalHook();
@@ -81,14 +86,15 @@ const AdminActivitiesPage: React.FC = () => {
   }, []);
 
 
-  const loadActivities = async () => {
+  const loadActivities = async (role?: 'konfi' | 'teamer') => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/activities');
+      const targetRole = role || selectedRole;
+      const response = await api.get(`/admin/activities?target_role=${targetRole}`);
       setActivities(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Aktivitäten');
- console.error('Error loading activities:', err);
+      console.error('Error loading activities:', err);
     } finally {
       setLoading(false);
     }
@@ -127,9 +133,14 @@ const AdminActivitiesPage: React.FC = () => {
 
   const presentActivityModal = () => {
     setSelectedActivity(null);
-    presentActivityModalHook({ 
-      presentingElement: presentingElement || pageRef.current || undefined 
+    presentActivityModalHook({
+      presentingElement: presentingElement || pageRef.current || undefined
     });
+  };
+
+  const handleRoleChange = (role: 'konfi' | 'teamer') => {
+    setSelectedRole(role);
+    loadActivities(role);
   };
 
   // Rollen-basierte Berechtigungen (org_admin und admin duerfen alles)
@@ -171,7 +182,24 @@ const AdminActivitiesPage: React.FC = () => {
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
+
+        {/* Konfi/Teamer Toggle */}
+        <div className="app-segment-wrapper" style={{ padding: '8px 16px 0' }}>
+          <IonSegment
+            value={selectedRole}
+            onIonChange={(e) => handleRoleChange(e.detail.value as 'konfi' | 'teamer')}
+          >
+            <IonSegmentButton value="konfi">
+              <IonLabel>Konfis</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="teamer">
+              <IonLabel style={selectedRole === 'teamer' ? { color: '#5b21b6', fontWeight: '700' } : {}}>
+                Teamer:innen
+              </IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
+
         {loading ? (
           <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (

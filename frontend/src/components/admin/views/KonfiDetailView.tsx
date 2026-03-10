@@ -69,6 +69,8 @@ interface Konfi {
   totalBonus?: number;
   badgeCount?: number;
   activities_count?: number;
+  role_name?: string;
+  user_type?: string;
 }
 
 interface Activity {
