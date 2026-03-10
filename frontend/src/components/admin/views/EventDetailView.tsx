@@ -589,6 +589,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {(() => {
                 const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
                 const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+                const konfiPresent = konfiOnly.filter(p => p.attendance_status === 'present').length;
                 const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
                 return (
                   <>
@@ -596,7 +597,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                       <div className="app-info-row__content">
                         {eventData?.mandatory
-                          ? `${konfiConfirmed}/${konfiOnly.length} Konfis`
+                          ? `${konfiPresent}/${konfiOnly.length} Konfis`
                           : `${konfiConfirmed} / ${(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E'} Konfis`
                         }
                       </div>
@@ -1130,7 +1131,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               )}
 
               {/* Teamer:innen Sektion */}
-              {teamerParticipants.length > 0 && (
+              {(teamerParticipants.length > 0 || eventData?.teamer_needed || eventData?.teamer_only) && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
                     <div className="app-section-icon app-section-icon--events">
@@ -1141,6 +1142,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   <IonCard className="app-card">
                     <IonCardContent className="app-card-content">
                       {teamerParticipants.map(renderParticipant)}
+                      <div className="app-event-detail__add-button-wrapper">
+                        <IonButton
+                          expand="block"
+                          fill="outline"
+                          onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                        >
+                          <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
+                          Teamer:in hinzufügen
+                        </IonButton>
+                      </div>
                     </IonCardContent>
                   </IonCard>
                 </IonList>
