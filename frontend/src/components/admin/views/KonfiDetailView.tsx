@@ -986,7 +986,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         {/* Teamer-Beförderung */}
         <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
+            <div className="app-section-icon app-section-icon--purple">
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Rolle ändern</IonLabel>
@@ -995,7 +995,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             <IonCardContent className="app-card-content">
               <IonButton
                 expand="block"
-                color="danger"
+                style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
                 onClick={handlePromoteToTeamer}
               >
                 <IonIcon icon={ribbon} slot="start" />
