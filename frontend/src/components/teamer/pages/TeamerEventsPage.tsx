@@ -388,9 +388,8 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.bring_items && (
                   <div className="app-info-row">
                     <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                    <div>
-                      <div className="app-info-row__content app-list-item__title">Was mitbringen</div>
-                      <div className="app-info-row__sublabel">{selectedEvent.bring_items}</div>
+                    <div className="app-info-row__content">
+                      {selectedEvent.bring_items}
                     </div>
                   </div>
                 )}
@@ -679,7 +678,7 @@ const TeamerEventsPage: React.FC = () => {
                               {/* Was mitbringen */}
                               {event.bring_items && (
                                 <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                                  <span className="app-list-item__meta-item" style={{ color: '#8b5cf6', fontWeight: '500' }}>
+                                  <span className="app-list-item__meta-item">
                                     <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
                                     {event.bring_items}
                                   </span>
