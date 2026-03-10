@@ -849,7 +849,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             // 6. konfi_profiles BLEIBT bestehen
             // 7. konfi_badges BLEIBEN bestehen
-            // 8. Chat-Teilnahmen BLEIBEN bestehen
+            // 8. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
+            await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
+            await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
 
             await client.query('COMMIT');
 
