@@ -190,6 +190,7 @@ interface Category {
 
 interface BadgeManagementModalProps {
   badgeId?: number | null;
+  targetRole?: 'konfi' | 'teamer';
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -208,13 +209,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   specific_activity: '#ffce00',
   streak: '#eb445a',
   time_based: '#8e8e93',
-  event_count: '#e63946'
+  event_count: '#e63946',
+  teamer_year: '#5b21b6'
 };
 
 const getCategoryColor = (criteriaType: string) => CATEGORY_COLORS[criteriaType] || '#667eea';
 
 const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   badgeId,
+  targetRole = 'konfi',
   onClose,
   onSuccess
 }) => {
@@ -241,17 +244,22 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     }
   };
 
+  // Punkte-basierte Kriterien - bei Teamer ausblenden
+  const POINTS_CRITERIA_TYPES = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
+
   // Form data
+  const defaultCriteriaType = targetRole === 'teamer' ? 'activity_count' : 'total_points';
   const [formData, setFormData] = useState({
     name: '',
     icon: 'trophy',
     description: '',
-    criteria_type: 'total_points',
-    criteria_value: 10,
+    criteria_type: defaultCriteriaType,
+    criteria_value: targetRole === 'teamer' ? 5 : 10,
     criteria_extra: '{}',
     is_active: true,
     is_hidden: false,
-    color: getCategoryColor('total_points')
+    color: getCategoryColor(defaultCriteriaType),
+    target_role: targetRole
   });
 
   // isDirty nach Initialisierung bei jeder formData-Aenderung setzen
@@ -284,7 +292,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     'event_count': 'Event-Teilnahmen',
     'bonus_points': 'Bonuspunkte',
     'streak': 'Serie',
-    'unique_activities': 'Einzigartige Aktivitäten'
+    'unique_activities': 'Einzigartige Aktivitäten',
+    'teamer_year': 'Teamer-Jahre'
   };
 
   useEffect(() => {
@@ -363,7 +372,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           criteria_extra: badge.criteria_extra || '{}',
           is_active: badge.is_active !== undefined ? badge.is_active : true,
           is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
-          color: badge.color || '#667eea'
+          color: badge.color || '#667eea',
+          target_role: badge.target_role || targetRole
         };
 
         setFormData(newFormData);
@@ -711,6 +721,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         return 'Anzahl (Aufeinanderfolgende Wochen)';
       case 'time_based':
         return 'Anzahl (Aktivitäten & Events im Zeitraum)';
+      case 'teamer_year':
+        return 'Anzahl (Aktive Jahre als Teamer:in)';
       default:
         return 'Wert';
     }
@@ -950,7 +962,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonItem>
                 <div slot="content" style={{ padding: '8px 0' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {Object.entries(criteriaTypes).map(([value, type]: [string, any]) => {
+                    {Object.entries(criteriaTypes)
+                      .filter(([value]) => {
+                        // Bei Teamer: Punkte-basierte Kriterien ausblenden
+                        if (formData.target_role === 'teamer' && POINTS_CRITERIA_TYPES.includes(value)) return false;
+                        // teamer_year NUR bei Teamer anzeigen
+                        if (value === 'teamer_year' && formData.target_role !== 'teamer') return false;
+                        return true;
+                      })
+                      .map(([value, type]: [string, any]) => {
                       const isSelected = formData.criteria_type === value;
                       // Remove emojis from label
                       const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();

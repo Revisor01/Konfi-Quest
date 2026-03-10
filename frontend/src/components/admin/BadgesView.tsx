@@ -186,6 +186,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'bonus_points': return 'Bonuspunkte';
       case 'streak': return 'Serie';
       case 'unique_activities': return 'Einzigartige Aktivitäten';
+      case 'teamer_year': return 'Teamer-Jahre';
       default: return type;
     }
   };
@@ -205,6 +206,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       case 'bonus_points': return star;
       case 'streak': return flame;
       case 'unique_activities': return sparkles;
+      case 'teamer_year': return calendar;
       default: return flash;
     }
   };
@@ -246,6 +248,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         return `${badge.criteria_value} Wochen am Stück`;
       case 'unique_activities':
         return `${badge.criteria_value} verschiedene`;
+      case 'teamer_year':
+        return `${badge.criteria_value} Jahr${badge.criteria_value !== 1 ? 'e' : ''} als Teamer:in`;
       default:
         return `Wert: ${badge.criteria_value}`;
     }

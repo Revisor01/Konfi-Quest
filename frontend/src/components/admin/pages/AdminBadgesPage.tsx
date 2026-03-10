@@ -10,6 +10,9 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -34,16 +37,18 @@ interface Badge {
   is_hidden: boolean;
   earned_count: number;
   created_at: string;
+  target_role?: string;
 }
 
 const AdminBadgesPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-badges');
-  
+
   // State
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
+
   // Modal state
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
@@ -54,6 +59,7 @@ const AdminBadgesPage: React.FC = () => {
   // Modal mit useIonModal Hook
   const [presentBadgeModalHook, dismissBadgeModalHook] = useIonModal(BadgeManagementModal, {
     badgeId: modalBadgeId,
+    targetRole: selectedRole,
     onClose: () => {
       dismissBadgeModalHook();
       setSelectedBadge(null);
@@ -90,14 +96,15 @@ const AdminBadgesPage: React.FC = () => {
     };
   }, []);
 
-  const loadBadges = async () => {
+  const loadBadges = async (role?: 'konfi' | 'teamer') => {
     setLoading(true);
     try {
-      const response = await api.get('/admin/badges');
+      const targetRole = role || selectedRole;
+      const response = await api.get(`/admin/badges?target_role=${targetRole}`);
       setBadges(response.data);
     } catch (err) {
       setError('Fehler beim Laden der Badges');
- console.error('Error loading badges:', err);
+      console.error('Error loading badges:', err);
     } finally {
       setLoading(false);
     }
@@ -146,6 +153,11 @@ const AdminBadgesPage: React.FC = () => {
     });
   };
 
+  const handleRoleChange = (role: 'konfi' | 'teamer') => {
+    setSelectedRole(role);
+    loadBadges(role);
+  };
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -176,7 +188,24 @@ const AdminBadgesPage: React.FC = () => {
         }}>
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
-        
+
+        {/* Konfi/Teamer Toggle */}
+        <div className="app-segment-wrapper" style={{ padding: '8px 16px 0' }}>
+          <IonSegment
+            value={selectedRole}
+            onIonChange={(e) => handleRoleChange(e.detail.value as 'konfi' | 'teamer')}
+          >
+            <IonSegmentButton value="konfi">
+              <IonLabel>Konfis</IonLabel>
+            </IonSegmentButton>
+            <IonSegmentButton value="teamer">
+              <IonLabel style={selectedRole === 'teamer' ? { color: '#5b21b6', fontWeight: '700' } : {}}>
+                Teamer:innen
+              </IonLabel>
+            </IonSegmentButton>
+          </IonSegment>
+        </div>
+
         {loading ? (
           <LoadingSpinner message="Badges werden geladen..." />
         ) : (
