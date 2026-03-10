@@ -394,7 +394,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{konfi.name}</div>
                               <div className="app-list-item__subtitle">
-                                {konfi.role_name === 'teamer' ? 'Teamer:in' : (konfi.jahrgang_name || '')}
+                                {konfi.role_name === 'teamer'
+                                  ? `Teamer:in${konfi.jahrgang_name ? ` \u00B7 ${konfi.jahrgang_name}` : ''}`
+                                  : (konfi.jahrgang_name || '')}
                               </div>
                             </div>
                           </div>

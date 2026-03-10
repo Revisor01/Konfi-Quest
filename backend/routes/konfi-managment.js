@@ -93,10 +93,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.get('/teamer', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             const query = `
-                SELECT u.id, u.display_name as name, u.username
+                SELECT u.id, u.display_name as name, u.username,
+                       STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
+                LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
+                LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id
                 WHERE r.name = 'teamer' AND u.organization_id = $1
+                GROUP BY u.id, u.display_name, u.username
                 ORDER BY u.display_name
             `;
             const { rows } = await db.query(query, [req.user.organization_id]);
