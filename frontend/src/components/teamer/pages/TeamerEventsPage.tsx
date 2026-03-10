@@ -574,23 +574,40 @@ const TeamerEventsPage: React.FC = () => {
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Status Corner Badge */}
-                        {showBadge && (
-                          <div
-                            className="app-corner-badge"
-                            style={{ backgroundColor: statusColor }}
-                          >
-                            {statusText}
-                          </div>
-                        )}
-
-                        {/* TEAM Corner Badge - oben links (gespiegelt) */}
-                        {isTeamerEvent && (
-                          <div
-                            className="app-corner-badge"
-                            style={{ backgroundColor: '#5b21b6', right: 'auto', left: 0, borderRadius: '10px 0 10px 0' }}
-                          >
-                            TEAM
+                        {/* Corner Badges Container - oben rechts */}
+                        {(showBadge || isTeamerEvent) && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            zIndex: 10
+                          }}>
+                            {isTeamerEvent && (
+                              <>
+                                <div style={{
+                                  backgroundColor: '#5b21b6',
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '600',
+                                  padding: '4px 8px',
+                                  borderRadius: '0 0 8px 8px',
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.3px'
+                                }}>
+                                  TEAM
+                                </div>
+                                {showBadge && (
+                                  <div style={{ width: '2px', background: 'white' }} />
+                                )}
+                              </>
+                            )}
+                            {showBadge && (
+                              <div className="app-corner-badge" style={{ backgroundColor: statusColor, position: 'static' }}>
+                                {statusText}
+                              </div>
+                            )}
                           </div>
                         )}
 
