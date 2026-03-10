@@ -150,9 +150,13 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   const filteredKonfis = availableKonfis.filter(konfi => {
     // Search filter
     const matchesSearch = konfi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (konfi.role_name === 'teamer' && 'teamer'.includes(searchTerm.toLowerCase()));
 
     if (!matchesSearch) return false;
+
+    // Teamer sind immer sichtbar (kein Jahrgang-Filter)
+    if (konfi.role_name === 'teamer') return true;
 
     // Wenn Event Jahrgänge hat, nur diese Konfis zeigen (außer "alle" gewählt)
     if (hasEventJahrgaenge && selectedJahrgang === 'alle') {
