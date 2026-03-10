@@ -346,7 +346,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                           </div>
                           {event.jahrgang_names && (
                             <div className="app-list-item__subtitle" style={{ color: shouldGrayOut ? '#999' : undefined }}>
-                              {event.jahrgang_names}
+                              {event.jahrgang_names.split(',').join(' \u00B7 ')}
                             </div>
                           )}
 
@@ -362,7 +362,7 @@ const EventsView: React.FC<EventsViewProps> = ({
                             {(event.teamer_count || 0) > 0 && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#5b21b6' }} />
-                                {event.teamer_count} Teamer
+                                {event.teamer_count} Team
                               </span>
                             )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
