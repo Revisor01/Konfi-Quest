@@ -358,8 +358,86 @@ const checkAndAwardBadges = async (db, konfiId) => {
 };
 
 
+// Migration: Tabellen umbenennen und Spalten hinzufuegen (idempotent)
+async function runMigrations(db) {
+  try {
+    // 1. konfi_badges -> user_badges (nur wenn alte Tabelle noch existiert)
+    const { rows: [oldBadgesTable] } = await db.query(
+      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'konfi_badges') as exists"
+    );
+    if (oldBadgesTable.exists) {
+      // Pruefen ob user_badges schon existiert
+      const { rows: [newBadgesTable] } = await db.query(
+        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_badges') as exists"
+      );
+      if (!newBadgesTable.exists) {
+        await db.query('ALTER TABLE konfi_badges RENAME TO user_badges');
+        console.log('Migration: konfi_badges -> user_badges');
+      }
+    }
+
+    // 2. konfi_activities -> user_activities (nur wenn alte Tabelle noch existiert)
+    const { rows: [oldActivitiesTable] } = await db.query(
+      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'konfi_activities') as exists"
+    );
+    if (oldActivitiesTable.exists) {
+      const { rows: [newActivitiesTable] } = await db.query(
+        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_activities') as exists"
+      );
+      if (!newActivitiesTable.exists) {
+        await db.query('ALTER TABLE konfi_activities RENAME TO user_activities');
+        console.log('Migration: konfi_activities -> user_activities');
+      }
+    }
+
+    // 3. user_badges: konfi_id -> user_id (nur wenn Spalte noch konfi_id heisst)
+    const { rows: badgeCols } = await db.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'user_badges' AND column_name = 'konfi_id'"
+    );
+    if (badgeCols.length > 0) {
+      await db.query('ALTER TABLE user_badges RENAME COLUMN konfi_id TO user_id');
+      console.log('Migration: user_badges.konfi_id -> user_id');
+    }
+
+    // 4. user_activities: konfi_id -> user_id (nur wenn Spalte noch konfi_id heisst)
+    const { rows: actCols } = await db.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name = 'user_activities' AND column_name = 'konfi_id'"
+    );
+    if (actCols.length > 0) {
+      await db.query('ALTER TABLE user_activities RENAME COLUMN konfi_id TO user_id');
+      console.log('Migration: user_activities.konfi_id -> user_id');
+    }
+
+    // 5. activities: target_role Spalte hinzufuegen
+    await db.query("ALTER TABLE activities ADD COLUMN IF NOT EXISTS target_role VARCHAR(10) DEFAULT 'konfi'");
+
+    // 6. custom_badges: target_role Spalte hinzufuegen
+    await db.query("ALTER TABLE custom_badges ADD COLUMN IF NOT EXISTS target_role VARCHAR(10) DEFAULT 'konfi'");
+
+    // 7. UNIQUE Constraint auf user_activities entfernen falls vorhanden
+    const { rows: constraints } = await db.query(`
+      SELECT constraint_name FROM information_schema.table_constraints
+      WHERE table_name = 'user_activities' AND constraint_type = 'UNIQUE'
+    `);
+    for (const c of constraints) {
+      await db.query(`ALTER TABLE user_activities DROP CONSTRAINT IF EXISTS "${c.constraint_name}"`);
+      console.log(`Migration: Dropped UNIQUE constraint ${c.constraint_name} from user_activities`);
+    }
+
+    console.log('Badge/Activity migrations completed successfully');
+  } catch (err) {
+    console.error('Migration error:', err);
+    throw err;
+  }
+}
+
 // Badges: Teamer darf ansehen, Admin darf bearbeiten
 module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
+
+  // Migrations beim Server-Start ausfuehren
+  runMigrations(db).catch(err => {
+    console.error('Failed to run badge/activity migrations:', err);
+  });
 
   // Validierungsregeln
   const validateCreateBadge = [
