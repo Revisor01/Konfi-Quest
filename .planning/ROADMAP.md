@@ -223,7 +223,7 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 38. Rolle + App-Shell | 2/2 | Complete   | 2026-03-10 |
+| 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
 | 39. Events | 0/2 | Not started | - |
 | 40. Badges + Aktivitaeten | 0/2 | Not started | - |
 | 41. Zertifikate + Dashboard | 0/2 | Not started | - |
