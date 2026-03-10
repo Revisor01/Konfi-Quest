@@ -122,7 +122,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 
 - [x] **Phase 38: Rolle + App-Shell** - Teamer-Transition und eigene 5-Tab-UI aufbauen (completed 2026-03-10)
 - [x] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung (completed 2026-03-10)
-- [ ] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration
+- [x] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration (completed 2026-03-10)
 - [ ] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events
 - [ ] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang
 - [ ] **Phase 43: Profil + Chat** - Profil mit Antraegen und Badge-Historie, Chat-Zugriff
@@ -168,7 +168,7 @@ Plans:
   2. Teamer erhaelt automatisch Badges basierend auf 5 Kriterien-Typen (Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge)
   3. Admin kann Badge-Typen und deren Kriterien frei konfigurieren (Schwellenwerte, Kategorien, Gruppen)
   4. Vergebene Badges erscheinen im Dashboard und Profil des Teamers
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 40-01-PLAN.md -- DB-Migration und Backend-Route-Anpassung (Tabellen umbenennen, target_role)
@@ -226,7 +226,7 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 |-------|----------------|--------|-----------|
 | 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
 | 39. Events | 2/2 | Complete | 2026-03-10 |
-| 40. Badges + Aktivitaeten | 2/3 | In Progress|  |
+| 40. Badges + Aktivitaeten | 3/3 | Complete   | 2026-03-10 |
 | 41. Zertifikate + Dashboard | 0/2 | Not started | - |
 | 42. Material | 0/1 | Not started | - |
 | 43. Profil + Chat | 0/2 | Not started | - |
