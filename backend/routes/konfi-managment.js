@@ -72,7 +72,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
-                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
+                       (SELECT COUNT(*) FROM user_badges WHERE user_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -120,7 +120,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
-                       (SELECT COUNT(*) FROM konfi_badges WHERE konfi_id = u.id) as "badgeCount"
+                       (SELECT COUNT(*) FROM user_badges WHERE user_id = u.id) as "badgeCount"
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
@@ -137,10 +137,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const activitiesQuery = `
                 SELECT ka.id, a.name, a.points, a.type, ka.completed_date as date,
                        u.display_name as admin
-                FROM konfi_activities ka
+                FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
-                WHERE ka.konfi_id = $1 AND a.organization_id = $2
+                WHERE ka.user_id = $1 AND a.organization_id = $2
                 ORDER BY ka.completed_date DESC
             `;
             const { rows: activities } = await db.query(activitiesQuery, [req.params.id, req.user.organization_id]);
@@ -375,11 +375,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             // Delete related data (in correct order to avoid FK violations)
-            await client.query("DELETE FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
+            await client.query("DELETE FROM user_activities WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM bonus_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM event_points WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM event_bookings WHERE user_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
-            await client.query("DELETE FROM konfi_badges WHERE konfi_id = $1", [userId]);
+            await client.query("DELETE FROM user_badges WHERE user_id = $1", [userId]);
             await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND organization_id = $2", [userId, req.user.organization_id]);
             await client.query("DELETE FROM chat_participants WHERE user_id = $1 AND user_type = 'konfi'", [userId]);
             await client.query("DELETE FROM chat_read_status WHERE user_id = $1", [userId]);
@@ -462,10 +462,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             const activitiesQuery = `
                 SELECT ka.*, a.name, a.points, a.type, u.display_name as admin_name
-                FROM konfi_activities ka
+                FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
-                WHERE ka.konfi_id = $1 AND ka.organization_id = $2
+                WHERE ka.user_id = $1 AND ka.organization_id = $2
                 ORDER BY ka.completed_date DESC, ka.created_at DESC
             `;
             const { rows: activities } = await db.query(activitiesQuery, [konfiId, req.user.organization_id]);
@@ -479,7 +479,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             `;
             const { rows: bonusPoints } = await db.query(bonusQuery, [konfiId, req.user.organization_id]);
 
-            const badgeQuery = `SELECT COUNT(*) as "badgeCount" FROM konfi_badges WHERE konfi_id = $1`;
+            const badgeQuery = `SELECT COUNT(*) as "badgeCount" FROM user_badges WHERE user_id = $1`;
             const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId]);
 
             res.json({
@@ -716,25 +716,31 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
 
-            // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
-            const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
-            if (!ptEnabled) return res.status(400).json({ error: ptError });
+            const isTeamerActivity = activity.target_role === 'teamer';
+
+            if (!isTeamerActivity) {
+                // Guard: Punkte-Typ muss fuer den Jahrgang aktiviert sein
+                const { enabled: ptEnabled, error: ptError } = await checkPointTypeEnabled(db, req.params.id, activity.type);
+                if (!ptEnabled) return res.status(400).json({ error: ptError });
+            }
 
             const client = await db.getClient();
             try {
                 await client.query('BEGIN');
 
                 const query = `
-                    INSERT INTO konfi_activities (konfi_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
+                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at)
                     VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
                 await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id]);
 
-                const updateField = getPointField(activity.type);
-                const updateQuery = `
-                    UPDATE konfi_profiles
-                    SET ${updateField} = ${updateField} + $1
-                    WHERE user_id = $2`;
-                await client.query(updateQuery, [activity.points, req.params.id]);
+                if (!isTeamerActivity && activity.points && activity.type) {
+                    const updateField = getPointField(activity.type);
+                    const updateQuery = `
+                        UPDATE konfi_profiles
+                        SET ${updateField} = ${updateField} + $1
+                        WHERE user_id = $2`;
+                    await client.query(updateQuery, [activity.points, req.params.id]);
+                }
 
                 await client.query('COMMIT');
             } catch (txErr) {
@@ -774,9 +780,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             const getActivityQuery = `
                 SELECT ka.*, a.points, a.type
-                FROM konfi_activities ka
+                FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
-                WHERE ka.id = $1 AND ka.konfi_id = $2`;
+                WHERE ka.id = $1 AND ka.user_id = $2`;
             const { rows: [activity] } = await client.query(getActivityQuery, [req.params.activityId, req.params.id]);
 
             if (!activity) {
@@ -784,7 +790,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(404).json({ error: 'Aktivität nicht gefunden' });
             }
 
-            await client.query('DELETE FROM konfi_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
+            await client.query('DELETE FROM user_activities WHERE id = $1 AND organization_id = $2', [req.params.activityId, req.user.organization_id]);
 
             const updateField = getPointField(activity.type);
             const updateQuery = `
@@ -887,7 +893,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             // 7. konfi_profiles BLEIBT bestehen
-            // 8. konfi_badges BLEIBEN bestehen
+            // 8. user_badges BLEIBEN bestehen
             // 9. Chat-Teilnahmen: user_type aktualisieren damit Räume sichtbar bleiben
             await client.query("UPDATE chat_participants SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);
             await client.query("UPDATE chat_read_status SET user_type = 'teamer' WHERE user_id = $1 AND user_type = 'konfi'", [konfiId]);

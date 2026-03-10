@@ -124,7 +124,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
     );
     if (badges.length === 0) return 0;
     
-    const { rows: earned } = await db.query("SELECT badge_id FROM konfi_badges WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
+    const { rows: earned } = await db.query("SELECT badge_id FROM user_badges WHERE user_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
     const alreadyEarned = earned.map(e => e.badge_id);
     
     let newBadges = 0;
@@ -165,14 +165,14 @@ const checkAndAwardBadges = async (db, konfiId) => {
         
         case 'specific_activity':
           if (criteria.required_activity_name) {
-            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.name = $2 AND a.organization_id = $3`, [konfiId, criteria.required_activity_name, konfi.organization_id]);
+            const { rows: [result] } = await db.query(`SELECT COUNT(*) as count FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.name = $2 AND a.organization_id = $3`, [konfiId, criteria.required_activity_name, konfi.organization_id]);
             earned = result && parseInt(result.count) >= badge.criteria_value;
           }
           break;
         
         case 'activity_combination':
           if (criteria.required_activities) {
-            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.konfi_id = $1 AND a.organization_id = $2`, [konfiId, konfi.organization_id]);
+            const { rows: results } = await db.query(`SELECT DISTINCT a.name FROM user_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.user_id = $1 AND a.organization_id = $2`, [konfiId, konfi.organization_id]);
             const completedActivities = results.map(r => r.name);
             const matchCount = criteria.required_activities.filter(req => completedActivities.includes(req)).length;
             earned = matchCount >= badge.criteria_value;
@@ -183,11 +183,11 @@ const checkAndAwardBadges = async (db, konfiId) => {
           if (criteria.required_category) {
             const categoryCountQuery = `
               SELECT COUNT(*) as count FROM (
-                SELECT ka.id FROM konfi_activities ka
+                SELECT ka.id FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 JOIN activity_categories ac ON a.id = ac.activity_id
                 JOIN categories c ON ac.category_id = c.id
-                WHERE ka.konfi_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
+                WHERE ka.user_id = $1 AND c.name = $2 AND a.organization_id = $3 AND c.organization_id = $3
 
                 UNION ALL
 
@@ -208,7 +208,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
             const days = criteria.days || (criteria.weeks ? criteria.weeks * 7 : null);
             if (days) {
               const timeBasedQuery = `
-                SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
+                SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
                 UNION ALL
                 SELECT e.event_date as date FROM event_bookings eb
                 JOIN events e ON eb.event_id = e.id
@@ -227,7 +227,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
         case 'activity_count':
           const activityCountQuery = `
             SELECT (
-              (SELECT COUNT(*) FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2) +
+              (SELECT COUNT(*) FROM user_activities WHERE user_id = $1 AND organization_id = $2) +
               (SELECT COUNT(*) FROM event_bookings WHERE user_id = $1 AND attendance_status = 'present' AND organization_id = $2)
             ) as count
           `;
@@ -249,13 +249,13 @@ const checkAndAwardBadges = async (db, konfiId) => {
           break;
 
         case 'unique_activities':
-          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
+          const { rows: uniqueResults } = await db.query("SELECT DISTINCT activity_id FROM user_activities WHERE user_id = $1 AND organization_id = $2", [konfiId, konfi.organization_id]);
           earned = uniqueResults.length >= badge.criteria_value;
           break;
         
         case 'streak':
           const streakQuery = `
-            SELECT completed_date as date FROM konfi_activities WHERE konfi_id = $1 AND organization_id = $2
+            SELECT completed_date as date FROM user_activities WHERE user_id = $1 AND organization_id = $2
             UNION ALL
             SELECT e.event_date as date FROM event_bookings eb
             JOIN events e ON eb.event_id = e.id
@@ -315,7 +315,7 @@ const checkAndAwardBadges = async (db, konfiId) => {
     
     if (earnedBadgeIds.length > 0) {
       const insertPromises = earnedBadgeIds.map(badgeId => 
-        db.query("INSERT INTO konfi_badges (konfi_id, badge_id, organization_id) VALUES ($1, $2, $3)", [konfiId, badgeId, konfi.organization_id])
+        db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [konfiId, badgeId, konfi.organization_id])
       );
       await Promise.all(insertPromises);
 
@@ -361,9 +361,9 @@ const checkAndAwardBadges = async (db, konfiId) => {
 // Migration: Tabellen umbenennen und Spalten hinzufuegen (idempotent)
 async function runMigrations(db) {
   try {
-    // 1. konfi_badges -> user_badges (nur wenn alte Tabelle noch existiert)
+    // 1. user_badges -> user_badges (nur wenn alte Tabelle noch existiert)
     const { rows: [oldBadgesTable] } = await db.query(
-      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'konfi_badges') as exists"
+      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_badges') as exists"
     );
     if (oldBadgesTable.exists) {
       // Pruefen ob user_badges schon existiert
@@ -371,22 +371,22 @@ async function runMigrations(db) {
         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_badges') as exists"
       );
       if (!newBadgesTable.exists) {
-        await db.query('ALTER TABLE konfi_badges RENAME TO user_badges');
-        console.log('Migration: konfi_badges -> user_badges');
+        await db.query('ALTER TABLE user_badges RENAME TO user_badges');
+        console.log('Migration: user_badges -> user_badges');
       }
     }
 
-    // 2. konfi_activities -> user_activities (nur wenn alte Tabelle noch existiert)
+    // 2. user_activities -> user_activities (nur wenn alte Tabelle noch existiert)
     const { rows: [oldActivitiesTable] } = await db.query(
-      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'konfi_activities') as exists"
+      "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_activities') as exists"
     );
     if (oldActivitiesTable.exists) {
       const { rows: [newActivitiesTable] } = await db.query(
         "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_activities') as exists"
       );
       if (!newActivitiesTable.exists) {
-        await db.query('ALTER TABLE konfi_activities RENAME TO user_activities');
-        console.log('Migration: konfi_activities -> user_activities');
+        await db.query('ALTER TABLE user_activities RENAME TO user_activities');
+        console.log('Migration: user_activities -> user_activities');
       }
     }
 
@@ -467,6 +467,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
+      const { target_role } = req.query;
+      let targetRoleFilter = '';
+      const params = [req.user.organization_id];
+      if (target_role) {
+        params.push(target_role);
+        targetRoleFilter = ` AND cb.target_role = $${params.length}`;
+      }
       const badgeQuery = `
         SELECT cb.*,
                 u.display_name as created_by_name,
@@ -475,13 +482,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         LEFT JOIN users u ON cb.created_by = u.id
         LEFT JOIN (
           SELECT badge_id, COUNT(*) as earned_count
-          FROM konfi_badges
+          FROM user_badges
           GROUP BY badge_id
         ) badge_counts ON cb.id = badge_counts.badge_id
-        WHERE cb.organization_id = $1
+        WHERE cb.organization_id = $1${targetRoleFilter}
         ORDER BY cb.created_at DESC
       `;
-      const { rows } = await db.query(badgeQuery, [req.user.organization_id]);
+      const { rows } = await db.query(badgeQuery, params);
       res.json(rows);
     } catch (err) {
  console.error('Database error in GET /api/badges:', err);
@@ -499,7 +506,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
         LEFT JOIN users u ON cb.created_by = u.id
         LEFT JOIN (
           SELECT badge_id, COUNT(*) as earned_count
-          FROM konfi_badges
+          FROM user_badges
           GROUP BY badge_id
         ) badge_counts ON cb.id = badge_counts.badge_id
         WHERE cb.id = $1 AND cb.organization_id = $2
@@ -518,22 +525,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   });
   
   router.post('/', rbacVerifier, requireAdmin, validateCreateBadge, async (req, res) => {
-    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color } = req.body;
-    
+    const { name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color, target_role } = req.body;
+
     if (!name || !icon || !criteria_type || (criteria_value === null || criteria_value === undefined)) {
       return res.status(400).json({ error: 'Name, Icon, Kriterientyp und Wert sind erforderlich' });
     }
-    
+
     try {
       const extraJson = criteria_extra ? JSON.stringify(criteria_extra) : null;
       const hiddenFlag = !!is_hidden;
-      
-      const query = `INSERT INTO custom_badges 
-                    (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color, created_by, organization_id) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      const badgeTargetRole = target_role || 'konfi';
+
+      const query = `INSERT INTO custom_badges
+                    (name, icon, description, criteria_type, criteria_value, criteria_extra, is_hidden, color, created_by, organization_id, target_role)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     RETURNING id`;
-      
-      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, color || '#667eea', req.user.id, req.user.organization_id];
+
+      const params = [name, icon, description, criteria_type, criteria_value, extraJson, hiddenFlag, color || '#667eea', req.user.id, req.user.organization_id, badgeTargetRole];
       const { rows: [newBadge] } = await db.query(query, params);
       
       res.status(201).json({ id: newBadge.id, message: 'Badge erfolgreich erstellt' });
@@ -579,7 +587,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
     try {
       await client.query('BEGIN');
 
-      await client.query("DELETE FROM konfi_badges WHERE badge_id = $1", [req.params.id]);
+      await client.query("DELETE FROM user_badges WHERE badge_id = $1", [req.params.id]);
 
       const { rowCount } = await client.query("DELETE FROM custom_badges WHERE id = $1 AND organization_id = $2", [req.params.id, req.user.organization_id]);
 

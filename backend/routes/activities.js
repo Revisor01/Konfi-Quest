@@ -53,18 +53,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: GET /api/activities/
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
+      const { target_role } = req.query;
+      let targetRoleFilter = '';
+      const params = [req.user.organization_id];
+      if (target_role) {
+        params.push(target_role);
+        targetRoleFilter = ` AND a.target_role = $${params.length}`;
+      }
       const query = `
-        SELECT a.*, 
+        SELECT a.*,
                STRING_AGG(c.id || ':' || c.name, ',') as category_data
         FROM activities a
         LEFT JOIN activity_categories ac ON a.id = ac.activity_id
         LEFT JOIN categories c ON ac.category_id = c.id
-        WHERE a.organization_id = $1
+        WHERE a.organization_id = $1${targetRoleFilter}
         GROUP BY a.id
         ORDER BY a.type, a.name
       `;
-      
-      const { rows } = await db.query(query, [req.user.organization_id]);
+
+      const { rows } = await db.query(query, params);
 
       // Parse categories from STRING_AGG result
       const activitiesWithCategories = rows.map(row => {
@@ -96,13 +103,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // POST a new activity
   // Pfad: POST /api/activities/
   router.post('/', rbacVerifier, requireAdmin, validateCreateActivity, async (req, res) => {
-    const { name, points, type, category_ids } = req.body;
-    if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
-    if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Typ muss gottesdienst oder gemeinde sein' });
+    const { name, points, type, category_ids, target_role } = req.body;
+    const activityTargetRole = target_role || 'konfi';
+
+    // Teamer-Aktivitaeten: points und type sind optional
+    if (activityTargetRole === 'teamer') {
+      if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
+    } else {
+      if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
+      if (!['gottesdienst', 'gemeinde'].includes(type)) return res.status(400).json({ error: 'Typ muss gottesdienst oder gemeinde sein' });
+    }
 
     try {
-      const insertActivityQuery = "INSERT INTO activities (name, points, type, organization_id) VALUES ($1, $2, $3, $4) RETURNING id";
-      const { rows: [newActivity] } = await db.query(insertActivityQuery, [name, points, type, req.user.organization_id]);
+      const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
+      const actType = activityTargetRole === 'teamer' ? (type || null) : type;
+      const insertActivityQuery = "INSERT INTO activities (name, points, type, organization_id, target_role) VALUES ($1, $2, $3, $4, $5) RETURNING id";
+      const { rows: [newActivity] } = await db.query(insertActivityQuery, [name, actPoints, actType, req.user.organization_id, activityTargetRole]);
       const activityId = newActivity.id;
 
       if (category_ids && Array.isArray(category_ids) && category_ids.length > 0) {
@@ -127,12 +143,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Pfad: PUT /api/activities/:id
   router.put('/:id', rbacVerifier, requireAdmin, validateUpdateActivity, async (req, res) => {
     const activityId = req.params.id;
-    const { name, points, type, category_ids } = req.body;
-    if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
+    const { name, points, type, category_ids, target_role } = req.body;
+    const activityTargetRole = target_role || 'konfi';
+
+    // Teamer-Aktivitaeten: points und type sind optional
+    if (activityTargetRole === 'teamer') {
+      if (!name) return res.status(400).json({ error: 'Name ist erforderlich' });
+    } else {
+      if (!name || !points || !type) return res.status(400).json({ error: 'Name, Punkte und Typ sind erforderlich' });
+    }
 
     try {
-      const updateQuery = "UPDATE activities SET name = $1, points = $2, type = $3 WHERE id = $4 AND organization_id = $5";
-      const { rowCount } = await db.query(updateQuery, [name, points, type, activityId, req.user.organization_id]);
+      const actPoints = activityTargetRole === 'teamer' ? (points || 0) : points;
+      const actType = activityTargetRole === 'teamer' ? (type || null) : type;
+      const updateQuery = "UPDATE activities SET name = $1, points = $2, type = $3, target_role = $4 WHERE id = $5 AND organization_id = $6";
+      const { rowCount } = await db.query(updateQuery, [name, actPoints, actType, activityTargetRole, activityId, req.user.organization_id]);
       
       if (rowCount === 0) {
         return res.status(404).json({ error: 'Aktivität nicht gefunden oder keine Berechtigung' });
@@ -164,7 +189,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   router.delete('/:id', rbacVerifier, requireAdmin, validateDeleteActivity, async (req, res) => {
     const activityId = req.params.id;
     try {
-      const checkUsageQuery = `SELECT COUNT(*) as count FROM konfi_activities ka JOIN activities a ON ka.activity_id = a.id WHERE ka.activity_id = $1 AND a.organization_id = $2`;
+      const checkUsageQuery = `SELECT COUNT(*) as count FROM user_activities ua JOIN activities a ON ua.activity_id = a.id WHERE ua.activity_id = $1 AND a.organization_id = $2`;
       const { rows: [usage] } = await db.query(checkUsageQuery, [activityId, req.user.organization_id]);
 
       if (usage.count > 0) {
@@ -249,10 +274,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
           // konfi_activity Eintrag löschen
           await client.query(
-            `DELETE FROM konfi_activities
+            `DELETE FROM user_activities
              WHERE id = (
-               SELECT id FROM konfi_activities
-               WHERE konfi_id = $1 AND activity_id = $2
+               SELECT id FROM user_activities
+               WHERE user_id = $1 AND activity_id = $2
                ORDER BY completed_date DESC, id DESC
                LIMIT 1
              )`,
@@ -322,7 +347,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         await client.query(updateRequestQuery, [status, admin_comment, req.user.id, requestId]);
 
         if (status === 'approved') {
-          await client.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
+          await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [request.konfi_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id]);
 
           const pointField = getPointField(request.type);
           await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [request.points, request.konfi_id]);
@@ -453,18 +478,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
       }
 
-      // Guard: Punkte-Typ muss für den Jahrgang aktiviert sein
-      const { enabled, error } = await checkPointTypeEnabled(db, konfiId, activity.type);
-      if (!enabled) return res.status(400).json({ error });
+      // Teamer-Aktivitaeten: Keine Punkte-Vergabe und keinen pointTypeGuard-Check
+      const isTeamerActivity = activity.target_role === 'teamer';
+
+      if (!isTeamerActivity) {
+        // Guard: Punkte-Typ muss fuer den Jahrgang aktiviert sein
+        const { enabled, error } = await checkPointTypeEnabled(db, konfiId, activity.type);
+        if (!enabled) return res.status(400).json({ error });
+      }
 
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
 
-        await client.query("INSERT INTO konfi_activities (konfi_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
+        await client.query("INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id) VALUES ($1, $2, $3, $4, $5)", [konfiId, activityId, req.user.id, date, req.user.organization_id]);
 
-        const pointField = getPointField(activity.type);
-        await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
+        if (!isTeamerActivity && activity.points && activity.type) {
+          const pointField = getPointField(activity.type);
+          await client.query(`UPDATE konfi_profiles SET ${pointField} = ${pointField} + $1 WHERE user_id = $2`, [activity.points, konfiId]);
+        }
 
         await client.query('COMMIT');
       } catch (txErr) {
@@ -474,8 +506,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         client.release();
       }
 
-      // Badge-Check NACH COMMIT (verwendet db Pool)
-      const badgeResult = await checkAndAwardBadges(db, konfiId);
+      // Badge-Check NACH COMMIT (verwendet db Pool) - nur fuer Konfi-Aktivitaeten
+      const badgeResult = isTeamerActivity ? { count: 0, badges: [] } : await checkAndAwardBadges(db, konfiId);
 
       // Level-Check NACH Badge-Check
       try {

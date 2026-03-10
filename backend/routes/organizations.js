@@ -346,9 +346,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       await client.query('DELETE FROM events WHERE organization_id = $1', [id]);
 
       // 3. Konfi-Daten
-      await client.query('DELETE FROM konfi_activities WHERE organization_id = $1', [id]);
+      await client.query('DELETE FROM user_activities WHERE organization_id = $1', [id]);
       await client.query('DELETE FROM bonus_points WHERE organization_id = $1', [id]);
-      await client.query('DELETE FROM konfi_badges WHERE konfi_id IN (SELECT user_id FROM konfi_profiles WHERE organization_id = $1)', [id]);
+      await client.query('DELETE FROM user_badges WHERE user_id IN (SELECT user_id FROM konfi_profiles WHERE organization_id = $1)', [id]);
       await client.query('DELETE FROM activity_requests WHERE organization_id = $1', [id]);
 
       // 4. Notifications und Push-Tokens

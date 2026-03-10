@@ -28,9 +28,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Konfi-Badges (eingefroren nach Transition)
       const badgesQuery = `
         SELECT kb.badge_id, b.name, b.icon, b.color, kb.awarded_date
-        FROM konfi_badges kb
+        FROM user_badges kb
         JOIN badges b ON kb.badge_id = b.id
-        WHERE kb.konfi_id = $1
+        WHERE kb.user_id = $1
         ORDER BY kb.awarded_date DESC
       `;
       const { rows: badges } = await db.query(badgesQuery, [userId]);

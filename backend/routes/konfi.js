@@ -75,7 +75,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       if (tableExistsResult && tableExistsResult.to_regclass) {
         // Get total badge count for this organization
         const { rows: [badgeCountResult] } = await db.query(
-          'SELECT COUNT(*) as count FROM konfi_badges kb JOIN users u ON kb.konfi_id = u.id WHERE kb.konfi_id = $1 AND kb.organization_id = $2',
+          'SELECT COUNT(*) as count FROM user_badges kb JOIN users u ON kb.user_id = u.id WHERE kb.user_id = $1 AND kb.organization_id = $2',
           [konfiId, req.user.organization_id]
         );
         badgeCount = parseInt(badgeCountResult.count, 10) || 0;
@@ -85,7 +85,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
                  kb.earned_at
           FROM custom_badges cb
-          LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1 AND kb.organization_id = $2
+          LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
           WHERE kb.earned_at IS NOT NULL AND cb.organization_id = $2
           ORDER BY kb.earned_at DESC
           LIMIT 3
@@ -352,17 +352,17 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         JOIN roles r ON u.role_id = r.id
         LEFT JOIN activity_requests ar ON u.id = ar.konfi_id AND ar.organization_id = $2
         LEFT JOIN (
-          SELECT konfi_id, COUNT(*) as badge_count 
-          FROM konfi_badges 
-          WHERE organization_id = $2 
-          GROUP BY konfi_id
-        ) badge_stats ON u.id = badge_stats.konfi_id
+          SELECT user_id, COUNT(*) as badge_count
+          FROM user_badges
+          WHERE organization_id = $2
+          GROUP BY user_id
+        ) badge_stats ON u.id = badge_stats.user_id
         LEFT JOIN (
-          SELECT konfi_id, COUNT(*) as activity_count 
-          FROM konfi_activities 
-          WHERE organization_id = $2 
-          GROUP BY konfi_id
-        ) activity_stats ON u.id = activity_stats.konfi_id
+          SELECT user_id, COUNT(*) as activity_count
+          FROM user_activities
+          WHERE organization_id = $2
+          GROUP BY user_id
+        ) activity_stats ON u.id = activity_stats.user_id
         LEFT JOIN (
           SELECT user_id, COUNT(*) as event_count 
           FROM event_bookings 
@@ -487,9 +487,9 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           ka.completed_date as date,
           ka.comment,
           'activity' as source_type
-        FROM konfi_activities ka
+        FROM user_activities ka
         JOIN activities a ON ka.activity_id = a.id
-        WHERE ka.konfi_id = $1 AND ka.organization_id = $2
+        WHERE ka.user_id = $1 AND ka.organization_id = $2
         ORDER BY ka.completed_date DESC
       `;
       const { rows: activities } = await db.query(activitiesQuery, [konfiId, orgId]);
@@ -853,7 +853,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                kb.earned_at,
                COALESCE(kb.seen, false) as seen
         FROM custom_badges cb
-        LEFT JOIN konfi_badges kb ON cb.id = kb.badge_id AND kb.konfi_id = $1 AND kb.organization_id = $2
+        LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
         WHERE cb.is_active = TRUE AND cb.organization_id = $2
         ORDER BY earned DESC, cb.name
       `;
@@ -921,7 +921,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
               
             case 'activity_count':
               const { rows: [activityCountResult] } = await db.query(
-                'SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1',
+                'SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1',
                 [konfiId]
               );
               progress.current = parseInt(activityCountResult?.count || 0);
@@ -929,7 +929,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
               
             case 'unique_activities':
               const { rows: [uniqueActivitiesResult] } = await db.query(
-                'SELECT COUNT(DISTINCT activity_id) as count FROM konfi_activities WHERE konfi_id = $1',
+                'SELECT COUNT(DISTINCT activity_id) as count FROM user_activities WHERE user_id = $1',
                 [konfiId]
               );
               progress.current = parseInt(uniqueActivitiesResult?.count || 0);
@@ -947,7 +947,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
               
               if (specificActivityId) {
                 const { rows: [specificResult] } = await db.query(
-                  'SELECT COUNT(*) as count FROM konfi_activities WHERE konfi_id = $1 AND activity_id = $2',
+                  'SELECT COUNT(*) as count FROM user_activities WHERE user_id = $1 AND activity_id = $2',
                   [konfiId, specificActivityId]
                 );
                 progress.current = parseInt(specificResult?.count || 0);
@@ -969,11 +969,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
               if (requiredCategory) {
                 const { rows: [categoryResult] } = await db.query(
                   `SELECT COUNT(*) as count 
-                   FROM konfi_activities ka 
+                   FROM user_activities ka 
                    JOIN activities a ON ka.activity_id = a.id 
                    JOIN activity_categories ac ON a.id = ac.activity_id 
                    JOIN categories c ON ac.category_id = c.id 
-                   WHERE ka.konfi_id = $1 AND c.name = $2`,
+                   WHERE ka.user_id = $1 AND c.name = $2`,
                   [konfiId, requiredCategory]
                 );
                 progress.current = parseInt(categoryResult?.count || 0);
@@ -996,8 +996,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                 const placeholders = activityIds.map((_, i) => `$${i + 2}`).join(',');
                 const { rows: [combinationResult] } = await db.query(
                   `SELECT COUNT(DISTINCT activity_id) as count 
-                   FROM konfi_activities 
-                   WHERE konfi_id = $1 AND activity_id IN (${placeholders})`,
+                   FROM user_activities 
+                   WHERE user_id = $1 AND activity_id IN (${placeholders})`,
                   [konfiId, ...activityIds]
                 );
                 progress.current = parseInt(combinationResult?.count || 0);
@@ -1081,8 +1081,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         SELECT 
           (SELECT COUNT(*) FROM custom_badges WHERE organization_id = $2) as total_badges,
           COUNT(kb.badge_id) as earned_badges
-        FROM konfi_badges kb
-        WHERE kb.konfi_id = $1 AND kb.organization_id = $2
+        FROM user_badges kb
+        WHERE kb.user_id = $1 AND kb.organization_id = $2
       `;
       const { rows: [stats] } = await db.query(statsQuery, [konfiId, req.user.organization_id]);
       res.json({
@@ -1104,7 +1104,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     try {
       const konfiId = req.user.id;
       await db.query(
-        'UPDATE konfi_badges SET seen = true WHERE konfi_id = $1 AND organization_id = $2 AND seen = false',
+        'UPDATE user_badges SET seen = true WHERE user_id = $1 AND organization_id = $2 AND seen = false',
         [konfiId, req.user.organization_id]
       );
       res.json({ success: true, message: 'Alle Badges als gesehen markiert' });
