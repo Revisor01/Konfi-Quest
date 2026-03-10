@@ -523,21 +523,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
             const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
             const teamerOnly = participants.filter(p => p.role_name === 'teamer');
             const hasTeamer = (eventData?.teamer_needed || eventData?.teamer_only) && teamerOnly.length > 0;
+            const presentCount = konfiOnly.filter(p => p.attendance_status === 'present').length;
+            const absentCount = konfiOnly.filter(p => p.attendance_status === 'absent' || p.status === 'opted_out').length;
+            const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
             if (eventData?.mandatory) {
               return [
-                { value: konfiOnly.filter(p => p.status === 'confirmed').length, label: `von ${konfiOnly.length} TN` },
-                { value: konfiOnly.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' },
+                { value: presentCount, label: `von ${konfiOnly.length} TN` },
+                { value: absentCount, label: 'Abwesend' },
                 hasTeamer
-                  ? { value: teamerOnly.length, label: 'Teamer:innen' }
+                  ? { value: teamerOnly.length, label: 'Team' }
                   : { value: konfiOnly.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
               ];
             }
+            const maxP = (eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E';
             return [
-              { value: konfiOnly.filter(p => p.status === 'confirmed').length, label: 'TN' },
+              { value: konfiConfirmed, label: `von ${maxP} TN` },
               hasTeamer
-                ? { value: teamerOnly.length, label: 'Teamer:innen' }
+                ? { value: teamerOnly.length, label: 'Team' }
                 : { value: eventData?.points || 0, label: 'Punkte' },
-              { value: konfiOnly.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' }
+              { value: konfiOnly.filter(p => p.status === 'pending').length, label: 'Warteliste' }
             ];
           })()}
         />
@@ -581,16 +585,33 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* TN gesamt */}
-              <div className="app-info-row">
-                <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
-                <div className="app-info-row__content">
-                  {eventData?.mandatory
-                    ? `${participants.filter(p => p.status === 'confirmed').length}/${participants.length} Teilnehmer:innen`
-                    : `${eventData?.registered_count || 0} / ${(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E'} Teilnehmer:innen`
-                  }
-                </div>
-              </div>
+              {/* TN gesamt - Konfis und Teamer getrennt */}
+              {(() => {
+                const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
+                const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+                const konfiConfirmed = konfiOnly.filter(p => p.status === 'confirmed').length;
+                return (
+                  <>
+                    <div className="app-info-row">
+                      <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
+                      <div className="app-info-row__content">
+                        {eventData?.mandatory
+                          ? `${konfiConfirmed}/${konfiOnly.length} Konfis`
+                          : `${konfiConfirmed} / ${(eventData?.max_participants || 0) > 0 ? eventData?.max_participants : '\u221E'} Konfis`
+                        }
+                      </div>
+                    </div>
+                    {teamerOnly.length > 0 && (
+                      <div className="app-info-row">
+                        <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                        <div className="app-info-row__content">
+                          {teamerOnly.length} Teamer:innen
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
 
               {/* Warteliste */}
               {(eventData as any)?.waitlist_enabled && (
@@ -602,15 +623,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* Punkte */}
+              {/* Punkte - bei Pflicht-Events ausblenden */}
+              {!eventData?.mandatory && (
               <div className="app-info-row">
                 <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
                 <div className="app-info-row__content">
                   {eventData?.points || 0} Punkte
                 </div>
               </div>
+              )}
 
-              {/* Typ */}
+              {/* Typ - bei Pflicht-Events ausblenden */}
+              {!eventData?.mandatory && (
               <div className="app-info-row">
                 <IonIcon
                   icon={eventData?.point_type === 'gottesdienst' ? home : people}
@@ -621,6 +645,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   {eventData?.point_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
                 </div>
               </div>
+              )}
 
               {/* Kategorien */}
               {eventData?.categories && eventData.categories.length > 0 && (
@@ -656,7 +681,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData?.mandatory && (
                 <div className="app-info-row">
                   <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                  <div className="app-info-row__content" style={{ fontWeight: '600', color: '#dc2626' }}>
+                  <div className="app-info-row__content">
                     Pflicht-Event
                   </div>
                 </div>
@@ -666,7 +691,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {(eventData?.teamer_needed || eventData?.teamer_only) && (
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                  <div className="app-info-row__content" style={{ fontWeight: '600', color: '#5b21b6' }}>
+                  <div className="app-info-row__content">
                     {eventData?.teamer_only ? 'Nur Teamer:innen' : 'Teamer:innen gesucht'}
                   </div>
                 </div>
@@ -676,9 +701,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {eventData?.bring_items && (
                 <div className="app-info-row">
                   <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                  <div>
-                    <div className="app-info-row__content app-list-item__title">Was mitbringen</div>
-                    <div className="app-info-row__sublabel">{eventData.bring_items}</div>
+                  <div className="app-info-row__content">
+                    {eventData.bring_items}
                   </div>
                 </div>
               )}
