@@ -153,11 +153,11 @@ Plans:
   2. Admin kann reine Teamer-Events erstellen die nur fuer Teamer sichtbar und buchbar sind
   3. Teamer sieht Events-Tab mit 3 Segmenten (Meine, Alle, Team) und kann sich in Teamer-gesucht-Events und Teamer-Events einbuchen
   4. Teamer kann bei Events wo er eingeteilt ist seine Anwesenheit bestaetigen
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 39-01: TBD
-- [ ] 39-02: TBD
+- [ ] 39-01-PLAN.md -- Backend: DB-Schema, Booking, Filter, Check-in fuer Teamer
+- [ ] 39-02-PLAN.md -- Frontend: Admin-Formular, Teilnehmerliste, TeamerEventsPage mit 3 Segmenten
 
 ### Phase 40: Badges + Aktivitaeten
 **Goal**: Teamer sammeln Badges durch Aktivitaeten, Event-Teilnahme und Engagement
