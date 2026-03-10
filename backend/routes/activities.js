@@ -506,8 +506,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         client.release();
       }
 
-      // Badge-Check NACH COMMIT (verwendet db Pool) - nur fuer Konfi-Aktivitaeten
-      const badgeResult = isTeamerActivity ? { count: 0, badges: [] } : await checkAndAwardBadges(db, konfiId);
+      // Badge-Check NACH COMMIT (verwendet db Pool) - fuer Konfis UND Teamer
+      const badgeResult = await checkAndAwardBadges(db, konfiId);
 
       // Level-Check NACH Badge-Check
       try {

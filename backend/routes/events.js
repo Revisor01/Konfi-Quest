@@ -378,6 +378,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       await client.query('COMMIT');
       client.release();
 
+      // Badge-Check fuer Teamer NACH COMMIT (Konfis bekommen Badge-Check schon oben)
+      if (req.user.type === 'teamer') {
+        try {
+          await checkAndAwardBadges(db, userId);
+        } catch (badgeErr) {
+          console.error('Error checking teamer badges after QR check-in:', badgeErr);
+        }
+      }
+
       // Push und LiveUpdate NACH COMMIT
       try {
         const userType = req.user.type === 'teamer' ? 'teamer' : 'konfi';
@@ -1857,6 +1866,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       await client.query('COMMIT');
       client.release();
+
+      // Badge-Check NACH COMMIT fuer alle User (Teamer + Konfis)
+      if (attendance_status === 'present') {
+        try {
+          await checkAndAwardBadges(db, eventData.user_id);
+        } catch (badgeErr) {
+          console.error('Error checking badges after attendance update:', badgeErr);
+        }
+      }
 
       // Push und LiveUpdate NACH COMMIT und client.release() - nutzt pool (db) statt client
       try {
