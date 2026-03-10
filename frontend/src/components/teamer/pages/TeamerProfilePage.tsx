@@ -108,10 +108,20 @@ const TeamerProfilePage: React.FC = () => {
   if (!profile) {
     return (
       <IonPage>
-        <IonContent>
-          <p style={{ textAlign: 'center', marginTop: '50px' }}>
-            Fehler beim Laden des Profils
-          </p>
+        <IonContent className="ion-padding">
+          <div style={{ textAlign: 'center', marginTop: '80px' }}>
+            <p>Fehler beim Laden des Profils</p>
+            <IonButton
+              expand="block"
+              fill="outline"
+              color="danger"
+              onClick={handleLogout}
+              style={{ marginTop: '24px', height: '48px', borderRadius: '12px', fontWeight: '600' }}
+            >
+              <IonIcon icon={logOutOutline} slot="start" />
+              Abmelden
+            </IonButton>
+          </div>
         </IonContent>
       </IonPage>
     );
