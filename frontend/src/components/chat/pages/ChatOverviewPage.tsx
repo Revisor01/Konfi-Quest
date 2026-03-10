@@ -20,7 +20,7 @@ const ChatOverviewPage: React.FC = () => {
 
   const handleSelectRoom = (room: ChatRoomData) => {
     // Navigate to room view with proper routing
-    const basePath = user?.type === 'admin' ? '/admin' : '/konfi';
+    const basePath = user?.type === 'admin' ? '/admin' : user?.type === 'teamer' ? '/teamer' : '/konfi';
     history.push(`${basePath}/chat/room/${room.id}`);
   };
 
