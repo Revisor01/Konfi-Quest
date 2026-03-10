@@ -519,18 +519,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           subtitle={getStatusText()}
           icon={calendar}
           colors={getStatusColors()}
-          stats={eventData?.mandatory
-            ? [
-                { value: participants.filter(p => p.status === 'confirmed').length, label: `von ${participants.length} TN` },
-                { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' },
-                { value: participants.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
-              ]
-            : [
-                { value: participants.filter(p => p.status === 'confirmed').length, label: 'TN' },
-                { value: eventData?.points || 0, label: 'Punkte' },
-                { value: participants.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' }
-              ]
-          }
+          stats={(() => {
+            const konfiOnly = participants.filter(p => p.role_name !== 'teamer');
+            const teamerOnly = participants.filter(p => p.role_name === 'teamer');
+            const hasTeamer = (eventData?.teamer_needed || eventData?.teamer_only) && teamerOnly.length > 0;
+            if (eventData?.mandatory) {
+              return [
+                { value: konfiOnly.filter(p => p.status === 'confirmed').length, label: `von ${konfiOnly.length} TN` },
+                { value: konfiOnly.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' },
+                hasTeamer
+                  ? { value: teamerOnly.length, label: 'Teamer:innen' }
+                  : { value: konfiOnly.filter(p => p.status === 'opted_out').length, label: 'Abgemeldet' }
+              ];
+            }
+            return [
+              { value: konfiOnly.filter(p => p.status === 'confirmed').length, label: 'TN' },
+              hasTeamer
+                ? { value: teamerOnly.length, label: 'Teamer:innen' }
+                : { value: eventData?.points || 0, label: 'Punkte' },
+              { value: konfiOnly.filter(p => p.attendance_status === 'present').length, label: 'Anwesend' }
+            ];
+          })()}
         />
 
         {/* Event Details */}
@@ -1100,7 +1109,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               {teamerParticipants.length > 0 && (
                 <IonList className="app-section-inset" inset={true}>
                   <IonListHeader>
-                    <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+                    <div className="app-section-icon app-section-icon--events">
                       <IonIcon icon={people} />
                     </div>
                     <IonLabel>Teamer:innen ({teamerParticipants.length})</IonLabel>

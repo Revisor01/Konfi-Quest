@@ -64,6 +64,10 @@ interface Event {
   pending_bookings_count?: number;
   mandatory?: boolean;
   bring_items?: string;
+  teamer_count?: number;
+  teamer_needed?: boolean;
+  teamer_only?: boolean;
+  jahrgang_names?: string;
 }
 
 interface EventsViewProps {
@@ -340,16 +344,27 @@ const EventsView: React.FC<EventsViewProps> = ({
                               <IonIcon icon={copy} style={{ fontSize: '0.8rem', color: '#007aff', opacity: 0.7, flexShrink: 0 }} />
                             )}
                           </div>
+                          {event.jahrgang_names && (
+                            <div className="app-list-item__subtitle" style={{ color: shouldGrayOut ? '#999' : undefined }}>
+                              {event.jahrgang_names}
+                            </div>
+                          )}
 
-                          {/* Zeile 2: Buchungen + Warteliste + Punkte */}
+                          {/* Zeile 2: Buchungen + Teamer + Warteliste + Punkte */}
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#34c759' }} />
                               {event.mandatory
-                                ? `${event.registered_count} Konfis`
-                                : `${event.registered_count}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
+                                ? `${event.registered_count - (event.teamer_count || 0)} Konfis`
+                                : `${event.registered_count - (event.teamer_count || 0)}/${(event.max_participants || 0) > 0 ? event.max_participants : '\u221E'}`
                               }
                             </span>
+                            {(event.teamer_count || 0) > 0 && (
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={people} style={{ color: shouldGrayOut ? '#999' : '#5b21b6' }} />
+                                {event.teamer_count} Teamer
+                              </span>
+                            )}
                             {event.waitlist_enabled && (event.waitlist_count ?? 0) > 0 && (
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={listOutline} style={{ color: shouldGrayOut ? '#999' : '#fd7e14' }} />
