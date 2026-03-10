@@ -302,6 +302,8 @@ CREATE TABLE events (
     bring_items TEXT,
     qr_token TEXT DEFAULT NULL,
     checkin_window INTEGER DEFAULT 30,
+    teamer_needed BOOLEAN DEFAULT false,
+    teamer_only BOOLEAN DEFAULT false,
     registration_opens_at TIMESTAMP,
     registration_closes_at TIMESTAMP,
     has_timeslots BOOLEAN DEFAULT false,
@@ -318,8 +320,10 @@ CREATE TABLE events (
 -- Constraints
 ALTER TABLE events ADD CONSTRAINT events_registration_dates_check 
     CHECK (registration_opens_at IS NULL OR registration_closes_at IS NULL OR registration_opens_at < registration_closes_at);
-ALTER TABLE events ADD CONSTRAINT events_event_dates_check 
+ALTER TABLE events ADD CONSTRAINT events_event_dates_check
     CHECK (event_end_time IS NULL OR event_date < event_end_time);
+ALTER TABLE events ADD CONSTRAINT events_teamer_exclusive
+    CHECK (NOT (teamer_needed = true AND teamer_only = true));
 
 -- Indexes für Event Queries
 CREATE INDEX idx_events_date ON events (event_date);
@@ -328,6 +332,7 @@ CREATE INDEX idx_events_series ON events (series_id) WHERE series_id IS NOT NULL
 CREATE INDEX idx_events_org ON events (organization_id);
 CREATE INDEX idx_events_created_by ON events (created_by);
 CREATE INDEX idx_events_timeslots ON events (has_timeslots) WHERE has_timeslots = true;
+CREATE INDEX idx_events_teamer ON events (teamer_needed, teamer_only) WHERE teamer_needed = true OR teamer_only = true;
 
 -- Event-Category Relations
 CREATE TABLE event_categories (
@@ -585,3 +590,9 @@ CREATE TRIGGER update_settings_updated_at BEFORE UPDATE ON settings
 -- Migration v1.7 Phase 36: QR-Code Check-in (auf Live-DB ausfuehren):
 -- ALTER TABLE events ADD COLUMN IF NOT EXISTS qr_token TEXT DEFAULT NULL;
 -- ALTER TABLE events ADD COLUMN IF NOT EXISTS checkin_window INTEGER DEFAULT 30;
+
+-- Phase 39 Migration (auf Live-DB ausfuehren):
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS teamer_needed BOOLEAN DEFAULT false;
+-- ALTER TABLE events ADD COLUMN IF NOT EXISTS teamer_only BOOLEAN DEFAULT false;
+-- ALTER TABLE events ADD CONSTRAINT events_teamer_exclusive CHECK (NOT (teamer_needed = true AND teamer_only = true));
+-- CREATE INDEX IF NOT EXISTS idx_events_teamer ON events (teamer_needed, teamer_only) WHERE teamer_needed = true OR teamer_only = true;
