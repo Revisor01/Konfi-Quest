@@ -31,7 +31,7 @@ const TeamerDashboardPage: React.FC = () => {
           <div className="app-header-banner__content">
             <div className="app-header-banner__icon-row">
               <IonIcon icon={home} className="app-header-banner__icon" />
-              <span className="app-header-banner__title">Willkommen zurueck!</span>
+              <span className="app-header-banner__title">Willkommen zurück!</span>
             </div>
           </div>
         </div>
@@ -39,7 +39,7 @@ const TeamerDashboardPage: React.FC = () => {
         <EmptyState
           icon={home}
           title="Dein Dashboard"
-          message="Hier siehst du bald deine Zertifikate, naechste Events und Badges."
+          message="Hier siehst du bald deine Zertifikate, nächste Events und Badges."
         />
       </IonContent>
     </IonPage>

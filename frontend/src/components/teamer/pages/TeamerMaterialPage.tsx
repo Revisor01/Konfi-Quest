@@ -28,7 +28,7 @@ const TeamerMaterialPage: React.FC = () => {
         <EmptyState
           icon={documentIcon}
           title="Material"
-          message="Hier findest du bald Materialien und Dokumente fuer deinen Jahrgang."
+          message="Hier findest du bald Materialien und Dokumente für deinen Jahrgang."
         />
       </IonContent>
     </IonPage>

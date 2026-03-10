@@ -392,25 +392,25 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const handlePromoteToTeamer = async () => {
     if (!currentKonfi) return;
     presentAlert({
-      header: 'Zum Teamer befoerdern',
-      message: `${currentKonfi.name} wirklich zum Teamer befoerdern?\n\n` +
-        `Punkte: ${getGottesdienstPoints()} Gottesdienst, ${getGemeindePoints()} Gemeinde\n` +
-        `Badges: ${currentKonfi.badgeCount || 0}\n\n` +
+      header: 'Zum Teamer befördern',
+      message: `<strong>${currentKonfi.name}</strong> wirklich zum Teamer befördern?<br><br>` +
+        `<strong>Punkte:</strong> ${getGottesdienstPoints()} Gottesdienst, ${getGemeindePoints()} Gemeinde<br>` +
+        `<strong>Badges:</strong> ${currentKonfi.badgeCount || 0}<br><br>` +
         `Konfi-Punkte und Badges bleiben als Historie erhalten. ` +
-        `Event-Buchungen und offene Antraege werden geloescht. ` +
-        `Diese Aktion kann nicht rueckgaengig gemacht werden.`,
+        `Event-Buchungen und offene Anträge werden gelöscht.<br><br>` +
+        `<strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Befoerdern',
+          text: 'Befördern',
           handler: async () => {
             try {
               await api.post(`/admin/konfis/${konfiId}/promote-teamer`);
-              setSuccess(`${currentKonfi.name} wurde zum Teamer befoerdert`);
+              setSuccess(`${currentKonfi.name} wurde zum Teamer befördert`);
               window.dispatchEvent(new CustomEvent('konfis-updated'));
               onBack();
             } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Befoerdern');
+              setError(err.response?.data?.error || 'Fehler beim Befördern');
             }
           }
         }
@@ -983,15 +983,29 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonCardContent>
           </IonCard>
         </IonList>
-        {/* Teamer-Befoerderung */}
+        {/* Teamer-Beförderung */}
         <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
-          <IonItem button onClick={handlePromoteToTeamer} detail>
-            <IonIcon icon={ribbon} slot="start" color="primary" />
-            <IonLabel>
-              <h2>Zum Teamer befoerdern</h2>
-              <p>Konfi-Rolle wird dauerhaft gewechselt</p>
-            </IonLabel>
-          </IonItem>
+          <IonListHeader>
+            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
+              <IonIcon icon={ribbon} />
+            </div>
+            <IonLabel>Rolle ändern</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent className="app-card-content">
+              <IonButton
+                expand="block"
+                color="danger"
+                onClick={handlePromoteToTeamer}
+              >
+                <IonIcon icon={ribbon} slot="start" />
+                Zum Teamer befördern
+              </IonButton>
+              <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginTop: '8px' }}>
+                Konfi-Rolle wird dauerhaft gewechselt
+              </p>
+            </IonCardContent>
+          </IonCard>
         </IonList>
 
       </IonContent>
