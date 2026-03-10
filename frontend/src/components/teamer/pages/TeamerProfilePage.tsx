@@ -13,9 +13,12 @@ import {
   IonLabel,
   IonIcon,
   IonCard,
-  IonCardContent
+  IonCardContent,
+  IonButton,
+  useIonAlert
 } from '@ionic/react';
-import { person, trophy, star, flash } from 'ionicons/icons';
+import { person, trophy, star, flash, logOutOutline } from 'ionicons/icons';
+import { logout } from '../../../services/auth';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
@@ -44,6 +47,32 @@ interface TeamerProfile {
 const TeamerProfilePage: React.FC = () => {
   const { setError } = useApp();
   const { pageRef } = useModalPage('profile');
+  const [presentAlert] = useIonAlert();
+
+  const handleLogout = () => {
+    presentAlert({
+      header: 'Abmelden',
+      message: 'Möchtest du dich wirklich abmelden?',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Abmelden',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await logout();
+              window.location.href = '/';
+            } catch (error) {
+              console.error('Logout error:', error);
+              localStorage.removeItem('konfi_token');
+              localStorage.removeItem('konfi_user');
+              window.location.href = '/';
+            }
+          }
+        }
+      ]
+    });
+  };
   const [profile, setProfile] = useState<TeamerProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -209,6 +238,26 @@ const TeamerProfilePage: React.FC = () => {
             </IonCardContent>
           </IonCard>
         </IonList>
+
+        {/* Logout */}
+        <div style={{ padding: '0 16px', marginTop: '16px' }}>
+          <IonButton
+            expand="block"
+            fill="outline"
+            color="danger"
+            onClick={handleLogout}
+            style={{
+              height: '48px',
+              borderRadius: '12px',
+              fontWeight: '600'
+            }}
+          >
+            <IonIcon icon={logOutOutline} slot="start" />
+            Abmelden
+          </IonButton>
+        </div>
+
+        <div style={{ height: '32px' }}></div>
       </IonContent>
     </IonPage>
   );
