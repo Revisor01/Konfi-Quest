@@ -1039,9 +1039,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
                 </IonItem>
-                {!eventData?.mandatory && (
+                {(participant.role_name === 'teamer' || !eventData?.mandatory) && (
                 <IonItemOptions className="app-swipe-actions" side="end">
-                  {participant.status === 'confirmed' && (
+                  {participant.role_name !== 'teamer' && participant.status === 'confirmed' && (
                     <IonItemOption
                       className="app-swipe-action"
                       onClick={() => handleDemoteParticipant(participant)}
