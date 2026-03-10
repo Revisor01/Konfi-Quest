@@ -403,8 +403,8 @@ const EventsView: React.FC<EventsViewProps> = ({
                           {/* Zeile 5: Was mitbringen */}
                           {event.bring_items && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
-                              <span className="app-list-item__meta-item" style={{ color: '#8b5cf6', fontWeight: '500' }}>
-                                <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={bagHandle} style={{ color: shouldGrayOut ? '#999' : '#8b5cf6' }} />
                                 {event.bring_items}
                               </span>
                             </div>
