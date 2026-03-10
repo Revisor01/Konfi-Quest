@@ -584,11 +584,11 @@ const TeamerEventsPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* TEAM Corner Badge */}
+                        {/* TEAM Corner Badge - zweites Badge versetzt */}
                         {isTeamerEvent && (
                           <div
-                            className="app-corner-badge app-corner-badge--purple"
-                            style={{ top: 'auto', bottom: 0, borderRadius: '10px 0 10px 0' }}
+                            className="app-corner-badge"
+                            style={{ backgroundColor: '#5b21b6', top: showBadge ? '26px' : '0' }}
                           >
                             TEAM
                           </div>

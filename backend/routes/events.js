@@ -67,11 +67,15 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                     CASE WHEN e.has_timeslots THEN COALESCE(timeslot_capacity.total_capacity, e.max_participants) ELSE e.max_participants END
                   ) AND (NOT e.waitlist_enabled OR COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) >= COALESCE(e.max_waitlist_size, 0)) THEN 'closed'
                   ELSE 'open'
-                END as registration_status
+                END as registration_status,
+                CASE WHEN eb_user.status = 'confirmed' THEN true ELSE false END as is_registered,
+                eb_user.status as booking_status,
+                eb_user.attendance_status
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id
         LEFT JOIN users u_book ON eb.user_id = u_book.id
         LEFT JOIN roles r_book ON u_book.role_id = r_book.id
+        LEFT JOIN event_bookings eb_user ON e.id = eb_user.event_id AND eb_user.user_id = $2
         LEFT JOIN event_categories ec ON e.id = ec.event_id
         LEFT JOIN categories c ON ec.category_id = c.id
         LEFT JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
@@ -82,11 +86,11 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
         WHERE e.organization_id = $1
-        GROUP BY e.id, timeslot_capacity.total_capacity
+        GROUP BY e.id, timeslot_capacity.total_capacity, eb_user.status, eb_user.attendance_status
         ORDER BY e.event_date ASC
       `;
 
-      const { rows } = await db.query(query, [req.user.organization_id]);
+      const { rows } = await db.query(query, [req.user.organization_id, req.user.id]);
 
       // Für Teamer: nur Events anzeigen die mindestens einem zugewiesenen Jahrgang zugeordnet sind
       // ODER die keinem Jahrgang zugeordnet sind (allgemeine Events)
