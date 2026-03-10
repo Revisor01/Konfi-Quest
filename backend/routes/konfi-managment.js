@@ -795,5 +795,82 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // POST promote konfi to teamer
+    router.post('/:id/promote-teamer', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
+        const konfiId = parseInt(req.params.id);
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            // 1. User existiert in gleicher Organisation und ist Konfi
+            const checkUserQuery = `
+                SELECT u.id, u.display_name, r.name as role_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                WHERE u.id = $1 AND u.organization_id = $2
+            `;
+            const { rows: [user] } = await client.query(checkUserQuery, [konfiId, req.user.organization_id]);
+
+            if (!user) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'User nicht gefunden' });
+            }
+
+            if (user.role_name !== 'konfi') {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'User ist kein Konfi und kann nicht befördert werden' });
+            }
+
+            // 2. Teamer-Role-ID laden (org-spezifisch oder global)
+            let teamerRoleQuery = `SELECT id FROM roles WHERE name = 'teamer' AND organization_id = $1`;
+            let { rows: [teamerRole] } = await client.query(teamerRoleQuery, [req.user.organization_id]);
+
+            if (!teamerRole) {
+                // Fallback: globale Teamer-Rolle
+                const globalQuery = `SELECT id FROM roles WHERE name = 'teamer' AND organization_id IS NULL`;
+                const { rows: [globalRole] } = await client.query(globalQuery);
+                teamerRole = globalRole;
+            }
+
+            if (!teamerRole) {
+                await client.query('ROLLBACK');
+                return res.status(500).json({ error: 'Teamer-Rolle nicht gefunden' });
+            }
+
+            // 3. Rolle aendern
+            await client.query('UPDATE users SET role_id = $1 WHERE id = $2', [teamerRole.id, konfiId]);
+
+            // 4. Event-Buchungen loeschen
+            await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);
+
+            // 5. Offene Antraege loeschen
+            await client.query("DELETE FROM activity_requests WHERE konfi_id = $1 AND status = 'pending'", [konfiId]);
+
+            // 6. konfi_profiles BLEIBT bestehen
+            // 7. konfi_badges BLEIBEN bestehen
+            // 8. Chat-Teilnahmen BLEIBEN bestehen
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: 'Konfi wurde zum Teamer befördert',
+                user: {
+                    id: konfiId,
+                    display_name: user.display_name,
+                    role_name: 'teamer'
+                }
+            });
+
+        } catch (err) {
+            await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
+            console.error('Database error in POST /konfis/:id/promote-teamer:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        } finally {
+            client.release();
+        }
+    });
+
     return router;
 };
