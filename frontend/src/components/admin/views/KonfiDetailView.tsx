@@ -39,7 +39,8 @@ import {
   podium,
   personOutline,
   closeCircle,
-  eyeOff
+  eyeOff,
+  ribbon
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -386,6 +387,35 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         setError('Foto konnte nicht geladen werden');
       }
     }
+  };
+
+  const handlePromoteToTeamer = async () => {
+    if (!currentKonfi) return;
+    presentAlert({
+      header: 'Zum Teamer befoerdern',
+      message: `${currentKonfi.name} wirklich zum Teamer befoerdern?\n\n` +
+        `Punkte: ${getGottesdienstPoints()} Gottesdienst, ${getGemeindePoints()} Gemeinde\n` +
+        `Badges: ${currentKonfi.badgeCount || 0}\n\n` +
+        `Konfi-Punkte und Badges bleiben als Historie erhalten. ` +
+        `Event-Buchungen und offene Antraege werden geloescht. ` +
+        `Diese Aktion kann nicht rueckgaengig gemacht werden.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Befoerdern',
+          handler: async () => {
+            try {
+              await api.post(`/admin/konfis/${konfiId}/promote-teamer`);
+              setSuccess(`${currentKonfi.name} wurde zum Teamer befoerdert`);
+              window.dispatchEvent(new CustomEvent('konfis-updated'));
+              onBack();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Befoerdern');
+            }
+          }
+        }
+      ]
+    });
   };
 
   return (
@@ -953,6 +983,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonCardContent>
           </IonCard>
         </IonList>
+        {/* Teamer-Befoerderung */}
+        <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+          <IonItem button onClick={handlePromoteToTeamer} detail>
+            <IonIcon icon={ribbon} slot="start" color="primary" />
+            <IonLabel>
+              <h2>Zum Teamer befoerdern</h2>
+              <p>Konfi-Rolle wird dauerhaft gewechselt</p>
+            </IonLabel>
+          </IonItem>
+        </IonList>
+
       </IonContent>
 
     </IonPage>
