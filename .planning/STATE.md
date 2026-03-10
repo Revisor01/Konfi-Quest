@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Teamer
-current_plan: 2 of 3
+current_plan: 3 of 3
 status: completed
-stopped_at: Completed 40-01-PLAN.md
-last_updated: "2026-03-10T21:56:06.259Z"
-last_activity: 2026-03-10 -- Phase 40 Plan 01 completed
+stopped_at: Completed 40-02-PLAN.md
+last_updated: "2026-03-10T22:01:47.165Z"
+last_activity: 2026-03-10 -- Phase 40 Plan 02 completed
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 7
-  completed_plans: 5
-  percent: 42
+  completed_plans: 6
+  percent: 97
 ---
 
 # Project State
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.8 Teamer -- Phase 40 Badges + Aktivitaeten (Plan 01 done)
+**Current focus:** v1.8 Teamer -- Phase 40 Badges + Aktivitaeten (Plan 02 done)
 
 ## Current Position
 
 Phase: 40 of 43 (Badges + Aktivitaeten) -- IN PROGRESS
-Current Plan: 2 of 3
-Status: Plan 01 complete, ready for Plan 02
-Last activity: 2026-03-10 -- Phase 40 Plan 01 completed
+Current Plan: 3 of 3
+Status: Plan 02 complete, ready for Plan 03
+Last activity: 2026-03-10 -- Phase 40 Plan 02 completed
 
-Progress: [████░░░░░░] 42%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Progress: [████░░░░░░] 42%
 | 38 | 2 | ~15min | ~7min |
 | 39 | 2 | ~10min | ~5min |
 | Phase 40 P01 | 6min | 2 tasks | 6 files |
+| Phase 40 P02 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -64,6 +65,7 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 39]: QR-Check-in fuer Teamer ohne Punkte-Vergabe, Push an Admins bei Teamer-Booking/Storno
 - [Phase 39]: TeamerEventsPage als eigenstaendige Seite mit inline Event-Detail, TEAM Corner Badge #5b21b6
 - [Phase 40]: Migration als idempotente Funktion in badges.js, target_role Default 'konfi', Teamer-Aktivitaeten mit points=0
+- [Phase 40]: Streak-Logik und Badge-Insert als shared Funktionen extrahiert (DRY)
 
 ### Pending Todos
 
@@ -81,6 +83,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T21:56:06.257Z
-Stopped at: Completed 40-01-PLAN.md
+Last session: 2026-03-10T22:01:47.163Z
+Stopped at: Completed 40-02-PLAN.md
 Resume file: None
