@@ -65,7 +65,8 @@ import {
   location,
   chevronForward,
   medkit,
-  documentOutline
+  documentOutline,
+  bagHandle
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import api from '../../../services/api';
@@ -103,6 +104,9 @@ interface DashboardEvent {
   event_date: string;
   location: string;
   is_registered: boolean;
+  booking_status?: string;
+  cancelled?: boolean;
+  bring_items?: string;
 }
 
 interface Badge {
@@ -203,6 +207,44 @@ const TeamerDashboardPage: React.FC = () => {
     return `Gute Nacht, ${firstName}!`;
   };
 
+  // 1:1 aus DashboardView.tsx
+  const formatTimeUntil = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    const targetDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = targetDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Heute';
+    if (diffDays === 1) return 'Morgen';
+    if (diffDays < 0) return 'Vorbei';
+    if (diffDays < 7) return `${diffDays} Tage`;
+    if (diffDays < 14) return '1 Woche';
+    if (diffDays < 21) return '2 Wochen';
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} Wochen`;
+    if (diffDays < 365) return `${diffDays} Tage`;
+    return `${Math.floor(diffDays / 365)} Jahr${Math.floor(diffDays / 365) > 1 ? 'e' : ''}`;
+  };
+
+  const formatEventTime = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('de-DE', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatEventDate = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('de-DE', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    });
+  };
+
   const loadDashboard = async () => {
     try {
       const response = await api.get('/teamer/dashboard');
@@ -241,26 +283,6 @@ const TeamerDashboardPage: React.FC = () => {
     loadTageslosung();
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const formatTimeUntil = (dateString: string) => {
-    const eventDate = new Date(dateString);
-    const now = new Date();
-    const diffMs = eventDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'Heute';
-    if (diffDays === 1) return 'Morgen';
-    if (diffDays < 7) return `in ${diffDays} Tagen`;
-    if (diffDays < 30) return `in ${Math.ceil(diffDays / 7)} Wochen`;
-    return `in ${Math.ceil(diffDays / 30)} Monaten`;
-  };
-
   const config = dashboardData?.config;
 
   if (loading) {
@@ -293,7 +315,7 @@ const TeamerDashboardPage: React.FC = () => {
         </IonRefresher>
 
         <div style={{ padding: '16px' }}>
-          {/* Begruessung - app-dashboard-header */}
+          {/* Begruessung */}
           {dashboardData && (
             <div className="app-dashboard-header">
               <div className="app-dashboard-header__circle" style={{
@@ -314,12 +336,12 @@ const TeamerDashboardPage: React.FC = () => {
                 <h2 className="app-dashboard-greeting">
                   {getGreeting(dashboardData.greeting.display_name)}
                 </h2>
-                <p className="app-dashboard-subtitle">Teamer</p>
+                <p className="app-dashboard-subtitle">Teamer:in</p>
               </div>
             </div>
           )}
 
-          {/* Zertifikate - app-dashboard-section Style */}
+          {/* Zertifikate */}
           {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
             <div className="app-dashboard-section" style={{
               background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)'
@@ -428,7 +450,7 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Naechste Events - app-dashboard-section--events */}
+          {/* Events - 1:1 wie Konfi DashboardView */}
           {config?.show_events !== false && dashboardData && (
             <div className="app-dashboard-section app-dashboard-section--events">
               <div className="app-dashboard-section__bg-text">
@@ -454,60 +476,86 @@ const TeamerDashboardPage: React.FC = () => {
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {dashboardData.events.slice(0, 3).map((event) => (
-                      <div
-                        key={event.id}
-                        className="app-dashboard-glass-card"
-                        style={{
-                          position: 'relative',
-                          overflow: 'hidden',
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s ease, background 0.2s ease'
-                        }}
-                      >
-                        {/* Eselsohr oben rechts */}
-                        <div style={{
-                          position: 'absolute',
-                          top: '0',
-                          right: '0',
-                          background: event.is_registered
-                            ? 'rgba(5, 150, 105, 0.6)'
-                            : 'rgba(255,255,255,0.25)',
-                          borderRadius: '0 10px 0 10px',
-                          padding: '4px 10px',
-                          fontSize: '0.65rem',
-                          fontWeight: '600',
-                          color: 'white',
-                          whiteSpace: 'nowrap',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.3px'
-                        }}>
-                          {event.is_registered ? 'ANGEMELDET' : formatTimeUntil(event.event_date)}
-                        </div>
-                        <div>
+                    {dashboardData.events.map((event) => {
+                      const isWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
+                      return (
+                        <div
+                          key={event.id}
+                          className="app-dashboard-glass-card"
+                          style={{
+                            background: isWaitlist
+                              ? 'rgba(251, 191, 36, 0.25)'
+                              : undefined,
+                            position: 'relative',
+                            overflow: 'hidden',
+                            border: event.cancelled
+                              ? '2px dashed rgba(255,255,255,0.3)'
+                              : isWaitlist
+                                ? '2px solid rgba(251, 191, 36, 0.5)'
+                                : 'none',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease, background 0.2s ease'
+                          }}
+                        >
+                          {/* Eselsohr oben rechts - 1:1 wie Konfi */}
                           <div style={{
-                            fontSize: '1rem',
-                            fontWeight: '700',
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            background: event.cancelled
+                              ? 'rgba(255,255,255,0.3)'
+                              : isWaitlist
+                                ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                : 'rgba(255,255,255,0.25)',
+                            borderRadius: '0 10px 0 10px',
+                            padding: '4px 10px',
+                            fontSize: '0.65rem',
+                            fontWeight: '600',
                             color: 'white',
-                            marginBottom: '4px',
-                            paddingRight: '80px'
+                            whiteSpace: 'nowrap',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.3px'
                           }}>
-                            {event.title}
+                            {event.cancelled ? 'ABGESAGT' :
+                             isWaitlist ?
+                               'Warteliste' :
+                               formatTimeUntil(event.event_date)}
                           </div>
-                          <div className="app-dashboard-meta">
-                            <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
-                            <span>{formatDate(event.event_date)}</span>
-                            {event.location && (
-                              <>
-                                <span className="app-dashboard-dot" />
-                                <IonIcon icon={location} style={{ fontSize: '0.85rem' }} />
-                                <span>{event.location}</span>
-                              </>
+                          <div>
+                            <div style={{
+                              fontSize: '1rem',
+                              fontWeight: '700',
+                              color: 'white',
+                              marginBottom: '4px',
+                              paddingRight: '80px',
+                              textDecoration: event.cancelled ? 'line-through' : 'none'
+                            }}>
+                              {event.title}
+                            </div>
+                            <div className="app-dashboard-meta" style={{ flexWrap: 'wrap' }}>
+                              <IonIcon icon={calendar} style={{ fontSize: '0.9rem' }} />
+                              <span>{formatEventDate(event.event_date)}</span>
+                              <span className="app-dashboard-dot" />
+                              <IonIcon icon={time} style={{ fontSize: '0.9rem' }} />
+                              <span>{formatEventTime(event.event_date)}</span>
+                              {event.location && (
+                                <>
+                                  <span className="app-dashboard-dot" />
+                                  <IonIcon icon={location} style={{ fontSize: '0.9rem' }} />
+                                  <span>{event.location}</span>
+                                </>
+                              )}
+                            </div>
+                            {event.bring_items && (
+                              <div className="app-dashboard-meta" style={{ marginTop: '4px', color: 'rgba(255,255,255,0.9)' }}>
+                                <IonIcon icon={bagHandle} style={{ fontSize: '0.9rem', color: '#c4b5fd' }} />
+                                <span style={{ fontWeight: '600' }}>Mitbringen: {event.bring_items}</span>
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div
                       className="app-dashboard-glass-chip"
                       onClick={() => history.push('/teamer/events')}
@@ -527,7 +575,43 @@ const TeamerDashboardPage: React.FC = () => {
             </div>
           )}
 
-          {/* Badges - app-dashboard-section--badges */}
+          {/* Tageslosung - VOR Badges */}
+          {config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext) && (
+            <div className="app-dashboard-section app-dashboard-section--tageslosung">
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">TAGES</h2>
+                <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
+              </div>
+              <div className="app-dashboard-section__content">
+                {(() => {
+                  const hasLosung = dailyVerse.losungstext;
+                  const hasLehrtext = dailyVerse.lehrtext;
+
+                  let text, reference;
+                  if (hasLosung && hasLehrtext) {
+                    text = showLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
+                    reference = showLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
+                  } else {
+                    text = hasLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
+                    reference = hasLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
+                  }
+
+                  return (
+                    <div>
+                      <blockquote className="app-dashboard-quote">
+                        "{text}"
+                      </blockquote>
+                      <cite className="app-dashboard-cite">
+                        {reference}
+                      </cite>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Badges - NACH Tageslosung */}
           {config?.show_badges !== false && dashboardData && (
             <div className="app-dashboard-section app-dashboard-section--badges">
               <div className="app-dashboard-section__bg-text">
@@ -614,42 +698,6 @@ const TeamerDashboardPage: React.FC = () => {
                     </div>
                   </>
                 )}
-              </div>
-            </div>
-          )}
-
-          {/* Tageslosung - bereits korrekt */}
-          {config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext) && (
-            <div className="app-dashboard-section app-dashboard-section--tageslosung">
-              <div className="app-dashboard-section__bg-text">
-                <h2 className="app-dashboard-section__bg-label">TAGES</h2>
-                <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
-              </div>
-              <div className="app-dashboard-section__content">
-                {(() => {
-                  const hasLosung = dailyVerse.losungstext;
-                  const hasLehrtext = dailyVerse.lehrtext;
-
-                  let text, reference;
-                  if (hasLosung && hasLehrtext) {
-                    text = showLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
-                    reference = showLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
-                  } else {
-                    text = hasLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
-                    reference = hasLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
-                  }
-
-                  return (
-                    <div>
-                      <blockquote className="app-dashboard-quote">
-                        "{text}"
-                      </blockquote>
-                      <cite className="app-dashboard-cite">
-                        {reference}
-                      </cite>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
           )}

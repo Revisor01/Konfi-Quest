@@ -73,7 +73,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const badgesQuery = `
         SELECT kb.badge_id, b.name, b.icon, b.color, kb.awarded_date
         FROM user_badges kb
-        JOIN badges b ON kb.badge_id = b.id
+        JOIN custom_badges b ON kb.badge_id = b.id
         WHERE kb.user_id = $1
         ORDER BY kb.awarded_date DESC
       `;
@@ -420,16 +420,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
       const eventsQuery = `
         SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
-               e.teamer_only, e.teamer_needed,
-               CASE WHEN eb.id IS NOT NULL THEN true ELSE false END as is_registered
+               e.teamer_only, e.teamer_needed, e.bring_items, e.cancelled,
+               CASE WHEN eb.id IS NOT NULL THEN true ELSE false END as is_registered,
+               eb.status as booking_status
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
           AND (e.cancelled IS NOT TRUE)
-          AND (e.teamer_only = true OR e.teamer_needed = true)
         ORDER BY e.event_date ASC
-        LIMIT 3
+        LIMIT 5
       `;
       const { rows: events } = await db.query(eventsQuery, [userId, orgId]);
 
