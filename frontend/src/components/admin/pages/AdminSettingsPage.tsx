@@ -14,6 +14,11 @@ import {
   IonButton,
   IonItem,
   IonToggle,
+  IonSegment,
+  IonSegmentButton,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -31,7 +36,11 @@ import {
   flash,
   notifications,
   qrCode,
-  appsOutline
+  appsOutline,
+  add,
+  createOutline,
+  trash,
+  documentOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -47,9 +56,23 @@ interface DashboardConfig {
   show_ranking: boolean;
 }
 
+interface TeamerDashboardConfig {
+  show_zertifikate: boolean;
+  show_events: boolean;
+  show_badges: boolean;
+  show_losung: boolean;
+}
+
+interface CertificateType {
+  id: number;
+  name: string;
+  icon: string;
+  is_active: boolean;
+}
+
 const AdminSettingsPage: React.FC = () => {
   const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
-  const { user, pushNotificationsPermission, requestPushPermissions, setError } = useApp();
+  const { user, pushNotificationsPermission, requestPushPermissions, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const history = useHistory();
 
@@ -60,6 +83,16 @@ const AdminSettingsPage: React.FC = () => {
     show_badges: true,
     show_ranking: true
   });
+
+  const [teamerDashboardConfig, setTeamerDashboardConfig] = useState<TeamerDashboardConfig>({
+    show_zertifikate: true,
+    show_events: true,
+    show_badges: true,
+    show_losung: true
+  });
+
+  const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
+  const [certificateTypes, setCertificateTypes] = useState<CertificateType[]>([]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -73,12 +106,28 @@ const AdminSettingsPage: React.FC = () => {
           show_badges: data.dashboard_show_badges ?? true,
           show_ranking: data.dashboard_show_ranking ?? true
         });
+        setTeamerDashboardConfig({
+          show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
+          show_events: data.teamer_dashboard_show_events ?? true,
+          show_badges: data.teamer_dashboard_show_badges ?? true,
+          show_losung: data.teamer_dashboard_show_losung ?? true
+        });
       } catch {
         // Defaults bleiben bestehen
       }
     };
     loadSettings();
+    loadCertificateTypes();
   }, []);
+
+  const loadCertificateTypes = async () => {
+    try {
+      const response = await api.get('/teamer/certificate-types');
+      setCertificateTypes(response.data);
+    } catch {
+      // Ignorieren
+    }
+  };
 
   const handleDashboardToggle = async (key: keyof DashboardConfig, value: boolean) => {
     setDashboardConfig(prev => ({ ...prev, [key]: value }));
@@ -91,6 +140,103 @@ const AdminSettingsPage: React.FC = () => {
     }
   };
 
+  const handleTeamerDashboardToggle = async (key: keyof TeamerDashboardConfig, value: boolean) => {
+    setTeamerDashboardConfig(prev => ({ ...prev, [key]: value }));
+    try {
+      await api.put('/settings', { [`teamer_dashboard_${key}`]: value });
+    } catch {
+      setTeamerDashboardConfig(prev => ({ ...prev, [key]: !value }));
+      setError('Fehler beim Speichern der Teamer-Dashboard-Einstellung');
+    }
+  };
+
+  const handleCreateCertificateType = () => {
+    presentAlert({
+      header: 'Neuen Zertifikat-Typ erstellen',
+      inputs: [
+        { name: 'name', type: 'text', placeholder: 'Name (z.B. JuLeiCa)' },
+        { name: 'icon', type: 'text', placeholder: 'Icon-Name (z.B. ribbon, medkit)' }
+      ],
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Erstellen',
+          handler: async (data) => {
+            if (!data.name?.trim()) {
+              setError('Bitte einen Namen eingeben');
+              return false;
+            }
+            try {
+              await api.post('/teamer/certificate-types', {
+                name: data.name.trim(),
+                icon: data.icon?.trim() || 'ribbon'
+              });
+              setSuccess('Zertifikat-Typ erstellt');
+              loadCertificateTypes();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Erstellen');
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  const handleEditCertificateType = (certType: CertificateType) => {
+    presentAlert({
+      header: 'Zertifikat-Typ bearbeiten',
+      inputs: [
+        { name: 'name', type: 'text', value: certType.name, placeholder: 'Name' },
+        { name: 'icon', type: 'text', value: certType.icon, placeholder: 'Icon-Name' }
+      ],
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Speichern',
+          handler: async (data) => {
+            if (!data.name?.trim()) {
+              setError('Bitte einen Namen eingeben');
+              return false;
+            }
+            try {
+              await api.put(`/teamer/certificate-types/${certType.id}`, {
+                name: data.name.trim(),
+                icon: data.icon?.trim() || certType.icon
+              });
+              setSuccess('Zertifikat-Typ aktualisiert');
+              loadCertificateTypes();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Aktualisieren');
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  const handleDeleteCertificateType = (certType: CertificateType) => {
+    presentAlert({
+      header: 'Zertifikat-Typ loeschen',
+      message: `"${certType.name}" wirklich loeschen? Dies ist nur moeglich, wenn keine Zuweisungen bestehen.`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Loeschen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/teamer/certificate-types/${certType.id}`);
+              setSuccess('Zertifikat-Typ geloescht');
+              loadCertificateTypes();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Loeschen - moeglicherweise noch Zuweisungen vorhanden');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
     dismiss: () => dismissInviteModal()
@@ -99,7 +245,7 @@ const AdminSettingsPage: React.FC = () => {
   const handleLogout = () => {
     presentAlert({
       header: 'Abmelden',
-      message: 'Möchtest du dich wirklich abmelden?',
+      message: 'Moechtest du dich wirklich abmelden?',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -110,7 +256,7 @@ const AdminSettingsPage: React.FC = () => {
               await logout();
               window.location.href = '/';
             } catch (error) {
- console.error('Logout error:', error);
+console.error('Logout error:', error);
               // Fallback: direct logout even if token removal fails
               localStorage.removeItem('konfi_token');
               localStorage.removeItem('konfi_user');
@@ -155,7 +301,7 @@ const AdminSettingsPage: React.FC = () => {
                 </div>
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Profil</h2>
-                  <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
+                  <p className="app-settings-item__subtitle">Passwort und E-Mail aendern</p>
                 </div>
               </div>
 
@@ -189,7 +335,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonCard>
         </IonList>
 
-        {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
+        {/* BLOCK 1: Verwaltung - fuer org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -222,7 +368,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Konfis einladen</h2>
-                    <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
+                    <p className="app-settings-item__subtitle">QR-Code fuer Selbstregistrierung</p>
                   </div>
                 </div>
               </IonCardContent>
@@ -230,7 +376,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* System-Administration - NUR für super_admin */}
+        {/* System-Administration - NUR fuer super_admin */}
         {user?.role_name === 'super_admin' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -258,7 +404,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* BLOCK 2: Inhalt -- nur für org_admin/teamer, NICHT für super_admin */}
+        {/* BLOCK 2: Inhalt -- nur fuer org_admin/teamer, NICHT fuer super_admin */}
         {user?.role_name !== 'super_admin' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -277,8 +423,8 @@ const AdminSettingsPage: React.FC = () => {
                     <IonIcon icon={flash} />
                   </div>
                   <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Aktivitäten</h2>
-                    <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
+                    <h2 className="app-settings-item__title">Aktivitaeten</h2>
+                    <p className="app-settings-item__subtitle">Aktivitaeten und Punkte verwalten</p>
                   </div>
                 </div>
 
@@ -303,7 +449,7 @@ const AdminSettingsPage: React.FC = () => {
                     <IonIcon icon={school} />
                   </div>
                   <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Jahrgänge</h2>
+                    <h2 className="app-settings-item__title">Jahrgaenge</h2>
                     <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
                   </div>
                 </div>
@@ -317,7 +463,7 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Kategorien</h2>
-                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
+                    <p className="app-settings-item__subtitle">Kategorien fuer Aktivitaeten und Events</p>
                   </div>
                 </div>
 
@@ -333,12 +479,92 @@ const AdminSettingsPage: React.FC = () => {
                     <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                   </div>
                 </div>
+
+                {/* Zertifikat-Typen */}
+                <div
+                  className="app-list-item app-list-item--badges app-settings-item"
+                  style={{ cursor: 'default' }}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
+                    <IonIcon icon={documentOutline} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Zertifikat-Typen</h2>
+                    <p className="app-settings-item__subtitle">Zertifikat-Typen fuer Teamer:innen verwalten</p>
+                  </div>
+                </div>
+
+              </IonCardContent>
+            </IonCard>
+
+            {/* Zertifikat-Typen CRUD */}
+            <IonCard className="app-card" style={{ marginTop: '0' }}>
+              <IonCardContent>
+                {certificateTypes.length === 0 ? (
+                  <div className="app-empty-state">
+                    <p className="app-empty-state__text">Noch keine Zertifikat-Typen erstellt</p>
+                  </div>
+                ) : (
+                  <IonList className="app-list-inner" lines="none">
+                    {certificateTypes.map((certType, index) => (
+                      <IonItemSliding key={certType.id} style={{ marginBottom: index < certificateTypes.length - 1 ? '8px' : '0' }}>
+                        <IonItem
+                          className="app-item-transparent"
+                          detail={false}
+                          lines="none"
+                          onClick={() => handleEditCertificateType(certType)}
+                        >
+                          <div className="app-list-item" style={{ borderLeftColor: '#5b21b6' }}>
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className="app-icon-circle" style={{ backgroundColor: '#5b21b6' }}>
+                                  <IonIcon icon={ribbon} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{certType.name}</div>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={createOutline} />
+                                      Icon: {certType.icon}
+                                    </span>
+                                    <span className="app-list-item__meta-item">
+                                      {certType.is_active ? 'Aktiv' : 'Inaktiv'}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </IonItem>
+                        <IonItemOptions className="app-swipe-actions" side="end">
+                          <IonItemOption
+                            className="app-swipe-action"
+                            onClick={() => handleDeleteCertificateType(certType)}
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                              <IonIcon icon={trash} />
+                            </div>
+                          </IonItemOption>
+                        </IonItemOptions>
+                      </IonItemSliding>
+                    ))}
+                  </IonList>
+                )}
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  onClick={handleCreateCertificateType}
+                  style={{ marginTop: '12px' }}
+                >
+                  <IonIcon icon={add} slot="start" />
+                  Neuen Typ erstellen
+                </IonButton>
               </IonCardContent>
             </IonCard>
           </IonList>
         )}
 
-        {/* Dashboard-Konfiguration - nur für org_admin */}
+        {/* Dashboard-Konfiguration - nur fuer org_admin */}
         {user?.role_name === 'org_admin' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -347,47 +573,103 @@ const AdminSettingsPage: React.FC = () => {
               </div>
               <IonLabel>Dashboard-Konfiguration</IonLabel>
             </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent>
-                <IonList style={{ background: 'transparent', padding: '0' }}>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Konfirmations-Countdown anzeigen</IonLabel>
-                    <IonToggle
-                      checked={dashboardConfig.show_konfirmation}
-                      onIonChange={(e) => handleDashboardToggle('show_konfirmation', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Events anzeigen</IonLabel>
-                    <IonToggle
-                      checked={dashboardConfig.show_events}
-                      onIonChange={(e) => handleDashboardToggle('show_events', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Tageslosung anzeigen</IonLabel>
-                    <IonToggle
-                      checked={dashboardConfig.show_losung}
-                      onIonChange={(e) => handleDashboardToggle('show_losung', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Badges anzeigen</IonLabel>
-                    <IonToggle
-                      checked={dashboardConfig.show_badges}
-                      onIonChange={(e) => handleDashboardToggle('show_badges', e.detail.checked)}
-                    />
-                  </IonItem>
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Ranking anzeigen</IonLabel>
-                    <IonToggle
-                      checked={dashboardConfig.show_ranking}
-                      onIonChange={(e) => handleDashboardToggle('show_ranking', e.detail.checked)}
-                    />
-                  </IonItem>
-                </IonList>
-              </IonCardContent>
-            </IonCard>
+
+            {/* Segment Toggle Konfi/Teamer */}
+            <IonSegment
+              value={dashboardSegment}
+              onIonChange={(e) => setDashboardSegment(e.detail.value as 'konfi' | 'teamer')}
+              style={{ marginBottom: '8px', padding: '0 16px' }}
+            >
+              <IonSegmentButton value="konfi">
+                <IonLabel>Konfi</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="teamer">
+                <IonLabel>Teamer</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+
+            {/* Konfi Dashboard Config */}
+            {dashboardSegment === 'konfi' && (
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <IonList style={{ background: 'transparent', padding: '0' }}>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Konfirmations-Countdown anzeigen</IonLabel>
+                      <IonToggle
+                        checked={dashboardConfig.show_konfirmation}
+                        onIonChange={(e) => handleDashboardToggle('show_konfirmation', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Events anzeigen</IonLabel>
+                      <IonToggle
+                        checked={dashboardConfig.show_events}
+                        onIonChange={(e) => handleDashboardToggle('show_events', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Tageslosung anzeigen</IonLabel>
+                      <IonToggle
+                        checked={dashboardConfig.show_losung}
+                        onIonChange={(e) => handleDashboardToggle('show_losung', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Badges anzeigen</IonLabel>
+                      <IonToggle
+                        checked={dashboardConfig.show_badges}
+                        onIonChange={(e) => handleDashboardToggle('show_badges', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Ranking anzeigen</IonLabel>
+                      <IonToggle
+                        checked={dashboardConfig.show_ranking}
+                        onIonChange={(e) => handleDashboardToggle('show_ranking', e.detail.checked)}
+                      />
+                    </IonItem>
+                  </IonList>
+                </IonCardContent>
+              </IonCard>
+            )}
+
+            {/* Teamer Dashboard Config */}
+            {dashboardSegment === 'teamer' && (
+              <IonCard className="app-card">
+                <IonCardContent>
+                  <IonList style={{ background: 'transparent', padding: '0' }}>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Zertifikate anzeigen</IonLabel>
+                      <IonToggle
+                        checked={teamerDashboardConfig.show_zertifikate}
+                        onIonChange={(e) => handleTeamerDashboardToggle('show_zertifikate', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Events anzeigen</IonLabel>
+                      <IonToggle
+                        checked={teamerDashboardConfig.show_events}
+                        onIonChange={(e) => handleTeamerDashboardToggle('show_events', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Badges anzeigen</IonLabel>
+                      <IonToggle
+                        checked={teamerDashboardConfig.show_badges}
+                        onIonChange={(e) => handleTeamerDashboardToggle('show_badges', e.detail.checked)}
+                      />
+                    </IonItem>
+                    <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                      <IonLabel>Tageslosung anzeigen</IonLabel>
+                      <IonToggle
+                        checked={teamerDashboardConfig.show_losung}
+                        onIonChange={(e) => handleTeamerDashboardToggle('show_losung', e.detail.checked)}
+                      />
+                    </IonItem>
+                  </IonList>
+                </IonCardContent>
+              </IonCard>
+            )}
           </IonList>
         )}
 

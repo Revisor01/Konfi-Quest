@@ -40,7 +40,8 @@ import {
   personOutline,
   closeCircle,
   eyeOff,
-  ribbon
+  ribbon,
+  documentOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -105,6 +106,21 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [targetRole, setTargetRole] = useState<string>('konfi');
   const isTeamer = targetRole === 'teamer';
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [certificates, setCertificates] = useState<Array<{
+    id: number;
+    certificate_type_id: number;
+    name: string;
+    icon: string;
+    issued_date: string;
+    expiry_date: string | null;
+    status: string;
+  }>>([]);
+  const [certificateTypes, setCertificateTypes] = useState<Array<{
+    id: number;
+    name: string;
+    icon: string;
+    is_active: boolean;
+  }>>([]);
   const [attendanceStats, setAttendanceStats] = useState<{
     total_mandatory: number;
     attended: number;
@@ -211,6 +227,21 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
       // Rolle setzen fuer bedingte Anzeige
       setTargetRole(konfiData.role_name || 'konfi');
+
+      // Zertifikate aus dem Detail-Response (nur fuer Teamer)
+      if (konfiData.role_name === 'teamer' && konfiData.certificates) {
+        setCertificates(konfiData.certificates);
+      }
+
+      // Zertifikat-Typen laden (fuer die Zuweisung)
+      if (konfiData.role_name === 'teamer') {
+        try {
+          const certTypesRes = await api.get('/teamer/certificate-types');
+          setCertificateTypes(certTypesRes.data || []);
+        } catch {
+          // Ignorieren
+        }
+      }
 
       // bonusPoints vom Backend ist ein Array, nicht eine Zahl!
       const bonusEntriesArray = Array.isArray(konfiData.bonusPoints) ? konfiData.bonusPoints : [];
@@ -395,6 +426,94 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
         setError('Foto konnte nicht geladen werden');
       }
     }
+  };
+
+  const handleAssignCertificate = () => {
+    const availableTypes = certificateTypes.filter(
+      ct => ct.is_active && !certificates.some(c => c.certificate_type_id === ct.id)
+    );
+
+    if (availableTypes.length === 0) {
+      setError('Keine verfuegbaren Zertifikat-Typen mehr');
+      return;
+    }
+
+    presentAlert({
+      header: 'Zertifikat zuweisen',
+      inputs: [
+        {
+          name: 'certificate_type_id',
+          type: 'radio' as any,
+          label: availableTypes[0]?.name || '',
+          value: String(availableTypes[0]?.id || ''),
+          checked: true
+        },
+        ...availableTypes.slice(1).map(ct => ({
+          name: 'certificate_type_id',
+          type: 'radio' as any,
+          label: ct.name,
+          value: String(ct.id)
+        })),
+        {
+          name: 'issued_date',
+          type: 'date' as any,
+          label: 'Ausstellungsdatum',
+          value: new Date().toISOString().split('T')[0]
+        },
+        {
+          name: 'expiry_date',
+          type: 'date' as any,
+          label: 'Ablaufdatum (optional)'
+        }
+      ],
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Zuweisen',
+          handler: async (data: any) => {
+            const typeId = typeof data === 'string' ? data : data?.certificate_type_id || data;
+            const issuedDate = (document.querySelector('ion-alert input[name="issued_date"]') as HTMLInputElement)?.value
+              || new Date().toISOString().split('T')[0];
+            const expiryDate = (document.querySelector('ion-alert input[name="expiry_date"]') as HTMLInputElement)?.value || null;
+
+            try {
+              await api.post(`/teamer/${konfiId}/certificates`, {
+                certificate_type_id: parseInt(typeId),
+                issued_date: issuedDate,
+                expiry_date: expiryDate || null
+              });
+              setSuccess('Zertifikat zugewiesen');
+              await loadKonfiData();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Zuweisen');
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  const handleDeleteCertificate = (cert: { id: number; name: string }) => {
+    presentAlert({
+      header: 'Zertifikat entfernen',
+      message: `"${cert.name}" wirklich entfernen?`,
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Entfernen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/teamer/${konfiId}/certificates/${cert.id}`);
+              setSuccess('Zertifikat entfernt');
+              await loadKonfiData();
+            } catch (err: any) {
+              setError(err.response?.data?.error || 'Fehler beim Entfernen');
+            }
+          }
+        }
+      ]
+    });
   };
 
   const handlePromoteToTeamer = async () => {
@@ -995,6 +1114,98 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonCardContent>
           </IonCard>
         </IonList>
+        {/* Zertifikate - nur fuer Teamer */}
+        {isTeamer && (
+          <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+            <IonListHeader>
+              <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+                <IonIcon icon={documentOutline} />
+              </div>
+              <IonLabel>Zertifikate</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {certificates.length === 0 ? (
+                  <div className="app-empty-state">
+                    <p className="app-empty-state__text">Noch keine Zertifikate zugewiesen</p>
+                  </div>
+                ) : (
+                  <IonList className="app-list-inner" lines="none">
+                    {certificates.map((cert, index) => (
+                      <IonItemSliding key={cert.id} style={{ marginBottom: index < certificates.length - 1 ? '8px' : '0' }}>
+                        <IonItem
+                          className="app-item-transparent"
+                          detail={false}
+                          lines="none"
+                        >
+                          <div
+                            className="app-list-item"
+                            style={{
+                              borderLeftColor: cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af'
+                            }}
+                          >
+                            {cert.status === 'expired' && (
+                              <div className="app-corner-badge" style={{ backgroundColor: '#ef4444' }}>
+                                Abgelaufen
+                              </div>
+                            )}
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div
+                                  className="app-icon-circle"
+                                  style={{
+                                    backgroundColor: cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af'
+                                  }}
+                                >
+                                  <IonIcon icon={ribbon} />
+                                </div>
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title app-list-item__title--badge-space">
+                                    {cert.name}
+                                  </div>
+                                  <div className="app-list-item__meta">
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={calendar} className="app-icon-color--events" />
+                                      {formatDate(cert.issued_date)}
+                                    </span>
+                                    {cert.expiry_date && (
+                                      <span className="app-list-item__meta-item">
+                                        Ablauf: {formatDate(cert.expiry_date)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </IonItem>
+                        <IonItemOptions className="app-swipe-actions" side="end">
+                          <IonItemOption
+                            className="app-swipe-action"
+                            onClick={() => handleDeleteCertificate(cert)}
+                          >
+                            <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                              <IonIcon icon={trash} />
+                            </div>
+                          </IonItemOption>
+                        </IonItemOptions>
+                      </IonItemSliding>
+                    ))}
+                  </IonList>
+                )}
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  onClick={handleAssignCertificate}
+                >
+                  <IonIcon icon={add} slot="start" />
+                  Zertifikat zuweisen
+                </IonButton>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Teamer-Befoerderung - nur fuer Konfis */}
         {!isTeamer && (
           <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
