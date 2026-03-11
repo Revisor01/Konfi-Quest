@@ -14,6 +14,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
     body('dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('dashboard_show_badges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     body('dashboard_show_ranking').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('teamer_dashboard_show_zertifikate').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('teamer_dashboard_show_events').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('teamer_dashboard_show_badges').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
+    body('teamer_dashboard_show_losung').optional().isBoolean().withMessage('Dashboard-Toggle muss Boolean sein'),
     handleValidationErrors
   ];
 
@@ -73,7 +77,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
       rows.forEach(row => {
         if (row.key === 'max_waitlist_size') {
           settings[row.key] = parseInt(row.value, 10) || 0;
-        } else if (row.key === 'waitlist_enabled' || row.key.startsWith('dashboard_show_')) {
+        } else if (row.key === 'waitlist_enabled' || row.key.startsWith('dashboard_show_') || row.key.startsWith('teamer_dashboard_show_')) {
           settings[row.key] = row.value === 'true' || row.value === '1';
         } else {
           settings[row.key] = row.value;
@@ -99,16 +103,24 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin }) => {
         dashboard_show_events,
         dashboard_show_losung,
         dashboard_show_badges,
-        dashboard_show_ranking
+        dashboard_show_ranking,
+        teamer_dashboard_show_zertifikate,
+        teamer_dashboard_show_events,
+        teamer_dashboard_show_badges,
+        teamer_dashboard_show_losung
       } = req.body;
 
-      // Dashboard-Widget-Toggles speichern
+      // Dashboard-Widget-Toggles speichern (Konfi + Teamer)
       const dashboardKeys = {
         dashboard_show_konfirmation,
         dashboard_show_events,
         dashboard_show_losung,
         dashboard_show_badges,
-        dashboard_show_ranking
+        dashboard_show_ranking,
+        teamer_dashboard_show_zertifikate,
+        teamer_dashboard_show_events,
+        teamer_dashboard_show_badges,
+        teamer_dashboard_show_losung
       };
 
       for (const [key, value] of Object.entries(dashboardKeys)) {

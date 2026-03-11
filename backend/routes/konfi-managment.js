@@ -483,11 +483,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             const badgeQuery = `SELECT COUNT(*) as "badgeCount" FROM user_badges WHERE user_id = $1`;
             const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId]);
 
+            // Zertifikate fuer Teamer mitladen
+            let certificates = [];
+            if (konfi.role_name === 'teamer') {
+                const certQuery = `
+                    SELECT uc.id, uc.issued_date, uc.expiry_date, ct.name, ct.icon
+                    FROM user_certificates uc
+                    JOIN certificate_types ct ON uc.certificate_type_id = ct.id
+                    WHERE uc.user_id = $1 AND uc.organization_id = $2
+                    ORDER BY uc.issued_date DESC
+                `;
+                const { rows: certRows } = await db.query(certQuery, [konfiId, req.user.organization_id]);
+                certificates = certRows;
+            }
+
             res.json({
                 ...konfi,
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
-                badgeCount: badgeResult ? badgeResult.badgeCount : 0
+                badgeCount: badgeResult ? badgeResult.badgeCount : 0,
+                ...(konfi.role_name === 'teamer' ? { certificates } : {})
             });
 
         } catch (err) {
