@@ -16,10 +16,10 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 
 ### Dashboard (DSH)
 
-- [ ] **DSH-01**: Teamer sieht tageszeitabhaengige Begruessing im Dashboard
-- [ ] **DSH-02**: Teamer sieht Zertifikat-Anzeige (JuLeiCa, Teamer-Card mit Datum) prominent im Dashboard
-- [ ] **DSH-03**: Teamer sieht naechste anstehende Events im Dashboard
-- [ ] **DSH-04**: Teamer sieht eigene Badges-Sektion im Dashboard (wie bei Konfis)
+- [x] **DSH-01**: Teamer sieht tageszeitabhaengige Begruessing im Dashboard
+- [x] **DSH-02**: Teamer sieht Zertifikat-Anzeige (JuLeiCa, Teamer-Card mit Datum) prominent im Dashboard
+- [x] **DSH-03**: Teamer sieht naechste anstehende Events im Dashboard
+- [x] **DSH-04**: Teamer sieht eigene Badges-Sektion im Dashboard (wie bei Konfis)
 
 ### Events (EVT)
 
@@ -42,9 +42,9 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 
 ### Zertifikate (ZRT)
 
-- [ ] **ZRT-01**: Admin kann Teamer Zertifikate zuweisen (JuLeiCa, Teamer-Card, etc.) mit Datum
+- [x] **ZRT-01**: Admin kann Teamer Zertifikate zuweisen (JuLeiCa, Teamer-Card, etc.) mit Datum
 - [ ] **ZRT-02**: Zertifikate werden im Dashboard prominent angezeigt (aehnlich Konfi-Level-Anzeige)
-- [ ] **ZRT-03**: Zertifikat-Typen sind frei konfigurierbar durch Admin
+- [x] **ZRT-03**: Zertifikat-Typen sind frei konfigurierbar durch Admin
 
 ### Material (MAT)
 
@@ -92,10 +92,10 @@ Deferred. Nicht in aktuellem Roadmap.
 | ROL-02 | Phase 38 | Complete |
 | ROL-03 | Phase 38 | Complete |
 | ROL-04 | Phase 38 | Complete |
-| DSH-01 | Phase 41 | Pending |
-| DSH-02 | Phase 41 | Pending |
-| DSH-03 | Phase 41 | Pending |
-| DSH-04 | Phase 41 | Pending |
+| DSH-01 | Phase 41 | Complete |
+| DSH-02 | Phase 41 | Complete |
+| DSH-03 | Phase 41 | Complete |
+| DSH-04 | Phase 41 | Complete |
 | EVT-01 | Phase 39 | Complete |
 | EVT-02 | Phase 39 | Complete |
 | EVT-03 | Phase 39 | Complete |
@@ -109,9 +109,9 @@ Deferred. Nicht in aktuellem Roadmap.
 | BDG-05 | Phase 40 | Complete |
 | BDG-06 | Phase 40 | Complete |
 | BDG-07 | Phase 40 | Complete |
-| ZRT-01 | Phase 41 | Pending |
+| ZRT-01 | Phase 41 | Complete |
 | ZRT-02 | Phase 41 | Pending |
-| ZRT-03 | Phase 41 | Pending |
+| ZRT-03 | Phase 41 | Complete |
 | MAT-01 | Phase 42 | Pending |
 | MAT-02 | Phase 42 | Pending |
 | MAT-03 | Phase 42 | Pending |

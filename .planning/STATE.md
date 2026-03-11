@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Teamer
-current_plan: 3 of 3
-status: completed
-stopped_at: Phase 41 context gathered
-last_updated: "2026-03-11T13:26:44.886Z"
-last_activity: 2026-03-10 -- Phase 40 Plan 03 completed
+current_plan: 1 of 2
+status: in_progress
+stopped_at: Completed 41-01-PLAN.md
+last_updated: "2026-03-11T13:39:38Z"
+last_activity: 2026-03-11 -- Phase 41 Plan 01 completed
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 10
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.8 Teamer -- Phase 40 Badges + Aktivitaeten (COMPLETE)
+**Current focus:** v1.8 Teamer -- Phase 41 Zertifikate + Dashboard
 
 ## Current Position
 
-Phase: 40 of 43 (Badges + Aktivitaeten) -- COMPLETE
-Current Plan: 3 of 3
-Status: Phase 40 complete
-Last activity: 2026-03-10 -- Phase 40 Plan 03 completed
+Phase: 41 of 43 (Zertifikate + Dashboard)
+Current Plan: 1 of 2
+Status: Plan 01 complete, Plan 02 pending
+Last activity: 2026-03-11 -- Phase 41 Plan 01 completed
 
-Progress: [██████████] 100%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Progress: [██████████] 100%
 | Phase 40 P02 | 5min | 2 tasks | 4 files |
 | Phase 40 P03 | 8min | 3 tasks | 9 files |
 | Phase 40 P04 | 5min | 2 tasks | 3 files |
+| Phase 41 P01 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -71,6 +72,8 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 40]: Segment-Toggle Pattern fuer Konfi/Teamer-Umschaltung in Badge/Activity-Seiten
 - [Phase 40]: TeamerBadgesView als eigenstaendige Komponente mit eigenem Fetch
 - [Phase 40]: WHERE IN ('konfi','teamer') statt separater Route, targetRole als optionaler Prop
+- [Phase 41]: Idempotente Migration fuer Zertifikat-Tabellen in teamer.js, Events-Query nutzt teamer_only/teamer_needed
+- [Phase 41]: Zertifikat-Status per SQL CASE (valid/expired/not_earned), DELETE nur ohne Zuweisungen
 
 ### Pending Todos
 
@@ -88,6 +91,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-11T13:26:44.880Z
-Stopped at: Phase 41 context gathered
-Resume file: .planning/phases/41-zertifikate-dashboard/41-CONTEXT.md
+Last session: 2026-03-11T13:39:38Z
+Stopped at: Completed 41-01-PLAN.md
+Resume file: .planning/phases/41-zertifikate-dashboard/41-01-SUMMARY.md

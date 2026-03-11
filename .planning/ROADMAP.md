@@ -188,7 +188,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 41-01-PLAN.md -- Backend: DB-Schema Zertifikate, CRUD-Endpoints, Teamer-Dashboard-Endpoint, Settings-Erweiterung
+- [x] 41-01-PLAN.md -- Backend: DB-Schema Zertifikate, CRUD-Endpoints, Teamer-Dashboard-Endpoint, Settings-Erweiterung
 - [ ] 41-02-PLAN.md -- Frontend: TeamerDashboardPage, Admin Zertifikat-Verwaltung, Dashboard-Konfiguration
 
 ### Phase 42: Material
@@ -228,6 +228,6 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
-| 41. Zertifikate + Dashboard | 0/2 | Not started | - |
+| 41. Zertifikate + Dashboard | 1/2 | In Progress | - |
 | 42. Material | 0/1 | Not started | - |
 | 43. Profil + Chat | 0/2 | Not started | - |
