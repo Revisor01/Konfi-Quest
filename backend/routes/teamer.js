@@ -2,7 +2,51 @@ const express = require('express');
 const router = express.Router();
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
-  const { requireTeamer } = roleHelpers;
+  const { requireTeamer, requireOrgAdmin, requireAdmin } = roleHelpers;
+
+  // ====================================================================
+  // IDEMPOTENTE MIGRATION: certificate_types + user_certificates
+  // ====================================================================
+  const runCertificateMigration = async () => {
+    try {
+      // certificate_types Tabelle
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS certificate_types (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(100) NOT NULL,
+          icon VARCHAR(50) DEFAULT 'ribbon',
+          organization_id INTEGER REFERENCES organizations(id),
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(organization_id, name)
+        )
+      `);
+
+      // user_certificates Tabelle
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS user_certificates (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER REFERENCES users(id),
+          certificate_type_id INTEGER REFERENCES certificate_types(id),
+          organization_id INTEGER REFERENCES organizations(id),
+          issued_date DATE NOT NULL,
+          expiry_date DATE,
+          admin_id INTEGER REFERENCES users(id),
+          created_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(user_id, certificate_type_id)
+        )
+      `);
+    } catch (err) {
+      console.error('Certificate migration error:', err.message);
+    }
+  };
+
+  // Migration beim Laden ausfuehren
+  runCertificateMigration();
+
+  // ====================================================================
+  // TEAMER PROFIL
+  // ====================================================================
 
   // GET /teamer/profile - Eingefrorene Konfi-Daten fuer Teamer
   router.get('/profile', rbacVerifier, (req, res, next) => {
@@ -115,6 +159,332 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     } catch (err) {
       console.error('Error marking badges as seen:', err);
       res.status(500).json({ error: 'Fehler beim Aktualisieren des Badge-Status' });
+    }
+  });
+
+  // ====================================================================
+  // ZERTIFIKAT-TYPEN CRUD (Admin-only)
+  // ====================================================================
+
+  // GET /teamer/certificate-types - Alle aktiven Typen der Organisation
+  router.get('/certificate-types', rbacVerifier, requireAdmin, async (req, res) => {
+    try {
+      const { rows } = await db.query(
+        `SELECT id, name, icon, is_active, created_at
+         FROM certificate_types
+         WHERE organization_id = $1 AND is_active = true
+         ORDER BY name`,
+        [req.user.organization_id]
+      );
+      res.json(rows);
+    } catch (err) {
+      console.error('Error loading certificate types:', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Zertifikat-Typen' });
+    }
+  });
+
+  // POST /teamer/certificate-types - Neuen Typ erstellen
+  router.post('/certificate-types', rbacVerifier, requireOrgAdmin, async (req, res) => {
+    try {
+      const { name, icon } = req.body;
+      if (!name || !name.trim()) {
+        return res.status(400).json({ error: 'Name ist erforderlich' });
+      }
+
+      const { rows: [created] } = await db.query(
+        `INSERT INTO certificate_types (name, icon, organization_id)
+         VALUES ($1, $2, $3)
+         RETURNING id, name, icon, is_active, created_at`,
+        [name.trim(), icon || 'ribbon', req.user.organization_id]
+      );
+      res.status(201).json(created);
+    } catch (err) {
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'Ein Zertifikat-Typ mit diesem Namen existiert bereits' });
+      }
+      console.error('Error creating certificate type:', err);
+      res.status(500).json({ error: 'Fehler beim Erstellen des Zertifikat-Typs' });
+    }
+  });
+
+  // PUT /teamer/certificate-types/:id - Typ bearbeiten
+  router.put('/certificate-types/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+    try {
+      const { name, icon, is_active } = req.body;
+      const updates = [];
+      const params = [];
+      let paramIdx = 1;
+
+      if (name !== undefined) {
+        if (!name.trim()) {
+          return res.status(400).json({ error: 'Name darf nicht leer sein' });
+        }
+        updates.push(`name = $${paramIdx++}`);
+        params.push(name.trim());
+      }
+      if (icon !== undefined) {
+        updates.push(`icon = $${paramIdx++}`);
+        params.push(icon);
+      }
+      if (is_active !== undefined) {
+        updates.push(`is_active = $${paramIdx++}`);
+        params.push(is_active);
+      }
+
+      if (updates.length === 0) {
+        return res.status(400).json({ error: 'Keine Aenderungen angegeben' });
+      }
+
+      params.push(req.params.id, req.user.organization_id);
+      const { rowCount } = await db.query(
+        `UPDATE certificate_types SET ${updates.join(', ')}
+         WHERE id = $${paramIdx++} AND organization_id = $${paramIdx}`,
+        params
+      );
+
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden' });
+      }
+      res.json({ message: 'Zertifikat-Typ erfolgreich aktualisiert' });
+    } catch (err) {
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'Ein Zertifikat-Typ mit diesem Namen existiert bereits' });
+      }
+      console.error('Error updating certificate type:', err);
+      res.status(500).json({ error: 'Fehler beim Aktualisieren des Zertifikat-Typs' });
+    }
+  });
+
+  // DELETE /teamer/certificate-types/:id - Typ loeschen (nur wenn nicht zugewiesen)
+  router.delete('/certificate-types/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
+    try {
+      // Pruefen ob Zertifikate zugewiesen sind
+      const { rows: [usage] } = await db.query(
+        'SELECT COUNT(*) as count FROM user_certificates WHERE certificate_type_id = $1',
+        [req.params.id]
+      );
+
+      if (parseInt(usage.count) > 0) {
+        return res.status(409).json({
+          error: 'Zertifikat-Typ kann nicht geloescht werden, da er bereits zugewiesen ist. Deaktivieren Sie ihn stattdessen.'
+        });
+      }
+
+      const { rowCount } = await db.query(
+        'DELETE FROM certificate_types WHERE id = $1 AND organization_id = $2',
+        [req.params.id, req.user.organization_id]
+      );
+
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden' });
+      }
+      res.json({ message: 'Zertifikat-Typ erfolgreich geloescht' });
+    } catch (err) {
+      console.error('Error deleting certificate type:', err);
+      res.status(500).json({ error: 'Fehler beim Loeschen des Zertifikat-Typs' });
+    }
+  });
+
+  // ====================================================================
+  // ZERTIFIKAT-ZUWEISUNG AN TEAMER (Admin-only)
+  // ====================================================================
+
+  // GET /teamer/:userId/certificates - Alle Zertifikate eines Teamers
+  router.get('/:userId/certificates', rbacVerifier, requireAdmin, async (req, res) => {
+    try {
+      const { rows } = await db.query(
+        `SELECT uc.id, uc.issued_date, uc.expiry_date, uc.created_at,
+                ct.id as certificate_type_id, ct.name, ct.icon
+         FROM user_certificates uc
+         JOIN certificate_types ct ON uc.certificate_type_id = ct.id
+         WHERE uc.user_id = $1 AND uc.organization_id = $2
+         ORDER BY uc.issued_date DESC`,
+        [req.params.userId, req.user.organization_id]
+      );
+      res.json(rows);
+    } catch (err) {
+      console.error('Error loading user certificates:', err);
+      res.status(500).json({ error: 'Fehler beim Laden der Zertifikate' });
+    }
+  });
+
+  // POST /teamer/:userId/certificates - Zertifikat zuweisen
+  router.post('/:userId/certificates', rbacVerifier, requireOrgAdmin, async (req, res) => {
+    try {
+      const { certificate_type_id, issued_date, expiry_date } = req.body;
+
+      if (!certificate_type_id || !issued_date) {
+        return res.status(400).json({ error: 'Zertifikat-Typ und Ausstellungsdatum sind erforderlich' });
+      }
+
+      // Pruefen: User existiert und ist Teamer
+      const { rows: [user] } = await db.query(
+        `SELECT u.id FROM users u
+         JOIN roles r ON u.role_id = r.id
+         WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'teamer'`,
+        [req.params.userId, req.user.organization_id]
+      );
+
+      if (!user) {
+        return res.status(404).json({ error: 'Teamer nicht gefunden' });
+      }
+
+      // Pruefen: Zertifikat-Typ gehoert zur Organisation
+      const { rows: [certType] } = await db.query(
+        'SELECT id FROM certificate_types WHERE id = $1 AND organization_id = $2 AND is_active = true',
+        [certificate_type_id, req.user.organization_id]
+      );
+
+      if (!certType) {
+        return res.status(404).json({ error: 'Zertifikat-Typ nicht gefunden oder nicht aktiv' });
+      }
+
+      const { rows: [created] } = await db.query(
+        `INSERT INTO user_certificates (user_id, certificate_type_id, organization_id, issued_date, expiry_date, admin_id)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, issued_date, expiry_date`,
+        [req.params.userId, certificate_type_id, req.user.organization_id, issued_date, expiry_date || null, req.user.id]
+      );
+
+      res.status(201).json({ message: 'Zertifikat erfolgreich zugewiesen', ...created });
+    } catch (err) {
+      if (err.code === '23505') {
+        return res.status(409).json({ error: 'Dieses Zertifikat wurde dem Teamer bereits zugewiesen' });
+      }
+      console.error('Error assigning certificate:', err);
+      res.status(500).json({ error: 'Fehler beim Zuweisen des Zertifikats' });
+    }
+  });
+
+  // DELETE /teamer/:userId/certificates/:certId - Zertifikat entfernen
+  router.delete('/:userId/certificates/:certId', rbacVerifier, requireOrgAdmin, async (req, res) => {
+    try {
+      const { rowCount } = await db.query(
+        'DELETE FROM user_certificates WHERE id = $1 AND user_id = $2 AND organization_id = $3',
+        [req.params.certId, req.params.userId, req.user.organization_id]
+      );
+
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Zertifikat nicht gefunden' });
+      }
+      res.json({ message: 'Zertifikat erfolgreich entfernt' });
+    } catch (err) {
+      console.error('Error removing certificate:', err);
+      res.status(500).json({ error: 'Fehler beim Entfernen des Zertifikats' });
+    }
+  });
+
+  // ====================================================================
+  // TEAMER-DASHBOARD
+  // ====================================================================
+
+  // GET /teamer/dashboard - Dashboard-Daten fuer Teamer
+  router.get('/dashboard', rbacVerifier, requireTeamer, async (req, res) => {
+    try {
+      if (req.user.role_name !== 'teamer') {
+        return res.status(403).json({ error: 'Nur Teamer koennen das Dashboard abrufen' });
+      }
+
+      const userId = req.user.id;
+      const orgId = req.user.organization_id;
+
+      // 1. Greeting
+      const now = new Date();
+      const greeting = {
+        display_name: req.user.display_name,
+        hour: now.getHours()
+      };
+
+      // 2. Certificates: Alle Typen der Org mit LEFT JOIN user_certificates
+      const certificatesQuery = `
+        SELECT ct.id, ct.name, ct.icon,
+               uc.issued_date, uc.expiry_date,
+               CASE
+                 WHEN uc.id IS NULL THEN 'not_earned'
+                 WHEN uc.expiry_date IS NOT NULL AND uc.expiry_date < CURRENT_DATE THEN 'expired'
+                 ELSE 'valid'
+               END as status
+        FROM certificate_types ct
+        LEFT JOIN user_certificates uc ON ct.id = uc.certificate_type_id AND uc.user_id = $1
+        WHERE ct.organization_id = $2 AND ct.is_active = true
+        ORDER BY
+          CASE
+            WHEN uc.id IS NOT NULL AND (uc.expiry_date IS NULL OR uc.expiry_date >= CURRENT_DATE) THEN 0
+            WHEN uc.id IS NOT NULL AND uc.expiry_date < CURRENT_DATE THEN 1
+            ELSE 2
+          END,
+          ct.name
+      `;
+      const { rows: certificates } = await db.query(certificatesQuery, [userId, orgId]);
+
+      // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
+      const eventsQuery = `
+        SELECT e.id, e.name, e.event_date, e.event_end_time, e.location, e.type,
+               e.teamer_only, e.teamer_needed,
+               CASE WHEN eb.id IS NOT NULL THEN true ELSE false END as is_registered
+        FROM events e
+        LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
+        WHERE e.organization_id = $2
+          AND e.event_date >= CURRENT_DATE
+          AND (e.cancelled IS NOT TRUE)
+          AND (e.teamer_only = true OR e.teamer_needed = true)
+        ORDER BY e.event_date ASC
+        LIMIT 3
+      `;
+      const { rows: events } = await db.query(eventsQuery, [userId, orgId]);
+
+      // 4. Badges: Letzte 3 earned + Counts
+      const recentBadgesQuery = `
+        SELECT cb.icon, cb.name, ub.awarded_date
+        FROM user_badges ub
+        JOIN custom_badges cb ON ub.badge_id = cb.id
+        WHERE ub.user_id = $1 AND ub.organization_id = $2 AND cb.target_role = 'teamer'
+        ORDER BY ub.awarded_date DESC
+        LIMIT 3
+      `;
+      const { rows: recentBadges } = await db.query(recentBadgesQuery, [userId, orgId]);
+
+      const earnedCountQuery = `
+        SELECT COUNT(*) as count FROM user_badges ub
+        JOIN custom_badges cb ON ub.badge_id = cb.id
+        WHERE ub.user_id = $1 AND ub.organization_id = $2 AND cb.target_role = 'teamer'
+      `;
+      const { rows: [earnedResult] } = await db.query(earnedCountQuery, [userId, orgId]);
+
+      const totalCountQuery = `
+        SELECT COUNT(*) as count FROM custom_badges
+        WHERE organization_id = $1 AND target_role = 'teamer' AND is_active = true
+      `;
+      const { rows: [totalResult] } = await db.query(totalCountQuery, [orgId]);
+
+      const badges = {
+        recent: recentBadges,
+        earned_count: parseInt(earnedResult.count),
+        total_count: parseInt(totalResult.count)
+      };
+
+      // 5. Config: Dashboard-Config aus settings
+      const configQuery = `
+        SELECT key, value FROM settings
+        WHERE organization_id = $1 AND key LIKE 'teamer_dashboard_show_%'
+      `;
+      const { rows: configRows } = await db.query(configQuery, [orgId]);
+
+      const config = {
+        teamer_dashboard_show_zertifikate: true,
+        teamer_dashboard_show_events: true,
+        teamer_dashboard_show_badges: true,
+        teamer_dashboard_show_losung: true
+      };
+
+      configRows.forEach(row => {
+        config[row.key] = row.value === 'true' || row.value === '1';
+      });
+
+      res.json({ greeting, certificates, events, badges, config });
+    } catch (err) {
+      console.error('Error loading teamer dashboard:', err);
+      res.status(500).json({ error: 'Fehler beim Laden des Teamer-Dashboards' });
     }
   });
 
