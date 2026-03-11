@@ -372,17 +372,22 @@ const TeamerEventsPage: React.FC = () => {
           </IonRefresher>
 
           {/* SectionHeader mit Status-Farben */}
-          <SectionHeader
-            title={selectedEvent.name}
-            subtitle={getStatusText(selectedEvent)}
-            icon={calendar}
-            colors={getStatusColors(selectedEvent)}
-            stats={[
-              { value: selectedEvent.registered_count, label: 'Konfis' },
-              { value: selectedEvent.teamer_count || 0, label: 'Team' },
-              { value: selectedEvent.points, label: 'Punkte' }
-            ]}
-          />
+          {(() => {
+            const konfiCount = selectedEvent.registered_count - (selectedEvent.teamer_count || 0);
+            return (
+              <SectionHeader
+                title={selectedEvent.name}
+                subtitle={getStatusText(selectedEvent)}
+                icon={calendar}
+                colors={getStatusColors(selectedEvent)}
+                stats={[
+                  { value: konfiCount, label: 'Konfis' },
+                  { value: selectedEvent.teamer_count || 0, label: 'Team' },
+                  { value: selectedEvent.points, label: 'Punkte' }
+                ]}
+              />
+            );
+          })()}
 
           {/* Details Card - wie Admin EventDetailView */}
           <IonList className="app-section-inset" inset={true}>
@@ -408,11 +413,11 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Konfis */}
+                {/* Konfis - ohne Teamer */}
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                   <div className="app-info-row__content">
-                    {selectedEvent.registered_count} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Konfis
+                    {selectedEvent.registered_count - (selectedEvent.teamer_count || 0)} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Konfis
                   </div>
                 </div>
 
@@ -477,7 +482,7 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Pflicht-Badge */}
+                {/* Pflicht-Event */}
                 {selectedEvent.mandatory && (
                   <div className="app-info-row">
                     <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
@@ -493,16 +498,6 @@ const TeamerEventsPage: React.FC = () => {
                     <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
                     <div className="app-info-row__content">
                       {selectedEvent.bring_items}
-                    </div>
-                  </div>
-                )}
-
-                {/* Teamer-Status */}
-                {isTeamerEvent && (
-                  <div className="app-info-row">
-                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                    <div className="app-info-row__content">
-                      {selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}
                     </div>
                   </div>
                 )}

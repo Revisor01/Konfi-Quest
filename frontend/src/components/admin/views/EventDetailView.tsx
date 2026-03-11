@@ -693,7 +693,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                   <div className="app-info-row__content">
-                    {eventData?.teamer_only ? 'Nur Teamer:innen' : 'Teamer:innen gesucht'}
+                    {eventData?.teamer_only ? 'Nur Team' : 'Team gesucht'}
                   </div>
                 </div>
               )}
