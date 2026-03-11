@@ -54,9 +54,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 e.registration_closes_at,
                 e.point_type,
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-                STRING_AGG(DISTINCT c.name, ',') as category_names,
+                STRING_AGG(DISTINCT c.name, ', ') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
-                STRING_AGG(DISTINCT j.name, ',') as jahrgang_names,
+                STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names,
                 CASE
                   WHEN e.mandatory THEN 'mandatory'
                   WHEN NOW() < e.registration_opens_at THEN 'upcoming'
@@ -170,9 +170,9 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 COUNT(DISTINCT CASE WHEN eb.status = 'waitlist' THEN eb.id END) as waitlist_count,
                 COUNT(DISTINCT CASE WHEN eb.status = 'confirmed' AND eb.attendance_status IS NULL THEN eb.id END) as unprocessed_count,
                 STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-                STRING_AGG(DISTINCT c.name, ',') as category_names,
+                STRING_AGG(DISTINCT c.name, ', ') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
-                STRING_AGG(DISTINCT j.name, ',') as jahrgang_names
+                STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id
         LEFT JOIN event_categories ec ON e.id = ec.event_id

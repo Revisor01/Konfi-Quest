@@ -760,7 +760,8 @@ const TeamerEventsPage: React.FC = () => {
                                 className="app-list-item__title"
                                 style={{
                                   color: shouldGrayOut ? '#999' : undefined,
-                                  paddingRight: showBadge ? '70px' : '0'
+                                  paddingRight: (showBadge || isTeamerEvent) ? '70px' : '0',
+                                  paddingTop: (showBadge || isTeamerEvent) ? '4px' : '0'
                                 }}
                               >
                                 {event.name}

@@ -1133,7 +1133,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                  ELSE e.max_participants
                END as max_participants,
                STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-               STRING_AGG(DISTINCT c.name, ',') as category_names,
+               STRING_AGG(DISTINCT c.name, ', ') as category_names,
                CASE 
                  WHEN e.cancelled = true THEN 'cancelled'
                  WHEN NOW() < e.registration_opens_at THEN 'upcoming'
