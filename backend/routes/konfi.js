@@ -1383,7 +1383,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
       
       // Not cached - fetch from external API
       const fetch = (await import('node-fetch')).default;
-      const apiUrl = `https://losung.konfi-quest.de/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
+      const apiUrl = `https://losung.konfi-quest.de/api/?api_key=ksadh8324oijcff45rfdsvcvhoids44&translation=${translation}`;
       
       const response = await fetch(apiUrl, {
         headers: {

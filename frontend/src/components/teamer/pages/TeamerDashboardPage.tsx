@@ -6,11 +6,6 @@ import {
   IonTitle,
   IonContent,
   IonIcon,
-  IonCard,
-  IonCardContent,
-  IonList,
-  IonListHeader,
-  IonLabel,
   IonRefresher,
   IonRefresherContent,
   useIonPopover
@@ -146,7 +141,7 @@ const CertPopoverContent: React.FC<{
   const cert = dataRef.current;
   if (!cert) return null;
 
-  const statusLabel = cert.status === 'valid' ? 'Gültig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
+  const statusLabel = cert.status === 'valid' ? 'Gueltig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
   const statusColor = cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af';
 
   return (
@@ -188,7 +183,7 @@ const TeamerDashboardPage: React.FC = () => {
 
   // Certificate Popover
   const certPopoverRef = React.useRef<Certificate | null>(null);
-  const [presentCertPopover, dismissCertPopover] = useIonPopover(CertPopoverContent, {
+  const [presentCertPopover] = useIonPopover(CertPopoverContent, {
     dataRef: certPopoverRef
   });
 
@@ -196,7 +191,6 @@ const TeamerDashboardPage: React.FC = () => {
 
   const getGreeting = (displayName: string): string => {
     const firstName = getFirstName(displayName);
-    // Moin-Variante bei jedem 5. Laden
     if (Math.random() < 0.2) {
       return `Moin, ${firstName}!`;
     }
@@ -223,7 +217,7 @@ const TeamerDashboardPage: React.FC = () => {
   const loadTageslosung = async () => {
     setShowLosung(Math.random() > 0.5);
     try {
-      const response = await api.get('/konfi/tageslosung');
+      const response = await api.get('/teamer/tageslosung');
       if (response.data && response.data.success) {
         const { losung, lehrtext } = response.data.data;
         setDailyVerse({
@@ -253,6 +247,18 @@ const TeamerDashboardPage: React.FC = () => {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const formatTimeUntil = (dateString: string) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    const diffMs = eventDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Heute';
+    if (diffDays === 1) return 'Morgen';
+    if (diffDays < 7) return `in ${diffDays} Tagen`;
+    if (diffDays < 30) return `in ${Math.ceil(diffDays / 7)} Wochen`;
+    return `in ${Math.ceil(diffDays / 30)} Monaten`;
   };
 
   const config = dashboardData?.config;
@@ -286,290 +292,368 @@ const TeamerDashboardPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Begrüßung */}
-        {dashboardData && (
-          <div className="app-dashboard-header">
-            {/* Dekorative Kreise im Hintergrund */}
-            <div className="app-dashboard-header__circle" style={{
-              top: '-40px', right: '-40px', width: '140px', height: '140px',
-              background: 'rgba(255, 255, 255, 0.08)'
-            }}/>
-            <div className="app-dashboard-header__circle" style={{
-              top: '60px', right: '30px', width: '60px', height: '60px'
-            }}/>
-            <div className="app-dashboard-header__circle" style={{
-              bottom: '-30px', left: '-30px', width: '100px', height: '100px'
-            }}/>
-            <div className="app-dashboard-header__circle" style={{
-              bottom: '40px', left: '40px', width: '40px', height: '40px'
-            }}/>
+        <div style={{ padding: '16px' }}>
+          {/* Begruessung - app-dashboard-header */}
+          {dashboardData && (
+            <div className="app-dashboard-header">
+              <div className="app-dashboard-header__circle" style={{
+                top: '-40px', right: '-40px', width: '140px', height: '140px',
+                background: 'rgba(255, 255, 255, 0.08)'
+              }}/>
+              <div className="app-dashboard-header__circle" style={{
+                top: '60px', right: '30px', width: '60px', height: '60px'
+              }}/>
+              <div className="app-dashboard-header__circle" style={{
+                bottom: '-30px', left: '-30px', width: '100px', height: '100px'
+              }}/>
+              <div className="app-dashboard-header__circle" style={{
+                bottom: '40px', left: '40px', width: '40px', height: '40px'
+              }}/>
 
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <h2 className="app-dashboard-greeting">
-                {getGreeting(dashboardData.greeting.display_name)}
-              </h2>
-              <p className="app-dashboard-subtitle">Teamer</p>
-            </div>
-          </div>
-        )}
-
-        {/* Zertifikate */}
-        {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
-                <IonIcon icon={ribbon} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <h2 className="app-dashboard-greeting">
+                  {getGreeting(dashboardData.greeting.display_name)}
+                </h2>
+                <p className="app-dashboard-subtitle">Teamer</p>
               </div>
-              <IonLabel>Zertifikate</IonLabel>
-            </IonListHeader>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              overflowX: 'auto',
-              paddingBottom: '8px',
-              paddingLeft: '16px',
-              paddingRight: '16px',
-              WebkitOverflowScrolling: 'touch'
+            </div>
+          )}
+
+          {/* Zertifikate - app-dashboard-section Style */}
+          {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
+            <div className="app-dashboard-section" style={{
+              background: 'linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%)'
             }}>
-              {dashboardData.certificates.map((cert) => {
-                const isValid = cert.status === 'valid';
-                const isExpired = cert.status === 'expired';
-                const isNotEarned = cert.status === 'not_earned';
-
-                const bgColor = isValid ? '#059669' : isExpired ? '#ef4444' : '#e5e7eb';
-                const textColor = isNotEarned ? '#9ca3af' : 'white';
-
-                return (
-                  <div
-                    key={cert.id}
-                    onClick={(e) => {
-                      certPopoverRef.current = cert;
-                      presentCertPopover({ event: e as any });
-                    }}
-                    style={{
-                      minWidth: '160px',
-                      maxWidth: '160px',
-                      borderRadius: '16px',
-                      padding: '16px',
-                      background: isNotEarned ? '#f3f4f6' : `linear-gradient(135deg, ${bgColor} 0%, ${bgColor}cc 100%)`,
-                      opacity: isNotEarned ? 0.4 : 1,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: isNotEarned ? 'none' : `0 4px 12px ${bgColor}40`,
-                      flexShrink: 0
-                    }}
-                  >
-                    <div style={{
-                      width: '48px', height: '48px', borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: isNotEarned ? '#d1d5db' : 'rgba(255,255,255,0.2)',
-                      color: textColor
-                    }}>
-                      <IonIcon
-                        icon={getIconFromString(cert.icon)}
-                        style={{ fontSize: '1.4rem', opacity: isNotEarned ? 0.5 : 1 }}
-                      />
-                    </div>
-                    <span style={{
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      color: textColor,
-                      textAlign: 'center',
-                      lineHeight: '1.2'
-                    }}>
-                      {cert.name}
-                    </span>
-                    {isValid && cert.issued_date && (
-                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)' }}>
-                        Seit {new Date(cert.issued_date).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })}
-                      </span>
-                    )}
-                    {isExpired && (
-                      <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', fontWeight: '600' }}>
-                        Abgelaufen
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </IonList>
-        )}
-
-        {/* Nächste Events */}
-        {config?.show_events !== false && dashboardData && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--events">
-                <IonIcon icon={calendar} />
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                <h2 className="app-dashboard-section__bg-label">ZERTIFIKATE</h2>
               </div>
-              <IonLabel>Nächste Events</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent>
+
+              <div className="app-dashboard-glass-chip" style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                zIndex: 3
+              }}>
+                {dashboardData.certificates.filter(c => c.status === 'valid').length}/{dashboardData.certificates.length} ERHALTEN
+              </div>
+
+              <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '12px',
+                  overflowX: 'auto',
+                  paddingBottom: '8px',
+                  WebkitOverflowScrolling: 'touch'
+                }}>
+                  {dashboardData.certificates.map((cert) => {
+                    const isValid = cert.status === 'valid';
+                    const isExpired = cert.status === 'expired';
+                    const isNotEarned = cert.status === 'not_earned';
+
+                    return (
+                      <div
+                        key={cert.id}
+                        onClick={(e) => {
+                          certPopoverRef.current = cert;
+                          presentCertPopover({ event: e as any });
+                        }}
+                        style={{
+                          minWidth: '120px',
+                          maxWidth: '120px',
+                          borderRadius: '16px',
+                          padding: '16px 12px',
+                          background: isNotEarned
+                            ? 'rgba(255, 255, 255, 0.1)'
+                            : isValid
+                              ? 'rgba(5, 150, 105, 0.3)'
+                              : 'rgba(239, 68, 68, 0.3)',
+                          border: isNotEarned
+                            ? '2px dashed rgba(255, 255, 255, 0.2)'
+                            : isValid
+                              ? '2px solid rgba(5, 150, 105, 0.5)'
+                              : '2px solid rgba(239, 68, 68, 0.5)',
+                          opacity: isNotEarned ? 0.5 : 1,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '8px',
+                          flexShrink: 0,
+                          transition: 'transform 0.2s ease'
+                        }}
+                      >
+                        <div style={{
+                          width: '44px', height: '44px', borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: isNotEarned
+                            ? 'rgba(255, 255, 255, 0.15)'
+                            : isValid
+                              ? 'rgba(5, 150, 105, 0.5)'
+                              : 'rgba(239, 68, 68, 0.5)',
+                          color: 'white'
+                        }}>
+                          <IonIcon
+                            icon={getIconFromString(cert.icon)}
+                            style={{ fontSize: '1.3rem', opacity: isNotEarned ? 0.5 : 1 }}
+                          />
+                        </div>
+                        <span style={{
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          color: 'white',
+                          textAlign: 'center',
+                          lineHeight: '1.2',
+                          opacity: isNotEarned ? 0.6 : 1
+                        }}>
+                          {cert.name}
+                        </span>
+                        {isValid && cert.issued_date && (
+                          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.7)' }}>
+                            Seit {new Date(cert.issued_date).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' })}
+                          </span>
+                        )}
+                        {isExpired && (
+                          <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>
+                            Abgelaufen
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Naechste Events - app-dashboard-section--events */}
+          {config?.show_events !== false && dashboardData && (
+            <div className="app-dashboard-section app-dashboard-section--events">
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                <h2 className="app-dashboard-section__bg-label">EVENTS</h2>
+              </div>
+
+              <div className="app-dashboard-glass-chip" style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                fontSize: '0.7rem',
+                fontWeight: '700',
+                zIndex: 3
+              }}>
+                {dashboardData.events.length === 1 ? 'DEIN EVENT' : `DEINE ${dashboardData.events.length} EVENTS`}
+              </div>
+
+              <div className="app-dashboard-section__content app-dashboard-section__content--compact">
                 {dashboardData.events.length === 0 ? (
-                  <div className="app-empty-state">
-                    <p className="app-empty-state__text">Keine anstehenden Events</p>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
+                    Keine anstehenden Events
                   </div>
                 ) : (
-                  <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {dashboardData.events.slice(0, 3).map((event) => (
                       <div
                         key={event.id}
-                        className="app-list-item app-list-item--events"
-                        style={{ marginBottom: '8px', position: 'relative', overflow: 'hidden' }}
+                        className="app-dashboard-glass-card"
+                        style={{
+                          position: 'relative',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease, background 0.2s ease'
+                        }}
                       >
-                        {event.is_registered && (
-                          <div className="app-corner-badge" style={{ backgroundColor: '#059669' }}>
-                            Angemeldet
+                        {/* Eselsohr oben rechts */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '0',
+                          right: '0',
+                          background: event.is_registered
+                            ? 'rgba(5, 150, 105, 0.6)'
+                            : 'rgba(255,255,255,0.25)',
+                          borderRadius: '0 10px 0 10px',
+                          padding: '4px 10px',
+                          fontSize: '0.65rem',
+                          fontWeight: '600',
+                          color: 'white',
+                          whiteSpace: 'nowrap',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.3px'
+                        }}>
+                          {event.is_registered ? 'ANGEMELDET' : formatTimeUntil(event.event_date)}
+                        </div>
+                        <div>
+                          <div style={{
+                            fontSize: '1rem',
+                            fontWeight: '700',
+                            color: 'white',
+                            marginBottom: '4px',
+                            paddingRight: '80px'
+                          }}>
+                            {event.title}
                           </div>
-                        )}
-                        <div className="app-list-item__row">
-                          <div className="app-list-item__main">
-                            <div className="app-icon-circle app-icon-circle--events">
-                              <IonIcon icon={calendar} />
-                            </div>
-                            <div className="app-list-item__content">
-                              <div className="app-list-item__title app-list-item__title--badge-space">
-                                {event.title}
-                              </div>
-                              <div className="app-list-item__meta">
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={calendar} className="app-icon-color--events" />
-                                  {formatDate(event.event_date)}
-                                </span>
-                                {event.location && (
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={location} className="app-icon-color--events" />
-                                    {event.location}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
+                          <div className="app-dashboard-meta">
+                            <IonIcon icon={calendar} style={{ fontSize: '0.85rem' }} />
+                            <span>{formatDate(event.event_date)}</span>
+                            {event.location && (
+                              <>
+                                <span className="app-dashboard-dot" />
+                                <IonIcon icon={location} style={{ fontSize: '0.85rem' }} />
+                                <span>{event.location}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
                     ))}
                     <div
+                      className="app-dashboard-glass-chip"
+                      onClick={() => history.push('/teamer/events')}
                       style={{
+                        alignSelf: 'center',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '4px',
-                        padding: '8px',
-                        cursor: 'pointer',
-                        color: '#5b21b6',
-                        fontWeight: '600',
-                        fontSize: '0.85rem'
+                        gap: '4px'
                       }}
-                      onClick={() => history.push('/teamer/events')}
                     >
-                      Alle anzeigen
-                      <IonIcon icon={chevronForward} />
+                      Alle Events anzeigen <IonIcon icon={chevronForward} />
                     </div>
-                  </>
+                  </div>
                 )}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
-        {/* Badges */}
-        {config?.show_badges !== false && dashboardData && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <div className="app-section-icon app-section-icon--badges">
-                <IonIcon icon={trophy} />
               </div>
-              <IonLabel>Badges</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent>
+            </div>
+          )}
+
+          {/* Badges - app-dashboard-section--badges */}
+          {config?.show_badges !== false && dashboardData && (
+            <div className="app-dashboard-section app-dashboard-section--badges">
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">DEINE</h2>
+                <h2 className="app-dashboard-section__bg-label">BADGES</h2>
+              </div>
+
+              <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
                 {dashboardData.badges.earned_count === 0 ? (
-                  <div className="app-empty-state">
-                    <p className="app-empty-state__text">Noch keine Badges erhalten</p>
+                  <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.7)' }}>
+                    Noch keine Badges erhalten
                   </div>
                 ) : (
-                  <div
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => history.push('/teamer/profil')}
-                  >
+                  <>
+                    {/* Badge Stats Chip */}
                     <div style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '8px'
+                      justifyContent: 'center',
+                      gap: '10px',
+                      marginBottom: '20px',
+                      flexWrap: 'wrap'
                     }}>
-                      {dashboardData.badges.recent.slice(0, 3).map((badge) => (
+                      <div className="app-dashboard-glass-chip" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '0.9rem'
+                      }}>
+                        <span style={{ fontWeight: '800' }}>{dashboardData.badges.earned_count}/{dashboardData.badges.total_count}</span>
+                        <span style={{ opacity: 0.8, marginLeft: '4px' }}>erhalten</span>
+                      </div>
+                    </div>
+
+                    {/* Badge Icons Grid */}
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                      justifyContent: 'center',
+                      marginBottom: '16px'
+                    }}>
+                      {dashboardData.badges.recent.map((badge) => (
                         <div
                           key={badge.id}
                           style={{
-                            width: '48px', height: '48px', borderRadius: '50%',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '50%',
                             background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                            color: 'white',
-                            boxShadow: '0 2px 8px rgba(245,158,11,0.3)'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer'
                           }}
                         >
-                          <IonIcon icon={getIconFromString(badge.icon)} style={{ fontSize: '1.2rem' }} />
+                          <IonIcon
+                            icon={getIconFromString(badge.icon)}
+                            style={{
+                              fontSize: '1.2rem',
+                              color: 'white',
+                              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}>
-                      <span style={{ fontSize: '0.85rem', color: '#666', fontWeight: '500' }}>
-                        {dashboardData.badges.earned_count} von {dashboardData.badges.total_count} Badges
-                      </span>
-                      <IonIcon icon={chevronForward} style={{ color: '#5b21b6', fontSize: '1.1rem' }} />
+
+                    {/* Alle Badges Link */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <div
+                        className="app-dashboard-glass-chip"
+                        onClick={() => history.push('/teamer/profil')}
+                        style={{
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        Alle Badges anzeigen <IonIcon icon={chevronForward} />
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
-        {/* Tageslosung */}
-        {config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext) && (
-          <div className="app-dashboard-section app-dashboard-section--tageslosung">
-            <div className="app-dashboard-section__bg-text">
-              <h2 className="app-dashboard-section__bg-label">TAGES</h2>
-              <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
+              </div>
             </div>
-            <div className="app-dashboard-section__content">
-              {(() => {
-                const hasLosung = dailyVerse.losungstext;
-                const hasLehrtext = dailyVerse.lehrtext;
+          )}
 
-                let text, reference;
-                if (hasLosung && hasLehrtext) {
-                  text = showLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
-                  reference = showLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
-                } else {
-                  text = hasLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
-                  reference = hasLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
-                }
+          {/* Tageslosung - bereits korrekt */}
+          {config?.show_losung !== false && !loadingVerse && dailyVerse && (dailyVerse.losungstext || dailyVerse.lehrtext) && (
+            <div className="app-dashboard-section app-dashboard-section--tageslosung">
+              <div className="app-dashboard-section__bg-text">
+                <h2 className="app-dashboard-section__bg-label">TAGES</h2>
+                <h2 className="app-dashboard-section__bg-label">LOSUNG</h2>
+              </div>
+              <div className="app-dashboard-section__content">
+                {(() => {
+                  const hasLosung = dailyVerse.losungstext;
+                  const hasLehrtext = dailyVerse.lehrtext;
 
-                return (
-                  <div>
-                    <blockquote className="app-dashboard-quote">
-                      "{text}"
-                    </blockquote>
-                    <cite className="app-dashboard-cite">
-                      {reference}
-                    </cite>
-                  </div>
-                );
-              })()}
+                  let text, reference;
+                  if (hasLosung && hasLehrtext) {
+                    text = showLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
+                    reference = showLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
+                  } else {
+                    text = hasLosung ? dailyVerse.losungstext : dailyVerse.lehrtext;
+                    reference = hasLosung ? dailyVerse.losungsvers : dailyVerse.lehrtextvers;
+                  }
+
+                  return (
+                    <div>
+                      <blockquote className="app-dashboard-quote">
+                        "{text}"
+                      </blockquote>
+                      <cite className="app-dashboard-cite">
+                        {reference}
+                      </cite>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="ion-padding-bottom" />
       </IonContent>
