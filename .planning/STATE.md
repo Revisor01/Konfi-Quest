@@ -4,14 +4,14 @@ milestone: v1.8
 milestone_name: Teamer
 current_plan: 2 of 2
 status: completed
-stopped_at: Completed 41-02-PLAN.md
-last_updated: "2026-03-11T13:47:58.548Z"
+stopped_at: Completed 41-03-PLAN.md
+last_updated: "2026-03-11T14:16:39.667Z"
 last_activity: 2026-03-11 -- Phase 41 Plan 02 completed
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 ---
 
@@ -52,6 +52,7 @@ Progress: [██████████] 100%
 | Phase 40 P04 | 5min | 2 tasks | 3 files |
 | Phase 41 P01 | 3min | 2 tasks | 3 files |
 | Phase 41 P02 | 4min | 2 tasks | 3 files |
+| Phase 41 P03 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -76,6 +77,7 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 41]: Idempotente Migration fuer Zertifikat-Tabellen in teamer.js, Events-Query nutzt teamer_only/teamer_needed
 - [Phase 41]: Zertifikat-Status per SQL CASE (valid/expired/not_earned), DELETE nur ohne Zuweisungen
 - [Phase 41]: Zertifikat-Typen CRUD inline in AdminSettingsPage, Segment-Toggle Konfi/Teamer fuer Dashboard-Config
+- [Phase 41]: Config-Keys per replace() im forEach statt SQL-Alias fuer DB-zu-Frontend-Mapping
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-11T13:47:58.545Z
-Stopped at: Completed 41-02-PLAN.md
+Last session: 2026-03-11T14:16:39.665Z
+Stopped at: Completed 41-03-PLAN.md
 Resume file: None
