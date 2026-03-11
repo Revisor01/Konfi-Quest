@@ -419,7 +419,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // 3. Events: Naechste 3 anstehende Events (Teamer-Events + Teamer-gesucht)
       const eventsQuery = `
-        SELECT e.id, e.name, e.event_date, e.event_end_time, e.location, e.type,
+        SELECT e.id, e.name AS title, e.event_date, e.event_end_time, e.location, e.type,
                e.teamer_only, e.teamer_needed,
                CASE WHEN eb.id IS NOT NULL THEN true ELSE false END as is_registered
         FROM events e
@@ -471,14 +471,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const { rows: configRows } = await db.query(configQuery, [orgId]);
 
       const config = {
-        teamer_dashboard_show_zertifikate: true,
-        teamer_dashboard_show_events: true,
-        teamer_dashboard_show_badges: true,
-        teamer_dashboard_show_losung: true
+        show_zertifikate: true,
+        show_events: true,
+        show_badges: true,
+        show_losung: true
       };
 
       configRows.forEach(row => {
-        config[row.key] = row.value === 'true' || row.value === '1';
+        config[row.key.replace('teamer_dashboard_show_', 'show_')] = row.value === 'true' || row.value === '1';
       });
 
       res.json({ greeting, certificates, events, badges, config });
