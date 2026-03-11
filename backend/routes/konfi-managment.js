@@ -447,17 +447,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
-                       j.target_gottesdienst, j.target_gemeinde
+                       j.target_gottesdienst, j.target_gemeinde,
+                       r.name as role_name
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-                WHERE u.id = $1 AND r.name = 'konfi' AND u.organization_id = $2
+                WHERE u.id = $1 AND r.name IN ('konfi', 'teamer') AND u.organization_id = $2
             `;
             const { rows: [konfi] } = await db.query(konfiQuery, [konfiId, req.user.organization_id]);
 
             if (!konfi) {
-                return res.status(404).json({ error: 'Konfi nicht gefunden' });
+                return res.status(404).json({ error: 'Benutzer nicht gefunden' });
             }
 
             const activitiesQuery = `
