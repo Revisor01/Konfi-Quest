@@ -41,7 +41,8 @@ import {
   navigateOutline,
   informationCircle,
   pricetag,
-  shieldCheckmark
+  shieldCheckmark,
+  home
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -370,7 +371,7 @@ const TeamerEventsPage: React.FC = () => {
             <IonRefresherContent />
           </IonRefresher>
 
-          {/* SectionHeader mit Status-Farben - wie Konfi */}
+          {/* SectionHeader mit Status-Farben */}
           <SectionHeader
             title={selectedEvent.name}
             subtitle={getStatusText(selectedEvent)}
@@ -378,11 +379,12 @@ const TeamerEventsPage: React.FC = () => {
             colors={getStatusColors(selectedEvent)}
             stats={[
               { value: selectedEvent.registered_count, label: 'Konfis' },
-              { value: selectedEvent.teamer_count || 0, label: 'Teamer:innen' }
+              { value: selectedEvent.teamer_count || 0, label: 'Team' },
+              { value: selectedEvent.points, label: 'Punkte' }
             ]}
           />
 
-          {/* Details Card - wie Konfi EventDetailView */}
+          {/* Details Card - wie Admin EventDetailView */}
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
@@ -406,16 +408,45 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Teilnehmer:innen */}
+                {/* Konfis */}
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                   <div className="app-info-row__content">
                     {selectedEvent.registered_count} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Konfis
-                    {(selectedEvent.teamer_count !== undefined && selectedEvent.teamer_count > 0) && (
-                      <> + {selectedEvent.teamer_count} Teamer:innen</>
-                    )}
                   </div>
                 </div>
+
+                {/* Team */}
+                {(selectedEvent.teamer_count !== undefined && selectedEvent.teamer_count > 0) && (
+                  <div className="app-info-row">
+                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                    <div className="app-info-row__content">
+                      {selectedEvent.teamer_count} Team
+                    </div>
+                  </div>
+                )}
+
+                {/* Punkte */}
+                <div className="app-info-row">
+                  <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
+                  <div className="app-info-row__content">
+                    {selectedEvent.points} Punkte
+                  </div>
+                </div>
+
+                {/* Typ */}
+                {selectedEvent.type && (
+                  <div className="app-info-row">
+                    <IonIcon
+                      icon={selectedEvent.type === 'gottesdienst' ? home : people}
+                      className="app-info-row__icon"
+                      style={{ color: selectedEvent.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
+                    />
+                    <div className="app-info-row__content">
+                      {selectedEvent.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
+                    </div>
+                  </div>
+                )}
 
                 {/* Kategorien */}
                 {selectedEvent.category_names && (
@@ -450,7 +481,7 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.mandatory && (
                   <div className="app-info-row">
                     <IonIcon icon={shieldCheckmark} className="app-info-row__icon" style={{ color: '#dc2626' }} />
-                    <div className="app-info-row__content" style={{ fontWeight: '600', color: '#dc2626' }}>
+                    <div className="app-info-row__content">
                       Pflicht-Event
                     </div>
                   </div>
@@ -460,19 +491,18 @@ const TeamerEventsPage: React.FC = () => {
                 {selectedEvent.bring_items && (
                   <div className="app-info-row">
                     <IonIcon icon={bagHandle} className="app-info-row__icon" style={{ color: '#8b5cf6' }} />
-                    <div>
-                      <div className="app-info-row__content app-list-item__title">Was mitbringen</div>
-                      <div className="app-info-row__sublabel">{selectedEvent.bring_items}</div>
+                    <div className="app-info-row__content">
+                      {selectedEvent.bring_items}
                     </div>
                   </div>
                 )}
 
-                {/* Teamer-Status Badge */}
+                {/* Teamer-Status */}
                 {isTeamerEvent && (
                   <div className="app-info-row">
                     <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
-                    <div className="app-info-row__content" style={{ fontWeight: '600', color: '#5b21b6' }}>
-                      {selectedEvent.teamer_only ? 'Nur Teamer:innen' : 'Teamer:innen gesucht'}
+                    <div className="app-info-row__content">
+                      {selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}
                     </div>
                   </div>
                 )}
