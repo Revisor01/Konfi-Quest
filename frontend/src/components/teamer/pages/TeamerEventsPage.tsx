@@ -40,7 +40,6 @@ import {
   qrCodeOutline,
   navigateOutline,
   informationCircle,
-  home,
   pricetag,
   shieldCheckmark
 } from 'ionicons/icons';
@@ -341,9 +340,6 @@ const TeamerEventsPage: React.FC = () => {
   if (selectedEvent) {
     const isPast = new Date(selectedEvent.event_date) < new Date();
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
-    const spotsLeft = selectedEvent.max_participants > 0
-      ? selectedEvent.max_participants - selectedEvent.registered_count
-      : 0;
 
     return (
       <IonPage>
@@ -381,9 +377,8 @@ const TeamerEventsPage: React.FC = () => {
             icon={calendar}
             colors={getStatusColors(selectedEvent)}
             stats={[
-              { value: spotsLeft > 0 ? spotsLeft : 0, label: 'Frei' },
-              { value: selectedEvent.points, label: 'Punkte' },
-              { value: selectedEvent.registered_count, label: 'Dabei' }
+              { value: selectedEvent.registered_count, label: 'Konfis' },
+              { value: selectedEvent.teamer_count || 0, label: 'Teamer:innen' }
             ]}
           />
 
@@ -415,34 +410,12 @@ const TeamerEventsPage: React.FC = () => {
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon app-icon-color--participants" />
                   <div className="app-info-row__content">
-                    {selectedEvent.registered_count} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Teilnehmer:innen
+                    {selectedEvent.registered_count} / {selectedEvent.max_participants > 0 ? selectedEvent.max_participants : '\u221E'} Konfis
                     {(selectedEvent.teamer_count !== undefined && selectedEvent.teamer_count > 0) && (
                       <> + {selectedEvent.teamer_count} Teamer:innen</>
                     )}
                   </div>
                 </div>
-
-                {/* Punkte */}
-                <div className="app-info-row">
-                  <IonIcon icon={trophy} className="app-info-row__icon app-icon-color--badges" />
-                  <div className="app-info-row__content">
-                    {selectedEvent.points} Punkte
-                  </div>
-                </div>
-
-                {/* Typ */}
-                {selectedEvent.type && (
-                  <div className="app-info-row">
-                    <IonIcon
-                      icon={selectedEvent.type === 'gottesdienst' ? home : people}
-                      className="app-info-row__icon"
-                      style={{ color: selectedEvent.type === 'gottesdienst' ? '#007aff' : '#2dd36f' }}
-                    />
-                    <div className="app-info-row__content">
-                      {selectedEvent.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde'}
-                    </div>
-                  </div>
-                )}
 
                 {/* Kategorien */}
                 {selectedEvent.category_names && (
