@@ -428,6 +428,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE e.organization_id = $2
           AND e.event_date >= CURRENT_DATE
           AND (e.cancelled IS NOT TRUE)
+          AND eb.id IS NOT NULL
         ORDER BY e.event_date ASC
         LIMIT 5
       `;

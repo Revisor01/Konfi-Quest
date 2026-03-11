@@ -482,6 +482,7 @@ const TeamerDashboardPage: React.FC = () => {
                         <div
                           key={event.id}
                           className="app-dashboard-glass-card"
+                          onClick={() => history.push('/teamer/events', { selectedEventId: event.id })}
                           style={{
                             background: isWaitlist
                               ? 'rgba(251, 191, 36, 0.25)'
