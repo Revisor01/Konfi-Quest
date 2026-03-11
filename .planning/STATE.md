@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Teamer
-current_plan: 1 of 2
-status: in_progress
-stopped_at: Completed 41-01-PLAN.md
-last_updated: "2026-03-11T13:39:38Z"
-last_activity: 2026-03-11 -- Phase 41 Plan 01 completed
+current_plan: 2 of 2
+status: completed
+stopped_at: Completed 41-02-PLAN.md
+last_updated: "2026-03-11T13:47:58.548Z"
+last_activity: 2026-03-11 -- Phase 41 Plan 02 completed
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 41 of 43 (Zertifikate + Dashboard)
-Current Plan: 1 of 2
-Status: Plan 01 complete, Plan 02 pending
-Last activity: 2026-03-11 -- Phase 41 Plan 01 completed
+Current Plan: 2 of 2
+Status: Phase 41 complete
+Last activity: 2026-03-11 -- Phase 41 Plan 02 completed
 
-Progress: [█████████░] 90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [█████████░] 90%
 | Phase 40 P03 | 8min | 3 tasks | 9 files |
 | Phase 40 P04 | 5min | 2 tasks | 3 files |
 | Phase 41 P01 | 3min | 2 tasks | 3 files |
+| Phase 41 P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -74,6 +75,7 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 40]: WHERE IN ('konfi','teamer') statt separater Route, targetRole als optionaler Prop
 - [Phase 41]: Idempotente Migration fuer Zertifikat-Tabellen in teamer.js, Events-Query nutzt teamer_only/teamer_needed
 - [Phase 41]: Zertifikat-Status per SQL CASE (valid/expired/not_earned), DELETE nur ohne Zuweisungen
+- [Phase 41]: Zertifikat-Typen CRUD inline in AdminSettingsPage, Segment-Toggle Konfi/Teamer fuer Dashboard-Config
 
 ### Pending Todos
 
@@ -91,6 +93,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-11T13:39:38Z
-Stopped at: Completed 41-01-PLAN.md
-Resume file: .planning/phases/41-zertifikate-dashboard/41-01-SUMMARY.md
+Last session: 2026-03-11T13:47:58.545Z
+Stopped at: Completed 41-02-PLAN.md
+Resume file: None

@@ -43,7 +43,7 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 ### Zertifikate (ZRT)
 
 - [x] **ZRT-01**: Admin kann Teamer Zertifikate zuweisen (JuLeiCa, Teamer-Card, etc.) mit Datum
-- [ ] **ZRT-02**: Zertifikate werden im Dashboard prominent angezeigt (aehnlich Konfi-Level-Anzeige)
+- [x] **ZRT-02**: Zertifikate werden im Dashboard prominent angezeigt (aehnlich Konfi-Level-Anzeige)
 - [x] **ZRT-03**: Zertifikat-Typen sind frei konfigurierbar durch Admin
 
 ### Material (MAT)
@@ -110,7 +110,7 @@ Deferred. Nicht in aktuellem Roadmap.
 | BDG-06 | Phase 40 | Complete |
 | BDG-07 | Phase 40 | Complete |
 | ZRT-01 | Phase 41 | Complete |
-| ZRT-02 | Phase 41 | Pending |
+| ZRT-02 | Phase 41 | Complete |
 | ZRT-03 | Phase 41 | Complete |
 | MAT-01 | Phase 42 | Pending |
 | MAT-02 | Phase 42 | Pending |

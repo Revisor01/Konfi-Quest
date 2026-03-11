@@ -123,7 +123,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 - [x] **Phase 38: Rolle + App-Shell** - Teamer-Transition und eigene 5-Tab-UI aufbauen (completed 2026-03-10)
 - [x] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung (completed 2026-03-10)
 - [x] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration (gap closure) (completed 2026-03-11)
-- [ ] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events
+- [x] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events (completed 2026-03-11)
 - [ ] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang
 - [ ] **Phase 43: Profil + Chat** - Profil mit Antraegen und Badge-Historie, Chat-Zugriff
 
@@ -228,6 +228,6 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
-| 41. Zertifikate + Dashboard | 1/2 | In Progress | - |
+| 41. Zertifikate + Dashboard | 2/2 | Complete   | 2026-03-11 |
 | 42. Material | 0/1 | Not started | - |
 | 43. Profil + Chat | 0/2 | Not started | - |
