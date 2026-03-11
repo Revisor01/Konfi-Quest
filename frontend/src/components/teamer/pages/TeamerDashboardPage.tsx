@@ -13,7 +13,6 @@ import {
   IonLabel,
   IonRefresher,
   IonRefresherContent,
-  IonProgressBar,
   useIonPopover
 } from '@ionic/react';
 import {
@@ -75,6 +74,7 @@ import {
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import api from '../../../services/api';
+import LoadingSpinner from '../../common/LoadingSpinner';
 
 // Badge/Certificate Icon Mapping (shared with DashboardView)
 const ICON_MAP: Record<string, string> = {
@@ -146,7 +146,7 @@ const CertPopoverContent: React.FC<{
   const cert = dataRef.current;
   if (!cert) return null;
 
-  const statusLabel = cert.status === 'valid' ? 'Gueltig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
+  const statusLabel = cert.status === 'valid' ? 'Gültig' : cert.status === 'expired' ? 'Abgelaufen' : 'Nicht erhalten';
   const statusColor = cert.status === 'valid' ? '#059669' : cert.status === 'expired' ? '#ef4444' : '#9ca3af';
 
   return (
@@ -192,18 +192,21 @@ const TeamerDashboardPage: React.FC = () => {
     dataRef: certPopoverRef
   });
 
+  const getFirstName = (name: string) => name.split(' ')[0];
+
   const getGreeting = (displayName: string): string => {
+    const firstName = getFirstName(displayName);
     // Moin-Variante bei jedem 5. Laden
     if (Math.random() < 0.2) {
-      return `Moin, ${displayName}`;
+      return `Moin, ${firstName}!`;
     }
 
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 11) return `Guten Morgen, ${displayName}`;
-    if (hour >= 11 && hour < 14) return `Guten Mittag, ${displayName}`;
-    if (hour >= 14 && hour < 18) return `Guten Tag, ${displayName}`;
-    if (hour >= 18 && hour < 22) return `Guten Abend, ${displayName}`;
-    return `Gute Nacht, ${displayName}`;
+    if (hour >= 5 && hour < 11) return `Guten Morgen, ${firstName}!`;
+    if (hour >= 11 && hour < 14) return `Guten Mittag, ${firstName}!`;
+    if (hour >= 14 && hour < 18) return `Guten Tag, ${firstName}!`;
+    if (hour >= 18 && hour < 22) return `Guten Abend, ${firstName}!`;
+    return `Gute Nacht, ${firstName}!`;
   };
 
   const loadDashboard = async () => {
@@ -254,18 +257,22 @@ const TeamerDashboardPage: React.FC = () => {
 
   const config = dashboardData?.config;
 
+  if (loading) {
+    return <LoadingSpinner fullScreen message="Dashboard wird geladen..." />;
+  }
+
   return (
     <IonPage>
       <IonHeader translucent={true}>
         <IonToolbar>
-          <IonTitle>Start</IonTitle>
+          <IonTitle>Konfi Quest</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Start</IonTitle>
+            <IonTitle size="large">Konfi Quest</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -279,19 +286,32 @@ const TeamerDashboardPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {loading && <IonProgressBar type="indeterminate" />}
+        {/* Begrüßung */}
+        {dashboardData && (
+          <div className="app-dashboard-header">
+            {/* Dekorative Kreise im Hintergrund */}
+            <div className="app-dashboard-header__circle" style={{
+              top: '-40px', right: '-40px', width: '140px', height: '140px',
+              background: 'rgba(255, 255, 255, 0.08)'
+            }}/>
+            <div className="app-dashboard-header__circle" style={{
+              top: '60px', right: '30px', width: '60px', height: '60px'
+            }}/>
+            <div className="app-dashboard-header__circle" style={{
+              bottom: '-30px', left: '-30px', width: '100px', height: '100px'
+            }}/>
+            <div className="app-dashboard-header__circle" style={{
+              bottom: '40px', left: '40px', width: '40px', height: '40px'
+            }}/>
 
-        {/* Begruessing */}
-        <div className="app-header-banner app-header-banner--teamer">
-          <div className="app-header-banner__content">
-            <div className="app-header-banner__icon-row">
-              <IonIcon icon={home} className="app-header-banner__icon" />
-              <span className="app-header-banner__title">
-                {dashboardData ? getGreeting(dashboardData.greeting.display_name) : 'Willkommen!'}
-              </span>
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <h2 className="app-dashboard-greeting">
+                {getGreeting(dashboardData.greeting.display_name)}
+              </h2>
+              <p className="app-dashboard-subtitle">Teamer</p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Zertifikate */}
         {config?.show_zertifikate !== false && dashboardData && dashboardData.certificates.length > 0 && (
@@ -379,14 +399,14 @@ const TeamerDashboardPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* Naechste Events */}
+        {/* Nächste Events */}
         {config?.show_events !== false && dashboardData && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={calendar} />
               </div>
-              <IonLabel>Naechste Events</IonLabel>
+              <IonLabel>Nächste Events</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
