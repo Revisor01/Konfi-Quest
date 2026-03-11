@@ -4,14 +4,14 @@ milestone: v1.8
 milestone_name: Teamer
 current_plan: 3 of 3
 status: completed
-stopped_at: Completed 40-03-PLAN.md
-last_updated: "2026-03-10T22:12:28.104Z"
+stopped_at: Completed 40-04-PLAN.md (Gap Closure)
+last_updated: "2026-03-11T12:19:47.982Z"
 last_activity: 2026-03-10 -- Phase 40 Plan 03 completed
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -49,6 +49,7 @@ Progress: [██████████] 100%
 | Phase 40 P01 | 6min | 2 tasks | 6 files |
 | Phase 40 P02 | 5min | 2 tasks | 4 files |
 | Phase 40 P03 | 8min | 3 tasks | 9 files |
+| Phase 40 P04 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -69,6 +70,7 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 40]: Streak-Logik und Badge-Insert als shared Funktionen extrahiert (DRY)
 - [Phase 40]: Segment-Toggle Pattern fuer Konfi/Teamer-Umschaltung in Badge/Activity-Seiten
 - [Phase 40]: TeamerBadgesView als eigenstaendige Komponente mit eigenem Fetch
+- [Phase 40]: WHERE IN ('konfi','teamer') statt separater Route, targetRole als optionaler Prop
 
 ### Pending Todos
 
@@ -86,6 +88,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-10T22:12:28.102Z
-Stopped at: Completed 40-03-PLAN.md
+Last session: 2026-03-11T12:19:47.980Z
+Stopped at: Completed 40-04-PLAN.md (Gap Closure)
 Resume file: None
