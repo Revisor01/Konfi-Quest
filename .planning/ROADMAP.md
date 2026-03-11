@@ -185,11 +185,12 @@ Plans:
   2. Teamer sieht tageszeitabhaengige Begruessing im Dashboard
   3. Zertifikate werden prominent im Dashboard angezeigt (aehnlich Konfi-Level-Anzeige mit Datum und Status)
   4. Dashboard zeigt naechste anstehende Events und eigene Badges-Sektion
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
 - [x] 41-01-PLAN.md -- Backend: DB-Schema Zertifikate, CRUD-Endpoints, Teamer-Dashboard-Endpoint, Settings-Erweiterung
-- [ ] 41-02-PLAN.md -- Frontend: TeamerDashboardPage, Admin Zertifikat-Verwaltung, Dashboard-Konfiguration
+- [x] 41-02-PLAN.md -- Frontend: TeamerDashboardPage, Admin Zertifikat-Verwaltung, Dashboard-Konfiguration
+- [ ] 41-03-PLAN.md -- Gap Closure: Config-Key-Mismatch und Event-Feld-Mismatch im Dashboard fixen
 
 ### Phase 42: Material
 **Goal**: Teamer haben Zugriff auf einen Datei-Bereich mit Materialien pro Jahrgang
