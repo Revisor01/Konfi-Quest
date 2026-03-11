@@ -492,6 +492,16 @@ const TeamerEventsPage: React.FC = () => {
                   </div>
                 )}
 
+                {/* Team gesucht */}
+                {isTeamerEvent && (
+                  <div className="app-info-row">
+                    <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                    <div className="app-info-row__content">
+                      {selectedEvent.teamer_only ? 'Nur Team' : 'Team gesucht'}
+                    </div>
+                  </div>
+                )}
+
                 {/* Was mitbringen */}
                 {selectedEvent.bring_items && (
                   <div className="app-info-row">
