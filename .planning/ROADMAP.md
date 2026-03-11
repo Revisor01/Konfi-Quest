@@ -185,11 +185,11 @@ Plans:
   2. Teamer sieht tageszeitabhaengige Begruessing im Dashboard
   3. Zertifikate werden prominent im Dashboard angezeigt (aehnlich Konfi-Level-Anzeige mit Datum und Status)
   4. Dashboard zeigt naechste anstehende Events und eigene Badges-Sektion
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 41-01: TBD
-- [ ] 41-02: TBD
+- [ ] 41-01-PLAN.md -- Backend: DB-Schema Zertifikate, CRUD-Endpoints, Teamer-Dashboard-Endpoint, Settings-Erweiterung
+- [ ] 41-02-PLAN.md -- Frontend: TeamerDashboardPage, Admin Zertifikat-Verwaltung, Dashboard-Konfiguration
 
 ### Phase 42: Material
 **Goal**: Teamer haben Zugriff auf einen Datei-Bereich mit Materialien pro Jahrgang
@@ -199,7 +199,7 @@ Plans:
   1. Admin oder Teamer kann Dateien (PDF, Bilder, Dokumente) hochladen und einem Jahrgang zuordnen
   2. Material-Tab zeigt Dateien sortiert nach Jahrgang mit Dateiname, Typ und Upload-Datum
   3. Teamer kann Dateien aus der Materialliste herunterladen
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 42-01: TBD
@@ -212,7 +212,7 @@ Plans:
   1. Teamer kann Aktivitaets-Antraege stellen (gleicher Flow wie bei Konfis)
   2. Teamer sieht im Profil eine Badges-Uebersicht mit aktuellen Teamer-Badges und eingefrorenen Konfi-Badges als Historie
   3. Teamer kann Chat-Raeume erstellen und hat vollen Zugriff auf Nachrichten, Polls und Datei-Uploads
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 43-01: TBD
