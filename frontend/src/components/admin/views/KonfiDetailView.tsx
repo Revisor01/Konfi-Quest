@@ -102,6 +102,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [eventPoints, setEventPoints] = useState<any[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
   const [loading, setLoading] = useState(true);
+  const [targetRole, setTargetRole] = useState<string>('konfi');
+  const isTeamer = targetRole === 'teamer';
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [attendanceStats, setAttendanceStats] = useState<{
     total_mandatory: number;
@@ -120,6 +122,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
     konfiId: konfiId,
+    targetRole: targetRole,
     onClose: () => dismissActivityModalHook(),
     onSave: async () => {
       await loadKonfiData();
@@ -205,6 +208,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
 
       const konfiData = konfiRes.data;
       const allActivities = konfiData.activities || [];
+
+      // Rolle setzen fuer bedingte Anzeige
+      setTargetRole(konfiData.role_name || 'konfi');
 
       // bonusPoints vom Backend ist ein Array, nicht eine Zahl!
       const bonusEntriesArray = Array.isArray(konfiData.bonusPoints) ? konfiData.bonusPoints : [];
@@ -429,7 +435,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>{currentKonfi?.name || 'Konfi Details'}</IonTitle>
+          <IonTitle>{currentKonfi?.name || (isTeamer ? 'Teamer:in Details' : 'Konfi Details')}</IonTitle>
           <IonButtons slot="end">
             <IonButton onClick={handlePasswordAction}>
               <IonIcon icon={key} />
@@ -533,17 +539,19 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - @{currentKonfi?.username}
           </div>
 
-          {/* Activity Rings */}
-          <ActivityRings
-            totalPoints={getTotalPoints()}
-            gottesdienstPoints={getGottesdienstPoints()}
-            gemeindePoints={getGemeindePoints()}
-            gottesdienstGoal={currentKonfi?.target_gottesdienst || 10}
-            gemeindeGoal={currentKonfi?.target_gemeinde || 10}
-            gottesdienstEnabled={currentKonfi?.gottesdienst_enabled}
-            gemeindeEnabled={currentKonfi?.gemeinde_enabled}
-            size={160}
-          />
+          {/* Activity Rings - nur fuer Konfis */}
+          {!isTeamer && (
+            <ActivityRings
+              totalPoints={getTotalPoints()}
+              gottesdienstPoints={getGottesdienstPoints()}
+              gemeindePoints={getGemeindePoints()}
+              gottesdienstGoal={currentKonfi?.target_gottesdienst || 10}
+              gemeindeGoal={currentKonfi?.target_gemeinde || 10}
+              gottesdienstEnabled={currentKonfi?.gottesdienst_enabled}
+              gemeindeEnabled={currentKonfi?.gemeinde_enabled}
+              size={160}
+            />
+          )}
 
           {/* Badge Count */}
           <div
@@ -569,8 +577,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </div>
         </div>
 
-        {/* Bonuspunkte - iOS26 Pattern - Orange als Hauptfarbe */}
-        <IonList className="app-section-inset" inset={true}>
+        {/* Bonuspunkte - iOS26 Pattern - Orange als Hauptfarbe - nur fuer Konfis */}
+        {!isTeamer && <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--bonus">
               <IonIcon icon={gift} />
@@ -669,10 +677,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               </IonButton>
             </IonCardContent>
           </IonCard>
-        </IonList>
+        </IonList>}
 
-        {/* Event Points - iOS26 Pattern - Rot als Hauptfarbe */}
-        <IonList className="app-section-inset" inset={true}>
+        {/* Event Points - iOS26 Pattern - Rot als Hauptfarbe - nur fuer Konfis */}
+        {!isTeamer && <IonList className="app-section-inset" inset={true}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={podium} />
@@ -747,10 +755,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
               )}
             </IonCardContent>
           </IonCard>
-        </IonList>
+        </IonList>}
 
-        {/* Anwesenheit - Pflicht-Events */}
-        {attendanceStats && attendanceStats.total_mandatory > 0 && (
+        {/* Anwesenheit - Pflicht-Events - nur fuer Konfis */}
+        {!isTeamer && attendanceStats && attendanceStats.total_mandatory > 0 && (
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
               <div className="app-section-icon" style={{ backgroundColor: '#6366f1' }}>
@@ -861,7 +869,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             <div className="app-section-icon app-section-icon--activities">
               <IonIcon icon={flash} />
             </div>
-            <IonLabel>Aktivitäten ({activities.filter((a) => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})</IonLabel>
+            <IonLabel>Aktivitäten {!isTeamer && `(${activities.filter((a) => !a.isPending).reduce((sum, a) => sum + (a.points || 0), 0)})`} {isTeamer && `(${activities.filter((a) => !a.isPending).length})`}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent className="app-card-content">
@@ -896,19 +904,21 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                             ...(isActivityTypeDisabled ? { filter: 'grayscale(100%)' } : {})
                           }}
                         >
-                          {/* Corner Badge für Punkte */}
-                          <div
-                            className="app-corner-badge"
-                            style={{
-                              backgroundColor: activity.isPending
-                                ? '#f59e0b'
-                                : activity.type === 'gottesdienst'
-                                ? '#3b82f6'
-                                : '#059669'
-                            }}
-                          >
-                            {activity.isPending ? '?' : '+'}{activity.points}P
-                          </div>
+                          {/* Corner Badge fuer Punkte - bei Teamer ausblenden */}
+                          {!isTeamer && (
+                            <div
+                              className="app-corner-badge"
+                              style={{
+                                backgroundColor: activity.isPending
+                                  ? '#f59e0b'
+                                  : activity.type === 'gottesdienst'
+                                  ? '#3b82f6'
+                                  : '#059669'
+                              }}
+                            >
+                              {activity.isPending ? '?' : '+'}{activity.points}P
+                            </div>
+                          )}
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               <div
@@ -985,30 +995,32 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonCardContent>
           </IonCard>
         </IonList>
-        {/* Teamer-Beförderung */}
-        <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
-          <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
-              <IonIcon icon={ribbon} />
-            </div>
-            <IonLabel>Rolle ändern</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent className="app-card-content">
-              <IonButton
-                expand="block"
-                style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
-                onClick={handlePromoteToTeamer}
-              >
-                <IonIcon icon={ribbon} slot="start" />
-                Zum Teamer befördern
-              </IonButton>
-              <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginTop: '8px' }}>
-                Konfi-Rolle wird dauerhaft gewechselt
-              </p>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
+        {/* Teamer-Befoerderung - nur fuer Konfis */}
+        {!isTeamer && (
+          <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--purple">
+                <IonIcon icon={ribbon} />
+              </div>
+              <IonLabel>Rolle ändern</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <IonButton
+                  expand="block"
+                  style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
+                  onClick={handlePromoteToTeamer}
+                >
+                  <IonIcon icon={ribbon} slot="start" />
+                  Zum Teamer befördern
+                </IonButton>
+                <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginTop: '8px' }}>
+                  Konfi-Rolle wird dauerhaft gewechselt
+                </p>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
       </IonContent>
 

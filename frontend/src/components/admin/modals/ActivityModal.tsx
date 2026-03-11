@@ -34,9 +34,10 @@ interface ActivityModalProps {
   onClose: () => void;
   onSave: () => Promise<void>;
   dismiss?: () => void;
+  targetRole?: string;
 }
 
-const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss }) => {
+const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole }) => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -86,7 +87,8 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
 
   const loadActivities = async () => {
     try {
-      const response = await api.get('/admin/activities');
+      const url = targetRole ? `/admin/activities?target_role=${targetRole}` : '/admin/activities';
+      const response = await api.get(url);
       setActivities(response.data);
     } catch (err) {
  console.error('Error loading activities:', err);
@@ -211,13 +213,15 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
                           overflow: 'hidden'
                         }}
                       >
-                        {/* Corner Badge */}
-                        <div
-                          className="app-corner-badge"
-                          style={{ backgroundColor: typeColor }}
-                        >
-                          +{activity.points}P
-                        </div>
+                        {/* Corner Badge - nur bei Nicht-Teamer anzeigen */}
+                        {targetRole !== 'teamer' && (
+                          <div
+                            className="app-corner-badge"
+                            style={{ backgroundColor: typeColor }}
+                          >
+                            +{activity.points}P
+                          </div>
+                        )}
 
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
