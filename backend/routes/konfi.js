@@ -83,11 +83,11 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
         // Get recent badges for display
         const badgesQuery = `
           SELECT cb.id, cb.name, cb.description, cb.icon, cb.criteria_type, cb.criteria_value,
-                 kb.earned_at
+                 kb.awarded_date AS earned_at
           FROM custom_badges cb
           LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
-          WHERE kb.earned_at IS NOT NULL AND cb.organization_id = $2
-          ORDER BY kb.earned_at DESC
+          WHERE kb.awarded_date IS NOT NULL AND cb.organization_id = $2
+          ORDER BY kb.awarded_date DESC
           LIMIT 3
         `;
         const { rows: badgeResults } = await db.query(badgesQuery, [konfiId, req.user.organization_id]);
@@ -849,8 +849,8 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
 
       const query = `
         SELECT cb.*,
-               CASE WHEN kb.konfi_id IS NOT NULL THEN TRUE ELSE FALSE END as earned,
-               kb.earned_at,
+               CASE WHEN kb.user_id IS NOT NULL THEN TRUE ELSE FALSE END as earned,
+               kb.awarded_date AS earned_at,
                COALESCE(kb.seen, false) as seen
         FROM custom_badges cb
         LEFT JOIN user_badges kb ON cb.id = kb.badge_id AND kb.user_id = $1 AND kb.organization_id = $2
