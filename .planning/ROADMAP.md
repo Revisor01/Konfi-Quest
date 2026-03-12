@@ -203,7 +203,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 42-01: TBD
+- [ ] 42-01-PLAN.md -- Backend: DB-Schema, Material CRUD, Tag-Verwaltung, Datei-Upload/Download
+- [ ] 42-02-PLAN.md -- Frontend: Admin Material-Verwaltung, Teamer Material-Tab + Detail, Event-Integration
 
 ### Phase 43: Profil + Chat
 **Goal**: Teamer hat ein vollstaendiges Profil mit Antraegen und Badge-Historie sowie Chat-Zugriff
@@ -230,5 +231,5 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
 | 41. Zertifikate + Dashboard | 3/3 | Complete   | 2026-03-11 |
-| 42. Material | 0/1 | Not started | - |
+| 42. Material | 0/2 | Not started | - |
 | 43. Profil + Chat | 0/2 | Not started | - |
