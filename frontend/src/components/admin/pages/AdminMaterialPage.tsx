@@ -35,7 +35,6 @@ import {
   createOutline,
   attachOutline,
   calendarOutline,
-  pricetagOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -43,11 +42,6 @@ import api from '../../../services/api';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import MaterialFormModal from '../modals/MaterialFormModal';
-
-interface MaterialTag {
-  id: number;
-  name: string;
-}
 
 interface Material {
   id: number;
@@ -58,7 +52,6 @@ interface Material {
   jahrgang_id?: number;
   jahrgang_name?: string;
   file_count?: number;
-  tags?: MaterialTag[];
   created_at: string;
 }
 
@@ -68,11 +61,9 @@ const AdminMaterialPage: React.FC = () => {
   const [presentAlert] = useIonAlert();
 
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [tags, setTags] = useState<MaterialTag[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTagId, setActiveTagId] = useState<number | undefined>();
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [segment, setSegment] = useState<'alle' | 'mit_event' | 'ohne_event'>('alle');
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
@@ -92,24 +83,19 @@ const AdminMaterialPage: React.FC = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [matRes, tagsRes] = await Promise.all([
-        api.get('/material', {
-          params: {
-            ...(activeTagId ? { tag_id: activeTagId } : {}),
-            ...(search ? { search } : {}),
-            ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
-          }
-        }),
-        api.get('/material/tags')
-      ]);
-      setMaterials(matRes.data);
-      setTags(tagsRes.data);
+      const res = await api.get('/material', {
+        params: {
+          ...(search ? { search } : {}),
+          ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
+        }
+      });
+      setMaterials(res.data);
     } catch {
       setError('Fehler beim Laden der Materialien');
     } finally {
       setLoading(false);
     }
-  }, [activeTagId, search, activeJahrgangId]);
+  }, [search, activeJahrgangId]);
 
   useEffect(() => {
     loadData();
@@ -134,87 +120,6 @@ const AdminMaterialPage: React.FC = () => {
             try {
               await api.delete(`/material/${material.id}`);
               setSuccess('Material gelöscht');
-              loadData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Löschen');
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  // Tag CRUD
-  const handleCreateTag = () => {
-    presentAlert({
-      header: 'Neuen Tag erstellen',
-      inputs: [
-        { name: 'name', type: 'text', placeholder: 'Tag-Name (z.B. Spiele, Andachten)' }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Erstellen',
-          handler: async (data) => {
-            if (!data.name?.trim()) {
-              setError('Bitte einen Namen eingeben');
-              return false;
-            }
-            try {
-              await api.post('/material/tags', { name: data.name.trim() });
-              setSuccess('Tag erstellt');
-              loadData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Erstellen');
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  const handleEditTag = (tag: MaterialTag) => {
-    presentAlert({
-      header: 'Tag bearbeiten',
-      inputs: [
-        { name: 'name', type: 'text', value: tag.name, placeholder: 'Tag-Name' }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Speichern',
-          handler: async (data) => {
-            if (!data.name?.trim()) {
-              setError('Bitte einen Namen eingeben');
-              return false;
-            }
-            try {
-              await api.put(`/material/tags/${tag.id}`, { name: data.name.trim() });
-              setSuccess('Tag aktualisiert');
-              loadData();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Aktualisieren');
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  const handleDeleteTag = (tag: MaterialTag) => {
-    presentAlert({
-      header: 'Tag löschen',
-      message: `"${tag.name}" wirklich löschen?`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Löschen',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              await api.delete(`/material/tags/${tag.id}`);
-              setSuccess('Tag gelöscht');
-              if (activeTagId === tag.id) setActiveTagId(undefined);
               loadData();
             } catch (err: any) {
               setError(err.response?.data?.error || 'Fehler beim Löschen');
@@ -298,35 +203,6 @@ const AdminMaterialPage: React.FC = () => {
           <LoadingSpinner message="Materialien werden geladen..." />
         ) : (
           <>
-            {/* Tag-Filter Chips */}
-            {tags.length > 0 && (
-              <div style={{ padding: '8px 16px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
-                <IonChip
-                  onClick={() => setActiveTagId(undefined)}
-                  style={{
-                    backgroundColor: !activeTagId ? '#d97706' : 'transparent',
-                    color: !activeTagId ? 'white' : '#d97706',
-                    border: '1px solid #d97706'
-                  }}
-                >
-                  <IonLabel>Alle</IonLabel>
-                </IonChip>
-                {tags.map(tag => (
-                  <IonChip
-                    key={tag.id}
-                    onClick={() => setActiveTagId(activeTagId === tag.id ? undefined : tag.id)}
-                    style={{
-                      backgroundColor: activeTagId === tag.id ? '#d97706' : 'transparent',
-                      color: activeTagId === tag.id ? 'white' : '#d97706',
-                      border: '1px solid #d97706'
-                    }}
-                  >
-                    <IonLabel>{tag.name}</IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            )}
-
             {/* Jahrgang-Filter Chips */}
             {jahrgaenge.length > 0 && (
               <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -439,7 +315,14 @@ const AdminMaterialPage: React.FC = () => {
                                   {mat.file_count && mat.file_count > 0 && (
                                     <>
                                       {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                      <div className="app-corner-badge" style={{ backgroundColor: '#d97706', position: 'static' }}>
+                                      <div style={{
+                                        backgroundColor: '#d97706',
+                                        color: 'white',
+                                        fontSize: '0.65rem',
+                                        fontWeight: '700',
+                                        padding: '4px 8px',
+                                        borderRadius: '0 0 8px 8px'
+                                      }}>
                                         {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                       </div>
                                     </>
@@ -504,73 +387,6 @@ const AdminMaterialPage: React.FC = () => {
                       ))}
                     </IonList>
                   )}
-                </IonCardContent>
-              </IonCard>
-            </IonList>
-
-            {/* Tag-Management */}
-            <IonList inset={true} className="app-segment-wrapper">
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={pricetagOutline} />
-                </div>
-                <IonLabel>Tags verwalten</IonLabel>
-              </IonListHeader>
-              <IonCard className="app-card">
-                <IonCardContent>
-                  {tags.length === 0 ? (
-                    <EmptyState
-                      icon={pricetagOutline}
-                      title="Keine Tags"
-                      message="Erstelle Tags um Materialien zu kategorisieren"
-                      iconColor="#d97706"
-                    />
-                  ) : (
-                    <IonList className="app-list-inner" lines="none">
-                      {tags.map((tag, index) => (
-                        <IonItemSliding key={tag.id} style={{ marginBottom: index < tags.length - 1 ? '8px' : '0' }}>
-                          <IonItem
-                            className="app-item-transparent"
-                            detail={false}
-                            lines="none"
-                            onClick={() => handleEditTag(tag)}
-                          >
-                            <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>
-                              <div className="app-list-item__row">
-                                <div className="app-list-item__main">
-                                  <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
-                                    <IonIcon icon={pricetagOutline} />
-                                  </div>
-                                  <div className="app-list-item__content">
-                                    <div className="app-list-item__title">{tag.name}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </IonItem>
-                          <IonItemOptions className="app-swipe-actions" side="end">
-                            <IonItemOption
-                              className="app-swipe-action"
-                              onClick={() => handleDeleteTag(tag)}
-                            >
-                              <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
-                                <IonIcon icon={trash} />
-                              </div>
-                            </IonItemOption>
-                          </IonItemOptions>
-                        </IonItemSliding>
-                      ))}
-                    </IonList>
-                  )}
-                  <IonButton
-                    expand="block"
-                    fill="outline"
-                    onClick={handleCreateTag}
-                    style={{ marginTop: '12px' }}
-                  >
-                    <IonIcon icon={add} slot="start" />
-                    Neuen Tag erstellen
-                  </IonButton>
                 </IonCardContent>
               </IonCard>
             </IonList>

@@ -295,7 +295,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       // Dateien laden
       const { rows: files } = await db.query(
-        `SELECT id, original_name, mime_type, file_size, created_at
+        `SELECT id, original_name, stored_name, mime_type, file_size, created_at
          FROM material_files
          WHERE material_id = $1
          ORDER BY created_at`,

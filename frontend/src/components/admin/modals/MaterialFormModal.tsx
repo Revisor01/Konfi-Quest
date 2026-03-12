@@ -8,6 +8,9 @@ import {
   IonButtons,
   IonButton,
   IonItem,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
   IonLabel,
   IonInput,
   IonTextarea,
@@ -19,7 +22,6 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
-  IonChip,
   useIonAlert
 } from '@ionic/react';
 import {
@@ -33,6 +35,10 @@ import {
   videocamOutline,
   musicalNotesOutline
 } from 'ionicons/icons';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { FileViewer } from '@capacitor/file-viewer';
+import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -43,11 +49,6 @@ interface MaterialFile {
   mime_type: string;
   file_size: number;
   created_at: string;
-}
-
-interface MaterialTag {
-  id: number;
-  name: string;
 }
 
 interface EventOption {
@@ -68,7 +69,6 @@ interface Material {
   event_name?: string;
   jahrgang_id?: number;
   jahrgang_name?: string;
-  tags?: MaterialTag[];
   files?: MaterialFile[];
   created_at: string;
 }
@@ -89,16 +89,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   const [description, setDescription] = useState(material?.description || '');
   const [eventId, setEventId] = useState<number | undefined>(material?.event_id);
   const [jahrgangId, setJahrgangId] = useState<number | undefined>(material?.jahrgang_id);
-  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(
-    material?.tags?.map(t => t.id) || []
-  );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   const [events, setEvents] = useState<EventOption[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<JahrgangOption[]>([]);
-  const [tags, setTags] = useState<MaterialTag[]>([]);
 
   useEffect(() => {
     loadOptions();
@@ -106,14 +102,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
   const loadOptions = async () => {
     try {
-      const [eventsRes, jahrgaengeRes, tagsRes] = await Promise.all([
+      const [eventsRes, jahrgaengeRes] = await Promise.all([
         api.get('/events'),
-        api.get('/admin/jahrgaenge'),
-        api.get('/material/tags')
+        api.get('/admin/jahrgaenge')
       ]);
       setEvents(eventsRes.data);
       setJahrgaenge(jahrgaengeRes.data);
-      setTags(tagsRes.data);
     } catch {
       // Optionen laden fehlgeschlagen
     }
@@ -132,12 +126,54 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const toggleTag = (tagId: number) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
+  const openFile = async (file: MaterialFile) => {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      const response = await api.get(`/material/files/${file.stored_name}`, {
+        responseType: 'blob'
+      });
+      const blob = response.data;
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const ext = file.original_name.split('.').pop() || '';
+      const tempPath = `temp/material_${file.id}.${ext}`;
+
+      try {
+        await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
+      } catch { /* existiert bereits */ }
+
+      await Filesystem.writeFile({
+        path: tempPath,
+        data: base64Data,
+        directory: Directory.Documents,
+        recursive: true
+      });
+
+      const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path: tempPath });
+
+      if (file.mime_type.startsWith('image/')) {
+        await FileOpener.open({ filePath: fileUri.uri, contentType: file.mime_type });
+      } else {
+        await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
+      }
+    } catch (err) {
+      console.warn('Native file viewer failed, using blob fallback:', err);
+      try {
+        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
+        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: file.mime_type }));
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch {
+        setError('Fehler beim Öffnen der Datei');
+      }
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,8 +227,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         title: title.trim(),
         description: description.trim() || null,
         event_id: eventId || null,
-        jahrgang_id: jahrgangId || null,
-        tag_ids: selectedTagIds
+        jahrgang_id: jahrgangId || null
       };
 
       if (material) {
@@ -318,34 +353,6 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonCard>
         </IonList>
 
-        {/* Tags */}
-        {tags.length > 0 && (
-          <IonList inset={true} className="app-segment-wrapper">
-            <IonListHeader>
-              <IonLabel>Tags</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {tags.map(tag => (
-                    <IonChip
-                      key={tag.id}
-                      onClick={() => toggleTag(tag.id)}
-                      style={{
-                        backgroundColor: selectedTagIds.includes(tag.id) ? '#d97706' : 'transparent',
-                        color: selectedTagIds.includes(tag.id) ? 'white' : '#d97706',
-                        border: `1px solid #d97706`
-                      }}
-                    >
-                      <IonLabel>{tag.name}</IonLabel>
-                    </IonChip>
-                  ))}
-                </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
-
         {/* Bestehende Dateien */}
         {existingFiles.length > 0 && (
           <IonList inset={true} className="app-segment-wrapper">
@@ -354,36 +361,47 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                {existingFiles.map(file => (
-                  <div
-                    key={file.id}
-                    className="app-list-item"
-                    style={{ borderLeftColor: '#d97706' }}
-                  >
-                    <div className="app-list-item__row">
-                      <div className="app-list-item__main">
-                        <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
-                          <IonIcon icon={getFileIcon(file.mime_type)} />
-                        </div>
-                        <div className="app-list-item__content">
-                          <div className="app-list-item__title">{file.original_name}</div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">
-                              {formatFileSize(file.file_size)}
-                            </span>
+                <IonList className="app-list-inner" lines="none">
+                  {existingFiles.map((file, index) => (
+                    <IonItemSliding key={file.id} style={{ marginBottom: index < existingFiles.length - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        button
+                        detail={false}
+                        lines="none"
+                        className="app-item-transparent"
+                        onClick={() => openFile(file)}
+                      >
+                        <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                                <IonIcon icon={getFileIcon(file.mime_type)} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{file.original_name}</div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    {formatFileSize(file.file_size)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <IonButton
-                        fill="clear"
-                        color="danger"
-                        onClick={() => handleDeleteExistingFile(file)}
-                      >
-                        <IonIcon icon={trash} slot="icon-only" />
-                      </IonButton>
-                    </div>
-                  </div>
-                ))}
+                      </IonItem>
+                      <IonItemOptions className="app-swipe-actions" side="end">
+                        <IonItemOption
+                          className="app-swipe-action"
+                          onClick={() => handleDeleteExistingFile(file)}
+                        >
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                            <IonIcon icon={trash} />
+                          </div>
+                        </IonItemOption>
+                      </IonItemOptions>
+                    </IonItemSliding>
+                  ))}
+                </IonList>
               </IonCardContent>
             </IonCard>
           </IonList>

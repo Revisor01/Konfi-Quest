@@ -6,15 +6,13 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonBackButton,
+  IonButton,
   IonIcon,
-  IonChip,
   IonLabel,
   IonList,
   IonListHeader,
   IonCard,
   IonCardContent,
-  IonItem,
   IonRefresher,
   IonRefresherContent
 } from '@ionic/react';
@@ -24,11 +22,17 @@ import {
   videocamOutline,
   musicalNotesOutline,
   documentOutline,
-  downloadOutline,
   calendarOutline,
-  personOutline
+  personOutline,
+  arrowBack,
+  informationCircleOutline,
+  textOutline
 } from 'ionicons/icons';
 import { useParams } from 'react-router-dom';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { FileViewer } from '@capacitor/file-viewer';
+import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -43,11 +47,6 @@ interface MaterialFile {
   created_at: string;
 }
 
-interface MaterialTag {
-  id: number;
-  name: string;
-}
-
 interface MaterialDetail {
   id: number;
   title: string;
@@ -57,7 +56,6 @@ interface MaterialDetail {
   jahrgang_id?: number;
   jahrgang_name?: string;
   admin_name?: string;
-  tags?: MaterialTag[];
   files?: MaterialFile[];
   created_at: string;
 }
@@ -105,21 +103,53 @@ const TeamerMaterialDetailPage: React.FC = () => {
     });
   };
 
-  const handleDownload = async (file: MaterialFile) => {
+  const openFile = async (file: MaterialFile) => {
     try {
-      const res = await api.get(`/material/files/${file.stored_name}`, {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      const response = await api.get(`/material/files/${file.stored_name}`, {
         responseType: 'blob'
       });
-      const url = URL.createObjectURL(res.data);
-      const a = window.document.createElement('a');
-      a.href = url;
-      a.download = file.original_name;
-      window.document.body.appendChild(a);
-      a.click();
-      window.document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch {
-      setError('Fehler beim Herunterladen der Datei');
+      const blob = response.data;
+      const base64Data = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const ext = file.original_name.split('.').pop() || '';
+      const tempPath = `temp/material_${file.id}.${ext}`;
+
+      try {
+        await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
+      } catch { /* existiert bereits */ }
+
+      await Filesystem.writeFile({
+        path: tempPath,
+        data: base64Data,
+        directory: Directory.Documents,
+        recursive: true
+      });
+
+      const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path: tempPath });
+
+      if (file.mime_type.startsWith('image/')) {
+        await FileOpener.open({ filePath: fileUri.uri, contentType: file.mime_type });
+      } else {
+        await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
+      }
+    } catch (err) {
+      console.warn('Native file viewer failed, using blob fallback:', err);
+      try {
+        const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
+        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: file.mime_type }));
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch {
+        setError('Fehler beim Öffnen der Datei');
+      }
     }
   };
 
@@ -128,7 +158,9 @@ const TeamerMaterialDetailPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/material" />
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
           </IonButtons>
           <IonTitle>{material?.title || 'Material'}</IonTitle>
         </IonToolbar>
@@ -158,27 +190,13 @@ const TeamerMaterialDetailPage: React.FC = () => {
           />
         ) : (
           <>
-            {/* Tags */}
-            {material.tags && material.tags.length > 0 && (
-              <div style={{ padding: '8px 16px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                {material.tags.map(tag => (
-                  <IonChip
-                    key={tag.id}
-                    style={{
-                      backgroundColor: '#d97706',
-                      color: 'white'
-                    }}
-                  >
-                    <IonLabel>{tag.name}</IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            )}
-
             {/* Beschreibung */}
             {material.description && (
               <IonList inset={true} className="app-segment-wrapper">
                 <IonListHeader>
+                  <div className="app-section-icon app-section-icon--material">
+                    <IonIcon icon={textOutline} />
+                  </div>
                   <IonLabel>Beschreibung</IonLabel>
                 </IonListHeader>
                 <IonCard className="app-card">
@@ -194,6 +212,9 @@ const TeamerMaterialDetailPage: React.FC = () => {
             {/* Info */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
+                <div className="app-section-icon app-section-icon--material">
+                  <IonIcon icon={informationCircleOutline} />
+                </div>
                 <IonLabel>Informationen</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
@@ -235,7 +256,7 @@ const TeamerMaterialDetailPage: React.FC = () => {
             {/* Dateien */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                <div className="app-section-icon app-section-icon--material">
                   <IonIcon icon={documentIcon} />
                 </div>
                 <IonLabel>Dateien ({material.files?.length || 0})</IonLabel>
@@ -244,9 +265,10 @@ const TeamerMaterialDetailPage: React.FC = () => {
                 <IonCardContent>
                   {(!material.files || material.files.length === 0) ? (
                     <EmptyState
-                      icon={documentIcon}
+                      icon={documentOutline}
                       title="Keine Dateien"
-                      message="Dieses Material hat keine angehaengten Dateien."
+                      message="Dieses Material hat keine angehängten Dateien."
+                      iconColor="#d97706"
                     />
                   ) : (
                     material.files.map((file, index) => (
@@ -258,7 +280,7 @@ const TeamerMaterialDetailPage: React.FC = () => {
                           cursor: 'pointer',
                           marginBottom: index < (material.files?.length || 0) - 1 ? '8px' : '0'
                         }}
-                        onClick={() => handleDownload(file)}
+                        onClick={() => openFile(file)}
                       >
                         <div className="app-list-item__row">
                           <div className="app-list-item__main">
@@ -270,10 +292,6 @@ const TeamerMaterialDetailPage: React.FC = () => {
                               <div className="app-list-item__meta">
                                 <span className="app-list-item__meta-item">
                                   {formatFileSize(file.file_size)}
-                                </span>
-                                <span className="app-list-item__meta-item">
-                                  <IonIcon icon={downloadOutline} style={{ color: '#d97706' }} />
-                                  Herunterladen
                                 </span>
                               </div>
                             </div>

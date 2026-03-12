@@ -29,11 +29,6 @@ import api from '../../../services/api';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
-interface MaterialTag {
-  id: number;
-  name: string;
-}
-
 interface Material {
   id: number;
   title: string;
@@ -43,7 +38,6 @@ interface Material {
   jahrgang_id?: number;
   jahrgang_name?: string;
   file_count?: number;
-  tags?: MaterialTag[];
   created_at: string;
 }
 
@@ -52,11 +46,9 @@ const TeamerMaterialPage: React.FC = () => {
   const history = useHistory();
 
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [tags, setTags] = useState<MaterialTag[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTagId, setActiveTagId] = useState<number | undefined>();
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
 
   // Jahrgaenge einmalig laden
@@ -77,7 +69,6 @@ const TeamerMaterialPage: React.FC = () => {
       setLoading(true);
       const matRes = await api.get('/material', {
         params: {
-          ...(activeTagId ? { tag_id: activeTagId } : {}),
           ...(search ? { search } : {}),
           ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
         }
@@ -86,14 +77,8 @@ const TeamerMaterialPage: React.FC = () => {
     } catch {
       setError('Fehler beim Laden der Materialien');
     }
-    try {
-      const tagsRes = await api.get('/material/tags');
-      setTags(tagsRes.data);
-    } catch {
-      // Tags-Fehler nicht kritisch, Liste trotzdem anzeigen
-    }
     setLoading(false);
-  }, [activeTagId, search, activeJahrgangId]);
+  }, [search, activeJahrgangId]);
 
   useEffect(() => {
     loadData();
@@ -133,35 +118,6 @@ const TeamerMaterialPage: React.FC = () => {
           <LoadingSpinner message="Materialien werden geladen..." />
         ) : (
           <>
-            {/* Tag-Filter Chips */}
-            {tags.length > 0 && (
-              <div style={{ padding: '8px 16px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch' }}>
-                <IonChip
-                  onClick={() => setActiveTagId(undefined)}
-                  style={{
-                    backgroundColor: !activeTagId ? '#d97706' : 'transparent',
-                    color: !activeTagId ? 'white' : '#d97706',
-                    border: '1px solid #d97706'
-                  }}
-                >
-                  <IonLabel>Alle</IonLabel>
-                </IonChip>
-                {tags.map(tag => (
-                  <IonChip
-                    key={tag.id}
-                    onClick={() => setActiveTagId(activeTagId === tag.id ? undefined : tag.id)}
-                    style={{
-                      backgroundColor: activeTagId === tag.id ? '#d97706' : 'transparent',
-                      color: activeTagId === tag.id ? 'white' : '#d97706',
-                      border: '1px solid #d97706'
-                    }}
-                  >
-                    <IonLabel>{tag.name}</IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            )}
-
             {/* Jahrgang-Filter Chips */}
             {jahrgaenge.length > 0 && (
               <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -265,7 +221,14 @@ const TeamerMaterialPage: React.FC = () => {
                               {mat.jahrgang_name && (
                                 <>
                                   {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                  <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6', position: 'static' }}>
+                                  <div style={{
+                                    backgroundColor: '#5b21b6',
+                                    color: 'white',
+                                    fontSize: '0.65rem',
+                                    fontWeight: '700',
+                                    padding: '4px 8px',
+                                    borderRadius: '0 0 8px 8px'
+                                  }}>
                                     {mat.jahrgang_name}
                                   </div>
                                 </>
