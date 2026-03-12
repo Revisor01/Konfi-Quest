@@ -52,29 +52,47 @@ const TeamerMaterialPage: React.FC = () => {
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [tags, setTags] = useState<MaterialTag[]>([]);
+  const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeTagId, setActiveTagId] = useState<number | undefined>();
+  const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
+
+  // Jahrgaenge einmalig laden
+  useEffect(() => {
+    const loadJahrgaenge = async () => {
+      try {
+        const res = await api.get('/jahrgaenge');
+        setJahrgaenge(res.data);
+      } catch {
+        // Nicht kritisch
+      }
+    };
+    loadJahrgaenge();
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
-      const [matRes, tagsRes] = await Promise.all([
-        api.get('/material', {
-          params: {
-            ...(activeTagId ? { tag_id: activeTagId } : {}),
-            ...(search ? { search } : {})
-          }
-        }),
-        api.get('/material/tags')
-      ]);
+      setLoading(true);
+      const matRes = await api.get('/material', {
+        params: {
+          ...(activeTagId ? { tag_id: activeTagId } : {}),
+          ...(search ? { search } : {}),
+          ...(activeJahrgangId ? { jahrgang_id: activeJahrgangId } : {})
+        }
+      });
       setMaterials(matRes.data);
-      setTags(tagsRes.data);
     } catch {
       setError('Fehler beim Laden der Materialien');
-    } finally {
-      setLoading(false);
     }
-  }, [activeTagId, search]);
+    try {
+      const tagsRes = await api.get('/material/tags');
+      setTags(tagsRes.data);
+    } catch {
+      // Tags-Fehler nicht kritisch, Liste trotzdem anzeigen
+    }
+    setLoading(false);
+  }, [activeTagId, search, activeJahrgangId]);
 
   useEffect(() => {
     loadData();
@@ -138,6 +156,36 @@ const TeamerMaterialPage: React.FC = () => {
                     }}
                   >
                     <IonLabel>{tag.name}</IonLabel>
+                  </IonChip>
+                ))}
+              </div>
+            )}
+
+            {/* Jahrgang-Filter Chips */}
+            {jahrgaenge.length > 0 && (
+              <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
+                <IonChip
+                  onClick={() => setActiveJahrgangId(undefined)}
+                  style={{
+                    backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
+                    color: !activeJahrgangId ? 'white' : '#d97706',
+                    border: '1px solid #d97706'
+                  }}
+                >
+                  <IonLabel>Alle</IonLabel>
+                </IonChip>
+                {jahrgaenge.map(jg => (
+                  <IonChip
+                    key={jg.id}
+                    onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
+                    style={{
+                      backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
+                      color: activeJahrgangId === jg.id ? 'white' : '#d97706',
+                      border: '1px solid #d97706'
+                    }}
+                  >
+                    <IonLabel>{jg.name}</IonLabel>
                   </IonChip>
                 ))}
               </div>
