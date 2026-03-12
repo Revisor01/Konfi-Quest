@@ -144,7 +144,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
     if (e.target.files) {
       setNewFiles(prev => [...prev, ...Array.from(e.target.files!)]);
     }
-    // Input zuruecksetzen
+    // Input zurücksetzen
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -156,20 +156,20 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
   const handleDeleteExistingFile = (file: MaterialFile) => {
     presentAlert({
-      header: 'Datei loeschen',
-      message: `"${file.original_name}" wirklich loeschen?`,
+      header: 'Datei löschen',
+      message: `"${file.original_name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Loeschen',
+          text: 'Löschen',
           role: 'destructive',
           handler: async () => {
             try {
               await api.delete(`/material/files/${file.id}`);
               setExistingFiles(prev => prev.filter(f => f.id !== file.id));
-              setSuccess('Datei geloescht');
+              setSuccess('Datei gelöscht');
             } catch {
-              setError('Fehler beim Loeschen der Datei');
+              setError('Fehler beim Löschen der Datei');
             }
           }
         }
@@ -284,14 +284,16 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                 <IonSelect
                   label="Event"
                   labelPlacement="stacked"
-                  value={eventId}
-                  onIonChange={(e) => setEventId(e.detail.value || undefined)}
+                  value={eventId || 0}
+                  onIonChange={(e) => setEventId(e.detail.value === 0 ? undefined : e.detail.value)}
                   placeholder="Kein Event"
-                  interface="action-sheet"
+                  interface="alert"
                 >
-                  <IonSelectOption value={undefined}>Kein Event</IonSelectOption>
+                  <IonSelectOption value={0}>Kein Event</IonSelectOption>
                   {events.map(ev => (
-                    <IonSelectOption key={ev.id} value={ev.id}>{ev.name}</IonSelectOption>
+                    <IonSelectOption key={ev.id} value={ev.id}>
+                      {ev.name} ({new Date((ev as any).event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })})
+                    </IonSelectOption>
                   ))}
                 </IonSelect>
               </IonItem>
@@ -299,12 +301,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                 <IonSelect
                   label="Jahrgang"
                   labelPlacement="stacked"
-                  value={jahrgangId}
-                  onIonChange={(e) => setJahrgangId(e.detail.value || undefined)}
+                  value={jahrgangId || 0}
+                  onIonChange={(e) => setJahrgangId(e.detail.value === 0 ? undefined : e.detail.value)}
                   placeholder="Kein Jahrgang"
-                  interface="action-sheet"
+                  interface="alert"
                 >
-                  <IonSelectOption value={undefined}>Kein Jahrgang</IonSelectOption>
+                  <IonSelectOption value={0}>Kein Jahrgang</IonSelectOption>
                   {jahrgaenge.map(jg => (
                     <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
                   ))}
@@ -388,7 +390,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         {/* Neue Dateien */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <IonLabel>Dateien hinzufuegen</IonLabel>
+            <IonLabel>Dateien hinzufügen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
@@ -440,7 +442,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                 onClick={() => fileInputRef.current?.click()}
               >
                 <IonIcon icon={cloudUploadOutline} slot="start" />
-                Dateien auswaehlen
+                Dateien auswählen
               </IonButton>
             </IonCardContent>
           </IonCard>

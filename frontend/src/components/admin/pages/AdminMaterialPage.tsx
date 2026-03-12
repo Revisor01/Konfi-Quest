@@ -123,20 +123,20 @@ const AdminMaterialPage: React.FC = () => {
 
   const handleDelete = (material: Material) => {
     presentAlert({
-      header: 'Material loeschen',
-      message: `"${material.title}" wirklich loeschen? Alle zugehoerigen Dateien werden ebenfalls geloescht.`,
+      header: 'Material löschen',
+      message: `"${material.title}" wirklich löschen? Alle zugehörigen Dateien werden ebenfalls gelöscht.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Loeschen',
+          text: 'Löschen',
           role: 'destructive',
           handler: async () => {
             try {
               await api.delete(`/material/${material.id}`);
-              setSuccess('Material geloescht');
+              setSuccess('Material gelöscht');
               loadData();
             } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Loeschen');
+              setError(err.response?.data?.error || 'Fehler beim Löschen');
             }
           }
         }
@@ -203,21 +203,21 @@ const AdminMaterialPage: React.FC = () => {
 
   const handleDeleteTag = (tag: MaterialTag) => {
     presentAlert({
-      header: 'Tag loeschen',
-      message: `"${tag.name}" wirklich loeschen?`,
+      header: 'Tag löschen',
+      message: `"${tag.name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Loeschen',
+          text: 'Löschen',
           role: 'destructive',
           handler: async () => {
             try {
               await api.delete(`/material/tags/${tag.id}`);
-              setSuccess('Tag geloescht');
+              setSuccess('Tag gelöscht');
               if (activeTagId === tag.id) setActiveTagId(undefined);
               loadData();
             } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Loeschen');
+              setError(err.response?.data?.error || 'Fehler beim Löschen');
             }
           }
         }

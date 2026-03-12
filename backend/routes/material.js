@@ -163,7 +163,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const { tag_id, search, event_id, jahrgang_id } = req.query;
 
       let query = `
-        SELECT m.id, m.title, m.description, m.event_id, e.title as event_title,
+        SELECT m.id, m.title, m.description, m.event_id, e.name as event_name,
                m.jahrgang_id, j.name as jahrgang_name,
                m.created_at, u.display_name as created_by_name,
                (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
@@ -268,7 +268,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
 
       const { rows: [material] } = await db.query(
-        `SELECT m.id, m.title, m.description, m.event_id, e.title as event_title,
+        `SELECT m.id, m.title, m.description, m.event_id, e.name as event_name,
                 m.jahrgang_id, j.name as jahrgang_name,
                 m.created_at, u.display_name as created_by_name
          FROM materials m
