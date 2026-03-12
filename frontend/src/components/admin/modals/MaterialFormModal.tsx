@@ -290,7 +290,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                   interface="alert"
                 >
                   <IonSelectOption value={0}>Kein Event</IonSelectOption>
-                  {events.map(ev => (
+                  {events
+                    .filter(ev => new Date((ev as any).event_date) >= new Date(new Date().toDateString()))
+                    .map(ev => (
                     <IonSelectOption key={ev.id} value={ev.id}>
                       {ev.name} ({new Date((ev as any).event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })})
                     </IonSelectOption>
