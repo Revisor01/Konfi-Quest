@@ -40,7 +40,8 @@ import {
   add,
   createOutline,
   trash,
-  documentOutline
+  documentOutline,
+  document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -464,6 +465,19 @@ console.error('Logout error:', error);
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Kategorien</h2>
                     <p className="app-settings-item__subtitle">Kategorien fuer Aktivitaeten und Events</p>
+                  </div>
+                </div>
+
+                <div
+                  className="app-list-item app-settings-item"
+                  onClick={() => history.push('/admin/material')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#d97706' }}>
+                    <IonIcon icon={documentIcon} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Material</h2>
+                    <p className="app-settings-item__subtitle">Materialien und Dokumente verwalten</p>
                   </div>
                 </div>
 
