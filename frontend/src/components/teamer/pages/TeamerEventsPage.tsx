@@ -24,7 +24,7 @@ import {
   IonBackButton,
   useIonModal
 } from '@ionic/react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useHistory } from 'react-router-dom';
 import {
   calendar,
   time,
@@ -42,7 +42,9 @@ import {
   informationCircle,
   pricetag,
   shieldCheckmark,
-  home
+  home,
+  document as documentIcon,
+  attachOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -95,6 +97,8 @@ const TeamerEventsPage: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
+  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const history = useHistory();
 
   // QR Scanner Modal
   const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
@@ -115,6 +119,17 @@ const TeamerEventsPage: React.FC = () => {
   useEffect(() => {
     loadEvents();
   }, []);
+
+  // Material fuer ausgewaehltes Event laden
+  useEffect(() => {
+    if (selectedEvent) {
+      api.get(`/material/by-event/${selectedEvent.id}`)
+        .then(res => setEventMaterials(res.data || []))
+        .catch(() => setEventMaterials([]));
+    } else {
+      setEventMaterials([]);
+    }
+  }, [selectedEvent?.id]);
 
   // Wenn von Dashboard mit selectedEventId navigiert wurde, Event direkt oeffnen
   useEffect(() => {
@@ -529,6 +544,51 @@ const TeamerEventsPage: React.FC = () => {
                   <p className="app-info-row__sublabel">
                     {selectedEvent.description}
                   </p>
+                </IonCardContent>
+              </IonCard>
+            </IonList>
+          )}
+
+          {/* Material */}
+          {eventMaterials.length > 0 && (
+            <IonList className="app-section-inset" inset={true}>
+              <IonListHeader>
+                <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                  <IonIcon icon={documentIcon} />
+                </div>
+                <IonLabel>Material</IonLabel>
+              </IonListHeader>
+              <IonCard className="app-card">
+                <IonCardContent className="app-card-content">
+                  {eventMaterials.map((mat: any) => (
+                    <div
+                      key={mat.id}
+                      className="app-list-item"
+                      style={{
+                        borderLeftColor: '#d97706',
+                        cursor: 'pointer',
+                        marginBottom: '8px'
+                      }}
+                      onClick={() => history.push(`/teamer/material/${mat.id}`)}
+                    >
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                            <IonIcon icon={documentIcon} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">{mat.title}</div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                                {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </IonCardContent>
               </IonCard>
             </IonList>

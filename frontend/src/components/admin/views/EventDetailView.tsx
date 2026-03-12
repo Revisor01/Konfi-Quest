@@ -44,7 +44,9 @@ import {
   informationCircle,
   shieldCheckmark,
   bagHandle,
-  qrCodeOutline
+  qrCodeOutline,
+  document as documentIcon,
+  attachOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -143,6 +145,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState<Event | null>(null);
+  const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   // Event Modal mit useIonModal Hook
@@ -191,6 +194,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
+      // Material fuer dieses Event laden
+      try {
+        const matRes = await api.get(`/material/by-event/${eventId}`);
+        setEventMaterials(matRes.data || []);
+      } catch {
+        setEventMaterials([]);
+      }
     } catch (error) {
       setError('Fehler beim Laden der Event-Daten');
     } finally {
@@ -1215,6 +1225,51 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <span className="app-reason-box__label">Grund:</span> {unreg.reason}
                       </div>
                     )}
+                  </div>
+                ))}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Material */}
+        {eventMaterials.length > 0 && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonListHeader>
+              <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                <IonIcon icon={documentIcon} />
+              </div>
+              <IonLabel>Material</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {eventMaterials.map((mat: any) => (
+                  <div
+                    key={mat.id}
+                    className="app-list-item"
+                    style={{
+                      borderLeftColor: '#d97706',
+                      cursor: 'pointer',
+                      marginBottom: '8px'
+                    }}
+                    onClick={() => window.location.href = '/admin/material'}
+                  >
+                    <div className="app-list-item__row">
+                      <div className="app-list-item__main">
+                        <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                          <IonIcon icon={documentIcon} />
+                        </div>
+                        <div className="app-list-item__content">
+                          <div className="app-list-item__title">{mat.title}</div>
+                          <div className="app-list-item__meta">
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                              {mat.file_count || 0} {(mat.file_count || 0) === 1 ? 'Datei' : 'Dateien'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </IonCardContent>
