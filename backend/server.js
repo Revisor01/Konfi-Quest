@@ -235,9 +235,10 @@ app.use(express.json());
 const uploadsDir = path.join(__dirname, 'uploads');
 const requestsDir = path.join(uploadsDir, 'requests');
 const chatDir = path.join(uploadsDir, 'chat');
+const materialDir = path.join(uploadsDir, 'material');
 
 // Create upload directories
-[uploadsDir, requestsDir, chatDir].forEach(dir => {
+[uploadsDir, requestsDir, chatDir, materialDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -276,6 +277,41 @@ const chatUpload = multer({
       cb(null, true);
     } else {
  console.warn(`Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
+      cb(null, false);
+    }
+  }
+});
+
+// Material upload config (20MB limit)
+const materialUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, materialDir);
+    },
+    filename: (req, file, cb) => {
+      const hash = crypto.createHash('md5').update(Date.now() + file.originalname + Math.random().toString()).digest('hex');
+      cb(null, hash);
+    }
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB fuer Material
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
+      'application/pdf',
+      'video/mp4', 'video/quicktime', 'video/webm',
+      'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/wav',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain', 'text/csv'
+    ];
+
+    const isAllowed = allowedMimes.includes(file.mimetype);
+    if (isAllowed) {
+      cb(null, true);
+    } else {
+      console.warn(`Material-Datei abgelehnt: ${file.originalname} (${file.mimetype})`);
       cb(null, false);
     }
   }
@@ -368,6 +404,7 @@ const adminJahrgaengeRoutes = require('./routes/jahrgaenge');
 const adminCategoriesRoutes = require('./routes/categories');
 
 const teamerRoutes = require('./routes/teamer');
+const materialRoutes = require('./routes/material');
 const usersRoutes = require('./routes/users');
 const rolesRoutes = require('./routes/roles');
 const organizationsRoutes = require('./routes/organizations');
@@ -432,6 +469,7 @@ app.use('/api/organizations', orgLimiter, organizationsRoutes(db, rbacVerifier, 
 
 app.use('/api/levels', levelsRoutes(db, rbacVerifier, roleHelpers));
 app.use('/api/teamer', teamerRoutes(db, rbacVerifier, roleHelpers));
+app.use('/api/material', materialRoutes(db, rbacVerifier, roleHelpers, materialUpload));
 
 // ====================================================================
 // CHAT SYSTEM INITIALIZATION
