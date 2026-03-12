@@ -69,11 +69,11 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   runMaterialMigration();
 
   // ====================================================================
-  // TAG ENDPOINTS (requireOrgAdmin)
+  // TAG ENDPOINTS (Lesen: requireTeamer, CRUD: requireOrgAdmin)
   // ====================================================================
 
   // GET /tags - Tags der eigenen Organisation laden
-  router.get('/tags', rbacVerifier, requireOrgAdmin, async (req, res) => {
+  router.get('/tags', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const { rows } = await db.query(
         'SELECT id, name, created_at FROM material_tags WHERE organization_id = $1 ORDER BY name',
@@ -160,7 +160,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const orgId = req.user.organization_id;
-      const { tag_id, search, event_id } = req.query;
+      const { tag_id, search, event_id, jahrgang_id } = req.query;
 
       let query = `
         SELECT m.id, m.title, m.description, m.event_id, e.title as event_title,
@@ -191,6 +191,12 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       if (event_id) {
         query += ` AND m.event_id = $${paramIndex}`;
         params.push(event_id);
+        paramIndex++;
+      }
+
+      if (jahrgang_id) {
+        query += ` AND m.jahrgang_id = $${paramIndex}`;
+        params.push(jahrgang_id);
         paramIndex++;
       }
 
