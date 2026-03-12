@@ -24,11 +24,10 @@ import {
   documentOutline,
   calendarOutline,
   personOutline,
-  arrowBack,
+  closeOutline,
   informationCircleOutline,
   textOutline
 } from 'ionicons/icons';
-import { useParams } from 'react-router-dom';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
@@ -60,8 +59,12 @@ interface MaterialDetail {
   created_at: string;
 }
 
-const TeamerMaterialDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface TeamerMaterialDetailProps {
+  materialId: number;
+  onClose: () => void;
+}
+
+const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materialId, onClose }) => {
   const { setError } = useApp();
 
   const [material, setMaterial] = useState<MaterialDetail | null>(null);
@@ -69,11 +72,11 @@ const TeamerMaterialDetailPage: React.FC = () => {
 
   useEffect(() => {
     loadMaterial();
-  }, [id]);
+  }, [materialId]);
 
   const loadMaterial = async () => {
     try {
-      const res = await api.get(`/material/${id}`);
+      const res = await api.get(`/material/${materialId}`);
       setMaterial(res.data);
     } catch {
       setError('Fehler beim Laden des Materials');
@@ -158,8 +161,8 @@ const TeamerMaterialDetailPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={() => window.history.back()}>
-              <IonIcon icon={arrowBack} />
+            <IonButton onClick={onClose}>
+              <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
           <IonTitle>{material?.title || 'Material'}</IonTitle>

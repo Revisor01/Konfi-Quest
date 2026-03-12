@@ -15,7 +15,8 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
-  IonItem
+  IonItem,
+  useIonModal
 } from '@ionic/react';
 import {
   document as documentIcon,
@@ -23,11 +24,12 @@ import {
   attachOutline,
   calendarOutline
 } from 'ionicons/icons';
-import { useHistory } from 'react-router-dom';
 import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 
 interface Material {
   id: number;
@@ -43,13 +45,14 @@ interface Material {
 
 const TeamerMaterialPage: React.FC = () => {
   const { setError } = useApp();
-  const history = useHistory();
+  const { presentingElement } = useModalPage('teamer-material');
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
+  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null);
 
   // Jahrgaenge einmalig laden
   useEffect(() => {
@@ -83,6 +86,17 @@ const TeamerMaterialPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Detail Modal
+  const [presentDetailModal, dismissDetailModal] = useIonModal(TeamerMaterialDetailPage, {
+    materialId: selectedMaterialId,
+    onClose: () => dismissDetailModal()
+  });
+
+  const openDetail = (matId: number) => {
+    setSelectedMaterialId(matId);
+    presentDetailModal({ presentingElement: presentingElement });
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
@@ -180,7 +194,7 @@ const TeamerMaterialPage: React.FC = () => {
                       <IonItem
                         key={mat.id}
                         button
-                        onClick={() => history.push(`/teamer/material/${mat.id}`)}
+                        onClick={() => openDetail(mat.id)}
                         detail={false}
                         lines="none"
                         style={{
@@ -214,21 +228,21 @@ const TeamerMaterialPage: React.FC = () => {
                               zIndex: 10
                             }}>
                               {mat.event_name && (
-                                <div className="app-corner-badge" style={{ backgroundColor: '#dc2626', position: 'static' }}>
+                                <div style={{
+                                  backgroundColor: '#dc2626',
+                                  color: 'white',
+                                  fontSize: '0.65rem',
+                                  fontWeight: '700',
+                                  padding: '4px 8px',
+                                  borderRadius: '0 0 0 8px'
+                                }}>
                                   {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
                                 </div>
                               )}
                               {mat.jahrgang_name && (
                                 <>
                                   {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                  <div style={{
-                                    backgroundColor: '#5b21b6',
-                                    color: 'white',
-                                    fontSize: '0.65rem',
-                                    fontWeight: '700',
-                                    padding: '4px 8px',
-                                    borderRadius: '0 0 8px 8px'
-                                  }}>
+                                  <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6', position: 'static' }}>
                                     {mat.jahrgang_name}
                                   </div>
                                 </>

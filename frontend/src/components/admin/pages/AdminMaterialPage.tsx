@@ -308,21 +308,21 @@ const AdminMaterialPage: React.FC = () => {
                                   zIndex: 10
                                 }}>
                                   {mat.event_name && (
-                                    <div className="app-corner-badge" style={{ backgroundColor: '#dc2626', position: 'static' }}>
+                                    <div style={{
+                                      backgroundColor: '#dc2626',
+                                      color: 'white',
+                                      fontSize: '0.65rem',
+                                      fontWeight: '700',
+                                      padding: '4px 8px',
+                                      borderRadius: '0 0 0 8px'
+                                    }}>
                                       {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
                                     </div>
                                   )}
                                   {mat.file_count && mat.file_count > 0 && (
                                     <>
                                       {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                      <div style={{
-                                        backgroundColor: '#d97706',
-                                        color: 'white',
-                                        fontSize: '0.65rem',
-                                        fontWeight: '700',
-                                        padding: '4px 8px',
-                                        borderRadius: '0 0 8px 8px'
-                                      }}>
+                                      <div className="app-corner-badge" style={{ backgroundColor: '#d97706', position: 'static' }}>
                                         {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                       </div>
                                     </>

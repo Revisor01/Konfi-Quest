@@ -53,6 +53,7 @@ import { SectionHeader, ListSection } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
+import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
 
 interface Category {
   id: number;
@@ -98,7 +99,14 @@ const TeamerEventsPage: React.FC = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
+  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null);
   const history = useHistory();
+
+  // Material Detail Modal
+  const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
+    materialId: selectedMaterialId,
+    onClose: () => dismissMaterialModal()
+  });
 
   // QR Scanner Modal
   const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
@@ -569,7 +577,10 @@ const TeamerEventsPage: React.FC = () => {
                         cursor: 'pointer',
                         marginBottom: '8px'
                       }}
-                      onClick={() => history.push(`/teamer/material/${mat.id}`)}
+                      onClick={() => {
+                        setSelectedMaterialId(mat.id);
+                        presentMaterialModal();
+                      }}
                     >
                       <div className="app-list-item__row">
                         <div className="app-list-item__main">

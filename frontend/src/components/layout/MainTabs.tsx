@@ -58,7 +58,7 @@ import KonfiProfilePage from '../konfi/pages/KonfiProfilePage';
 import TeamerDashboardPage from '../teamer/pages/TeamerDashboardPage';
 import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
 import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
-import TeamerMaterialDetailPage from '../teamer/pages/TeamerMaterialDetailPage';
+
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
 
 const MainTabs: React.FC = () => {
@@ -206,7 +206,7 @@ const MainTabs: React.FC = () => {
           }} />
           <Route exact path="/teamer/events" component={TeamerEventsPage} />
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
-          <Route exact path="/teamer/material/:id" component={TeamerMaterialDetailPage} />
+
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
           <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
         </IonRouterOutlet>
