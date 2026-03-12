@@ -124,7 +124,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 - [x] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung (completed 2026-03-10)
 - [x] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration (gap closure) (completed 2026-03-11)
 - [x] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events (completed 2026-03-11)
-- [ ] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang
+- [x] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang (completed 2026-03-12)
 - [ ] **Phase 43: Profil + Chat** - Profil mit Antraegen und Badge-Historie, Chat-Zugriff
 
 ## Phase Details
@@ -231,5 +231,5 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
 | 41. Zertifikate + Dashboard | 3/3 | Complete   | 2026-03-11 |
-| 42. Material | 1/2 | In Progress|  |
+| 42. Material | 2/2 | Complete   | 2026-03-12 |
 | 43. Profil + Chat | 0/2 | Not started | - |
