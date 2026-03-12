@@ -231,5 +231,5 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
 | 41. Zertifikate + Dashboard | 3/3 | Complete   | 2026-03-11 |
-| 42. Material | 0/2 | Not started | - |
+| 42. Material | 1/2 | In Progress|  |
 | 43. Profil + Chat | 0/2 | Not started | - |

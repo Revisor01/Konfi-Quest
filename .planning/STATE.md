@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Teamer
-current_plan: 2 of 2
-status: completed
-stopped_at: Phase 42 context gathered
-last_updated: "2026-03-12T06:58:14.335Z"
-last_activity: 2026-03-11 -- Phase 41 Plan 02 completed
+current_plan: 1 of 2
+status: in_progress
+stopped_at: Phase 42 Plan 01 completed
+last_updated: "2026-03-12T07:50:30Z"
+last_activity: 2026-03-12 -- Phase 42 Plan 01 completed
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
   percent: 100
 ---
 
@@ -22,16 +22,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.8 Teamer -- Phase 41 Zertifikate + Dashboard
+**Current focus:** v1.8 Teamer -- Phase 42 Material
 
 ## Current Position
 
-Phase: 41 of 43 (Zertifikate + Dashboard)
-Current Plan: 2 of 2
-Status: Phase 41 complete
-Last activity: 2026-03-11 -- Phase 41 Plan 02 completed
+Phase: 42 of 43 (Material)
+Current Plan: 1 of 2
+Status: Phase 42 Plan 01 complete
+Last activity: 2026-03-12 -- Phase 42 Plan 01 completed
 
-Progress: [██████████] 100%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [██████████] 100%
 | Phase 41 P01 | 3min | 2 tasks | 3 files |
 | Phase 41 P02 | 4min | 2 tasks | 3 files |
 | Phase 41 P03 | 2min | 1 tasks | 1 files |
+| Phase 42 P01 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 | Phase 38 P01 | 2min | 2 tasks | 4 files |
@@ -78,6 +79,7 @@ All v1.0-v1.7 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 41]: Zertifikat-Status per SQL CASE (valid/expired/not_earned), DELETE nur ohne Zuweisungen
 - [Phase 41]: Zertifikat-Typen CRUD inline in AdminSettingsPage, Segment-Toggle Konfi/Teamer fuer Dashboard-Config
 - [Phase 41]: Config-Keys per replace() im forEach statt SQL-Alias fuer DB-zu-Frontend-Mapping
+- [Phase 42]: Gleiche MIME-Whitelist wie Chat-Upload mit 20MB Limit, material_file_tags als Join-Tabelle
 
 ### Pending Todos
 
@@ -95,6 +97,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-12T06:58:14.330Z
-Stopped at: Phase 42 context gathered
-Resume file: .planning/phases/42-material/42-CONTEXT.md
+Last session: 2026-03-12T07:50:30Z
+Stopped at: Completed 42-01-PLAN.md
+Resume file: .planning/phases/42-material/42-01-SUMMARY.md

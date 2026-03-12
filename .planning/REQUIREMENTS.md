@@ -48,9 +48,9 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 
 ### Material (MAT)
 
-- [ ] **MAT-01**: Admin oder Teamer kann Dateien hochladen (PDF, Bilder, Dokumente)
-- [ ] **MAT-02**: Material ist pro Jahrgang organisiert
-- [ ] **MAT-03**: Teamer sieht sortierte Materialliste und kann Dateien herunterladen
+- [x] **MAT-01**: Admin oder Teamer kann Dateien hochladen (PDF, Bilder, Dokumente)
+- [x] **MAT-02**: Material ist pro Jahrgang organisiert
+- [x] **MAT-03**: Teamer sieht sortierte Materialliste und kann Dateien herunterladen
 
 ### Profil (PRF)
 
@@ -112,9 +112,9 @@ Deferred. Nicht in aktuellem Roadmap.
 | ZRT-01 | Phase 41 | Complete |
 | ZRT-02 | Phase 41 | Complete |
 | ZRT-03 | Phase 41 | Complete |
-| MAT-01 | Phase 42 | Pending |
-| MAT-02 | Phase 42 | Pending |
-| MAT-03 | Phase 42 | Pending |
+| MAT-01 | Phase 42 | Complete |
+| MAT-02 | Phase 42 | Complete |
+| MAT-03 | Phase 42 | Complete |
 | PRF-01 | Phase 43 | Pending |
 | PRF-02 | Phase 43 | Pending |
 | PRF-03 | Phase 43 | Pending |
