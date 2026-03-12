@@ -6,7 +6,7 @@ import {
   IonTitle,
   IonContent,
   IonButtons,
-  IonBackButton,
+  IonButton,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -21,9 +21,6 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  IonFab,
-  IonFabButton,
-  IonButton,
   IonRefresher,
   IonRefresherContent,
   useIonAlert,
@@ -33,6 +30,7 @@ import {
   document as documentIcon,
   documentOutline,
   add,
+  arrowBack,
   trash,
   createOutline,
   attachOutline,
@@ -269,9 +267,16 @@ const AdminMaterialPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/admin/settings" />
+            <IonButton onClick={() => window.history.back()}>
+              <IonIcon icon={arrowBack} />
+            </IonButton>
           </IonButtons>
           <IonTitle>Material verwalten</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={openCreateModal}>
+              <IonIcon icon={add} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -383,7 +388,7 @@ const AdminMaterialPage: React.FC = () => {
             {/* Material-Liste */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                <div className="app-section-icon app-section-icon--material">
                   <IonIcon icon={documentIcon} />
                 </div>
                 <IonLabel>Materialien ({filteredMaterials.length})</IonLabel>
@@ -506,7 +511,7 @@ const AdminMaterialPage: React.FC = () => {
             {/* Tag-Management */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                <div className="app-section-icon app-section-icon--material">
                   <IonIcon icon={pricetagOutline} />
                 </div>
                 <IonLabel>Tags verwalten</IonLabel>
@@ -514,9 +519,12 @@ const AdminMaterialPage: React.FC = () => {
               <IonCard className="app-card">
                 <IonCardContent>
                   {tags.length === 0 ? (
-                    <div className="app-empty-state">
-                      <p className="app-empty-state__text">Noch keine Tags erstellt</p>
-                    </div>
+                    <EmptyState
+                      icon={pricetagOutline}
+                      title="Keine Tags"
+                      message="Erstelle Tags um Materialien zu kategorisieren"
+                      iconColor="#d97706"
+                    />
                   ) : (
                     <IonList className="app-list-inner" lines="none">
                       {tags.map((tag, index) => (
@@ -567,12 +575,6 @@ const AdminMaterialPage: React.FC = () => {
               </IonCard>
             </IonList>
 
-            {/* FAB */}
-            <IonFab vertical="bottom" horizontal="end" slot="fixed">
-              <IonFabButton onClick={openCreateModal} style={{ '--background': '#d97706' }}>
-                <IonIcon icon={add} />
-              </IonFabButton>
-            </IonFab>
           </>
         )}
       </IonContent>

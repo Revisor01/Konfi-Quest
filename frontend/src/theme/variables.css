@@ -311,6 +311,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--success { background-color: #047857; }
 .app-section-icon--warning { background-color: #ff9500; }
 .app-section-icon--danger { background-color: #dc3545; }
+.app-section-icon--material { background-color: #d97706; }
 .app-section-icon--info { background-color: #007aff; }
 .app-section-icon--purple { background-color: #5b21b6; }
 .app-section-icon--primary { background-color: #5b21b6; }
