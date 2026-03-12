@@ -124,7 +124,7 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 - [x] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung (completed 2026-03-10)
 - [x] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration (gap closure) (completed 2026-03-11)
 - [x] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events (completed 2026-03-11)
-- [x] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang (completed 2026-03-12)
+- [ ] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang (gap closure)
 - [ ] **Phase 43: Profil + Chat** - Profil mit Antraegen und Badge-Historie, Chat-Zugriff
 
 ## Phase Details
@@ -200,11 +200,12 @@ Plans:
   1. Admin oder Teamer kann Dateien (PDF, Bilder, Dokumente) hochladen und einem Jahrgang zuordnen
   2. Material-Tab zeigt Dateien sortiert nach Jahrgang mit Dateiname, Typ und Upload-Datum
   3. Teamer kann Dateien aus der Materialliste herunterladen
-**Plans**: 2 plans
+**Plans**: 3 plans
 
 Plans:
-- [ ] 42-01-PLAN.md -- Backend: DB-Schema, Material CRUD, Tag-Verwaltung, Datei-Upload/Download
-- [ ] 42-02-PLAN.md -- Frontend: Admin Material-Verwaltung, Teamer Material-Tab + Detail, Event-Integration
+- [x] 42-01-PLAN.md -- Backend: DB-Schema, Material CRUD, Tag-Verwaltung, Datei-Upload/Download
+- [x] 42-02-PLAN.md -- Frontend: Admin Material-Verwaltung, Teamer Material-Tab + Detail, Event-Integration
+- [ ] 42-03-PLAN.md -- Gap Closure: requireTeamer auf GET /tags, Jahrgang-Filter Backend + UI
 
 ### Phase 43: Profil + Chat
 **Goal**: Teamer hat ein vollstaendiges Profil mit Antraegen und Badge-Historie sowie Chat-Zugriff
@@ -231,5 +232,5 @@ Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
 | 39. Events | 2/2 | Complete | 2026-03-10 |
 | 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
 | 41. Zertifikate + Dashboard | 3/3 | Complete   | 2026-03-11 |
-| 42. Material | 2/2 | Complete   | 2026-03-12 |
+| 42. Material | 2/3 | Gap Closure   | 2026-03-12 |
 | 43. Profil + Chat | 0/2 | Not started | - |
