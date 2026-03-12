@@ -135,6 +135,7 @@ ion-item.app-list-item:last-child {
 .app-list-item--organizations, ion-item.app-list-item--organizations { border-left-color: #667eea; }
 .app-list-item--badges, ion-item.app-list-item--badges { border-left-color: #f59e0b; }
 .app-list-item--categories, ion-item.app-list-item--categories { border-left-color: #0ea5e9; }
+.app-list-item--material, ion-item.app-list-item--material { border-left-color: #d97706; }
 .app-list-item--requests, ion-item.app-list-item--requests { border-left-color: #5b21b6; }
 .app-list-item--jahrgang, ion-item.app-list-item--jahrgang { border-left-color: #007aff; }
 
@@ -383,6 +384,7 @@ ion-item.app-list-item:last-child {
 .app-icon-circle--organizations { background-color: #667eea; }
 .app-icon-circle--badges { background-color: #f59e0b; }
 .app-icon-circle--categories { background-color: #0ea5e9; }
+.app-icon-circle--material { background-color: #d97706; }
 .app-icon-circle--jahrgang { background-color: #007aff; }
 .app-icon-circle ion-icon {
   color: white;

@@ -469,10 +469,10 @@ console.error('Logout error:', error);
                 </div>
 
                 <div
-                  className="app-list-item app-settings-item"
+                  className="app-list-item app-list-item--material app-settings-item"
                   onClick={() => history.push('/admin/material')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#d97706' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--material">
                     <IonIcon icon={documentIcon} />
                   </div>
                   <div className="app-flex-fill">

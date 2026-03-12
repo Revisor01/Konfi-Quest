@@ -19,6 +19,7 @@ import {
 } from '@ionic/react';
 import {
   document as documentIcon,
+  documentOutline,
   attachOutline,
   calendarOutline
 } from 'ionicons/icons';
@@ -204,9 +205,10 @@ const TeamerMaterialPage: React.FC = () => {
             {/* Material-Liste */}
             {materials.length === 0 ? (
               <EmptyState
-                icon={documentIcon}
+                icon={documentOutline}
                 title="Keine Materialien"
                 message="Noch keine Materialien vorhanden."
+                iconColor="#d97706"
               />
             ) : (
               <IonList inset={true} className="app-segment-wrapper">

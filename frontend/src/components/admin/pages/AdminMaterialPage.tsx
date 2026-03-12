@@ -31,6 +31,7 @@ import {
 } from '@ionic/react';
 import {
   document as documentIcon,
+  documentOutline,
   add,
   trash,
   createOutline,
@@ -391,9 +392,10 @@ const AdminMaterialPage: React.FC = () => {
                 <IonCardContent>
                   {filteredMaterials.length === 0 ? (
                     <EmptyState
-                      icon={documentIcon}
+                      icon={documentOutline}
                       title="Keine Materialien"
                       message="Erstelle dein erstes Material mit dem + Button"
+                      iconColor="#d97706"
                     />
                   ) : (
                     <IonList className="app-list-inner" lines="none">
