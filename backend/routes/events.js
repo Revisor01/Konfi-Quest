@@ -19,7 +19,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       .isLength({ max: 200 }).withMessage('Name darf maximal 200 Zeichen lang sein'),
     body('event_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
-    body('bring_items').optional().isString().withMessage('bring_items muss ein String sein'),
+    body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
 
@@ -27,7 +27,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
     body('mandatory').optional().isBoolean().withMessage('mandatory muss ein Boolean sein'),
-    body('bring_items').optional().isString().withMessage('bring_items muss ein String sein'),
+    body('bring_items').optional({ nullable: true }).isString().withMessage('bring_items muss ein String sein'),
     handleValidationErrors
   ];
 
