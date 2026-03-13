@@ -234,7 +234,7 @@ const TeamerMaterialPage: React.FC = () => {
                                   fontSize: '0.65rem',
                                   fontWeight: '700',
                                   padding: '4px 8px',
-                                  borderRadius: '0 0 0 8px'
+                                  borderRadius: '0 0 8px 8px'
                                 }}>
                                   {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
                                 </div>
