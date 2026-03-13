@@ -66,6 +66,13 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/konfi/badges')) currentTabId = 'badges';
     else if (currentPath.includes('/konfi/chat')) currentTabId = 'chat';
     else if (currentPath.includes('/konfi/profile')) currentTabId = 'profile';
+    // Teamer Routes
+    else if (currentPath.includes('/teamer/material')) currentTabId = 'teamer-material';
+    else if (currentPath.includes('/teamer/events')) currentTabId = 'teamer-events';
+    else if (currentPath.includes('/teamer/dashboard')) currentTabId = 'teamer-dashboard';
+    else if (currentPath.includes('/teamer/chat')) currentTabId = 'teamer-chat';
+    else if (currentPath.includes('/teamer/badges')) currentTabId = 'teamer-badges';
+    else if (currentPath.includes('/teamer/profile')) currentTabId = 'teamer-profile';
 
     return tabPresentingElements.get(currentTabId);
   };

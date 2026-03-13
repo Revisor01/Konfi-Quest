@@ -22,10 +22,12 @@ import {
   videocamOutline,
   musicalNotesOutline,
   documentOutline,
-  calendarOutline,
-  personOutline,
+  calendar,
+  people,
+  person,
+  time,
   closeOutline,
-  informationCircleOutline,
+  informationCircle,
   textOutline
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -36,6 +38,7 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
+import { SectionHeader } from '../../shared';
 
 interface MaterialFile {
   id: number;
@@ -216,7 +219,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={calendarOutline} />
+                  <IonIcon icon={informationCircle} />
                 </div>
                 <IonLabel>Details</IonLabel>
               </IonListHeader>
@@ -224,7 +227,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 <IonCardContent>
                   {material.event_name && (
                     <div className="app-info-row">
-                      <IonIcon icon={calendarOutline} className="app-info-row__icon" style={{ color: '#dc2626' }} />
+                      <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
                       <div className="app-info-row__content">
                         Event: {material.event_name}
                       </div>
@@ -232,21 +235,21 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                   )}
                   {material.jahrgang_name && (
                     <div className="app-info-row">
-                      <IonIcon icon={personOutline} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
+                      <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                       <div className="app-info-row__content">
                         Jahrgang: {material.jahrgang_name}
                       </div>
                     </div>
                   )}
                   <div className="app-info-row">
-                    <IonIcon icon={calendarOutline} className="app-info-row__icon" style={{ color: '#6c757d' }} />
+                    <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#6c757d' }} />
                     <div className="app-info-row__content">
                       Erstellt am {formatDate(material.created_at)}
                     </div>
                   </div>
                   {material.admin_name && (
                     <div className="app-info-row">
-                      <IonIcon icon={personOutline} className="app-info-row__icon" style={{ color: '#6c757d' }} />
+                      <IonIcon icon={person} className="app-info-row__icon" style={{ color: '#6c757d' }} />
                       <div className="app-info-row__content">
                         Von {material.admin_name}
                       </div>
@@ -257,13 +260,14 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
             </IonList>
 
             {/* Dateien */}
+            <SectionHeader
+              title={material.title}
+              subtitle="Dateien"
+              icon={documentIcon}
+              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              stats={[{ value: material.files?.length || 0, label: 'Dateien' }]}
+            />
             <IonList inset={true} className="app-segment-wrapper">
-              <IonListHeader>
-                <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={documentIcon} />
-                </div>
-                <IonLabel>Dateien ({material.files?.length || 0})</IonLabel>
-              </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
                   {(!material.files || material.files.length === 0) ? (
