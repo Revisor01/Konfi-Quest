@@ -242,6 +242,7 @@ Plans:
   3. Badge-Fortschritt zeigt keine Nachkommastellen
   4. Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigiert)
   5. Befoerdern-Button zeigt Info-Hinweistext ueber dem Button
+  6. Beschreibungstexte in Event-Details und Material-Details haben lesbare Schriftgroesse
 **Plans**: TBD
 
 Plans:

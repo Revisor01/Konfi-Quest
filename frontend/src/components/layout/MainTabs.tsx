@@ -41,6 +41,8 @@ import AdminOrganizationsPage from '../admin/pages/AdminOrganizationsPage';
 import AdminProfilePage from '../admin/pages/AdminProfilePage';
 import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
 import AdminMaterialPage from '../admin/pages/AdminMaterialPage';
+import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
+import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
 import ChatOverviewPage from '../chat/pages/ChatOverviewPage'; // Diese bleibt!
@@ -145,6 +147,8 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/users" component={AdminUsersPage} />
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/material" component={AdminMaterialPage} />
+          <Route exact path="/admin/settings/certificates" component={AdminCertificatesPage} />
+          <Route exact path="/admin/settings/dashboard" component={AdminDashboardSettingsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
           <Route exact path="/" render={() => <Redirect to="/admin/konfis" />} />
