@@ -86,6 +86,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pageRef = useRef<HTMLElement>(null);
 
   const [title, setTitle] = useState(material?.title || '');
   const [description, setDescription] = useState(material?.description || '');
@@ -116,7 +117,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer();
+    presentFileViewer({ presentingElement: pageRef.current || undefined });
   }, [presentFileViewer]);
 
   useEffect(() => {
@@ -279,7 +280,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
   };
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">

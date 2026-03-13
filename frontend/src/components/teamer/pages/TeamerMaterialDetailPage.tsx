@@ -72,6 +72,7 @@ interface TeamerMaterialDetailProps {
 
 const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materialId, onClose }) => {
   const { setError } = useApp();
+  const pageRef = useRef<HTMLElement>(null);
 
   const [material, setMaterial] = useState<MaterialDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +95,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer();
+    presentFileViewer({ presentingElement: pageRef.current || undefined });
   }, [presentFileViewer]);
 
   useEffect(() => {
@@ -182,11 +183,11 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   };
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonButton onClick={onClose}>
+            <IonButton className="app-modal-close-btn" onClick={onClose}>
               <IonIcon icon={closeOutline} slot="icon-only" />
             </IonButton>
           </IonButtons>
@@ -218,6 +219,15 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
           />
         ) : (
           <>
+            {/* SectionHeader oben */}
+            <SectionHeader
+              title={material.title}
+              subtitle="Material"
+              icon={documentIcon}
+              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              stats={[{ value: material.files?.length || 0, label: 'Dateien' }]}
+            />
+
             {/* Beschreibung */}
             {material.description && (
               <IonList inset={true} className="app-segment-wrapper">
@@ -237,7 +247,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               </IonList>
             )}
 
-            {/* Info */}
+            {/* Details */}
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
@@ -282,14 +292,13 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
             </IonList>
 
             {/* Dateien */}
-            <SectionHeader
-              title={material.title}
-              subtitle="Dateien"
-              icon={documentIcon}
-              colors={{ primary: '#d97706', secondary: '#b45309' }}
-              stats={[{ value: material.files?.length || 0, label: 'Dateien' }]}
-            />
             <IonList inset={true} className="app-segment-wrapper">
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--material">
+                  <IonIcon icon={documentIcon} />
+                </div>
+                <IonLabel>Dateien ({material.files?.length || 0})</IonLabel>
+              </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
                   {(!material.files || material.files.length === 0) ? (

@@ -435,7 +435,7 @@ const TeamerMaterialPage: React.FC = () => {
               icon={documentIcon}
               colors={{ primary: '#d97706', secondary: '#b45309' }}
               stats={[
-                { value: materials.length, label: 'Materialien' },
+                { value: materials.length, label: 'Material' },
                 { value: materials.reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
               ]}
             />
@@ -543,8 +543,8 @@ const TeamerMaterialPage: React.FC = () => {
                               flexDirection: 'row',
                               zIndex: 10
                             }}>
-                              <div className="app-corner-badge" style={{ backgroundColor: '#dc2626' }}>
-                                {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
+                              <div className="app-corner-badge" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>
+                                {mat.event_name.length > 20 ? mat.event_name.substring(0, 20) + '...' : mat.event_name}
                               </div>
                             </div>
                           )}

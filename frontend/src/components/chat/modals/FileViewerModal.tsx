@@ -47,7 +47,9 @@ const FileViewerModal: React.FC<FileViewerModalProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            padding: '8px'
+            padding: '8px',
+            overflow: 'auto',
+            touchAction: 'pinch-zoom'
           }}>
             <img
               src={blobUrl}
@@ -55,7 +57,8 @@ const FileViewerModal: React.FC<FileViewerModalProps> = ({
               style={{
                 maxWidth: '100%',
                 maxHeight: '100%',
-                objectFit: 'contain'
+                objectFit: 'contain',
+                touchAction: 'pinch-zoom'
               }}
             />
           </div>
@@ -70,6 +73,7 @@ const FileViewerModal: React.FC<FileViewerModalProps> = ({
               height: '100%',
               border: 'none'
             }}
+            allow="fullscreen"
           />
         )}
 
