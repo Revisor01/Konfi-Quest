@@ -56,6 +56,7 @@ import { SectionHeader } from '../../shared';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
 import QRDisplayModal from '../modals/QRDisplayModal';
+import TeamerMaterialDetailPage from '../../teamer/pages/TeamerMaterialDetailPage';
 
 interface Category {
   id: number;
@@ -147,6 +148,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const [eventData, setEventData] = useState<Event | null>(null);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
+
+  // Material Detail Modal (wie Teamer)
+  const materialIdRef = useRef<number | null>(null);
+  const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
+    get materialId() { return materialIdRef.current; },
+    onClose: () => dismissMaterialModal()
+  });
 
   // Event Modal mit useIonModal Hook
   const [presentEventModalHook, dismissEventModalHook] = useIonModal(EventModal, {
@@ -249,7 +257,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         if (event) {
           const waitlistEnabled = (event as any)?.waitlist_enabled;
           const maxWaitlistSize = (event as any)?.max_waitlist_size || 0;
-          const pendingCount = participants.filter(p => p.status === 'pending').length;
+          const pendingCount = participants.filter(p => p.status === 'waitlist').length;
           const eventFull = event.max_participants > 0 && event.registered_count >= event.max_participants;
 
           if (eventFull) {
@@ -456,7 +464,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const handleDemoteParticipant = async (participant: Participant) => {
     try {
       await api.put(`/events/${eventId}/participants/${participant.id}/status`, {
-        status: 'pending'
+        status: 'waitlist'
       });
       setSuccess(`${participant.participant_name} auf Warteliste gesetzt`);
 
@@ -551,7 +559,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               hasTeamer
                 ? { value: teamerOnly.length, label: 'Team' }
                 : { value: eventData?.points || 0, label: 'Punkte' },
-              { value: konfiOnly.filter(p => p.status === 'pending').length, label: 'Warteliste' }
+              { value: konfiOnly.filter(p => p.status === 'waitlist').length, label: 'Warteliste' }
             ];
           })()}
         />
@@ -629,7 +637,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 <div className="app-info-row">
                   <IonIcon icon={listOutline} className="app-info-row__icon app-icon-color--warning" />
                   <div className="app-info-row__content">
-                    {participants.filter(p => p.status === 'pending').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
+                    {participants.filter(p => p.status === 'waitlist').length} / {(eventData as any)?.max_waitlist_size || 10} auf Warteliste
                   </div>
                 </div>
               )}
@@ -957,7 +965,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
           // Bei Timeslot-Events: zeige Teilnehmer ohne Slot-Zuordnung + Warteliste
           // Bei normalen Events: zeige alle Konfis
           const confirmedParticipants = konfiParticipants.filter(p => p.status === 'confirmed');
-          const waitlistParticipants = konfiParticipants.filter(p => p.status === 'pending');
+          const waitlistParticipants = konfiParticipants.filter(p => p.status === 'waitlist');
 
           // Bei Timeslot-Events: Teilnehmer ohne Slot-Zuordnung finden
           const unassignedParticipants = eventData?.has_timeslots
@@ -973,7 +981,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
 
           // Helper: Einzelnen Teilnehmer rendern
           const renderParticipant = (participant: Participant) => {
-            const isWaitlist = participant.status === 'pending';
+            const isWaitlist = participant.status === 'waitlist';
             const isOptedOut = participant.status === 'opted_out';
             const listItemClass = isOptedOut ? 'app-list-item--danger' :
                                   participant.attendance_status === 'present' ? 'app-list-item--success' :
@@ -1015,7 +1023,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                   onClick={() => {
                     if (participant.status === 'confirmed') {
                       showAttendanceActionSheet(participant);
-                    } else if (participant.status === 'pending') {
+                    } else if (participant.status === 'waitlist') {
                       showWaitlistActionSheet(participant);
                     }
                   }}
@@ -1236,7 +1244,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
         {eventMaterials.length > 0 && (
           <IonList className="app-section-inset" inset={true}>
             <IonListHeader>
-              <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+              <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={documentIcon} />
               </div>
               <IonLabel>Material</IonLabel>
@@ -1252,7 +1260,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       cursor: 'pointer',
                       marginBottom: '8px'
                     }}
-                    onClick={() => window.location.href = '/admin/material'}
+                    onClick={() => {
+                      materialIdRef.current = mat.id;
+                      presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
+                    }}
                   >
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
