@@ -57,6 +57,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     else if (currentPath.includes('/admin/profile')) currentTabId = 'admin-profile';
     else if (currentPath.includes('/admin/settings/categories')) currentTabId = 'admin-categories';
     else if (currentPath.includes('/admin/settings/jahrgaenge')) currentTabId = 'admin-jahrgaenge';
+    else if (currentPath.includes('/admin/settings/levels')) currentTabId = 'admin-levels';
     else if (currentPath.includes('/admin/settings')) currentTabId = 'admin-settings';
     // Konfi Routes
     else if (currentPath.includes('/konfi/dashboard')) currentTabId = 'dashboard';
