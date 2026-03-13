@@ -4,20 +4,19 @@
 
 Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
 
-## Current Milestone: v1.8 Teamer
+## Current Milestone: v1.9 Bugfix + Polish
 
-**Goal:** Teamer als vollwertige Rolle mit eigenem Dashboard, Event-Teilnahme, Badge-System und Material-Bereich einfuehren.
+**Goal:** Alle nach dem Grundaufbau gefundenen Bugs, UI-Inkonsistenzen und Logik-Luecken schliessen — App produktionsreif machen.
 
 **Target features:**
-- Teamer-Rolle mit manueller Transition (Admin befoerdert Ex-Konfi)
-- Eigenes Dashboard (kein Ranking, Konfi-Uebersicht, naechste Events)
-- Zugriff auf: Punkte vergeben, Anwesenheit feststellen, Chat-Raeume erstellen
-- Events: "Teamer gesucht"-Toggle bei Konfi-Events + reine Teamer-Events
-- Teamer-Aktivitaeten (manuell vergeben: Jugendreise, JuLeiCa, Teamer-Card)
-- Teamer-Badges (frei konfigurierbar): Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge
-- Zertifikat-Anzeige im Profil (JuLeiCa, Teamer-Card mit Datum, aehnlich Konfi-Level)
-- Konfi-Badges bleiben als Historie erhalten
-- Material-Bereich mit Datei-Uploads fuer Teamer im Jahrgang
+- Ghost-Push-Bug fuer Admins debuggen und fixen
+- Event-Sichtbarkeit: Jahrgangs-Filter, abgesagte Events, Pflicht-Events korrekt filtern
+- Auto-Enrollment bei Jahrgangs-Beitritt fuer bestehende Pflicht-Events
+- Punkte-Logik: Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken
+- UI-Polish: Toggle-Alignment, Badge-Rundung, Chat-Badge z-index, QR-Button-Position
+- Admin-Struktur: Zertifikate/Dashboard/Badges als Unterseiten im Inhalt-Bereich
+- Event-Chat-Erstellung aus Admin-Event-Details
+- Teamer-Profil und Badge-Ansicht ueberarbeiten
 
 ## Core Value
 
@@ -96,20 +95,21 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 
 ### Active
 
-- [ ] Manuelle Konfi-zu-Teamer Transition durch Admin mit Badge-Historie-Erhalt
-- [ ] Eigene Teamer-UI: 5 Tabs (Dashboard, Events, Chat, Material, Profil)
-- [ ] Teamer-Dashboard mit Begruessing, Zertifikaten, naechsten Events
-- [ ] "Teamer gesucht"-Toggle bei Konfi-Events + reine Teamer-Events
-- [ ] Teamer bucht sich in Events ein, kann Anwesenheit bestaetigen
-- [ ] Teamer-Aktivitaeten (manuell durch Admin vergeben)
-- [ ] Teamer-Badges: Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge
-- [ ] Zertifikat-Anzeige (JuLeiCa, Teamer-Card mit Datum) im Dashboard
-- [ ] Profil mit Antraege stellen, Badges-Uebersicht und Badge-Historie
-- [ ] Material-Bereich mit Datei-Uploads pro Jahrgang
+- [ ] Ghost-Push-Bug debuggen und fixen (leere Admin-Push alle 5 Min)
+- [ ] Event-Sichtbarkeit: Jahrgangs-Filter, abgesagte Events, Pflicht-Events korrekt
+- [ ] Auto-Enrollment bei Jahrgangs-Beitritt fuer bestehende Pflicht-Events
+- [ ] Punkte-Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken
+- [ ] Punkte-History Header Layout und korrekte Datenanzeige
+- [ ] UI-Polish: Toggles, Badge-Rundung, Chat-Badge, QR-Button, Befoerdern-Text
+- [ ] Admin-Struktur: Zertifikate/Dashboard/Badges als Unterseiten im Inhalt-Bereich
+- [ ] Event-Logik: Teamer-only Felder, Absagen, Teilnehmer-Filter, Event-Chat
+- [ ] Badge-UI: Modal-Selection, Segment-Position, Teamer-Badge-Ansicht
+- [ ] Teamer-Profil ordentlich gestalten
+- [ ] Admin-Badge fuer unverbuchte Events
 
 ### Out of Scope
 
-- Teamer-System (Rolle, Dashboard, Badges, Events, Chat) -- eigener Milestone v1.8
+- Teamer-System (Rolle, Dashboard, Badges, Events, Chat) -- shipped v1.8
 - Konfi Wrapped -- eigener Milestone (Timing-abhaengig)
 - Offline-Support -- Komplexitaet zu hoch, nur bei konkretem Bedarf
 - App Store Submission -- erst nach Stabilisierung
@@ -127,7 +127,8 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 - v1.5 shipped: Push-Notifications (5 Phasen, 8 Plans, 17 Requirements, 16 Dateien, +647/-406 Zeilen)
 - v1.6 shipped: Dashboard-Konfig + Punkte-Logik (4 Phasen, 7 Plans, 13 Requirements, 18 Dateien, +866/-524 Zeilen)
 - v1.7 shipped: Unterricht + Pflicht-Events (4 Phasen, 8 Plans, 17 Requirements, 23 Dateien, +2312/-523 Zeilen)
-- Gesamt: 38 Phasen, 78 Plans ueber 8 Milestones shipped
+- v1.8 shipped: Teamer (5 Phasen, 14 Plans, 27 Requirements, Rolle+Events+Badges+Zertifikate+Material)
+- Gesamt: 43 Phasen, 92 Plans ueber 9 Milestones shipped
 - Codebase: ~34.259 Zeilen (TS/TSX/CSS)
 - Frontend nutzt iOS 26 Theme und MD3 Theme (beide aktiv, platform-scoped)
 - Deployment: git push -> Portainer Docker auto-build -> Xcode Build fuer iOS-Test auf echtem Geraet
@@ -186,4 +187,4 @@ Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkte
 | Scanner-Feedback als inline Banners | Ueber Video-Feed statt Toast, bessere UX | Bestaetigt v1.7 |
 
 ---
-*Last updated: 2026-03-09 after v1.8 milestone start*
+*Last updated: 2026-03-13 after v1.9 milestone start*

@@ -63,6 +63,59 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 - [ ] **CHT-01**: Teamer kann Chat-Raeume und Gruppen erstellen
 - [ ] **CHT-02**: Teamer hat Zugriff auf bestehende Chat-Funktionalitaet (Nachrichten, Polls, Dateien)
 
+## v1.9 Requirements
+
+Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
+
+### Push (PUSH)
+
+- [ ] **PUSH-01**: Admin erhaelt keine leeren Push-Benachrichtigungen mehr (Ghost-Push-Bug debuggen und fixen)
+
+### Events (EVT-v19)
+
+- [ ] **EVT-v19-01**: Konfi sieht nur Events seines eigenen Jahrgangs (keine fremden Pflicht-Events, keine fremden Konfirmationen)
+- [ ] **EVT-v19-02**: Abgesagte Events werden nicht mehr in der Konfi-Event-Liste angezeigt
+- [ ] **EVT-v19-03**: Konfi kann sich nicht von Pflicht-Events abmelden bei denen er nicht angemeldet ist
+- [ ] **EVT-v19-04**: Neue Konfis in einem Jahrgang werden automatisch zu bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
+- [ ] **EVT-v19-05**: Event absagen funktioniert aus der Admin-Ansicht
+- [ ] **EVT-v19-06**: Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
+- [ ] **EVT-v19-07**: "Mitbringen" und "Pflicht" werden farbig hervorgehoben in Event-Liste und Details
+- [ ] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
+- [ ] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
+- [ ] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
+- [ ] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
+- [ ] **EVT-v19-12**: Aus einem Event kann ein Chat mit allen angemeldeten Konfis und Teamer:innen erstellt werden
+
+### Punkte (PKT-v19)
+
+- [ ] **PKT-v19-01**: Deaktivierter Punkt-Typ graut den anderen Toggle aus (mindestens ein Typ muss aktiv bleiben) mit Hinweis wie viele Konfis bereits Punkte haben
+- [ ] **PKT-v19-02**: Admin-Konfi-Liste zeigt korrekte Gesamtpunkte (nur aktive Typen)
+- [ ] **PKT-v19-03**: Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (wie der Gesamtbalken bei zwei Typen)
+- [ ] **PKT-v19-04**: Punkte-History Header zeigt korrekte Daten und besseres Layout fuer 6 Stats (Events, Bonus, Aktivitaeten, Gesamt, Gottesdienst, Gemeinde)
+
+### UI (UI)
+
+- [ ] **UI-01**: Toggle-Switches stehen rechts aussen in Jahrgang-Modal und Dashboard-Einstellungen
+- [ ] **UI-02**: QR-Scanner-Button oben rechts (Header-Position) statt unten rechts FAB
+- [ ] **UI-03**: Badge-Fortschritt ohne Nachkommastellen
+- [ ] **UI-04**: Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigieren)
+- [ ] **UI-05**: Badge-Modal: Auswahl ohne Umrandung, mit backgroundColor-Change Pattern (wie ueberall sonst)
+- [ ] **UI-06**: Badge-Segment (Konfi/Teamer) unter dem Header positioniert, "Teamer:innen" nicht lila/fett bei Auswahl
+- [ ] **UI-07**: Teamer-Badge-Ansicht 1:1 wie Konfi-Badge-Ansicht mit Segment-Wechsel (Teamer vorausgewaehlt)
+- [ ] **UI-08**: Befoerdern-Button: Info-Hinweistext steht ueber dem Button
+
+### Admin-Struktur (ADM)
+
+- [ ] **ADM-01**: Zertifikat-Verwaltung als Unterseite im Inhalt-Bereich (nicht inline in Settings)
+- [ ] **ADM-02**: Dashboard-Einstellungen als Unterseite im Inhalt-Bereich
+- [ ] **ADM-03**: Badge-Verwaltung als Unterseite im Inhalt-Bereich, mit Typ-Abfrage (Konfi/Teamer) vor Badge-Erstellung
+- [ ] **ADM-04**: Admin-Badge auf Events-Tab fuer Events die verbucht werden muessen
+- [ ] **ADM-05**: Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
+
+### Teamer (TMR)
+
+- [ ] **TMR-01**: Teamer-Profil ordentlich gestalten (vollstaendige Profilansicht)
+
 ## v2 Requirements
 
 Deferred. Nicht in aktuellem Roadmap.
@@ -121,11 +174,16 @@ Deferred. Nicht in aktuellem Roadmap.
 | CHT-01 | Phase 43 | Pending |
 | CHT-02 | Phase 43 | Pending |
 
-**Coverage:**
+**Coverage v1.8:**
 - v1.8 requirements: 32 total
 - Mapped to phases: 32
 - Unmapped: 0
 
+**Coverage v1.9:**
+- v1.9 requirements: 30 total
+- Mapped to phases: 0 (pending roadmap)
+- Unmapped: 30
+
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-09 after roadmap creation*
+*Last updated: 2026-03-13 after v1.9 requirements definition*
