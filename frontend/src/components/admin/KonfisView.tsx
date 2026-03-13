@@ -97,7 +97,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       const loadTeamers = async () => {
         setTeamerLoading(true);
         try {
-          const response = await api.get('/konfi-managment/teamer');
+          const response = await api.get('/admin/konfis/teamer');
           setTeamers(response.data || []);
         } catch (err) {
           console.error('Error loading teamers:', err);

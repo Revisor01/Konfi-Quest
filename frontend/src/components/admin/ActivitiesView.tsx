@@ -47,6 +47,7 @@ interface ActivitiesViewProps {
   canEdit: boolean;
   canDelete: boolean;
   targetRole?: 'konfi' | 'teamer';
+  onRoleChange?: (role: 'konfi' | 'teamer') => void;
 }
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({
@@ -57,7 +58,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   onDeleteActivity,
   canEdit,
   canDelete,
-  targetRole = 'konfi'
+  targetRole = 'konfi',
+  onRoleChange
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
@@ -140,6 +142,22 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
           { value: getGottesdienstActivities().length, label: 'Godi' }
         ]}
       />
+
+      {/* Konfis / Teamer:innen Segment */}
+      {onRoleChange && (
+        <IonSegment
+          value={targetRole}
+          onIonChange={(e) => onRoleChange(e.detail.value as 'konfi' | 'teamer')}
+          style={{ margin: '0 16px 8px', maxWidth: 'calc(100% - 32px)' }}
+        >
+          <IonSegmentButton value="konfi">
+            <IonLabel>Konfis</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="teamer">
+            <IonLabel>Teamer:innen</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      )}
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>

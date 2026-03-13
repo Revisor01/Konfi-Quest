@@ -102,9 +102,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
                 LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id
                 LEFT JOIN (
-                    SELECT user_id, COUNT(*) as badge_count
-                    FROM user_badges
-                    GROUP BY user_id
+                    SELECT ub.user_id, COUNT(*) as badge_count
+                    FROM user_badges ub
+                    JOIN custom_badges cb ON ub.badge_id = cb.id
+                    WHERE cb.target_role = 'teamer'
+                    GROUP BY ub.user_id
                 ) badge_counts ON u.id = badge_counts.user_id
                 LEFT JOIN (
                     SELECT user_id, COUNT(*) as cert_count
@@ -125,61 +127,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
-    // GET a single konfi by ID with full details
-    router.get('/:id', rbacVerifier, requireTeamer, async (req, res) => {
-        try {
-            const konfiQuery = `
-                SELECT u.id, u.display_name as name, u.username,
-                       kp.gottesdienst_points, kp.gemeinde_points,
-                       j.name as jahrgang_name, j.id as jahrgang_id,
-                       j.gottesdienst_enabled, j.gemeinde_enabled,
-                       j.target_gottesdienst, j.target_gemeinde,
-                       (SELECT COUNT(*) FROM user_badges WHERE user_id = u.id) as "badgeCount"
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
-                LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-                WHERE r.name = 'konfi' AND u.id = $1 AND u.organization_id = $2
-            `;
-            const { rows: [konfi] } = await db.query(konfiQuery, [req.params.id, req.user.organization_id]);
-
-            if (!konfi) {
-                return res.status(404).json({ error: 'Konfi nicht gefunden' });
-            }
-
-            // Get activities
-            const activitiesQuery = `
-                SELECT ka.id, a.name, a.points, a.type, ka.completed_date as date,
-                       u.display_name as admin
-                FROM user_activities ka
-                JOIN activities a ON ka.activity_id = a.id
-                LEFT JOIN users u ON ka.admin_id = u.id
-                WHERE ka.user_id = $1 AND a.organization_id = $2
-                ORDER BY ka.completed_date DESC
-            `;
-            const { rows: activities } = await db.query(activitiesQuery, [req.params.id, req.user.organization_id]);
-
-            // Get bonus points
-            const bonusQuery = `
-                SELECT bp.id, bp.points, bp.type, bp.description, bp.created_at as date,
-                       u.display_name as admin
-                FROM bonus_points bp
-                LEFT JOIN users u ON bp.admin_id = u.id
-                WHERE bp.konfi_id = $1 AND bp.organization_id = $2
-                ORDER BY bp.created_at DESC
-            `;
-            const { rows: bonusPoints } = await db.query(bonusQuery, [req.params.id, req.user.organization_id]);
-
-            konfi.activities = activities || [];
-            konfi.bonusPoints = bonusPoints || [];
-            konfi.totalBonus = bonusPoints.reduce((sum, bp) => sum + bp.points, 0);
-
-            res.json(konfi);
-        } catch (err) {
- console.error('Database error in GET /konfis/:id (first route):', err);
-            res.status(500).json({ error: 'Datenbankfehler' });
-        }
-    });
+    // GET a single konfi/teamer by ID - weiterleiten an zweiten Handler
 
     // POST (create) a new konfi
     router.post('/', rbacVerifier, requireAdmin, validateCreateKonfi, async (req, res) => {
@@ -494,8 +442,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             `;
             const { rows: bonusPoints } = await db.query(bonusQuery, [konfiId, req.user.organization_id]);
 
-            const badgeQuery = `SELECT COUNT(*) as "badgeCount" FROM user_badges WHERE user_id = $1`;
-            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId]);
+            const badgeQuery = `
+                SELECT COUNT(*) as "badgeCount" FROM user_badges ub
+                JOIN custom_badges cb ON ub.badge_id = cb.id
+                WHERE ub.user_id = $1 AND cb.target_role = $2
+            `;
+            const { rows: [badgeResult] } = await db.query(badgeQuery, [konfiId, konfi.role_name]);
 
             // Zertifikate fuer Teamer mitladen
             let certificates = [];

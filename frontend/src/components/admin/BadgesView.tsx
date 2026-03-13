@@ -121,14 +121,18 @@ interface BadgesViewProps {
   onAddBadgeClick: () => void;
   onSelectBadge: (badge: Badge) => void;
   onDeleteBadge: (badge: Badge) => void;
+  targetRole?: 'konfi' | 'teamer';
+  onRoleChange?: (role: 'konfi' | 'teamer') => void;
 }
 
-const BadgesView: React.FC<BadgesViewProps> = ({ 
-  badges, 
-  onUpdate, 
+const BadgesView: React.FC<BadgesViewProps> = ({
+  badges,
+  onUpdate,
   onAddBadgeClick,
   onSelectBadge,
-  onDeleteBadge
+  onDeleteBadge,
+  targetRole = 'konfi',
+  onRoleChange
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
@@ -280,6 +284,22 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           { value: getTotalEarnedCount(), label: 'VERLIEHEN' }
         ]}
       />
+
+      {/* Konfis / Teamer:innen Segment */}
+      {onRoleChange && (
+        <IonSegment
+          value={targetRole}
+          onIonChange={(e) => onRoleChange(e.detail.value as 'konfi' | 'teamer')}
+          style={{ margin: '0 16px 8px', maxWidth: 'calc(100% - 32px)' }}
+        >
+          <IonSegmentButton value="konfi">
+            <IonLabel>Konfis</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="teamer">
+            <IonLabel>Teamer:innen</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      )}
 
       {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>

@@ -10,9 +10,6 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -189,30 +186,17 @@ const AdminBadgesPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Konfi/Teamer Toggle */}
-        <div className="app-segment-wrapper" style={{ padding: '8px 16px 0' }}>
-          <IonSegment
-            value={selectedRole}
-            onIonChange={(e) => handleRoleChange(e.detail.value as 'konfi' | 'teamer')}
-          >
-            <IonSegmentButton value="konfi">
-              <IonLabel>Konfis</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="teamer">
-              <IonLabel>Teamer:innen</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
-
         {loading ? (
           <LoadingSpinner message="Badges werden geladen..." />
         ) : (
-          <BadgesView 
+          <BadgesView
             badges={badges}
             onUpdate={loadBadges}
             onAddBadgeClick={presentBadgeModal}
             onSelectBadge={handleSelectBadge}
             onDeleteBadge={handleDeleteBadge}
+            targetRole={selectedRole}
+            onRoleChange={handleRoleChange}
           />
         )}
       </IonContent>

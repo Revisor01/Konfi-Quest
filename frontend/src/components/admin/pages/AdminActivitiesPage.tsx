@@ -10,9 +10,6 @@ import {
   IonButtons,
   IonButton,
   IonIcon,
-  IonSegment,
-  IonSegmentButton,
-  IonLabel,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -183,21 +180,6 @@ const AdminActivitiesPage: React.FC = () => {
           <IonRefresherContent></IonRefresherContent>
         </IonRefresher>
 
-        {/* Konfi/Teamer Toggle */}
-        <div className="app-segment-wrapper" style={{ padding: '8px 16px 0' }}>
-          <IonSegment
-            value={selectedRole}
-            onIonChange={(e) => handleRoleChange(e.detail.value as 'konfi' | 'teamer')}
-          >
-            <IonSegmentButton value="konfi">
-              <IonLabel>Konfis</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="teamer">
-              <IonLabel>Teamer:innen</IonLabel>
-            </IonSegmentButton>
-          </IonSegment>
-        </div>
-
         {loading ? (
           <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (
@@ -210,6 +192,7 @@ const AdminActivitiesPage: React.FC = () => {
             canEdit={canEdit}
             canDelete={canDelete}
             targetRole={selectedRole}
+            onRoleChange={handleRoleChange}
           />
         )}
       </IonContent>

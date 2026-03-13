@@ -159,7 +159,7 @@ const MainTabs: React.FC = () => {
           <IonTabBar slot="bottom">
             <IonTabButton tab="admin-konfis" href="/admin/konfis">
               <IonIcon icon={people} />
-              <IonLabel>Konfis</IonLabel>
+              <IonLabel>User</IonLabel>
             </IonTabButton>
             <IonTabButton tab="admin-chat" href="/admin/chat">
               <IonIcon icon={chatbubbles} />
