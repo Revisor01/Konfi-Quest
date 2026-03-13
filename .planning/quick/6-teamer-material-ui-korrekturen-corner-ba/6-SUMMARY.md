@@ -1,45 +1,57 @@
 ---
-phase: quick-6
+phase: quick-6b
 plan: 1
-subsystem: frontend/teamer-material
-tags: [ui-fix, corner-badges, icons, modal-backdrop]
-key-files:
-  created: []
+subsystem: frontend
+tags: [material, inline-detail, corner-badges, modal-context, ui]
+dependency_graph:
+  requires: []
+  provides: [inline-material-detail, admin-material-presenting-element]
+  affects: [TeamerMaterialPage, ModalContext]
+tech_stack:
+  patterns: [inline-detail-view, selectedState-conditional-rendering, app-corner-badge]
+key_files:
   modified:
     - frontend/src/components/teamer/pages/TeamerMaterialPage.tsx
-    - frontend/src/components/teamer/pages/TeamerMaterialDetailPage.tsx
     - frontend/src/contexts/ModalContext.tsx
 decisions:
-  - Corner Badges: TeamerEventsPage-Pattern mit app-corner-badge CSS-Klasse und borderRadius 0 0 8px 8px
+  - "Material Detail als Inline-View statt Modal (wie TeamerEventsPage Pattern)"
+  - "Nur Event Corner Badge behalten, Jahrgang Badge entfernt"
+  - "app-corner-badge CSS-Klasse fuer Event Badge statt inline borderRadius"
+  - "create Icon (SOLID) fuer Erstellt-am statt time/outline"
 metrics:
   duration: 2min
-  completed: "2026-03-13T09:48:00Z"
+  completed: "2026-03-13T10:10:00Z"
   tasks: 2
-  files: 3
+  files: 2
 ---
 
-# Quick Task 6: Teamer Material UI-Korrekturen Summary
+# Quick Task 6 (Revised): Teamer Material UI-Korrekturen Summary
 
-8 UI-Korrekturen in TeamerMaterialPage und TeamerMaterialDetailPage: Corner Badges konsistent mit Events, solid Icons, SectionHeader Stats, Suchleiste Breite, iOS Backdrop via ModalContext
+Material Detail von Modal auf Inline-View umgebaut (selectedMaterial State + Conditional Rendering), Corner Badge nur noch Event mit app-corner-badge CSS-Klasse, admin-material Route-Mapping in ModalContext ergaenzt.
 
 ## Tasks Completed
 
-### Task 1: TeamerMaterialPage - 5 Fixes
-- **Commit:** a763ff9
-- **Corner Badges:** borderRadius auf `0 0 8px 8px` fuer beide Badges (konsistent mit TeamerEventsPage), `app-corner-badge` CSS-Klasse fuer Jahrgang-Badge
-- **Kalender-Icon:** `calendar` (solid) statt `calendarOutline`
-- **Filter-Icon:** `filter` (solid) statt `filterOutline`
-- **SectionHeader Stats:** 2 Stats (Materialien + Dateien) statt nur 1
-- **Suchleiste:** margin `0 16px 16px` fuer volle Breite oben
+### Task 1: Material Detail Inline + Corner Badge Fix (a96aeec)
 
-### Task 2: TeamerMaterialDetailPage - 3 Fixes
-- **Commit:** 0cdf792
-- **Detail-Icons:** Alle auf solid umgestellt (calendar, people, person, time, informationCircle)
-- **Dateien-SectionHeader:** SectionHeader mit Datei-Statistik ersetzt IonListHeader
-- **iOS Backdrop:** Teamer-Routes in ModalContext gemappt fuer presentingElement
+**TeamerMaterialPage.tsx komplett ueberarbeitet:**
+- `useIonModal` und `TeamerMaterialDetailPage`-Import entfernt
+- `useModalPage` entfernt (kein Modal mehr noetig)
+- `selectedMaterial` State mit `MaterialDetail` Interface statt `selectedMaterialId`
+- `openDetail()` laedt Material per API und setzt `selectedMaterial`
+- Inline Detail-View mit arrowBack Button, SectionHeader (amber), Beschreibung, Details, Dateien
+- Detail-Icons: calendar (SOLID, rot) fuer Event, create (SOLID) fuer Erstellt-am, person fuer Admin
+- File-Handling Funktionen (getFileIcon, formatFileSize, openFile) direkt in TeamerMaterialPage
+- Corner Badge: Nur Event Badge mit `app-corner-badge` CSS-Klasse, Jahrgang Badge entfernt
+- Stats: "Materialien" + "Dateien" (2 Felder)
+- Kalender-Icon in Liste: calendar (SOLID, nicht outline)
+
+### Task 2: Admin Material ModalContext Fix (d02ecf1)
+
+- `admin-material` Route-Mapping in ModalContext.tsx hinzugefuegt
+- MaterialFormModal bekommt jetzt korrektes presentingElement (iOS Backdrop)
 
 ## Deviations from Plan
 
-None - plan executed exactly as written.
+None - plan executed with user overrides applied.
 
 ## Self-Check: PASSED
