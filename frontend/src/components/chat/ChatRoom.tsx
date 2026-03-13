@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -33,6 +33,7 @@ import { formatFileSize } from '../../utils/helpers';
 import MessageBubble from './MessageBubble';
 import PollModal from './modals/PollModal';
 import MembersModal from './modals/MembersModal';
+import FileViewerModal from './modals/FileViewerModal';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
@@ -60,6 +61,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLIonTextareaElement>(null);
   const scrollPositionRef = useRef<number>(0);
+  const viewerDataRef = useRef<{ blobUrl: string; fileName: string; mimeType: string }>({ blobUrl: '', fileName: '', mimeType: '' });
 
 
   // Open image with FileOpener (like Activity Requests)
@@ -116,8 +118,14 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         contentType: 'image/jpeg'
       });
     } catch (error) {
- console.error('Error opening image:', error);
-      setError('Fehler beim Öffnen des Bildes');
+      console.warn('Native image opener failed, using in-app viewer:', error);
+      try {
+        const fallbackResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
+        const fallbackFileName = filePath.split('/').pop() || 'Bild';
+        openInAppViewer(fallbackResponse.data, fallbackFileName, 'image/jpeg');
+      } catch {
+        setError('Fehler beim Öffnen des Bildes');
+      }
     }
   };
 
@@ -158,6 +166,26 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
       presentingElement: presentingElement || undefined // <-- Verwendet das Prop
     });
   };
+
+  // FileViewer Modal mit useIonModal Hook (In-App Dateivorschau)
+  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
+    get blobUrl() { return viewerDataRef.current.blobUrl; },
+    get fileName() { return viewerDataRef.current.fileName; },
+    get mimeType() { return viewerDataRef.current.mimeType; },
+    onClose: () => {
+      dismissFileViewer();
+      if (viewerDataRef.current.blobUrl) {
+        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
+        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
+      }
+    }
+  });
+
+  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
+    presentFileViewer({ presentingElement: presentingElement || undefined });
+  }, [presentFileViewer, presentingElement]);
 
   // Load messages on mount and setup WebSocket for real-time updates
   useEffect(() => {
@@ -758,12 +786,11 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           path: fileUri.uri
         });
       } catch (viewerError) {
-        console.warn('Native viewer failed, using fallback:', viewerError);
+        console.warn('Native viewer failed, using in-app viewer:', viewerError);
         try {
           const fallbackResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-          const blobUrl = URL.createObjectURL(new Blob([fallbackResponse.data], { type: 'application/octet-stream' }));
-          window.open(blobUrl, '_blank');
-          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+          const mime = fallbackResponse.headers?.['content-type'] || 'application/octet-stream';
+          openInAppViewer(fallbackResponse.data, fileName, mime);
         } catch {
           setError('Fehler beim Öffnen der Datei');
         }
@@ -771,9 +798,8 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     } else {
       try {
         const fileResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-        const blobUrl = URL.createObjectURL(new Blob([fileResponse.data], { type: 'application/octet-stream' }));
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        const mime = fileResponse.headers?.['content-type'] || 'application/octet-stream';
+        openInAppViewer(fileResponse.data, fileName, mime);
       } catch {
         setError('Fehler beim Öffnen der Datei');
       }
