@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -22,7 +22,8 @@ import {
   IonListHeader,
   IonCard,
   IonCardContent,
-  useIonAlert
+  useIonAlert,
+  useIonModal
 } from '@ionic/react';
 import {
   checkmarkOutline,
@@ -41,6 +42,7 @@ import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import FileViewerModal from '../../chat/modals/FileViewerModal';
 
 interface MaterialFile {
   id: number;
@@ -95,6 +97,27 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
   const [events, setEvents] = useState<EventOption[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<JahrgangOption[]>([]);
+
+  // FileViewer Modal (In-App Dateivorschau)
+  const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
+  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
+    get blobUrl() { return viewerDataRef.current.blobUrl; },
+    get fileName() { return viewerDataRef.current.fileName; },
+    get mimeType() { return viewerDataRef.current.mimeType; },
+    onClose: () => {
+      dismissFileViewer();
+      if (viewerDataRef.current.blobUrl) {
+        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
+        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
+      }
+    }
+  });
+
+  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
+    presentFileViewer();
+  }, [presentFileViewer]);
 
   useEffect(() => {
     loadOptions();
@@ -164,12 +187,10 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
       }
     } catch (err) {
-      console.warn('Native file viewer failed, using blob fallback:', err);
+      console.warn('Native file viewer failed, using in-app fallback:', err);
       try {
         const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
-        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: file.mime_type }));
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        openInAppViewer(response.data, file.original_name, file.mime_type);
       } catch {
         setError('Fehler beim Öffnen der Datei');
       }
@@ -424,9 +445,7 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
                         lines="none"
                         className="app-item-transparent"
                         onClick={() => {
-                          const blobUrl = URL.createObjectURL(file);
-                          window.open(blobUrl, '_blank');
-                          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+                          openInAppViewer(file, file.name, file.type);
                         }}
                       >
                         <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>

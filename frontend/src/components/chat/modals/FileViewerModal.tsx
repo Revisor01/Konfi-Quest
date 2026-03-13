@@ -88,7 +88,12 @@ const FileViewerModal: React.FC<FileViewerModalProps> = ({
             <p style={{ margin: 0, fontSize: '0.85rem', color: '#999' }}>{fileName}</p>
             <IonButton
               fill="outline"
-              onClick={() => window.open(blobUrl, '_blank')}
+              onClick={() => {
+                const a = window.document.createElement('a');
+                a.href = blobUrl;
+                a.download = fileName;
+                a.click();
+              }}
             >
               <IonIcon icon={downloadOutline} slot="start" />
               Herunterladen

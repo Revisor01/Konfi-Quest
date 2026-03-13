@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -14,7 +14,8 @@ import {
   IonCard,
   IonCardContent,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  useIonModal
 } from '@ionic/react';
 import {
   document as documentIcon,
@@ -28,7 +29,8 @@ import {
   time,
   closeOutline,
   informationCircle,
-  textOutline
+  textOutline,
+  create
 } from 'ionicons/icons';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -39,6 +41,7 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
 import { SectionHeader } from '../../shared';
+import FileViewerModal from '../../chat/modals/FileViewerModal';
 
 interface MaterialFile {
   id: number;
@@ -72,6 +75,27 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
 
   const [material, setMaterial] = useState<MaterialDetail | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // FileViewer Modal (In-App Dateivorschau mit Backdrop)
+  const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
+  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
+    get blobUrl() { return viewerDataRef.current.blobUrl; },
+    get fileName() { return viewerDataRef.current.fileName; },
+    get mimeType() { return viewerDataRef.current.mimeType; },
+    onClose: () => {
+      dismissFileViewer();
+      if (viewerDataRef.current.blobUrl) {
+        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
+        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
+      }
+    }
+  });
+
+  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
+    presentFileViewer();
+  }, [presentFileViewer]);
 
   useEffect(() => {
     loadMaterial();
@@ -147,12 +171,10 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
         await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
       }
     } catch (err) {
-      console.warn('Native file viewer failed, using blob fallback:', err);
+      console.warn('Native file viewer failed, using in-app fallback:', err);
       try {
         const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
-        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: file.mime_type }));
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        openInAppViewer(response.data, file.original_name, file.mime_type);
       } catch {
         setError('Fehler beim Öffnen der Datei');
       }
@@ -242,7 +264,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                     </div>
                   )}
                   <div className="app-info-row">
-                    <IonIcon icon={time} className="app-info-row__icon" style={{ color: '#6c757d' }} />
+                    <IonIcon icon={create} className="app-info-row__icon" style={{ color: '#6c757d' }} />
                     <div className="app-info-row__content">
                       Erstellt am {formatDate(material.created_at)}
                     </div>

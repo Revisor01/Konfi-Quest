@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -18,7 +18,8 @@ import {
   IonItem,
   IonItemGroup,
   IonButtons,
-  IonButton
+  IonButton,
+  useIonModal
 } from '@ionic/react';
 import {
   document as documentIcon,
@@ -42,10 +43,12 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { FileViewer } from '@capacitor/file-viewer';
 import { FileOpener } from '@capacitor-community/file-opener';
 import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import FileViewerModal from '../../chat/modals/FileViewerModal';
 
 interface Material {
   id: number;
@@ -83,6 +86,7 @@ interface MaterialDetail {
 
 const TeamerMaterialPage: React.FC = () => {
   const { setError } = useApp();
+  const { presentingElement } = useModalPage('teamer-material');
 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<{ id: number; name: string }[]>([]);
@@ -91,6 +95,27 @@ const TeamerMaterialPage: React.FC = () => {
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // FileViewer Modal (In-App Dateivorschau mit Backdrop)
+  const viewerDataRef = useRef({ blobUrl: '', fileName: '', mimeType: '' });
+  const [presentFileViewer, dismissFileViewer] = useIonModal(FileViewerModal, {
+    get blobUrl() { return viewerDataRef.current.blobUrl; },
+    get fileName() { return viewerDataRef.current.fileName; },
+    get mimeType() { return viewerDataRef.current.mimeType; },
+    onClose: () => {
+      dismissFileViewer();
+      if (viewerDataRef.current.blobUrl) {
+        URL.revokeObjectURL(viewerDataRef.current.blobUrl);
+        viewerDataRef.current = { blobUrl: '', fileName: '', mimeType: '' };
+      }
+    }
+  });
+
+  const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
+    const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+    viewerDataRef.current = { blobUrl: url, fileName, mimeType };
+    presentFileViewer({ presentingElement: presentingElement || undefined });
+  }, [presentFileViewer, presentingElement]);
 
   // Jahrgaenge einmalig laden
   useEffect(() => {
@@ -206,12 +231,10 @@ const TeamerMaterialPage: React.FC = () => {
         await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
       }
     } catch (err) {
-      console.warn('Native file viewer failed, using blob fallback:', err);
+      console.warn('Native file viewer failed, using in-app fallback:', err);
       try {
         const response = await api.get(`/material/files/${file.stored_name}`, { responseType: 'blob' });
-        const blobUrl = URL.createObjectURL(new Blob([response.data], { type: file.mime_type }));
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        openInAppViewer(response.data, file.original_name, file.mime_type);
       } catch {
         setError('Fehler beim Öffnen der Datei');
       }

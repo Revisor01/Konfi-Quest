@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -101,12 +101,12 @@ const TeamerEventsPage: React.FC = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [initialEventHandled, setInitialEventHandled] = useState(false);
   const [eventMaterials, setEventMaterials] = useState<any[]>([]);
-  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null);
+  const materialIdRef = useRef<number | null>(null);
   const history = useHistory();
 
-  // Material Detail Modal
+  // Material Detail Modal (useRef fuer dynamische materialId)
   const [presentMaterialModal, dismissMaterialModal] = useIonModal(TeamerMaterialDetailPage, {
-    materialId: selectedMaterialId,
+    get materialId() { return materialIdRef.current; },
     onClose: () => dismissMaterialModal()
   });
 
@@ -580,7 +580,7 @@ const TeamerEventsPage: React.FC = () => {
                         marginBottom: '8px'
                       }}
                       onClick={() => {
-                        setSelectedMaterialId(mat.id);
+                        materialIdRef.current = mat.id;
                         presentMaterialModal({ presentingElement: presentingElement });
                       }}
                     >
