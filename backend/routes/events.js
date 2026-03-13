@@ -1760,13 +1760,28 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       }
       
       
-      const { rows: [booking] } = await db.query("SELECT status FROM event_bookings WHERE id = $1 AND event_id = $2", [participantId, eventId]);
+      const { rows: [booking] } = await db.query("SELECT eb.status, eb.attendance_status, eb.user_id, e.organization_id FROM event_bookings eb JOIN events e ON eb.event_id = e.id WHERE eb.id = $1 AND eb.event_id = $2", [participantId, eventId]);
       if (!booking) return res.status(404).json({ error: 'Buchung nicht gefunden' });
+      if (booking.organization_id !== req.user.organization_id) return res.status(403).json({ error: 'Zugriff verweigert' });
       if (booking.status === status) return res.status(400).json({ error: `Participant already ${status}` });
-      
-      const { rowCount } = await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
-      if (rowCount === 0) return res.status(404).json({ error: 'Buchung während Aktualisierung nicht gefunden' }); // Should be rare
-      
+
+      if (status === 'waitlist') {
+        // Auf Warteliste: attendance_status löschen und Event-Punkte zurücknehmen
+        await db.query("UPDATE event_bookings SET status = 'waitlist', attendance_status = NULL WHERE id = $1", [participantId]);
+
+        // Event-Punkte zurücknehmen falls vorhanden
+        const { rows: [existingPoints] } = await db.query("SELECT id, points, point_type FROM event_points WHERE konfi_id = $1 AND event_id = $2", [booking.user_id, eventId]);
+        if (existingPoints) {
+          await db.query("DELETE FROM event_points WHERE id = $1", [existingPoints.id]);
+          const updateProfileQuery = existingPoints.point_type === 'gottesdienst'
+            ? "UPDATE konfi_profiles SET gottesdienst_points = GREATEST(0, gottesdienst_points - $1) WHERE user_id = $2"
+            : "UPDATE konfi_profiles SET gemeinde_points = GREATEST(0, gemeinde_points - $1) WHERE user_id = $2";
+          await db.query(updateProfileQuery, [existingPoints.points, booking.user_id]);
+        }
+      } else {
+        await db.query("UPDATE event_bookings SET status = $1 WHERE id = $2", [status, participantId]);
+      }
+
       const action = status === 'confirmed' ? 'promoted from waitlist' : 'moved to waitlist';
       res.json({ message: `Participant ${action}`, status });
       
