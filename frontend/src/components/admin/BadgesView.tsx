@@ -281,27 +281,6 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         ]}
       />
 
-      {/* Tab Navigation - einfaches IonSegment */}
-      <div className="app-segment-wrapper">
-        <IonSegment
-          value={selectedFilter}
-          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
-        >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="aktiv">
-            <IonLabel>Aktiv</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="versteckt">
-            <IonLabel>Geheim</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="inaktiv">
-            <IonLabel>Inaktiv</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-      </div>
-
       {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>
         <IonListHeader>
@@ -321,6 +300,27 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           </IonItem>
         </IonItemGroup>
       </IonList>
+
+      {/* Status-Filter */}
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={selectedFilter}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+        >
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="aktiv">
+            <IonLabel>Aktiv</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="versteckt">
+            <IonLabel>Geheim</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="inaktiv">
+            <IonLabel>Inaktiv</IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      </div>
 
       {/* Badges Liste - Gruppiert nach Typ */}
       {filteredAndSortedBadges.length === 0 ? (

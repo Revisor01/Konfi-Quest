@@ -6,6 +6,7 @@ import {
   IonItem,
   IonLabel,
   IonList,
+  IonListHeader,
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
@@ -21,6 +22,7 @@ import {
   flash,
   pricetag,
   flashOutline,
+  filterOutline,
   search
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -139,7 +141,31 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         ]}
       />
 
-      {/* Tab Navigation - nur bei Konfis (Teamer haben keinen Typ) */}
+      {/* Suche & Filter */}
+      <IonList inset={true} style={{ margin: '16px' }}>
+        <IonListHeader>
+          <div className="app-section-icon app-section-icon--activities">
+            <IonIcon icon={filterOutline} />
+          </div>
+          <IonLabel>Suche & Filter</IonLabel>
+        </IonListHeader>
+        <IonCard className="app-card">
+          <IonCardContent style={{ padding: '8px 16px' }}>
+            <div className="app-search-bar" style={{ padding: 0 }}>
+              <IonIcon icon={search} className="app-search-bar__icon" />
+              <IonInput
+                value={searchTerm}
+                onIonInput={(e) => setSearchTerm(e.detail.value!)}
+                placeholder="Aktivität suchen..."
+                clearInput={true}
+                style={{ '--padding-start': '0' }}
+              />
+            </div>
+          </IonCardContent>
+        </IonCard>
+      </IonList>
+
+      {/* Typ-Filter - nur bei Konfis (Teamer haben keinen Typ) */}
       {targetRole !== 'teamer' && (
       <div className="app-segment-wrapper">
         <IonSegment
@@ -158,24 +184,6 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         </IonSegment>
       </div>
       )}
-
-      {/* Suche */}
-      <IonList inset={true} style={{ margin: '16px' }}>
-        <IonCard className="app-card">
-          <IonCardContent style={{ padding: '8px 16px' }}>
-            <div className="app-search-bar" style={{ padding: 0 }}>
-              <IonIcon icon={search} className="app-search-bar__icon" />
-              <IonInput
-                value={searchTerm}
-                onIonInput={(e) => setSearchTerm(e.detail.value!)}
-                placeholder="Aktivität suchen..."
-                clearInput={true}
-                style={{ '--padding-start': '0' }}
-              />
-            </div>
-          </IonCardContent>
-        </IonCard>
-      </IonList>
 
       {/* Aktivitäten Liste */}
       <ListSection
