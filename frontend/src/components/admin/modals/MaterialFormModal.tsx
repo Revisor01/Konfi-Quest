@@ -415,38 +415,51 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           <IonCard className="app-card">
             <IonCardContent>
               {newFiles.length > 0 && (
-                <div style={{ marginBottom: '12px' }}>
+                <IonList className="app-list-inner" lines="none" style={{ marginBottom: '12px' }}>
                   {newFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="app-list-item"
-                      style={{ borderLeftColor: '#d97706' }}
-                    >
-                      <div className="app-list-item__row">
-                        <div className="app-list-item__main">
-                          <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
-                            <IonIcon icon={attachOutline} />
-                          </div>
-                          <div className="app-list-item__content">
-                            <div className="app-list-item__title">{file.name}</div>
-                            <div className="app-list-item__meta">
-                              <span className="app-list-item__meta-item">
-                                {formatFileSize(file.size)}
-                              </span>
+                    <IonItemSliding key={index} style={{ marginBottom: index < newFiles.length - 1 ? '8px' : '0' }}>
+                      <IonItem
+                        button
+                        detail={false}
+                        lines="none"
+                        className="app-item-transparent"
+                        onClick={() => {
+                          const blobUrl = URL.createObjectURL(file);
+                          window.open(blobUrl, '_blank');
+                          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+                        }}
+                      >
+                        <div className="app-list-item" style={{ borderLeftColor: '#d97706' }}>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
+                                <IonIcon icon={attachOutline} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title">{file.name}</div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    {formatFileSize(file.size)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <IonButton
-                          fill="clear"
-                          color="danger"
+                      </IonItem>
+                      <IonItemOptions className="app-swipe-actions" side="end">
+                        <IonItemOption
+                          className="app-swipe-action"
                           onClick={() => removeNewFile(index)}
                         >
-                          <IonIcon icon={trash} slot="icon-only" />
-                        </IonButton>
-                      </div>
-                    </div>
+                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
+                            <IonIcon icon={trash} />
+                          </div>
+                        </IonItemOption>
+                      </IonItemOptions>
+                    </IonItemSliding>
                   ))}
-                </div>
+                </IonList>
               )}
               <input
                 ref={fileInputRef}

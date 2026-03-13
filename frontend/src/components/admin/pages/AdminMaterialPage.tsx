@@ -21,6 +21,7 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
+  IonItemGroup,
   IonRefresher,
   IonRefresherContent,
   useIonAlert,
@@ -35,6 +36,7 @@ import {
   createOutline,
   attachOutline,
   calendarOutline,
+  filterOutline,
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -203,45 +205,52 @@ const AdminMaterialPage: React.FC = () => {
           <LoadingSpinner message="Materialien werden geladen..." />
         ) : (
           <>
-            {/* Jahrgang-Filter Chips */}
-            {jahrgaenge.length > 0 && (
-              <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
-                <IonChip
-                  onClick={() => setActiveJahrgangId(undefined)}
-                  style={{
-                    backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
-                    color: !activeJahrgangId ? 'white' : '#d97706',
-                    border: '1px solid #d97706'
-                  }}
-                >
-                  <IonLabel>Alle</IonLabel>
-                </IonChip>
-                {jahrgaenge.map(jg => (
-                  <IonChip
-                    key={jg.id}
-                    onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
-                    style={{
-                      backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
-                      color: activeJahrgangId === jg.id ? 'white' : '#d97706',
-                      border: '1px solid #d97706'
-                    }}
-                  >
-                    <IonLabel>{jg.name}</IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            )}
-
-            {/* Suchleiste */}
-            <div style={{ padding: '0 16px' }}>
-              <IonSearchbar
-                value={search}
-                onIonInput={(e) => setSearch(e.detail.value || '')}
-                placeholder="Material durchsuchen..."
-                debounce={300}
-              />
-            </div>
+            {/* Suche & Filter */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--material">
+                  <IonIcon icon={filterOutline} />
+                </div>
+                <IonLabel>Suche & Filter</IonLabel>
+              </IonListHeader>
+              <IonItemGroup>
+                <IonSearchbar
+                  value={search}
+                  onIonInput={(e) => setSearch(e.detail.value || '')}
+                  placeholder="Material durchsuchen..."
+                  debounce={300}
+                />
+                {/* Jahrgang-Filter Chips */}
+                {jahrgaenge.length > 0 && (
+                  <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
+                    <IonChip
+                      onClick={() => setActiveJahrgangId(undefined)}
+                      style={{
+                        backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
+                        color: !activeJahrgangId ? 'white' : '#d97706',
+                        border: '1px solid #d97706'
+                      }}
+                    >
+                      <IonLabel>Alle</IonLabel>
+                    </IonChip>
+                    {jahrgaenge.map(jg => (
+                      <IonChip
+                        key={jg.id}
+                        onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
+                        style={{
+                          backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
+                          color: activeJahrgangId === jg.id ? 'white' : '#d97706',
+                          border: '1px solid #d97706'
+                        }}
+                      >
+                        <IonLabel>{jg.name}</IonLabel>
+                      </IonChip>
+                    ))}
+                  </div>
+                )}
+              </IonItemGroup>
+            </IonList>
 
             {/* Segment */}
             <div className="app-segment-wrapper">
@@ -364,7 +373,7 @@ const AdminMaterialPage: React.FC = () => {
                                         </span>
                                       )}
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={calendarOutline} style={{ color: '#6c757d' }} />
+                                        <IonIcon icon={calendarOutline} style={{ color: '#dc2626' }} />
                                         {formatDate(mat.created_at)}
                                       </span>
                                     </div>
