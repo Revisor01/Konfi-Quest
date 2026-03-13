@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -33,24 +33,24 @@ import {
   add,
   arrowBack,
   trash,
-  createOutline,
   attachOutline,
-  calendarOutline,
+  calendar,
   filterOutline,
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
+
 
 interface Material {
   id: number;
   title: string;
   description?: string;
-  event_id?: number;
-  event_name?: string;
+  events?: { id: number; name: string }[];
+  event_count?: number;
   jahrgang_id?: number;
   jahrgang_name?: string;
   file_count?: number;
@@ -58,7 +58,8 @@ interface Material {
 }
 
 const AdminMaterialPage: React.FC = () => {
-  const { presentingElement } = useModalPage('admin-material');
+  const pageRef = useRef<HTMLElement>(null);
+  const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
   const { setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
 
@@ -69,6 +70,10 @@ const AdminMaterialPage: React.FC = () => {
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [segment, setSegment] = useState<'alle' | 'mit_event' | 'ohne_event'>('alle');
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
+
+  useEffect(() => {
+    setPresentingElement(pageRef.current);
+  }, []);
 
   // Jahrgaenge einmalig laden
   useEffect(() => {
@@ -104,8 +109,8 @@ const AdminMaterialPage: React.FC = () => {
   }, [loadData]);
 
   const filteredMaterials = materials.filter(m => {
-    if (segment === 'mit_event') return !!m.event_id;
-    if (segment === 'ohne_event') return !m.event_id;
+    if (segment === 'mit_event') return (m.event_count || 0) > 0;
+    if (segment === 'ohne_event') return (m.event_count || 0) === 0;
     return true;
   });
 
@@ -148,14 +153,14 @@ const AdminMaterialPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditMaterial(null);
-    presentFormModal({ presentingElement: presentingElement });
+    presentFormModal({ presentingElement: presentingElement || undefined });
   };
 
   const openEditModal = async (material: Material) => {
     try {
       const res = await api.get(`/material/${material.id}`);
       setEditMaterial(res.data);
-      presentFormModal({ presentingElement: presentingElement });
+      presentFormModal({ presentingElement: presentingElement || undefined });
     } catch {
       setError('Fehler beim Laden des Materials');
     }
@@ -170,7 +175,7 @@ const AdminMaterialPage: React.FC = () => {
   };
 
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
@@ -205,6 +210,17 @@ const AdminMaterialPage: React.FC = () => {
           <LoadingSpinner message="Materialien werden geladen..." />
         ) : (
           <>
+            <SectionHeader
+              title="Material"
+              subtitle="Dokumente und Dateien"
+              icon={documentIcon}
+              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              stats={[
+                { value: materials.length, label: 'Material' },
+                { value: materials.reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
+              ]}
+            />
+
             {/* Suche & Filter */}
             <IonList inset={true} style={{ margin: '16px' }}>
               <IonListHeader>
@@ -300,58 +316,15 @@ const AdminMaterialPage: React.FC = () => {
                           >
                             <div
                               className="app-list-item"
-                              style={{
-                                borderLeftColor: '#d97706',
-                                position: 'relative',
-                                overflow: 'hidden'
-                              }}
+                              style={{ borderLeftColor: '#d97706' }}
                             >
-                              {/* Corner Badges */}
-                              {(mat.event_name || (mat.file_count && mat.file_count > 0)) && (
-                                <div style={{
-                                  position: 'absolute',
-                                  top: '0',
-                                  right: '0',
-                                  display: 'flex',
-                                  flexDirection: 'row',
-                                  zIndex: 10
-                                }}>
-                                  {mat.event_name && (
-                                    <div style={{
-                                      backgroundColor: '#dc2626',
-                                      color: 'white',
-                                      fontSize: '0.65rem',
-                                      fontWeight: '700',
-                                      padding: '4px 8px',
-                                      borderRadius: '0 0 8px 8px'
-                                    }}>
-                                      {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
-                                    </div>
-                                  )}
-                                  {mat.file_count && mat.file_count > 0 && (
-                                    <>
-                                      {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                      <div className="app-corner-badge" style={{ backgroundColor: '#d97706', position: 'static' }}>
-                                        {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-
                               <div className="app-list-item__row">
                                 <div className="app-list-item__main">
                                   <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
                                     <IonIcon icon={documentIcon} />
                                   </div>
                                   <div className="app-list-item__content">
-                                    <div
-                                      className="app-list-item__title"
-                                      style={{
-                                        paddingRight: (mat.event_name || (mat.file_count && mat.file_count > 0)) ? '80px' : '0',
-                                        paddingTop: (mat.event_name || (mat.file_count && mat.file_count > 0)) ? '4px' : '0'
-                                      }}
-                                    >
+                                    <div className="app-list-item__title">
                                       {mat.title}
                                     </div>
                                     {mat.description && (
@@ -366,16 +339,18 @@ const AdminMaterialPage: React.FC = () => {
                                       </div>
                                     )}
                                     <div className="app-list-item__meta">
-                                      {mat.file_count !== undefined && (
+                                      {mat.file_count !== undefined && mat.file_count > 0 && (
                                         <span className="app-list-item__meta-item">
                                           <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
                                           {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                         </span>
                                       )}
-                                      <span className="app-list-item__meta-item">
-                                        <IonIcon icon={calendarOutline} style={{ color: '#dc2626' }} />
-                                        {formatDate(mat.created_at)}
-                                      </span>
+                                      {(mat.event_count || 0) > 0 && (
+                                        <span className="app-list-item__meta-item">
+                                          <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
+                                          {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

@@ -54,8 +54,8 @@ interface Material {
   id: number;
   title: string;
   description?: string;
-  event_id?: number;
-  event_name?: string;
+  events?: { id: number; name: string }[];
+  event_count?: number;
   jahrgang_id?: number;
   jahrgang_name?: string;
   file_count?: number;
@@ -75,9 +75,8 @@ interface MaterialDetail {
   id: number;
   title: string;
   description?: string;
-  event_id?: number;
-  event_name?: string;
-  jahrgang_id?: number;
+  events?: { id: number; name: string }[];
+  jahrgaenge?: { id: number; name: string }[];
   jahrgang_name?: string;
   admin_name?: string;
   files?: MaterialFile[];
@@ -311,19 +310,19 @@ const TeamerMaterialPage: React.FC = () => {
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
-                {selectedMaterial.event_name && (
+                {selectedMaterial.events && selectedMaterial.events.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
                     <div className="app-info-row__content">
-                      Event: {selectedMaterial.event_name}
+                      {selectedMaterial.events.length === 1 ? 'Event' : 'Events'}: {selectedMaterial.events.map(e => e.name).join(', ')}
                     </div>
                   </div>
                 )}
-                {selectedMaterial.jahrgang_name && (
+                {selectedMaterial.jahrgaenge && selectedMaterial.jahrgaenge.length > 0 && (
                   <div className="app-info-row">
                     <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                     <div className="app-info-row__content">
-                      Jahrgang: {selectedMaterial.jahrgang_name}
+                      {selectedMaterial.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}: {selectedMaterial.jahrgaenge.map(j => j.name).join(', ')}
                     </div>
                   </div>
                 )}
@@ -528,40 +527,16 @@ const TeamerMaterialPage: React.FC = () => {
                           className="app-list-item"
                           style={{
                             width: '100%',
-                            borderLeftColor: '#d97706',
-                            position: 'relative',
-                            overflow: 'hidden'
+                            borderLeftColor: '#d97706'
                           }}
                         >
-                          {/* Corner Badge - nur Event */}
-                          {mat.event_name && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '0',
-                              right: '0',
-                              display: 'flex',
-                              flexDirection: 'row',
-                              zIndex: 10
-                            }}>
-                              <div className="app-corner-badge" style={{ backgroundColor: '#dc2626', whiteSpace: 'nowrap' }}>
-                                {mat.event_name.length > 20 ? mat.event_name.substring(0, 20) + '...' : mat.event_name}
-                              </div>
-                            </div>
-                          )}
-
                           <div className="app-list-item__row">
                             <div className="app-list-item__main">
                               <div className="app-icon-circle" style={{ backgroundColor: '#d97706' }}>
                                 <IonIcon icon={documentIcon} />
                               </div>
                               <div className="app-list-item__content">
-                                <div
-                                  className="app-list-item__title"
-                                  style={{
-                                    paddingRight: mat.event_name ? '80px' : '0',
-                                    paddingTop: mat.event_name ? '4px' : '0'
-                                  }}
-                                >
+                                <div className="app-list-item__title">
                                   {mat.title}
                                 </div>
                                 {mat.description && (
@@ -582,10 +557,12 @@ const TeamerMaterialPage: React.FC = () => {
                                       {mat.file_count} {mat.file_count === 1 ? 'Datei' : 'Dateien'}
                                     </span>
                                   )}
-                                  <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
-                                    {formatDate(mat.created_at)}
-                                  </span>
+                                  {(mat.event_count || 0) > 0 && (
+                                    <span className="app-list-item__meta-item">
+                                      <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
+                                      {mat.event_count} {mat.event_count === 1 ? 'Event' : 'Events'}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>

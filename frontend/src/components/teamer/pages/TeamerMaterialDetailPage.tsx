@@ -56,9 +56,8 @@ interface MaterialDetail {
   id: number;
   title: string;
   description?: string;
-  event_id?: number;
-  event_name?: string;
-  jahrgang_id?: number;
+  events?: { id: number; name: string }[];
+  jahrgaenge?: { id: number; name: string }[];
   jahrgang_name?: string;
   admin_name?: string;
   files?: MaterialFile[];
@@ -252,19 +251,19 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>
-                  {material.event_name && (
+                  {material.events && material.events.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={calendar} className="app-info-row__icon" style={{ color: '#dc2626' }} />
                       <div className="app-info-row__content">
-                        Event: {material.event_name}
+                        {material.events.length === 1 ? 'Event' : 'Events'}: {material.events.map(e => e.name).join(', ')}
                       </div>
                     </div>
                   )}
-                  {material.jahrgang_name && (
+                  {material.jahrgaenge && material.jahrgaenge.length > 0 && (
                     <div className="app-info-row">
                       <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                       <div className="app-info-row__content">
-                        Jahrgang: {material.jahrgang_name}
+                        {material.jahrgaenge.length === 1 ? 'Jahrgang' : 'Jahrgänge'}: {material.jahrgaenge.map(j => j.name).join(', ')}
                       </div>
                     </div>
                   )}

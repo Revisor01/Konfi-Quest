@@ -59,6 +59,46 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         )
       `);
 
+      // material_events Join-Tabelle (Many-to-Many: Material <-> Events)
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS material_events (
+          material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+          event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+          PRIMARY KEY(material_id, event_id)
+        )
+      `);
+
+      // Migration: bestehende event_id Daten in Join-Tabelle uebertragen
+      const { rowCount: migrated } = await db.query(`
+        INSERT INTO material_events (material_id, event_id)
+        SELECT id, event_id FROM materials
+        WHERE event_id IS NOT NULL
+        ON CONFLICT DO NOTHING
+      `);
+      if (migrated > 0) {
+        console.log(`Material migration: ${migrated} event_id Eintraege in material_events uebertragen`);
+      }
+
+      // material_jahrgaenge Join-Tabelle (Many-to-Many: Material <-> Jahrgaenge)
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS material_jahrgaenge (
+          material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+          jahrgang_id INTEGER REFERENCES jahrgaenge(id) ON DELETE CASCADE,
+          PRIMARY KEY(material_id, jahrgang_id)
+        )
+      `);
+
+      // Migration: bestehende jahrgang_id Daten in Join-Tabelle uebertragen
+      const { rowCount: jgMigrated } = await db.query(`
+        INSERT INTO material_jahrgaenge (material_id, jahrgang_id)
+        SELECT id, jahrgang_id FROM materials
+        WHERE jahrgang_id IS NOT NULL
+        ON CONFLICT DO NOTHING
+      `);
+      if (jgMigrated > 0) {
+        console.log(`Material migration: ${jgMigrated} jahrgang_id Eintraege in material_jahrgaenge uebertragen`);
+      }
+
       console.log('Material migration: OK');
     } catch (err) {
       console.error('Material migration error:', err.message);
@@ -163,13 +203,12 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const { tag_id, search, event_id, jahrgang_id } = req.query;
 
       let query = `
-        SELECT m.id, m.title, m.description, m.event_id, e.name as event_name,
-               m.jahrgang_id, j.name as jahrgang_name,
+        SELECT m.id, m.title, m.description,
                m.created_at, u.display_name as created_by_name,
-               (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
+               (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count,
+               (SELECT COUNT(*) FROM material_events me WHERE me.material_id = m.id) as event_count,
+               (SELECT COUNT(*) FROM material_jahrgaenge mj WHERE mj.material_id = m.id) as jahrgang_count
         FROM materials m
-        LEFT JOIN events e ON m.event_id = e.id
-        LEFT JOIN jahrgaenge j ON m.jahrgang_id = j.id
         LEFT JOIN users u ON m.created_by = u.id
         WHERE m.organization_id = $1
       `;
@@ -189,13 +228,13 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       }
 
       if (event_id) {
-        query += ` AND m.event_id = $${paramIndex}`;
+        query += ` AND EXISTS (SELECT 1 FROM material_events me WHERE me.material_id = m.id AND me.event_id = $${paramIndex})`;
         params.push(event_id);
         paramIndex++;
       }
 
       if (jahrgang_id) {
-        query += ` AND m.jahrgang_id = $${paramIndex}`;
+        query += ` AND EXISTS (SELECT 1 FROM material_jahrgaenge mj WHERE mj.material_id = m.id AND mj.jahrgang_id = $${paramIndex})`;
         params.push(jahrgang_id);
         paramIndex++;
       }
@@ -204,14 +243,24 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
 
       const { rows: materials } = await db.query(query, params);
 
-      // Tags fuer alle Materialien laden
       if (materials.length > 0) {
         const materialIds = materials.map(m => m.id);
+
+        // Tags fuer alle Materialien laden
         const { rows: tags } = await db.query(
           `SELECT mft.material_id, mt.id, mt.name
            FROM material_file_tags mft
            JOIN material_tags mt ON mft.tag_id = mt.id
            WHERE mft.material_id = ANY($1)`,
+          [materialIds]
+        );
+
+        // Events fuer alle Materialien laden
+        const { rows: matEvents } = await db.query(
+          `SELECT me.material_id, e.id, e.name
+           FROM material_events me
+           JOIN events e ON me.event_id = e.id
+           WHERE me.material_id = ANY($1)`,
           [materialIds]
         );
 
@@ -221,9 +270,34 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           tagsByMaterial[tag.material_id].push({ id: tag.id, name: tag.name });
         }
 
+        const eventsByMaterial = {};
+        for (const ev of matEvents) {
+          if (!eventsByMaterial[ev.material_id]) eventsByMaterial[ev.material_id] = [];
+          eventsByMaterial[ev.material_id].push({ id: ev.id, name: ev.name });
+        }
+
+        // Jahrgaenge fuer alle Materialien laden
+        const { rows: matJahrgaenge } = await db.query(
+          `SELECT mj.material_id, j.id, j.name
+           FROM material_jahrgaenge mj
+           JOIN jahrgaenge j ON mj.jahrgang_id = j.id
+           WHERE mj.material_id = ANY($1)`,
+          [materialIds]
+        );
+
+        const jahrgaengeByMaterial = {};
+        for (const jg of matJahrgaenge) {
+          if (!jahrgaengeByMaterial[jg.material_id]) jahrgaengeByMaterial[jg.material_id] = [];
+          jahrgaengeByMaterial[jg.material_id].push({ id: jg.id, name: jg.name });
+        }
+
         for (const material of materials) {
           material.tags = tagsByMaterial[material.id] || [];
+          material.events = eventsByMaterial[material.id] || [];
+          material.jahrgaenge = jahrgaengeByMaterial[material.id] || [];
           material.file_count = parseInt(material.file_count, 10);
+          material.event_count = parseInt(material.event_count, 10);
+          material.jahrgang_count = parseInt(material.jahrgang_count, 10);
         }
       }
 
@@ -246,7 +320,8 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
                 (SELECT COUNT(*) FROM material_files mf WHERE mf.material_id = m.id) as file_count
          FROM materials m
          LEFT JOIN users u ON m.created_by = u.id
-         WHERE m.organization_id = $1 AND m.event_id = $2
+         WHERE m.organization_id = $1
+           AND EXISTS (SELECT 1 FROM material_events me WHERE me.material_id = m.id AND me.event_id = $2)
          ORDER BY m.created_at DESC`,
         [orgId, eventId]
       );
@@ -268,12 +343,9 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
       const orgId = req.user.organization_id;
 
       const { rows: [material] } = await db.query(
-        `SELECT m.id, m.title, m.description, m.event_id, e.name as event_name,
-                m.jahrgang_id, j.name as jahrgang_name,
+        `SELECT m.id, m.title, m.description,
                 m.created_at, u.display_name as created_by_name
          FROM materials m
-         LEFT JOIN events e ON m.event_id = e.id
-         LEFT JOIN jahrgaenge j ON m.jahrgang_id = j.id
          LEFT JOIN users u ON m.created_by = u.id
          WHERE m.id = $1 AND m.organization_id = $2`,
         [req.params.id, orgId]
@@ -292,6 +364,28 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         [material.id]
       );
       material.tags = tags;
+
+      // Events laden (Many-to-Many)
+      const { rows: matEvents } = await db.query(
+        `SELECT e.id, e.name, e.event_date
+         FROM material_events me
+         JOIN events e ON me.event_id = e.id
+         WHERE me.material_id = $1
+         ORDER BY e.event_date DESC`,
+        [material.id]
+      );
+      material.events = matEvents;
+
+      // Jahrgaenge laden (Many-to-Many)
+      const { rows: matJahrgaenge } = await db.query(
+        `SELECT j.id, j.name
+         FROM material_jahrgaenge mj
+         JOIN jahrgaenge j ON mj.jahrgang_id = j.id
+         WHERE mj.material_id = $1
+         ORDER BY j.name`,
+        [material.id]
+      );
+      material.jahrgaenge = matJahrgaenge;
 
       // Dateien laden
       const { rows: files } = await db.query(
@@ -313,18 +407,40 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // POST / - Material erstellen
   router.post('/', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
-      const { title, description, event_id, jahrgang_id, tag_ids } = req.body;
+      const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: 'Titel ist erforderlich' });
       }
 
       const { rows: [material] } = await db.query(
-        `INSERT INTO materials (title, description, event_id, jahrgang_id, organization_id, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, title, description, event_id, jahrgang_id, created_at`,
-        [title.trim(), description || null, event_id || null, jahrgang_id || null, req.user.organization_id, req.user.id]
+        `INSERT INTO materials (title, description, organization_id, created_by)
+         VALUES ($1, $2, $3, $4)
+         RETURNING id, title, description, created_at`,
+        [title.trim(), description || null, req.user.organization_id, req.user.id]
       );
+
+      // Events zuordnen (Many-to-Many) - unterstuetzt event_ids Array oder legacy event_id
+      const resolvedEventIds = event_ids || (event_id ? [event_id] : []);
+      if (resolvedEventIds.length > 0) {
+        const eventValues = resolvedEventIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+        const eventParams = [material.id, ...resolvedEventIds];
+        await db.query(
+          `INSERT INTO material_events (material_id, event_id) VALUES ${eventValues}`,
+          eventParams
+        );
+      }
+
+      // Jahrgaenge zuordnen (Many-to-Many) - unterstuetzt jahrgang_ids Array oder legacy jahrgang_id
+      const resolvedJahrgangIds = jahrgang_ids || (jahrgang_id ? [jahrgang_id] : []);
+      if (resolvedJahrgangIds.length > 0) {
+        const jgValues = resolvedJahrgangIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+        const jgParams = [material.id, ...resolvedJahrgangIds];
+        await db.query(
+          `INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ${jgValues}`,
+          jgParams
+        );
+      }
 
       // Tags zuordnen
       if (tag_ids && tag_ids.length > 0) {
@@ -346,7 +462,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
   // PUT /:id - Material bearbeiten
   router.put('/:id', rbacVerifier, requireOrgAdmin, async (req, res) => {
     try {
-      const { title, description, event_id, jahrgang_id, tag_ids } = req.body;
+      const { title, description, event_id, event_ids, jahrgang_id, jahrgang_ids, tag_ids } = req.body;
       const orgId = req.user.organization_id;
       const materialId = req.params.id;
 
@@ -374,16 +490,6 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         params.push(description);
         paramIndex++;
       }
-      if (event_id !== undefined) {
-        updates.push(`event_id = $${paramIndex}`);
-        params.push(event_id || null);
-        paramIndex++;
-      }
-      if (jahrgang_id !== undefined) {
-        updates.push(`jahrgang_id = $${paramIndex}`);
-        params.push(jahrgang_id || null);
-        paramIndex++;
-      }
 
       if (updates.length > 0) {
         updates.push(`updated_at = NOW()`);
@@ -392,6 +498,34 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
           `UPDATE materials SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
           params
         );
+      }
+
+      // Events aktualisieren (DELETE + INSERT) - unterstuetzt event_ids Array oder legacy event_id
+      const resolvedEventIds = event_ids !== undefined ? event_ids : (event_id !== undefined ? (event_id ? [event_id] : []) : undefined);
+      if (resolvedEventIds !== undefined) {
+        await db.query('DELETE FROM material_events WHERE material_id = $1', [materialId]);
+        if (resolvedEventIds.length > 0) {
+          const eventValues = resolvedEventIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+          const eventParams = [materialId, ...resolvedEventIds];
+          await db.query(
+            `INSERT INTO material_events (material_id, event_id) VALUES ${eventValues}`,
+            eventParams
+          );
+        }
+      }
+
+      // Jahrgaenge aktualisieren (DELETE + INSERT) - unterstuetzt jahrgang_ids Array oder legacy jahrgang_id
+      const resolvedJahrgangIds = jahrgang_ids !== undefined ? jahrgang_ids : (jahrgang_id !== undefined ? (jahrgang_id ? [jahrgang_id] : []) : undefined);
+      if (resolvedJahrgangIds !== undefined) {
+        await db.query('DELETE FROM material_jahrgaenge WHERE material_id = $1', [materialId]);
+        if (resolvedJahrgangIds.length > 0) {
+          const jgValues = resolvedJahrgangIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+          const jgParams = [materialId, ...resolvedJahrgangIds];
+          await db.query(
+            `INSERT INTO material_jahrgaenge (material_id, jahrgang_id) VALUES ${jgValues}`,
+            jgParams
+          );
+        }
       }
 
       // Tags aktualisieren (DELETE + INSERT)

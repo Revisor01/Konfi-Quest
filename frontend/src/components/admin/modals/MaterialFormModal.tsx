@@ -16,12 +16,12 @@ import {
   IonTextarea,
   IonIcon,
   IonSpinner,
-  IonSelect,
-  IonSelectOption,
   IonList,
   IonListHeader,
   IonCard,
   IonCardContent,
+  IonAccordion,
+  IonAccordionGroup,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -56,6 +56,7 @@ interface MaterialFile {
 interface EventOption {
   id: number;
   name: string;
+  event_date?: string;
 }
 
 interface JahrgangOption {
@@ -69,8 +70,10 @@ interface Material {
   description?: string;
   event_id?: number;
   event_name?: string;
+  events?: { id: number; name: string }[];
   jahrgang_id?: number;
   jahrgang_name?: string;
+  jahrgaenge?: { id: number; name: string }[];
   files?: MaterialFile[];
   created_at: string;
 }
@@ -90,8 +93,12 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
 
   const [title, setTitle] = useState(material?.title || '');
   const [description, setDescription] = useState(material?.description || '');
-  const [eventId, setEventId] = useState<number | undefined>(material?.event_id);
-  const [jahrgangId, setJahrgangId] = useState<number | undefined>(material?.jahrgang_id);
+  const [eventIds, setEventIds] = useState<number[]>(
+    material?.events?.map(e => e.id) || (material?.event_id ? [material.event_id] : [])
+  );
+  const [jahrgangIds, setJahrgangIds] = useState<number[]>(
+    material?.jahrgaenge?.map(j => j.id) || (material?.jahrgang_id ? [material.jahrgang_id] : [])
+  );
   const [existingFiles, setExistingFiles] = useState<MaterialFile[]>(material?.files || []);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
@@ -248,8 +255,8 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
       const payload: any = {
         title: title.trim(),
         description: description.trim() || null,
-        event_id: eventId || null,
-        jahrgang_id: jahrgangId || null
+        event_ids: eventIds,
+        jahrgang_ids: jahrgangIds
       };
 
       if (material) {
@@ -301,6 +308,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         {/* Titel & Beschreibung */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
+            <div className="app-section-icon app-section-icon--material">
+              <IonIcon icon={documentIcon} />
+            </div>
             <IonLabel>Grunddaten</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
@@ -330,47 +340,122 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
           </IonCard>
         </IonList>
 
-        {/* Event & Jahrgang */}
+        {/* Events zuordnen */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
+            <div className="app-section-icon app-section-icon--material">
+              <IonIcon icon={documentIcon} />
+            </div>
             <IonLabel>Zuordnung</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
-              <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                <IonSelect
-                  label="Event"
-                  labelPlacement="stacked"
-                  value={eventId || 0}
-                  onIonChange={(e) => setEventId(e.detail.value === 0 ? undefined : e.detail.value)}
-                  placeholder="Kein Event"
-                  interface="alert"
-                >
-                  <IonSelectOption value={0}>Kein Event</IonSelectOption>
-                  {events
-                    .filter(ev => new Date((ev as any).event_date) >= new Date(new Date().toDateString()))
-                    .map(ev => (
-                    <IonSelectOption key={ev.id} value={ev.id}>
-                      {ev.name} ({new Date((ev as any).event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })})
-                    </IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
-              <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                <IonSelect
-                  label="Jahrgang"
-                  labelPlacement="stacked"
-                  value={jahrgangId || 0}
-                  onIonChange={(e) => setJahrgangId(e.detail.value === 0 ? undefined : e.detail.value)}
-                  placeholder="Kein Jahrgang"
-                  interface="alert"
-                >
-                  <IonSelectOption value={0}>Kein Jahrgang</IonSelectOption>
-                  {jahrgaenge.map(jg => (
-                    <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
-                  ))}
-                </IonSelect>
-              </IonItem>
+            <IonCardContent style={{ padding: '0' }}>
+              <IonAccordionGroup>
+                <IonAccordion value="events">
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                    <IonLabel>
+                      <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>
+                        Events
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
+                        {eventIds.length > 0
+                          ? `${eventIds.length} ${eventIds.length === 1 ? 'Event' : 'Events'} ausgewählt`
+                          : 'Keine Events zugeordnet'}
+                      </p>
+                    </IonLabel>
+                  </IonItem>
+                  <div slot="content" style={{ padding: '4px 16px 12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {events
+                        .filter(ev => new Date(ev.event_date || '') >= new Date(new Date().toDateString()) || eventIds.includes(ev.id))
+                        .map(ev => {
+                          const isSelected = eventIds.includes(ev.id);
+                          return (
+                            <div
+                              key={ev.id}
+                              className="app-list-item"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setEventIds(eventIds.filter(id => id !== ev.id));
+                                } else {
+                                  setEventIds([...eventIds, ev.id]);
+                                }
+                              }}
+                              style={{
+                                cursor: 'pointer',
+                                marginBottom: '0',
+                                borderLeftColor: isSelected ? '#d97706' : '#e5e7eb',
+                                backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                              }}
+                            >
+                              <div className="app-list-item__row">
+                                <div className="app-list-item__main">
+                                  <div className="app-list-item__content">
+                                    <div className="app-list-item__title">{ev.name}</div>
+                                    {ev.event_date && (
+                                      <div className="app-list-item__subtitle">
+                                        {new Date(ev.event_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </IonAccordion>
+
+                <IonAccordion value="jahrgaenge">
+                  <IonItem slot="header" lines="none" style={{ '--padding-start': '16px' }}>
+                    <IonLabel>
+                      <h3 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151', margin: '0 0 2px 0' }}>
+                        Jahrgänge
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0', fontWeight: '400' }}>
+                        {jahrgangIds.length > 0
+                          ? `${jahrgangIds.length} ${jahrgangIds.length === 1 ? 'Jahrgang' : 'Jahrgänge'} ausgewählt`
+                          : 'Keine Jahrgänge zugeordnet'}
+                      </p>
+                    </IonLabel>
+                  </IonItem>
+                  <div slot="content" style={{ padding: '4px 16px 12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {jahrgaenge.map(jg => {
+                        const isSelected = jahrgangIds.includes(jg.id);
+                        return (
+                          <div
+                            key={jg.id}
+                            className="app-list-item"
+                            onClick={() => {
+                              if (isSelected) {
+                                setJahrgangIds(jahrgangIds.filter(id => id !== jg.id));
+                              } else {
+                                setJahrgangIds([...jahrgangIds, jg.id]);
+                              }
+                            }}
+                            style={{
+                              cursor: 'pointer',
+                              marginBottom: '0',
+                              borderLeftColor: isSelected ? '#d97706' : '#e5e7eb',
+                              backgroundColor: isSelected ? 'rgba(217, 119, 6, 0.08)' : undefined
+                            }}
+                          >
+                            <div className="app-list-item__row">
+                              <div className="app-list-item__main">
+                                <div className="app-list-item__content">
+                                  <div className="app-list-item__title">{jg.name}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </IonAccordion>
+              </IonAccordionGroup>
             </IonCardContent>
           </IonCard>
         </IonList>
@@ -379,6 +464,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         {existingFiles.length > 0 && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
+              <div className="app-section-icon app-section-icon--material">
+                <IonIcon icon={attachOutline} />
+              </div>
               <IonLabel>Vorhandene Dateien</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
@@ -432,6 +520,9 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, onClose
         {/* Neue Dateien */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
+            <div className="app-section-icon app-section-icon--material">
+              <IonIcon icon={cloudUploadOutline} />
+            </div>
             <IonLabel>Dateien hinzufügen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">

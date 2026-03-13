@@ -1247,7 +1247,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
               <div className="app-section-icon app-section-icon--events">
                 <IonIcon icon={documentIcon} />
               </div>
-              <IonLabel>Material</IonLabel>
+              <IonLabel>Material ({eventMaterials.length})</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
