@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 Phase: 42 of 43 (Material)
 Current Plan: 3 of 3
 Status: Phase 42 complete (incl. gap closure)
-Last activity: 2026-03-13 - Completed quick task 4: Material UI-Fixes Admin, Teamer, Events, Chat
+Last activity: 2026-03-13 - Completed quick task 5: Chat-Dateien und Bilder in In-App FileViewer
 
 Progress: [██████████] 100%
 
@@ -100,9 +100,10 @@ None.
 | 2 | KonfiEventsPage.tsx TypeScript Interface um fehlende v1.7 Felder ergaenzen | 2026-03-09 | b090734 | [2-konfieventspage-tsx-typescript-interface](./quick/2-konfieventspage-tsx-typescript-interface/) |
 | 3 | LevelManagementModal Backdrop Fix - Route-Mapping admin-levels in ModalContext | 2026-03-13 | cf9e6b5 | [3-ui-fixes-levelmanagementmodal-backdrop-p](./quick/3-ui-fixes-levelmanagementmodal-backdrop-p/) |
 | 4 | Material UI-Fixes Admin, Teamer, Events, Chat (18 Punkte) | 2026-03-13 | 2e7361c | [4-material-ui-fixes-admin-teamer-events-ch](./quick/4-material-ui-fixes-admin-teamer-events-ch/) |
+| 5 | Chat-Dateien und Bilder in In-App FileViewer | 2026-03-13 | c7945e3 | [5-chat-dateien-bilder-in-app-fileviewer-st](./quick/5-chat-dateien-bilder-in-app-fileviewer-st/) |
 
 ## Session Continuity
 
-Last session: 2026-03-13T09:25:00Z
-Stopped at: Completed quick-4-PLAN.md
-Resume file: .planning/quick/4-material-ui-fixes-admin-teamer-events-ch/4-SUMMARY.md
+Last session: 2026-03-13T09:33:00Z
+Stopped at: Completed quick-5-PLAN.md
+Resume file: .planning/quick/5-chat-dateien-bilder-in-app-fileviewer-st/5-SUMMARY.md
