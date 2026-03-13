@@ -41,7 +41,14 @@ import {
   closeCircle,
   eyeOff,
   ribbon,
-  documentOutline
+  documentOutline,
+  calendarOutline,
+  timeOutline,
+  starOutline,
+  flashOutline,
+  giftOutline,
+  trophyOutline,
+  createOutline
 } from 'ionicons/icons';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
@@ -72,6 +79,7 @@ interface Konfi {
   activities_count?: number;
   role_name?: string;
   user_type?: string;
+  teamer_since?: string;
 }
 
 interface Activity {
@@ -106,6 +114,20 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
   const [targetRole, setTargetRole] = useState<string>('konfi');
   const isTeamer = targetRole === 'teamer';
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [teamerEvents, setTeamerEvents] = useState<Array<{
+    id: number;
+    name: string;
+    event_date: string;
+    location: string;
+    teamer_only: boolean;
+    teamer_needed: boolean;
+    booking_status: string;
+    booking_date: string;
+  }>>([]);
+  const [konfiHistory, setKonfiHistory] = useState<{
+    history: Array<{ id: number; title: string; points: number; category: string; date: string; source_type: string }>;
+    totals: { gottesdienst: number; gemeinde: number; total: number };
+  } | null>(null);
   const [certificates, setCertificates] = useState<Array<{
     id: number;
     certificate_type_id: number;
@@ -228,9 +250,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
       // Rolle setzen fuer bedingte Anzeige
       setTargetRole(konfiData.role_name || 'konfi');
 
-      // Zertifikate aus dem Detail-Response (nur fuer Teamer)
-      if (konfiData.role_name === 'teamer' && konfiData.certificates) {
-        setCertificates(konfiData.certificates);
+      // Teamer-Daten aus dem Detail-Response
+      if (konfiData.role_name === 'teamer') {
+        if (konfiData.certificates) setCertificates(konfiData.certificates);
+        if (konfiData.teamerEvents) setTeamerEvents(konfiData.teamerEvents);
+        if (konfiData.konfiHistory) setKonfiHistory(konfiData.konfiHistory);
       }
 
       // Zertifikat-Typen laden (fuer die Zuweisung)
@@ -650,13 +674,27 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           <div
             style={{
               textAlign: 'center',
-              marginBottom: '16px',
+              marginBottom: isTeamer ? '4px' : '16px',
               color: 'rgba(255, 255, 255, 0.8)',
               fontSize: '0.85rem'
             }}
           >
             {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - @{currentKonfi?.username}
           </div>
+
+          {/* Teamer: Aktiv seit */}
+          {isTeamer && currentKonfi?.teamer_since && (
+            <div
+              style={{
+                textAlign: 'center',
+                marginBottom: '16px',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: '0.8rem'
+              }}
+            >
+              Teamer:in seit {new Date(currentKonfi.teamer_since).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+            </div>
+          )}
 
           {/* Activity Rings - nur fuer Konfis */}
           {!isTeamer && (
@@ -672,28 +710,55 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             />
           )}
 
-          {/* Badge Count */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '16px'
-            }}
-          >
+          {/* Teamer Stats Chips */}
+          {isTeamer && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {[
+                { value: currentKonfi?.badgeCount || 0, label: 'Badges' },
+                { value: certificates.length, label: 'Zertifikate' },
+                { value: teamerEvents.length, label: 'Events' },
+                { value: activities.filter(a => !a.isPending).length, label: 'Aktivitäten' }
+              ].map(stat => (
+                <div
+                  key={stat.label}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    borderRadius: '10px',
+                    padding: '8px 12px',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ fontSize: '1.1rem', fontWeight: '700', color: 'white' }}>{stat.value}</div>
+                  <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.8)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label.toUpperCase()}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Badge Count - nur fuer Konfis (Teamer haben Stats Chips) */}
+          {!isTeamer && (
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.15)',
-                borderRadius: '12px',
-                padding: '8px 16px',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
+                justifyContent: 'center',
+                marginTop: '16px'
               }}
             >
-              <IonIcon icon={trophy} className="app-icon-color--badges" style={{ fontSize: '1.2rem' }} />
-              <span style={{ color: 'white', fontWeight: '600' }}>{currentKonfi?.badgeCount || 0} Badges</span>
+              <div
+                style={{
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  borderRadius: '12px',
+                  padding: '8px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <IonIcon icon={trophy} className="app-icon-color--badges" style={{ fontSize: '1.2rem' }} />
+                <span style={{ color: 'white', fontWeight: '600' }}>{currentKonfi?.badgeCount || 0} Badges</span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bonuspunkte - iOS26 Pattern - Orange als Hauptfarbe - nur fuer Konfis */}
@@ -982,6 +1047,74 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
           </IonList>
         )}
 
+        {/* Teamer Events - Rot als Hauptfarbe */}
+        {isTeamer && teamerEvents.length > 0 && (
+          <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--events">
+                <IonIcon icon={calendar} />
+              </div>
+              <IonLabel>Events ({teamerEvents.length})</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <IonList className="app-list-inner" lines="none">
+                  {teamerEvents.slice(0, 10).map((event, index) => {
+                    const isPast = new Date(event.event_date) < new Date();
+                    return (
+                      <IonItem
+                        key={event.id}
+                        className="app-item-transparent"
+                        detail={false}
+                        lines="none"
+                        style={{ marginBottom: index < Math.min(teamerEvents.length, 10) - 1 ? '8px' : '0' }}
+                      >
+                        <div
+                          className="app-list-item"
+                          style={{
+                            borderLeftColor: isPast ? '#9ca3af' : '#dc2626',
+                            opacity: isPast ? 0.7 : 1
+                          }}
+                        >
+                          {event.teamer_only && (
+                            <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6' }}>
+                              TEAM
+                            </div>
+                          )}
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div
+                                className="app-icon-circle"
+                                style={{ backgroundColor: isPast ? '#9ca3af' : '#dc2626' }}
+                              >
+                                <IonIcon icon={calendar} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title app-list-item__title--badge-space">
+                                  {event.name}
+                                </div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={calendarOutline} className="app-icon-color--events" />
+                                    {formatDate(event.event_date)}
+                                  </span>
+                                  {event.location && (
+                                    <span className="app-list-item__meta-item">{event.location}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </IonItem>
+                    );
+                  })}
+                </IonList>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Aktivitäten - iOS26 Pattern - Grün als Hauptfarbe */}
         <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
           <IonListHeader>
@@ -1201,6 +1334,148 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <IonIcon icon={add} slot="start" />
                   Zertifikat zuweisen
                 </IonButton>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Teamer: Aktiv-seit bearbeiten */}
+        {isTeamer && (
+          <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+            <IonListHeader>
+              <div className="app-section-icon" style={{ backgroundColor: '#5b21b6' }}>
+                <IonIcon icon={calendarOutline} />
+              </div>
+              <IonLabel>Teamer:in seit</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <IonItem lines="none" style={{ '--background': 'transparent', '--padding-start': '0' }}>
+                  <IonLabel position="stacked" style={{ fontSize: '0.85rem', color: 'var(--ion-color-medium)' }}>Aktiv seit</IonLabel>
+                  <input
+                    type="date"
+                    value={currentKonfi?.teamer_since ? new Date(currentKonfi.teamer_since).toISOString().split('T')[0] : ''}
+                    onChange={async (e) => {
+                      const newDate = e.target.value;
+                      if (!newDate) return;
+                      try {
+                        await api.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: newDate });
+                        setCurrentKonfi(prev => prev ? { ...prev, teamer_since: newDate } : prev);
+                        setSuccess('Aktiv-seit-Datum aktualisiert');
+                      } catch {
+                        setError('Fehler beim Aktualisieren');
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid var(--ion-color-light-shade)',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      background: 'var(--ion-background-color)',
+                      color: 'var(--ion-text-color)',
+                      marginTop: '4px'
+                    }}
+                  />
+                </IonItem>
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Konfi-Historie - nur fuer promoted Teamer */}
+        {isTeamer && konfiHistory && (
+          <IonList className="app-section-inset" inset={true} style={{ marginBottom: '32px' }}>
+            <IonListHeader>
+              <div className="app-section-icon app-section-icon--purple">
+                <IonIcon icon={timeOutline} />
+              </div>
+              <IonLabel>Konfi-Historie ({konfiHistory.totals.total} Punkte)</IonLabel>
+            </IonListHeader>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {/* Punkte-Übersicht */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                  {konfiHistory.totals.gottesdienst > 0 && (
+                    <div style={{
+                      flex: 1,
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#3b82f6' }}>{konfiHistory.totals.gottesdienst}</div>
+                      <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GOTTESDIENST</div>
+                    </div>
+                  )}
+                  {konfiHistory.totals.gemeinde > 0 && (
+                    <div style={{
+                      flex: 1,
+                      background: 'rgba(5, 150, 105, 0.1)',
+                      borderRadius: '10px',
+                      padding: '10px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#059669' }}>{konfiHistory.totals.gemeinde}</div>
+                      <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GEMEINDE</div>
+                    </div>
+                  )}
+                  <div style={{
+                    flex: 1,
+                    background: 'rgba(91, 33, 182, 0.1)',
+                    borderRadius: '10px',
+                    padding: '10px',
+                    textAlign: 'center'
+                  }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#5b21b6' }}>{konfiHistory.totals.total}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#6b7280', fontWeight: '600' }}>GESAMT</div>
+                  </div>
+                </div>
+
+                {/* Verlauf */}
+                {konfiHistory.history.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {konfiHistory.history.slice(0, 8).map((entry) => {
+                      const categoryColor = entry.category === 'gottesdienst' ? '#3b82f6' : '#059669';
+                      const entryIcon = entry.source_type === 'bonus' ? giftOutline
+                        : entry.source_type === 'event' ? calendarOutline
+                        : entry.category === 'gottesdienst' ? starOutline : flashOutline;
+                      return (
+                        <div
+                          key={`${entry.source_type}-${entry.id}`}
+                          className="app-list-item"
+                          style={{ borderLeftColor: categoryColor, position: 'relative', overflow: 'hidden' }}
+                        >
+                          <div className="app-corner-badge" style={{ backgroundColor: categoryColor }}>
+                            +{entry.points}P
+                          </div>
+                          <div className="app-list-item__row">
+                            <div className="app-list-item__main">
+                              <div className="app-icon-circle" style={{ backgroundColor: categoryColor }}>
+                                <IonIcon icon={entryIcon} />
+                              </div>
+                              <div className="app-list-item__content">
+                                <div className="app-list-item__title app-list-item__title--badge-space">{entry.title}</div>
+                                <div className="app-list-item__meta">
+                                  <span className="app-list-item__meta-item">{formatDate(entry.date)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {konfiHistory.history.length > 8 && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', margin: '8px 0 0' }}>
+                        + {konfiHistory.history.length - 8} weitere Einträge
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="app-empty-state">
+                    <p className="app-empty-state__text">Keine Konfi-Punkte vorhanden</p>
+                  </div>
+                )}
               </IonCardContent>
             </IonCard>
           </IonList>

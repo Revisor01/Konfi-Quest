@@ -36,6 +36,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           UNIQUE(user_id, certificate_type_id)
         )
       `);
+
+      // teamer_since Spalte auf users (fuer Teamer-Aktiv-seit)
+      await db.query(`
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS teamer_since DATE
+      `);
     } catch (err) {
       console.error('Certificate migration error:', err.message);
     }

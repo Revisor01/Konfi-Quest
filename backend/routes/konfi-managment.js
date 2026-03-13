@@ -93,14 +93,28 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
     router.get('/teamer', rbacVerifier, requireTeamer, async (req, res) => {
         try {
             const query = `
-                SELECT u.id, u.display_name as name, u.username,
-                       STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name
+                SELECT u.id, u.display_name as name, u.username, u.teamer_since,
+                       STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name,
+                       COALESCE(badge_counts.badge_count, 0)::int as badge_count,
+                       COALESCE(cert_counts.cert_count, 0)::int as cert_count
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
                 LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id
+                LEFT JOIN (
+                    SELECT user_id, COUNT(*) as badge_count
+                    FROM user_badges
+                    GROUP BY user_id
+                ) badge_counts ON u.id = badge_counts.user_id
+                LEFT JOIN (
+                    SELECT user_id, COUNT(*) as cert_count
+                    FROM user_certificates
+                    WHERE organization_id = $1
+                    GROUP BY user_id
+                ) cert_counts ON u.id = cert_counts.user_id
                 WHERE r.name = 'teamer' AND u.organization_id = $1
-                GROUP BY u.id, u.display_name, u.username
+                GROUP BY u.id, u.display_name, u.username, u.teamer_since,
+                         badge_counts.badge_count, cert_counts.cert_count
                 ORDER BY u.display_name
             `;
             const { rows } = await db.query(query, [req.user.organization_id]);
@@ -444,7 +458,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         
         try {
             const konfiQuery = `
-                SELECT u.*, kp.gottesdienst_points, kp.gemeinde_points,
+                SELECT u.*, u.teamer_since, kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
@@ -485,6 +499,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
 
             // Zertifikate fuer Teamer mitladen
             let certificates = [];
+            let teamerEvents = [];
             if (konfi.role_name === 'teamer') {
                 const certQuery = `
                     SELECT uc.id, uc.issued_date, uc.expiry_date, ct.name, ct.icon
@@ -495,6 +510,65 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 `;
                 const { rows: certRows } = await db.query(certQuery, [konfiId, req.user.organization_id]);
                 certificates = certRows;
+
+                // Events fuer Teamer: gebuchte Events mit Status
+                const eventsQuery = `
+                    SELECT e.id, e.name, e.event_date, e.location, e.teamer_only, e.teamer_needed,
+                           eb.status as booking_status, eb.booking_date
+                    FROM event_bookings eb
+                    JOIN events e ON eb.event_id = e.id
+                    WHERE eb.user_id = $1 AND e.organization_id = $2
+                    ORDER BY e.event_date DESC
+                `;
+                const { rows: eventRows } = await db.query(eventsQuery, [konfiId, req.user.organization_id]);
+                teamerEvents = eventRows;
+            }
+
+            // Konfi-Historie: Punkte-History fuer promoted Teamer
+            let konfiHistory = null;
+            if (konfi.role_name === 'teamer' && konfi.gottesdienst_points !== null) {
+                // Activities aus der Konfi-Zeit
+                const histActivities = `
+                    SELECT ka.id, a.name as title, a.points, a.type as category,
+                           ka.completed_date as date, 'activity' as source_type
+                    FROM user_activities ka
+                    JOIN activities a ON ka.activity_id = a.id
+                    WHERE ka.user_id = $1 AND ka.organization_id = $2
+                    ORDER BY ka.completed_date DESC
+                `;
+                const { rows: histAct } = await db.query(histActivities, [konfiId, req.user.organization_id]);
+
+                const histBonus = `
+                    SELECT id, description as title, points, type as category,
+                           completed_date as date, 'bonus' as source_type
+                    FROM bonus_points
+                    WHERE konfi_id = $1 AND organization_id = $2
+                    ORDER BY completed_date DESC
+                `;
+                const { rows: histBon } = await db.query(histBonus, [konfiId, req.user.organization_id]);
+
+                const histEvents = `
+                    SELECT ep.id, e.name as title, ep.points, ep.point_type as category,
+                           ep.awarded_date as date, 'event' as source_type
+                    FROM event_points ep
+                    JOIN events e ON ep.event_id = e.id
+                    WHERE ep.konfi_id = $1 AND ep.organization_id = $2
+                    ORDER BY ep.awarded_date DESC
+                `;
+                const { rows: histEvt } = await db.query(histEvents, [konfiId, req.user.organization_id]);
+
+                const allHistory = [...histAct, ...histBon, ...histEvt].sort((a, b) =>
+                    new Date(b.date || 0) - new Date(a.date || 0)
+                );
+
+                konfiHistory = {
+                    history: allHistory,
+                    totals: {
+                        gottesdienst: konfi.gottesdienst_points || 0,
+                        gemeinde: konfi.gemeinde_points || 0,
+                        total: (konfi.gottesdienst_points || 0) + (konfi.gemeinde_points || 0)
+                    }
+                };
             }
 
             res.json({
@@ -502,7 +576,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
                 badgeCount: badgeResult ? badgeResult.badgeCount : 0,
-                ...(konfi.role_name === 'teamer' ? { certificates } : {})
+                ...(konfi.role_name === 'teamer' ? { certificates, teamerEvents, konfiHistory } : {})
             });
 
         } catch (err) {
@@ -839,6 +913,27 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
         }
     });
 
+    // PUT teamer_since - Aktiv-seit-Datum aendern
+    router.put('/:id/teamer-since', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
+        try {
+            const { teamer_since } = req.body;
+            if (!teamer_since) {
+                return res.status(400).json({ error: 'teamer_since ist erforderlich' });
+            }
+            const result = await db.query(
+                'UPDATE users SET teamer_since = $1 WHERE id = $2 AND organization_id = $3 RETURNING teamer_since',
+                [teamer_since, req.params.id, req.user.organization_id]
+            );
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'User nicht gefunden' });
+            }
+            res.json({ teamer_since: result.rows[0].teamer_since });
+        } catch (err) {
+            console.error('Database error in PUT /konfis/:id/teamer-since:', err);
+            res.status(500).json({ error: 'Datenbankfehler' });
+        }
+    });
+
     // POST promote konfi to teamer
     router.post('/:id/promote-teamer', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const konfiId = parseInt(req.params.id);
@@ -882,8 +977,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
                 return res.status(500).json({ error: 'Teamer-Rolle nicht gefunden' });
             }
 
-            // 3. Rolle aendern
-            await client.query('UPDATE users SET role_id = $1 WHERE id = $2', [teamerRole.id, konfiId]);
+            // 3. Rolle aendern + teamer_since setzen
+            await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
 
             // 4. Event-Buchungen loeschen
             await client.query('DELETE FROM event_bookings WHERE user_id = $1', [konfiId]);

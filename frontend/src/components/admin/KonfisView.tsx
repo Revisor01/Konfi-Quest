@@ -26,7 +26,8 @@ import {
   filterOutline,
   search,
   calendarOutline,
-  ribbon
+  ribbon,
+  documentOutline
 } from 'ionicons/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
@@ -297,8 +298,18 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">
                             <IonIcon icon={ribbonOutline} style={{ color: '#5b21b6' }} />
-                            {teamer.badge_count || teamer.badgeCount || 0} Badges
+                            {teamer.badge_count || 0} Badges
                           </span>
+                          <span className="app-list-item__meta-item">
+                            <IonIcon icon={documentOutline} style={{ color: '#059669' }} />
+                            {teamer.cert_count || 0} Zertifikate
+                          </span>
+                          {teamer.teamer_since && (
+                            <span className="app-list-item__meta-item">
+                              <IonIcon icon={calendarOutline} style={{ color: '#6b7280' }} />
+                              seit {new Date(teamer.teamer_since).getFullYear()}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
