@@ -70,7 +70,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
                 END as registration_status,
                 CASE WHEN eb_user.status = 'confirmed' THEN true ELSE false END as is_registered,
                 eb_user.status as booking_status,
-                eb_user.attendance_status
+                eb_user.attendance_status,
+                (SELECT COUNT(*) FROM material_events me WHERE me.event_id = e.id) as material_count
         FROM events e
         LEFT JOIN event_bookings eb ON e.id = eb.event_id
         LEFT JOIN users u_book ON eb.user_id = u_book.id
@@ -149,6 +150,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
           jahrgaenge: jahrgaenge,
           waitlist_count: parseInt(row.waitlist_count, 10) || 0,
           teamer_count: parseInt(row.teamer_count, 10) || 0,
+          material_count: parseInt(row.material_count, 10) || 0,
           pending_bookings_count: unprocessedCount > 0 ? unprocessedCount : undefined
         };
       });

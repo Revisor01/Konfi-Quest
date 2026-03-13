@@ -26,7 +26,8 @@ import {
   calendarOutline,
   lockOpenOutline,
   shieldCheckmark,
-  bagHandle
+  bagHandle,
+  attachOutline
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { filterBySearchTerm } from '../../utils/helpers';
@@ -68,6 +69,7 @@ interface Event {
   teamer_needed?: boolean;
   teamer_only?: boolean;
   jahrgang_names?: string;
+  material_count?: number;
 }
 
 interface EventsViewProps {
@@ -406,6 +408,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                               <span className="app-list-item__meta-item">
                                 <IonIcon icon={bagHandle} style={{ color: shouldGrayOut ? '#999' : '#8b5cf6' }} />
                                 {event.bring_items}
+                              </span>
+                            </div>
+                          )}
+                          {/* Zeile 6: Material */}
+                          {(event.material_count || 0) > 0 && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={attachOutline} style={{ color: shouldGrayOut ? '#999' : '#d97706' }} />
+                                {event.material_count} {event.material_count === 1 ? 'Material' : 'Materialien'}
                               </span>
                             </div>
                           )}

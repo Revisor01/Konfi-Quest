@@ -330,6 +330,12 @@ ion-item.app-list-item:last-child {
   font-size: 0.8rem;
 }
 
+/* IonListHeader in inset IonList: Einrueckung reduzieren */
+ion-list[inset] ion-list-header {
+  --padding-start: 0;
+  padding-inline-start: 16px;
+}
+
 /* === Info Rows === */
 /* App Info Row - fuer Info-Zeilen mit Icon */
 .app-info-row {

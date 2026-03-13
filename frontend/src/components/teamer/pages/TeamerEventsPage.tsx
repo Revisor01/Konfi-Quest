@@ -87,6 +87,7 @@ interface Event {
   teamer_needed?: boolean;
   teamer_only?: boolean;
   teamer_count?: number;
+  material_count?: number;
 }
 
 const TeamerEventsPage: React.FC = () => {
@@ -566,7 +567,7 @@ const TeamerEventsPage: React.FC = () => {
                 <div className="app-section-icon app-section-icon--events">
                   <IonIcon icon={documentIcon} />
                 </div>
-                <IonLabel>Material</IonLabel>
+                <IonLabel>Material ({eventMaterials.length})</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
@@ -888,6 +889,15 @@ const TeamerEventsPage: React.FC = () => {
                                   <span className="app-list-item__meta-item">
                                     <IonIcon icon={bagHandle} style={{ color: '#8b5cf6' }} />
                                     {event.bring_items}
+                                  </span>
+                                </div>
+                              )}
+                              {/* Material */}
+                              {(event.material_count || 0) > 0 && (
+                                <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                                  <span className="app-list-item__meta-item">
+                                    <IonIcon icon={attachOutline} style={{ color: '#d97706' }} />
+                                    {event.material_count} {event.material_count === 1 ? 'Material' : 'Materialien'}
                                   </span>
                                 </div>
                               )}
