@@ -754,15 +754,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
 
   const handleImageOrFileClick = async (filePath: string) => {
     const fileName = filePath.split('/').pop() || 'file';
-    if (fileName.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-      await openImageWithFileOpener(filePath);
-    } else if (fileName.match(/\.(pdf|doc|docx|txt|xls|xlsx|ppt|pptx)$/i)) {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      const response = await api.get(`/chat/files/${filePath}`, {
+        responseType: 'blob'
+      });
+      const blob = response.data;
+      const mime = response.headers?.['content-type'] || 'application/octet-stream';
+
+      // Nativer Pfad versuchen
       try {
-        await Haptics.impact({ style: ImpactStyle.Medium });
-        const response = await api.get(`/chat/files/${filePath}`, {
-          responseType: 'blob'
-        });
-        const blob = response.data;
         const base64Data = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -771,38 +772,24 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           };
           reader.readAsDataURL(blob);
         });
-        const path = `temp/${fileName}`;
-        await Filesystem.writeFile({
-          path,
-          data: base64Data,
-          directory: Directory.Documents,
-          recursive: true
-        });
-        const fileUri = await Filesystem.getUri({
-          directory: Directory.Documents,
-          path
-        });
-        await FileViewer.openDocumentFromLocalPath({
-          path: fileUri.uri
-        });
-      } catch (viewerError) {
-        console.warn('Native viewer failed, using in-app viewer:', viewerError);
+        const ext = fileName.split('.').pop() || '';
+        const path = `temp/chat_${Date.now()}.${ext}`;
         try {
-          const fallbackResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-          const mime = fallbackResponse.headers?.['content-type'] || 'application/octet-stream';
-          openInAppViewer(fallbackResponse.data, fileName, mime);
-        } catch {
-          setError('Fehler beim Öffnen der Datei');
+          await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
+        } catch { /* existiert bereits */ }
+        await Filesystem.writeFile({ path, data: base64Data, directory: Directory.Documents, recursive: true });
+        const fileUri = await Filesystem.getUri({ directory: Directory.Documents, path });
+        if (mime.startsWith('image/')) {
+          await FileOpener.open({ filePath: fileUri.uri, contentType: mime });
+        } else {
+          await FileViewer.openDocumentFromLocalPath({ path: fileUri.uri });
         }
+      } catch (nativeError) {
+        console.warn('Native viewer failed, using in-app viewer:', nativeError);
+        openInAppViewer(blob, fileName, mime);
       }
-    } else {
-      try {
-        const fileResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
-        const mime = fileResponse.headers?.['content-type'] || 'application/octet-stream';
-        openInAppViewer(fileResponse.data, fileName, mime);
-      } catch {
-        setError('Fehler beim Öffnen der Datei');
-      }
+    } catch {
+      setError('Fehler beim Öffnen der Datei');
     }
   };
 
