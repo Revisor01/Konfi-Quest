@@ -633,10 +633,9 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     
     try {
       if (selectedMessage.file_path) {
-        // For files, share the actual file natively
-        const fileUrl = `${api.defaults.baseURL}/chat/files/${selectedMessage.file_path}`;
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
+        // For files, share the actual file natively (with auth token)
+        const response = await api.get(`/chat/files/${selectedMessage.file_path}`, { responseType: 'blob' });
+        const blob = response.data;
         const fileName = selectedMessage.file_name || 'file';
         
         // Write to Documents directory for sharing
@@ -760,12 +759,24 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
         });
       } catch (viewerError) {
         console.warn('Native viewer failed, using fallback:', viewerError);
-        const fileUrl = `${api.defaults.baseURL}/chat/files/${filePath}`;
-        window.open(fileUrl, '_blank');
+        try {
+          const fallbackResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
+          const blobUrl = URL.createObjectURL(new Blob([fallbackResponse.data], { type: 'application/octet-stream' }));
+          window.open(blobUrl, '_blank');
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        } catch {
+          setError('Fehler beim Öffnen der Datei');
+        }
       }
     } else {
-      const fileUrl = `${api.defaults.baseURL}/chat/files/${filePath}`;
-      window.open(fileUrl, '_blank');
+      try {
+        const fileResponse = await api.get(`/chat/files/${filePath}`, { responseType: 'blob' });
+        const blobUrl = URL.createObjectURL(new Blob([fileResponse.data], { type: 'application/octet-stream' }));
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch {
+        setError('Fehler beim Öffnen der Datei');
+      }
     }
   };
 

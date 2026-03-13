@@ -21,8 +21,8 @@ import {
   IonListHeader,
   IonItemGroup,
   IonLabel,
-  IonSelect,
-  IonSelectOption,
+  IonSegment,
+  IonSegmentButton,
   useIonModal,
   useIonAlert
 } from '@ionic/react';
@@ -325,7 +325,7 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           ]}
         />
 
-        {/* Suche & Filter - iOS26 Pattern wie im Modal */}
+        {/* Suche & Filter */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
             <div className="app-section-icon app-section-icon--chat">
@@ -334,7 +334,6 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             <IonLabel>Suche & Filter</IonLabel>
           </IonListHeader>
           <IonItemGroup>
-            {/* Suchfeld */}
             <IonItem>
               <IonIcon
                 icon={search}
@@ -350,28 +349,18 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
                 placeholder="Chaträume durchsuchen..."
               />
             </IonItem>
-            {/* Filter - Icon + Select linksbündig */}
-            <IonItem>
-              <IonIcon
-                icon={chatbubblesOutline}
-                slot="start"
-                style={{ color: '#8e8e93', fontSize: '1rem' }}
-              />
-              <IonSelect
-                value={filterType}
-                onIonChange={(e) => setFilterType(e.detail.value!)}
-                placeholder="Alle Chats"
-                interface="popover"
-                style={{ width: '100%' }}
-              >
-                <IonSelectOption value="alle">Alle Chats</IonSelectOption>
-                <IonSelectOption value="direkt">Direktnachricht</IonSelectOption>
-                <IonSelectOption value="gruppe">Gruppenchat</IonSelectOption>
-                <IonSelectOption value="jahrgang">Jahrgangschat</IonSelectOption>
-              </IonSelect>
-            </IonItem>
           </IonItemGroup>
         </IonList>
+
+        {/* Filter-Tabs */}
+        <div className="app-segment-wrapper">
+          <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
+            <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="direkt"><IonLabel>Direkt</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="gruppe"><IonLabel>Gruppe</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="jahrgang"><IonLabel>Jahrgang</IonLabel></IonSegmentButton>
+          </IonSegment>
+        </div>
 
         {/* Chat Rooms Liste - Karten-Design mit farbigem Rand + Swipe */}
         <IonList inset={true} style={{ margin: '16px' }}>
