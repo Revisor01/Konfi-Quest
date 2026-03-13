@@ -47,6 +47,7 @@ import {
   attachOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
+import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { SectionHeader, ListSection } from '../../shared';
@@ -90,6 +91,7 @@ interface Event {
 
 const TeamerEventsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
+  const { presentingElement } = useModalPage('teamer-events');
   const routerLocation = useLocation<{ selectedEventId?: number }>();
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -549,7 +551,7 @@ const TeamerEventsPage: React.FC = () => {
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent className="app-card-content">
-                  <p className="app-info-row__sublabel">
+                  <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#374151', whiteSpace: 'pre-wrap', margin: 0 }}>
                     {selectedEvent.description}
                   </p>
                 </IonCardContent>
@@ -561,7 +563,7 @@ const TeamerEventsPage: React.FC = () => {
           {eventMaterials.length > 0 && (
             <IonList className="app-section-inset" inset={true}>
               <IonListHeader>
-                <div className="app-section-icon" style={{ backgroundColor: 'rgba(217, 119, 6, 0.15)', color: '#d97706' }}>
+                <div className="app-section-icon app-section-icon--events">
                   <IonIcon icon={documentIcon} />
                 </div>
                 <IonLabel>Material</IonLabel>
@@ -579,7 +581,7 @@ const TeamerEventsPage: React.FC = () => {
                       }}
                       onClick={() => {
                         setSelectedMaterialId(mat.id);
-                        presentMaterialModal();
+                        presentMaterialModal({ presentingElement: presentingElement });
                       }}
                     >
                       <div className="app-list-item__row">

@@ -216,9 +216,9 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
             <IonList inset={true} className="app-segment-wrapper">
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={informationCircleOutline} />
+                  <IonIcon icon={calendarOutline} />
                 </div>
-                <IonLabel>Informationen</IonLabel>
+                <IonLabel>Details</IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
                 <IonCardContent>

@@ -16,17 +16,20 @@ import {
   IonCard,
   IonCardContent,
   IonItem,
+  IonItemGroup,
   useIonModal
 } from '@ionic/react';
 import {
   document as documentIcon,
   documentOutline,
   attachOutline,
-  calendarOutline
+  calendarOutline,
+  filterOutline
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { SectionHeader } from '../../shared';
 import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import TeamerMaterialDetailPage from './TeamerMaterialDetailPage';
@@ -132,45 +135,60 @@ const TeamerMaterialPage: React.FC = () => {
           <LoadingSpinner message="Materialien werden geladen..." />
         ) : (
           <>
-            {/* Jahrgang-Filter Chips */}
-            {jahrgaenge.length > 0 && (
-              <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
-                <IonChip
-                  onClick={() => setActiveJahrgangId(undefined)}
-                  style={{
-                    backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
-                    color: !activeJahrgangId ? 'white' : '#d97706',
-                    border: '1px solid #d97706'
-                  }}
-                >
-                  <IonLabel>Alle</IonLabel>
-                </IonChip>
-                {jahrgaenge.map(jg => (
-                  <IonChip
-                    key={jg.id}
-                    onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
-                    style={{
-                      backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
-                      color: activeJahrgangId === jg.id ? 'white' : '#d97706',
-                      border: '1px solid #d97706'
-                    }}
-                  >
-                    <IonLabel>{jg.name}</IonLabel>
-                  </IonChip>
-                ))}
-              </div>
-            )}
+            <SectionHeader
+              title="Material"
+              subtitle="Dokumente und Dateien"
+              icon={documentIcon}
+              colors={{ primary: '#d97706', secondary: '#b45309' }}
+              stats={[{ value: materials.length, label: 'Materialien' }]}
+            />
 
-            {/* Suchleiste */}
-            <div style={{ padding: '0 16px' }}>
-              <IonSearchbar
-                value={search}
-                onIonInput={(e) => setSearch(e.detail.value || '')}
-                placeholder="Material durchsuchen..."
-                debounce={300}
-              />
-            </div>
+            {/* Suche & Filter */}
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon app-section-icon--material">
+                  <IonIcon icon={filterOutline} />
+                </div>
+                <IonLabel>Suche & Filter</IonLabel>
+              </IonListHeader>
+              <IonItemGroup>
+                <IonSearchbar
+                  value={search}
+                  onIonInput={(e) => setSearch(e.detail.value || '')}
+                  placeholder="Material durchsuchen..."
+                  debounce={300}
+                />
+                {/* Jahrgang-Filter Chips */}
+                {jahrgaenge.length > 0 && (
+                  <div style={{ padding: '0 16px 8px', overflowX: 'auto', whiteSpace: 'nowrap', WebkitOverflowScrolling: 'touch', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '12px', color: '#6c757d', flexShrink: 0 }}>Jahrgang:</span>
+                    <IonChip
+                      onClick={() => setActiveJahrgangId(undefined)}
+                      style={{
+                        backgroundColor: !activeJahrgangId ? '#d97706' : 'transparent',
+                        color: !activeJahrgangId ? 'white' : '#d97706',
+                        border: '1px solid #d97706'
+                      }}
+                    >
+                      <IonLabel>Alle</IonLabel>
+                    </IonChip>
+                    {jahrgaenge.map(jg => (
+                      <IonChip
+                        key={jg.id}
+                        onClick={() => setActiveJahrgangId(activeJahrgangId === jg.id ? undefined : jg.id)}
+                        style={{
+                          backgroundColor: activeJahrgangId === jg.id ? '#d97706' : 'transparent',
+                          color: activeJahrgangId === jg.id ? 'white' : '#d97706',
+                          border: '1px solid #d97706'
+                        }}
+                      >
+                        <IonLabel>{jg.name}</IonLabel>
+                      </IonChip>
+                    ))}
+                  </div>
+                )}
+              </IonItemGroup>
+            </IonList>
 
             {/* Material-Liste */}
             {materials.length === 0 ? (
@@ -234,7 +252,7 @@ const TeamerMaterialPage: React.FC = () => {
                                   fontSize: '0.65rem',
                                   fontWeight: '700',
                                   padding: '4px 8px',
-                                  borderRadius: '0 0 8px 8px'
+                                  borderRadius: mat.jahrgang_name ? '0 0 0 8px' : '0 0 8px 8px'
                                 }}>
                                   {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
                                 </div>
@@ -242,7 +260,14 @@ const TeamerMaterialPage: React.FC = () => {
                               {mat.jahrgang_name && (
                                 <>
                                   {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
-                                  <div className="app-corner-badge" style={{ backgroundColor: '#5b21b6', position: 'static' }}>
+                                  <div style={{
+                                    backgroundColor: '#5b21b6',
+                                    color: 'white',
+                                    fontSize: '0.65rem',
+                                    fontWeight: '700',
+                                    padding: '4px 8px',
+                                    borderRadius: mat.event_name ? '0 0 8px 0' : '0 0 8px 8px'
+                                  }}>
                                     {mat.jahrgang_name}
                                   </div>
                                 </>
@@ -284,7 +309,7 @@ const TeamerMaterialPage: React.FC = () => {
                                     </span>
                                   )}
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendarOutline} style={{ color: '#6c757d' }} />
+                                    <IonIcon icon={calendarOutline} style={{ color: '#dc2626' }} />
                                     {formatDate(mat.created_at)}
                                   </span>
                                 </div>
