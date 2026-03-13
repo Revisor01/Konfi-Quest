@@ -23,8 +23,8 @@ import {
   document as documentIcon,
   documentOutline,
   attachOutline,
-  calendarOutline,
-  filterOutline
+  calendar,
+  filter
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -140,14 +140,17 @@ const TeamerMaterialPage: React.FC = () => {
               subtitle="Dokumente und Dateien"
               icon={documentIcon}
               colors={{ primary: '#d97706', secondary: '#b45309' }}
-              stats={[{ value: materials.length, label: 'Materialien' }]}
+              stats={[
+                { value: materials.length, label: 'Materialien' },
+                { value: materials.reduce((sum, m) => sum + (m.file_count || 0), 0), label: 'Dateien' }
+              ]}
             />
 
             {/* Suche & Filter */}
-            <IonList inset={true} style={{ margin: '16px' }}>
+            <IonList inset={true} style={{ margin: '0 16px 16px' }}>
               <IonListHeader>
                 <div className="app-section-icon app-section-icon--material">
-                  <IonIcon icon={filterOutline} />
+                  <IonIcon icon={filter} />
                 </div>
                 <IonLabel>Suche & Filter</IonLabel>
               </IonListHeader>
@@ -246,31 +249,28 @@ const TeamerMaterialPage: React.FC = () => {
                               zIndex: 10
                             }}>
                               {mat.event_name && (
-                                <div style={{
-                                  backgroundColor: '#dc2626',
-                                  color: 'white',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '700',
-                                  padding: '4px 8px',
-                                  borderRadius: mat.jahrgang_name ? '0 0 0 8px' : '0 0 8px 8px'
-                                }}>
-                                  {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
-                                </div>
-                              )}
-                              {mat.jahrgang_name && (
                                 <>
-                                  {mat.event_name && <div style={{ width: '2px', background: 'white' }} />}
                                   <div style={{
-                                    backgroundColor: '#5b21b6',
+                                    backgroundColor: '#dc2626',
                                     color: 'white',
                                     fontSize: '0.65rem',
-                                    fontWeight: '700',
+                                    fontWeight: '600',
                                     padding: '4px 8px',
-                                    borderRadius: mat.event_name ? '0 0 8px 0' : '0 0 8px 8px'
+                                    borderRadius: '0 0 8px 8px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.3px'
                                   }}>
-                                    {mat.jahrgang_name}
+                                    {mat.event_name.length > 15 ? mat.event_name.substring(0, 15) + '...' : mat.event_name}
                                   </div>
+                                  {mat.jahrgang_name && (
+                                    <div style={{ width: '2px', background: 'white' }} />
+                                  )}
                                 </>
+                              )}
+                              {mat.jahrgang_name && (
+                                <div className="app-corner-badge app-corner-badge--purple" style={{ position: 'static' }}>
+                                  {mat.jahrgang_name}
+                                </div>
                               )}
                             </div>
                           )}
@@ -309,7 +309,7 @@ const TeamerMaterialPage: React.FC = () => {
                                     </span>
                                   )}
                                   <span className="app-list-item__meta-item">
-                                    <IonIcon icon={calendarOutline} style={{ color: '#dc2626' }} />
+                                    <IonIcon icon={calendar} style={{ color: '#dc2626' }} />
                                     {formatDate(mat.created_at)}
                                   </span>
                                 </div>
