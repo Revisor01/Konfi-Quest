@@ -179,7 +179,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         icon={viewMode === 'teamer' ? ribbon : people}
         preset="konfis"
         stats={viewMode === 'teamer' ? [
-          { value: teamers.length, label: 'Teamer:innen' },
+          { value: teamers.length, label: 'Team' },
           { value: teamers.reduce((sum, t) => sum + (t.cert_count || 0), 0), label: 'Zertifikate' },
           { value: teamers.reduce((sum, t) => sum + (t.badge_count || 0), 0), label: 'Badges' }
         ] : [
@@ -193,7 +193,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       <IonSegment
         value={viewMode}
         onIonChange={(e) => setViewMode(e.detail.value as 'konfis' | 'teamer')}
-        style={{ margin: '0 16px 8px' }}
+        style={{ margin: '0 16px 8px', maxWidth: 'calc(100% - 32px)' }}
       >
         <IonSegmentButton value="konfis">
           <IonLabel>Konfis</IonLabel>
@@ -263,15 +263,15 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         <ListSection
           icon={ribbon}
           title="Teamer:innen"
-          count={filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).length}
+          count={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length}
           iconColorClass="primary"
-          isEmpty={filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).length === 0}
+          isEmpty={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length === 0}
           emptyIcon={ribbon}
           emptyTitle="Keine Teamer:innen gefunden"
           emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch keine Teamer:innen vorhanden'}
           emptyIconColor="#5b21b6"
         >
-          {filterBySearchTerm(teamers, searchTerm, ['display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
+          {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer: any, index: number, arr: any[]) => (
             <IonItemSliding key={teamer.id} style={{ marginBottom: index < arr.length - 1 ? '8px' : '0' }}>
               <IonItem
                 button
