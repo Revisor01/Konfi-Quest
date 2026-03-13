@@ -107,7 +107,7 @@ interface Participant {
   jahrgang_name?: string;
   role_name?: string;
   created_at: string;
-  status?: 'confirmed' | 'pending' | 'opted_out';
+  status?: 'confirmed' | 'waitlist' | 'pending' | 'opted_out';
   attendance_status?: 'present' | 'absent' | null;
   timeslot_start_time?: string;
   timeslot_end_time?: string;
