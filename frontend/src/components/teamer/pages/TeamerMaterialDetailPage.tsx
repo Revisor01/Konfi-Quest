@@ -184,7 +184,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
 
   return (
     <IonPage ref={pageRef}>
-      <IonHeader translucent={true}>
+      <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">
             <IonButton className="app-modal-close-btn" onClick={onClose}>
@@ -196,11 +196,6 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">{material?.title || 'Material'}</IonTitle>
-          </IonToolbar>
-        </IonHeader>
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await loadMaterial();
