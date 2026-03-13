@@ -95,7 +95,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer({ presentingElement: pageRef.current || undefined });
+    presentFileViewer();
   }, [presentFileViewer]);
 
   useEffect(() => {

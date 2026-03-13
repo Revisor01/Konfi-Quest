@@ -114,8 +114,8 @@ const TeamerMaterialPage: React.FC = () => {
   const openInAppViewer = useCallback((blob: Blob, fileName: string, mimeType: string) => {
     const url = URL.createObjectURL(new Blob([blob], { type: mimeType }));
     viewerDataRef.current = { blobUrl: url, fileName, mimeType };
-    presentFileViewer({ presentingElement: presentingElement || undefined });
-  }, [presentFileViewer, presentingElement]);
+    presentFileViewer();
+  }, [presentFileViewer]);
 
   // Jahrgaenge einmalig laden
   useEffect(() => {
