@@ -683,7 +683,7 @@ const TeamerEventsPage: React.FC = () => {
 
   // Events-Liste
   return (
-    <IonPage>
+    <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Events</IonTitle>
