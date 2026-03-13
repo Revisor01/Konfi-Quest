@@ -91,7 +91,7 @@ interface Event {
 
 const TeamerEventsPage: React.FC = () => {
   const { setSuccess, setError } = useApp();
-  const { presentingElement } = useModalPage('teamer-events');
+  const { pageRef, presentingElement } = useModalPage('teamer-events');
   const routerLocation = useLocation<{ selectedEventId?: number }>();
 
   const [events, setEvents] = useState<Event[]>([]);
@@ -368,7 +368,7 @@ const TeamerEventsPage: React.FC = () => {
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
 
     return (
-      <IonPage>
+      <IonPage ref={pageRef}>
         <IonHeader translucent={true}>
           <IonToolbar>
             <IonButtons slot="start">
@@ -581,7 +581,7 @@ const TeamerEventsPage: React.FC = () => {
                       }}
                       onClick={() => {
                         materialIdRef.current = mat.id;
-                        presentMaterialModal({ presentingElement: presentingElement });
+                        presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
                       }}
                     >
                       <div className="app-list-item__row">
