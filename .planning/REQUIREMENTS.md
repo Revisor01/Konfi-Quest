@@ -179,11 +179,45 @@ Deferred. Nicht in aktuellem Roadmap.
 - Mapped to phases: 32
 - Unmapped: 0
 
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PUSH-01 | Phase 44 | Pending |
+| EVT-v19-01 | Phase 45 | Pending |
+| EVT-v19-02 | Phase 45 | Pending |
+| EVT-v19-03 | Phase 45 | Pending |
+| EVT-v19-04 | Phase 45 | Pending |
+| EVT-v19-05 | Phase 46 | Pending |
+| EVT-v19-06 | Phase 46 | Pending |
+| EVT-v19-07 | Phase 46 | Pending |
+| EVT-v19-08 | Phase 45 | Pending |
+| EVT-v19-09 | Phase 45 | Pending |
+| EVT-v19-10 | Phase 46 | Pending |
+| EVT-v19-11 | Phase 46 | Pending |
+| EVT-v19-12 | Phase 46 | Pending |
+| PKT-v19-01 | Phase 47 | Pending |
+| PKT-v19-02 | Phase 47 | Pending |
+| PKT-v19-03 | Phase 47 | Pending |
+| PKT-v19-04 | Phase 47 | Pending |
+| UI-01 | Phase 50 | Pending |
+| UI-02 | Phase 50 | Pending |
+| UI-03 | Phase 50 | Pending |
+| UI-04 | Phase 50 | Pending |
+| UI-05 | Phase 49 | Pending |
+| UI-06 | Phase 49 | Pending |
+| UI-07 | Phase 49 | Pending |
+| UI-08 | Phase 50 | Pending |
+| ADM-01 | Phase 48 | Pending |
+| ADM-02 | Phase 48 | Pending |
+| ADM-03 | Phase 48 | Pending |
+| ADM-04 | Phase 48 | Pending |
+| ADM-05 | Phase 48 | Pending |
+| TMR-01 | Phase 51 | Pending |
+
 **Coverage v1.9:**
 - v1.9 requirements: 30 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 30
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-09*
-*Last updated: 2026-03-13 after v1.9 requirements definition*
+*Last updated: 2026-03-13 after v1.9 roadmap creation*

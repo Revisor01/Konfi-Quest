@@ -10,7 +10,8 @@
 - Shipped **v1.5 Push-Notifications** - Phases 25-29 (shipped 2026-03-07)
 - Shipped **v1.6 Dashboard-Konfig + Punkte-Logik** - Phases 30-33 (shipped 2026-03-09)
 - Shipped **v1.7 Unterricht + Pflicht-Events** - Phases 34-37 (shipped 2026-03-09)
-- v1.8 Teamer - Phases 38-43 (in progress)
+- Shipped **v1.8 Teamer** - Phases 38-43 (shipped 2026-03-12)
+- v1.9 Bugfix + Polish - Phases 44-51 (in progress)
 
 ## Phases
 
@@ -116,121 +117,160 @@ Phase 37: Dashboard-Widget + Anwesenheitsstatistik (2 plans, complete)
 
 </details>
 
-### v1.8 Teamer (In Progress)
+<details>
+<summary>Shipped v1.8 Teamer (Phases 38-43) - SHIPPED 2026-03-12</summary>
 
-**Milestone Goal:** Teamer als vollwertige Rolle mit eigenem Dashboard, Event-Teilnahme, Badge-System und Material-Bereich einfuehren.
+See .planning/milestones/v1.8-ROADMAP.md for full details.
 
-- [x] **Phase 38: Rolle + App-Shell** - Teamer-Transition und eigene 5-Tab-UI aufbauen (completed 2026-03-10)
-- [x] **Phase 39: Events** - Teamer-gesucht-Toggle, Teamer-Events und Event-Buchung (completed 2026-03-10)
-- [x] **Phase 40: Badges + Aktivitaeten** - Teamer-Badge-System mit 5 Badge-Typen und Admin-Konfiguration (gap closure) (completed 2026-03-11)
-- [x] **Phase 41: Zertifikate + Dashboard** - Dashboard mit Zertifikat-Anzeige, Begruessing und naechsten Events (completed 2026-03-11)
-- [x] **Phase 42: Material** - Datei-Uploads und Material-Bereich pro Jahrgang (gap closure) (completed 2026-03-12)
-- [ ] **Phase 43: Profil + Chat** - Profil mit Antraegen und Badge-Historie, Chat-Zugriff
+Phase 38: Rolle + App-Shell (2 plans, complete)
+Phase 39: Events (2 plans, complete)
+Phase 40: Badges + Aktivitaeten (4 plans, complete)
+Phase 41: Zertifikate + Dashboard (3 plans, complete)
+Phase 42: Material (3 plans, complete)
+Phase 43: Profil + Chat (2 plans, complete)
+
+</details>
+
+### v1.9 Bugfix + Polish (In Progress)
+
+**Milestone Goal:** Alle nach dem Grundaufbau gefundenen Bugs, UI-Inkonsistenzen und Logik-Luecken schliessen -- App produktionsreif machen.
+
+- [ ] **Phase 44: Push-Debug** - Ghost-Push-Bug fuer Admins debuggen und fixen
+- [ ] **Phase 45: Event-Sichtbarkeit + Filterung** - Jahrgangs-Filter, abgesagte Events, Auto-Enrollment und Konfi-Event-Segmente korrigieren
+- [ ] **Phase 46: Event-Admin + Teamer-Logik** - Admin-Event-Verwaltung, Teamer-only Felder, Event-Chat-Erstellung
+- [ ] **Phase 47: Punkte-Logik** - Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken, History-Header
+- [ ] **Phase 48: Admin-Struktur** - Zertifikate, Dashboard-Einstellungen und Badges als Unterseiten, Event-Badge, Chat-Filter
+- [ ] **Phase 49: Badge-UI** - Badge-Modal-Selection, Segment-Position, Teamer-Badge-Ansicht
+- [ ] **Phase 50: UI-Polish** - Toggles, QR-Button, Badge-Rundung, Chat-Badge, Befoerdern-Text
+- [ ] **Phase 51: Teamer-Profil** - Teamer-Profilseite ordentlich gestalten
 
 ## Phase Details
 
-### Phase 38: Rolle + App-Shell
-**Goal**: Teamer existiert als nutzbare Rolle mit eigener Navigation und UI-Grundstruktur
-**Depends on**: Nothing (Teamer-Rolle existiert bereits im RBAC-Backend)
-**Requirements**: ROL-01, ROL-02, ROL-03, ROL-04
+### Phase 44: Push-Debug
+**Goal**: Admin erhaelt keine unerklaeerten leeren Push-Benachrichtigungen mehr
+**Depends on**: Nothing (standalone Debugging)
+**Requirements**: PUSH-01
 **Success Criteria** (what must be TRUE):
-  1. Admin kann in der Konfi-Verwaltung einen Konfi zum Teamer befoerdern und der Konfi hat danach die Teamer-Rolle
-  2. Nach Transition sieht der Ex-Konfi eine eigene TabBar mit 5 Tabs (Dashboard, Events, Chat, Material, Profil)
-  3. Konfi-Badges und Konfi-Punkte/Level bleiben nach Transition erhalten und sind im Teamer-Profil sichtbar (eingefroren)
-  4. Teamer kann sich einloggen und sieht ausschliesslich die Teamer-UI, nicht die Konfi- oder Admin-UI
-**Plans:** 2/2 plans complete
+  1. Admin-Geraet zeigt keine leeren Push-Benachrichtigungen mehr (Ghost-Pushes alle 5 Min sind eliminiert)
+  2. Root Cause ist identifiziert und dokumentiert (welcher Sender, welcher Trigger)
+**Plans**: TBD
 
 Plans:
-- [ ] 38-01-PLAN.md -- Backend: Transition-Endpoint, user.type-Erweiterung, Badge-Skip
-- [ ] 38-02-PLAN.md -- Frontend: Teamer-TabBar, Profil, EmptyState-Pages, Transition-Button
+- [ ] 44-01: TBD
 
-### Phase 39: Events
-**Goal**: Teamer koennen sich fuer Events einbuchen und sehen alle relevanten Events in einem strukturierten Tab
-**Depends on**: Phase 38
-**Requirements**: EVT-01, EVT-02, EVT-03, EVT-04, EVT-05, EVT-06
+### Phase 45: Event-Sichtbarkeit + Filterung
+**Goal**: Konfis sehen nur die fuer sie relevanten Events und werden korrekt zu Pflicht-Events enrollt
+**Depends on**: Nothing (Bugfixes auf bestehendem System)
+**Requirements**: EVT-v19-01, EVT-v19-02, EVT-v19-03, EVT-v19-04, EVT-v19-08, EVT-v19-09
 **Success Criteria** (what must be TRUE):
-  1. Admin kann bei einem Konfi-Event den "Teamer gesucht"-Toggle aktivieren und es erscheint fuer Teamer im Team-Segment
-  2. Admin kann reine Teamer-Events erstellen die nur fuer Teamer sichtbar und buchbar sind
-  3. Teamer sieht Events-Tab mit 3 Segmenten (Meine, Alle, Team) und kann sich in Teamer-gesucht-Events und Teamer-Events einbuchen
-  4. Teamer kann bei Events wo er eingeteilt ist seine Anwesenheit bestaetigen
-**Plans:** 2/2 plans complete
+  1. Konfi sieht ausschliesslich Events seines eigenen Jahrgangs (keine fremden Pflicht-Events oder Konfirmationen)
+  2. Abgesagte Events tauchen nicht mehr in der Konfi-Event-Liste auf
+  3. Konfi sieht keinen Abmelde-Button bei Pflicht-Events, bei denen er nicht angemeldet ist
+  4. Neuer Konfi in einem Jahrgang wird automatisch zu allen bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
+  5. Konfi-Events zeigen "Meine" als erstes Segment, Admin-Event-Liste hat Jahrgangs-Filter mit Jahrgang in Listen-Details
+**Plans**: TBD
 
 Plans:
-- [x] 39-01-PLAN.md -- Backend: DB-Schema, Booking, Filter, Check-in fuer Teamer
-- [x] 39-02-PLAN.md -- Frontend: Admin-Formular, Teilnehmerliste, TeamerEventsPage mit 3 Segmenten
+- [ ] 45-01: TBD
+- [ ] 45-02: TBD
 
-### Phase 40: Badges + Aktivitaeten
-**Goal**: Teamer sammeln Badges durch Aktivitaeten, Event-Teilnahme und Engagement
-**Depends on**: Phase 38
-**Requirements**: BDG-01, BDG-02, BDG-03, BDG-04, BDG-05, BDG-06, BDG-07
+### Phase 46: Event-Admin + Teamer-Logik
+**Goal**: Admin kann Events vollstaendig verwalten inkl. Absagen, Teamer-Felder und Event-Chat-Erstellung
+**Depends on**: Phase 45
+**Requirements**: EVT-v19-05, EVT-v19-06, EVT-v19-07, EVT-v19-10, EVT-v19-11, EVT-v19-12
 **Success Criteria** (what must be TRUE):
-  1. Admin kann Teamer-spezifische Aktivitaeten erstellen und einem Teamer manuell zuweisen
-  2. Teamer erhaelt automatisch Badges basierend auf 5 Kriterien-Typen (Aktivitaeten-Anzahl, Event-Teilnahme, Streak, Sammel-Badge, Jahres-Badge)
-  3. Admin kann Badge-Typen und deren Kriterien frei konfigurieren (Schwellenwerte, Kategorien, Gruppen)
-  4. Vergebene Badges erscheinen im Dashboard und Profil des Teamers
-**Plans:** 4/4 plans complete
+  1. Admin kann ein Event absagen und die Absage wird korrekt verarbeitet
+  2. Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
+  3. "Mitbringen" und "Pflicht" werden in Event-Liste und Details farbig hervorgehoben
+  4. Admin Event-Details zeigen korrekte Hinweise (kein doppelter Teamer-Hinweis, getrennte Listen fuer Teamer und Konfis hinzufuegen)
+  5. Aus einem Event kann ein Chat mit allen angemeldeten Teilnehmer:innen erstellt werden
+**Plans**: TBD
 
 Plans:
-- [x] 40-01-PLAN.md -- DB-Migration und Backend-Route-Anpassung (Tabellen umbenennen, target_role)
-- [x] 40-02-PLAN.md -- checkAndAwardBadges Teamer-Branch mit 5 Kriterien-Typen und Badge-API
-- [x] 40-03-PLAN.md -- Frontend: Admin Segment-Toggles, Teamer-Filter, TeamerBadgesView
-- [ ] 40-04-PLAN.md -- Gap Closure: Admin-Teamer-Detail-View und ActivityModal target_role Filter
+- [ ] 46-01: TBD
+- [ ] 46-02: TBD
 
-### Phase 41: Zertifikate + Dashboard
-**Goal**: Teamer sieht ein vollstaendiges Dashboard mit Zertifikaten, naechsten Events und Badges
-**Depends on**: Phase 38, Phase 39, Phase 40
-**Requirements**: ZRT-01, ZRT-02, ZRT-03, DSH-01, DSH-02, DSH-03, DSH-04
+### Phase 47: Punkte-Logik
+**Goal**: Punkte-System funktioniert korrekt bei ein oder zwei aktiven Typen mit konsistenter Anzeige
+**Depends on**: Nothing (Bugfixes auf bestehendem System)
+**Requirements**: PKT-v19-01, PKT-v19-02, PKT-v19-03, PKT-v19-04
 **Success Criteria** (what must be TRUE):
-  1. Admin kann Teamer Zertifikate zuweisen (JuLeiCa, Teamer-Card, frei konfigurierbare Typen) mit Ausstellungsdatum
-  2. Teamer sieht tageszeitabhaengige Begruessing im Dashboard
-  3. Zertifikate werden prominent im Dashboard angezeigt (aehnlich Konfi-Level-Anzeige mit Datum und Status)
-  4. Dashboard zeigt naechste anstehende Events und eigene Badges-Sektion
-**Plans**: 3 plans
+  1. Beim Deaktivieren eines Punkt-Typs wird der Toggle des anderen ausgegraut mit Hinweis zur Konfi-Anzahl
+  2. Admin-Konfi-Liste zeigt korrekte Gesamtpunkte basierend auf aktiven Typen
+  3. Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (analog zum Gesamtbalken bei zwei Typen)
+  4. Punkte-History Header zeigt korrekte Daten mit besserem Layout fuer 6 Stats
+**Plans**: TBD
 
 Plans:
-- [x] 41-01-PLAN.md -- Backend: DB-Schema Zertifikate, CRUD-Endpoints, Teamer-Dashboard-Endpoint, Settings-Erweiterung
-- [x] 41-02-PLAN.md -- Frontend: TeamerDashboardPage, Admin Zertifikat-Verwaltung, Dashboard-Konfiguration
-- [ ] 41-03-PLAN.md -- Gap Closure: Config-Key-Mismatch und Event-Feld-Mismatch im Dashboard fixen
+- [ ] 47-01: TBD
 
-### Phase 42: Material
-**Goal**: Teamer haben Zugriff auf einen Datei-Bereich mit Materialien pro Jahrgang
-**Depends on**: Phase 38
-**Requirements**: MAT-01, MAT-02, MAT-03
+### Phase 48: Admin-Struktur
+**Goal**: Admin-Bereich ist sauber strukturiert mit Zertifikate, Dashboard und Badges als eigene Unterseiten
+**Depends on**: Nothing (Strukturumbau)
+**Requirements**: ADM-01, ADM-02, ADM-03, ADM-04, ADM-05
 **Success Criteria** (what must be TRUE):
-  1. Admin oder Teamer kann Dateien (PDF, Bilder, Dokumente) hochladen und einem Jahrgang zuordnen
-  2. Material-Tab zeigt Dateien sortiert nach Jahrgang mit Dateiname, Typ und Upload-Datum
-  3. Teamer kann Dateien aus der Materialliste herunterladen
-**Plans**: 3 plans
+  1. Zertifikat-Verwaltung, Dashboard-Einstellungen und Badge-Verwaltung sind als Unterseiten im Inhalt-Bereich erreichbar (nicht inline in Settings)
+  2. Badge-Erstellung fragt vorab den Typ (Konfi/Teamer) ab
+  3. Events-Tab zeigt ein Badge fuer Events die noch verbucht werden muessen
+  4. Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
+**Plans**: TBD
 
 Plans:
-- [x] 42-01-PLAN.md -- Backend: DB-Schema, Material CRUD, Tag-Verwaltung, Datei-Upload/Download
-- [x] 42-02-PLAN.md -- Frontend: Admin Material-Verwaltung, Teamer Material-Tab + Detail, Event-Integration
-- [ ] 42-03-PLAN.md -- Gap Closure: requireTeamer auf GET /tags, Jahrgang-Filter Backend + UI
+- [ ] 48-01: TBD
+- [ ] 48-02: TBD
 
-### Phase 43: Profil + Chat
-**Goal**: Teamer hat ein vollstaendiges Profil mit Antraegen und Badge-Historie sowie Chat-Zugriff
-**Depends on**: Phase 38, Phase 40
-**Requirements**: PRF-01, PRF-02, PRF-03, CHT-01, CHT-02
+### Phase 49: Badge-UI
+**Goal**: Badge-Verwaltung und -Anzeige sind konsistent und korrekt gestaltet
+**Depends on**: Phase 48 (Badge-Verwaltung als Unterseite muss stehen)
+**Requirements**: UI-05, UI-06, UI-07
 **Success Criteria** (what must be TRUE):
-  1. Teamer kann Aktivitaets-Antraege stellen (gleicher Flow wie bei Konfis)
-  2. Teamer sieht im Profil eine Badges-Uebersicht mit aktuellen Teamer-Badges und eingefrorenen Konfi-Badges als Historie
-  3. Teamer kann Chat-Raeume erstellen und hat vollen Zugriff auf Nachrichten, Polls und Datei-Uploads
-**Plans**: 2 plans
+  1. Badge-Modal-Auswahl nutzt backgroundColor-Change Pattern (keine Umrandung)
+  2. Badge-Segment (Konfi/Teamer) steht unter dem Header, "Teamer:innen" ist bei Auswahl nicht lila/fett
+  3. Teamer-Badge-Ansicht ist 1:1 wie Konfi-Badge-Ansicht aufgebaut mit Segment-Wechsel (Teamer vorausgewaehlt)
+**Plans**: TBD
 
 Plans:
-- [ ] 43-01: TBD
-- [ ] 43-02: TBD
+- [ ] 49-01: TBD
+
+### Phase 50: UI-Polish
+**Goal**: Kleinere UI-Inkonsistenzen in verschiedenen Bereichen sind behoben
+**Depends on**: Nothing (unabhaengige UI-Fixes)
+**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-08
+**Success Criteria** (what must be TRUE):
+  1. Toggle-Switches stehen rechts aussen in Jahrgang-Modal und Dashboard-Einstellungen
+  2. QR-Scanner-Button ist oben rechts im Header positioniert (kein FAB unten rechts)
+  3. Badge-Fortschritt zeigt keine Nachkommastellen
+  4. Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigiert)
+  5. Befoerdern-Button zeigt Info-Hinweistext ueber dem Button
+**Plans**: TBD
+
+Plans:
+- [ ] 50-01: TBD
+
+### Phase 51: Teamer-Profil
+**Goal**: Teamer hat eine ordentliche, vollstaendige Profilseite
+**Depends on**: Phase 49 (Badge-Ansicht muss stehen fuer Profil-Integration)
+**Requirements**: TMR-01
+**Success Criteria** (what must be TRUE):
+  1. Teamer-Profilseite zeigt alle relevanten Informationen (Name, Rolle, Zertifikate, Badges, Kontaktdaten)
+  2. Profil-Design ist konsistent mit dem restlichen App-Design (gleiche Patterns wie Konfi-Profil)
+**Plans**: TBD
+
+Plans:
+- [ ] 51-01: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 38 -> 39 -> 40 -> 41 -> 42 -> 43
+Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 38. Rolle + App-Shell | 2/2 | Complete    | 2026-03-10 |
-| 39. Events | 2/2 | Complete | 2026-03-10 |
-| 40. Badges + Aktivitaeten | 4/4 | Complete    | 2026-03-11 |
-| 41. Zertifikate + Dashboard | 3/3 | Complete   | 2026-03-11 |
-| 42. Material | 3/3 | Complete   | 2026-03-12 |
-| 43. Profil + Chat | 0/2 | Not started | - |
+| 44. Push-Debug | 0/1 | Not started | - |
+| 45. Event-Sichtbarkeit + Filterung | 0/2 | Not started | - |
+| 46. Event-Admin + Teamer-Logik | 0/2 | Not started | - |
+| 47. Punkte-Logik | 0/1 | Not started | - |
+| 48. Admin-Struktur | 0/2 | Not started | - |
+| 49. Badge-UI | 0/1 | Not started | - |
+| 50. UI-Polish | 0/1 | Not started | - |
+| 51. Teamer-Profil | 0/1 | Not started | - |
