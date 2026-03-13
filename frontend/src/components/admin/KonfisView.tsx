@@ -13,7 +13,9 @@ import {
   IonItem,
   IonInput,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  IonSegment,
+  IonSegmentButton
 } from '@ionic/react';
 import {
   trash,
@@ -85,12 +87,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
+  const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>('konfis');
   const [teamers, setTeamers] = useState<any[]>([]);
   const [teamerLoading, setTeamerLoading] = useState(false);
 
-  // Teamer laden wenn "Teamer:innen" ausgewaehlt wird
+  // Teamer laden wenn Teamer-Segment aktiv
   useEffect(() => {
-    if (selectedJahrgang === 'teamer') {
+    if (viewMode === 'teamer') {
       const loadTeamers = async () => {
         setTeamerLoading(true);
         try {
@@ -105,7 +108,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
       };
       loadTeamers();
     }
-  }, [selectedJahrgang]);
+  }, [viewMode]);
 
   const getTotalPoints = (konfi: Konfi) => {
     const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
@@ -171,16 +174,34 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Konfis"
-        subtitle="Konfirmanden verwalten"
-        icon={people}
+        title={viewMode === 'teamer' ? 'Teamer:innen' : 'Konfis'}
+        subtitle={viewMode === 'teamer' ? 'Teamer:innen verwalten' : 'Konfirmanden verwalten'}
+        icon={viewMode === 'teamer' ? ribbon : people}
         preset="konfis"
-        stats={[
+        stats={viewMode === 'teamer' ? [
+          { value: teamers.length, label: 'Teamer:innen' },
+          { value: teamers.reduce((sum, t) => sum + (t.cert_count || 0), 0), label: 'Zertifikate' },
+          { value: teamers.reduce((sum, t) => sum + (t.badge_count || 0), 0), label: 'Badges' }
+        ] : [
           { value: konfis.length, label: 'Konfis' },
           { value: konfis.reduce((sum, k) => sum + getTotalPoints(k), 0), label: 'Punkte' },
           { value: jahrgaenge.length, label: 'Jahrgänge' }
         ]}
       />
+
+      {/* Konfis / Teamer:innen Segment */}
+      <IonSegment
+        value={viewMode}
+        onIonChange={(e) => setViewMode(e.detail.value as 'konfis' | 'teamer')}
+        style={{ margin: '0 16px 8px' }}
+      >
+        <IonSegmentButton value="konfis">
+          <IonLabel>Konfis</IonLabel>
+        </IonSegmentButton>
+        <IonSegmentButton value="teamer">
+          <IonLabel>Teamer:innen</IonLabel>
+        </IonSegmentButton>
+      </IonSegment>
 
       {/* Suche & Filter */}
       <IonList inset={true} style={{ margin: '16px' }}>
@@ -197,45 +218,48 @@ const KonfisView: React.FC<KonfisViewProps> = ({
             <IonInput
               value={searchTerm}
               onIonInput={(e) => setSearchTerm(e.detail.value!)}
-              placeholder="Konfi suchen..."
+              placeholder={viewMode === 'teamer' ? 'Teamer:in suchen...' : 'Konfi suchen...'}
             />
           </IonItem>
-          {/* Jahrgang Filter */}
-          <IonItem>
-            <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-            <IonSelect
-              value={selectedJahrgang}
-              onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
-              interface="popover"
-              placeholder="Jahrgang"
-              style={{ width: '100%' }}
-            >
-              <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-              {jahrgaenge.map(jg => (
-                <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
-              ))}
-              <IonSelectOption value="teamer">Teamer:innen</IonSelectOption>
-            </IonSelect>
-          </IonItem>
-          {/* Sortierung */}
-          <IonItem>
-            <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
-            <IonSelect
-              value={sortBy}
-              onIonChange={(e) => setSortBy(e.detail.value)}
-              interface="popover"
-              placeholder="Sortierung"
-              style={{ width: '100%' }}
-            >
-              <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
-              <IonSelectOption value="points">Punkte</IonSelectOption>
-            </IonSelect>
-          </IonItem>
+          {/* Jahrgang Filter - nur fuer Konfis */}
+          {viewMode === 'konfis' && (
+            <IonItem>
+              <IonIcon icon={calendarOutline} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonSelect
+                value={selectedJahrgang}
+                onIonChange={(e) => setSelectedJahrgang(e.detail.value)}
+                interface="popover"
+                placeholder="Jahrgang"
+                style={{ width: '100%' }}
+              >
+                <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                {jahrgaenge.map(jg => (
+                  <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
+                ))}
+              </IonSelect>
+            </IonItem>
+          )}
+          {/* Sortierung - nur fuer Konfis */}
+          {viewMode === 'konfis' && (
+            <IonItem>
+              <IonIcon icon={swapVertical} slot="start" style={{ color: '#8e8e93', fontSize: '1rem' }} />
+              <IonSelect
+                value={sortBy}
+                onIonChange={(e) => setSortBy(e.detail.value)}
+                interface="popover"
+                placeholder="Sortierung"
+                style={{ width: '100%' }}
+              >
+                <IonSelectOption value="name">Name (A-Z)</IonSelectOption>
+                <IonSelectOption value="points">Punkte</IonSelectOption>
+              </IonSelect>
+            </IonItem>
+          )}
         </IonItemGroup>
       </IonList>
 
       {/* Teamer-Liste */}
-      {selectedJahrgang === 'teamer' ? (
+      {viewMode === 'teamer' ? (
         <ListSection
           icon={ribbon}
           title="Teamer:innen"
