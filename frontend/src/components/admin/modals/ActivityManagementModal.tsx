@@ -18,7 +18,7 @@ import {
   IonCardContent,
   useIonAlert
 } from '@ionic/react';
-import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle } from 'ionicons/icons';
+import { checkmarkOutline, closeOutline, create, pricetag, addOutline, removeOutline, checkmarkCircle, peopleOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 
@@ -256,6 +256,54 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       </IonHeader>
 
       <IonContent className="app-gradient-background">
+        {/* SEKTION: Zielgruppe (nur bei neuer Aktivität) */}
+        {!currentActivity && (
+        <IonList inset={true} className="app-modal-section">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--activities">
+              <IonIcon icon={peopleOutline} />
+            </div>
+            <IonLabel>Zielgruppe</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card">
+            <IonCardContent>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div
+                  className="app-list-item"
+                  onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', points: formData.target_role === 'teamer' ? 1 : formData.points, type: formData.target_role === 'teamer' ? 'gottesdienst' : formData.type })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0',
+                    borderLeftColor: '#059669',
+                    background: formData.target_role === 'konfi' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Konfis</span>
+                </div>
+                <div
+                  className="app-list-item"
+                  onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', points: 0, type: '' })}
+                  style={{
+                    cursor: loading ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '0',
+                    borderLeftColor: '#059669',
+                    background: formData.target_role === 'teamer' ? 'rgba(5, 150, 105, 0.1)' : undefined
+                  }}
+                >
+                  <span style={{ fontWeight: '500', color: '#333' }}>Teamer:innen</span>
+                </div>
+              </div>
+            </IonCardContent>
+          </IonCard>
+        </IonList>
+        )}
+
         {/* SEKTION: Grunddaten */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>

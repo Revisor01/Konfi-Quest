@@ -13,8 +13,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Validierungsregeln
   const validateCreateActivity = [
     commonValidations.name,
-    commonValidations.points,
-    commonValidations.type,
+    body('points').optional().isInt({ min: 0 }).withMessage('Punkte müssen eine Ganzzahl >= 0 sein'),
+    body('type').optional().isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
+    body('target_role').optional().isIn(['konfi', 'teamer']).withMessage('Zielgruppe muss "konfi" oder "teamer" sein'),
     body('category_ids').optional().isArray().withMessage('Kategorie-IDs müssen ein Array sein'),
     handleValidationErrors
   ];
@@ -22,8 +23,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   const validateUpdateActivity = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
     commonValidations.name,
-    commonValidations.points,
-    commonValidations.type,
+    body('points').optional().isInt({ min: 0 }).withMessage('Punkte müssen eine Ganzzahl >= 0 sein'),
+    body('type').optional().isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
+    body('target_role').optional().isIn(['konfi', 'teamer']).withMessage('Zielgruppe muss "konfi" oder "teamer" sein'),
     handleValidationErrors
   ];
 

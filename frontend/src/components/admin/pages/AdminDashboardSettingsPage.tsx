@@ -112,7 +112,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
       <IonPage>
         <IonHeader>
           <IonToolbar>
-            <IonTitle>Dashboard-Einstellungen</IonTitle>
+            <IonTitle>Dashboard</IonTitle>
           </IonToolbar>
         </IonHeader>
         <IonContent>
@@ -131,14 +131,14 @@ const AdminDashboardSettingsPage: React.FC = () => {
               <IonIcon icon={arrowBack} />
             </IonButton>
           </IonButtons>
-          <IonTitle>Dashboard-Einstellungen</IonTitle>
+          <IonTitle>Dashboard</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent className="app-gradient-background" fullscreen>
         <IonHeader collapse="condense">
           <IonToolbar className="app-condense-toolbar">
-            <IonTitle size="large">Dashboard-Einstellungen</IonTitle>
+            <IonTitle size="large">Dashboard</IonTitle>
           </IonToolbar>
         </IonHeader>
 
@@ -234,7 +234,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         {dashboardSegment === 'teamer' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
-              <div className="app-section-icon app-section-icon--purple">
+              <div className="app-section-icon app-section-icon--settings">
                 <IonIcon icon={appsOutline} />
               </div>
               <IonLabel>Teamer:innen-Dashboard</IonLabel>

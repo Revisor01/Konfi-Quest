@@ -44,6 +44,7 @@ interface ActivitiesViewProps {
   onDeleteActivity: (activity: Activity) => void;
   canEdit: boolean;
   canDelete: boolean;
+  targetRole?: 'konfi' | 'teamer';
 }
 
 const ActivitiesView: React.FC<ActivitiesViewProps> = ({
@@ -53,7 +54,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   onSelectActivity,
   onDeleteActivity,
   canEdit,
-  canDelete
+  canDelete,
+  targetRole = 'konfi'
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('alle');
@@ -125,17 +127,20 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     <>
       <SectionHeader
         title="Aktivitäten"
-        subtitle="Punkte und Aufgaben"
+        subtitle={targetRole === 'teamer' ? 'Teamer:innen-Aktivitäten' : 'Punkte und Aufgaben'}
         icon={flash}
         preset="activities"
-        stats={[
+        stats={targetRole === 'teamer' ? [
+          { value: activities.length, label: 'Gesamt' }
+        ] : [
           { value: activities.length, label: 'Gesamt' },
           { value: getGemeindeActivities().length, label: 'Gemeinde' },
           { value: getGottesdienstActivities().length, label: 'Godi' }
         ]}
       />
 
-      {/* Tab Navigation - einfaches IonSegment */}
+      {/* Tab Navigation - nur bei Konfis (Teamer haben keinen Typ) */}
+      {targetRole !== 'teamer' && (
       <div className="app-segment-wrapper">
         <IonSegment
           value={selectedType}
@@ -152,6 +157,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
           </IonSegmentButton>
         </IonSegment>
       </div>
+      )}
 
       {/* Suche */}
       <IonList inset={true} style={{ margin: '16px' }}>

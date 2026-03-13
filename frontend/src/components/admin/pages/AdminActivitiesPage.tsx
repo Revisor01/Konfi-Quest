@@ -193,9 +193,7 @@ const AdminActivitiesPage: React.FC = () => {
               <IonLabel>Konfis</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="teamer">
-              <IonLabel style={selectedRole === 'teamer' ? { color: '#5b21b6', fontWeight: '700' } : {}}>
-                Teamer:innen
-              </IonLabel>
+              <IonLabel>Teamer:innen</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </div>
@@ -203,7 +201,7 @@ const AdminActivitiesPage: React.FC = () => {
         {loading ? (
           <LoadingSpinner message="Aktivitäten werden geladen..." />
         ) : (
-          <ActivitiesView 
+          <ActivitiesView
             activities={activities}
             onUpdate={loadActivities}
             onAddActivityClick={presentActivityModal}
@@ -211,6 +209,7 @@ const AdminActivitiesPage: React.FC = () => {
             onDeleteActivity={handleDeleteActivity}
             canEdit={canEdit}
             canDelete={canDelete}
+            targetRole={selectedRole}
           />
         )}
       </IonContent>

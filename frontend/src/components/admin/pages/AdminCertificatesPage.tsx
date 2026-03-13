@@ -20,8 +20,10 @@ import {
   IonItemOptions,
   IonItemOption,
   IonInput,
-  IonToggle,
   IonSpinner,
+  IonAccordionGroup,
+  IonAccordion,
+  IonText,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -33,13 +35,123 @@ import {
   closeOutline,
   arrowBack,
   trash,
-  createOutline
+  createOutline,
+  trophy,
+  medal,
+  star,
+  checkmarkCircle,
+  diamond,
+  shield,
+  flame,
+  flash,
+  rocket,
+  sparkles,
+  thumbsUp,
+  heart,
+  people,
+  personAdd,
+  chatbubbles,
+  gift,
+  book,
+  school,
+  construct,
+  brush,
+  colorPalette,
+  sunny,
+  moon,
+  leaf,
+  rose,
+  calendar,
+  today,
+  time,
+  timer,
+  stopwatch,
+  restaurant,
+  fitness,
+  bicycle,
+  car,
+  airplane,
+  boat,
+  camera,
+  image,
+  musicalNote,
+  balloon,
+  home,
+  business,
+  location,
+  navigate,
+  compass,
+  pin,
+  flag,
+  informationCircle,
+  helpCircle,
+  alertCircle,
+  hammer
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
+
+const CERT_ICONS: Record<string, { icon: any; name: string; category: string }> = {
+  ribbon: { icon: ribbon, name: 'Band', category: 'Erfolg' },
+  trophy: { icon: trophy, name: 'Pokal', category: 'Erfolg' },
+  medal: { icon: medal, name: 'Medaille', category: 'Erfolg' },
+  star: { icon: star, name: 'Stern', category: 'Erfolg' },
+  checkmarkCircle: { icon: checkmarkCircle, name: 'Bestanden', category: 'Erfolg' },
+  diamond: { icon: diamond, name: 'Diamant', category: 'Erfolg' },
+  shield: { icon: shield, name: 'Schild', category: 'Erfolg' },
+  flame: { icon: flame, name: 'Flamme', category: 'Engagement' },
+  flash: { icon: flash, name: 'Blitz', category: 'Engagement' },
+  rocket: { icon: rocket, name: 'Rakete', category: 'Engagement' },
+  sparkles: { icon: sparkles, name: 'Funken', category: 'Engagement' },
+  thumbsUp: { icon: thumbsUp, name: 'Daumen hoch', category: 'Engagement' },
+  heart: { icon: heart, name: 'Herz', category: 'Gemeinschaft' },
+  people: { icon: people, name: 'Gruppe', category: 'Gemeinschaft' },
+  personAdd: { icon: personAdd, name: 'Neue Person', category: 'Gemeinschaft' },
+  chatbubbles: { icon: chatbubbles, name: 'Chat', category: 'Gemeinschaft' },
+  gift: { icon: gift, name: 'Geschenk', category: 'Gemeinschaft' },
+  book: { icon: book, name: 'Buch', category: 'Lernen' },
+  school: { icon: school, name: 'Schule', category: 'Lernen' },
+  construct: { icon: construct, name: 'Werkzeug', category: 'Lernen' },
+  brush: { icon: brush, name: 'Pinsel', category: 'Lernen' },
+  colorPalette: { icon: colorPalette, name: 'Farbpalette', category: 'Lernen' },
+  sunny: { icon: sunny, name: 'Sonne', category: 'Natur' },
+  moon: { icon: moon, name: 'Mond', category: 'Natur' },
+  leaf: { icon: leaf, name: 'Blatt', category: 'Natur' },
+  rose: { icon: rose, name: 'Rose', category: 'Natur' },
+  calendar: { icon: calendar, name: 'Kalender', category: 'Zeit' },
+  today: { icon: today, name: 'Heute', category: 'Zeit' },
+  time: { icon: time, name: 'Uhr', category: 'Zeit' },
+  timer: { icon: timer, name: 'Timer', category: 'Zeit' },
+  stopwatch: { icon: stopwatch, name: 'Stoppuhr', category: 'Zeit' },
+  restaurant: { icon: restaurant, name: 'Restaurant', category: 'Aktivitäten' },
+  fitness: { icon: fitness, name: 'Fitness', category: 'Aktivitäten' },
+  bicycle: { icon: bicycle, name: 'Fahrrad', category: 'Aktivitäten' },
+  car: { icon: car, name: 'Auto', category: 'Aktivitäten' },
+  airplane: { icon: airplane, name: 'Flugzeug', category: 'Aktivitäten' },
+  boat: { icon: boat, name: 'Boot', category: 'Aktivitäten' },
+  camera: { icon: camera, name: 'Kamera', category: 'Aktivitäten' },
+  image: { icon: image, name: 'Bild', category: 'Aktivitäten' },
+  musicalNote: { icon: musicalNote, name: 'Musik', category: 'Aktivitäten' },
+  balloon: { icon: balloon, name: 'Ballon', category: 'Aktivitäten' },
+  home: { icon: home, name: 'Zuhause', category: 'Orte' },
+  business: { icon: business, name: 'Gebäude', category: 'Orte' },
+  location: { icon: location, name: 'Standort', category: 'Orte' },
+  navigate: { icon: navigate, name: 'Navigation', category: 'Orte' },
+  compass: { icon: compass, name: 'Kompass', category: 'Orte' },
+  pin: { icon: pin, name: 'Pin', category: 'Orte' },
+  flag: { icon: flag, name: 'Flagge', category: 'Orte' },
+  informationCircle: { icon: informationCircle, name: 'Info', category: 'Sonstiges' },
+  helpCircle: { icon: helpCircle, name: 'Hilfe', category: 'Sonstiges' },
+  alertCircle: { icon: alertCircle, name: 'Warnung', category: 'Sonstiges' },
+  hammer: { icon: hammer, name: 'Hammer', category: 'Sonstiges' }
+};
+
+const getIconFromString = (iconName: string) => {
+  return CERT_ICONS[iconName]?.icon || ribbon;
+};
 
 interface CertificateType {
   id: number;
@@ -74,17 +186,13 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
   const [name, setName] = useState(certificateType?.name || '');
   const [icon, setIcon] = useState(certificateType?.icon || 'ribbon');
-  const [isActive, setIsActive] = useState(certificateType?.is_active ?? true);
-
   useEffect(() => {
     if (certificateType) {
       setName(certificateType.name);
       setIcon(certificateType.icon || 'ribbon');
-      setIsActive(certificateType.is_active);
     } else {
       setName('');
       setIcon('ribbon');
-      setIsActive(true);
     }
   }, [certificateType]);
 
@@ -99,8 +207,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       if (certificateType) {
         await api.put(`/teamer/certificate-types/${certificateType.id}`, {
           name: name.trim(),
-          icon,
-          is_active: isActive
+          icon
         });
         setSuccess('Zertifikat aktualisiert');
       } else {
@@ -169,25 +276,72 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
                   />
                 </IonItem>
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
-                  <IonInput
-                    label="Icon"
-                    labelPlacement="stacked"
-                    value={icon}
-                    onIonInput={(e) => setIcon(e.detail.value || 'ribbon')}
-                    placeholder="ribbon"
-                    disabled={loading}
-                  />
+                  <div style={{ width: '100%', padding: '8px 0' }}>
+                    <IonAccordionGroup>
+                      <IonAccordion value="icon-picker">
+                        <IonItem slot="header" lines="none">
+                          <IonLabel>
+                            <h3 style={{ fontSize: '0.9rem', fontWeight: '500', color: '#666', margin: '0 0 4px 0' }}>
+                              Icon
+                            </h3>
+                            {icon && CERT_ICONS[icon] && (
+                              <p style={{ fontSize: '0.85rem', color: '#333', margin: '0', fontWeight: '500' }}>
+                                {CERT_ICONS[icon].name} ({CERT_ICONS[icon].category})
+                              </p>
+                            )}
+                          </IonLabel>
+                        </IonItem>
+                        <div slot="content" style={{ padding: '16px' }}>
+                          {Object.entries(CERT_ICONS).reduce((acc, [key, data]) => {
+                            const categoryIndex = acc.findIndex((group: any) => group.category === data.category);
+                            if (categoryIndex === -1) {
+                              acc.push({ category: data.category, icons: [{ key, data }] });
+                            } else {
+                              acc[categoryIndex].icons.push({ key, data });
+                            }
+                            return acc;
+                          }, [] as any[]).map((group: any) => (
+                            <div key={group.category} style={{ marginBottom: '16px' }}>
+                              <IonText style={{ fontSize: '0.85rem', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'block' }}>
+                                {group.category}
+                              </IonText>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
+                                {group.icons.map(({ key, data }: any) => (
+                                  <div
+                                    key={key}
+                                    onClick={() => setIcon(key)}
+                                    style={{
+                                      width: '100%',
+                                      aspectRatio: '1',
+                                      backgroundColor: icon === key ? '#5b21b6' : '#f8f9fa',
+                                      borderRadius: '12px',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      border: '1px solid #e0e0e0',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                      transition: 'all 0.2s'
+                                    }}
+                                  >
+                                    <IonIcon
+                                      icon={data.icon}
+                                      style={{
+                                        fontSize: '1.5rem',
+                                        color: icon === key ? 'white' : '#666'
+                                      }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </IonAccordion>
+                    </IonAccordionGroup>
+                  </div>
                 </IonItem>
-                {certificateType && (
-                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                    <IonLabel>Aktiv</IonLabel>
-                    <IonToggle
-                      checked={isActive}
-                      onIonChange={(e) => setIsActive(e.detail.checked)}
-                      disabled={loading}
-                    />
-                  </IonItem>
-                )}
               </IonList>
             </IonCardContent>
           </IonCard>
@@ -239,24 +393,24 @@ const AdminCertificatesPage: React.FC = () => {
 
   const handleDelete = async (certType: CertificateType) => {
     presentAlert({
-      header: 'Zertifikat loeschen',
-      message: `"${certType.name}" wirklich loeschen?`,
+      header: 'Zertifikat löschen',
+      message: `"${certType.name}" wirklich löschen?`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
-          text: 'Loeschen',
+          text: 'Löschen',
           role: 'destructive',
           handler: async () => {
             const slidingElement = slidingRefs.current.get(certType.id);
             try {
               await api.delete(`/teamer/certificate-types/${certType.id}`);
-              setSuccess(`"${certType.name}" geloescht`);
+              setSuccess(`"${certType.name}" gelöscht`);
               loadCertificateTypes();
             } catch (error: any) {
               if (slidingElement) {
                 await slidingElement.close();
               }
-              setError(error.response?.data?.error || 'Fehler beim Loeschen');
+              setError(error.response?.data?.error || 'Fehler beim Löschen');
             }
           }
         }
@@ -328,8 +482,7 @@ const AdminCertificatesPage: React.FC = () => {
           icon={ribbon}
           colors={{ primary: '#5b21b6', secondary: '#4c1d95' }}
           stats={[
-            { value: certificateTypes.length, label: 'Gesamt' },
-            { value: certificateTypes.filter(c => c.is_active).length, label: 'Aktiv' }
+            { value: certificateTypes.length, label: 'Gesamt' }
           ]}
         />
 
@@ -374,23 +527,17 @@ const AdminCertificatesPage: React.FC = () => {
                   className="app-list-item"
                   style={{
                     width: '100%',
-                    borderLeftColor: '#5b21b6',
-                    opacity: certType.is_active ? 1 : 0.5
+                    borderLeftColor: '#5b21b6'
                   }}
                 >
                   <div className="app-list-item__row">
                     <div className="app-list-item__main">
                       <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
-                        <IonIcon icon={ribbon} />
+                        <IonIcon icon={getIconFromString(certType.icon)} />
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">
                           {certType.name}
-                        </div>
-                        <div className="app-list-item__meta">
-                          <span className="app-list-item__meta-item">
-                            {certType.is_active ? 'Aktiv' : 'Inaktiv'}
-                          </span>
                         </div>
                       </div>
                     </div>

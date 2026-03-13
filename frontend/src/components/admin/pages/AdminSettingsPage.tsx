@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -12,13 +12,6 @@ import {
   IonList,
   IonListHeader,
   IonButton,
-  IonItem,
-  IonToggle,
-  IonSegment,
-  IonSegmentButton,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
   useIonAlert,
   useIonModal
 } from '@ionic/react';
@@ -37,206 +30,18 @@ import {
   notifications,
   qrCode,
   appsOutline,
-  add,
-  createOutline,
-  trash,
-  documentOutline,
   document as documentIcon
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { logout } from '../../../services/auth';
 import { useHistory } from 'react-router-dom';
-import api from '../../../services/api';
-
-interface DashboardConfig {
-  show_konfirmation: boolean;
-  show_events: boolean;
-  show_losung: boolean;
-  show_badges: boolean;
-  show_ranking: boolean;
-}
-
-interface TeamerDashboardConfig {
-  show_zertifikate: boolean;
-  show_events: boolean;
-  show_badges: boolean;
-  show_losung: boolean;
-}
-
-interface CertificateType {
-  id: number;
-  name: string;
-  icon: string;
-  is_active: boolean;
-}
 
 const AdminSettingsPage: React.FC = () => {
-  const { pageRef, presentingElement, cleanupModals } = useModalPage('admin-settings');
-  const { user, pushNotificationsPermission, requestPushPermissions, setError, setSuccess } = useApp();
+  const { pageRef, presentingElement } = useModalPage('admin-settings');
+  const { user, pushNotificationsPermission, requestPushPermissions } = useApp();
   const [presentAlert] = useIonAlert();
   const history = useHistory();
-
-  const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
-    show_konfirmation: true,
-    show_events: true,
-    show_losung: true,
-    show_badges: true,
-    show_ranking: true
-  });
-
-  const [teamerDashboardConfig, setTeamerDashboardConfig] = useState<TeamerDashboardConfig>({
-    show_zertifikate: true,
-    show_events: true,
-    show_badges: true,
-    show_losung: true
-  });
-
-  const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
-  const [certificateTypes, setCertificateTypes] = useState<CertificateType[]>([]);
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const response = await api.get('/settings');
-        const data = response.data;
-        setDashboardConfig({
-          show_konfirmation: data.dashboard_show_konfirmation ?? true,
-          show_events: data.dashboard_show_events ?? true,
-          show_losung: data.dashboard_show_losung ?? true,
-          show_badges: data.dashboard_show_badges ?? true,
-          show_ranking: data.dashboard_show_ranking ?? true
-        });
-        setTeamerDashboardConfig({
-          show_zertifikate: data.teamer_dashboard_show_zertifikate ?? true,
-          show_events: data.teamer_dashboard_show_events ?? true,
-          show_badges: data.teamer_dashboard_show_badges ?? true,
-          show_losung: data.teamer_dashboard_show_losung ?? true
-        });
-      } catch {
-        // Defaults bleiben bestehen
-      }
-    };
-    loadSettings();
-    loadCertificateTypes();
-  }, []);
-
-  const loadCertificateTypes = async () => {
-    try {
-      const response = await api.get('/teamer/certificate-types');
-      setCertificateTypes(response.data);
-    } catch {
-      // Ignorieren
-    }
-  };
-
-  const handleDashboardToggle = async (key: keyof DashboardConfig, value: boolean) => {
-    setDashboardConfig(prev => ({ ...prev, [key]: value }));
-    try {
-      await api.put('/settings', { [`dashboard_${key}`]: value });
-    } catch {
-      // Revert bei Fehler
-      setDashboardConfig(prev => ({ ...prev, [key]: !value }));
-      setError('Fehler beim Speichern der Dashboard-Einstellung');
-    }
-  };
-
-  const handleTeamerDashboardToggle = async (key: keyof TeamerDashboardConfig, value: boolean) => {
-    setTeamerDashboardConfig(prev => ({ ...prev, [key]: value }));
-    try {
-      await api.put('/settings', { [`teamer_dashboard_${key}`]: value });
-    } catch {
-      setTeamerDashboardConfig(prev => ({ ...prev, [key]: !value }));
-      setError('Fehler beim Speichern der Teamer-Dashboard-Einstellung');
-    }
-  };
-
-  const handleCreateCertificateType = () => {
-    presentAlert({
-      header: 'Neuen Zertifikat-Typ erstellen',
-      inputs: [
-        { name: 'name', type: 'text', placeholder: 'Name (z.B. JuLeiCa)' },
-        { name: 'icon', type: 'text', placeholder: 'Icon-Name (z.B. ribbon, medkit)' }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Erstellen',
-          handler: async (data) => {
-            if (!data.name?.trim()) {
-              setError('Bitte einen Namen eingeben');
-              return false;
-            }
-            try {
-              await api.post('/teamer/certificate-types', {
-                name: data.name.trim(),
-                icon: data.icon?.trim() || 'ribbon'
-              });
-              setSuccess('Zertifikat-Typ erstellt');
-              loadCertificateTypes();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Erstellen');
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  const handleEditCertificateType = (certType: CertificateType) => {
-    presentAlert({
-      header: 'Zertifikat-Typ bearbeiten',
-      inputs: [
-        { name: 'name', type: 'text', value: certType.name, placeholder: 'Name' },
-        { name: 'icon', type: 'text', value: certType.icon, placeholder: 'Icon-Name' }
-      ],
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Speichern',
-          handler: async (data) => {
-            if (!data.name?.trim()) {
-              setError('Bitte einen Namen eingeben');
-              return false;
-            }
-            try {
-              await api.put(`/teamer/certificate-types/${certType.id}`, {
-                name: data.name.trim(),
-                icon: data.icon?.trim() || certType.icon
-              });
-              setSuccess('Zertifikat-Typ aktualisiert');
-              loadCertificateTypes();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Aktualisieren');
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  const handleDeleteCertificateType = (certType: CertificateType) => {
-    presentAlert({
-      header: 'Zertifikat-Typ loeschen',
-      message: `"${certType.name}" wirklich loeschen? Dies ist nur moeglich, wenn keine Zuweisungen bestehen.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Loeschen',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              await api.delete(`/teamer/certificate-types/${certType.id}`);
-              setSuccess('Zertifikat-Typ geloescht');
-              loadCertificateTypes();
-            } catch (err: any) {
-              setError(err.response?.data?.error || 'Fehler beim Loeschen - moeglicherweise noch Zuweisungen vorhanden');
-            }
-          }
-        }
-      ]
-    });
-  };
 
   const [presentInviteModal, dismissInviteModal] = useIonModal(AdminInvitePage, {
     onClose: () => dismissInviteModal(),
@@ -246,7 +51,7 @@ const AdminSettingsPage: React.FC = () => {
   const handleLogout = () => {
     presentAlert({
       header: 'Abmelden',
-      message: 'Moechtest du dich wirklich abmelden?',
+      message: 'Möchtest du dich wirklich abmelden?',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -302,7 +107,7 @@ console.error('Logout error:', error);
                 </div>
                 <div className="app-flex-fill">
                   <h2 className="app-settings-item__title">Profil</h2>
-                  <p className="app-settings-item__subtitle">Passwort und E-Mail aendern</p>
+                  <p className="app-settings-item__subtitle">Passwort und E-Mail ändern</p>
                 </div>
               </div>
 
@@ -336,7 +141,7 @@ console.error('Logout error:', error);
           </IonCard>
         </IonList>
 
-        {/* BLOCK 1: Verwaltung - fuer org_admin UND super_admin */}
+        {/* BLOCK 1: Verwaltung - für org_admin UND super_admin */}
         {(user?.role_name === 'org_admin' || user?.role_name === 'super_admin') && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -360,6 +165,21 @@ console.error('Logout error:', error);
                   </div>
                 </div>
 
+                {user?.role_name === 'org_admin' && (
+                  <div
+                    className="app-list-item app-list-item--users app-settings-item"
+                    onClick={() => history.push('/admin/settings/dashboard')}
+                  >
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                      <IonIcon icon={appsOutline} />
+                    </div>
+                    <div className="app-flex-fill">
+                      <h2 className="app-settings-item__title">Dashboard</h2>
+                      <p className="app-settings-item__subtitle">Sichtbare Bereiche für Konfis und Teamer:innen</p>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className="app-list-item app-list-item--users app-settings-item"
                   onClick={() => presentInviteModal({ presentingElement: presentingElement })}
@@ -369,30 +189,15 @@ console.error('Logout error:', error);
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Konfis einladen</h2>
-                    <p className="app-settings-item__subtitle">QR-Code fuer Selbstregistrierung</p>
+                    <p className="app-settings-item__subtitle">QR-Code für Selbstregistrierung</p>
                   </div>
                 </div>
-
-                {user?.role_name === 'org_admin' && (
-                  <div
-                    className="app-list-item app-list-item--settings app-settings-item"
-                    onClick={() => history.push('/admin/settings/dashboard')}
-                  >
-                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--settings">
-                      <IonIcon icon={appsOutline} />
-                    </div>
-                    <div className="app-flex-fill">
-                      <h2 className="app-settings-item__title">Dashboard-Einstellungen</h2>
-                      <p className="app-settings-item__subtitle">Sichtbare Bereiche fuer Konfis und Teamer:innen</p>
-                    </div>
-                  </div>
-                )}
               </IonCardContent>
             </IonCard>
           </IonList>
         )}
 
-        {/* System-Administration - NUR fuer super_admin */}
+        {/* System-Administration - NUR für super_admin */}
         {user?.role_name === 'super_admin' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -420,7 +225,7 @@ console.error('Logout error:', error);
           </IonList>
         )}
 
-        {/* BLOCK 2: Inhalt -- nur fuer org_admin/teamer, NICHT fuer super_admin */}
+        {/* BLOCK 2: Inhalt -- nur für org_admin/teamer, NICHT für super_admin */}
         {user?.role_name !== 'super_admin' && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -439,8 +244,8 @@ console.error('Logout error:', error);
                     <IonIcon icon={flash} />
                   </div>
                   <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Aktivitaeten</h2>
-                    <p className="app-settings-item__subtitle">Aktivitaeten und Punkte verwalten</p>
+                    <h2 className="app-settings-item__title">Aktivitäten</h2>
+                    <p className="app-settings-item__subtitle">Aktivitäten und Punkte verwalten</p>
                   </div>
                 </div>
 
@@ -465,7 +270,7 @@ console.error('Logout error:', error);
                     <IonIcon icon={school} />
                   </div>
                   <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Jahrgaenge</h2>
+                    <h2 className="app-settings-item__title">Jahrgänge</h2>
                     <p className="app-settings-item__subtitle">Konfirmand:innen verwalten</p>
                   </div>
                 </div>
@@ -479,7 +284,20 @@ console.error('Logout error:', error);
                   </div>
                   <div className="app-flex-fill">
                     <h2 className="app-settings-item__title">Kategorien</h2>
-                    <p className="app-settings-item__subtitle">Kategorien fuer Aktivitaeten und Events</p>
+                    <p className="app-settings-item__subtitle">Kategorien für Aktivitäten und Events</p>
+                  </div>
+                </div>
+
+                <div
+                  className="app-list-item app-list-item--level app-settings-item"
+                  onClick={() => history.push('/admin/settings/levels')}
+                >
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
+                    <IonIcon icon={trophy} />
+                  </div>
+                  <div className="app-flex-fill">
+                    <h2 className="app-settings-item__title">Level</h2>
+                    <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
                   </div>
                 </div>
 
@@ -497,24 +315,10 @@ console.error('Logout error:', error);
                 </div>
 
                 <div
-                  className="app-list-item app-list-item--level app-settings-item"
-                  onClick={() => history.push('/admin/settings/levels')}
-                >
-                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--level">
-                    <IonIcon icon={trophy} />
-                  </div>
-                  <div className="app-flex-fill">
-                    <h2 className="app-settings-item__title">Level-System</h2>
-                    <p className="app-settings-item__subtitle">Punkte-Level und Belohnungen</p>
-                  </div>
-                </div>
-
-                {/* Zertifikate */}
-                <div
-                  className="app-list-item app-list-item--badges app-settings-item"
+                  className="app-list-item app-list-item--purple app-settings-item"
                   onClick={() => history.push('/admin/settings/certificates')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
+                  <div className="app-icon-circle app-icon-circle--lg app-icon-circle--purple">
                     <IonIcon icon={ribbon} />
                   </div>
                   <div className="app-flex-fill">

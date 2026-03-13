@@ -199,9 +199,7 @@ const AdminBadgesPage: React.FC = () => {
               <IonLabel>Konfis</IonLabel>
             </IonSegmentButton>
             <IonSegmentButton value="teamer">
-              <IonLabel style={selectedRole === 'teamer' ? { color: '#5b21b6', fontWeight: '700' } : {}}>
-                Teamer:innen
-              </IonLabel>
+              <IonLabel>Teamer:innen</IonLabel>
             </IonSegmentButton>
           </IonSegment>
         </div>
