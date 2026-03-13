@@ -772,8 +772,16 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           };
           reader.readAsDataURL(blob);
         });
-        const ext = fileName.split('.').pop() || '';
-        const path = `temp/chat_${Date.now()}.${ext}`;
+        // Extension aus MIME-Type ableiten (fileName kann Hash ohne Extension sein)
+        const mimeExtMap: Record<string, string> = {
+          'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp',
+          'application/pdf': 'pdf', 'text/plain': 'txt',
+          'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+          'application/vnd.ms-excel': 'xls', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+          'application/vnd.ms-powerpoint': 'ppt', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx'
+        };
+        const fileExt = fileName.includes('.') ? fileName.split('.').pop() : mimeExtMap[mime] || 'bin';
+        const path = `temp/chat_${Date.now()}.${fileExt}`;
         try {
           await Filesystem.mkdir({ path: 'temp', directory: Directory.Documents, recursive: true });
         } catch { /* existiert bereits */ }
