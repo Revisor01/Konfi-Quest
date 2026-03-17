@@ -112,6 +112,7 @@ Dein Konfi Quest Team
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header img { width: 48px; height: 48px; border-radius: 10px; margin-bottom: 10px; }
     .header h1 { margin: 0; font-size: 24px; }
     .content { background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; }
     .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white !important; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
@@ -123,6 +124,7 @@ Dein Konfi Quest Team
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://konfi-points.de/assets/icon/icon-192x192.png" alt="Konfi Quest" />
       <h1>Konfi Quest</h1>
     </div>
     <div class="content">
@@ -175,6 +177,7 @@ Dein Konfi Quest Team
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; }
+    .header img { width: 48px; height: 48px; border-radius: 10px; margin-bottom: 10px; }
     .header h1 { margin: 0; font-size: 24px; }
     .content { background: #f9fafb; padding: 30px; border-radius: 0 0 12px 12px; }
     .success { background: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 16px; text-align: center; }
@@ -185,6 +188,7 @@ Dein Konfi Quest Team
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://konfi-points.de/assets/icon/icon-192x192.png" alt="Konfi Quest" />
       <h1>Konfi Quest</h1>
     </div>
     <div class="content">
