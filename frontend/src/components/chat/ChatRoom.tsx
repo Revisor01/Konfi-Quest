@@ -50,6 +50,13 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
   const [messageText, setMessageText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
+
+  // Validiert URLs fuer img src, erlaubt nur sichere Protokolle (blob: und data:)
+  const getSafePreviewUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith('blob:') || url.startsWith('data:image/')) return url;
+    return null;
+  };
   const [uploading, setUploading] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
@@ -934,7 +941,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
                 border: '2px solid #06b6d4'
               }}>
                 <img
-                  src={selectedFilePreview}
+                  src={getSafePreviewUrl(selectedFilePreview) || ''}
                   alt="Preview"
                   style={{
                     width: '100%',

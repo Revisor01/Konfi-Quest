@@ -219,9 +219,16 @@ const orgLimiter = rateLimit({
 // app.use(cors()); // DEAKTIVIERT - Apache macht das
 
 // Security Headers
+// CSP bleibt deaktiviert, da Ionic/React inline Styles und Scripts benoetigt.
+// HSTS wird von Apache/KeyHelp gesetzt, daher hier nicht doppelt konfigurieren.
 app.use(helmet({
   contentSecurityPolicy: false,
-  strictTransportSecurity: false
+  strictTransportSecurity: false,
+  crossOriginEmbedderPolicy: false,
+  xContentTypeOptions: true,
+  xFrameOptions: { action: 'deny' },
+  xXssProtection: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }));
 
 // Allgemeiner Rate Limiter

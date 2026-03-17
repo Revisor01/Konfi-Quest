@@ -1,4 +1,5 @@
 // Utility functions for password generation
+const crypto = require('crypto');
 
 const generateBiblicalPassword = () => {
   const BIBLE_BOOKS = [
@@ -14,10 +15,10 @@ const generateBiblicalPassword = () => {
     'Timotheus', 'Titus', 'Philemon', 'Hebraeer', 'Jakobus',
     'Petrus', 'Johannes', 'Judas', 'Offenbarung'
   ];
-  
-  const book = BIBLE_BOOKS[Math.floor(Math.random() * BIBLE_BOOKS.length)];
-  const chapter = Math.floor(Math.random() * 50) + 1;
-  const verse = Math.floor(Math.random() * 30) + 1;
+
+  const book = BIBLE_BOOKS[crypto.randomInt(BIBLE_BOOKS.length)];
+  const chapter = crypto.randomInt(1, 51);
+  const verse = crypto.randomInt(1, 31);
   return `${book}${chapter},${verse}`;
 };
 
