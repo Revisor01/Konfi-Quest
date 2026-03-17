@@ -275,3 +275,13 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 | 49. Badge-UI | 0/1 | Not started | - |
 | 50. UI-Polish | 0/1 | Not started | - |
 | 51. Teamer-Profil | 0/1 | Not started | - |
+
+### Phase 52: Teamer-Profilseite mit Tabs (Badges, Konfi-Stats)
+
+**Goal:** Teamer-Profilseite vollstaendig ueberarbeiten mit AdminProfilePage-Layout, Konto-Einstellungen, Teamer-Badges im Konfi-Grid-Look, Konfi-Badges und Konfi-Stats (conditional)
+**Requirements**: PRF-02, PRF-03, TMR-01
+**Depends on:** Phase 51
+**Plans:** 1 plan
+
+Plans:
+- [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten
