@@ -55,8 +55,8 @@ Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Ph
 ### Profil (PRF)
 
 - [ ] **PRF-01**: Teamer kann Aktivitaets-Antraege stellen (wie Konfis)
-- [ ] **PRF-02**: Teamer sieht Badges-Uebersicht und Badge-Historie im Profil
-- [ ] **PRF-03**: Teamer sieht eingefrorene Konfi-Badges als Historie
+- [x] **PRF-02**: Teamer sieht Badges-Uebersicht und Badge-Historie im Profil
+- [x] **PRF-03**: Teamer sieht eingefrorene Konfi-Badges als Historie
 
 ### Chat (CHT)
 
@@ -114,7 +114,7 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 
 ### Teamer (TMR)
 
-- [ ] **TMR-01**: Teamer-Profil ordentlich gestalten (vollstaendige Profilansicht)
+- [x] **TMR-01**: Teamer-Profil ordentlich gestalten (vollstaendige Profilansicht)
 
 ## v2 Requirements
 
@@ -169,8 +169,8 @@ Deferred. Nicht in aktuellem Roadmap.
 | MAT-02 | Phase 42 | Complete |
 | MAT-03 | Phase 42 | Complete |
 | PRF-01 | Phase 43 | Pending |
-| PRF-02 | Phase 43 | Pending |
-| PRF-03 | Phase 43 | Pending |
+| PRF-02 | Phase 43 | Complete |
+| PRF-03 | Phase 43 | Complete |
 | CHT-01 | Phase 43 | Pending |
 | CHT-02 | Phase 43 | Pending |
 
@@ -211,7 +211,7 @@ Deferred. Nicht in aktuellem Roadmap.
 | ADM-03 | Phase 48 | Pending |
 | ADM-04 | Phase 48 | Pending |
 | ADM-05 | Phase 48 | Pending |
-| TMR-01 | Phase 51 | Pending |
+| TMR-01 | Phase 51 | Complete |
 
 **Coverage v1.9:**
 - v1.9 requirements: 30 total

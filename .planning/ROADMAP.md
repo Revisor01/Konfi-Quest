@@ -281,7 +281,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 **Goal:** Teamer-Profilseite vollstaendig ueberarbeiten mit AdminProfilePage-Layout, Konto-Einstellungen, Teamer-Badges im Konfi-Grid-Look, Konfi-Badges und Konfi-Stats (conditional)
 **Requirements**: PRF-02, PRF-03, TMR-01
 **Depends on:** Phase 51
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten
