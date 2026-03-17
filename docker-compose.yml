@@ -14,8 +14,8 @@ services:
       PGTZ: Europe/Berlin
       SMTP_HOST: server.godsapp.de
       SMTP_PORT: 465
-      SMTP_USER: team@konfi-quest.de
-      SMTP_PASS: "NkqFQuTx877Sia6Pp"
+      SMTP_USER: noreply@konfi-quest.de
+      SMTP_PASS: "3F!kevTv6G!63MjZNKlos"
     volumes:
       - ./postgres:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -49,8 +49,8 @@ services:
       PGPORT: 5432
       SMTP_HOST: server.godsapp.de
       SMTP_PORT: 465
-      SMTP_USER: team@konfi-quest.de
-      SMTP_PASS: "NkqFQuTx877Sia6Pp"
+      SMTP_USER: noreply@konfi-quest.de
+      SMTP_PASS: "3F!kevTv6G!63MjZNKlos"
     volumes:
       - ./uploads:/app/uploads  # Chat uploads
     extra_hosts:

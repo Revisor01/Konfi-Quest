@@ -122,7 +122,7 @@ const SMTP_CONFIG = {
   port: parseInt(process.env.SMTP_PORT || '465'),
   secure: process.env.SMTP_SECURE === 'true' || true, // true for 465
   auth: {
-    user: process.env.SMTP_USER || 'profil@konfi-quest.de',
+    user: process.env.SMTP_USER || 'noreply@konfi-quest.de',
     pass: process.env.SMTP_PASS
   },
   // TLS-Optionen: Hostname-Validierung lockern für Docker-Umgebung

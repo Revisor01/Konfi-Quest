@@ -34,6 +34,9 @@ const getTransporter = () => {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
+    },
+    tls: {
+      rejectUnauthorized: false
     }
   });
 
@@ -51,7 +54,7 @@ const getTransporter = () => {
 const sendEmail = async ({ to, subject, text, html }) => {
   const transporter = getTransporter();
 
-  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER || 'team@konfi-quest.de'}>`;
+  const smtpFrom = process.env.SMTP_FROM || `Konfi Quest <${process.env.SMTP_USER || 'noreply@konfi-quest.de'}>`;
 
   const mailOptions = {
     from: smtpFrom,
