@@ -119,7 +119,7 @@ const db = require('./database');
 // ====================================================================
 
 const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'server.godsapp.de',
+  host: process.env.SMTP_HOST || '213.109.162.132',
   port: parseInt(process.env.SMTP_PORT || '465'),
   secure: process.env.SMTP_SECURE === 'true' || true, // true for 465
   auth: {

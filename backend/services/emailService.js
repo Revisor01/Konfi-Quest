@@ -28,7 +28,7 @@ const getTransporter = () => {
   }
 
   cachedTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'server.godsapp.de',
+    host: process.env.SMTP_HOST || '213.109.162.132',
     port: parseInt(process.env.SMTP_PORT || '465'),
     secure: process.env.SMTP_SECURE !== 'false', // Default: true (Port 465 mit TLS)
     auth: {
