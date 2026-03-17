@@ -119,3 +119,8 @@ uploads/
 
 # Portainer Stack (enthält sensible Daten)
 portainer-stack.yml
+docker-compose.yml
+
+# Firebase Config (API Keys)
+**/GoogleService-Info.plist
+**/google-services.json
