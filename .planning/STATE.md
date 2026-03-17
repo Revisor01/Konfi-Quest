@@ -4,7 +4,7 @@ milestone: v1.9
 milestone_name: Bugfix + Polish
 status: planning
 stopped_at: Completed 52-01-PLAN.md
-last_updated: "2026-03-17T23:37:59.426Z"
+last_updated: "2026-03-17T23:42:19.452Z"
 last_activity: 2026-03-17 — Sicherheitsvorfall behoben, Credentials rotiert
 progress:
   total_phases: 9
