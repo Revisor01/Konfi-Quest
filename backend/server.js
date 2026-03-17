@@ -18,6 +18,7 @@ const helmet = require('helmet');
 // ====================================================================
 
 const app = express();
+app.set('trust proxy', 1); // Traefik Reverse Proxy
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
