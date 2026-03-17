@@ -64,6 +64,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     try {
       const userId = req.user.id;
 
+      // User-Daten aus DB laden (inkl. email, role_title, teamer_since)
+      const userQuery = `
+        SELECT u.display_name, u.username, u.email, u.role_title, u.teamer_since,
+               o.name as organization_name
+        FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        WHERE u.id = $1
+      `;
+      const { rows: [userData] } = await db.query(userQuery, [userId]);
+
       // Konfi-Profildaten (eingefroren nach Transition)
       const profileQuery = `
         SELECT kp.gottesdienst_points, kp.gemeinde_points,
@@ -86,9 +96,12 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       res.json({
         user: {
-          display_name: req.user.display_name,
-          username: req.user.username,
-          organization_name: req.user.organization_name || ''
+          display_name: userData?.display_name || req.user.display_name,
+          username: userData?.username || req.user.username,
+          email: userData?.email || '',
+          role_title: userData?.role_title || '',
+          teamer_since: userData?.teamer_since || null,
+          organization_name: userData?.organization_name || ''
         },
         konfi_data: {
           gottesdienst_points: konfiProfile?.gottesdienst_points || 0,
