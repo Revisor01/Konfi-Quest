@@ -32,6 +32,7 @@ interface PointsHistoryModalProps {
     gottesdienst_enabled: boolean;
     gemeinde_enabled: boolean;
   };
+  apiEndpoint?: string;
 }
 
 interface PointEntry {
@@ -50,7 +51,7 @@ interface PointsTotals {
   total: number;
 }
 
-const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig }) => {
+const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointConfig, apiEndpoint }) => {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<PointEntry[]>([]);
   const [totals, setTotals] = useState<PointsTotals>({ gottesdienst: 0, gemeinde: 0, total: 0 });
@@ -65,7 +66,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
 
   const loadHistory = async () => {
     try {
-      const response = await api.get('/konfi/points-history');
+      const response = await api.get(apiEndpoint || '/konfi/points-history');
       setHistory(response.data.history || []);
       setTotals(response.data.totals || { gottesdienst: 0, gemeinde: 0, total: 0 });
     } catch (err) {

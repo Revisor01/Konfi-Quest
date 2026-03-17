@@ -62,6 +62,8 @@ import TeamerEventsPage from '../teamer/pages/TeamerEventsPage';
 import TeamerMaterialPage from '../teamer/pages/TeamerMaterialPage';
 
 import TeamerProfilePage from '../teamer/pages/TeamerProfilePage';
+import TeamerBadgesPage from '../teamer/pages/TeamerBadgesPage';
+import TeamerKonfiStatsPage from '../teamer/pages/TeamerKonfiStatsPage';
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
@@ -212,6 +214,8 @@ const MainTabs: React.FC = () => {
           <Route exact path="/teamer/material" component={TeamerMaterialPage} />
 
           <Route exact path="/teamer/profile" component={TeamerProfilePage} />
+          <Route exact path="/teamer/profile/badges" component={TeamerBadgesPage} />
+          <Route exact path="/teamer/profile/konfi-stats" component={TeamerKonfiStatsPage} />
           <Route exact path="/" render={() => <Redirect to="/teamer/dashboard" />} />
         </IonRouterOutlet>
         {!isTabBarHidden(location.pathname) && (
