@@ -99,7 +99,7 @@ module.exports = (db, rbacVerifier, roleHelpers, materialUpload) => {
         console.log(`Material migration: ${jgMigrated} jahrgang_id Eintraege in material_jahrgaenge uebertragen`);
       }
 
-      console.log('Material migration: OK');
+      // Migration OK — kein Log bei jedem Start
     } catch (err) {
       console.error('Material migration error:', err.message);
     }

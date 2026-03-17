@@ -700,7 +700,7 @@ async function runMigrations(db) {
       console.log(`Migration: Dropped UNIQUE constraint ${c.constraint_name} from user_activities`);
     }
 
-    console.log('Badge/Activity migrations completed successfully');
+    // Migrations OK — kein Log bei jedem Start
   } catch (err) {
     console.error('Migration error:', err);
     throw err;

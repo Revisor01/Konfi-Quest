@@ -511,7 +511,7 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ====================================================================
 
-// Firebase und APN Status ermitteln
+// Firebase Status ermitteln
 let firebaseStatus = 'Nicht konfiguriert';
 try {
   const firebase = require('./push/firebase');
@@ -519,16 +519,6 @@ try {
   if (fbApp) firebaseStatus = 'Verbunden';
 } catch (e) {
   // Firebase nicht verfuegbar
-}
-
-let apnStatus = 'Nicht konfiguriert';
-try {
-  const apnModule = require('./push/apn');
-  if (apnModule && apnModule.getProvider && apnModule.getProvider()) {
-    apnStatus = 'Verbunden';
-  }
-} catch (e) {
-  // APN nicht verfuegbar
 }
 
 const smtpStatus = SMTP_CONFIG.auth.pass ? 'Konfiguriert' : 'Nicht konfiguriert';
@@ -546,7 +536,6 @@ server.listen(PORT, () => {
   console.log('  Services:');
   console.log(`  - SMTP:       ${smtpStatus}`);
   console.log(`  - Firebase:   ${firebaseStatus}`);
-  console.log(`  - APN:        ${apnStatus}`);
   console.log('  - Background: Gestartet');
   console.log('========================================');
 });
