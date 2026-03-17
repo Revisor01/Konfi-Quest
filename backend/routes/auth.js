@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { body, param } = require('express-validator');
+const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
 const PushService = require('../services/pushService');
@@ -202,8 +203,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
     const trimmedEmail = email?.trim() || null;
 
     if (trimmedEmail) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(trimmedEmail)) {
+      if (!validator.isEmail(trimmedEmail)) {
         return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
       }
     }
@@ -534,8 +534,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}) 
 
     // Optional: E-Mail validieren wenn angegeben
     if (email && email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!validator.isEmail(email.trim())) {
         return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
       }
     }
