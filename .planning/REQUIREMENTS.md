@@ -73,14 +73,14 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 
 ### Events (EVT-v19)
 
-- [ ] **EVT-v19-01**: Konfi sieht nur Events seines eigenen Jahrgangs (keine fremden Pflicht-Events, keine fremden Konfirmationen)
-- [ ] **EVT-v19-02**: Abgesagte Events werden nicht mehr in der Konfi-Event-Liste angezeigt
-- [ ] **EVT-v19-03**: Konfi kann sich nicht von Pflicht-Events abmelden bei denen er nicht angemeldet ist
-- [ ] **EVT-v19-04**: Neue Konfis in einem Jahrgang werden automatisch zu bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
+- [x] **EVT-v19-01**: Konfi sieht nur Events seines eigenen Jahrgangs (keine fremden Pflicht-Events, keine fremden Konfirmationen)
+- [x] **EVT-v19-02**: Abgesagte Events werden nicht mehr in der Konfi-Event-Liste angezeigt
+- [x] **EVT-v19-03**: Konfi kann sich nicht von Pflicht-Events abmelden bei denen er nicht angemeldet ist
+- [x] **EVT-v19-04**: Neue Konfis in einem Jahrgang werden automatisch zu bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
 - [ ] **EVT-v19-05**: Event absagen funktioniert aus der Admin-Ansicht
 - [ ] **EVT-v19-06**: Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
 - [ ] **EVT-v19-07**: "Mitbringen" und "Pflicht" werden farbig hervorgehoben in Event-Liste und Details
-- [ ] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
+- [x] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
 - [x] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
 - [ ] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
 - [ ] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
@@ -182,14 +182,14 @@ Deferred. Nicht in aktuellem Roadmap.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PUSH-01 | Phase 44 | Complete |
-| EVT-v19-01 | Phase 45 | Pending |
-| EVT-v19-02 | Phase 45 | Pending |
-| EVT-v19-03 | Phase 45 | Pending |
-| EVT-v19-04 | Phase 45 | Pending |
+| EVT-v19-01 | Phase 45 | Complete |
+| EVT-v19-02 | Phase 45 | Complete |
+| EVT-v19-03 | Phase 45 | Complete |
+| EVT-v19-04 | Phase 45 | Complete |
 | EVT-v19-05 | Phase 46 | Pending |
 | EVT-v19-06 | Phase 46 | Pending |
 | EVT-v19-07 | Phase 46 | Pending |
-| EVT-v19-08 | Phase 45 | Pending |
+| EVT-v19-08 | Phase 45 | Complete |
 | EVT-v19-09 | Phase 45 | Complete |
 | EVT-v19-10 | Phase 46 | Pending |
 | EVT-v19-11 | Phase 46 | Pending |
