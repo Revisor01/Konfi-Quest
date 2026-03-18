@@ -277,3 +277,13 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 
 Plans:
 - [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten
+
+### Phase 53: Chat verlassen — Gruppenchats (z.B. Event-Chats) verlassen, Jahrgangschat nicht verlassbar
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 52
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 53 to break down)
