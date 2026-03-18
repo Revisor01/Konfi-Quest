@@ -20,7 +20,8 @@ import {
   IonItemSliding,
   IonItemOptions,
   IonItemOption,
-  useIonActionSheet
+  useIonActionSheet,
+  useIonAlert
 } from '@ionic/react';
 import {
   arrowBack,
@@ -46,7 +47,9 @@ import {
   bagHandle,
   qrCodeOutline,
   document as documentIcon,
-  attachOutline
+  attachOutline,
+  ban,
+  chatbubbles
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
@@ -93,6 +96,8 @@ interface Event {
   series_id?: string;
   series_events?: Event[];
   created_at: string;
+  chat_room_id?: number | null;
+  cancelled?: boolean;
 }
 
 interface Jahrgang {
@@ -141,6 +146,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
   const { setSuccess, setError } = useApp();
   const [presentActionSheet] = useIonActionSheet();
+  const [presentAlert] = useIonAlert();
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
@@ -184,6 +190,30 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
       loadEventData(); // Reload to get updated participant list
     },
     dismiss: () => dismissParticipantModalHook()
+  });
+
+  // Teamer Modal (filterRole: 'teamer')
+  const [presentTeamerModal, dismissTeamerModal] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    onClose: () => dismissTeamerModal(),
+    onSuccess: () => {
+      dismissTeamerModal();
+      loadEventData();
+    },
+    dismiss: () => dismissTeamerModal(),
+    filterRole: 'teamer'
+  });
+
+  // Konfi Modal (filterRole: 'konfi')
+  const [presentKonfiModal, dismissKonfiModal] = useIonModal(ParticipantManagementModal, {
+    eventId: eventId,
+    onClose: () => dismissKonfiModal(),
+    onSuccess: () => {
+      dismissKonfiModal();
+      loadEventData();
+    },
+    dismiss: () => dismissKonfiModal(),
+    filterRole: 'konfi'
   });
 
   useEffect(() => {
@@ -499,6 +529,47 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
     }
   };
 
+  const isCancelled = eventData?.cancelled || eventData?.registration_status === ('cancelled' as string);
+
+  const handleCancelEvent = async () => {
+    presentAlert({
+      header: 'Event absagen',
+      message: 'Wirklich absagen? Alle Teilnehmer:innen werden benachrichtigt.',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Absagen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.put(`/events/${eventData?.id}/cancel`);
+              setSuccess('Event wurde abgesagt');
+              loadEventData();
+              window.dispatchEvent(new CustomEvent('events-updated'));
+            } catch (error: any) {
+              setError(error.response?.data?.error || 'Fehler beim Absagen');
+            }
+          }
+        }
+      ]
+    });
+  };
+
+  const handleCreateEventChat = async () => {
+    try {
+      await api.post(`/events/${eventData?.id}/chat`);
+      setSuccess('Chat erstellt');
+      loadEventData();
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Fehler beim Erstellen des Chats');
+    }
+  };
+
+  const handleNavigateToChat = () => {
+    // Navigate via admin chat tab
+    window.location.href = `/admin/chat/${eventData?.chat_room_id}`;
+  };
+
   return (
     <IonPage ref={pageRef}>
       <IonHeader translucent={true}>
@@ -706,8 +777,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 </div>
               )}
 
-              {/* Teamer-Zugang Badge */}
-              {(eventData?.teamer_needed || eventData?.teamer_only) && (
+              {/* Teamer-Zugang Badge - nur wenn teamer_only oder wenn teamer_needed und noch keine Teamer angemeldet */}
+              {(eventData?.teamer_only || (eventData?.teamer_needed && participants.filter(p => p.role_name === 'teamer' && p.status === 'confirmed').length === 0)) && (
                 <div className="app-info-row">
                   <IonIcon icon={people} className="app-info-row__icon" style={{ color: '#5b21b6' }} />
                   <div className="app-info-row__content">
@@ -1092,10 +1163,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     <IonButton
                       expand="block"
                       fill="outline"
-                      onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                      onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
                     >
                       <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                      Teilnehmer:in hinzufügen
+                      Kind hinzufügen
                     </IonButton>
                   </IonCardContent>
                 </IonCard>
@@ -1137,10 +1208,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <IonButton
                           expand="block"
                           fill="outline"
-                          onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                          onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
                         >
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                          Teilnehmer:in hinzufügen
+                          Kind hinzufügen
                         </IonButton>
                       </div>
                     </IonCardContent>
@@ -1164,7 +1235,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                         <IonButton
                           expand="block"
                           fill="outline"
-                          onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                          onClick={() => presentTeamerModal({ presentingElement: presentingElement || undefined })}
                         >
                           <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
                           Teamer:in hinzufügen
@@ -1183,10 +1254,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                       <IonButton
                         expand="block"
                         fill="outline"
-                        onClick={() => presentParticipantModalHook({ presentingElement: presentingElement || undefined })}
+                        onClick={() => presentKonfiModal({ presentingElement: presentingElement || undefined })}
                       >
                         <IonIcon icon={personAdd} className="app-event-detail__icon-gap" />
-                        Teilnehmer:in hinzufügen
+                        Kind hinzufügen
                       </IonButton>
                     </IonCardContent>
                   </IonCard>
@@ -1283,6 +1354,54 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                     </div>
                   </div>
                 ))}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Event-Chat */}
+        {eventData && !isCancelled && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                {eventData.chat_room_id ? (
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    onClick={handleNavigateToChat}
+                  >
+                    <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
+                    Zum Chat
+                  </IonButton>
+                ) : (
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    onClick={handleCreateEventChat}
+                  >
+                    <IonIcon icon={chatbubbles} className="app-event-detail__icon-gap" />
+                    Chat erstellen
+                  </IonButton>
+                )}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
+        {/* Event absagen */}
+        {eventData && !isCancelled && (
+          <IonList className="app-section-inset" inset={true}>
+            <IonCard className="app-card">
+              <IonCardContent className="app-card-content">
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  color="danger"
+                  onClick={handleCancelEvent}
+                >
+                  <IonIcon icon={ban} className="app-event-detail__icon-gap" />
+                  Event absagen
+                </IonButton>
               </IonCardContent>
             </IonCard>
           </IonList>
