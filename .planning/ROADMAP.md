@@ -261,7 +261,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 |-------|----------------|--------|-----------|
 | 44. Push-Debug | 1/1 | Complete    | 2026-03-18 |
 | 45. Event-Sichtbarkeit + Filterung | 2/2 | Complete    | 2026-03-18 |
-| 46. Event-Admin + Teamer-Logik | 2/2 | Complete   | 2026-03-18 |
+| 46. Event-Admin + Teamer-Logik | 2/2 | Complete    | 2026-03-18 |
 | 47. Punkte-Logik | 0/1 | Not started | - |
 | 48. Admin-Struktur | 0/2 | Not started | - |
 | 49. Badge-UI | 0/1 | Not started | - |
