@@ -365,6 +365,8 @@ const EventModal: React.FC<EventModalProps> = ({
         return date.toISOString();
       };
 
+      const isTeamerOnly = teamerAccess === 'teamer_only';
+
       const payload = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
@@ -372,16 +374,16 @@ const EventModal: React.FC<EventModalProps> = ({
         event_end_time: toBackendTimestamp(formData.event_end_time),
         location: formData.location.trim() || null,
         points: formData.mandatory ? 0 : formData.points,
-        point_type: formData.point_type,
+        point_type: isTeamerOnly ? 'gemeinde' : formData.point_type,
         category_ids: formData.category_ids,
-        jahrgang_ids: formData.jahrgang_ids,
+        jahrgang_ids: isTeamerOnly ? [] : formData.jahrgang_ids,
         type: formData.type,
-        max_participants: formData.mandatory ? 0 : formData.max_participants,
+        max_participants: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_participants,
         registration_opens_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_opens_at),
         registration_closes_at: formData.mandatory ? null : toBackendTimestamp(formData.registration_closes_at),
         has_timeslots: formData.mandatory ? false : formData.has_timeslots,
-        waitlist_enabled: formData.mandatory ? false : formData.waitlist_enabled,
-        max_waitlist_size: formData.mandatory ? 0 : formData.max_waitlist_size,
+        waitlist_enabled: (formData.mandatory || isTeamerOnly) ? false : formData.waitlist_enabled,
+        max_waitlist_size: (formData.mandatory || isTeamerOnly) ? 0 : formData.max_waitlist_size,
         timeslots: !formData.mandatory && formData.has_timeslots ? timeslots.map(ts => ({
           ...ts,
           start_time: toBackendTimestamp(ts.start_time),
@@ -426,7 +428,7 @@ const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const isFormValid = formData.name.trim().length > 0 && formData.event_date && (!formData.mandatory || formData.jahrgang_ids.length > 0);
+  const isFormValid = formData.name.trim().length > 0 && formData.event_date && (teamerAccess === 'teamer_only' || !formData.mandatory || formData.jahrgang_ids.length > 0);
 
   return (
     <IonPage>
@@ -662,7 +664,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </IonList>
 
         {/* ZEITFENSTER - VOR Punkte & Teilnehmer */}
-        {!formData.mandatory && (<>
+        {!formData.mandatory && teamerAccess !== 'teamer_only' && (<>
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
@@ -831,7 +833,7 @@ const EventModal: React.FC<EventModalProps> = ({
         </>)}
 
         {/* PUNKTE & TEILNEHMER */}
-        {!formData.mandatory && (
+        {!formData.mandatory && teamerAccess !== 'teamer_only' && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
@@ -1058,6 +1060,7 @@ const EventModal: React.FC<EventModalProps> = ({
                 </IonItem>
               )}
 
+              {teamerAccess !== 'teamer_only' && (<>
               <IonItem lines="none" style={{ '--background': 'transparent', paddingBottom: '8px', paddingTop: '16px' }}>
                 <IonLabel style={{ fontSize: '0.9rem', fontWeight: '500', color: formData.mandatory && formData.jahrgang_ids.length === 0 ? '#dc3545' : '#666' }}>
                   Jahrgänge (mehrere möglich) *{formData.mandatory && formData.jahrgang_ids.length === 0 ? ' (Pflicht bei Pflicht-Events)' : ''}
@@ -1105,13 +1108,14 @@ const EventModal: React.FC<EventModalProps> = ({
                   );
                 })}
               </div>
+              </>)}
             </IonList>
           </IonCardContent>
           </IonCard>
         </IonList>
 
         {/* WARTELISTE */}
-        {!formData.mandatory && (
+        {!formData.mandatory && teamerAccess !== 'teamer_only' && (
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--events">
