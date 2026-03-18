@@ -1,4 +1,4 @@
-const { sendFirebasePushNotification } = require('../push/firebase');
+const { sendFirebasePushNotification, sendFirebaseSilentPush } = require('../push/firebase');
 
 /**
  * Push Notification Type Registry
@@ -243,13 +243,7 @@ class PushService {
       let errorCount = 0;
 
       for (const token of tokens) {
-        const result = await sendFirebasePushNotification(token.token, {
-          badge: badgeCount,
-          data: {
-            type: 'badge_update',
-            count: badgeCount.toString()
-          }
-        });
+        const result = await sendFirebaseSilentPush(token.token, badgeCount);
 
         if (result.success) {
           successCount++;
@@ -281,6 +275,46 @@ class PushService {
 
     } catch (error) {
  console.error('PushService.sendBadgeUpdate error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sendet sichtbare Push-Benachrichtigung bei neuem Badge
+   */
+  static async sendNewBadgeNotification(db, userId, badgeName) {
+    try {
+      const tokens = await this.getTokensForUser(db, userId);
+      if (tokens.length === 0) return { success: false, message: 'No tokens found' };
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const token of tokens) {
+        const result = await sendFirebasePushNotification(token.token, {
+          title: 'Neues Badge erreicht!',
+          body: badgeName,
+          data: { type: 'new_badge', badge_name: badgeName },
+        });
+
+        if (result.success) {
+          successCount++;
+          if (token.error_count > 0) {
+            await db.query('UPDATE push_tokens SET error_count = 0, last_error_at = NULL WHERE id = $1', [token.id]);
+          }
+        } else {
+          const fatalCodes = ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'];
+          if (fatalCodes.includes(result.errorCode)) {
+            await db.query('DELETE FROM push_tokens WHERE id = $1', [token.id]);
+          } else {
+            await db.query('UPDATE push_tokens SET error_count = error_count + 1, last_error_at = NOW() WHERE id = $1', [token.id]);
+          }
+          errorCount++;
+        }
+      }
+      return { success: true, sent: successCount, errors: errorCount, total: tokens.length };
+    } catch (error) {
+      console.error('PushService.sendNewBadgeNotification error:', error);
       throw error;
     }
   }

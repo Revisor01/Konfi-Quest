@@ -68,7 +68,40 @@ const sendFirebasePushNotification = async (deviceToken, notificationData) => {
   }
 };
 
+const sendFirebaseSilentPush = async (deviceToken, badgeCount) => {
+  try {
+    const app = initializeFirebase();
+    if (!app) {
+      throw new Error('Firebase not initialized');
+    }
+
+    const message = {
+      token: deviceToken,
+      apns: {
+        payload: {
+          aps: {
+            badge: badgeCount,
+            'content-available': 1,
+          },
+        },
+        headers: {
+          'apns-push-type': 'background',
+          'apns-priority': '5',
+        },
+      },
+      data: { type: 'badge_update', count: badgeCount.toString() },
+    };
+
+    const response = await admin.messaging().send(message);
+    return { success: true, messageId: response };
+  } catch (error) {
+    console.error('Firebase silent push error:', error);
+    return { success: false, error: error.message, errorCode: error.code || null };
+  }
+};
+
 module.exports = {
   initializeFirebase,
-  sendFirebasePushNotification
+  sendFirebasePushNotification,
+  sendFirebaseSilentPush
 };
