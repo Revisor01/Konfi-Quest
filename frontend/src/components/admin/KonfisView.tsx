@@ -111,8 +111,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   }, [viewMode]);
 
   const getTotalPoints = (konfi: Konfi) => {
-    const gottesdienst = konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
-    const gemeinde = konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0;
+    const godiEnabled = konfi.gottesdienst_enabled !== false;
+    const gemEnabled = konfi.gemeinde_enabled !== false;
+    const gottesdienst = godiEnabled ? (konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0) : 0;
+    const gemeinde = gemEnabled ? (konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0) : 0;
     return gottesdienst + gemeinde;
   };
 
@@ -438,52 +440,66 @@ const KonfisView: React.FC<KonfisViewProps> = ({
 
                           {/* Progress Bars - nur aktive Typen */}
                           <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {/* Gottesdienst + Gemeinde nebeneinander (wenn beide aktiv) oder einzeln */}
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              {/* Gottesdienst - nur wenn aktiviert */}
-                              {godiEnabled && (
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                    <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
-                                    <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGodi}</span>
+                            {godiEnabled && gemEnabled ? (
+                              <>
+                                {/* Gottesdienst + Gemeinde nebeneinander */}
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                      <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '600' }}>Godi</span>
+                                      <span style={{ fontSize: '0.65rem', color: '#999' }}>{godiPoints}/{targetGodi}</span>
+                                    </div>
+                                    <div className="app-progress-bar">
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
+                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="app-progress-bar">
-                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}>
-                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGodi)}%`, backgroundColor: '#3b82f6' }} />
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                      <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
+                                      <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGem}</span>
+                                    </div>
+                                    <div className="app-progress-bar">
+                                      <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
+                                        <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
-                              )}
-
-                              {/* Gemeinde - nur wenn aktiviert */}
-                              {gemEnabled && (
-                                <div style={{ flex: 1 }}>
+                                {/* Gesamt */}
+                                <div>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                    <span style={{ fontSize: '0.65rem', color: '#059669', fontWeight: '600' }}>Gemeinde</span>
-                                    <span style={{ fontSize: '0.65rem', color: '#999' }}>{gemPoints}/{targetGem}</span>
+                                    <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
+                                    <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
+                                      {totalPoints}/{targetTotal}
+                                      {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
+                                    </span>
                                   </div>
-                                  <div className="app-progress-bar">
-                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)' }}>
-                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentGem)}%`, backgroundColor: '#059669' }} />
+                                  <div className="app-progress-bar app-progress-bar--thick">
+                                    <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
+                                      <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
                                     </div>
                                   </div>
                                 </div>
-                              )}
-                            </div>
-
-                            {/* Gesamt - nur wenn beide Typen aktiv */}
-                            {godiEnabled && gemEnabled && (
+                              </>
+                            ) : (
+                              /* Ein breiter Balken fuer den aktiven Typ */
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                  <span style={{ fontSize: '0.7rem', color: '#5b21b6', fontWeight: '700' }}>Gesamt</span>
+                                  <span style={{ fontSize: '0.7rem', color: godiEnabled ? '#3b82f6' : '#059669', fontWeight: '700' }}>
+                                    {godiEnabled ? 'Gottesdienst' : 'Gemeinde'}
+                                  </span>
                                   <span style={{ fontSize: '0.7rem', color: '#666', fontWeight: '600' }}>
-                                    {totalPoints}/{targetTotal}
-                                    {percentTotal > 100 && <span style={{ color: '#059669', marginLeft: '4px' }}>({percentTotal}%)</span>}
+                                    {godiEnabled ? godiPoints : gemPoints}/{godiEnabled ? targetGodi : targetGem}
                                   </span>
                                 </div>
                                 <div className="app-progress-bar app-progress-bar--thick">
-                                  <div className="app-progress-bar__track" style={{ backgroundColor: 'rgba(91, 33, 182, 0.12)' }}>
-                                    <div className="app-progress-bar__fill" style={{ width: `${Math.min(100, percentTotal)}%`, backgroundColor: '#5b21b6' }} />
+                                  <div className="app-progress-bar__track" style={{ backgroundColor: godiEnabled ? 'rgba(59, 130, 246, 0.15)' : 'rgba(34, 197, 94, 0.15)' }}>
+                                    <div className="app-progress-bar__fill" style={{
+                                      width: `${Math.min(100, godiEnabled ? percentGodi : percentGem)}%`,
+                                      backgroundColor: godiEnabled ? '#3b82f6' : '#059669'
+                                    }} />
                                   </div>
                                 </div>
                               </div>

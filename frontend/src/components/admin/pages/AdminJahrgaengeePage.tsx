@@ -223,9 +223,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   <IonToggle
                     checked={formData.gottesdienst_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gottesdienst_enabled: e.detail.checked })}
-                    disabled={loading}
+                    disabled={loading || (!formData.gemeinde_enabled)}
                   />
                 </IonItem>
+                {!formData.gemeinde_enabled && formData.gottesdienst_enabled && (
+                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', paddingLeft: '16px' }}>
+                    Mindestens ein Punkt-Typ muss aktiv bleiben.
+                  </div>
+                )}
                 {formData.gottesdienst_enabled && (
                   <IonItem lines="full" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gottesdienst</IonLabel>
@@ -248,9 +253,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                   <IonToggle
                     checked={formData.gemeinde_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gemeinde_enabled: e.detail.checked })}
-                    disabled={loading}
+                    disabled={loading || (!formData.gottesdienst_enabled)}
                   />
                 </IonItem>
+                {!formData.gottesdienst_enabled && formData.gemeinde_enabled && (
+                  <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', paddingLeft: '16px' }}>
+                    Mindestens ein Punkt-Typ muss aktiv bleiben.
+                  </div>
+                )}
                 {formData.gemeinde_enabled && (
                   <IonItem lines="none" style={{ '--background': 'transparent' }}>
                     <IonLabel position="stacked">Ziel Gemeinde</IonLabel>
