@@ -65,13 +65,15 @@ interface ParticipantManagementModalProps {
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
+  filterRole?: 'teamer' | 'konfi' | null;
 }
 
 const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   eventId,
   onClose,
   onSuccess,
-  dismiss
+  dismiss,
+  filterRole
 }) => {
   const { setSuccess, setError } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -133,15 +135,23 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
       const participantUserIds = activeParticipants.map(p => p.user_id || p.id);
       const available = allPersons.filter((p: Konfi) => !participantUserIds.includes(p.id));
 
+      // Filter by role if filterRole prop is set
+      let roleFiltered = available;
+      if (filterRole === 'teamer') {
+        roleFiltered = available.filter((p: Konfi) => p.role_name === 'teamer');
+      } else if (filterRole === 'konfi') {
+        roleFiltered = available.filter((p: Konfi) => p.role_name !== 'teamer');
+      }
+
       // Extract available Jahrgaenge (wird nur fuer Dropdown gebraucht wenn Event keine Jahrgaenge hat)
       const jahrgaenge = [...new Set(
-        available
+        roleFiltered
           .filter((k: Konfi) => k.jahrgang_name)
           .map((k: Konfi) => k.jahrgang_name!)
       )].sort() as string[];
       setAvailableJahrgaenge(jahrgaenge);
 
-      setAvailableKonfis(available);
+      setAvailableKonfis(roleFiltered);
     } catch (error) {
       setError('Fehler beim Laden der Personen');
     }
@@ -248,7 +258,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Teilnehmer verwalten</IonTitle>
+          <IonTitle>{filterRole === 'teamer' ? 'Teamer:in hinzufügen' : filterRole === 'konfi' ? 'Kind hinzufügen' : 'Teilnehmer verwalten'}</IonTitle>
           <IonButtons slot="start">
             <IonButton onClick={handleClose} disabled={loading} className="app-modal-close-btn">
               <IonIcon icon={closeOutline} slot="icon-only" />
