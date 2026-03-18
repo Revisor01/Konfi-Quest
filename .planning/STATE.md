@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
-stopped_at: Completed 46-02-PLAN.md
-last_updated: "2026-03-18T22:55:46.167Z"
+stopped_at: Completed 46-01-PLAN.md
+last_updated: "2026-03-18T22:56:50.283Z"
 last_activity: 2026-03-18 — Jahrgangs-Filter in Admin-Event-Liste
 progress:
   total_phases: 10
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.9 Phase 45 Event-Sichtbarkeit-Filterung
+**Current focus:** v1.9 Phase 46 Event-Admin-Teamer-Logik
 
 ## Current Position
 
-Phase: 45 of 51 (Event-Sichtbarkeit-Filterung) -- 2 of 8 in v1.9
-Plan: 02 complete (2/2)
-Status: Phase 45 complete
-Last activity: 2026-03-18 — Jahrgangs-Filter in Admin-Event-Liste
+Phase: 46 of 51 (Event-Admin-Teamer-Logik) -- 3 of 8 in v1.9
+Plan: 01 complete (1/2)
+Status: Plan 46-01 complete
+Last activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
 
 Progress: [████████░░] 75%
 
@@ -50,6 +50,7 @@ All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 45]: Jahrgangs-Filter via INNER JOIN -- Konfi ohne Jahrgang sieht keine Events
 - [Phase 45]: Segment Meine als Default statt Alle -- persoenliche Relevanz zuerst
 - [Phase 46]: filterRole Prop statt separater Modals fuer Teamer/Konfi Filterung
+- [Phase 46]: Zeitfenster-Sektion bei teamer_only ebenfalls ausgeblendet
 
 ### Roadmap Evolution
 
@@ -73,9 +74,10 @@ None.
 | Phase 44 P01 | 2min | 2 tasks | 3 files |
 | Phase 45 P01 | 3min | 2 tasks | 5 files |
 | Phase 46 P02 | 3min | 3 tasks | 3 files |
+| Phase 46 P01 | 2min | 2 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T22:55:46.165Z
-Stopped at: Completed 46-02-PLAN.md
+Last session: 2026-03-18T22:56:50.280Z
+Stopped at: Completed 46-01-PLAN.md
 Resume file: None
