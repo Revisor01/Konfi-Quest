@@ -32,6 +32,7 @@ interface ChangeEmailModalProps {
   initialEmail?: string;
   sectionIconClass?: string;
   submitBtnClass?: string;
+  infoBoxClass?: string;
 }
 
 const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
@@ -39,7 +40,8 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   onSuccess,
   initialEmail = '',
   sectionIconClass = 'app-section-icon--purple',
-  submitBtnClass = 'app-modal-submit-btn--konfi'
+  submitBtnClass = 'app-modal-submit-btn--konfi',
+  infoBoxClass = 'app-info-box--purple'
 }) => {
   const { setSuccess, setError } = useApp();
   const [email, setEmail] = useState(initialEmail);
@@ -152,7 +154,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--purple">
+          <IonCard className={`app-card ${infoBoxClass}`}>
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.

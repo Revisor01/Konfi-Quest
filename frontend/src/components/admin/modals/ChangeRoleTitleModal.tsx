@@ -32,6 +32,7 @@ interface ChangeRoleTitleModalProps {
   initialRoleTitle?: string;
   sectionIconClass?: string;
   submitBtnClass?: string;
+  infoBoxClass?: string;
 }
 
 const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
@@ -39,7 +40,8 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   onSuccess,
   initialRoleTitle = '',
   sectionIconClass = 'app-section-icon--users',
-  submitBtnClass = 'app-modal-submit-btn--settings'
+  submitBtnClass = 'app-modal-submit-btn--settings',
+  infoBoxClass = 'app-info-box--blue'
 }) => {
   const { setSuccess, setError } = useApp();
   const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
@@ -113,7 +115,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             </div>
             <IonLabel>Hinweis</IonLabel>
           </IonListHeader>
-          <IonCard className="app-card app-info-box--blue">
+          <IonCard className={`app-card ${infoBoxClass}`}>
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
                 Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.

@@ -106,7 +106,8 @@ const TeamerProfilePage: React.FC = () => {
       }
     },
     sectionIconClass: 'app-section-icon--teamer',
-    submitBtnClass: 'app-modal-submit-btn--teamer'
+    submitBtnClass: 'app-modal-submit-btn--teamer',
+    infoBoxClass: 'app-info-box--teamer'
   });
 
   const [presentPasswordModal, dismissPasswordModal] = useIonModal(ChangePasswordModal, {
@@ -124,7 +125,8 @@ const TeamerProfilePage: React.FC = () => {
     },
     initialRoleTitle: profile?.user.role_title || '',
     sectionIconClass: 'app-section-icon--teamer',
-    submitBtnClass: 'app-modal-submit-btn--teamer'
+    submitBtnClass: 'app-modal-submit-btn--teamer',
+    infoBoxClass: 'app-info-box--teamer'
   });
 
   // Logout

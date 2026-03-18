@@ -86,7 +86,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
       // Konfi-Badges (eingefroren nach Transition)
       const badgesQuery = `
-        SELECT kb.badge_id, b.name, b.icon, b.color, kb.awarded_date
+        SELECT kb.badge_id, b.name, b.description, b.icon, b.color,
+               b.criteria_type, b.criteria_value,
+               kb.awarded_date
         FROM user_badges kb
         JOIN custom_badges b ON kb.badge_id = b.id
         WHERE kb.user_id = $1

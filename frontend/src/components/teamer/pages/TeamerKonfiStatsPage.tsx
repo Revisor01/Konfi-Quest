@@ -23,7 +23,6 @@ import {
   flashOutline,
   schoolOutline,
   starOutline,
-  calendarOutline,
   checkmark,
   checkmarkCircle
 } from 'ionicons/icons';
@@ -77,6 +76,7 @@ import {
   leaf,
   rose,
   calendar,
+  calendarOutline,
   today,
   time,
   timer,
@@ -101,7 +101,12 @@ import {
   informationCircle,
   helpCircle,
   alertCircle,
-  hammer
+  hammer,
+  layersOutline,
+  gridOutline,
+  prismOutline,
+  cubeOutline,
+  handLeft
 } from 'ionicons/icons';
 
 const BADGE_ICONS: Record<string, string> = {
@@ -247,7 +252,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
         <IonHeader>
           <IonToolbar>
             <IonButtons slot="start">
-              <IonBackButton defaultHref="/teamer/profile" text="" />
+              <IonBackButton defaultHref="/teamer/profile" />
             </IonButtons>
             <IonTitle>Konfi-Historie</IonTitle>
           </IonToolbar>
@@ -268,7 +273,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/profile" text="" />
+            <IonBackButton defaultHref="/teamer/profile" />
           </IonButtons>
           <IonTitle>Konfi-Historie</IonTitle>
         </IonToolbar>
@@ -328,118 +333,182 @@ const TeamerKonfiStatsPage: React.FC = () => {
         </div>
 
         {/* Konfi-Badges */}
-        {konfiData.badges.length > 0 && (
-          <IonList inset={true} style={{ margin: '16px' }}>
-            <IonListHeader>
-              <div className="app-section-icon" style={{ backgroundColor: '#f59e0b' }}>
-                <IonIcon icon={trophy} />
-              </div>
-              <IonLabel>Konfi-Badges ({konfiData.badges.length})</IonLabel>
-            </IonListHeader>
-            <IonCard className="app-card">
-              <IonCardContent style={{ padding: '16px' }}>
-                {/* 3-Column Badge Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '12px'
-                }}>
-                  {[...konfiData.badges].sort((a, b) => {
-                    // Sortiere nach criteria_type, dann criteria_value, dann awarded_date
-                    if (a.criteria_type && b.criteria_type) {
-                      if (a.criteria_type !== b.criteria_type) return a.criteria_type.localeCompare(b.criteria_type);
-                      if (a.criteria_value !== undefined && b.criteria_value !== undefined) return a.criteria_value - b.criteria_value;
-                    }
-                    return new Date(a.awarded_date).getTime() - new Date(b.awarded_date).getTime();
-                  }).map((badge) => {
-                    const bColor = badge.color || '#f59e0b';
-                    return (
-                      <div
-                        key={badge.badge_id}
-                        onClick={(e) => handleBadgeClick(badge, e)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          padding: '12px 8px',
-                          borderRadius: '16px',
-                          background: `${bColor}10`,
-                          border: `2px solid ${bColor}40`,
-                          position: 'relative',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {/* Badge Icon */}
-                        <div style={{
-                          width: '56px',
-                          height: '56px',
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: `linear-gradient(145deg, ${bColor} 0%, ${bColor}cc 100%)`,
-                          boxShadow: `0 4px 12px ${bColor}40`,
-                          position: 'relative',
-                          marginBottom: '8px'
-                        }}>
-                          <IonIcon
-                            icon={getIconFromString(badge.icon)}
-                            style={{ fontSize: '1.8rem', color: 'white' }}
-                          />
-                          {/* Earned Checkmark */}
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '-2px',
-                            right: '-2px',
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            background: '#22c55e',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '2px solid white'
-                          }}>
-                            <IonIcon icon={checkmark} style={{ fontSize: '0.7rem', color: 'white' }} />
-                          </div>
-                        </div>
+        {konfiData.badges.length > 0 && (() => {
+          // Kategorien wie in BadgesView
+          const KONFI_BADGE_CATEGORIES: { key: string; title: string; icon: string; color: string }[] = [
+            { key: 'total_points', title: 'Punkte-Sammler', icon: trophy, color: '#ffd700' },
+            { key: 'gottesdienst_points', title: 'Gottesdienst-Held', icon: sunny, color: '#ff9500' },
+            { key: 'gemeinde_points', title: 'Gemeinde-Star', icon: people, color: '#059669' },
+            { key: 'bonus_points', title: 'Bonus-Jäger', icon: gift, color: '#ff6b9d' },
+            { key: 'both_categories', title: 'Allrounder', icon: layersOutline, color: '#5856d6' },
+            { key: 'activity_count', title: 'Aktiv dabei', icon: checkmarkCircle, color: '#3880ff' },
+            { key: 'unique_activities', title: 'Vielseitig', icon: gridOutline, color: '#10dc60' },
+            { key: 'activity_combination', title: 'Kombinier-Profi', icon: prismOutline, color: '#7044ff' },
+            { key: 'category_activities', title: 'Kategorie-Meister', icon: cubeOutline, color: '#0cd1e8' },
+            { key: 'specific_activity', title: 'Spezialist', icon: handLeft, color: '#ffce00' },
+            { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a' },
+            { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93' },
+            { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946' },
+            { key: 'collection', title: 'Sammler', icon: trophy, color: '#ffd700' },
+            { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93' }
+          ];
 
-                        {/* Badge Name */}
-                        <span style={{
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          color: '#333',
-                          textAlign: 'center',
-                          lineHeight: '1.2',
-                          maxWidth: '100%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical'
-                        }}>
-                          {badge.name}
-                        </span>
+          const badgesByCategory = KONFI_BADGE_CATEGORIES
+            .map(cat => ({
+              ...cat,
+              badges: konfiData.badges
+                .filter(b => b.criteria_type === cat.key)
+                .sort((a, b) => (a.criteria_value || 0) - (b.criteria_value || 0))
+            }))
+            .filter(cat => cat.badges.length > 0);
 
-                        {/* Award Date */}
-                        <span style={{
-                          fontSize: '0.6rem',
-                          color: '#888',
-                          marginTop: '2px'
-                        }}>
-                          {new Date(badge.awarded_date).toLocaleDateString('de-DE', {
-                            day: 'numeric',
-                            month: 'short'
-                          })}
-                        </span>
-                      </div>
-                    );
-                  })}
+          // Badges ohne bekannte Kategorie direkt nach criteria_type gruppieren
+          const knownKeys = new Set(KONFI_BADGE_CATEGORIES.map(c => c.key));
+          const unknownBadges = konfiData.badges.filter(b => !b.criteria_type || !knownKeys.has(b.criteria_type));
+          if (unknownBadges.length > 0) {
+            // Nach criteria_type gruppieren, falls vorhanden
+            const unknownGroups = new Map<string, KonfiBadge[]>();
+            unknownBadges.forEach(b => {
+              const key = b.criteria_type || 'badges';
+              if (!unknownGroups.has(key)) unknownGroups.set(key, []);
+              unknownGroups.get(key)!.push(b);
+            });
+            unknownGroups.forEach((badges, key) => {
+              badgesByCategory.push({
+                key,
+                title: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                icon: trophy,
+                color: '#f59e0b',
+                badges: badges.sort((a, b) => (a.criteria_value || 0) - (b.criteria_value || 0))
+              });
+            });
+          }
+
+          return (
+            <IonList inset={true} style={{ margin: '16px' }}>
+              <IonListHeader>
+                <div className="app-section-icon" style={{ backgroundColor: '#f59e0b' }}>
+                  <IonIcon icon={trophy} />
                 </div>
-              </IonCardContent>
-            </IonCard>
-          </IonList>
-        )}
+                <IonLabel>Konfi-Badges ({konfiData.badges.length})</IonLabel>
+              </IonListHeader>
+
+              {badgesByCategory.map((category, index) => (
+                <IonCard key={category.key} className="app-card" style={{ marginTop: index > 0 ? '8px' : '0' }}>
+                  <IonCardContent style={{ padding: '16px' }}>
+                    {/* Category Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <div style={{
+                        width: '42px', height: '42px', borderRadius: '12px',
+                        background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}cc 100%)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: `0 4px 12px ${category.color}40`
+                      }}>
+                        <IonIcon icon={category.icon} style={{ fontSize: '1.3rem', color: 'white' }} />
+                      </div>
+                      <div>
+                        <h3 style={{ margin: '0', fontSize: '1.1rem', fontWeight: '700', color: '#333' }}>{category.title}</h3>
+                        <span style={{ fontSize: '0.85rem', color: '#888' }}>{category.badges.length} Badge{category.badges.length !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+
+                    {/* 3-Column Badge Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: '12px'
+                    }}>
+                      {category.badges.map((badge) => {
+                        const bColor = badge.color || '#f59e0b';
+                        return (
+                          <div
+                            key={badge.badge_id}
+                            onClick={(e) => handleBadgeClick(badge, e)}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              padding: '12px 8px',
+                              borderRadius: '16px',
+                              background: `${bColor}10`,
+                              border: `2px solid ${bColor}40`,
+                              position: 'relative',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {/* Badge Icon */}
+                            <div style={{
+                              width: '56px',
+                              height: '56px',
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: `linear-gradient(145deg, ${bColor} 0%, ${bColor}cc 100%)`,
+                              boxShadow: `0 4px 12px ${bColor}40`,
+                              position: 'relative',
+                              marginBottom: '8px'
+                            }}>
+                              <IonIcon
+                                icon={getIconFromString(badge.icon)}
+                                style={{ fontSize: '1.8rem', color: 'white' }}
+                              />
+                              {/* Earned Checkmark */}
+                              <div style={{
+                                position: 'absolute',
+                                bottom: '-2px',
+                                right: '-2px',
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                background: '#22c55e',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '2px solid white'
+                              }}>
+                                <IonIcon icon={checkmark} style={{ fontSize: '0.7rem', color: 'white' }} />
+                              </div>
+                            </div>
+
+                            {/* Badge Name */}
+                            <span style={{
+                              fontSize: '0.75rem',
+                              fontWeight: '600',
+                              color: '#333',
+                              textAlign: 'center',
+                              lineHeight: '1.2',
+                              maxWidth: '100%',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical'
+                            }}>
+                              {badge.name}
+                            </span>
+
+                            {/* Award Date */}
+                            <span style={{
+                              fontSize: '0.6rem',
+                              color: '#888',
+                              marginTop: '2px'
+                            }}>
+                              {new Date(badge.awarded_date).toLocaleDateString('de-DE', {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              ))}
+            </IonList>
+          );
+        })()}
 
         <div style={{ height: '32px' }} />
       </IonContent>

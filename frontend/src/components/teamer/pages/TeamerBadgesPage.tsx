@@ -76,6 +76,10 @@ import {
   hammer,
   lockClosed,
   cubeOutline,
+  layersOutline,
+  gridOutline,
+  prismOutline,
+  handLeft,
   checkmark
 } from 'ionicons/icons';
 import api from '../../../services/api';
@@ -323,20 +327,22 @@ const TeamerBadgesPage: React.FC = () => {
     }
 
     const categories: { key: string; title: string; icon: string; color: string; badges: TeamerBadge[] }[] = [
-      { key: 'activity_count', title: 'Aktivitäten', icon: checkmarkCircle, color: '#3880ff', badges: filtered.filter(b => b.criteria_type === 'activity_count').sort((a, b) => a.criteria_value - b.criteria_value) },
-      { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946', badges: filtered.filter(b => b.criteria_type === 'event_count').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'total_points', title: 'Punkte-Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'total_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'gottesdienst_points', title: 'Gottesdienst-Held', icon: sunny, color: '#ff9500', badges: filtered.filter(b => b.criteria_type === 'gottesdienst_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'gemeinde_points', title: 'Gemeinde-Star', icon: people, color: '#059669', badges: filtered.filter(b => b.criteria_type === 'gemeinde_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'bonus_points', title: 'Bonus-Jäger', icon: gift, color: '#ff6b9d', badges: filtered.filter(b => b.criteria_type === 'bonus_points').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'both_categories', title: 'Allrounder', icon: layersOutline, color: '#5856d6', badges: filtered.filter(b => b.criteria_type === 'both_categories').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'activity_count', title: 'Aktiv dabei', icon: checkmarkCircle, color: '#3880ff', badges: filtered.filter(b => b.criteria_type === 'activity_count').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'unique_activities', title: 'Vielseitig', icon: gridOutline, color: '#10dc60', badges: filtered.filter(b => b.criteria_type === 'unique_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'activity_combination', title: 'Kombinier-Profi', icon: prismOutline, color: '#7044ff', badges: filtered.filter(b => b.criteria_type === 'activity_combination').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'category_activities', title: 'Kategorie-Meister', icon: cubeOutline, color: '#0cd1e8', badges: filtered.filter(b => b.criteria_type === 'category_activities').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'specific_activity', title: 'Spezialist', icon: handLeft, color: '#ffce00', badges: filtered.filter(b => b.criteria_type === 'specific_activity').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'streak', title: 'Serien-Champion', icon: flame, color: '#eb445a', badges: filtered.filter(b => b.criteria_type === 'streak').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'time_based', title: 'Zeitreisender', icon: time, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'time_based').sort((a, b) => a.criteria_value - b.criteria_value) },
+      { key: 'event_count', title: 'Event-Champion', icon: calendar, color: '#e63946', badges: filtered.filter(b => b.criteria_type === 'event_count').sort((a, b) => a.criteria_value - b.criteria_value) },
       { key: 'collection', title: 'Sammler', icon: trophy, color: '#ffd700', badges: filtered.filter(b => b.criteria_type === 'collection').sort((a, b) => a.criteria_value - b.criteria_value) },
-      { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'yearly').sort((a, b) => a.criteria_value - b.criteria_value) },
-      { key: 'category_activities', title: 'Kategorie-Meister', icon: cubeOutline, color: '#0cd1e8', badges: filtered.filter(b => b.criteria_type === 'category_activities').sort((a, b) => a.criteria_value - b.criteria_value) }
+      { key: 'yearly', title: 'Jahres-Badges', icon: calendarOutline, color: '#8e8e93', badges: filtered.filter(b => b.criteria_type === 'yearly').sort((a, b) => a.criteria_value - b.criteria_value) }
     ];
-
-    // Fallback fuer unbekannte Typen
-    const knownTypes = new Set(categories.map(c => c.key));
-    const unknownBadges = filtered.filter(b => !knownTypes.has(b.criteria_type));
-    if (unknownBadges.length > 0) {
-      categories.push({ key: 'weitere', title: 'Weitere', icon: star, color: '#667eea', badges: unknownBadges.sort((a, b) => a.criteria_value - b.criteria_value) });
-    }
 
     return categories.filter(cat => cat.badges.length > 0);
   };
@@ -367,7 +373,7 @@ const TeamerBadgesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/profile" text="" />
+            <IonBackButton defaultHref="/teamer/profile" />
           </IonButtons>
           <IonTitle>Teamer-Badges</IonTitle>
         </IonToolbar>
