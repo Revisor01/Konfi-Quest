@@ -892,3 +892,5 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   
   return router;
 };
+
+module.exports.checkAndAwardBadges = checkAndAwardBadges;
