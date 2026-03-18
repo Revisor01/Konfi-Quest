@@ -202,7 +202,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 47-01: TBD
+- [ ] 47-01-PLAN.md — Toggle-Sperre, getTotalPoints Fix, Ein-Typ-Statusbalken
+- [ ] 47-02-PLAN.md — History-Header 3x2 Grid + Teamer-Konfi-History
 
 ### Phase 48: Admin-Struktur
 **Goal**: Admin-Bereich ist sauber strukturiert mit Zertifikate, Dashboard und Badges als eigene Unterseiten
