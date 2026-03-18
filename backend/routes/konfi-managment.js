@@ -198,6 +198,26 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, filterByJah
             }
 
             await client.query('COMMIT');
+
+            // Auto-Enrollment für zukünftige Pflicht-Events
+            try {
+              const enrollFutureEventsQuery = `
+                INSERT INTO event_bookings (event_id, user_id, status, booking_date, organization_id)
+                SELECT e.id, $1, 'confirmed', NOW(), $2
+                FROM events e
+                JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
+                WHERE eja.jahrgang_id = $3
+                  AND e.mandatory = true
+                  AND e.event_date > NOW()
+                  AND e.organization_id = $2
+                  AND e.cancelled IS NOT TRUE
+                ON CONFLICT (user_id, event_id) DO NOTHING
+              `;
+              await db.query(enrollFutureEventsQuery, [userId, req.user.organization_id, jahrgang_id]);
+            } catch (enrollErr) {
+              console.error('Auto-enrollment für Pflicht-Events fehlgeschlagen:', enrollErr);
+            }
+
             res.status(201).json({ id: userId, username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' });
 
         } catch (err) {

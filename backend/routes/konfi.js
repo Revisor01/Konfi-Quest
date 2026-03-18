@@ -1122,8 +1122,20 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
-      
-      // Get all events with konfi-specific data
+
+      // Jahrgang des Konfis laden für Filterung
+      const { rows: [konfiProfile] } = await db.query(
+        'SELECT jahrgang_id FROM konfi_profiles WHERE user_id = $1',
+        [konfiId]
+      );
+
+      if (!konfiProfile || !konfiProfile.jahrgang_id) {
+        return res.json([]); // Konfi ohne Jahrgang sieht keine Events
+      }
+
+      const jahrgangId = konfiProfile.jahrgang_id;
+
+      // Get all events with konfi-specific data, filtered by jahrgang
       const query = `
         SELECT e.*, 
                COUNT(DISTINCT CASE WHEN eb_all.status = 'confirmed' THEN eb_all.id END) as registered_count,
@@ -1170,6 +1182,7 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
                  ELSE NULL
                END as waitlist_position
         FROM events e
+        INNER JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
         LEFT JOIN event_bookings eb_all ON e.id = eb_all.event_id
         LEFT JOIN event_bookings eb_konfi ON e.id = eb_konfi.event_id AND eb_konfi.user_id = $2
         LEFT JOIN event_timeslots et_booked ON eb_konfi.timeslot_id = et_booked.id
@@ -1181,11 +1194,14 @@ module.exports = (db, rbacMiddleware, upload, requestUpload) => {
           GROUP BY event_id
         ) timeslot_capacity ON e.id = timeslot_capacity.event_id
         WHERE e.organization_id = $1
+          AND eja.jahrgang_id = $3
+          AND e.teamer_only IS NOT TRUE
+          AND (e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT NULL)
         GROUP BY e.id, timeslot_capacity.total_capacity, eb_konfi.id, eb_konfi.status, eb_konfi.attendance_status, eb_konfi.created_at, eb_konfi.timeslot_id, et_booked.start_time, et_booked.end_time
         ORDER BY e.event_date ASC
       `;
-      
-      const { rows } = await db.query(query, [req.user.organization_id, konfiId]);
+
+      const { rows } = await db.query(query, [req.user.organization_id, konfiId, jahrgangId]);
       
       // Transform the data to include categories arrays
       const eventsWithRelations = rows.map(row => {
