@@ -26,8 +26,6 @@ import {
   settingsOutline,
   trophy,
   logOutOutline,
-  informationCircleOutline,
-  shieldOutline,
   ribbon,
   schoolOutline
 } from 'ionicons/icons';
@@ -106,12 +104,16 @@ const TeamerProfilePage: React.FC = () => {
       } catch (err) {
         console.error('Error refreshing user:', err);
       }
-    }
+    },
+    sectionIconClass: 'app-section-icon--teamer',
+    submitBtnClass: 'app-modal-submit-btn--teamer'
   });
 
   const [presentPasswordModal, dismissPasswordModal] = useIonModal(ChangePasswordModal, {
     onClose: () => dismissPasswordModal(),
-    onSuccess: () => dismissPasswordModal()
+    onSuccess: () => dismissPasswordModal(),
+    sectionIconClass: 'app-section-icon--teamer',
+    submitBtnClass: 'app-modal-submit-btn--teamer'
   });
 
   const [presentRoleTitleModal, dismissRoleTitleModal] = useIonModal(ChangeRoleTitleModal, {
@@ -120,7 +122,9 @@ const TeamerProfilePage: React.FC = () => {
       dismissRoleTitleModal();
       loadProfile();
     },
-    initialRoleTitle: profile?.user.role_title || ''
+    initialRoleTitle: profile?.user.role_title || '',
+    sectionIconClass: 'app-section-icon--teamer',
+    submitBtnClass: 'app-modal-submit-btn--teamer'
   });
 
   // Logout
@@ -261,7 +265,7 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%' }}>
+                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: '#e11d48' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle" style={{ backgroundColor: '#e11d48' }}>
@@ -288,7 +292,7 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={{ ...itemStyle, marginBottom: '8px' } as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%' }}>
+                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: '#e11d48' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle" style={{ backgroundColor: '#e11d48' }}>
@@ -315,7 +319,7 @@ const TeamerProfilePage: React.FC = () => {
                   lines="none"
                   style={itemStyle as any}
                 >
-                  <div className="app-list-item" style={{ width: '100%' }}>
+                  <div className="app-list-item" style={{ width: '100%', borderLeftColor: '#e11d48' }}>
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle" style={{ backgroundColor: '#e11d48' }}>
@@ -339,7 +343,7 @@ const TeamerProfilePage: React.FC = () => {
         {/* C. Inhalt */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#6b7280' }}>
+            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Inhalt</IonLabel>
@@ -397,34 +401,6 @@ const TeamerProfilePage: React.FC = () => {
           </IonButton>
         </div>
 
-        {/* E. App-Info */}
-        <IonList inset={true} style={{ margin: '16px' }}>
-          <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
-              <IonIcon icon={informationCircleOutline} />
-            </div>
-            <IonLabel>App-Info</IonLabel>
-          </IonListHeader>
-          <IonCard className="app-card">
-            <IonCardContent style={{ padding: '16px' }}>
-              <div className="app-list-item">
-                <div className="app-list-item__row">
-                  <div className="app-list-item__main">
-                    <div className="app-icon-circle" style={{ backgroundColor: '#e11d48' }}>
-                      <IonIcon icon={shieldOutline} />
-                    </div>
-                    <div className="app-list-item__content">
-                      <div className="app-list-item__title">Konfi Quest</div>
-                      <div className="app-list-item__meta">
-                        <span className="app-list-item__meta-item">Version 2.0 - Ionic 8</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </IonList>
 
         <div style={{ height: '32px' }} />
       </IonContent>

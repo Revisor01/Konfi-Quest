@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -15,7 +15,8 @@ import {
   IonList,
   IonListHeader,
   IonLabel,
-  useIonModal
+  useIonModal,
+  useIonPopover
 } from '@ionic/react';
 import {
   trophy,
@@ -23,7 +24,8 @@ import {
   schoolOutline,
   starOutline,
   calendarOutline,
-  checkmark
+  checkmark,
+  checkmarkCircle
 } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
@@ -31,24 +33,28 @@ import api from '../../../services/api';
 import PointsHistoryModal from '../../konfi/modals/PointsHistoryModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
+interface KonfiBadge {
+  badge_id: number;
+  name: string;
+  description?: string;
+  icon: string;
+  color: string;
+  awarded_date: string;
+  criteria_type?: string;
+  criteria_value?: number;
+}
+
 interface KonfiData {
   gottesdienst_points: number;
   gemeinde_points: number;
   jahrgang_name: string;
-  badges: Array<{
-    badge_id: number;
-    name: string;
-    icon: string;
-    color: string;
-    awarded_date: string;
-  }>;
+  badges: KonfiBadge[];
 }
 
 import {
   medal,
   ribbon,
   star,
-  checkmarkCircle,
   diamond,
   shield,
   flame,
@@ -113,11 +119,100 @@ const getIconFromString = (iconName: string): string => {
   return BADGE_ICONS[iconName] || trophy;
 };
 
+// Popover Content fuer Badge-Details
+const KonfiBadgePopoverContent: React.FC<{
+  badgeRef: React.RefObject<{ badge: KonfiBadge | null } | null>;
+}> = ({ badgeRef }) => {
+  const data = badgeRef.current;
+  if (!data || !data.badge) return null;
+  const badge = data.badge;
+  const bColor = badge.color || '#f59e0b';
+
+  return (
+    <div style={{ padding: '12px', background: 'white' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: '50%',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: `linear-gradient(145deg, ${bColor} 0%, ${bColor}cc 100%)`,
+          boxShadow: `0 2px 8px ${bColor}40`
+        }}>
+          <IonIcon
+            icon={getIconFromString(badge.icon)}
+            style={{ fontSize: '1.4rem', color: 'white' }}
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', fontWeight: '700', color: '#333', whiteSpace: 'nowrap' }}>
+            {badge.name}
+          </h3>
+          <p style={{ margin: '0', fontSize: '0.8rem', color: '#666', lineHeight: '1.3' }}>
+            {badge.description || 'Keine Beschreibung'}
+          </p>
+        </div>
+      </div>
+      <div style={{
+        marginTop: '10px',
+        paddingTop: '10px',
+        borderTop: '1px solid #eee',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: '#22c55e',
+          color: 'white',
+          padding: '3px 8px',
+          borderRadius: '8px',
+          fontSize: '0.7rem',
+          fontWeight: '600'
+        }}>
+          <IonIcon icon={checkmarkCircle} style={{ fontSize: '0.75rem' }} />
+          Erreicht
+        </div>
+        {badge.awarded_date && (
+          <span style={{ fontSize: '0.7rem', color: '#888' }}>
+            {new Date(badge.awarded_date).toLocaleDateString('de-DE', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const TeamerKonfiStatsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('teamer-konfi-stats');
   const { setError } = useApp();
   const [konfiData, setKonfiData] = useState<KonfiData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const badgePopoverRef = useRef<{ badge: KonfiBadge | null }>({ badge: null });
+
+  const [presentBadgePopover] = useIonPopover(KonfiBadgePopoverContent, {
+    badgeRef: badgePopoverRef
+  });
+
+  const handleBadgeClick = (badge: KonfiBadge, e: React.MouseEvent) => {
+    badgePopoverRef.current = { badge };
+    presentBadgePopover({
+      event: e.nativeEvent,
+      side: 'top',
+      alignment: 'center',
+      cssClass: 'badge-detail-popover'
+    });
+  };
 
   const [presentPointsModal, dismissPointsModal] = useIonModal(PointsHistoryModal, {
     onClose: () => dismissPointsModal(),
@@ -249,11 +344,19 @@ const TeamerKonfiStatsPage: React.FC = () => {
                   gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: '12px'
                 }}>
-                  {konfiData.badges.map((badge) => {
+                  {[...konfiData.badges].sort((a, b) => {
+                    // Sortiere nach criteria_type, dann criteria_value, dann awarded_date
+                    if (a.criteria_type && b.criteria_type) {
+                      if (a.criteria_type !== b.criteria_type) return a.criteria_type.localeCompare(b.criteria_type);
+                      if (a.criteria_value !== undefined && b.criteria_value !== undefined) return a.criteria_value - b.criteria_value;
+                    }
+                    return new Date(a.awarded_date).getTime() - new Date(b.awarded_date).getTime();
+                  }).map((badge) => {
                     const bColor = badge.color || '#f59e0b';
                     return (
                       <div
                         key={badge.badge_id}
+                        onClick={(e) => handleBadgeClick(badge, e)}
                         style={{
                           display: 'flex',
                           flexDirection: 'column',
@@ -262,7 +365,8 @@ const TeamerKonfiStatsPage: React.FC = () => {
                           borderRadius: '16px',
                           background: `${bColor}10`,
                           border: `2px solid ${bColor}40`,
-                          position: 'relative'
+                          position: 'relative',
+                          cursor: 'pointer'
                         }}
                       >
                         {/* Badge Icon */}

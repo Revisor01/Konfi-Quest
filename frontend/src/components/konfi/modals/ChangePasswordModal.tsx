@@ -35,6 +35,8 @@ import api from '../../../services/api';
 interface ChangePasswordModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  sectionIconClass?: string;
+  submitBtnClass?: string;
 }
 
 interface PasswordCheck {
@@ -62,7 +64,12 @@ const PasswordCheckItem: React.FC<{ label: string; checked: boolean }> = ({ labe
   </div>
 );
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSuccess }) => {
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+  onClose,
+  onSuccess,
+  sectionIconClass = 'app-section-icon--purple',
+  submitBtnClass = 'app-modal-submit-btn--konfi'
+}) => {
   const { setSuccess, setError } = useApp();
   const [saving, setSaving] = useState(false);
 
@@ -143,7 +150,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSave} disabled={saving || !isValid}>
+            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={saving || !isValid}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -154,7 +161,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Aktuelles Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={lockClosedOutline} />
             </div>
             <IonLabel>Aktuelles Passwort</IonLabel>
@@ -187,7 +194,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Neues Passwort Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={keyOutline} />
             </div>
             <IonLabel>Neues Passwort</IonLabel>
@@ -238,7 +245,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
         {/* Passwort-Anforderungen Sektion */}
         <IonList inset={true} className="app-modal-section">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={shieldCheckmarkOutline} />
             </div>
             <IonLabel>Passwort-Anforderungen</IonLabel>

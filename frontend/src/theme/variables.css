@@ -325,6 +325,7 @@ ion-item.app-list-item:last-child {
 .app-section-icon--requests { background-color: #047857; }
 .app-section-icon--jahrgang { background-color: #007aff; }
 .app-section-icon--settings { background-color: #667eea; }
+.app-section-icon--teamer { background-color: #e11d48; }
 .app-section-icon ion-icon {
   color: white;
   font-size: 0.8rem;
@@ -1192,6 +1193,10 @@ ion-button.app-modal-submit-btn--konfi {
 ion-button.app-modal-submit-btn--settings {
   --background: #667eea;
   --background-hover: #5a6fd6;
+}
+ion-button.app-modal-submit-btn--teamer {
+  --background: #e11d48;
+  --background-hover: #be123c;
 }
 ion-button.app-modal-submit-btn--level {
   --background: #ec4899;

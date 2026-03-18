@@ -503,11 +503,12 @@ const TeamerBadgesPage: React.FC = () => {
                         const bColor = getBadgeColor(badge);
                         const isEarned = badge.earned;
                         const hasProgress = !isEarned && badge.progress_percentage && badge.progress_percentage > 0;
+                        const isSecret = badge.is_hidden && !isEarned;
 
                         return (
                           <div
                             key={badge.id}
-                            onClick={(e) => handleBadgeClick(badge, e)}
+                            onClick={(e) => !isSecret && handleBadgeClick(badge, e)}
                             style={{
                               display: 'flex',
                               flexDirection: 'column',
@@ -516,7 +517,7 @@ const TeamerBadgesPage: React.FC = () => {
                               borderRadius: '16px',
                               background: isEarned ? `${bColor}10` : '#f5f5f5',
                               border: isEarned ? `2px solid ${bColor}40` : '2px solid transparent',
-                              cursor: 'pointer',
+                              cursor: isSecret ? 'default' : 'pointer',
                               transition: 'transform 0.2s',
                               position: 'relative'
                             }}
@@ -537,7 +538,7 @@ const TeamerBadgesPage: React.FC = () => {
                               marginBottom: '8px'
                             }}>
                               {/* Progress Ring */}
-                              {hasProgress && (
+                              {hasProgress && !isSecret && (
                                 <svg style={{ position: 'absolute', top: '-4px', left: '-4px', width: '64px', height: '64px', transform: 'rotate(-90deg)' }}>
                                   <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(0,0,0,0.1)" strokeWidth="3" />
                                   <circle cx="32" cy="32" r="28" fill="none" stroke="#667eea" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(badge.progress_percentage || 0) * 1.76} 176`} />
@@ -545,9 +546,9 @@ const TeamerBadgesPage: React.FC = () => {
                               )}
 
                               <IonIcon
-                                icon={getIconFromString(badge.icon)}
+                                icon={isSecret ? lockClosed : getIconFromString(badge.icon)}
                                 style={{
-                                  fontSize: '1.8rem',
+                                  fontSize: isSecret ? '1.5rem' : '1.8rem',
                                   color: isEarned ? 'white' : '#999'
                                 }}
                               />
@@ -571,8 +572,8 @@ const TeamerBadgesPage: React.FC = () => {
                                 </div>
                               )}
 
-                              {/* Lock for not earned */}
-                              {!isEarned && !hasProgress && (
+                              {/* Lock for not earned (non-hidden) */}
+                              {!isEarned && !hasProgress && !isSecret && (
                                 <div style={{
                                   position: 'absolute',
                                   bottom: '-2px',
@@ -605,7 +606,7 @@ const TeamerBadgesPage: React.FC = () => {
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical'
                             }}>
-                              {badge.name}
+                              {isSecret ? '???' : badge.name}
                             </span>
 
                             {/* Progress percentage */}

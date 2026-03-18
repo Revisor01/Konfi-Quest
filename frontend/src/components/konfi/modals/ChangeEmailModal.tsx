@@ -30,12 +30,16 @@ interface ChangeEmailModalProps {
   onClose: () => void;
   onSuccess: () => void;
   initialEmail?: string;
+  sectionIconClass?: string;
+  submitBtnClass?: string;
 }
 
 const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   onClose,
   onSuccess,
-  initialEmail = ''
+  initialEmail = '',
+  sectionIconClass = 'app-section-icon--purple',
+  submitBtnClass = 'app-modal-submit-btn--konfi'
 }) => {
   const { setSuccess, setError } = useApp();
   const [email, setEmail] = useState(initialEmail);
@@ -99,7 +103,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSave} disabled={saving || loading}>
+            <IonButton className={`app-modal-submit-btn ${submitBtnClass}`} onClick={handleSave} disabled={saving || loading}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -110,7 +114,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* E-Mail-Adresse Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={mailOutline} />
             </div>
             <IonLabel>E-Mail-Adresse</IonLabel>
@@ -143,7 +147,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--purple">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>

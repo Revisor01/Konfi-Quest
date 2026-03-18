@@ -30,12 +30,16 @@ interface ChangeRoleTitleModalProps {
   onClose: () => void;
   onSuccess: () => void;
   initialRoleTitle?: string;
+  sectionIconClass?: string;
+  submitBtnClass?: string;
 }
 
 const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   onClose,
   onSuccess,
-  initialRoleTitle = ''
+  initialRoleTitle = '',
+  sectionIconClass = 'app-section-icon--users',
+  submitBtnClass = 'app-modal-submit-btn--settings'
 }) => {
   const { setSuccess, setError } = useApp();
   const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
@@ -67,7 +71,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton onClick={handleSave} disabled={saving} className="app-modal-submit-btn app-modal-submit-btn--settings">
+            <IonButton onClick={handleSave} disabled={saving} className={`app-modal-submit-btn ${submitBtnClass}`}>
               {saving ? <IonSpinner name="crescent" /> : <IonIcon icon={checkmarkOutline} />}
             </IonButton>
           </IonButtons>
@@ -78,7 +82,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         {/* Funktionsbeschreibung Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper" style={{ marginTop: '8px' }}>
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={briefcaseOutline} />
             </div>
             <IonLabel>Deine Funktion</IonLabel>
@@ -104,7 +108,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
         {/* Hinweis Sektion - iOS26 Pattern */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon ${sectionIconClass}`}>
               <IonIcon icon={informationCircleOutline} />
             </div>
             <IonLabel>Hinweis</IonLabel>
