@@ -286,7 +286,7 @@ const TeamerBadgesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState<string>('alle');
 
-  const badgePopoverRef = useRef<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>({ badge: null, getBadgeColor: () => '#e11d48' });
+  const badgePopoverRef = useRef<{ badge: TeamerBadge | null; getBadgeColor: (badge: TeamerBadge) => string }>({ badge: null, getBadgeColor: () => '#f59e0b' });
 
   const loadBadges = useCallback(async () => {
     setLoading(true);
@@ -306,7 +306,7 @@ const TeamerBadgesPage: React.FC = () => {
 
   const getBadgeColor = (badge: TeamerBadge) => {
     if (badge.color) return badge.color;
-    return '#e11d48';
+    return '#f59e0b';
   };
 
   const getCategories = () => {
@@ -367,7 +367,7 @@ const TeamerBadgesPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonButtons slot="start">
-            <IonBackButton defaultHref="/teamer/profile" />
+            <IonBackButton defaultHref="/teamer/profile" text="" />
           </IonButtons>
           <IonTitle>Teamer-Badges</IonTitle>
         </IonToolbar>
@@ -386,6 +386,41 @@ const TeamerBadgesPage: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
+        {/* Header Banner */}
+        <div className="app-header-banner" style={{
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          boxShadow: '0 20px 40px rgba(245, 158, 11, 0.3)',
+          padding: '24px',
+          margin: '16px',
+          borderRadius: '16px',
+          color: 'white'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+            <div className="app-icon-circle" style={{
+              width: '48px', height: '48px',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.3)'
+            }}>
+              <IonIcon icon={trophy} style={{ fontSize: '1.4rem', color: 'white' }} />
+            </div>
+            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: 'white' }}>Teamer-Badges</h2>
+          </div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ textAlign: 'center', flex: '1 1 0', padding: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>{earnedCount}</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '600', letterSpacing: '0.3px', opacity: 0.85 }}>ERREICHT</div>
+            </div>
+            <div style={{ textAlign: 'center', flex: '1 1 0', padding: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>{badges.length}</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '600', letterSpacing: '0.3px', opacity: 0.85 }}>GESAMT</div>
+            </div>
+            <div style={{ textAlign: 'center', flex: '1 1 0', padding: '8px', background: 'rgba(255,255,255,0.15)', borderRadius: '12px' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>{badges.length > 0 ? Math.round((earnedCount / badges.length) * 100) : 0}%</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: '600', letterSpacing: '0.3px', opacity: 0.85 }}>PROZENT</div>
+            </div>
+          </div>
+        </div>
+
         {/* Filter */}
         <div style={{ margin: '16px' }}>
           <IonSegment value={selectedFilter} onIonChange={(e) => setSelectedFilter(e.detail.value as string)}>
@@ -398,7 +433,7 @@ const TeamerBadgesPage: React.FC = () => {
         {/* Badges Grid */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
+            <div className="app-section-icon" style={{ backgroundColor: '#f59e0b' }}>
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Teamer-Badges ({earnedCount})</IonLabel>

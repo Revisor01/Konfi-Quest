@@ -339,7 +339,7 @@ const TeamerProfilePage: React.FC = () => {
         {/* C. Inhalt */}
         <IonList inset={true} style={{ margin: '16px' }}>
           <IonListHeader>
-            <div className="app-section-icon" style={{ backgroundColor: '#e11d48' }}>
+            <div className="app-section-icon" style={{ backgroundColor: '#6b7280' }}>
               <IonIcon icon={ribbon} />
             </div>
             <IonLabel>Inhalt</IonLabel>
@@ -348,9 +348,10 @@ const TeamerProfilePage: React.FC = () => {
             <IonCardContent>
               <div
                 className="app-list-item app-settings-item"
+                style={{ borderLeftColor: '#f59e0b' }}
                 onClick={() => history.push('/teamer/profile/badges')}
               >
-                <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#e11d48' }}>
+                <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#f59e0b' }}>
                   <IonIcon icon={trophy} />
                 </div>
                 <div className="app-flex-fill">
@@ -362,9 +363,10 @@ const TeamerProfilePage: React.FC = () => {
               {profile.konfi_data?.jahrgang_name && (
                 <div
                   className="app-list-item app-settings-item"
+                  style={{ borderLeftColor: '#5b21b6' }}
                   onClick={() => history.push('/teamer/profile/konfi-stats')}
                 >
-                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#e11d48' }}>
+                  <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: '#5b21b6' }}>
                     <IonIcon icon={schoolOutline} />
                   </div>
                   <div className="app-flex-fill">
