@@ -168,11 +168,11 @@ Plans:
   3. Konfi sieht keinen Abmelde-Button bei Pflicht-Events, bei denen er nicht angemeldet ist
   4. Neuer Konfi in einem Jahrgang wird automatisch zu allen bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
   5. Konfi-Events zeigen "Meine" als erstes Segment, Admin-Event-Liste hat Jahrgangs-Filter mit Jahrgang in Listen-Details
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 45-01: TBD
-- [ ] 45-02: TBD
+- [ ] 45-01-PLAN.md -- Backend Jahrgangs-Filter + Abgesagte-Events + Auto-Enrollment, Frontend Segmente Meine/Alle/Konfi + Opt-out-Fix
+- [ ] 45-02-PLAN.md -- Admin-Event-Liste Jahrgangs-Filter Dropdown
 
 ### Phase 46: Event-Admin + Teamer-Logik
 **Goal**: Admin kann Events vollstaendig verwalten inkl. Absagen, Teamer-Felder und Event-Chat-Erstellung
