@@ -4,7 +4,7 @@ milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
 stopped_at: Completed 48-01-PLAN.md
-last_updated: "2026-03-18T23:56:39.043Z"
+last_updated: "2026-03-18T23:58:51.153Z"
 last_activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
 progress:
   total_phases: 11
