@@ -443,6 +443,15 @@ const EventsView: React.FC<EventsViewProps> = ({
                               </span>
                             </div>
                           )}
+                          {/* Zeile: Pflicht-Event Markierung */}
+                          {event.mandatory && !isCancelled && (
+                            <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={shieldCheckmark} style={{ color: shouldGrayOut ? '#999' : '#dc2626' }} />
+                                Pflicht-Event
+                              </span>
+                            </div>
+                          )}
                           {/* Zeile 6: Material */}
                           {(event.material_count || 0) > 0 && (
                             <div className="app-list-item__meta" style={{ marginTop: '4px' }}>
