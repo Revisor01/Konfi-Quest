@@ -201,8 +201,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
       // Typ-Filter
       if (filterType === 'alle') return true;
       if (filterType === 'direkt') return room.type === 'direct';
-      if (filterType === 'gruppe') return room.type === 'group' || room.type === 'admin';
-      if (filterType === 'jahrgang') return room.type === 'jahrgang';
+      if (filterType === 'konfis') return room.type === 'jahrgang' || room.type === 'group';
+      if (filterType === 'team') return room.type === 'admin';
       return true;
     })
     .sort((a, b) => {
@@ -357,8 +357,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
           <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
             <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
             <IonSegmentButton value="direkt"><IonLabel>Direkt</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="gruppe"><IonLabel>Gruppe</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="jahrgang"><IonLabel>Jahrgang</IonLabel></IonSegmentButton>
+            <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
+            {isAdmin && (
+              <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>
+            )}
           </IonSegment>
         </div>
 
