@@ -610,6 +610,12 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
       `;
       const { rows: unregistrations } = await db.query(unregistrationsQuery, [eventId, req.user.organization_id]);
 
+      // Check if event has an associated chat room
+      const { rows: [eventChat] } = await db.query(
+        "SELECT id FROM chat_rooms WHERE event_id = $1",
+        [eventId]
+      );
+
       // Calculate correct registered_count for timeslot events
       const registeredCount = participants.filter(p => p.status === 'confirmed').length;
       const pendingCount = participants.filter(p => p.status === 'waitlist').length;
@@ -631,7 +637,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
         registered_count: registeredCount,
         pending_count: pendingCount,
         max_participants: totalCapacity,
-        available_spots: totalCapacity - registeredCount
+        available_spots: totalCapacity - registeredCount,
+        chat_room_id: eventChat?.id || null
       });
       
     } catch (err) {
@@ -1954,15 +1961,23 @@ module.exports = (db, rbacVerifier, { requireTeamer }, checkAndAwardBadges) => {
 
       await client.query("INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'admin')", [chatRoomId, req.user.id]);
 
-      const { rows: participants } = await client.query("SELECT DISTINCT user_id FROM event_bookings WHERE event_id = $1 AND status = 'confirmed'", [eventId]);
+      const { rows: participants } = await client.query(`
+        SELECT DISTINCT eb.user_id, r.name as role_name
+        FROM event_bookings eb
+        JOIN users u ON eb.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
+        WHERE eb.event_id = $1 AND eb.status = 'confirmed'
+      `, [eventId]);
 
       if (participants.length > 0) {
-        const participantInsertQuery = `
-          INSERT INTO chat_participants (room_id, user_id, user_type)
-          SELECT $1, p.user_id, 'konfi' FROM unnest($2::int[]) AS p(user_id)
-        `;
-        const participantIds = participants.map(p => p.user_id);
-        await client.query(participantInsertQuery, [chatRoomId, participantIds]);
+        for (const p of participants) {
+          if (p.user_id === req.user.id) continue; // Creator already added
+          const userType = p.role_name === 'teamer' ? 'teamer' : 'konfi';
+          await client.query(
+            "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            [chatRoomId, p.user_id, userType]
+          );
+        }
       }
 
       await client.query('COMMIT');
