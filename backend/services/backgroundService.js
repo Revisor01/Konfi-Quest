@@ -39,11 +39,15 @@ class BackgroundService {
    */
   static async updateAllUserBadges(db) {
     try {
-      // Alle User mit Push Tokens laden
+      // Alle User mit Push Tokens laden (Admins ausschliessen)
       const usersQuery = `
-        SELECT DISTINCT pt.user_id, pt.user_type
+        SELECT DISTINCT pt.user_id, pt.user_type,
+          r.name as role_name
         FROM push_tokens pt
+        JOIN users u ON pt.user_id = u.id
+        JOIN roles r ON u.role_id = r.id
         WHERE pt.token IS NOT NULL
+          AND r.name != 'admin'
       `;
       const { rows: users } = await db.query(usersQuery, []);
 
@@ -51,11 +55,23 @@ class BackgroundService {
         return { updated: 0 };
       }
 
+      // Badge-Counts VOR dem Sync laden (fuer Change-Detection)
+      const { rows: badgeCounts } = await db.query(`
+        SELECT user_id, COUNT(*)::int as badge_count
+        FROM user_badges
+        GROUP BY user_id
+      `);
+      const previousBadgeCounts = {};
+      for (const row of badgeCounts) {
+        previousBadgeCounts[row.user_id] = parseInt(row.badge_count);
+      }
+
       let updatedCount = 0;
+      const checkAndAwardBadges = require('../routes/badges').checkAndAwardBadges;
 
       for (const user of users) {
         try {
-          // Badge Count fuer User berechnen (Chat + Antraege + Events)
+          // Badge Count fuer User berechnen (nur Chat-Unread fuer Konfis/Teamer)
           const badgeQuery = `
             SELECT
               (SELECT COUNT(DISTINCT cm.id)::int FROM chat_messages cm
@@ -66,30 +82,34 @@ class BackgroundService {
                  AND cm.created_at > COALESCE(crs.last_read_at, '1970-01-01')
                  AND cm.deleted_at IS NULL
                  AND NOT (cm.user_id = $1 AND cm.user_type = $2)
-              ) as chat_unread,
-              CASE WHEN $2 = 'admin' THEN (
-                SELECT COUNT(*)::int FROM activity_requests ar
-                JOIN activities a ON ar.activity_id = a.id
-                WHERE a.organization_id = (SELECT organization_id FROM users WHERE id = $1)
-                  AND ar.status = 'pending'
-              ) ELSE 0 END as pending_requests,
-              CASE WHEN $2 = 'admin' THEN (
-                SELECT COUNT(DISTINCT e.id)::int FROM events e
-                JOIN event_bookings eb ON e.id = eb.event_id
-                WHERE e.organization_id = (SELECT organization_id FROM users WHERE id = $1)
-                  AND e.event_date < CURRENT_DATE
-                  AND eb.status = 'confirmed'
-                  AND eb.attendance_status IS NULL
-              ) ELSE 0 END as pending_events
+              ) as chat_unread
           `;
           const { rows: [result] } = await db.query(badgeQuery, [user.user_id, user.user_type]);
 
-          const badgeCount = (result?.chat_unread || 0) + (result?.pending_requests || 0) + (result?.pending_events || 0);
+          const badgeCount = result?.chat_unread || 0;
 
-          // Nur Badge Update senden wenn Count > 0 (spart Push Notifications)
+          // Silent badge-count update (App-Icon Badge) wenn Count > 0
           if (badgeCount > 0) {
             await PushService.sendBadgeUpdate(db, user.user_id, badgeCount);
             updatedCount++;
+          }
+
+          // Badge-Check durchfuehren (Streak, zeitbasiert etc.)
+          const awardResult = await checkAndAwardBadges(db, user.user_id);
+
+          // Neue Badge-Counts nach Check
+          const { rows: [newCount] } = await db.query(
+            'SELECT COUNT(*)::int as cnt FROM user_badges WHERE user_id = $1',
+            [user.user_id]
+          );
+          const prevCount = previousBadgeCounts[user.user_id] || 0;
+          const currentCount = newCount?.cnt || 0;
+
+          // Nur bei NEUEN Badges sichtbare Push senden
+          if (currentCount > prevCount && awardResult?.badges?.length > 0) {
+            for (const badge of awardResult.badges) {
+              await PushService.sendNewBadgeNotification(db, user.user_id, badge.name || 'Neues Badge');
+            }
           }
         } catch (error) {
           console.error(`Badge update failed for user ${user.user_id}:`, error);
