@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
-stopped_at: Phase 47 context gathered
-last_updated: "2026-03-18T23:16:43.371Z"
+stopped_at: Completed 47-01-PLAN.md
+last_updated: "2026-03-18T23:29:16.381Z"
 last_activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 4
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
   percent: 75
 ---
 
@@ -51,6 +51,7 @@ All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 45]: Segment Meine als Default statt Alle -- persoenliche Relevanz zuerst
 - [Phase 46]: filterRole Prop statt separater Modals fuer Teamer/Konfi Filterung
 - [Phase 46]: Zeitfenster-Sektion bei teamer_only ebenfalls ausgeblendet
+- [Phase 47]: Inline-Hinweis statt Toast fuer Toggle-Sperre
 
 ### Roadmap Evolution
 
@@ -77,9 +78,10 @@ None.
 | Phase 45 P01 | 3min | 2 tasks | 5 files |
 | Phase 46 P02 | 3min | 3 tasks | 3 files |
 | Phase 46 P01 | 2min | 2 tasks | 2 files |
+| Phase 47 P01 | 1min | 1 tasks | 2 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T23:16:43.366Z
-Stopped at: Phase 47 context gathered
-Resume file: .planning/phases/47-punkte-logik/47-CONTEXT.md
+Last session: 2026-03-18T23:29:16.379Z
+Stopped at: Completed 47-01-PLAN.md
+Resume file: None
