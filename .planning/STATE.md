@@ -56,6 +56,8 @@ All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 
 - Phase 52 added: Teamer-Profilseite mit Tabs (Badges, Konfi-Stats)
 - Phase 53 added: Chat verlassen — Gruppenchats verlassbar, Jahrgangschat nicht
+- Phase 54 added: Teamer Dashboard Zertifikat-Ansicht anpassen
+- Phase 53 added: Chat verlassen — Gruppenchats verlassbar, Jahrgangschat nicht
 
 ### Pending Todos
 
