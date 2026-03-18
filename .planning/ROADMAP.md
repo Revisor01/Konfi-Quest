@@ -259,7 +259,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 44. Push-Debug | 1/1 | Complete   | 2026-03-18 |
+| 44. Push-Debug | 1/1 | Complete    | 2026-03-18 |
 | 45. Event-Sichtbarkeit + Filterung | 0/2 | Not started | - |
 | 46. Event-Admin + Teamer-Logik | 0/2 | Not started | - |
 | 47. Punkte-Logik | 0/1 | Not started | - |
