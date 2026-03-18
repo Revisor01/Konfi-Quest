@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
-status: planning
-stopped_at: Phase 44 context gathered
-last_updated: "2026-03-18T09:02:00.331Z"
+status: executing
+stopped_at: Completed 44-01-PLAN.md
+last_updated: "2026-03-18T18:53:32.011Z"
 last_activity: 2026-03-17 — Sicherheitsvorfall behoben, Credentials rotiert
 progress:
   total_phases: 9
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-03-13)
 ## Current Position
 
 Phase: 44 of 51 (Push-Debug) -- 1 of 8 in v1.9
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-17 — Sicherheitsvorfall behoben, Credentials rotiert
+Plan: 01 complete (1/1)
+Status: Phase 44 complete
+Last activity: 2026-03-18 — Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge Change-Detection
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 1
+- Average duration: 2min
+- Total execution time: 2min
 
 ## Accumulated Context
 
@@ -45,6 +45,7 @@ Progress: [░░░░░░░░░░] 0%
 
 All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 52]: Badge-Grid inline statt TeamerBadgesView Import
+- [Phase 44]: Silent Push via apns-push-type background fuer badge-count-only updates
 
 ### Roadmap Evolution
 
@@ -56,7 +57,7 @@ None.
 
 ### Blockers/Concerns
 
-- Ghost-Push-Bug ist hoechste Prioritaet (Phase 44), da er aktiv stoert
+None.
 
 ### Quick Tasks Completed
 
@@ -64,9 +65,10 @@ None.
 |---|-------------|------|--------|-----------|
 | Q1 | SMTP-Sicherheitsvorfall: Queue geleert, Credentials rotiert, TLS-Fix, trust proxy, Firebase Keys | 2026-03-17 | b9ab7f2 | — |
 | Phase 52 P01 | 4min | 2 tasks | 2 files |
+| Phase 44 P01 | 2min | 2 tasks | 3 files |
 
 ## Session Continuity
 
-Last session: 2026-03-18T09:02:00.326Z
-Stopped at: Phase 44 context gathered
-Resume file: .planning/phases/44-push-debug/44-CONTEXT.md
+Last session: 2026-03-18T18:53:32.009Z
+Stopped at: Completed 44-01-PLAN.md
+Resume file: None

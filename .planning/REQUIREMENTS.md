@@ -69,7 +69,7 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 
 ### Push (PUSH)
 
-- [ ] **PUSH-01**: Admin erhaelt keine leeren Push-Benachrichtigungen mehr (Ghost-Push-Bug debuggen und fixen)
+- [x] **PUSH-01**: Admin erhaelt keine leeren Push-Benachrichtigungen mehr (Ghost-Push-Bug debuggen und fixen)
 
 ### Events (EVT-v19)
 
@@ -181,7 +181,7 @@ Deferred. Nicht in aktuellem Roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PUSH-01 | Phase 44 | Pending |
+| PUSH-01 | Phase 44 | Complete |
 | EVT-v19-01 | Phase 45 | Pending |
 | EVT-v19-02 | Phase 45 | Pending |
 | EVT-v19-03 | Phase 45 | Pending |
