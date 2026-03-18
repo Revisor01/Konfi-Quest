@@ -184,11 +184,11 @@ Plans:
   3. "Mitbringen" und "Pflicht" werden in Event-Liste und Details farbig hervorgehoben
   4. Admin Event-Details zeigen korrekte Hinweise (kein doppelter Teamer-Hinweis, getrennte Listen fuer Teamer und Konfis hinzufuegen)
   5. Aus einem Event kann ein Chat mit allen angemeldeten Teilnehmer:innen erstellt werden
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 46-01: TBD
-- [ ] 46-02: TBD
+- [ ] 46-01-PLAN.md -- EventModal Teamer-only Felder + Pflicht/Mitbringen Hervorhebung
+- [ ] 46-02-PLAN.md -- EventDetailView Cancel, Chat, getrennte Add-Buttons, Teamer-Hinweis
 
 ### Phase 47: Punkte-Logik
 **Goal**: Punkte-System funktioniert korrekt bei ein oder zwei aktiven Typen mit konsistenter Anzeige
@@ -199,7 +199,7 @@ Plans:
   2. Admin-Konfi-Liste zeigt korrekte Gesamtpunkte basierend auf aktiven Typen
   3. Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (analog zum Gesamtbalken bei zwei Typen)
   4. Punkte-History Header zeigt korrekte Daten mit besserem Layout fuer 6 Stats
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 47-01: TBD
@@ -213,7 +213,7 @@ Plans:
   2. Badge-Erstellung fragt vorab den Typ (Konfi/Teamer) ab
   3. Events-Tab zeigt ein Badge fuer Events die noch verbucht werden muessen
   4. Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 48-01: TBD
@@ -227,7 +227,7 @@ Plans:
   1. Badge-Modal-Auswahl nutzt backgroundColor-Change Pattern (keine Umrandung)
   2. Badge-Segment (Konfi/Teamer) steht unter dem Header, "Teamer:innen" ist bei Auswahl nicht lila/fett
   3. Teamer-Badge-Ansicht ist 1:1 wie Konfi-Badge-Ansicht aufgebaut mit Segment-Wechsel (Teamer vorausgewaehlt)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 49-01: TBD
@@ -243,7 +243,7 @@ Plans:
   4. Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigiert)
   5. Befoerdern-Button zeigt Info-Hinweistext ueber dem Button
   6. Beschreibungstexte in Event-Details und Material-Details haben lesbare Schriftgroesse
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 - [ ] 50-01: TBD
