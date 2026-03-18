@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
-stopped_at: Completed 44-01-PLAN.md
-last_updated: "2026-03-18T18:57:53.342Z"
+stopped_at: Phase 45 context gathered
+last_updated: "2026-03-18T20:23:52.191Z"
 last_activity: "2026-03-18 — Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge Change-Detection"
 progress:
   total_phases: 9
@@ -69,6 +69,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-18T18:53:32.009Z
-Stopped at: Completed 44-01-PLAN.md
-Resume file: None
+Last session: 2026-03-18T20:23:52.186Z
+Stopped at: Phase 45 context gathered
+Resume file: .planning/phases/45-event-sichtbarkeit-filterung/45-CONTEXT.md
