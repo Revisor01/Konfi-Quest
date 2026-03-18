@@ -153,10 +153,10 @@ Phase 43: Profil + Chat (2 plans, complete)
 **Success Criteria** (what must be TRUE):
   1. Admin-Geraet zeigt keine leeren Push-Benachrichtigungen mehr (Ghost-Pushes alle 5 Min sind eliminiert)
   2. Root Cause ist identifiziert und dokumentiert (welcher Sender, welcher Trigger)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 44-01: TBD
+- [ ] 44-01-PLAN.md -- Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge-Change-Detection
 
 ### Phase 45: Event-Sichtbarkeit + Filterung
 **Goal**: Konfis sehen nur die fuer sie relevanten Events und werden korrekt zu Pflicht-Events enrollt
