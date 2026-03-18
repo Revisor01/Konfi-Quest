@@ -4,7 +4,7 @@ milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
 stopped_at: Completed 45-01-PLAN.md
-last_updated: "2026-03-18T20:57:56.994Z"
+last_updated: "2026-03-18T21:00:55.858Z"
 last_activity: 2026-03-18 — Jahrgangs-Filter in Admin-Event-Liste
 progress:
   total_phases: 9
