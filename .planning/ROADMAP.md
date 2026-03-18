@@ -260,7 +260,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 44. Push-Debug | 1/1 | Complete    | 2026-03-18 |
-| 45. Event-Sichtbarkeit + Filterung | 0/2 | Not started | - |
+| 45. Event-Sichtbarkeit + Filterung | 1/2 | In Progress|  |
 | 46. Event-Admin + Teamer-Logik | 0/2 | Not started | - |
 | 47. Punkte-Logik | 0/1 | Not started | - |
 | 48. Admin-Struktur | 0/2 | Not started | - |
@@ -273,7 +273,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 **Goal:** Teamer-Profilseite vollstaendig ueberarbeiten mit AdminProfilePage-Layout, Konto-Einstellungen, Teamer-Badges im Konfi-Grid-Look, Konfi-Badges und Konfi-Stats (conditional)
 **Requirements**: PRF-02, PRF-03, TMR-01
 **Depends on:** Phase 51
-**Plans:** 1/1 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten

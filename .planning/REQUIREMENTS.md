@@ -81,7 +81,7 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 - [ ] **EVT-v19-06**: Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
 - [ ] **EVT-v19-07**: "Mitbringen" und "Pflicht" werden farbig hervorgehoben in Event-Liste und Details
 - [ ] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
-- [ ] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
+- [x] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
 - [ ] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
 - [ ] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
 - [ ] **EVT-v19-12**: Aus einem Event kann ein Chat mit allen angemeldeten Konfis und Teamer:innen erstellt werden
@@ -190,7 +190,7 @@ Deferred. Nicht in aktuellem Roadmap.
 | EVT-v19-06 | Phase 46 | Pending |
 | EVT-v19-07 | Phase 46 | Pending |
 | EVT-v19-08 | Phase 45 | Pending |
-| EVT-v19-09 | Phase 45 | Pending |
+| EVT-v19-09 | Phase 45 | Complete |
 | EVT-v19-10 | Phase 46 | Pending |
 | EVT-v19-11 | Phase 46 | Pending |
 | EVT-v19-12 | Phase 46 | Pending |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
-stopped_at: Phase 45 context gathered
-last_updated: "2026-03-18T20:23:52.191Z"
-last_activity: "2026-03-18 — Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge Change-Detection"
+stopped_at: Completed 45-02-PLAN.md
+last_updated: "2026-03-18T20:56:21.145Z"
+last_activity: 2026-03-18 — Jahrgangs-Filter in Admin-Event-Liste
 progress:
   total_phases: 9
   completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
-**Current focus:** v1.9 Phase 44 Push-Debug
+**Current focus:** v1.9 Phase 45 Event-Sichtbarkeit-Filterung
 
 ## Current Position
 
-Phase: 44 of 51 (Push-Debug) -- 1 of 8 in v1.9
-Plan: 01 complete (1/1)
-Status: Phase 44 complete
-Last activity: 2026-03-18 — Ghost-Push-Fix: Silent Push, Admin-Ausschluss, Badge Change-Detection
+Phase: 45 of 51 (Event-Sichtbarkeit-Filterung) -- 2 of 8 in v1.9
+Plan: 02 complete (2/2)
+Status: Phase 45 complete
+Last activity: 2026-03-18 — Jahrgangs-Filter in Admin-Event-Liste
 
-Progress: [██████████] 100%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Progress: [██████████] 100%
 All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 52]: Badge-Grid inline statt TeamerBadgesView Import
 - [Phase 44]: Silent Push via apns-push-type background fuer badge-count-only updates
+- [Phase 45]: Clientseitige Jahrgangs-Filterung statt Backend-Query fuer Admin-Events
 
 ### Roadmap Evolution
 
@@ -69,6 +70,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-18T20:23:52.186Z
-Stopped at: Phase 45 context gathered
-Resume file: .planning/phases/45-event-sichtbarkeit-filterung/45-CONTEXT.md
+Last session: 2026-03-18T20:56:21.143Z
+Stopped at: Completed 45-02-PLAN.md
+Resume file: None
