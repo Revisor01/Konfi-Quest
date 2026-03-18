@@ -219,6 +219,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
     });
   };
 
+  // Teamer-Konfi-Daten sind eingefroren — beide Typen immer sichtbar
   const [presentPointsModal, dismissPointsModal] = useIonModal(PointsHistoryModal, {
     onClose: () => dismissPointsModal(),
     pointConfig: { gottesdienst_enabled: true, gemeinde_enabled: true },
