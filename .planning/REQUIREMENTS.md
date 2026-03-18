@@ -91,7 +91,7 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 - [x] **PKT-v19-01**: Deaktivierter Punkt-Typ graut den anderen Toggle aus (mindestens ein Typ muss aktiv bleiben) mit Hinweis wie viele Konfis bereits Punkte haben
 - [x] **PKT-v19-02**: Admin-Konfi-Liste zeigt korrekte Gesamtpunkte (nur aktive Typen)
 - [x] **PKT-v19-03**: Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (wie der Gesamtbalken bei zwei Typen)
-- [ ] **PKT-v19-04**: Punkte-History Header zeigt korrekte Daten und besseres Layout fuer 6 Stats (Events, Bonus, Aktivitaeten, Gesamt, Gottesdienst, Gemeinde)
+- [x] **PKT-v19-04**: Punkte-History Header zeigt korrekte Daten und besseres Layout fuer 6 Stats (Events, Bonus, Aktivitaeten, Gesamt, Gottesdienst, Gemeinde)
 
 ### UI (UI)
 
@@ -197,7 +197,7 @@ Deferred. Nicht in aktuellem Roadmap.
 | PKT-v19-01 | Phase 47 | Complete |
 | PKT-v19-02 | Phase 47 | Complete |
 | PKT-v19-03 | Phase 47 | Complete |
-| PKT-v19-04 | Phase 47 | Pending |
+| PKT-v19-04 | Phase 47 | Complete |
 | UI-01 | Phase 50 | Pending |
 | UI-02 | Phase 50 | Pending |
 | UI-03 | Phase 50 | Pending |
