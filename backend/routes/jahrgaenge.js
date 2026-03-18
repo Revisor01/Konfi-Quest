@@ -73,7 +73,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   // GET all jahrgaenge for the admin's organization
   router.get('/', rbacVerifier, requireTeamer, async (req, res) => {
     try {
-      const query = "SELECT * FROM jahrgaenge WHERE organization_id = $1 ORDER BY name DESC";
+      const query = `SELECT j.*,
+        (SELECT COUNT(*) FROM konfi_profiles kp JOIN users u ON kp.user_id = u.id WHERE kp.jahrgang_id = j.id AND u.organization_id = j.organization_id)::int as konfi_count,
+        (SELECT COALESCE(SUM(kp.gottesdienst_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gottesdienst_points > 0)::int as gottesdienst_points_total,
+        (SELECT COALESCE(SUM(kp.gemeinde_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gemeinde_points > 0)::int as gemeinde_points_total
+      FROM jahrgaenge j WHERE j.organization_id = $1 ORDER BY j.name DESC`;
       const { rows: jahrgaenge } = await db.query(query, [req.user.organization_id]);
       res.json(jahrgaenge);
     } catch (err) {

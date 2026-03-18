@@ -55,6 +55,9 @@ interface Jahrgang {
   gemeinde_enabled?: boolean;
   target_gottesdienst?: number;
   target_gemeinde?: number;
+  konfi_count?: number;
+  gottesdienst_points_total?: number;
+  gemeinde_points_total?: number;
 }
 
 interface JahrgangModalProps {
@@ -228,7 +231,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 </IonItem>
                 {!formData.gemeinde_enabled && formData.gottesdienst_enabled && (
                   <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', paddingLeft: '16px' }}>
-                    Mindestens ein Punkt-Typ muss aktiv bleiben.
+                    Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gottesdienst-Punkte.` : ''}
                   </div>
                 )}
                 {formData.gottesdienst_enabled && (
@@ -258,7 +261,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 </IonItem>
                 {!formData.gottesdienst_enabled && formData.gemeinde_enabled && (
                   <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '4px', paddingLeft: '16px' }}>
-                    Mindestens ein Punkt-Typ muss aktiv bleiben.
+                    Mindestens ein Punkt-Typ muss aktiv bleiben.{jahrgang?.konfi_count ? ` ${jahrgang.konfi_count} Konfis haben bereits Gemeinde-Punkte.` : ''}
                   </div>
                 )}
                 {formData.gemeinde_enabled && (
