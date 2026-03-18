@@ -168,7 +168,7 @@ Plans:
   3. Konfi sieht keinen Abmelde-Button bei Pflicht-Events, bei denen er nicht angemeldet ist
   4. Neuer Konfi in einem Jahrgang wird automatisch zu allen bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
   5. Konfi-Events zeigen "Meine" als erstes Segment, Admin-Event-Liste hat Jahrgangs-Filter mit Jahrgang in Listen-Details
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
 - [ ] 45-01-PLAN.md -- Backend Jahrgangs-Filter + Abgesagte-Events + Auto-Enrollment, Frontend Segmente Meine/Alle/Konfi + Opt-out-Fix
@@ -184,7 +184,7 @@ Plans:
   3. "Mitbringen" und "Pflicht" werden in Event-Liste und Details farbig hervorgehoben
   4. Admin Event-Details zeigen korrekte Hinweise (kein doppelter Teamer-Hinweis, getrennte Listen fuer Teamer und Konfis hinzufuegen)
   5. Aus einem Event kann ein Chat mit allen angemeldeten Teilnehmer:innen erstellt werden
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
 - [ ] 46-01-PLAN.md -- EventModal Teamer-only Felder + Pflicht/Mitbringen Hervorhebung
@@ -199,7 +199,7 @@ Plans:
   2. Admin-Konfi-Liste zeigt korrekte Gesamtpunkte basierend auf aktiven Typen
   3. Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (analog zum Gesamtbalken bei zwei Typen)
   4. Punkte-History Header zeigt korrekte Daten mit besserem Layout fuer 6 Stats
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
 - [ ] 47-01-PLAN.md — Toggle-Sperre, getTotalPoints Fix, Ein-Typ-Statusbalken
@@ -214,11 +214,10 @@ Plans:
   2. Badge-Erstellung fragt vorab den Typ (Konfi/Teamer) ab
   3. Events-Tab zeigt ein Badge fuer Events die noch verbucht werden muessen
   4. Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
-- [ ] 48-01: TBD
-- [ ] 48-02: TBD
+- [ ] 48-01-PLAN.md -- Chat-Filter Konfis/Team + ADM-01 bis ADM-04 Verifizierung
 
 ### Phase 49: Badge-UI
 **Goal**: Badge-Verwaltung und -Anzeige sind konsistent und korrekt gestaltet
@@ -228,7 +227,7 @@ Plans:
   1. Badge-Modal-Auswahl nutzt backgroundColor-Change Pattern (keine Umrandung)
   2. Badge-Segment (Konfi/Teamer) steht unter dem Header, "Teamer:innen" ist bei Auswahl nicht lila/fett
   3. Teamer-Badge-Ansicht ist 1:1 wie Konfi-Badge-Ansicht aufgebaut mit Segment-Wechsel (Teamer vorausgewaehlt)
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
 - [ ] 49-01: TBD
@@ -244,7 +243,7 @@ Plans:
   4. Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigiert)
   5. Befoerdern-Button zeigt Info-Hinweistext ueber dem Button
   6. Beschreibungstexte in Event-Details und Material-Details haben lesbare Schriftgroesse
-**Plans**: 2 plans
+**Plans**: 1 plan
 
 Plans:
 - [ ] 50-01: TBD
