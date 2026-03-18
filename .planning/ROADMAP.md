@@ -142,7 +142,7 @@ Phase 43: Profil + Chat (2 plans, complete)
 - [ ] **Phase 48: Admin-Struktur** - Zertifikate, Dashboard-Einstellungen und Badges als Unterseiten, Event-Badge, Chat-Filter
 - [ ] **Phase 49: Badge-UI** - Badge-Modal-Selection, Segment-Position, Teamer-Badge-Ansicht
 - [ ] **Phase 50: UI-Polish** - Toggles, QR-Button, Badge-Rundung, Chat-Badge, Befoerdern-Text
-- [ ] **Phase 51: Teamer-Profil** - Teamer-Profilseite ordentlich gestalten
+- [x] **Phase 51: Teamer-Profil** - Teamer-Profilseite ordentlich gestalten (abgedeckt durch Phase 52)
 
 ## Phase Details
 
@@ -248,17 +248,9 @@ Plans:
 Plans:
 - [ ] 50-01: TBD
 
-### Phase 51: Teamer-Profil
+### Phase 51: Teamer-Profil -- COMPLETE (abgedeckt durch Phase 52)
 **Goal**: Teamer hat eine ordentliche, vollstaendige Profilseite
-**Depends on**: Phase 49 (Badge-Ansicht muss stehen fuer Profil-Integration)
-**Requirements**: TMR-01
-**Success Criteria** (what must be TRUE):
-  1. Teamer-Profilseite zeigt alle relevanten Informationen (Name, Rolle, Zertifikate, Badges, Kontaktdaten)
-  2. Profil-Design ist konsistent mit dem restlichen App-Design (gleiche Patterns wie Konfi-Profil)
-**Plans**: TBD
-
-Plans:
-- [ ] 51-01: TBD
+**Status**: Erledigt -- Phase 52 (Teamer-Profilseite mit Tabs) deckt alle Anforderungen ab
 
 ## Progress
 
