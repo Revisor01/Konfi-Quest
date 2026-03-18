@@ -106,11 +106,11 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 
 ### Admin-Struktur (ADM)
 
-- [ ] **ADM-01**: Zertifikat-Verwaltung als Unterseite im Inhalt-Bereich (nicht inline in Settings)
-- [ ] **ADM-02**: Dashboard-Einstellungen als Unterseite im Inhalt-Bereich
-- [ ] **ADM-03**: Badge-Verwaltung als Unterseite im Inhalt-Bereich, mit Typ-Abfrage (Konfi/Teamer) vor Badge-Erstellung
-- [ ] **ADM-04**: Admin-Badge auf Events-Tab fuer Events die verbucht werden muessen
-- [ ] **ADM-05**: Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
+- [x] **ADM-01**: Zertifikat-Verwaltung als Unterseite im Inhalt-Bereich (nicht inline in Settings)
+- [x] **ADM-02**: Dashboard-Einstellungen als Unterseite im Inhalt-Bereich
+- [x] **ADM-03**: Badge-Verwaltung als Unterseite im Inhalt-Bereich, mit Typ-Abfrage (Konfi/Teamer) vor Badge-Erstellung
+- [x] **ADM-04**: Admin-Badge auf Events-Tab fuer Events die verbucht werden muessen
+- [x] **ADM-05**: Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
 
 ### Teamer (TMR)
 
@@ -206,11 +206,11 @@ Deferred. Nicht in aktuellem Roadmap.
 | UI-06 | Phase 49 | Pending |
 | UI-07 | Phase 49 | Pending |
 | UI-08 | Phase 50 | Pending |
-| ADM-01 | Phase 48 | Pending |
-| ADM-02 | Phase 48 | Pending |
-| ADM-03 | Phase 48 | Pending |
-| ADM-04 | Phase 48 | Pending |
-| ADM-05 | Phase 48 | Pending |
+| ADM-01 | Phase 48 | Complete |
+| ADM-02 | Phase 48 | Complete |
+| ADM-03 | Phase 48 | Complete |
+| ADM-04 | Phase 48 | Complete |
+| ADM-05 | Phase 48 | Complete |
 | TMR-01 | Phase 51 | Complete |
 
 **Coverage v1.9:**
