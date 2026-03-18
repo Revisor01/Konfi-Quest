@@ -154,8 +154,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
     }
   };
 
-  // Event- und Bonus-Anzahl aus gefilterter History berechnen
+  // Event-, Aktivitaeten- und Bonus-Anzahl aus gefilterter History berechnen
   const eventCount = filteredHistory.filter(h => h.source_type === 'event').length;
+  const activityCount = filteredHistory.filter(h => h.source_type === 'activity').length;
   const bonusCount = filteredHistory.filter(h => h.source_type === 'bonus').length;
   const showBothTypes = gottesdienstEnabled && gemeindeEnabled;
 
@@ -200,36 +201,37 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({ onClose, pointC
                 </div>
               </div>
 
-              {/* Stats Boxen - 3 oben + 2 unten */}
+              {/* Stats Boxen - 3x2 Grid */}
               <div style={{ position: 'relative', zIndex: 1 }}>
-                {/* Erste Reihe: Punkte-Typ-Stats (nur aktive Typen) */}
-                <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px' }}>
+                {/* Reihe 1: Punkte-Typ-Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: showBothTypes ? 'repeat(3, 1fr)' : '1fr', gap: '8px' }}>
                   {showBothTypes && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.total}</div>
                       <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GESAMT</div>
                     </div>
                   )}
                   {gottesdienstEnabled && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gottesdienst}</div>
                       <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GOTTESDIENST</div>
                     </div>
                   )}
                   {gemeindeEnabled && (
-                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', padding: '10px 8px' }}>
+                    <div className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{filteredTotals.gemeinde}</div>
                       <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>GEMEINDE</div>
                     </div>
                   )}
                 </div>
-                {/* Zweite Reihe: Events, Bonus */}
-                <div className="app-detail-header__info-row" style={{ justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
+                {/* Reihe 2: Quellen-Stats (immer 3 Spalten) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginTop: '8px' }}>
                   {[
                     { value: eventCount, label: 'EVENTS' },
+                    { value: activityCount, label: 'AKTIVITAETEN' },
                     { value: bonusCount, label: 'BONUS' }
                   ].map((stat) => (
-                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', flex: '1 1 0', maxWidth: '45%', padding: '10px 8px' }}>
+                    <div key={stat.label} className="app-detail-header__info-chip" style={{ textAlign: 'center', padding: '10px 8px' }}>
                       <div style={{ fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>{stat.value}</div>
                       <div style={{ fontSize: '0.6rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '600', letterSpacing: '0.3px' }}>{stat.label}</div>
                     </div>
