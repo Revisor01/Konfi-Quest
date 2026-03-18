@@ -53,6 +53,8 @@ interface Event {
   series_id?: number;
   waitlist_count?: number;
   pending_bookings_count?: number;
+  jahrgang_ids?: string;
+  jahrgang_names?: string;
 }
 
 const AdminEventsPage: React.FC = () => {
@@ -68,6 +70,8 @@ const AdminEventsPage: React.FC = () => {
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'upcoming' | 'konfirmation'>('upcoming');
+  const [jahrgaenge, setJahrgaenge] = useState<Array<{id: number; name: string}>>([]);
+  const [selectedJahrgang, setSelectedJahrgang] = useState<number | null>(null);
   
   const [editEvent, setEditEvent] = useState<Event | null>(null);
 
@@ -95,10 +99,29 @@ const AdminEventsPage: React.FC = () => {
   // Subscribe to live updates for events
   useLiveRefresh('events', refreshAllEvents);
 
+  const loadJahrgaenge = async () => {
+    try {
+      const response = await api.get('/jahrgaenge');
+      setJahrgaenge(response.data);
+    } catch (err) {
+      console.error('Error loading jahrgaenge:', err);
+    }
+  };
+
+  const filterByJahrgang = (eventList: Event[]) => {
+    if (!selectedJahrgang) return eventList;
+    return eventList.filter(event => {
+      if (!event.jahrgang_ids) return false;
+      const ids = event.jahrgang_ids.split(',').map(id => parseInt(id.trim(), 10));
+      return ids.includes(selectedJahrgang);
+    });
+  };
+
   useEffect(() => {
     loadEvents();
     loadCancelledEvents();
     loadPastEvents();
+    loadJahrgaenge();
     // Event-Listener fuer Updates aus EventDetailView (legacy support)
     const handleEventsUpdated = () => {
       loadEvents();
@@ -411,9 +434,9 @@ const AdminEventsPage: React.FC = () => {
         ) : (
           <EventsView
             events={
-              activeTab === 'all' ? getAllEvents() :
-              activeTab === 'konfirmation' ? getKonfirmationEvents() :
-              getFutureEvents()
+              activeTab === 'all' ? filterByJahrgang(getAllEvents()) :
+              activeTab === 'konfirmation' ? filterByJahrgang(getKonfirmationEvents()) :
+              filterByJahrgang(getFutureEvents())
             }
             onUpdate={loadEvents}
             onAddEventClick={handleAddEventClick}
@@ -424,10 +447,13 @@ const AdminEventsPage: React.FC = () => {
             activeTab={activeTab}
             onTabChange={setActiveTab}
             eventCounts={{
-              all: getAllEvents().length,
-              upcoming: getFutureEvents().length,
-              konfirmation: getKonfirmationEvents().length
+              all: filterByJahrgang(getAllEvents()).length,
+              upcoming: filterByJahrgang(getFutureEvents()).length,
+              konfirmation: filterByJahrgang(getKonfirmationEvents()).length
             }}
+            jahrgaenge={jahrgaenge}
+            selectedJahrgang={selectedJahrgang}
+            onJahrgangChange={setSelectedJahrgang}
           />
         )}
       </IonContent>

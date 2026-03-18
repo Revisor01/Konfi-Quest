@@ -7,7 +7,9 @@ import {
   IonItemOptions,
   IonItemOption,
   IonSegment,
-  IonSegmentButton
+  IonSegmentButton,
+  IonSelect,
+  IonSelectOption
 } from '@ionic/react';
 import {
   flash,
@@ -87,6 +89,9 @@ interface EventsViewProps {
     upcoming: number;
     konfirmation: number;
   };
+  jahrgaenge?: Array<{id: number; name: string}>;
+  selectedJahrgang?: number | null;
+  onJahrgangChange?: (jahrgangId: number | null) => void;
 }
 
 const EventsView: React.FC<EventsViewProps> = ({
@@ -99,7 +104,10 @@ const EventsView: React.FC<EventsViewProps> = ({
   onCancelEvent,
   activeTab = 'upcoming',
   onTabChange,
-  eventCounts
+  eventCounts,
+  jahrgaenge,
+  selectedJahrgang,
+  onJahrgangChange
 }) => {
   const slidingRefs = useRef<Map<number, HTMLIonItemSlidingElement>>(new Map());
 
@@ -190,6 +198,30 @@ const EventsView: React.FC<EventsViewProps> = ({
         ]}
       />
 
+
+      {/* Jahrgangs-Filter */}
+      {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
+        <div style={{ padding: '0 16px 8px' }}>
+          <IonSelect
+            value={selectedJahrgang}
+            placeholder="Alle Jahrgänge"
+            interface="popover"
+            onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
+            style={{
+              '--padding-start': '12px',
+              '--padding-end': '12px',
+              fontSize: '0.9rem',
+              background: 'var(--ion-color-light)',
+              borderRadius: '8px'
+            }}
+          >
+            <IonSelectOption value={null}>Alle Jahrgänge</IonSelectOption>
+            {jahrgaenge.map(j => (
+              <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
+            ))}
+          </IonSelect>
+        </div>
+      )}
 
       {/* Tab Navigation - einfaches IonSegment */}
       {onTabChange && (
