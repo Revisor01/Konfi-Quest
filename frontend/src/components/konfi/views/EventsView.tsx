@@ -74,8 +74,8 @@ interface Event {
 
 interface EventsViewProps {
   events: Event[];
-  activeTab: 'upcoming' | 'registered' | 'konfirmation';
-  onTabChange: (tab: 'upcoming' | 'registered' | 'konfirmation') => void;
+  activeTab: 'meine' | 'alle' | 'konfirmation';
+  onTabChange: (tab: 'meine' | 'alle' | 'konfirmation') => void;
   onSelectEvent: (event: Event) => void;
   onUpdate: () => void;
 }
@@ -123,10 +123,10 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   const eventCounts = useMemo(() => ({
     all: events.length,
-    upcoming: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
-    registered: events.filter(e => e.is_registered).length,
-    registeredUpcoming: events.filter(e => e.is_registered && new Date(e.event_date) >= new Date()).length,
-    registeredPast: events.filter(e => e.is_registered && new Date(e.event_date) < new Date()).length,
+    meine: events.filter(e => e.is_registered || e.booking_status === 'opted_out').length,
+    alle: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
+    meineUpcoming: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) >= new Date()).length,
+    meinePast: events.filter(e => (e.is_registered || e.booking_status === 'opted_out') && new Date(e.event_date) < new Date()).length,
     konfirmation: konfirmationEvents.length,
     konfirmationUpcoming: konfirmationEvents.filter(e => new Date(e.event_date) >= new Date()).length,
     konfirmationRegistered: konfirmationEvents.filter(e => e.is_registered).length
@@ -134,17 +134,17 @@ const EventsView: React.FC<EventsViewProps> = ({
 
   const getStatLabelsAndCounts = () => {
     switch (activeTab) {
-      case 'upcoming':
+      case 'meine':
         return [
-          { label: 'Gesamt', count: eventCounts.upcoming, icon: calendar },
+          { label: 'Gebucht', count: eventCounts.meine, icon: calendar },
+          { label: 'Anstehend', count: eventCounts.meineUpcoming, icon: time },
+          { label: 'Vergangen', count: eventCounts.meinePast, icon: checkmarkCircle }
+        ];
+      case 'alle':
+        return [
+          { label: 'Gesamt', count: eventCounts.alle, icon: calendar },
           { label: 'Anstehend', count: nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date() && !e.is_registered).length, icon: time },
           { label: 'Gebucht', count: nonKonfirmationEvents.filter(e => e.is_registered).length, icon: checkmarkCircle }
-        ];
-      case 'registered':
-        return [
-          { label: 'Gebucht', count: eventCounts.registered, icon: calendar },
-          { label: 'Anstehend', count: eventCounts.registeredUpcoming, icon: time },
-          { label: 'Vergangen', count: eventCounts.registeredPast, icon: checkmarkCircle }
         ];
       case 'konfirmation':
         return [
@@ -155,8 +155,8 @@ const EventsView: React.FC<EventsViewProps> = ({
       default:
         return [
           { label: 'Gesamt', count: eventCounts.all, icon: calendar },
-          { label: 'Anstehend', count: eventCounts.upcoming, icon: time },
-          { label: 'Gebucht', count: eventCounts.registered, icon: checkmarkCircle }
+          { label: 'Anstehend', count: eventCounts.alle, icon: time },
+          { label: 'Gebucht', count: eventCounts.meine, icon: checkmarkCircle }
         ];
     }
   };
@@ -244,10 +244,10 @@ const EventsView: React.FC<EventsViewProps> = ({
   // Filtere Events basierend auf aktivem Tab
   const getFilteredEvents = () => {
     switch (activeTab) {
-      case 'upcoming':
+      case 'meine':
+        return events.filter(e => e.is_registered || e.booking_status === 'opted_out');
+      case 'alle':
         return nonKonfirmationEvents.filter(e => new Date(e.event_date) >= new Date());
-      case 'registered':
-        return events.filter(e => e.is_registered);
       case 'konfirmation':
         return konfirmationEvents;
       default:
@@ -273,11 +273,11 @@ const EventsView: React.FC<EventsViewProps> = ({
           value={activeTab}
           onIonChange={(e) => onTabChange(e.detail.value as any)}
         >
-          <IonSegmentButton value="upcoming">
-            <IonLabel>Anstehend</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="registered">
+          <IonSegmentButton value="meine">
             <IonLabel>Meine</IonLabel>
+          </IonSegmentButton>
+          <IonSegmentButton value="alle">
+            <IonLabel>Alle</IonLabel>
           </IonSegmentButton>
           <IonSegmentButton value="konfirmation">
             <IonLabel>Konfi</IonLabel>
@@ -295,7 +295,7 @@ const EventsView: React.FC<EventsViewProps> = ({
         emptyIcon={calendarOutline}
         emptyTitle="Keine Events gefunden"
         emptyMessage={
-          activeTab === 'registered'
+          activeTab === 'meine'
             ? 'Du bist noch für keine Events angemeldet'
             : activeTab === 'konfirmation'
             ? 'Keine Konfirmationstermine verfügbar'

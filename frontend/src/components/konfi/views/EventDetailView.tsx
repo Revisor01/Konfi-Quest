@@ -778,25 +778,35 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack }) =>
                 );
               }
 
+              if (eventData.is_registered) {
+                return (
+                  <div style={{ textAlign: 'center', padding: '12px 16px' }}>
+                    <IonNote color="medium" style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem' }}>
+                      <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                      Du bist automatisch angemeldet
+                    </IonNote>
+                    <IonButton
+                      className="app-action-button"
+                      expand="block"
+                      fill="outline"
+                      color="danger"
+                      onClick={() => presentOptOutModal({
+                        presentingElement: pageRef.current || undefined
+                      })}
+                    >
+                      <IonIcon icon={closeCircle} slot="start" />
+                      Abmelden
+                    </IonButton>
+                  </div>
+                );
+              }
+
+              // Nicht angemeldet bei Pflicht-Event -- nur Hinweis, kein Button
               return (
-                <div style={{ textAlign: 'center', padding: '12px 16px' }}>
-                  <IonNote color="medium" style={{ display: 'block', marginBottom: '12px', fontSize: '0.95rem' }}>
-                    <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                    Du bist automatisch angemeldet
-                  </IonNote>
-                  <IonButton
-                    className="app-action-button"
-                    expand="block"
-                    fill="outline"
-                    color="danger"
-                    onClick={() => presentOptOutModal({
-                      presentingElement: pageRef.current || undefined
-                    })}
-                  >
-                    <IonIcon icon={closeCircle} slot="start" />
-                    Abmelden
-                  </IonButton>
-                </div>
+                <IonNote color="medium" style={{ display: 'block', textAlign: 'center', padding: '16px', fontSize: '0.95rem' }}>
+                  <IonIcon icon={shieldCheckmark} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                  Pflicht-Event
+                </IonNote>
               );
             })()
           ) : eventData.is_registered ? (

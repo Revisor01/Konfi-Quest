@@ -70,7 +70,7 @@ const KonfiEventsPage: React.FC = () => {
   // State
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'registered' | 'konfirmation'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
 
   // Memoized refresh function for live updates
   const refreshEvents = useCallback(() => {
@@ -115,17 +115,21 @@ const KonfiEventsPage: React.FC = () => {
     
     let filteredEvents;
     switch (activeTab) {
-      case 'registered':
-        // Zeige alle Events wo ich angemeldet bin
-        filteredEvents = events.filter(event => event.is_registered);
+      case 'meine':
+        // Persönliche Event-Historie: alle Events wo angemeldet (inkl. vergangene, abgesagte, opted_out)
+        filteredEvents = events.filter(event =>
+          event.is_registered || event.booking_status === 'opted_out'
+        );
         break;
-      case 'upcoming':
-        filteredEvents = events.filter(event => 
-          new Date(event.event_date) >= now && !event.category_names?.toLowerCase().includes('konfirmation')
+      case 'alle':
+        // NUR zukünftige Events (keine vergangenen), keine Konfirmation
+        filteredEvents = events.filter(event =>
+          new Date(event.event_date) >= now &&
+          !event.category_names?.toLowerCase().includes('konfirmation')
         );
         break;
       case 'konfirmation':
-        filteredEvents = events.filter(event => 
+        filteredEvents = events.filter(event =>
           event.category_names?.toLowerCase().includes('konfirmation')
         );
         break;
