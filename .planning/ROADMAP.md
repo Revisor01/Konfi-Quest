@@ -137,7 +137,7 @@ Phase 43: Profil + Chat (2 plans, complete)
 
 - [x] **Phase 44: Push-Debug** - Ghost-Push-Bug fuer Admins debuggen und fixen (completed 2026-03-18)
 - [x] **Phase 45: Event-Sichtbarkeit + Filterung** - Jahrgangs-Filter, abgesagte Events, Auto-Enrollment und Konfi-Event-Segmente korrigieren (completed 2026-03-18)
-- [ ] **Phase 46: Event-Admin + Teamer-Logik** - Admin-Event-Verwaltung, Teamer-only Felder, Event-Chat-Erstellung
+- [x] **Phase 46: Event-Admin + Teamer-Logik** - Admin-Event-Verwaltung, Teamer-only Felder, Event-Chat-Erstellung (completed 2026-03-18)
 - [ ] **Phase 47: Punkte-Logik** - Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken, History-Header
 - [ ] **Phase 48: Admin-Struktur** - Zertifikate, Dashboard-Einstellungen und Badges als Unterseiten, Event-Badge, Chat-Filter
 - [ ] **Phase 49: Badge-UI** - Badge-Modal-Selection, Segment-Position, Teamer-Badge-Ansicht
@@ -261,7 +261,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 |-------|----------------|--------|-----------|
 | 44. Push-Debug | 1/1 | Complete    | 2026-03-18 |
 | 45. Event-Sichtbarkeit + Filterung | 2/2 | Complete    | 2026-03-18 |
-| 46. Event-Admin + Teamer-Logik | 0/2 | Not started | - |
+| 46. Event-Admin + Teamer-Logik | 2/2 | Complete   | 2026-03-18 |
 | 47. Punkte-Logik | 0/1 | Not started | - |
 | 48. Admin-Struktur | 0/2 | Not started | - |
 | 49. Badge-UI | 0/1 | Not started | - |

@@ -77,14 +77,14 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 - [x] **EVT-v19-02**: Abgesagte Events werden nicht mehr in der Konfi-Event-Liste angezeigt
 - [x] **EVT-v19-03**: Konfi kann sich nicht von Pflicht-Events abmelden bei denen er nicht angemeldet ist
 - [x] **EVT-v19-04**: Neue Konfis in einem Jahrgang werden automatisch zu bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
-- [ ] **EVT-v19-05**: Event absagen funktioniert aus der Admin-Ansicht
+- [x] **EVT-v19-05**: Event absagen funktioniert aus der Admin-Ansicht
 - [ ] **EVT-v19-06**: Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
 - [ ] **EVT-v19-07**: "Mitbringen" und "Pflicht" werden farbig hervorgehoben in Event-Liste und Details
 - [x] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
 - [x] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
-- [ ] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
-- [ ] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
-- [ ] **EVT-v19-12**: Aus einem Event kann ein Chat mit allen angemeldeten Konfis und Teamer:innen erstellt werden
+- [x] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
+- [x] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
+- [x] **EVT-v19-12**: Aus einem Event kann ein Chat mit allen angemeldeten Konfis und Teamer:innen erstellt werden
 
 ### Punkte (PKT-v19)
 
@@ -186,14 +186,14 @@ Deferred. Nicht in aktuellem Roadmap.
 | EVT-v19-02 | Phase 45 | Complete |
 | EVT-v19-03 | Phase 45 | Complete |
 | EVT-v19-04 | Phase 45 | Complete |
-| EVT-v19-05 | Phase 46 | Pending |
+| EVT-v19-05 | Phase 46 | Complete |
 | EVT-v19-06 | Phase 46 | Pending |
 | EVT-v19-07 | Phase 46 | Pending |
 | EVT-v19-08 | Phase 45 | Complete |
 | EVT-v19-09 | Phase 45 | Complete |
-| EVT-v19-10 | Phase 46 | Pending |
-| EVT-v19-11 | Phase 46 | Pending |
-| EVT-v19-12 | Phase 46 | Pending |
+| EVT-v19-10 | Phase 46 | Complete |
+| EVT-v19-11 | Phase 46 | Complete |
+| EVT-v19-12 | Phase 46 | Complete |
 | PKT-v19-01 | Phase 47 | Pending |
 | PKT-v19-02 | Phase 47 | Pending |
 | PKT-v19-03 | Phase 47 | Pending |
