@@ -303,7 +303,7 @@ Plans:
   2. Zertifikat-Karten sind kompakter mit weniger Padding und kleineren Icons
   3. Neue Organisationen erhalten automatisch 4 Standard-Zertifikat-Typen
   4. Bestehende Organisationen ohne Zertifikat-Typen erhalten die 4 Standards beim naechsten Deploy
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 54-01-PLAN.md -- 2x2 Grid Layout + kompakte Karten + Default-Zertifikat-Seed bei Org-Erstellung
