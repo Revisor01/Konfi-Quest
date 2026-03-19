@@ -7,13 +7,19 @@ import {
   IonTitle,
   IonContent,
   IonRefresher,
-  IonRefresherContent
+  IonRefresherContent,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  useIonModal
 } from '@ionic/react';
+import { qrCodeOutline } from 'ionicons/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import EventsView from '../views/EventsView';
+import QRScannerModal from '../modals/QRScannerModal';
 import EventDetailView from '../views/EventDetailView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 
@@ -66,6 +72,15 @@ const KonfiEventsPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const { pageRef, presentingElement } = useModalPage('konfi-events');
   const history = useHistory();
+
+  const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
+    onClose: () => dismissScannerModal(),
+    onSuccess: (_eventId: number, eventName: string) => {
+      dismissScannerModal();
+      setSuccess(`Eingecheckt bei: ${eventName}`);
+      loadEvents();
+    }
+  });
   
   // State
   const [events, setEvents] = useState<Event[]>([]);
@@ -167,6 +182,11 @@ const KonfiEventsPage: React.FC = () => {
       <IonHeader translucent={true}>
         <IonToolbar>
           <IonTitle>Events</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={() => presentScannerModal()}>
+              <IonIcon icon={qrCodeOutline} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background" fullscreen>

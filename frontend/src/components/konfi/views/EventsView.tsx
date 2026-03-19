@@ -6,10 +6,7 @@ import {
   IonLabel,
   IonSegment,
   IonSegmentButton,
-  IonItemSliding,
-  IonFab,
-  IonFabButton,
-  useIonModal
+  IonItemSliding
 } from '@ionic/react';
 import {
   calendar,
@@ -25,12 +22,9 @@ import {
   lockOpenOutline,
   shieldCheckmark,
   bagHandle,
-  closeCircle,
-  qrCodeOutline
+  closeCircle
 } from 'ionicons/icons';
-import { useApp } from '../../../contexts/AppContext';
 import { SectionHeader, ListSection } from '../../shared';
-import QRScannerModal from '../modals/QRScannerModal';
 
 interface Category {
   id: number;
@@ -87,17 +81,6 @@ const EventsView: React.FC<EventsViewProps> = ({
   onSelectEvent,
   onUpdate
 }) => {
-  const { setSuccess } = useApp();
-
-  const [presentScannerModal, dismissScannerModal] = useIonModal(QRScannerModal, {
-    onClose: () => dismissScannerModal(),
-    onSuccess: (_eventId: number, eventName: string) => {
-      dismissScannerModal();
-      setSuccess(`Eingecheckt bei: ${eventName}`);
-      onUpdate();
-    }
-  });
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {
       day: '2-digit',
@@ -432,12 +415,6 @@ const EventsView: React.FC<EventsViewProps> = ({
         })}
       </ListSection>
 
-      {/* FAB für QR-Scanner */}
-      <IonFab vertical="bottom" horizontal="end" slot="fixed">
-        <IonFabButton onClick={() => presentScannerModal()}>
-          <IonIcon icon={qrCodeOutline} />
-        </IonFabButton>
-      </IonFab>
     </div>
   );
 };

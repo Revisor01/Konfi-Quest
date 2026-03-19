@@ -224,6 +224,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel>Gottesdienst-Punkte aktiviert</IonLabel>
                   <IonToggle
+                    slot="end"
                     checked={formData.gottesdienst_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gottesdienst_enabled: e.detail.checked })}
                     disabled={loading || (!formData.gemeinde_enabled)}
@@ -254,6 +255,7 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 <IonItem lines="full" style={{ '--background': 'transparent' }}>
                   <IonLabel>Gemeinde-Punkte aktiviert</IonLabel>
                   <IonToggle
+                    slot="end"
                     checked={formData.gemeinde_enabled}
                     onIonChange={(e) => setFormData({ ...formData, gemeinde_enabled: e.detail.checked })}
                     disabled={loading || (!formData.gottesdienst_enabled)}
