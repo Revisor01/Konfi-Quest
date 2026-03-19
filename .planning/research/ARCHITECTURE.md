@@ -1,474 +1,641 @@
-# Architecture: Pflicht-Events, QR-Check-in, Auto-Enrollment, Anwesenheitsstatistik
+# Architecture: Offline-Layer Integration
 
-**Projekt:** Konfi Quest v1.7
-**Recherchiert:** 2026-03-09
-**Confidence:** HIGH (basiert auf vollstaendiger Codebase-Analyse)
+**Projekt:** Konfi Quest v2.1 App-Resilienz
+**Recherchiert:** 2026-03-19
+**Fokus:** Wie Offline-Cache, Schreib-Queue und Sync in die bestehende Axios + Socket.io + React Context Architektur integriert werden
 
-## Empfohlene Architektur
-
-### Ueberblick
-
-Pflicht-Events erweitern das bestehende Event-System um vier Saeulen:
-1. **Mandatory-Flag + Auto-Enrollment** -- events-Tabelle + automatische event_bookings
-2. **Opt-out statt Opt-in** -- Neue event_optouts-Tabelle (getrennt von Buchungen)
-3. **QR-Check-in** -- Event-spezifische JWT-QR-Codes + Scan-Endpunkt + Konfi-Scanner-UI
-4. **Anwesenheitsstatistik** -- Aggregierte Abfragen ueber event_bookings.attendance_status
+## Ist-Zustand: Datenfluss heute
 
 ```
-Admin erstellt Pflicht-Event (mandatory=true, jahrgang_ids=[...])
-    |
-    v
-Backend: Auto-Enrollment aller Konfis aus zugewiesenen Jahrgaengen
-    |-> Batch-INSERT INTO event_bookings fuer alle Konfis
-    |-> Push-Notification: "Du wurdest fuer XYZ eingetragen"
-    |
-Konfi sieht Event im Dashboard + Events-Tab
-    |-> Opt-out-Button mit Pflicht-Begruendung
-    |-> INSERT INTO event_optouts + UPDATE booking status
-    |
-Event-Tag: Admin zeigt QR-Code (JWT-basiert, stateless)
-    |-> Konfi scannt QR -> POST /events/:id/checkin
-    |-> Backend setzt attendance_status='present'
-    |-> KEIN Punktevergabe (Pflicht-Events haben points=0)
-    |
-Admin-Korrektur: Manuell present/absent setzen (bestehende Route)
-    |
-Statistik: Aggregation ueber event_bookings WHERE event.mandatory=true
+Page (z.B. KonfiDashboardPage)
+  |-- useEffect -> api.get('/konfi/dashboard') -> setState(response.data)
+  |-- useLiveRefresh(['dashboard', 'events', 'badges'], refreshAllData)
+  |-- IonRefresher -> loadDashboardData()
+
+api.ts (Axios)
+  |-- Request Interceptor: JWT aus localStorage
+  |-- Response Interceptor: 401 -> Logout, 429 -> Rate-Limit Event
+
+websocket.ts (Socket.io)
+  |-- initializeWebSocket(token) -> singleton Socket
+  |-- Events: newMessage, liveUpdate, joinRoom, leaveRoom
+
+Contexts:
+  |-- AppContext: user, error, success, push permissions
+  |-- BadgeContext: chatUnreadByRoom, pendingRequests/Events, WebSocket listener
+  |-- LiveUpdateContext: subscribe/unsubscribe Pub-Sub fuer WebSocket-Events
+  |-- ModalContext: presentingElement Management
 ```
 
-### Komponentengrenzen
+### Aktuelles Datenladen-Pattern (in jeder Page)
+
+```typescript
+// Typisches Pattern in ~30 Pages:
+const [data, setData] = useState(null);
+const [loading, setLoading] = useState(true);
+
+const loadData = async () => {
+  setLoading(true);
+  try {
+    const response = await api.get('/endpoint');
+    setData(response.data);
+  } catch (err) {
+    setError('Fehler beim Laden');
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => { loadData(); }, []);
+useLiveRefresh('type', loadData);
+```
+
+**Wichtige Beobachtungen:**
+- Kein zentraler Data-Layer -- jede Page holt eigene Daten direkt via `api.get()`
+- Kein Caching -- jeder Seitenwechsel laedt alles neu
+- Kein Offline-Handling -- Netzfehler zeigen generische Fehlermeldung
+- localStorage nur fuer Auth (token, user, device_id) -- keine Datencaches
+- Socket.io hat bereits Reconnection-Logik (10 Versuche, 1s Delay)
+- IonRefresher (Pull-to-Refresh) existiert auf den meisten Pages
+
+---
+
+## Empfohlene Architektur: Cache-First mit Schreib-Queue
+
+### Architektur-Ueberblick
+
+```
+                                  FRONTEND
+ +-----------------------------------------------------------------+
+ |                                                                   |
+ |  Pages (unveraendert)                                             |
+ |    |                                                              |
+ |    v                                                              |
+ |  useOfflineQuery(key, fetcher)   <-- Neuer Hook, ersetzt         |
+ |    |                                 direktes api.get()           |
+ |    v                                                              |
+ |  OfflineCache (Singleton Service)                                 |
+ |    |-- get(key): CachedData | null                                |
+ |    |-- set(key, data, ttl)                                        |
+ |    |-- invalidate(key | pattern)                                  |
+ |    |-- Storage: Capacitor Preferences (nativ) / localStorage      |
+ |    |                                                              |
+ |  WriteQueue (Singleton Service)                                   |
+ |    |-- enqueue(method, url, body, metadata)                       |
+ |    |-- flush(): Promise<Results>                                  |
+ |    |-- getQueue(): QueueItem[]                                    |
+ |    |-- Storage: Capacitor Preferences                             |
+ |    |                                                              |
+ |  NetworkMonitor (Singleton Service)                               |
+ |    |-- isOnline: boolean                                          |
+ |    |-- subscribe(callback)                                        |
+ |    |-- Uses: Capacitor Network Plugin + navigator.onLine          |
+ |    |                                                              |
+ |  SyncManager (Singleton Service)                                  |
+ |    |-- syncOnResume(): void                                       |
+ |    |-- syncPeriodic(): void                                       |
+ |    |-- Koordiniert: WriteQueue.flush + Cache-Invalidierung        |
+ |    |                                                              |
+ |  OfflineBanner (UI-Komponente)                                    |
+ |    |-- Zeigt Status an: offline / syncing / online                |
+ |    |                                                              |
+ +-----------------------------------------------------------------+
+
+                                  BACKEND
+ +-----------------------------------------------------------------+
+ |  Neue Endpoints:                                                  |
+ |    GET /sync/changes?since=timestamp                              |
+ |      -> Inkrementelle Aenderungen seit letztem Sync               |
+ |    POST /sync/batch                                               |
+ |      -> Mehrere Schreiboperationen auf einmal                     |
+ |  Aenderungen an bestehenden Endpoints:                            |
+ |    Alle GET-Responses: + updated_at Feld                          |
+ |    Chat-Nachrichten: + client_id fuer Deduplizierung              |
+ +-----------------------------------------------------------------+
+```
+
+---
+
+## Neue Komponenten (6 Dateien)
+
+### 1. `frontend/src/services/offlineCache.ts` -- Cache-Storage
+
+```typescript
+// Schnittstelle:
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;    // Wann gecacht
+  ttl: number;          // Time-to-live in ms
+  version: number;      // Schema-Version fuer Migrationen
+}
+
+class OfflineCache {
+  async get<T>(key: string): Promise<CacheEntry<T> | null>;
+  async set<T>(key: string, data: T, ttl?: number): Promise<void>;
+  async invalidate(pattern: string): Promise<void>;  // z.B. 'events:*'
+  async clear(): Promise<void>;
+  isStale(entry: CacheEntry<any>): boolean;
+}
+```
+
+**Storage-Entscheidung:** `@capacitor/preferences` (nicht Filesystem, nicht IndexedDB).
+
+Gruende:
+- Bereits im Capacitor-Oekosystem (kein neues Plugin)
+- Key-Value String-Storage, perfekt fuer JSON-serialisierte API-Responses
+- Nativ auf iOS (UserDefaults) und Android (SharedPreferences)
+- Synchron auf nativen Plattformen, async API
+- Limit: ~1MB pro Key ist ausreichend -- groesste Response (Dashboard) ist <50KB
+- Web-Fallback: localStorage (bereits im Einsatz)
+
+**Cache-Keys nach Konvention:**
+```
+cache:konfi:dashboard:{userId}
+cache:konfi:events:{userId}
+cache:konfi:badges:{userId}
+cache:konfi:profile:{userId}
+cache:chat:rooms:{userId}
+cache:chat:messages:{roomId}:page:{n}
+cache:admin:konfis:{orgId}
+cache:admin:events:{orgId}
+```
+
+**TTL-Defaults:**
+| Datentyp | TTL | Begruendung |
+|----------|-----|-------------|
+| Dashboard | 5 Min | Punkte aendern sich selten |
+| Events | 10 Min | Registrierungsstatus relevant |
+| Badges | 30 Min | Aendern sich sehr selten |
+| Chat-Rooms | 2 Min | Unread-Counts muessen aktuell sein |
+| Chat-Messages | 1 Stunde | Historische Nachrichten aendern sich nicht |
+| Profil | 15 Min | Aendert sich selten |
+| Admin-Listen | 5 Min | Muessen relativ aktuell sein |
+
+### 2. `frontend/src/services/writeQueue.ts` -- Offline-Schreib-Queue
+
+```typescript
+interface QueueItem {
+  id: string;           // UUID, fuer Deduplizierung
+  method: 'POST' | 'PUT' | 'DELETE';
+  url: string;
+  body: any;
+  createdAt: number;
+  retryCount: number;
+  maxRetries: number;
+  metadata: {
+    type: 'chat_message' | 'activity_request' | 'event_booking';
+    displayText: string;  // Fuer UI: "Nachricht an Allgemein"
+  };
+}
+
+class WriteQueue {
+  async enqueue(item: Omit<QueueItem, 'id' | 'createdAt' | 'retryCount'>): Promise<string>;
+  async flush(): Promise<FlushResult>;
+  async getQueue(): Promise<QueueItem[]>;
+  async remove(id: string): Promise<void>;
+  async clear(): Promise<void>;
+  get pendingCount(): number;
+}
+```
+
+**Scope der Queue -- NUR diese Operationen:**
+1. Chat-Nachrichten (`POST /chat/rooms/:id/messages`)
+2. Aktivitaets-Antraege (`POST /konfi/activities/:id/request`)
+
+**NICHT in der Queue (zu komplex/riskant):**
+- Event-Buchungen (Kapazitaetspruefung noetig)
+- Admin-Operationen (Punkte vergeben, Konfis verwalten)
+- Passwort-Aenderungen
+- Datei-Uploads
+
+**Deduplizierung:** Jedes QueueItem bekommt eine `client_id` (UUID). Backend prueft bei Chat-Messages auf Duplikate per `client_id`.
+
+### 3. `frontend/src/services/networkMonitor.ts` -- Netzwerkstatus
+
+```typescript
+class NetworkMonitor {
+  isOnline: boolean;
+  connectionType: 'wifi' | 'cellular' | 'none' | 'unknown';
+  subscribe(callback: (online: boolean) => void): () => void;
+
+  // Nutzt:
+  // - @capacitor/network Plugin (nativ)
+  // - navigator.onLine + online/offline Events (Web)
+}
+```
+
+**Neues Plugin noetig:** `@capacitor/network` (noch nicht in package.json).
+
+### 4. `frontend/src/services/syncManager.ts` -- Sync-Koordinator
+
+```typescript
+class SyncManager {
+  // Bei App-Resume (appStateChange -> isActive)
+  async syncOnResume(): Promise<void>;
+
+  // Periodisch (alle 5 Min wenn online)
+  startPeriodicSync(intervalMs?: number): void;
+  stopPeriodicSync(): void;
+
+  // Bei Reconnect (WebSocket 'connect' Event)
+  async syncOnReconnect(): Promise<void>;
+
+  // Ablauf:
+  // 1. WriteQueue.flush() -- ausstehende Schreiboperationen senden
+  // 2. Inkrementeller Sync via GET /sync/changes?since=lastSync
+  // 3. Betroffene Cache-Keys invalidieren
+  // 4. Window Event 'sync-complete' dispatchen -> Pages refreshen
+}
+```
+
+### 5. `frontend/src/hooks/useOfflineQuery.ts` -- Der zentrale Hook
+
+```typescript
+interface UseOfflineQueryResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+  isStale: boolean;      // Daten aus Cache, Revalidierung laeuft
+  isOffline: boolean;
+  refresh: () => Promise<void>;
+}
+
+function useOfflineQuery<T>(
+  cacheKey: string,
+  fetcher: () => Promise<T>,
+  options?: {
+    ttl?: number;
+    enabled?: boolean;     // Conditional fetching
+    onSuccess?: (data: T) => void;
+  }
+): UseOfflineQueryResult<T>;
+```
+
+**Ablauf des Hooks:**
+```
+1. Cache lesen -> wenn vorhanden: sofort data setzen (isStale = true wenn TTL abgelaufen)
+2. Wenn online: fetcher() aufrufen
+   -> Erfolg: data aktualisieren, Cache schreiben, isStale = false
+   -> Fehler: Cache-Daten behalten, error setzen
+3. Wenn offline: Cache-Daten anzeigen (isStale = true), kein Fetch
+```
+
+### 6. `frontend/src/components/common/OfflineBanner.tsx` -- UI-Komponente
+
+```typescript
+// Kleiner Banner oben in der App wenn offline
+// Zeigt: "Offline - Daten werden angezeigt aus dem Cache"
+// Oder: "Synchronisiere..." mit Spinner
+// Verschwindet automatisch wenn online
+```
+
+**Positionierung:** In der App-Shell (App.tsx), ueber allen Pages. Nutzt `IonToast` oder absolut positioniertes div.
+
+---
+
+## Aenderungen an bestehenden Dateien
+
+### Aenderungs-Matrix
+
+| Datei | Aenderung | Aufwand |
+|-------|-----------|---------|
+| `services/api.ts` | Offline-Erkennung im Response-Interceptor, Retry-Logik | Klein |
+| `contexts/AppContext.tsx` | `isOnline` State + NetworkMonitor Integration | Klein |
+| `contexts/BadgeContext.tsx` | Cache fuer Badge-Counts, Offline-Fallback | Mittel |
+| `contexts/LiveUpdateContext.tsx` | Bei reconnect -> SyncManager.syncOnReconnect() | Klein |
+| `services/websocket.ts` | reconnect Event -> SyncManager triggern | Klein |
+| Jede Page mit `api.get()` (~25 Pages) | `api.get()` durch `useOfflineQuery()` ersetzen | Mittel (repetitiv) |
+| `ChatRoom.tsx` | sendMessage -> WriteQueue bei offline | Mittel |
+| `App.tsx` | OfflineBanner + NetworkMonitor Init | Klein |
+| `package.json` | + @capacitor/network, @capacitor/preferences | Trivial |
+
+### Detail: `services/api.ts` Aenderungen
+
+```typescript
+// BESTEHEND (bleibt):
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 401 Handler (bleibt)
+    // 429 Handler (bleibt)
+
+    // NEU: Retry-Logik fuer transiente Fehler
+    if (isRetryableError(error) && !error.config.__retryCount) {
+      error.config.__retryCount = (error.config.__retryCount || 0) + 1;
+      if (error.config.__retryCount <= 3) {
+        const delay = Math.pow(2, error.config.__retryCount) * 1000; // 2s, 4s, 8s
+        return new Promise(resolve =>
+          setTimeout(() => resolve(api(error.config)), delay)
+        );
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+function isRetryableError(error: any): boolean {
+  // Netzwerkfehler (kein Response) oder 5xx Server-Fehler
+  return !error.response || (error.response.status >= 500 && error.response.status < 600);
+}
+```
+
+### Detail: Jede Page migrieren (Beispiel KonfiDashboardPage)
+
+```typescript
+// VORHER:
+const [dashboardData, setDashboardData] = useState(null);
+const [loading, setLoading] = useState(true);
+
+const loadDashboardData = async () => {
+  setLoading(true);
+  try {
+    const response = await api.get('/konfi/dashboard');
+    setDashboardData(response.data);
+  } catch (err) {
+    setError('Fehler beim Laden');
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => { loadDashboardData(); }, []);
+
+// NACHHER:
+const {
+  data: dashboardData,
+  loading,
+  isStale,
+  refresh: refreshDashboard
+} = useOfflineQuery(
+  `konfi:dashboard:${user?.id}`,
+  () => api.get('/konfi/dashboard').then(r => r.data),
+  { ttl: 5 * 60 * 1000 }
+);
+
+// useLiveRefresh bleibt, ruft jetzt refresh() statt loadData() auf
+useLiveRefresh(['dashboard'], refreshDashboard);
+```
+
+**Migration-Aufwand pro Page:** ~10 Minuten. Mechanische Aenderung, kein Redesign.
+
+### Detail: ChatRoom.tsx -- Offline-Schreib-Queue
+
+```typescript
+// VORHER:
+const sendMessage = async () => {
+  await api.post(`/chat/rooms/${room.id}/messages`, formData, { ... });
+};
+
+// NACHHER:
+const sendMessage = async () => {
+  const clientId = crypto.randomUUID();
+
+  if (!networkMonitor.isOnline) {
+    // Optimistisch in UI anzeigen
+    addOptimisticMessage({ clientId, content, status: 'pending' });
+
+    // In Queue einreihen
+    await writeQueue.enqueue({
+      method: 'POST',
+      url: `/chat/rooms/${room.id}/messages`,
+      body: { ...formData, client_id: clientId },
+      maxRetries: 5,
+      metadata: { type: 'chat_message', displayText: `Nachricht an ${room.name}` }
+    });
+    return;
+  }
+
+  // Online: direkt senden (wie bisher)
+  await api.post(`/chat/rooms/${room.id}/messages`, { ...formData, client_id: clientId });
+};
+```
+
+---
+
+## Backend-Aenderungen
+
+### Neue Endpoints
+
+#### `GET /sync/changes?since=timestamp`
+
+```javascript
+// Gibt alle Aenderungen seit dem Timestamp zurueck
+// Gruppiert nach Typ, damit Frontend weiss welche Caches zu invalidieren
+router.get('/sync/changes', verifyTokenRBAC, async (req, res) => {
+  const since = new Date(parseInt(req.query.since));
+  const userId = req.user.id;
+  const orgId = req.user.organization_id;
+
+  const changes = {
+    dashboard: await hasDashboardChanges(userId, since),
+    events: await hasEventChanges(orgId, since),
+    badges: await hasBadgeChanges(userId, since),
+    chat: await hasChatChanges(userId, since),
+    // ... weitere Typen
+  };
+
+  res.json({ changes, serverTime: Date.now() });
+});
+```
+
+**Warum kein kompletter Delta-Sync:** Zu komplex fuer den Nutzen. Die App hat ~100 aktive Nutzer. Ein einfacher "hat sich etwas geaendert?"-Check reicht, um betroffene Caches zu invalidieren. Die Pages laden dann bei Bedarf die vollen Daten.
+
+#### Chat-Deduplizierung
+
+```javascript
+// In chat.js POST /rooms/:id/messages:
+// NEU: client_id Pruefung
+if (req.body.client_id) {
+  const existing = await pool.query(
+    'SELECT id FROM chat_messages WHERE client_id = $1',
+    [req.body.client_id]
+  );
+  if (existing.rows.length > 0) {
+    return res.json(existing.rows[0]); // Idempotent: gleiche Nachricht zurueckgeben
+  }
+}
+```
+
+### DB-Aenderung
+
+```sql
+-- chat_messages: client_id fuer Deduplizierung
+ALTER TABLE chat_messages ADD COLUMN client_id UUID;
+CREATE UNIQUE INDEX idx_chat_messages_client_id ON chat_messages(client_id) WHERE client_id IS NOT NULL;
+
+-- updated_at Trigger auf relevanten Tabellen (falls noch nicht vorhanden)
+-- Wird fuer /sync/changes benoetigt
+```
+
+---
+
+## Datenfluss: Stale-While-Revalidate
+
+```
+User oeffnet KonfiDashboardPage
+       |
+       v
+useOfflineQuery('konfi:dashboard:42', fetcher)
+       |
+       +-- 1. OfflineCache.get('konfi:dashboard:42')
+       |       |
+       |       +-- Cache HIT, TTL nicht abgelaufen
+       |       |     -> data = cachedData, loading = false, isStale = false
+       |       |     -> FERTIG (kein Netzwerk-Request)
+       |       |
+       |       +-- Cache HIT, TTL abgelaufen
+       |       |     -> data = cachedData, loading = false, isStale = true
+       |       |     -> Weiter zu Schritt 2 (Revalidierung im Hintergrund)
+       |       |
+       |       +-- Cache MISS
+       |             -> data = null, loading = true
+       |             -> Weiter zu Schritt 2
+       |
+       +-- 2. NetworkMonitor.isOnline?
+               |
+               +-- JA: fetcher() aufrufen
+               |     |
+               |     +-- Erfolg: data = freshData, Cache aktualisieren
+               |     +-- Fehler: Cache-Daten behalten, error setzen
+               |
+               +-- NEIN: Nichts tun (Cache-Daten bleiben)
+                         isOffline = true
+```
+
+---
+
+## Sync-Ausloeser
+
+| Trigger | Aktion |
+|---------|--------|
+| App-Start (mit User) | SyncManager.syncOnResume() |
+| App wird aktiv (appStateChange isActive) | SyncManager.syncOnResume() |
+| WebSocket reconnect | SyncManager.syncOnReconnect() |
+| Periodisch (alle 5 Min) | SyncManager.syncPeriodic() |
+| Manuell (Pull-to-Refresh) | useOfflineQuery.refresh() |
+| Netzwerk-Status: offline -> online | WriteQueue.flush() + Cache-Invalidierung |
+
+---
+
+## Komponentengrenzen
 
 | Komponente | Verantwortung | Kommuniziert mit |
 |-----------|---------------|-------------------|
-| `events.js` (Backend) | Pflicht-Event CRUD, Auto-Enrollment, QR-Token-Generierung, Check-in-Endpunkt | db, pushService, liveUpdate |
-| `konfi.js` (Backend) | Konfi-Event-Ansicht inkl. Pflicht-Status, Opt-out-Route, Dashboard-Erweiterung | db, events-Daten |
-| `konfi-managment.js` (Backend) | Pro-Konfi Anwesenheitsstatistik-Route | db |
-| `EventModal.tsx` (Admin) | Mandatory-Toggle, Bring-Items-Feld im Erstellformular | API POST/PUT /events |
-| `EventDetailView.tsx` (Admin) | QR-Code-Anzeige, Anwesenheitsstatistik, Opt-out-Uebersicht | API GET /events/:id |
-| `EventsView.tsx` (Konfi) | Pflicht-Events visuell markiert | API |
-| `EventDetailView.tsx` (Konfi) | Opt-out-Button, QR-Scanner, Bring-Items-Anzeige | API, Capacitor BarcodeScanner |
-| `DashboardView.tsx` (Konfi) | "Naechstes Event"-Widget mit Bring-Items | API /konfi/dashboard |
+| OfflineCache | Lese-Cache Verwaltung (get/set/invalidate) | useOfflineQuery, SyncManager |
+| WriteQueue | Schreib-Queue Verwaltung (enqueue/flush) | SyncManager, ChatRoom, RequestsPage |
+| NetworkMonitor | Netzwerkstatus erkennen und melden | Alle (via subscribe) |
+| SyncManager | Orchestriert Sync-Ablauf bei Statuswechsel | WriteQueue, OfflineCache, AppContext |
+| useOfflineQuery | Hook fuer Pages: Cache-First Datenladen | OfflineCache, NetworkMonitor, api.ts |
+| OfflineBanner | UI: Offline/Syncing Status anzeigen | NetworkMonitor, SyncManager |
 
-## Datenbank-Aenderungen
+**Keine neuen Contexts noetig.** NetworkMonitor und SyncManager sind Singleton-Services (wie api.ts und websocket.ts). Der einzige State, der in die React-Welt muss (`isOnline`), geht in den bestehenden AppContext.
 
-### Bestehende Tabellen: Aenderungen
-
-#### `events` -- 2 neue Spalten
-```sql
-ALTER TABLE events ADD COLUMN mandatory BOOLEAN DEFAULT FALSE;
-ALTER TABLE events ADD COLUMN bring_items TEXT;  -- Freitext "Was mitbringen"
-```
-
-**Warum keine eigene Tabelle:** `mandatory` ist ein einfaches Flag auf dem Event selbst. `bring_items` ist ein optionaler Freitext der zu jedem Event gehoert (nicht nur Pflicht-Events).
-
-#### `event_bookings` -- 1 neue Spalte
-```sql
-ALTER TABLE event_bookings ADD COLUMN enrollment_type VARCHAR(20) DEFAULT 'self';
--- Werte: 'self' (bestehendes Verhalten), 'auto' (Auto-Enrollment), 'admin' (Admin-Buchung)
-```
-
-**Warum:** Unterscheidung zwischen Selbstanmeldung und Auto-Enrollment fuer Statistik und UI. Der bestehende `status`-Flow (confirmed/waitlist) bleibt unveraendert -- Auto-Enrolled Konfis bekommen direkt `status='confirmed'`.
-
-**Bestehendes Schema event_bookings (relevant):**
-- `id`, `event_id`, `user_id`, `status` (confirmed/waitlist), `booking_date`, `attendance_status` (present/absent/null), `timeslot_id`, `organization_id`
-- UNIQUE auf `(event_id, user_id)` -- verhindert Doppelbuchungen
-- `attendance_status` wird bereits von der bestehenden Attendance-Route gesetzt
-
-### Neue Tabelle: `event_optouts`
-
-```sql
-CREATE TABLE event_optouts (
-  id SERIAL PRIMARY KEY,
-  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  reason TEXT NOT NULL,
-  opted_out_at TIMESTAMP DEFAULT NOW(),
-  organization_id INTEGER NOT NULL REFERENCES organizations(id),
-  UNIQUE(event_id, user_id)
-);
-```
-
-**Warum eigene Tabelle statt nur status-Aenderung in event_bookings:**
-
-1. **Begruendung als Pflichtfeld:** `reason` muss gespeichert werden -- passt nicht in event_bookings Struktur.
-2. **Parallele zum bestehenden Pattern:** `event_unregistrations` Tabelle existiert bereits fuer freiwillige Abmeldungen mit Grund (Zeile 325-332 in events.js). Opt-outs folgen dem gleichen Pattern.
-3. **Saubere Admin-Ansicht:** Admin sieht Opt-outs getrennt von Teilnehmerliste, analog zu bestehender Unregistrations-Ansicht.
-4. **event_bookings.status wird trotzdem aktualisiert:** Auf 'opted_out' gesetzt, damit die bestehende COUNT-Logik (`WHERE status = 'confirmed'`) die Abgemeldeten korrekt nicht mitzaehlt.
-
-**Query-Kompatibilitaetsanalyse:**
-Alle bestehenden COUNT-Queries in events.js filtern explizit auf `status = 'confirmed'` oder `status = 'waitlist'`. Ein neuer Status `opted_out` fliesst automatisch NICHT in `registered_count` ein. Getestet an 8+ Stellen im Code.
-
-### Keine neue Tabelle fuer QR-Codes
-
-QR-Codes werden **nicht** in der DB gespeichert. Stattdessen:
-- QR-Payload = signierter JWT: `{ type: "event_checkin", event_id, org_id, exp }`
-- Admin-UI generiert QR on-the-fly mit `qrcode`-Bibliothek (v1.5.4, bereits installiert im Frontend)
-- Backend validiert JWT bei Check-in -- kein DB-Lookup noetig
-- `type`-Feld im JWT verhindert Verwechslung mit Auth-JWTs
-
-**Vorteil:** Kein Token-Management, kein Cleanup, keine Race-Conditions, kein DB-State.
-
-## Datenfluss-Aenderungen
-
-### 1. Event-Erstellung mit Auto-Enrollment (Erweiterung POST /events)
-
-```
-POST /events (bestehend, erweitert)
-  Body: { ...existing, mandatory: true, bring_items: "Bibel, Stift", jahrgang_ids: [1, 2] }
-
-  Neuer Code NACH Event-Insert und NACH Jahrgang-Assignments:
-  IF mandatory AND jahrgang_ids.length > 0:
-    1. Batch-INSERT alle Konfis der zugewiesenen Jahrgaenge:
-       INSERT INTO event_bookings (event_id, user_id, status, enrollment_type, booking_date, organization_id)
-       SELECT $1, u.id, 'confirmed', 'auto', NOW(), $3
-       FROM users u
-       JOIN konfi_profiles kp ON u.id = kp.user_id
-       WHERE kp.jahrgang_id = ANY($2) AND u.organization_id = $3
-       ON CONFLICT (event_id, user_id) DO NOTHING
-    2. Push-Notification an alle eingetragenen Konfis
-```
-
-**Pflicht-Event Constraints:**
-- `points = 0` (immer, keine Punkte fuer Pflicht-Events)
-- `max_participants = 0` (unbegrenzt, alle Jahrgangs-Konfis werden eingetragen)
-- `registration_opens_at = NULL`, `registration_closes_at = NULL` (keine Registrierung noetig)
-- `waitlist_enabled = false` (keine Warteliste noetig)
-- EventModal muss diese Felder ausblenden/fix setzen wenn `mandatory = true`
-
-### 2. Opt-out-Flow (Neue Route in konfi.js)
-
-```
-POST /konfi/events/:id/optout
-  Body: { reason: "Familientermin" }
-  Auth: Konfi-JWT
-
-  1. Pruefe: Event existiert und ist mandatory?
-  2. Pruefe: Konfi hat confirmed Booking fuer dieses Event?
-  3. Pruefe: Kein existierender Opt-out?
-  4. BEGIN Transaction:
-     a) INSERT INTO event_optouts (event_id, user_id, reason, organization_id)
-     b) UPDATE event_bookings SET status = 'opted_out'
-        WHERE event_id = $1 AND user_id = $2
-  5. COMMIT
-  6. Push an Admin: "Max hat sich von XYZ abgemeldet: Familientermin"
-  7. Live-Update an Admins
-```
-
-**Opt-out rueckgaengig machen (Admin-Entscheidung):**
-- DELETE FROM event_optouts WHERE event_id = $1 AND user_id = $2
-- UPDATE event_bookings SET status = 'confirmed'
-- Separate Admin-Route: PUT /events/:id/participants/:userId/revert-optout
-
-### 3. QR-Check-in (Neue Routen)
-
-**Admin: QR-Token generieren**
-```
-GET /events/:id/qr-token
-  Auth: Admin/Teamer-JWT
-
-  1. Pruefe: Event existiert und gehoert zur Organisation
-  2. Generiere JWT:
-     jwt.sign(
-       { type: 'event_checkin', event_id, org_id },
-       process.env.JWT_SECRET,
-       { expiresIn: '24h' }
-     )
-  3. Response: { token: "eyJ..." }
-  Frontend generiert QR-Code aus Token mit qrcode.toDataURL()
-```
-
-**Konfi: Check-in ausfuehren**
-```
-POST /events/:id/checkin
-  Body: { token: "eyJ..." }  -- JWT aus gescanntem QR-Code
-  Auth: Konfi-JWT (normaler Auth-Header)
-
-  1. jwt.verify(token): Pruefe Signatur + Ablauf
-  2. Pruefe: decoded.type === 'event_checkin'
-  3. Pruefe: decoded.event_id === req.params.id
-  4. Pruefe: decoded.org_id === req.user.organization_id
-  5. Pruefe: Konfi hat Booking fuer dieses Event (status='confirmed')
-  6. Pruefe: Kein Opt-out vorhanden
-  7. Pruefe: Nicht bereits attendance_status='present'
-  8. UPDATE event_bookings SET attendance_status = 'present'
-     WHERE event_id = $1 AND user_id = $2
-  9. Response: { success: true, message: "Anwesenheit bestaetigt" }
-  10. Live-Update an Admin
-```
-
-**Wichtig:** Die bestehende Admin-Attendance-Route (`PUT /events/:id/participants/:participantId/attendance`) bleibt fuer manuelle Korrektur. Bei Pflicht-Events (points=0) greift die bestehende Bedingung `if (attendance_status === 'present' && eventData.points > 0)` automatisch NICHT -- keine Punkte werden vergeben. Kein Code-Change an dieser Route noetig.
-
-### 4. Dashboard-Widget "Naechstes Event" (Erweiterung bestehender Route)
-
-```
-GET /konfi/dashboard (bestehend, erweitert)
-  Neue Subquery:
-    SELECT e.id, e.name, e.event_date, e.location, e.bring_items, e.mandatory,
-           eb.status as booking_status,
-           CASE WHEN eo.id IS NOT NULL THEN true ELSE false END as has_opted_out,
-           eb.attendance_status
-    FROM events e
-    JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
-    LEFT JOIN event_optouts eo ON e.id = eo.event_id AND eo.user_id = $1
-    WHERE e.mandatory = true
-      AND e.event_date > NOW()
-      AND e.organization_id = $2
-      AND e.cancelled = false
-    ORDER BY e.event_date ASC
-    LIMIT 1
-
-  Response: {
-    ...existing,
-    next_mandatory_event: { id, name, event_date, location, bring_items, has_opted_out, attendance_status } | null
-  }
-```
-
-**DashboardView-Integration:** Neues Widget zwischen Konfirmation-Card und Events-Section.
-- Gesteuert ueber bestehendes `dashboardConfig`-System
-- Neuer Settings-Key: `dashboard_show_next_event`
-- DashboardConfig-Interface erweitern: `show_next_event: boolean`
-
-### 5. Konfi-Events-Liste erweitern (Erweiterung GET /konfi/events)
-
-Bestehende Query in konfi.js (Zeile 1127-1184) erweitern:
-
-```sql
--- Neue Felder im SELECT:
-e.mandatory,
-e.bring_items,
-CASE WHEN eo.id IS NOT NULL THEN true ELSE false END as has_opted_out,
-eo.reason as opt_out_reason
-
--- Neuer LEFT JOIN:
-LEFT JOIN event_optouts eo ON e.id = eo.event_id AND eo.user_id = $2
-```
-
-**Konfi-UI Auswirkungen:**
-- EventsView.tsx: Pflicht-Badge auf mandatory Events
-- EventDetailView.tsx (Konfi): Opt-out-Button statt Register-Button fuer mandatory Events
-- bring_items als Info-Card anzeigen (fuer alle Events, nicht nur Pflicht)
-
-### 6. Anwesenheitsstatistik (Neue Route in konfi-managment.js)
-
-```
-GET /konfi-management/:id/attendance
-  Auth: Admin/Teamer-JWT
-
-  Response: {
-    total_mandatory_events: number,    -- Alle Pflicht-Events des Konfis
-    attended: number,                   -- attendance_status = 'present'
-    absent: number,                     -- attendance_status = 'absent'
-    opted_out: number,                  -- In event_optouts
-    pending: number,                    -- Noch nicht stattgefunden
-    attendance_rate: number,            -- attended / (attended + absent) * 100
-    events: [
-      {
-        event_id, event_name, event_date,
-        attendance_status: 'present' | 'absent' | null,
-        opt_out_reason: string | null
-      }
-    ]
-  }
-```
-
-**Admin-UI:** Neue Sektion in der Admin-Konfi-Detail-Ansicht (konfi-managment Detail View). Zeigt Anwesenheitsquote + Event-Liste mit Statusfarben.
-
-## Betroffene bestehende Dateien
-
-### Backend (zu aendern)
-
-| Datei | Aenderung | Aufwand |
-|-------|-----------|---------|
-| `backend/routes/events.js` | POST: mandatory + bring_items + Auto-Enrollment. PUT: mandatory-Aenderung. Neue Routen: GET /:id/qr-token, POST /:id/checkin | Mittel |
-| `backend/routes/konfi.js` | GET /events: mandatory, bring_items, opt_out_status. Neue Route: POST /events/:id/optout. GET /dashboard: next_mandatory_event | Mittel |
-| `backend/routes/konfi-managment.js` | Neue Route: GET /:id/attendance | Klein |
-| `backend/routes/settings.js` | dashboard_show_next_event Validierung + UPSERT | Klein |
-
-### Frontend (zu aendern)
-
-| Datei | Aenderung | Aufwand |
-|-------|-----------|---------|
-| `frontend/src/components/admin/modals/EventModal.tsx` | Mandatory-Toggle, Bring-Items-Feld, Felder-Ausblendung bei mandatory | Mittel |
-| `frontend/src/components/admin/views/EventDetailView.tsx` | QR-Code-Anzeige-Button, Opt-out-Liste | Mittel |
-| `frontend/src/components/konfi/views/EventsView.tsx` | Pflicht-Badge auf Events, Status-Logik fuer auto-enrolled/opted-out | Klein |
-| `frontend/src/components/konfi/views/EventDetailView.tsx` | Opt-out-Button, Bring-Items-Card, QR-Scanner-Button | Mittel |
-| `frontend/src/components/konfi/views/DashboardView.tsx` | "Naechstes Event"-Widget Section | Mittel |
-| `frontend/src/types/dashboard.ts` | DashboardEvent um mandatory, bring_items erweitern | Klein |
-
-### Frontend (neu zu erstellen)
-
-| Datei | Zweck | Aufwand |
-|-------|-------|---------|
-| `frontend/src/components/konfi/modals/OptOutModal.tsx` | Abmeldung mit Pflicht-Begruendung (useIonModal Pattern) | Klein |
-| `frontend/src/components/konfi/modals/QrScannerModal.tsx` | QR-Code Scanner fuer Check-in (Capacitor Plugin) | Mittel |
-| `frontend/src/components/admin/modals/QrDisplayModal.tsx` | QR-Code Vollbild-Anzeige fuer Admin | Klein |
-| `frontend/src/components/admin/views/AttendanceStatsView.tsx` | Pro-Konfi Anwesenheitsstatistik in Admin-Konfi-Detail | Mittel |
-
-## Patterns zu befolgen
-
-### Pattern 1: Batch-INSERT fuer Auto-Enrollment
-**Was:** Ein einziger SQL-Query enrolled alle Jahrgangs-Konfis
-**Wann:** `mandatory === true` bei Event-Erstellung
-```javascript
-const enrollQuery = `
-  INSERT INTO event_bookings (event_id, user_id, status, enrollment_type, booking_date, organization_id)
-  SELECT $1, u.id, 'confirmed', 'auto', NOW(), $3
-  FROM users u
-  JOIN konfi_profiles kp ON u.id = kp.user_id
-  WHERE kp.jahrgang_id = ANY($2) AND u.organization_id = $3
-  ON CONFLICT (event_id, user_id) DO NOTHING
-`;
-await db.query(enrollQuery, [eventId, jahrgang_ids, req.user.organization_id]);
-```
-**Warum:** Performance (1 Query statt N) und Atomaritaet. ON CONFLICT verhindert Duplikate bei Re-Enrollment.
-
-### Pattern 2: JWT-basierte QR-Codes (stateless)
-**Was:** Signierte JWTs im QR-Code statt DB-gespeicherte Tokens
-**Wann:** Event-Check-in
-```javascript
-// Generierung (Admin-Route)
-const token = jwt.sign(
-  { type: 'event_checkin', event_id: eventId, org_id: orgId },
-  process.env.JWT_SECRET,
-  { expiresIn: '24h' }
-);
-// Validierung (Check-in-Route)
-const decoded = jwt.verify(token, process.env.JWT_SECRET);
-if (decoded.type !== 'event_checkin') throw new Error('Invalid token type');
-```
-**Warum:** Kein Token-Management noetig. JWT-Secret ist bereits konfiguriert. `type`-Feld verhindert Missbrauch von Auth-Tokens als Check-in-Tokens.
-
-### Pattern 3: Bestehende Attendance-Route fuer Admin-Korrektur
-**Was:** Keine neue Route fuer manuelle Attendance-Aenderung bei Pflicht-Events
-**Wann:** Admin korrigiert Anwesenheit nachtraeglich
-**Warum:** Die bestehende PUT /events/:id/participants/:participantId/attendance (Zeile 1289) funktioniert bereits korrekt: Bei events.points=0 werden keine Punkte vergeben (Bedingung Zeile 1314: `if (attendance_status === 'present' && eventData.points > 0)`).
-
-### Pattern 4: event_unregistrations als Vorbild fuer event_optouts
-**Was:** Separate Tabelle mit Grund, analog zu bestehendem Pattern
-**Referenz:** events.js Zeile 325-332, event_unregistrations mit user_id, event_id, reason, unregistered_at
-**Warum:** Bewaehrtes Pattern im Projekt. Admin-UI zeigt bereits Abmeldungen mit Gruenden an.
-
-### Pattern 5: Dashboard-Widget ueber Settings-KV
-**Was:** `dashboard_show_next_event` Toggle ueber bestehende Settings-Tabelle
-**Referenz:** v1.6 Dashboard-Widget-Steuerung (5 bestehende Keys: dashboard_show_konfirmation, show_events, show_losung, show_badges, show_ranking)
-**Warum:** Exakt gleiches Pattern. Kein neues System noetig.
-
-## Anti-Patterns zu vermeiden
-
-### Anti-Pattern 1: QR-Codes in der Datenbank speichern
-**Was:** Tabelle `event_qr_tokens` mit generierten Codes
-**Warum schlecht:** Unnoetige Komplexitaet. Cleanup-Jobs noetig. Race-Conditions bei Token-Validierung.
-**Stattdessen:** JWT-signierte Tokens. Stateless, selbst-verifizierend, ablaufend.
-
-### Anti-Pattern 2: Separate Pflicht-Events-Tabelle
-**Was:** Neue `mandatory_events` Tabelle neben `events`
-**Warum schlecht:** Dupliziert Event-Logik. Alle bestehenden Event-Queries (8+ Stellen) muessten UNION verwenden.
-**Stattdessen:** Boolean `mandatory` Spalte auf `events`.
-
-### Anti-Pattern 3: HTML5 getUserMedia fuer QR-Scanning
-**Was:** Browser-basierter QR-Scanner ohne Capacitor Plugin
-**Warum schlecht:** Unzuverlaessig auf iOS WebView. Capacitor handhabt Kamera-Permissions besser. Native Scanner ist schneller.
-**Stattdessen:** Capacitor Barcode Scanner Plugin (`@capgo/capacitor-barcode-scanner` oder `@capacitor-mlkit/barcode-scanning`).
-
-### Anti-Pattern 4: Opt-out nur ueber event_bookings.status
-**Was:** Status 'opted_out' in event_bookings ohne eigene Tabelle
-**Warum schlecht:** Verliert den Opt-out-Grund. Admin braucht separate Ansicht der Abmeldungen mit Gruenden.
-**Stattdessen:** Separate `event_optouts` Tabelle (mit Grund) + event_bookings Status-Update kombiniert.
-
-### Anti-Pattern 5: Auto-Enrollment mit Loop statt Batch
-**Was:** FOR-Schleife ueber alle Konfis mit einzelnen INSERTs
-**Warum schlecht:** N Queries statt 1. Bei 50 Konfis tolerierbar, aber unnoetig und nicht skalierbar.
-**Stattdessen:** `INSERT ... SELECT ... ON CONFLICT DO NOTHING` als ein einziger Query.
+---
 
 ## Empfohlene Build-Reihenfolge
 
-Die Reihenfolge folgt den Abhaengigkeiten: DB-Schema zuerst, dann Backend-Logik, dann Frontend.
+Die Reihenfolge folgt den Abhaengigkeiten -- jede Phase baut auf der vorherigen auf.
 
-### Phase 1: DB-Schema + Pflicht-Event-Erstellung + Auto-Enrollment
-**Was:** Migration, Event-Erstellung erweitern, Auto-Enrollment
-**Begruendung:** Alles andere baut darauf auf. Ohne mandatory-Flag und Auto-Enrollment kein Opt-out, kein Check-in, keine Statistik.
-1. SQL-Migration: `mandatory`, `bring_items` auf events. `enrollment_type` auf event_bookings. `event_optouts` Tabelle.
-2. POST /events erweitern: mandatory + bring_items speichern + Auto-Enrollment Logik
-3. PUT /events erweitern: mandatory nachtraeglich aenderbar mit Re-Enrollment
-4. GET /events und GET /events/:id: mandatory + bring_items im Response
-5. EventModal.tsx: Mandatory-Toggle, Bring-Items-Feld, Feld-Ausblendung bei mandatory
+### Phase 1: Fundament (NetworkMonitor + OfflineCache + OfflineBanner)
+- `@capacitor/network` und `@capacitor/preferences` installieren
+- `networkMonitor.ts` implementieren
+- `offlineCache.ts` implementieren (Capacitor Preferences Storage)
+- `isOnline` in AppContext integrieren
+- `OfflineBanner.tsx` in App-Shell einbauen
+- **Testbar:** Banner erscheint bei Flugmodus, Cache liest/schreibt
 
-### Phase 2: Opt-out + Konfi-UI fuer Pflicht-Events
-**Was:** Opt-out-Flow, Pflicht-Events in Konfi-UI
-**Begruendung:** Haengt von Phase 1 (Events + Bookings existieren) ab. Konfis muessen sich abmelden koennen bevor der Event-Tag kommt.
-1. POST /konfi/events/:id/optout Backend-Route
-2. Admin-Route: PUT /events/:id/participants/:userId/revert-optout
-3. GET /konfi/events erweitern: mandatory, bring_items, has_opted_out, opt_out_reason
-4. EventsView.tsx (Konfi): Pflicht-Badge, Status-Logik fuer auto-enrolled/opted-out
-5. EventDetailView.tsx (Konfi): Opt-out-Button statt Register, Bring-Items-Card
-6. OptOutModal.tsx: Begruendungs-Modal (useIonModal Pattern)
-7. Admin EventDetailView.tsx: Opt-out-Liste anzeigen (analog zu Unregistrations)
+### Phase 2: useOfflineQuery Hook + erste Page-Migration
+- `useOfflineQuery.ts` implementieren
+- KonfiDashboardPage migrieren (Referenz-Migration)
+- KonfiEventsPage migrieren
+- KonfiBadgesPage migrieren
+- **Testbar:** Pages zeigen Cache-Daten bei Offline, Stale-Indicator
 
-### Phase 3: QR-Check-in
-**Was:** QR-Generierung (Admin), QR-Scanner (Konfi), Check-in-Endpunkt
-**Begruendung:** Haengt von Phase 1 (Bookings existieren) ab. Unabhaengig von Phase 2 (Opt-out). Kann parallel gebaut werden.
-1. Capacitor Barcode Scanner Plugin installieren + iOS/Android konfigurieren
-2. GET /events/:id/qr-token Backend-Route (JWT generieren)
-3. POST /events/:id/checkin Backend-Route (JWT validieren, Attendance setzen)
-4. QrDisplayModal.tsx (Admin): QR-Code Vollbild-Anzeige mit qrcode Library
-5. QrScannerModal.tsx (Konfi): Scanner-UI mit Capacitor Plugin
-6. EventDetailView.tsx (Konfi): Scanner-Button integrieren
-7. EventDetailView.tsx (Admin): QR-Code-Button integrieren
+### Phase 3: Alle Pages migrieren
+- Restliche ~22 Pages systematisch migrieren
+- BadgeContext auf Cache-Fallback umstellen
+- **Testbar:** Komplette App nutzbar bei kurzem Offline
 
-### Phase 4: Dashboard-Widget + Anwesenheitsstatistik
-**Was:** "Naechstes Event"-Widget, Pro-Konfi Statistik-View
-**Begruendung:** Haengt von Phase 1-3 ab (braucht Attendance-Daten fuer Statistik). Darstellungslogik als letztes.
-1. GET /konfi/dashboard erweitern: next_mandatory_event Subquery
-2. DashboardView.tsx: Neue Widget-Section
-3. Settings: dashboard_show_next_event Toggle
-4. GET /konfi-management/:id/attendance Backend-Route
-5. AttendanceStatsView.tsx: Statistik-Ansicht im Admin-Konfi-Detail
-6. Push-Notifications fuer Pflicht-Event-Erinnerungen (24h vorher)
+### Phase 4: Retry-Logik + Double-Submit-Schutz
+- Exponential Backoff in api.ts Response-Interceptor
+- Loading-States und Button-Disable auf allen Submit-Buttons
+- **Testbar:** Flaky-Netzwerk simulieren, keine doppelten Submits
 
-## Skalierbarkeitsueberlegungen
+### Phase 5: WriteQueue + Chat-Offline
+- `writeQueue.ts` implementieren
+- ChatRoom.tsx fuer Offline-Nachrichten anpassen
+- Backend: client_id auf chat_messages, Deduplizierung
+- **Testbar:** Chat-Nachricht offline senden, nach Reconnect zugestellt
 
-| Concern | Bei 50 Konfis | Bei 500 Konfis | Bei 5000 Konfis |
-|---------|---------------|----------------|-----------------|
-| Auto-Enrollment | Batch-INSERT, <50ms | Batch-INSERT, <200ms | Batch-INSERT, <1s. Evtl. async Job |
-| QR-Check-in | JWT-Verify, <10ms | JWT-Verify, <10ms | JWT-Verify, <10ms (stateless) |
-| Attendance-Stats | Single Query mit JOIN, <50ms | Index auf event_bookings(user_id), <100ms | Materialized View erwaegen |
-| Dashboard next_event | Subquery, <50ms | Index auf events(mandatory, event_date), <100ms | Kein Problem |
+### Phase 6: SyncManager + Inkrementeller Sync
+- `syncManager.ts` implementieren
+- Backend: GET /sync/changes Endpoint
+- Integration in AppContext Lifecycle (appStateChange)
+- WebSocket reconnect -> Sync
+- Periodischer Sync
+- **Testbar:** App im Hintergrund, dann oeffnen -> Daten aktuell
 
-**Aktuell relevant:** 50-100 Konfis pro Organisation. Alle Ansaetze skalieren problemlos.
+---
 
-## Edge Cases
+## Anti-Patterns zu vermeiden
 
-### Edge Case 1: Neuer Konfi nach Event-Erstellung einem Jahrgang hinzugefuegt
-**Verhalten:** Kein automatisches Nachtrags-Enrollment. Admin muss manuell hinzufuegen (bestehende POST /:id/participants Route). Zukuenftige Erweiterung: Event-Hooks bei Jahrgang-Aenderung.
+### Anti-Pattern 1: IndexedDB als Cache
+**Was:** IndexedDB fuer den Cache verwenden statt Capacitor Preferences.
+**Warum schlecht:** Auf iOS/WKWebView gibt es bekannte Probleme mit IndexedDB-Persistenz (Daten koennen bei Speicherdruck geloescht werden). Capacitor Preferences nutzt natives UserDefaults, das zuverlaessiger persistiert.
+**Stattdessen:** Capacitor Preferences fuer alles unter ~1MB pro Key. Falls groessere Daten noetig: Capacitor Filesystem.
 
-### Edge Case 2: Konfi wechselt Jahrgang
-**Verhalten:** Bestehende Bookings bleiben. Neue Pflicht-Events des neuen Jahrgangs haben den Konfi nicht automatisch. Bestehende Pflicht-Events des alten Jahrgangs bleiben. Manuelles Management noetig.
+### Anti-Pattern 2: Globaler State-Store (Redux/Zustand) als Cache
+**Was:** Einen State-Manager als Cache-Layer einfuehren.
+**Warum schlecht:** Overkill fuer diesen Use-Case. Die App hat ~30 Pages mit einfachen GET-Requests. Ein Hook + Service reicht. State-Manager wuerde die gesamte Architektur aendern.
+**Stattdessen:** useOfflineQuery Hook mit Service-Singletons.
 
-### Edge Case 3: Admin aendert Event von normal zu mandatory nachtraeglich
-**Verhalten:** Re-Enrollment aller Jahrgangs-Konfis ausfuehren. ON CONFLICT DO NOTHING schuetzt bereits registrierte Konfis. Bestehende Self-Registrations bleiben mit enrollment_type='self'.
+### Anti-Pattern 3: Full Offline-First mit CRDT/Conflict Resolution
+**Was:** Bidirektionaler Sync mit Konfliktloesung wie bei lokalen Datenbanken (PouchDB/CouchDB).
+**Warum schlecht:** Massiver Aufwand, die App hat <100 Nutzer und kaum gleichzeitige Schreibkonflikte. Chat-Nachrichten und Antraege sind append-only, kein Merge noetig.
+**Stattdessen:** Last-Write-Wins fuer die wenigen Offline-Writes, Client-ID-Deduplizierung.
 
-### Edge Case 4: Opt-out und dann Event wird abgesagt
-**Verhalten:** Event-Absage (bestehendes cancelled-Flag) betrifft alle Bookings. Opt-outs bleiben in event_optouts fuer historische Daten. Status-Anzeige zeigt "Abgesagt" statt "Abgemeldet".
+### Anti-Pattern 4: Service Worker fuer API-Caching
+**Was:** Service Worker mit Workbox fuer automatisches API-Response-Caching.
+**Warum schlecht:** Dies ist eine native Capacitor-App, kein PWA. Service Worker laufen nicht zuverlaessig in WKWebView. Ausserdem hat man weniger Kontrolle ueber Cache-Invalidierung.
+**Stattdessen:** App-Level Caching in TypeScript mit voller Kontrolle.
 
-### Edge Case 5: QR-Code nach 24h abgelaufen
-**Verhalten:** JWT expired -> Check-in fehlgeschlagen -> Fehlermeldung "QR-Code abgelaufen, bitte Admin kontaktieren". Admin kann neuen QR generieren oder manuell Attendance setzen.
+---
 
-### Edge Case 6: Konfi scannt QR aber hat Opt-out
-**Verhalten:** Check-in wird abgelehnt: "Du hast dich von diesem Event abgemeldet". Admin muss erst Opt-out rueckgaengig machen.
+## Kapazitaets-Abschaetzung
+
+| Datentyp | Geschaetzte Groesse | Pro User |
+|----------|---------------------|----------|
+| Dashboard | ~5 KB | 1x |
+| Events (alle) | ~20 KB | 1x |
+| Badges | ~10 KB | 1x |
+| Chat-Rooms | ~3 KB | 1x |
+| Chat-Messages (letzte 50 pro Room) | ~15 KB | pro Room |
+| Profil | ~2 KB | 1x |
+| Admin-Listen | ~30 KB | 1x |
+
+**Gesamt pro User:** ~100-200 KB. Capacitor Preferences kann problemlos mehrere MB halten. Kein Kapazitaetsproblem.
+
+---
+
+## Risiken und Mitigationen
+
+| Risiko | Wahrscheinlichkeit | Mitigation |
+|--------|---------------------|------------|
+| Capacitor Preferences zu langsam fuer grosse Payloads | Niedrig | Benchmark bei 200KB, Fallback auf Filesystem |
+| Chat-Nachrichten gehen verloren bei App-Kill waehrend offline | Mittel | WriteQueue persistiert sofort bei enqueue() |
+| Race Condition: Sync + manueller Refresh gleichzeitig | Mittel | Mutex/Lock im SyncManager |
+| Stale Daten verwirren User | Mittel | isStale-Indicator in UI, klare Kommunikation |
+| Cache waechst unbegrenzt | Niedrig | TTL + periodisches Cleanup alter Eintraege |
+
+---
 
 ## Quellen
 
-- Bestehende Codebase-Analyse:
-  - events.js: 1450+ Zeilen, 15 Routen, Attendance-Logik Zeile 1289-1432
-  - konfi.js: 1800+ Zeilen, Events-Query Zeile 1117-1215, Dashboard Zeile 32-272
-  - konfi-managment.js: Konfi-Detail-Routen
-  - settings.js: Dashboard-Widget-Toggles (5 Keys, Zeile 98-112)
-  - event_unregistrations: Bestehendes Pattern fuer Abmeldungen mit Grund
-  - qrcode npm-Paket: v1.5.4, bereits installiert im Frontend
-  - JWT-Signierung: process.env.JWT_SECRET, bereits konfiguriert
-  - DashboardView.tsx: 1300+ Zeilen, 6 konfigurierbare Sektionen
-  - EventsView.tsx (Konfi): Status-Logik Zeile 145-204, 3 Tabs
+- Capacitor Preferences Plugin Dokumentation (offiziell, v7)
+- Capacitor Network Plugin Dokumentation (offiziell, v7)
+- Bestehender Codebase: api.ts, websocket.ts, AppContext.tsx, BadgeContext.tsx, LiveUpdateContext.tsx
+- Bestehende Pages: KonfiDashboardPage.tsx, KonfiEventsPage.tsx (Datenladen-Pattern)
+- Stale-While-Revalidate Pattern (HTTP RFC 5861, SWR/React-Query Konzepte)
 
----
-*Architecture research for: Konfi Quest v1.7 Pflicht-Events + QR-Check-in*
-*Researched: 2026-03-09*
+**Konfidenz:** HIGH -- basiert auf direkter Codebase-Analyse und bekannten Capacitor-APIs.

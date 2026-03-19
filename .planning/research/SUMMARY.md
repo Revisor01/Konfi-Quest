@@ -1,179 +1,224 @@
 # Project Research Summary
 
-**Project:** Konfi Quest v1.7 -- Unterricht + Pflicht-Events
-**Domain:** Pflicht-Event-Management mit Anwesenheits-Tracking fuer Konfirmanden-App
-**Researched:** 2026-03-09
+**Project:** Konfi Quest v2.1 — App-Resilienz (Offline + Sync)
+**Domain:** Offline-Caching und Schreib-Queue fuer Ionic/Capacitor Hybrid-App
+**Researched:** 2026-03-19
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Konfi Quest v1.7 erweitert das bestehende Event-System um Pflicht-Events mit Auto-Enrollment, QR-Code-basiertem Check-in und Anwesenheitsstatistik. Die Codebase ist ausgereift (15 vollstaendig migrierte Routes, funktionierendes Event-Booking-System mit Attendance-Tracking, Push-Infrastruktur mit 18 Types) und bietet solide Grundlagen: `event_bookings` mit `attendance_status`, `event_jahrgang_assignments` fuer Jahrgangs-Zuweisung, QR-Generierung via `qrcode`-Library und Socket.io-basierte Live-Updates. Die einzige neue externe Dependency ist `@capacitor/barcode-scanner` fuer den nativen QR-Scan auf Konfi-Geraeten.
+Konfi Quest ist eine native Hybrid-App (Capacitor 7 / React 19 / Ionic 8) fuer Kirchengemeinden mit ca. 50-200 Nutzern, die momentan keinerlei Offline-Unterstuetzung hat. Beim Wegfall der Netzwerkverbindung zeigt die App leere Seiten oder generische Fehlermeldungen — ein inakzeptabler Zustand fuer eine App, die Jugendliche bei der Konfirmationsvorbereitung begleitet. Die empfohlene Loesung ist ein schlanker, pragmatischer Offline-Layer: Lese-Cache mit Stale-While-Revalidate via Capacitor Preferences, eine begrenzte Schreib-Queue fuer Chat-Nachrichten und Aktivitaets-Antraege, sowie automatische Retry-Logik im bestehenden Axios-Interceptor. Der Ansatz nutzt das vorhandene Oekosystem (Axios, Socket.io, AppContext) und erweitert es konservativ, statt es zu ersetzen.
 
-Der empfohlene Ansatz: Events-Tabelle um ein `mandatory`-Boolean und ein `bring_items`-Textfeld erweitern, Auto-Enrollment via Batch-INSERT mit `ON CONFLICT DO NOTHING`, Opt-out als separate `event_optouts`-Tabelle (analog zum bestehenden `event_unregistrations`-Pattern), QR-Check-in via signierte JWTs (stateless, kein Token-Management), und Anwesenheitsstatistik als reine SQL-Aggregation. Pflicht-Events vergeben keine Punkte (Guard im bestehenden Attendance-Endpunkt) und ueberspringen die Kapazitaets-/Waitlist-Logik.
+Das Hauptrisiko liegt in zwei kritischen Bereichen: Erstens speichert die App derzeit JWT-Token und User-Daten in localStorage, das auf iOS vom WKWebView ohne Warnung geraeumt werden kann — eine Migration auf Capacitor Preferences muss als erstes passieren. Zweitens hat Socket.io zwar Reconnect-Logik, aber kein "Was habe ich verpasst?"-Protokoll: Nach einer Offline-Phase fehlen dem Chat Nachrichten und dem Dashboard aktuelle Punkte. Beide Risiken sind loesbar und muessen vor dem eigentlichen Cache-Aufbau addressiert werden.
 
-Die Hauptrisiken liegen in der Integration mit bestehendem Code: Der CHECK-Constraint auf `event_bookings.status` muss vor jeder anderen Arbeit synchronisiert werden (blockiert sonst alle Inserts bei frischen Setups). Der bestehende Abmelde-Flow LOESCHT Bookings statt den Status zu aendern -- bei Pflicht-Events fatal, weil die Anwesenheits-Tracking-Grundlage verloren geht. Multi-Tenant-Isolation muss bei jeder Auto-Enrollment-Query explizit geprueft werden (Jahrgangs-IDs sind global, nicht org-spezifisch). Alle diese Risiken sind durch saubere Architektur-Entscheidungen vor der Implementierung vermeidbar.
+Die Forschung empfiehlt klar, keine schweren Sync-Frameworks (RxDB, PouchDB, CouchDB) einzusetzen. Die Nutzerbasis und die append-only Natur der meisten Schreiboperationen rechtfertigen keinen vollstaendigen Offline-Modus. Ziel ist eine App, die sich bei transienter Verbindung zuverlaessig anfuehlt — nicht eine App, die wochenlang offline funktioniert. Dieser Scope-Eingrenzung sollte das Roadmap konsequent folgen.
 
 ## Key Findings
 
-### Recommended Stack
+### Empfohlener Stack
 
-Keine signifikanten Stack-Aenderungen. Eine neue Frontend-Dependency, null Backend-Dependencies. Details in [STACK.md](STACK.md).
+Die Erweiterung des Tech-Stacks ist bewusst minimal gehalten. Es werden 4 neue Pakete hinzugefuegt: `@capacitor/network` (Offline-Erkennung via nativer OS-APIs), `@capacitor/preferences` (persistenter Key-Value-Cache, ersetzt localStorage fuer kritische Daten), `@capawesome/capacitor-background-task` (Queue-Flush wenn App in Background geht) und `axios-retry` (Exponential Backoff). Alle drei Capacitor-Plugins folgen dem v7-Versionsschema des bestehenden Projekts. Drei Eigenbauten ersetzen extern nicht sinnvoll vorhandene Loesungen: ein `useCachedQuery`-Hook (SWR-Pattern), ein `QueueService` (FIFO Offline-Queue) und ein `useSubmitGuard`-Hook (Double-Submit-Schutz).
 
-**Neue Technologie:**
-- `@capacitor/barcode-scanner@latest-7`: Nativer QR-Scanner fuer Konfi-Geraete -- offizielles Capacitor-Plugin, Capacitor 7 Support, Web-Fallback
+**Core-Technologien (nur Neuzugaenge):**
+- `@capacitor/network` ^7.0.1: Netzwerkstatus via NWPathMonitor (iOS) / ConnectivityManager (Android) — zuverlaessiger als navigator.onLine
+- `@capacitor/preferences` ^7.0.1: Persistenter JSON-Cache via UserDefaults/SharedPreferences — wird NICHT vom OS geraeumt, im Gegensatz zu localStorage
+- `@capawesome/capacitor-background-task` ^7.0.1: ~30 Sekunden Background-Execution um Queue zu leeren bevor App suspendiert wird
+- `axios-retry` ^4.5.0: Community-Standard-Interceptor (5M+ weekly downloads) fuer Exponential Backoff
 
-**Bestehender Stack (erweitert genutzt):**
-- `qrcode` (v1.5.4): QR-Generierung fuer Check-in-Tokens -- Pattern aus AdminInvitePage wiederverwendbar
-- PostgreSQL + `pg` (v8.16.3): Neue Spalten auf events/event_bookings, neue event_optouts-Tabelle
-- Socket.io (v4.7/4.8): Live-Updates bei Check-in -- bestehendes `liveUpdate.sendToOrgAdmins()` Pattern
-- firebase-admin (v12.7): 2 neue Push-Types (pflicht_event_reminder, checkin_confirmed)
-- JWT (jsonwebtoken): QR-Check-in-Tokens als signierte JWTs -- stateless Validierung
+**Nicht installieren (Over-Engineering):**
+- SQLite, RxDB, @ionic/storage, Service Worker, tanstack-query — alle unangemessen fuer diese App-Groesse und diesen Sync-Ansatz
 
-**Explizit NICHT hinzufuegen:** ML Kit (Overkill), Redis (nicht noetig), date-fns/dayjs (natives Date reicht), html5-qrcode (Capacitor-Plugin besser).
+Detailquelle: `.planning/research/STACK.md`
 
-### Expected Features
+### Erwartete Features
 
-Details in [FEATURES.md](FEATURES.md).
+Die Forschung unterscheidet klar zwischen Pflicht-Features (Table Stakes), optionalen Differenzierern und bewussten Anti-Features. Der aktuelle Offline-Support ist vollstaendig nicht vorhanden: kein Cache, kein Retry, keine Netzwerk-Erkennung, kein Double-Submit-Schutz.
 
-**Must have (Table Stakes):**
-- Pflicht-Flag (`mandatory`) auf Events mit Auto-Enrollment aller Jahrgangs-Konfis
-- Opt-out mit Pflicht-Begruendung (Status-Aenderung, nicht Booking-Loeschung)
-- Keine Punkte fuer Pflicht-Events (nur Anwesenheits-Tracking)
-- QR-Code Check-in (Admin zeigt QR, Konfi scannt)
-- Manuelle Admin-Korrektur der Anwesenheit (bestehende Route reicht)
-- "Was mitbringen" Textfeld auf Events
-- Dashboard-Widget "Naechstes Event"
-- Pro-Konfi Anwesenheitsstatistik (Admin-Sicht)
+**Muss vorhanden sein (Table Stakes) — User erwarten das:**
+- Offline-Lese-Cache fuer Dashboard (Punkte, Ringe, Level)
+- Offline-Lese-Cache fuer Chat-Verlauf (letzte 50 Nachrichten pro Raum)
+- Offline-Lese-Cache fuer Events (Datum, Ort, Beschreibung)
+- Offline-Banner/Indikator — User muss verstehen WARUM Aktionen nicht gehen
+- Stale-While-Revalidate — gecachte Daten sofort zeigen, im Hintergrund aktualisieren
+- Automatischer Retry bei transienten Fehlern (500er, Timeouts)
+- Double-Submit-Schutz fuer Chat-Nachrichten und Aktivitaets-Antraege
 
-**Should have (Differentiators):**
-- Zeitfenster fuer QR-Check-in (30 Min vor/nach Event-Start)
-- Push bei Opt-out an Admin
-- Opt-out-Frist (bestehende 2-Tage-Logik wiederverwendbar)
-- QR-Code als druckbares PDF
+**Gut zu haben (Differenzierer), aber nicht zwingend:**
+- Offline-Schreib-Queue fuer Chat-Nachrichten (mit Optimistic UI)
+- Offline-Schreib-Queue fuer Aktivitaets-Antraege
+- WebSocket-Reconnect mit State-Recovery (verpasste Nachrichten nachladen)
+- App-Resume Sync via Capacitor appStateChange Event
 
-**Defer (v1.8+):**
-- Bulk-Attendance (mehrere Konfis gleichzeitig markieren)
-- Anwesenheits-Badges (`mandatory_attendance_rate` Kriterium)
-- Jahrgangs-Anwesenheits-Uebersicht (Tabelle aller Konfis)
+**Bewusst zurueckstellen (v2+ oder nie):**
+- Vollstaendiger Offline-Modus fuer Admin-Operationen — Konfliktpotenzial zu hoch
+- Offline-Event-Buchung — Kapazitaetspruefung benoetigt Server-Validierung
+- Offline-QR-Check-in — serverseitige Validierung zwingend
+- Periodischer Hintergrund-Sync — App-Resume reicht, spart Batterie
+- SQLite als lokale DB, CouchDB/PouchDB/RxDB — falsches Tool fuer PostgreSQL-Backend
 
-**Anti-Features (NICHT bauen):**
-- GPS/Geofencing Check-in, NFC Check-in, Self-Button-Check-in (ohne QR)
-- Automatische Absent-Markierung, Eltern-Benachrichtigung
-- Punkte-Option fuer Pflicht-Events, Recurring Events
-- Konfi sieht eigene Anwesenheitsstatistik (erzeugt Druck statt Motivation)
+Detailquelle: `.planning/research/FEATURES.md`
 
-### Architecture Approach
+### Architektur-Ansatz
 
-Die Architektur erweitert das bestehende Event-System um vier Saeulen: mandatory-Flag mit Auto-Enrollment, Opt-out via separate Tabelle, JWT-basierte QR-Codes (stateless), und Aggregations-basierte Statistik. Keine neuen Infrastruktur-Komponenten noetig. Details in [ARCHITECTURE.md](ARCHITECTURE.md).
+Die bestehende Architektur (ca. 30 Pages die direkt `api.get()` aufrufen, kein zentraler Data-Layer) wird durch einen einheitlichen Hook erweiterbar gemacht, ohne bestehende Pages komplett neu zu schreiben. Der Kernpattern: Jede Page ersetzt `api.get()` durch `useOfflineQuery(cacheKey, fetcher)` — eine mechanische Aenderung von ca. 10 Minuten pro Page. Alle neuen Services werden als Singletons implementiert (wie das bestehende api.ts und websocket.ts), keine neuen React-Contexts ausser `isOnline`-State im bestehenden AppContext.
 
-**Hauptkomponenten:**
-1. `events.js` (Backend) -- Pflicht-Event CRUD, Auto-Enrollment-Logik, QR-Token-Generierung, Check-in-Endpunkt
-2. `konfi.js` (Backend) -- Konfi-Event-Ansicht mit Pflicht-Status, Opt-out-Route, Dashboard-Erweiterung
-3. `konfi-managment.js` (Backend) -- Anwesenheitsstatistik-Route pro Konfi
-4. `EventModal.tsx` (Admin) -- Mandatory-Toggle, Feld-Ausblendung bei mandatory
-5. `EventDetailView.tsx` (Admin/Konfi) -- QR-Anzeige/Scanner, Opt-out-UI, Bring-Items
-6. `DashboardView.tsx` (Konfi) -- "Naechstes Event"-Widget
+**Neue Hauptkomponenten:**
+1. `offlineCache.ts` — Lese-Cache: get/set/invalidate via Capacitor Preferences, TTL-basiert
+2. `writeQueue.ts` — Schreib-Queue: FIFO, persistiert sofort, nur Chat + Aktivitaets-Antraege
+3. `networkMonitor.ts` — Netzwerkstatus: Capacitor Network Plugin + navigator.onLine als Dual-Source
+4. `syncManager.ts` — Sync-Koordinator: WriteQueue.flush + Cache-Invalidierung bei Reconnect/Resume
+5. `useOfflineQuery.ts` — Cache-First Hook: ersetzt direktes api.get() in allen Pages
+6. `OfflineBanner.tsx` — UI: Offline/Syncing-Status, global in App-Shell
 
-**Schluessel-Patterns:**
-- Batch-INSERT mit ON CONFLICT fuer Auto-Enrollment (1 Query statt N)
-- JWT-signierte QR-Tokens (kein DB-State, selbst-verifizierend)
-- Bestehende Attendance-Route fuer Admin-Korrektur (points=0 Guard greift automatisch)
-- `event_optouts`-Tabelle nach Vorbild von `event_unregistrations`
-- Dashboard-Widget ueber bestehende Settings-KV-Steuerung
+**Backend-Aenderungen:**
+- `GET /sync/changes?since=timestamp` — inkrementelle Aenderungs-Pruefung (kein Delta-Sync, nur "hat sich etwas geaendert?")
+- `client_id` Spalte auf `chat_messages` + Deduplizierungs-Logik
+- DB-Migration: `ALTER TABLE chat_messages ADD COLUMN client_id UUID` mit Unique Index
 
-### Critical Pitfalls
+Detailquelle: `.planning/research/ARCHITECTURE.md`
 
-Top 6 aus [PITFALLS.md](PITFALLS.md), nach Schwere geordnet:
+### Kritische Pitfalls
 
-1. **CHECK-Constraint blockiert neue Booking-Stati** -- Schema-Datei ist nicht synchron mit Live-DB. ZUERST `01-create-schema.sql` aktualisieren, dann Migration mit aktualisierten Constraints ausfuehren. Betrifft die allererste Aktion.
-2. **Opt-out loescht Booking statt Status zu aendern** -- Bestehender Abmelde-Flow (`DELETE FROM event_bookings`) zerstoert das Anwesenheits-Tracking. Neuen Opt-out-Endpunkt als Status-Aenderung implementieren, bestehenden DELETE-Flow NICHT wiederverwenden.
-3. **Multi-Tenant-Isolation bei Auto-Enrollment** -- `organization_id` in jeder Enrollment-Query pflichtmaessig filtern. Jahrgangs-IDs sind global (SERIAL), nicht org-spezifisch. DSGVO-relevant bei Verletzung.
-4. **Punkte-Vergabe bei Pflicht-Events** -- Bestehender Attendance-Endpunkt vergibt automatisch Punkte. Guard noetig: `if (event.mandatory) skip points/badges/level-check`. Alternativ: points=0 erzwingen bei mandatory=true.
-5. **Neue Konfis nach Event-Erstellung nicht nachgetragen** -- Auto-Enrollment ist einmalig bei Event-Erstellung. Trigger bei Jahrgang-Zuweisung (auth.js, konfi-managment.js) noetig um Nachzuegler zu enrollen.
-6. **QR-Code-Kollision mit bestehendem Invite-QR** -- Typ-Prefix im QR-Inhalt verwenden (`konfiquest://checkin/...` vs. `konfiquest://invite/...`), um Verwechslung zu verhindern.
+1. **localStorage auf iOS kann geraeumt werden** — JWT-Token, User-Daten und Write-Queue SOFORT auf `@capacitor/preferences` migrieren bevor irgendetwas anderes gebaut wird. localStorage-Migration muss erste Implementierungsaufgabe sein. Betroffen: auth.ts, api.ts, LiveUpdateContext.tsx, AppContext.tsx.
+
+2. **Axios 401-Handler loescht Token bei Offline-Zustand** — Aktuell unterscheidet der Handler nicht zwischen "Token abgelaufen" und "Server nicht erreichbar". Offline + 401 = sofortiger Logout. Fix: Netzwerkstatus pruefen BEVOR Token geloescht wird. Zweite Prioritaet, direkt nach Storage-Migration.
+
+3. **Write-Queue ohne Idempotenz-Keys fuehrt zu Duplikaten** — Chat-Nachrichten und Aktivitaets-Antraege muessen bei Reconnect-Retry identifizierbar sein. client_id (UUID) muss von Anfang an in Queue und Backend vorhanden sein, nicht nachtraeglich hinzugefuegt werden.
+
+4. **Socket.io reconnect ohne State-Recovery** — Nach Offline-Phase werden verpasste Chat-Nachrichten und Live-Updates nicht nachgeladen. SyncManager muss bei reconnect-Event `/sync/changes?since=lastSync` aufrufen und betroffene Cache-Keys invalidieren.
+
+5. **Race Conditions beim Sync nach Reconnect** — Write-Queue, Socket.io Live-Updates und Hintergrund-Sync koennen sich gegenseitig ueberschreiben. Klare Sync-Reihenfolge: Erst Write-Queue abarbeiten, dann Read-Sync, dann Live-Updates aktivieren. Mutex im SyncManager.
+
+Detailquelle: `.planning/research/PITFALLS.md`
 
 ## Implications for Roadmap
 
-### Phase 1: Datenmodell + Pflicht-Event-Erstellung + Auto-Enrollment
-**Rationale:** Alles andere baut auf dem mandatory-Flag und der Auto-Enrollment-Logik auf. Ohne diese Basis kein Opt-out, kein Check-in, keine Statistik. Schema-Synchronisation (Pitfall 1) muss der allererste Schritt sein.
-**Delivers:** Admin kann Pflicht-Events erstellen, Konfis werden automatisch enrolled, bring_items-Feld verfuegbar
-**Addresses:** Pflicht-Flag, Auto-Enrollment, "Was mitbringen", keine Punkte bei Pflicht-Events
-**Avoids:** Pitfall 1 (CHECK-Constraint), Pitfall 2 (UNIQUE-Violations), Pitfall 5 (Punkte-Vergabe), Pitfall 6 (Multi-Tenant), Pitfall 12 (Kapazitaetspruefung)
-**Umfang:** DB-Migration, POST/PUT/GET events erweitern, EventModal.tsx anpassen, Auto-Enrollment-Logik, Punkte-Guard
+Die Forschung zeigt eine klare Abhaengigkeitskette: Ohne stabile Storage-Grundlage bricht alles andere. Ohne Netzwerk-Erkennung kann kein Cache-Layer sinnvoll entscheiden. Ohne Cache-Layer ist der SWR-Hook nicht implementierbar. Ohne SWR-Hook ist Page-Migration nicht sinnvoll. Schreib-Queue baut auf NetworkMonitor und Cache-Layer auf. SyncManager braucht beides.
 
-### Phase 2: Opt-out-Flow + Konfi-UI fuer Pflicht-Events
-**Rationale:** Haengt von Phase 1 ab (Events + Bookings muessen existieren). Konfis muessen sich vor dem Event-Tag abmelden koennen. Frontend muss Pflicht- und freiwillige Events klar unterscheiden.
-**Delivers:** Konfis koennen sich mit Begruendung abmelden, Admin sieht Opt-out-Gruende, Pflicht-Badge in Event-Liste
-**Addresses:** Opt-out mit Begruendung, Konfi-Event-UI, Admin-Opt-out-Uebersicht
-**Avoids:** Pitfall 3 (Booking-Loeschung), Pitfall 7 (UI-Verwirrung), Pitfall 8 (falsche Statistik-Zaehlung)
-**Umfang:** event_optouts-Tabelle, POST /konfi/events/:id/optout, OptOutModal.tsx, EventsView.tsx Pflicht-Badge, EventDetailView.tsx Opt-out-Button
+### Phase 1: Fundament — Storage + Netzwerk + Schutzschicht
 
-### Phase 3: QR-Code Check-in
-**Rationale:** Unabhaengig von Opt-out (Phase 2), aber abhaengig von Phase 1 (Bookings muessen existieren). Kann theoretisch parallel zu Phase 2 gebaut werden. Einzige neue externe Dependency (`@capacitor/barcode-scanner`).
-**Delivers:** Admin zeigt QR-Code, Konfi scannt und wird als anwesend markiert, Live-Update an Admin
-**Addresses:** QR-Generierung, QR-Scan, Check-in-Validierung, Zeitfenster
-**Avoids:** Pitfall 4 (Offline-Fallback -- manueller Fallback bleibt), Pitfall 9 (QR-Kollision -- Typ-Prefix)
-**Umfang:** Capacitor Plugin installieren, GET /events/:id/qr-token, POST /events/:id/checkin, QrDisplayModal.tsx, QrScannerModal.tsx
+**Rationale:** Kritische Pitfalls 1 und 2 muessen zuerst geloest werden, sonst zieht jeder weitere Offline-Code auf einem instabilen Fundament. localStorage-Migration ist Voraussetzung fuer alles Nachfolgende.
+**Delivers:** App loggt User nicht mehr faelschlicherweise aus, Token ist persistent, Netzwerkstatus global verfuegbar, Offline-Banner sichtbar.
+**Addresses:** Table Stakes "Offline-Erkennung + Offline-Banner"
+**Avoids:** Pitfall 1 (localStorage iOS), Pitfall 4 (JWT offline Logout)
+**Tasks:**
+- `@capacitor/network` und `@capacitor/preferences` installieren + `npx cap sync`
+- `localStorage` -> `@capacitor/preferences` Migration fuer Token, User, DeviceID (mit Migrationspfad fuer bestehende User)
+- `networkMonitor.ts` Singleton implementieren
+- `isOnline` in AppContext integrieren
+- Axios 401-Handler um Offline-Pruefung erweitern
+- `OfflineBanner.tsx` in App-Shell einbauen
 
-### Phase 4: Dashboard-Widget + Anwesenheitsstatistik
-**Rationale:** Braucht Attendance-Daten aus Phase 1-3. Darstellungslogik als letztes, weil sie von den Daten abhaengt die die vorherigen Phasen produzieren.
-**Delivers:** "Naechstes Event"-Widget im Dashboard, pro-Konfi Anwesenheitsstatistik fuer Admin
-**Addresses:** Dashboard-Widget, Anwesenheitsstatistik, DashboardConfig-Erweiterung, Push-Erinnerungen
-**Avoids:** Pitfall 14 (fehlender Zeitraum-Filter -- Default auf Konfirmationsjahr)
-**Umfang:** Dashboard-Endpoint erweitern, DashboardView.tsx Widget, settings.js Toggle, GET /konfi-management/:id/attendance, AttendanceStatsView.tsx
+### Phase 2: Lese-Cache + SWR + Page-Migration
 
-### Phase Ordering Rationale
+**Rationale:** Erst wenn Storage und Netzwerk-Erkennung stabil sind, macht ein Cache-Layer Sinn. Die mechanische Page-Migration (useOfflineQuery) kann dann schnell und risikoarm durchgefuehrt werden.
+**Delivers:** App zeigt gecachte Daten bei Offline, Stale-While-Revalidate-Pattern, keine leeren Seiten mehr.
+**Addresses:** Table Stakes "Offline-Lese-Cache Dashboard/Chat/Events", "Stale-While-Revalidate"
+**Avoids:** Pitfall 9 (gefaehrlich alte Daten) durch TTL-Limits und Stale-Indikatoren
+**Tasks:**
+- `offlineCache.ts` implementieren mit TTL-Defaults (Dashboard 5 Min, Events 10 Min, Chat 1h)
+- `useOfflineQuery.ts` Hook implementieren
+- KonfiDashboardPage als Referenz-Migration
+- Restliche ~25 Pages systematisch migrieren
+- BadgeContext auf Cache-Fallback umstellen
 
-- **Abhaengigkeitskette:** Datenmodell -> Enrollment -> Opt-out -> Check-in -> Statistik. Jede Phase baut auf der vorherigen auf.
-- **Risiko-First:** Die kritischsten Pitfalls (CHECK-Constraint, Booking-Loeschung, Multi-Tenant) werden in Phase 1-2 adressiert, bevor das System komplexer wird.
-- **Einzelne externe Dependency:** `@capacitor/barcode-scanner` wird erst in Phase 3 benoetigt -- fruehe Phasen brauchen keine Installation/Konfiguration.
-- **Inkrementelle Lieferbarkeit:** Nach Phase 1 ist das System bereits nutzbar (Admin erstellt Pflicht-Events, Konfis sind enrolled). Nach Phase 2 koennen Konfis sich abmelden. Phase 3 beschleunigt den Check-in. Phase 4 liefert Reporting.
+### Phase 3: Retry-Logik + Double-Submit-Schutz
+
+**Rationale:** Nachdem Read-Pfad stabil ist, Schreib-Pfad absichern. Retry-Logik und Double-Submit-Schutz sind unabhaengig voneinander und koennen parallel entwickelt werden. Idempotency-Keys hier implementieren, weil Phase 4 (Write-Queue) sie zwingend benoetigt.
+**Delivers:** Keine doppelten Chat-Nachrichten oder Aktivitaets-Antraege, transiente Fehler werden automatisch wiederholt.
+**Addresses:** Table Stakes "Automatischer Retry", "Double-Submit-Schutz"
+**Avoids:** Pitfall 3 (Duplikate ohne Idempotenz) — Idempotency-Keys als erstes implementieren
+**Tasks:**
+- `axios-retry` installieren, Response-Interceptor in api.ts erweitern (3 Retries, Exponential Backoff, Jitter)
+- `useActionGuard`-Hook fuer Frontend Button-Disable
+- Backend: Idempotency-Key Middleware + `idempotency_keys` Tabelle
+- Kritische Endpoints absichern: POST /chat/messages, POST /konfi/activities/request, POST /events/:id/book
+
+### Phase 4: Schreib-Queue + Chat-Offline
+
+**Rationale:** Komplexester Teil des Offline-Layers. Baut auf NetworkMonitor (Phase 1), Cache (Phase 2) und Idempotency-Keys (Phase 3) auf. Chat-Integration mit Socket.io erfordert sorgfaeltige Reihenfolge-Logik.
+**Delivers:** Chat-Nachrichten werden bei Offline in Queue gespeichert und nach Reconnect automatisch gesendet. Aktivitaets-Antraege ebenfalls.
+**Addresses:** Differenzierer "Offline-Schreib-Queue Chat + Aktivitaets-Antraege", "Optimistic UI"
+**Avoids:** Pitfall 3 (Duplikate), Pitfall 6 (Race Conditions beim Reconnect)
+**Tasks:**
+- `writeQueue.ts` implementieren (FIFO, Capacitor Preferences, max 5 Retries)
+- DB-Migration: `client_id` Spalte auf `chat_messages`
+- ChatRoom.tsx: sendMessage -> WriteQueue bei offline + Optimistic UI
+- RequestsPage: Aktivitaets-Antrag -> WriteQueue bei offline
+- `@capawesome/capacitor-background-task` fuer Queue-Flush bei App-Background
+
+### Phase 5: SyncManager + App-Resume Sync
+
+**Rationale:** Letzter Baustein. Koordiniert alle vorigen Komponenten und schliesst die Sync-Luecke nach Offline-Phasen. Backend-Endpoint `/sync/changes` wird hier erst benoetigt.
+**Delivers:** App ist nach App-Resume sofort aktuell. Chat verpasst keine Nachrichten. Socket.io reconnect loest automatisch Sync aus.
+**Addresses:** Differenzierer "WebSocket-Reconnect mit State-Recovery", "App-Resume Sync"
+**Avoids:** Pitfall 2 (Socket.io reconnect ohne Resync), Pitfall 6 (Race Conditions)
+**Tasks:**
+- Backend: `GET /sync/changes?since=timestamp` Endpoint
+- `syncManager.ts` implementieren (WriteQueue.flush -> Read-Sync -> Cache-Invalidierung)
+- Integration in AppContext Lifecycle (appStateChange)
+- Socket.io reconnect -> SyncManager.syncOnReconnect()
+- Periodischer Sync alle 5 Minuten (optional, nur wenn online)
+
+### Phase-Reihenfolge Begruendung
+
+- Phasen 1-2 sind Fundament: ohne sie ist kein sinnvoller Offline-Support moeglich und jede weitere Arbeit riskiert instabile Grundlage
+- Phase 3 hat keine harte Abhaengigkeit von Phase 2 (kann parallelisiert werden), aber der Read-Pfad sollte stabil sein bevor man den Schreib-Pfad absichert
+- Phase 4 hat harte Abhaengigkeit von Phase 3 (Idempotency-Keys MUESSEN vorher da sein)
+- Phase 5 ist der Integrations-Baustein — er verbindet alle vorherigen Phasen und hat die meisten Backend-Aenderungen, daher zuletzt
 
 ### Research Flags
 
-Phasen die tiefere Recherche waehrend der Planung benoetigen:
-- **Phase 3 (QR-Check-in):** Architektur-Entscheidung "Wer scannt wen?" (Admin scannt Konfi-QR vs. Konfi scannt Event-QR) hat signifikante UX- und Sicherheits-Implikationen. Die Research-Dateien empfehlen unterschiedliche Ansaetze (STACK.md: Konfi scannt Event-QR; PITFALLS.md: Admin scannt Konfi-QR als sicherere Option). Diese Entscheidung muss vor der Implementierung fallen.
+Phasen die wahrscheinlich tiefere Recherche waehrend der Planung brauchen:
+- **Phase 4 (Write-Queue):** Chat-Queue mit Socket.io ist komplex — Reihenfolge-Garantie bei Socket.io Events und HTTP-Idempotency mischen sich auf unerwartete Weise. Konkrete Socket.io-Integration mit bestehendem websocket.ts pruefen.
+- **Phase 5 (SyncManager):** Backend `/sync/changes` Endpoint erfordert `updated_at`-Felder auf mehreren Tabellen — DB-Schema pruefen ob diese Felder bereits vorhanden sind.
 
-Phasen mit etablierten Patterns (keine Phase-Research noetig):
-- **Phase 1:** Batch-INSERT mit ON CONFLICT, Boolean-Spalten auf bestehender Tabelle -- Standard-PostgreSQL-Patterns.
-- **Phase 2:** Opt-out-Tabelle folgt exakt dem bestehenden `event_unregistrations`-Pattern. useIonModal fuer OptOutModal.
-- **Phase 4:** Dashboard-Widget folgt dem bestehenden 5-Widget-Pattern aus v1.6. Settings-KV identisch.
+Phasen mit Standard-Patterns (keine tiefere Recherche noetig):
+- **Phase 1 (Storage/Netzwerk):** Capacitor Network + Preferences sind offiziell dokumentiert, kein unbekanntes Terrain
+- **Phase 2 (Lese-Cache):** Stale-While-Revalidate ist ein bewaehrtes Pattern, Page-Migration ist mechanisch
+- **Phase 3 (Retry/Idempotency):** Axios-Retry und Idempotency-Key-Pattern sind gut dokumentiert (Stripe-Pattern)
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Einzige neue Dependency ist offizielles Capacitor-Plugin. Alle anderen Empfehlungen basieren auf direkter Codebase-Analyse bestehender Patterns. |
-| Features | HIGH | Feature-Landscape vollstaendig aus bestehendem Event-System abgeleitet. UX-Patterns aus Church/School-Management-Tools verifiziert. |
-| Architecture | HIGH | Alle Komponenten, Routen und Queries mit Zeilennummern referenziert. Datenfluss-Aenderungen an bestehenden Code-Stellen verifiziert. |
-| Pitfalls | HIGH | Pitfalls aus direkter Code-Analyse identifiziert (CHECK-Constraints, DELETE-Flow, Kapazitaetspruefung). Keine spekulativen Risiken. |
+| Stack | HIGH | Offizielle Capacitor-Doku, konkrete Versionen geprueft, Over-Engineering klar ausgeschlossen |
+| Features | HIGH | Codebase direkt analysiert, Ist-Zustand vollstaendig verstanden, klare Scope-Grenzen |
+| Architecture | HIGH | Basiert auf direkter Codebase-Analyse (api.ts, websocket.ts, Contexts), keine Annahmen |
+| Pitfalls | HIGH | Referenziert konkrete GitHub Issues und offizielle Docs, iOS localStorage Problem gut dokumentiert |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **QR-Scan-Richtung:** STACK.md empfiehlt "Konfi scannt Event-QR", PITFALLS.md warnt vor Weitergabe-Risiko und empfiehlt "Admin scannt Konfi-QR". Entscheidung muss in Phase-3-Planung fallen. Empfehlung: Konfi scannt Event-QR (einfacher, skaliert besser fuer 30 Konfis gleichzeitig) mit Zeitfenster-Validierung als Missbrauchsschutz.
-- **Nachtrags-Enrollment bei Jahrgangs-Wechsel:** PITFALLS.md identifiziert das Problem (Pitfall 10), aber die konkrete Implementierung (Trigger in auth.js + konfi-managment.js) braucht Code-Analyse waehrend Phase-1-Planung.
-- **event_unregistrations-Tabelle:** Existiert im Code aber nicht in `01-create-schema.sql`. Schema-Synchronisation muss das klaeren (Pitfall 1 erweitert).
-- **Capacitor Barcode Scanner Version:** `@latest-7` Tag muss bei Installation geprueft werden -- konkrete Versionsnummer zum Build-Zeitpunkt festhalten.
+- **updated_at Felder in DB:** Fuer `/sync/changes` braucht das Backend `updated_at` auf mehreren Tabellen. Es ist unklar ob diese bereits vorhanden sind. Bei Phase 5 Planung Schema pruefen.
+- **iOS 17 Storage Quota API:** `navigator.storage.estimate()` ist ab iOS 17 verfuegbar. Fuer aeltere Geraete faellt dieser Fallback weg. In Phase 2 entscheiden ob Quota-Pruefung noetig ist.
+- **Socket.io Connection State Recovery:** Das v4-Feature erlaubt kurze Reconnects ohne Datenverlust (nur bei Verbindungsunterbruch < 2 Minuten). In Phase 5 pruefen ob es fuer den Use-Case sinnvoll nutzbar ist.
 
 ## Sources
 
-### Primary (HIGH confidence -- direkte Codebase-Analyse)
-- events.js (1500+ Zeilen, 15 Routen, Attendance Zeile 1289-1432)
-- konfi.js (1800+ Zeilen, Events-Query Zeile 1117-1215, Unregistration Zeile 1718-1830)
-- 01-create-schema.sql (event_bookings CHECK-Constraint Zeile 387, UNIQUE Zeile 395)
-- AdminInvitePage.tsx (QR-Generierung mit qrcode v1.5.4)
-- pushService.js (18 bestehende Push-Types)
-- DashboardView.tsx (6 konfigurierbare Sektionen, Settings-KV)
-- [Capacitor Barcode Scanner Plugin Docs](https://capacitorjs.com/docs/apis/barcode-scanner)
+### Primary (HIGH confidence)
+- Capacitor Network Plugin API — https://capacitorjs.com/docs/apis/network
+- Capacitor Preferences Plugin API — https://capacitorjs.com/docs/apis/preferences
+- Capacitor Storage Guide — https://capacitorjs.com/docs/guides/storage
+- Capawesome Background Task v7 — https://capawesome.io/plugins/background-task/
+- Capacitor Issue #636 — localStorage lost on reboot (iOS)
+- WebKit Storage Policy Updates — https://webkit.org/blog/14403/updates-to-storage-policy/
+- Socket.IO Connection State Recovery Docs — https://socket.io/docs/v4/connection-state-recovery
+- MDN: Storage quotas and eviction — https://developer.mozilla.org/en-US/docs/Web/API/Storage_API/Storage_quotas_and_eviction_criteria
 
-### Secondary (MEDIUM confidence -- UX-Patterns aus Church/School-Tools)
-- [Church Check-in Systems (Breeze ChMS)](https://www.breezechms.com/blog/check-in-systems-for-churches)
-- [QR Code Attendance Best Practices (Verifyed)](https://www.verifyed.io/blog/qr-code-attendance)
-- [Orah Attendance Dashboard](https://success.orah.com/en/articles/9924908-attendance-insights-dashboard-all-widgets)
-- [MinHub Youth App](https://apps.apple.com/us/app/minhub-youth/id910303883)
+### Secondary (MEDIUM confidence)
+- Ionic Blog: Best Practices for Building Offline Apps — allgemeine Patterns, herstellernah
+- Ionic Blog: Choosing a Data Storage Solution — Storage-Vergleich
+- web.dev: Stale-While-Revalidate — https://web.dev/articles/stale-while-revalidate
+- web.dev: Offline UX Design Guidelines — Banner-Pattern
+- axios-retry npm — https://www.npmjs.com/package/axios-retry
+- RxDB Capacitor Database Guide — Vergleich IndexedDB vs SQLite Performance (herstellernah)
+
+### Tertiary (LOW confidence)
+- Sachith: Offline sync & conflict resolution patterns (Feb 2026) — Sync-Architektur-Vergleich, einzelne Quelle
+- LeanCode: Offline Mobile App Design — allgemeine Empfehlungen ohne Capacitor-Spezifik
 
 ---
-*Research completed: 2026-03-09*
+*Research completed: 2026-03-19*
 *Ready for roadmap: yes*

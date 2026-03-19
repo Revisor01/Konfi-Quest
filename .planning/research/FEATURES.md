@@ -1,284 +1,349 @@
-# Feature Landscape: Pflicht-Events, QR-Check-in, Anwesenheitsstatistik v1.7
+# Feature Landscape: Offline/Resilienz (v2.1)
 
-**Domain:** Pflicht-Event-Verwaltung mit Anwesenheits-Tracking fuer Konfirmanden-App
-**Researched:** 2026-03-09
-**Confidence:** HIGH (Codebase vollstaendig analysiert, UX-Patterns aus Church/School-Management-Tools verifiziert)
+**Domain:** Offline-First-Faehigkeiten fuer Ionic/Capacitor Hybrid-App (Kirchengemeinde)
+**Recherchiert:** 2026-03-19
+**Konfidenz:** HIGH (etablierte Patterns, Capacitor-Oekosystem gut dokumentiert, Codebase analysiert)
 
 ## Ist-Zustand Analyse
 
-### Event-System (bestehend)
+### Aktueller Offline-Support: Keiner
 
-| Komponente | Status | Details |
-|-----------|--------|---------|
-| Event-CRUD | Fertig | Titel, Datum, Endzeit, Ort, Maps-URL, Beschreibung, Kategorien, Punkte, Punkt-Typ |
-| Opt-in Buchung | Fertig | `event_bookings` mit status `confirmed`/`waitlist`/`pending` |
-| Abmeldung mit Grund | Fertig | `UnregisterModal` mit Freitext-Pflichtfeld, 2-Tage-Frist |
-| Timeslots | Fertig | `event_timeslots` Tabelle, ActionSheet-Auswahl |
-| Warteliste | Fertig | `waitlist_enabled`, `max_waitlist_size`, Nachrueck-Logik |
-| Registrierungsfenster | Fertig | `registration_opens_at`, `registration_closes_at` |
-| Attendance-Tracking (Admin) | Fertig | `attendance_status` auf `event_bookings` (`present`/`absent`/NULL) |
-| Punkte-Vergabe | Fertig | Automatisch bei `present`, Abzug bei `absent`, transaktionssicher |
-| Jahrgang-Zuweisung | Fertig | `event_jahrgang_assignments` -- Events fuer bestimmte Jahrgaenge |
-| Push-Erinnerungen | Fertig | 24h + 1h vor Event via `backgroundService.js` |
-| Dashboard-Events | Fertig | `show_events` Toggle in `DashboardConfig` (5 Widget-Toggles) |
-| Kategorien | Fertig | `event_categories` Verknuepfungstabelle |
+| Aspekt | Status | Auswirkung |
+|--------|--------|-----------|
+| API-Calls | Kein Cache, kein Retry | App zeigt leere Seite oder Fehler wenn offline |
+| Netzwerk-Erkennung | Nicht implementiert | App weiss nicht ob online/offline |
+| Schreib-Operationen | Fire-and-forget | Bei Verbindungsabbruch: Daten verloren |
+| Double-Submit | Kein Schutz | Doppelte Chat-Nachrichten, doppelte Antraege moeglich |
+| WebSocket (Chat) | Reconnect vorhanden (10 Versuche) | Verpasste Nachrichten nach Reconnect nicht nachgeladen |
+| Datenpersistenz | localStorage fuer Token/User | Keine gecachten API-Daten |
 
-### Was FEHLT fuer v1.7
+### Bestehende Infrastruktur die genutzt werden kann
 
-| Fehlend | Auswirkung |
-|---------|-----------|
-| Pflicht-Flag auf Events | Alle Events sind opt-in, keine Auto-Enrollment-Logik |
-| QR-Code Check-in | Attendance nur manuell durch Admin in Teilnehmerliste |
-| "Was mitbringen" Feld | Kein strukturiertes Feld, nur Freitext in `description` |
-| Naechstes-Event Widget | Dashboard zeigt nur angemeldete Events, kein prominentes naechstes Event |
-| Pro-Konfi Anwesenheitsstatistik | Keine aggregierte Anwesenheits-Uebersicht pro Konfi |
-| Opt-out statt Opt-in fuer Pflicht-Events | Konfi muss sich aktiv anmelden, kein Auto-Enrollment |
+| Komponente | Datei | Relevanz |
+|-----------|-------|---------|
+| Axios-Interceptor | `services/api.ts` | Bereits 401/429-Handler, erweiterbar um Retry + Cache |
+| Socket.io-Client | `services/websocket.ts` | Reconnect-Logik vorhanden, erweiterbar um State-Recovery |
+| AppContext | `contexts/AppContext.tsx` | Globaler State, erweiterbar um NetworkContext |
+| BadgeContext | `contexts/BadgeContext.tsx` | Unread-Counts, muessen gecacht werden |
+| Capacitor Core | `package.json` | @capacitor/core ^7.6.0 — Network Plugin verfuegbar |
 
 ## Table Stakes
 
-Features ohne die v1.7 unvollstaendig ist.
+Features die Nutzer bei einer App mit Offline-Unterstuetzung erwarten. Fehlen = App fuehlt sich unzuverlaessig an.
 
-| Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten | Notes |
-|---------|---------------|-------------|-----------------|-------|
-| Pflicht-Flag (`mandatory`) auf Events | Kern-Anforderung: Unterscheidung Pflicht vs. freiwillig. Bestimmt gesamte Buchungs-Logik | Low | `events` Tabelle: neue Spalte `mandatory BOOLEAN DEFAULT false` | Nur im EventModal als Toggle, aendert Buchungs-Flow komplett |
-| Auto-Enrollment aller Jahrgangs-Konfis | Bei mandatory=true: Alle Konfis der zugewiesenen Jahrgaenge werden automatisch als `confirmed` eingetragen | Med | `event_jahrgang_assignments` (schon da), `konfi_profiles.jahrgang_id`, `event_bookings` | Beim Event-Erstellen/-Bearbeiten: INSERT INTO event_bookings fuer alle Konfis des Jahrgangs. Neue Konfis im Jahrgang? -> Trigger oder manueller Sync |
-| Opt-out mit Freitext-Begruendung | Bei Pflicht-Events: Konfis sind angemeldet, koennen sich mit Grund abmelden. Admin sieht Gruende | Med | `event_bookings`: neue Spalte `opt_out_reason TEXT`, Status wechselt zu `opted_out` | Bestehender `UnregisterModal` kann erweitert werden. Wichtig: Opt-out ist NICHT gleich "absent" -- Konfi meldet sich VOR dem Event ab |
-| Keine Punkte fuer Pflicht-Events | Pflicht-Events tracken nur Anwesenheit, vergeben KEINE Punkte | Low | Backend: `events.points` = 0 bei mandatory, oder Guard in Attendance-Route | EventModal: Punkte-Feld ausblenden/deaktivieren wenn mandatory=true. Backend: Skip Punkte-Vergabe |
-| QR-Code generiert pro Event | Admin zeigt QR-Code, Konfis scannen beim Betreten | Med | Neue Route `GET /events/:id/qr` die signiertes Token generiert. Frontend: QR-Anzeige im Admin EventDetail | QR-Inhalt: JWT/signierter Payload mit event_id + Zeitstempel. KEIN statischer QR (Missbrauch) |
-| QR-Scan im Konfi-Frontend | Konfi scannt QR-Code mit Kamera, wird als "present" markiert | Med | Capacitor BarcodeScanner Plugin (bereits QR-Scan fuer Onboarding vorhanden!), neue Route `POST /konfi/events/:id/checkin` | Wiederverwende bestehende QR-Scan-Infrastruktur vom Onboarding. Validierung: Ist Konfi fuer Event angemeldet? Ist Event heute? |
-| Manuelle Admin-Korrektur | Admin kann Attendance nachtraeglich aendern (present/absent) -- auch nach QR-Check-in | Low | `PUT /events/:id/participants/:pid/attendance` existiert bereits! | Bestehende Route reicht. UI zeigt QR-Check-in-Status + manuelle Override-Moeglichkeit |
-| "Was mitbringen" Textfeld | Optionales Feld auf allen Events fuer Materialien/Mitbring-Info | Low | `events` Tabelle: neue Spalte `bring_items TEXT` | EventModal: neues IonTextarea. EventDetailView (Konfi + Admin): Anzeige wenn nicht leer |
-| Dashboard-Widget "Naechstes Event" | Prominente Card auf dem Dashboard mit naechstem anstehenden Event + Was-mitbringen | Med | `DashboardView.tsx`, Dashboard-Daten-Endpoint erweitern | Zeigt: Titel, Datum/Uhrzeit, Ort, "Was mitbringen". Nur fuer Events wo Konfi angemeldet ist. Neuer Toggle `show_next_event` in DashboardConfig |
-| Pro-Konfi Anwesenheitsstatistik (Admin-Sicht) | Admin sieht pro Konfi: Anwesenheitsquote, Fehlzeiten, Gruende | Med | `event_bookings` JOIN `events` WHERE mandatory=true, gruppiert pro Konfi | KonfiDetailView: Neue Section "Anwesenheit" mit Quote (X/Y anwesend), Liste der Fehlzeiten mit Opt-out-Gruenden |
+| Feature | Warum erwartet | Komplexitaet | Abhaengigkeiten im bestehenden System |
+|---------|---------------|--------------|---------------------------------------|
+| Offline-Lese-Cache (Dashboard) | Konfis oeffnen App ohne Netz und sehen leere Seite — inakzeptabel | Mittel | AppContext laedt alle Dashboard-Daten per API-Call, kein Cache vorhanden |
+| Offline-Lese-Cache (Chat-Verlauf) | Chat ist Kernfunktion, Nachrichten muessen auch offline lesbar sein | Mittel | Socket.io liefert Live-Daten, REST liefert History — beides ohne Cache |
+| Offline-Lese-Cache (Events) | Konfi will nachschauen wann/wo Event ist, gerade unterwegs ohne Netz | Niedrig | Einfache GET-Responses, gut cachebar |
+| Offline-Banner/Indikator | Nutzer muss wissen WARUM Aktionen nicht gehen, sonst Frustration | Niedrig | @capacitor/network Plugin fuer Status, UI-Banner global |
+| Stale-While-Revalidate | Sofort gecachte Daten zeigen, im Hintergrund aktualisieren — App fuehlt sich schnell an | Mittel | Erfordert Cache-Layer zwischen API-Service und Komponenten |
+| Automatischer Retry bei transienten Fehlern | 500er/Timeout duerfen nicht sofort "Fehler" zeigen, Retry ist Standard | Niedrig | Axios-Interceptor bereits vorhanden, Erweiterung um Retry-Logik |
+| Double-Submit-Schutz | Doppeltes Absenden von Chat-Nachrichten oder Aktivitaets-Antraegen | Niedrig | Loading-States und Button-Disable pro Aktion |
 
 ## Differentiators
 
-Features die ueber das Minimum hinausgehen, aber echten Mehrwert bieten.
+Features die die App absetzen, aber nicht zwingend erwartet werden.
 
-| Feature | Wertversprechen | Komplexitaet | Notes |
-|---------|----------------|-------------|-------|
-| Zeitfenster fuer QR-Check-in | QR-Code nur X Minuten vor/nach Event-Start gueltig. Verhindert fruehes/spaetes Scannen | Low | Backend-Validierung: `event_date - 30min <= NOW <= event_date + 30min`. Konfigurierbar? Nein, fester Wert reicht |
-| Push-Benachrichtigung bei Opt-out | Admin erhaelt Push wenn ein Konfi sich von Pflicht-Event abmeldet | Low | PushService.sendToOrgAdmins existiert. Trigger bei Opt-out |
-| Anwesenheits-Badge-Kriterien | Neue Badge-Criteria: `mandatory_attendance_rate` (z.B. >=90% Anwesenheit) oder `mandatory_streak` | Med | `badges.js` CRITERIA_TYPES erweitern. Sinnvoll fuer Engagement-Tracking ohne Punkte |
-| Bulk-Attendance (Admin) | Admin markiert mehrere Konfis gleichzeitig als present/absent statt einzeln | Med | Neue Route `PUT /events/:id/bulk-attendance`. UI: Checkbox-Liste + "Alle anwesend" Button |
-| Anwesenheits-Uebersicht Jahrgang | Tabelle: Alle Konfis eines Jahrgangs mit Anwesenheitsquote ueber alle Pflicht-Events | Med | Aggregations-Query. Nett fuer Elterngespraeche/Konfi-Gespraeche |
-| Opt-out-Frist | Opt-out nur bis X Tage vor Event moeglich (wie bestehende Abmelde-Frist) | Low | Bestehende `canUnregister` Logik (2-Tage-Frist) kann wiederverwendet werden |
-| QR-Code als PDF druckbar | Admin kann QR-Code als PDF exportieren zum Aushaengen | Low | Canvas-to-PDF im Frontend. Spart Admin das Screenshot-Machen |
+| Feature | Wertversprechen | Komplexitaet | Abhaengigkeiten |
+|---------|----------------|--------------|-----------------|
+| Offline-Schreib-Queue (Chat) | Nachricht tippen ohne Netz, wird automatisch bei Reconnect gesendet | Hoch | Socket.io-Integration, Queue-Persistenz, Reihenfolge-Garantie |
+| Offline-Schreib-Queue (Aktivitaets-Antraege) | Konfi kann Aktivitaet beantragen auch wenn kurz kein Netz | Mittel | REST-basiert, einfacher als Chat, aber braucht Idempotency |
+| Inkrementeller Sync (Delta statt Full-Reload) | Nur geaenderte Daten laden spart Bandbreite und Zeit | Hoch | Backend muss `updated_at`/`since`-Parameter unterstuetzen, aktuell nicht vorhanden |
+| Hintergrund-Sync (periodisch) | App aktualisiert Daten ohne dass Nutzer aktiv oeffnet | Mittel | Capacitor Background Task API, begrenzt auf iOS/Android |
+| WebSocket-Reconnect mit State-Recovery | Nach Reconnect verpasste Chat-Nachrichten nachladen | Mittel | Socket.io hat reconnect, aber kein "seit wann"-Nachladen implementiert |
+| Optimistic UI fuer Chat | Nachricht sofort anzeigen, Bestaetigungs-Haekchen nach Server-ACK | Mittel | Chat-UI muss "pending"-Status pro Nachricht unterstuetzen |
 
 ## Anti-Features
 
-Features die explizit NICHT gebaut werden sollen.
+Features die bewusst NICHT gebaut werden sollen.
 
-| Anti-Feature | Warum vermeiden | Stattdessen |
-|-------------|----------------|-------------|
-| GPS/Geofencing Check-in | Uebermaessig komplex, Privacy-Bedenken, unzuverlaessig in Kirchengebaeuden (dicke Waende) | QR-Code reicht. Physische Anwesenheit wird durch Scan im Raum bestaetigt |
-| Automatische Absent-Markierung | Event vorbei + kein Check-in = auto-absent? Gefaehrlich weil Admin vergessen haben koennte QR anzuzeigen | Admin markiert manuell oder bulk. Unverarbeitete Bookings bleiben `attendance_status = NULL` (bestehendes Verhalten) |
-| Eltern-Benachrichtigung bei Fehlen | DSGVO-komplex, braucht Eltern-Accounts, Einverstaendniserklaerungen | Admin kommuniziert bei Bedarf direkt mit Eltern (ausserhalb der App) |
-| NFC Check-in | Hardware-Abhaengigkeit, nicht jedes Geraet hat NFC-Writer | QR-Code ist universell, benoetigt nur Kamera |
-| Entschuldigung hochladen (Bild/PDF) | Dokumenten-Management ist ein eigenes System. Storage, Datenschutz, Aufbewahrungsfristen | Freitext-Grund reicht. Bei Bedarf kann Admin Notizen machen |
-| Punkte-Vergabe fuer Pflicht-Events als Option | "Manche Pflicht-Events koennten doch Punkte geben" -- Verwischt die klare Trennung. Pflicht = Anwesenheit, Freiwillig = Punkte | Trennung beibehalten. Wenn ein Event Punkte geben soll, ist es kein Pflicht-Event |
-| Wiederholende Events (Recurring) | Event-Serien (jeden Sonntag) -- massiv komplex: Ausnahmen, einzelne Absagen, unterschiedliche Teilnehmer | Admin erstellt Events einzeln. Bei Bedarf: "Event duplizieren" Button (v1.8+) |
-| Self-Attendance ohne QR (Button-Check-in) | Konfi drueckt einfach "Ich bin da" ohne physischen QR-Scan -- trivial zu faelschen | QR-Scan ist der Beweis der physischen Anwesenheit |
-| Konfi sieht eigene Anwesenheitsstatistik | Konfi-Dashboard zeigt Fehlzeiten-Quote -- erzeugt Druck/Angst statt Motivation | Anwesenheit ist Admin-only. Konfi sieht nur ob angemeldet/abgemeldet |
+| Anti-Feature | Warum vermeiden | Was stattdessen tun |
+|--------------|----------------|---------------------|
+| Vollstaendiger Offline-Modus (alle Schreib-Operationen) | Kirchengemeinde-App mit ~50-200 Nutzern, nicht Notion. Admin-Aktionen (Punkte vergeben, Events erstellen) offline = Chaos mit Konflikten | Nur Lese-Cache + begrenzte Schreib-Queue (Chat + Aktivitaets-Antraege) |
+| Conflict Resolution mit User-Prompt | Konfis sind 13-14 Jahre alt, "Konflikt aufloesen" ueberfordert | Last-Write-Wins fuer die wenigen Schreib-Operationen, Server ist autoritativ |
+| CouchDB/PouchDB/RxDB Sync-Framework | Massiver Overhead fuer kleine Nutzerbasis, PostgreSQL-Backend bleibt | Einfacher Cache-Layer mit Capacitor Preferences |
+| Service Worker fuer Offline | Capacitor-App laeuft nativ im WebView, Service Worker bringt Komplexitaet ohne echten Nutzen | Nativer Cache ueber Capacitor APIs + localStorage |
+| SQLite als lokale Datenbank | Overkill fuer Cache-Daten (<50KB pro Response), zusaetzliches Plugin, Migration-Aufwand | localStorage + Capacitor Preferences fuer strukturierte JSON-Daten reichen |
+| Offline-Event-Buchung | Kapazitaetspruefung, Warteliste, Timeslots — alles Server-seitig, nicht offline sinnvoll | Event-Daten lesen: ja. Buchen: nur online mit klarer Fehlermeldung |
+| Offline-QR-Check-in | QR-Scan benoetigt Server-Validierung (Zeitfenster, Duplikat-Check) | Check-in nur online, Offline-Banner zeigt "Internetverbindung noetig" |
+
+## Feature-Details
+
+### 1. Cache-Layer (Stale-While-Revalidate)
+
+**Pattern:** Jeder API-Call geht durch eine Cache-Schicht.
+1. Cache pruefen — wenn vorhanden, sofort zurueckgeben
+2. API-Call im Hintergrund starten
+3. Bei Erfolg: Cache aktualisieren, UI mit neuen Daten aktualisieren
+4. Bei Fehler (offline): Gecachte Daten bleiben stehen, kein Fehler-UI
+
+**Was cachen (nach Prioritaet):**
+
+| Daten | Cache-Key-Schema | TTL | Prioritaet |
+|-------|-----------------|-----|------------|
+| Dashboard (Punkte, Ringe, Level) | `cache:dashboard:{userId}` | 5 Min | P0 |
+| Chat-Raumliste | `cache:chatrooms:{userId}` | 2 Min | P0 |
+| Chat-Nachrichten (pro Raum, letzte 50) | `cache:chat:{roomId}` | 1 Min (Live via WS) | P0 |
+| Event-Liste | `cache:events:{orgId}` | 10 Min | P1 |
+| Profil-Daten | `cache:profile:{userId}` | 30 Min | P1 |
+| Eigene Antraege | `cache:requests:{userId}` | 5 Min | P1 |
+| Aktivitaeten-Katalog | `cache:activities:{orgId}` | 1 Stunde | P2 |
+| Badge-Katalog | `cache:badges:{orgId}` | 1 Stunde | P2 |
+
+**Speicher-Strategie:** `localStorage` fuer Web-Dev, gleicher Code funktioniert auch im Capacitor-WebView nativ. Kein SQLite noetig — die Datenmengen sind klein (JSON-Responses typisch < 50KB). localStorage hat 5-10MB Limit, reicht fuer diese App bei weitem.
+
+**Bekanntes Risiko:** Browser/WebView kann localStorage bei Speicherdruck loeschen. Fuer eine App mit 50-200 Nutzern und kleinen Datenmengen ist das akzeptabel — Worst Case: Daten werden frisch geladen.
+
+**Konfidenz:** HIGH — Stale-While-Revalidate ist ein etabliertes Pattern, dokumentiert auf web.dev und in der React-Community.
+
+### 2. Netzwerk-Status-Erkennung
+
+**Technologie:** `@capacitor/network` Plugin (Teil des Capacitor-Oekosystems, muss separat installiert werden).
+
+**Pattern:**
+- `Network.addListener('networkStatusChange', ...)` fuer Live-Updates
+- `Network.getStatus()` fuer initialen Status beim App-Start
+- Globaler React-Context (`NetworkContext`) der `isOnline`-State haelt
+- Alle Komponenten koennen via `useNetwork()` den Status abfragen
+
+**Bekannte Einschraenkung:** Plugin meldet `connected: true` bei VPN ohne echte Konnektivitaet ([GitHub Issue #1917](https://github.com/ionic-team/capacitor-plugins/issues/1917)). Fuer diese App akzeptabel — bei fehlgeschlagenem API-Call wird offline-Status trotzdem korrekt erkannt via Axios-Error.
+
+**Quellen:** [Capacitor Network API Docs](https://capacitorjs.com/docs/apis/network)
+
+### 3. Offline-Banner UI
+
+**Pattern:** Globaler Banner am oberen Bildschirmrand (unter IonHeader), nicht-dismissbar solange offline.
+
+**Verhalten:**
+
+| Status | Banner-Stil | Text | Dauer |
+|--------|------------|------|-------|
+| Offline | Gelb/Orange, IonIcon `cloudOfflineOutline` | "Kein Internet — gespeicherte Daten werden angezeigt" | Permanent bis online |
+| Reconnecting | Gelb mit Spinner | "Verbindung wird hergestellt..." | Permanent bis connected |
+| Zurueck online | Gruen, IonIcon `cloudDoneOutline` | "Wieder verbunden" | 3 Sekunden, dann ausblenden |
+| Sync laeuft | Dezent grau, kleiner Spinner | "Daten werden aktualisiert..." | Bis Sync fertig |
+
+**UX-Regeln (nach web.dev Offline UX Guidelines):**
+- NICHT grau einfaerben (verwechselbar mit "deaktiviert")
+- NICHT aggressive Fehlermeldung (kein rotes X)
+- Klar kommunizieren was GEHT (lesen) und was NICHT geht (senden)
+- IonIcon verwenden, keine Unicode-Emojis (Projekt-Regel)
+
+**Implementierung:** Globale Komponente `<OfflineBanner />` in App.tsx, nutzt `useNetwork()` Hook.
+
+**Konfidenz:** HIGH — Standard-Pattern, von Slack/WhatsApp etabliert.
+
+### 4. Schreib-Queue
+
+**Nur fuer zwei Operationen:**
+1. **Chat-Nachrichten** — Nachricht in lokale Queue, Optimistic UI (Nachricht sofort anzeigen mit "pending"-Indikator), bei Reconnect in Reihenfolge senden
+2. **Aktivitaets-Antraege** — Antrag lokal speichern, bei Reconnect an API senden
+
+**Queue-Design:**
+```typescript
+interface QueueItem {
+  id: string;            // UUID, Client-generiert (= Idempotency Key)
+  type: 'chat_message' | 'activity_request';
+  payload: Record<string, unknown>;
+  created_at: number;    // Timestamp
+  retry_count: number;
+  max_retries: number;   // 5
+  status: 'pending' | 'sending' | 'failed' | 'sent';
+}
+```
+
+**Persistenz:** `localStorage` unter Key `offline_queue` (Queue ueberlebt App-Neustart).
+
+**Abarbeitung:**
+1. Bei Reconnect (NetworkContext `isOnline` wird true): Queue abarbeiten
+2. Reihenfolge: FIFO (First In, First Out) — wichtig fuer Chat-Nachrichten
+3. Zwischen Items: 200ms Pause (verhindert Server-Ueberlastung)
+4. Bei Fehler: Exponential Backoff (1s, 2s, 4s), max 5 Retries
+5. Nach 5 Fehlversuchen: Item als `failed` markieren, Nutzer informieren
+
+**Konflikt-Strategie:** Last-Write-Wins. Server ist autoritativ. Client-UUID dient als Idempotency-Key — Server lehnt Duplikate ab (identische Response zurueck).
+
+**Backend-Aenderung noetig:** `X-Idempotency-Key` Header auf POST-Endpoints fuer Chat und Aktivitaets-Antraege. Server speichert Key + Response in `idempotency_keys`-Tabelle (auto-cleanup nach 24h via bestehenden Background-Service).
+
+**Konfidenz:** MEDIUM — Pattern ist klar, aber Integration mit Socket.io-Chat erfordert sorgfaeltige Reihenfolge-Logik. Chat-Queue ist komplexer als REST-Queue weil Socket.io Events nicht direkt mit HTTP-Idempotency arbeiten.
+
+### 5. Retry-Logik (Exponential Backoff)
+
+**Wo:** Axios-Interceptor in `services/api.ts` (bereits vorhanden, muss erweitert werden).
+
+**Welche Fehler retrien:**
+- HTTP 500, 502, 503, 504 (Server-Fehler)
+- Netzwerk-Timeouts (`ECONNABORTED`)
+- `ERR_NETWORK` (kein Netz)
+
+**NICHT retrien:**
+- HTTP 400, 401, 403, 404, 422 (Client-Fehler — Retry aendert nichts)
+- HTTP 429 (Rate-Limit — bereits behandelt mit eigenem Handler)
+
+**Parameter:**
+- Max 3 Retries
+- Delays: 1s, 2s, 4s (exponential, Basis 2)
+- Jitter: +/- 500ms (verhindert Thundering Herd bei vielen gleichzeitigen Reconnects)
+- Nur GET-Requests automatisch retrien (idempotent per Definition)
+- POST/PUT/DELETE nur retrien wenn `X-Idempotency-Key` Header vorhanden
+
+**Bibliothek:** Kein externes Paket noetig — ~30 Zeilen im Axios-Interceptor. Die Logik ist trivial:
+```typescript
+const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
+```
+
+**Konfidenz:** HIGH — Trivial zu implementieren, gut verstandenes Pattern.
+
+### 6. Double-Submit-Schutz
+
+**Frontend-seitig:**
+- `useActionGuard(action)` Hook: Wrapped async Aktion, setzt `isSubmitting`, disabled Button
+- Idempotency-Key pro Formular-Submit (UUID generiert bei Form-Open, regeneriert nach Erfolg)
+- Chat-Sende-Button: Disabled waehrend Nachricht gesendet wird
+
+**Backend-seitig:**
+- `X-Idempotency-Key` Header auf kritischen POST-Endpoints
+- Middleware prueft: Key bereits gesehen? -> gespeicherte Response zurueckgeben
+- Tabelle `idempotency_keys (key VARCHAR PRIMARY KEY, response JSONB, created_at TIMESTAMPTZ)`
+- Cleanup: Keys aelter als 24h loeschen (im bestehenden Background-Service `backgroundService.js`)
+
+**Kritische Endpoints fuer Idempotency:**
+- POST `/chat/messages` (Chat-Nachricht senden)
+- POST `/konfi/activities/request` (Aktivitaets-Antrag)
+- POST `/events/:id/book` (Event-Buchung)
+- POST `/bonus-points` (Bonus-Punkte vergeben)
+
+**Konfidenz:** HIGH — Standard-Pattern, von Stripe/Shopify etabliert.
+
+### 7. Inkrementeller Sync
+
+**Zwei Trigger:**
+1. **App-Start (App.tsx `useEffect`):** Alle gecachten Daten aktualisieren
+2. **App-Resume (Capacitor App `appStateChange`):** Daten aktualisieren wenn App in Vordergrund kommt
+
+**Phase 1 (ohne Backend-Aenderung):**
+- Full-Reload aller gecachten Endpoints bei App-Start/Resume
+- SWR-Pattern: Gecachte Daten sofort zeigen, im Hintergrund neu laden
+- WebSocket-Events als Live-Update-Kanal (bereits vorhanden fuer Chat)
+- Kein periodischer Hintergrund-Sync noetig — App-Resume reicht
+
+**Phase 2 (mit Backend-Aenderung, optional):**
+- `?since=ISO-Timestamp` Parameter auf GET-Endpoints
+- Backend gibt nur Aenderungen seit Timestamp zurueck
+- Spart Bandbreite bei grossen Chat-Historien
+- `updated_at` Spalte auf relevanten Tabellen (falls nicht vorhanden)
+
+**WebSocket-Recovery nach Reconnect:**
+- Socket.io `reconnect`-Event nutzen
+- Chat-Nachrichten seit letzter bekannter Message-ID nachladen (`GET /chat/:roomId/messages?after=lastMsgId`)
+- Dashboard-Daten einmal komplett neu laden
+- Badge-Counts aktualisieren
+
+**Konfidenz:** MEDIUM fuer Phase 1 (einfach), LOW fuer Phase 2 (braucht Backend-Aenderungen, muss sorgfaeltig geplant werden).
 
 ## Feature-Abhaengigkeiten
 
 ```
-events-Tabelle erweitern (mandatory, bring_items)
-  |-> EventModal: Pflicht-Toggle + "Was mitbringen" Feld
-  |     |-> Bei mandatory=true: Punkte-Feld ausblenden, Auto-Enrollment Logik
-  |     |-> Bei mandatory=true: Registrierungsfenster irrelevant (alle sind enrolled)
+@capacitor/network Plugin installieren
   |
-  |-> Auto-Enrollment (Backend)
-  |     |-> INSERT event_bookings fuer alle Jahrgangs-Konfis bei Event-Erstellung
-  |     |-> Neuer Status 'opted_out' in event_bookings + opt_out_reason Spalte
-  |     |-> Push an betroffene Konfis ("Neues Pflicht-Event: [Titel]")
+  v
+NetworkContext (isOnline State)
   |
-  |-> Opt-out Flow (Konfi-Frontend)
-  |     |-> EventDetailView: "Abmelden" Button mit Pflicht-Grund-Modal
-  |     |-> Bestehender UnregisterModal erweitern (Kontext: Pflicht vs. Freiwillig)
+  +--> Offline-Banner (liest isOnline)
   |
-  |-> QR-Code Check-in (unabhaengig von Pflicht, fuer ALLE Events nutzbar)
-  |     |-> Backend: QR-Token-Generierung (signiert, zeitlich begrenzt)
-  |     |-> Admin EventDetailView: QR-Code anzeigen Button
-  |     |-> Konfi: QR-Scanner (bestehende Capacitor-Infrastruktur)
-  |     |-> Backend: Check-in Validierung (angemeldet? heute? Zeitfenster?)
+  +--> Cache-Layer / SWR-Pattern
+  |      |
+  |      +--> Offline-Lese-Cache (Dashboard, Chat, Events, Profil)
+  |      |
+  |      +--> Inkrementeller Sync (nutzt Cache-Invalidierung)
   |
-  |-> "Was mitbringen" Anzeige
-  |     |-> Konfi EventDetailView: Neue Info-Row
-  |     |-> Dashboard "Naechstes Event" Widget: bring_items anzeigen
+  +--> Schreib-Queue
+  |      |
+  |      +--> Idempotency-Keys (Backend) <-- auch fuer Double-Submit
+  |      |
+  |      +--> Chat-Queue (Socket.io Integration)
+  |      |
+  |      +--> Aktivitaets-Antrags-Queue (REST)
   |
-  |-> Dashboard-Widget "Naechstes Event"
-  |     |-> DashboardConfig: show_next_event Toggle (6. konfigurierbares Widget)
-  |     |-> Dashboard-Endpoint: Naechstes Event mit bring_items liefern
-  |     |-> DashboardView: Neue Section zwischen Header und Konfirmation
+  +--> Retry-Logik (Axios-Interceptor)
+         |
+         +--> Idempotency-Keys fuer POST-Retries
+
+Double-Submit-Schutz (Frontend useActionGuard Hook)
   |
-  |-> Pro-Konfi Anwesenheitsstatistik (abhaengig von mandatory Events)
-       |-> Backend: Aggregations-Endpoint fuer Anwesenheitsquote
-       |-> KonfiDetailView (Admin): Neue "Anwesenheit" Section
-       |-> Fehlzeiten-Liste mit Opt-out-Gruenden
-```
-
-## UX-Pattern-Analyse
-
-### Pflicht-Event Enrollment: Default-Enrolled mit Opt-out
-
-**Pattern aus Church/School Management (Planning Center, ChurchTrac, MinHub):**
-- Pflicht-Events werden automatisch fuer alle betroffenen Teilnehmer gebucht
-- Teilnehmer sehen Event sofort in ihrer Liste als "Angemeldet"
-- Abmeldung erfordert aktive Handlung + Begruendung
-- Admin sieht Abmeldungen separat von No-Shows
-
-**Fuer Konfi Quest:**
-- Konfi oeffnet Events-Tab -> sieht Pflicht-Event mit Label "Pflicht" und Status "Angemeldet"
-- "Abmelden" Button ist vorhanden, oeffnet Modal mit Pflicht-Grund-Textfeld
-- Nach Abmeldung: Status wechselt zu "Entschuldigt" (nicht "Nicht angemeldet")
-- Admin-EventDetail: Drei Spalten: Anwesend / Entschuldigt / Nicht erschienen
-
-### QR-Code Check-in: Scan-to-Confirm
-
-**Pattern aus QR-Attendance-Apps (OneTap, Grow Numbers, AttendMe):**
-- Admin generiert/zeigt QR-Code (am Beamer, ausgedruckt, auf Tablet)
-- Teilnehmer scannen mit eigenem Geraet
-- System bestaetigt sofort: Gruener Haken + kurze Vibration
-- Admin sieht Live-Counter der eingecheckten Teilnehmer
-- Zeitfenster: QR nur gueltig waehrend des Events
-
-**Fuer Konfi Quest:**
-- Admin oeffnet Event -> "QR-Check-in starten" Button -> Fullscreen QR-Anzeige
-- Konfi oeffnet Events-Tab oder scannt direkt (Quick-Action?)
-- Nach Scan: Sofort-Feedback "Eingecheckt!" mit gruener Bestaetigung
-- Admin EventDetail: Live-Aktualisierung der Anwesenheitsliste
-- Zeitfenster: 30 Minuten vor bis 30 Minuten nach Event-Start
-
-### "Naechstes Event" Dashboard-Widget
-
-**Pattern aus Event-Apps und Kirchengemeinde-Tools:**
-- Prominente Card oben im Dashboard
-- Zeigt: Titel, Datum (relativ: "Morgen", "In 3 Tagen"), Uhrzeit, Ort
-- Optionale Zusatzinfo (hier: "Was mitbringen")
-- Tap navigiert zur Event-Detail-Seite
-- Verschwindet wenn kein zukuenftiges Event vorhanden
-
-**Fuer Konfi Quest:**
-- Position: Nach Header, vor Konfirmation (oder als Teil der Events-Section)
-- Card-Design konsistent mit bestehenden Dashboard-Cards
-- Icon: calendar (Events-Farbe Rot)
-- Zeigt nur Events wo Konfi angemeldet ist (inkl. Pflicht-Events)
-- "Was mitbringen" als Unter-Info wenn vorhanden
-
-### Anwesenheitsstatistik: Quote + Fehlzeiten-Details
-
-**Pattern aus Schulverwaltungs-Software (Orah, Aeries, Canvas):**
-- Prozentuale Anwesenheitsquote prominent angezeigt
-- Farbcodierung: Gruen (>90%), Gelb (75-90%), Rot (<75%)
-- Detail-Liste: Datum + Grund der Abwesenheit
-- Unterscheidung: Entschuldigt vs. Unentschuldigt
-
-**Fuer Konfi Quest:**
-- KonfiDetailView (Admin): Neue Section "Anwesenheit bei Pflicht-Events"
-- Donut/Progress als Quote: "8/10 anwesend (80%)"
-- Darunter: Liste der verpassten Events mit Opt-out-Grund oder "Nicht erschienen"
-- Keine separate Seite noetig -- Section in bestehender KonfiDetailView reicht
-
-## Datenmodell-Empfehlung
-
-### Neue Spalten auf `events`
-
-```sql
-ALTER TABLE events ADD COLUMN mandatory BOOLEAN DEFAULT false;
-ALTER TABLE events ADD COLUMN bring_items TEXT;
-```
-
-### Erweiterung `event_bookings`
-
-```sql
--- Neuer Status-Wert 'opted_out' neben 'confirmed', 'waitlist', 'pending'
--- Kein ENUM-Aenderung noetig wenn status VARCHAR ist (pruefen!)
-ALTER TABLE event_bookings ADD COLUMN opt_out_reason TEXT;
-```
-
-### QR-Check-in: Keine neue Tabelle noetig
-
-- QR-Token wird per JWT signiert (event_id + expiry), nicht persistiert
-- Check-in setzt `attendance_status = 'present'` auf bestehender `event_bookings` Zeile
-- Optional: `checked_in_at TIMESTAMPTZ` auf event_bookings fuer Audit
-
-```sql
-ALTER TABLE event_bookings ADD COLUMN checked_in_at TIMESTAMPTZ;
-ALTER TABLE event_bookings ADD COLUMN checked_in_via VARCHAR(20); -- 'qr' oder 'manual'
+  +--> Idempotency-Keys (Backend, gleiche Tabelle)
 ```
 
 ## MVP-Empfehlung
 
-### Priorisiere in dieser Reihenfolge:
+### Phase 1 — Fundament (muss zuerst, alle anderen bauen darauf auf):
+1. NetworkContext + `@capacitor/network` Plugin
+2. Offline-Banner UI-Komponente
+3. Cache-Layer Service mit SWR-Pattern
+4. Retry-Logik im Axios-Interceptor
+5. Offline-Lese-Cache fuer Dashboard, Events, Profil, Chat-Raeume
 
-1. **Pflicht-Flag + Auto-Enrollment** (Kern-Feature, aendert Event-Semantik)
-   - DB-Migration: `mandatory`, `bring_items` auf events
-   - Auto-Enrollment-Logik im Backend
-   - EventModal: Pflicht-Toggle
+**Ergebnis:** App zeigt gecachte Daten statt leerer Seite, Nutzer sieht Offline-Status, transiente Fehler werden automatisch wiederholt.
 
-2. **Opt-out Flow** (direkt abhaengig von Pflicht-Events)
-   - `opt_out_reason` Spalte
-   - UnregisterModal-Erweiterung
-   - Admin sieht Opt-out-Gruende
+### Phase 2 — Schreib-Resilienz (baut auf Phase 1 auf):
+6. Double-Submit-Schutz (Frontend `useActionGuard` Hook)
+7. Idempotency-Keys (Backend-Middleware + DB-Tabelle)
+8. Schreib-Queue Service
+9. Chat-Nachrichten-Queue mit Optimistic UI
+10. Aktivitaets-Antrags-Queue
 
-3. **QR-Code Check-in** (unabhaengig von Pflicht, aber hoher Nutzen)
-   - QR-Token-Generierung
-   - Admin QR-Anzeige
-   - Konfi QR-Scan (bestehende Infrastruktur)
-   - Check-in Validierung
+**Ergebnis:** Keine doppelten Submits, Chat-Nachrichten werden bei Reconnect automatisch gesendet.
 
-4. **"Was mitbringen" + Dashboard-Widget** (UI-Features)
-   - bring_items Anzeige in EventDetails
-   - Dashboard "Naechstes Event" Card
-   - DashboardConfig erweitern
+### Phase 3 — Sync-Optimierung (optional, bei Bedarf):
+11. App-Resume Sync (Capacitor App Plugin `appStateChange`)
+12. WebSocket-Recovery (verpasste Nachrichten nachladen)
+13. Inkrementeller Sync mit `since`-Parameter (Backend-Erweiterung)
 
-5. **Anwesenheitsstatistik** (Reporting, braucht Daten von 1+2+3)
-   - Aggregations-Query
-   - KonfiDetailView Section
+**Ergebnis:** App ist nach Hintergrund-Phase sofort aktuell, Chat verpasst keine Nachrichten.
 
-**Zurueckstellen:**
-- Bulk-Attendance (nett, aber manuelles Einzeln-Marking funktioniert)
-- Anwesenheits-Badges (v1.8+ wenn Badge-System erweitert wird)
-- QR-Code PDF-Export (Screenshot reicht erstmal)
-- Jahrgangs-Anwesenheits-Uebersicht (spaeter, braucht mehr Daten)
+### Zurueckstellen:
+- SQLite lokale DB — Overkill fuer diese Datenmenge
+- CouchDB/PouchDB/RxDB Sync — falsches Tool fuer PostgreSQL-Backend
+- Periodischer Hintergrund-Sync — App-Resume reicht, spart Batterie
+- Offline-Event-Buchung — Server-Validierung zwingend noetig
+- Offline-Admin-Operationen — Konfliktpotenzial zu hoch
 
 ## Feature-Priorisierungs-Matrix
 
-| Feature | Nutzer-Wert | Implementierungskosten | Prioritaet |
-|---------|------------|----------------------|-----------|
-| Pflicht-Flag auf Events | HIGH | LOW | P1 |
-| Auto-Enrollment Jahrgangs-Konfis | HIGH | MED | P1 |
-| Opt-out mit Begruendung | HIGH | MED | P1 |
-| Keine Punkte bei Pflicht-Events | HIGH | LOW | P1 |
-| QR-Code Check-in (Admin zeigt) | HIGH | MED | P1 |
-| QR-Scan (Konfi scannt) | HIGH | MED | P1 |
-| "Was mitbringen" Textfeld | MED | LOW | P1 |
-| Manuelle Admin-Korrektur | MED | LOW (existiert!) | P1 |
-| Dashboard "Naechstes Event" | MED | MED | P1 |
-| Pro-Konfi Anwesenheitsstatistik | MED | MED | P1 |
-| Zeitfenster QR-Check-in | MED | LOW | P1 |
-| Push bei Opt-out | LOW | LOW | P2 |
-| Opt-out-Frist | LOW | LOW | P2 |
-| Bulk-Attendance | LOW | MED | P2 |
-| Anwesenheits-Badges | LOW | MED | P3 |
+| Feature | Nutzer-Wert | Implementierungskosten | Abhaengigkeiten | Prioritaet |
+|---------|------------|----------------------|-----------------|-----------|
+| NetworkContext + Plugin | HOCH (Basis fuer alles) | NIEDRIG | Keine | P0 |
+| Offline-Banner | HOCH | NIEDRIG | NetworkContext | P0 |
+| Cache-Layer SWR | HOCH | MITTEL | NetworkContext | P0 |
+| Retry-Logik | HOCH | NIEDRIG | Axios-Interceptor (existiert) | P0 |
+| Offline-Lese-Cache | HOCH | MITTEL | Cache-Layer | P0 |
+| Double-Submit-Schutz (FE) | HOCH | NIEDRIG | Keine | P1 |
+| Idempotency-Keys (BE) | HOCH | MITTEL | DB-Migration | P1 |
+| Chat-Schreib-Queue | MITTEL | HOCH | Queue-Service, Idempotency, Socket.io | P1 |
+| Aktivitaets-Queue | MITTEL | MITTEL | Queue-Service, Idempotency | P1 |
+| Optimistic UI Chat | MITTEL | MITTEL | Chat-Schreib-Queue | P1 |
+| App-Resume Sync | MITTEL | NIEDRIG | Cache-Layer, Capacitor App Plugin | P2 |
+| WS-Recovery | MITTEL | MITTEL | Socket.io, Backend-Endpoint | P2 |
+| Inkrementeller Sync | NIEDRIG | HOCH | Backend-Aenderungen (updated_at, since-Parameter) | P3 |
+| Periodischer BG-Sync | NIEDRIG | MITTEL | Capacitor Background Task | P3 |
 
 ## Quellen
 
-- Codebase-Analyse: `events.js` (1430 Zeilen, vollstaendiges Event-CRUD, Attendance-Route Z.1289-1431)
-- Codebase-Analyse: `EventModal.tsx` (Event-Erstellungs-Modal mit allen Feldern)
-- Codebase-Analyse: `EventDetailView.tsx` (Konfi, 710 Zeilen, Buchungs-Flow, UnregisterModal)
-- Codebase-Analyse: `DashboardView.tsx` + `KonfiDashboardPage.tsx` (DashboardConfig mit 5 Widget-Toggles)
-- Codebase-Analyse: `event_bookings` Schema (status, attendance_status, bestehende Attendance-Logik)
-- Codebase-Analyse: QR-Onboarding (bestehende Capacitor BarcodeScanner Nutzung)
-- [Church Check-in Systems (Breeze ChMS)](https://www.breezechms.com/blog/check-in-systems-for-churches) -- QR-Check-in Patterns
-- [MinHub Youth App](https://apps.apple.com/us/app/minhub-youth/id910303883) -- Youth Ministry Attendance mit QR Kiosk Mode
-- [QR Code Attendance Best Practices (Verifyed)](https://www.verifyed.io/blog/qr-code-attendance) -- Zeitfenster, Validierung
-- [OneTap QR Attendance](https://www.onetapcheckin.com/qr-code-attendance-app) -- Self-Check-in Patterns
-- [Orah Attendance Dashboard](https://success.orah.com/en/articles/9924908-attendance-insights-dashboard-all-widgets) -- Statistik-Widgets
-- [Aeries Attendance Dashboard](https://support.aeries.com/support/solutions/articles/14000128314-attendance-dashboard) -- Fehlzeiten-Visualisierung
+- [Ionic Blog: Best Practices for Building Offline Apps](https://ionic.io/blog/best-practices-for-building-offline-apps)
+- [Ionic: Enterprise Guide Offline](https://ionic.io/enterprise-guide/offline)
+- [Capacitor Network Plugin API](https://capacitorjs.com/docs/apis/network)
+- [Capacitor Storage Guide](https://capacitorjs.com/docs/guides/storage)
+- [web.dev: Keeping things fresh with stale-while-revalidate](https://web.dev/articles/stale-while-revalidate)
+- [web.dev: Offline UX Design Guidelines](https://web.dev/articles/offline-ux-design-guidelines)
+- [Ionic: Choosing a Data Storage Solution](https://ionic.io/blog/choosing-a-data-storage-solution-ionic-storage-capacitor-storage-sqlite-or-ionic-secure-storage)
+- [Think-it: Building Offline Apps - A Fullstack Approach](https://think-it.io/insights/offline-apps)
+- [Android Developers: Build an offline-first app](https://developer.android.com/topic/architecture/data-layer/offline-first)
+- [Sachith: Offline sync & conflict resolution patterns (Feb 2026)](https://www.sachith.co.uk/offline-sync-conflict-resolution-patterns-architecture-trade%E2%80%91offs-practical-guide-feb-19-2026/)
+- [LeanCode: Offline Mobile App Design](https://leancode.co/blog/offline-mobile-app-design)
+- [GitHub Issue #1917: Network Plugin VPN false positive](https://github.com/ionic-team/capacitor-plugins/issues/1917)
+- [npm: exponential-backoff](https://www.npmjs.com/package/exponential-backoff)
 
 ---
-*Feature-Research fuer: Konfi Quest v1.7 Pflicht-Events + QR-Check-in + Anwesenheitsstatistik*
-*Recherchiert: 2026-03-09*
+*Feature-Research fuer: Konfi Quest v2.1 App-Resilienz (Offline/Schreib-Queue/Sync)*
+*Recherchiert: 2026-03-19*
