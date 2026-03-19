@@ -67,7 +67,7 @@ All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 
 ### Pending Todos
 
-None.
+- v3.0 Milestone geplant: Onboarding, Landing Website mit Erklaerung, Readme Github, Wiki — letzter Schritt vor oeffentlichem Launch. Ausfuehrung mit /gsd:new-milestone wenn v1.9 abgeschlossen.
 
 ### Blockers/Concerns
 
