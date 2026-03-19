@@ -1492,6 +1492,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent className="app-card-content">
+                <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginBottom: '12px' }}>
+                  Beim Befördern bleiben Konfi-Punkte und Badges als Historie erhalten. Event-Buchungen und offene Anträge werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
                 <IonButton
                   expand="block"
                   style={{ '--background': '#5b21b6', '--background-hover': '#4c1d95' }}
@@ -1500,9 +1503,6 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack }) =>
                   <IonIcon icon={ribbon} slot="start" />
                   Zum Teamer befördern
                 </IonButton>
-                <p style={{ fontSize: '0.8rem', color: 'var(--ion-color-medium)', textAlign: 'center', marginTop: '8px' }}>
-                  Konfi-Rolle wird dauerhaft gewechselt
-                </p>
               </IonCardContent>
             </IonCard>
           </IonList>

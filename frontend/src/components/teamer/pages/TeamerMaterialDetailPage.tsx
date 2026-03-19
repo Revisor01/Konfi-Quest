@@ -233,7 +233,7 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
                 </IonListHeader>
                 <IonCard className="app-card">
                   <IonCardContent>
-                    <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5', color: '#374151', margin: 0 }}>
+                    <p style={{ fontSize: '0.95rem', whiteSpace: 'pre-wrap', lineHeight: '1.5', color: '#374151', margin: 0 }}>
                       {material.description}
                     </p>
                   </IonCardContent>

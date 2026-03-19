@@ -1779,6 +1779,23 @@ ion-button.app-modal-submit-btn--chat {
   margin: 0 6px;
 }
 
+/* Tab-Badge Overflow Fix */
+ion-tab-button {
+  overflow: visible;
+}
+ion-tab-button ion-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 24px);
+  z-index: 10;
+  font-size: 0.65rem;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+}
+
 /* Dark Mode Support - DISABLED
 @media (prefers-color-scheme: dark) {
   body {

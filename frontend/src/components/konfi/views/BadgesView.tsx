@@ -248,7 +248,7 @@ const BadgePopoverContent: React.FC<{
               fontSize: '0.7rem',
               fontWeight: '600'
             }}>
-              {Math.round(badge.progress_percentage)}% - In Arbeit
+              {Math.round(badge.progress_percentage || 0)}% - In Arbeit
             </div>
             <span style={{ fontSize: '0.7rem', color: '#888' }}>
               {badge.progress_points || 0} / {badge.criteria_value}
@@ -579,7 +579,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
                               color: '#667eea',
                               marginTop: '2px'
                             }}>
-                              {Math.round(badge.progress_percentage)}%
+                              {Math.round(badge.progress_percentage || 0)}%
                             </span>
                           )}
 
