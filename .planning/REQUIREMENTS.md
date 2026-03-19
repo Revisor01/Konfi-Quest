@@ -99,9 +99,9 @@ Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
 - [ ] **UI-02**: QR-Scanner-Button oben rechts (Header-Position) statt unten rechts FAB
 - [ ] **UI-03**: Badge-Fortschritt ohne Nachkommastellen
 - [ ] **UI-04**: Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigieren)
-- [ ] **UI-05**: Badge-Modal: Auswahl ohne Umrandung, mit backgroundColor-Change Pattern (wie ueberall sonst)
-- [ ] **UI-06**: Badge-Segment (Konfi/Teamer) unter dem Header positioniert, "Teamer:innen" nicht lila/fett bei Auswahl
-- [ ] **UI-07**: Teamer-Badge-Ansicht 1:1 wie Konfi-Badge-Ansicht mit Segment-Wechsel (Teamer vorausgewaehlt)
+- [x] **UI-05**: Badge-Modal: Auswahl ohne Umrandung, mit backgroundColor-Change Pattern (wie ueberall sonst)
+- [x] **UI-06**: Badge-Segment (Konfi/Teamer) unter dem Header positioniert, "Teamer:innen" nicht lila/fett bei Auswahl
+- [x] **UI-07**: Teamer-Badge-Ansicht 1:1 wie Konfi-Badge-Ansicht mit Segment-Wechsel (Teamer vorausgewaehlt)
 - [ ] **UI-08**: Befoerdern-Button: Info-Hinweistext steht ueber dem Button
 
 ### Admin-Struktur (ADM)
@@ -202,9 +202,9 @@ Deferred. Nicht in aktuellem Roadmap.
 | UI-02 | Phase 50 | Pending |
 | UI-03 | Phase 50 | Pending |
 | UI-04 | Phase 50 | Pending |
-| UI-05 | Phase 49 | Pending |
-| UI-06 | Phase 49 | Pending |
-| UI-07 | Phase 49 | Pending |
+| UI-05 | Phase 49 | Complete |
+| UI-06 | Phase 49 | Complete |
+| UI-07 | Phase 49 | Complete |
 | UI-08 | Phase 50 | Pending |
 | ADM-01 | Phase 48 | Complete |
 | ADM-02 | Phase 48 | Complete |
