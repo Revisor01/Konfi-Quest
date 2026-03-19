@@ -25,11 +25,9 @@ Badge-Verwaltung und -Anzeige konsistent gestalten: Modal-Auswahl auf background
 - "Teamer:innen" darf bei Auswahl NICHT lila/fett sein — normales Segment-Styling
 - Pruefen ob das aktuelle Styling korrekt ist, sonst fixen
 
-### Teamer-Badge-Ansicht (UI-07)
-- TeamerBadgesPage existiert bereits mit eigener Struktur (Alle/Offen/In Arbeit Segments)
-- Soll 1:1 wie Konfi-Badge-Ansicht (BadgesView.tsx) aufgebaut sein
-- Segment-Wechsel: Teamer vorausgewaehlt, aber Konfi-Badges auch sichtbar (eingefrorene Historie)
-- Referenz: frontend/src/components/konfi/views/BadgesView.tsx
+### Teamer-Badge-Ansicht (UI-07) — BEREITS ERLEDIGT
+- TeamerBadgesPage wurde bereits in Phase 52 ueberarbeitet und ist fertig
+- Kein weiterer Umbau noetig — UI-07 ist erfuellt
 
 ### Claude's Discretion
 - Exakte backgroundColor-Werte fuer die Selection-States
