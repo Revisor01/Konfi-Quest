@@ -928,7 +928,44 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload) => {
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
-  
+
+  // Self-leave: Authenticated user leaves a chat room
+  router.delete('/rooms/:roomId/leave', verifyTokenRBAC, async (req, res) => {
+    try {
+      const roomId = req.params.roomId;
+      const userId = req.user.id;
+      const userType = req.user.type;
+
+      const { rows: [room] } = await db.query("SELECT type FROM chat_rooms WHERE id = $1", [roomId]);
+      if (!room) {
+        return res.status(404).json({ error: 'Raum nicht gefunden' });
+      }
+
+      // Check if room type is leavable
+      if (room.type === 'jahrgang' || room.type === 'direct') {
+        return res.status(400).json({ error: 'Dieser Chat kann nicht verlassen werden' });
+      }
+
+      if (room.type === 'admin' && userType === 'admin') {
+        return res.status(403).json({ error: 'Admins können diesen Chat nicht verlassen' });
+      }
+
+      const { rowCount } = await db.query(
+        "DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3",
+        [roomId, userId, userType]
+      );
+
+      if (rowCount === 0) {
+        return res.status(404).json({ error: 'Du bist kein Teilnehmer dieses Chats' });
+      }
+
+      res.json({ message: 'Chat erfolgreich verlassen' });
+    } catch (err) {
+      console.error(`Database error in DELETE /rooms/${req.params.roomId}/leave:`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // Protected file serving route
   router.get('/files/:filename', async (req, res) => {
     // Support token from header OR query parameter (for video elements)
