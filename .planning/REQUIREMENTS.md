@@ -1,223 +1,107 @@
 # Requirements: Konfi Quest
 
-**Defined:** 2026-03-09
+**Defined:** 2026-03-19
 **Core Value:** Konfis und Gemeindeleiter haben eine zentrale, zuverlaessige App fuer die Punkteverwaltung
 
-## v1.8 Requirements
+## v2.1 Requirements
 
-Requirements fuer Milestone v1.8 Teamer. Jedes Requirement mapped auf Roadmap-Phasen.
+Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaessigkeit.
 
-### Rolle + Transition (ROL)
+### Storage-Migration (STR)
 
-- [x] **ROL-01**: Admin kann einen Konfi manuell zum Teamer befoerdern
-- [x] **ROL-02**: Bei Transition bleiben Konfi-Badges als Historie erhalten
-- [x] **ROL-03**: Bei Transition werden Konfi-Punkte und Level eingefroren (sichtbar aber nicht aktiv)
-- [x] **ROL-04**: Teamer bekommt eigene TabBar-UI mit 5 Tabs (Dashboard, Events, Chat, Material, Profil)
+- [ ] **STR-01**: JWT-Token und User-Daten werden in Capacitor Preferences statt localStorage gespeichert (iOS-sicher)
+- [ ] **STR-02**: Device-ID und Push-Token werden in Capacitor Preferences gespeichert
+- [ ] **STR-03**: Bestehende localStorage-Daten werden beim App-Start automatisch migriert (einmalig)
 
-### Dashboard (DSH)
+### Offline-Erkennung (NET)
 
-- [x] **DSH-01**: Teamer sieht tageszeitabhaengige Begruessing im Dashboard
-- [x] **DSH-02**: Teamer sieht Zertifikat-Anzeige (JuLeiCa, Teamer-Card mit Datum) prominent im Dashboard
-- [x] **DSH-03**: Teamer sieht naechste anstehende Events im Dashboard
-- [x] **DSH-04**: Teamer sieht eigene Badges-Sektion im Dashboard (wie bei Konfis)
+- [ ] **NET-01**: App erkennt Online/Offline-Status ueber @capacitor/network + Axios-Error-Fallback
+- [ ] **NET-02**: NetworkContext stellt isOnline Status fuer alle Komponenten bereit
+- [ ] **NET-03**: Socket.io Reconnect nach Offline-Phase laedt verpasste Daten nach
 
-### Events (EVT)
+### Lese-Cache (CAC)
 
-- [x] **EVT-01**: Admin kann bei Konfi-Events einen "Teamer gesucht"-Toggle setzen
-- [x] **EVT-02**: Teamer sieht Events mit "Teamer gesucht" und kann sich einbuchen
-- [x] **EVT-03**: Admin kann reine Teamer-Events erstellen (nur fuer Teamer sichtbar/buchbar)
-- [x] **EVT-04**: Teamer kann Anwesenheit bei Events bestaetigen wo er eingeteilt ist
-- [x] **EVT-05**: Teamer sieht alle fuer ihn relevanten Events (Teamer-gesucht + Teamer-Events)
-- [ ] **EVT-06**: Events-Tab mit 3 Segmenten: Meine (gebucht), Alle (Jahrgangs-Uebersicht), Team (buchbar als Supporter + Teamer-Events)
+- [ ] **CAC-01**: useOfflineQuery Hook cached API-Responses in Capacitor Preferences mit Stale-While-Revalidate
+- [ ] **CAC-02**: Dashboard-Daten (Punkte, Badges, Level, Ranking) sind offline lesbar
+- [ ] **CAC-03**: Chat-Raeume und letzte Nachrichten sind offline lesbar
+- [ ] **CAC-04**: Events (angemeldete + anstehende) sind offline lesbar
+- [ ] **CAC-05**: Eigene Antraege mit Status sind offline lesbar
+- [ ] **CAC-06**: Profil-Daten sind offline lesbar
+- [ ] **CAC-07**: Alle ~25 Pages nutzen useOfflineQuery statt direktem api.get
+- [ ] **CAC-08**: Gecachte Daten werden sofort angezeigt, im Hintergrund aktualisiert (SWR-Pattern)
 
-### Badges + Aktivitaeten (BDG)
+### Retry + Schutz (RET)
 
-- [x] **BDG-01**: Admin kann Teamer-spezifische Aktivitaeten erstellen und manuell vergeben
-- [x] **BDG-02**: Teamer-Badges vom Typ Aktivitaeten-Anzahl (X Aktivitaeten gesamt oder pro Kategorie)
-- [x] **BDG-03**: Teamer-Badges vom Typ Event-Teilnahme (X Events gesamt oder pro Kategorie)
-- [x] **BDG-04**: Teamer-Badges vom Typ Streak (X Events hintereinander)
-- [x] **BDG-05**: Teamer-Badges vom Typ Sammel-Badge (alle Badges einer Gruppe)
-- [x] **BDG-06**: Teamer-Badges vom Typ Jahres-Badge (aktiv im X. Teamer-Jahr)
-- [x] **BDG-07**: Admin kann Teamer-Badge-Typen und Kriterien frei konfigurieren
+- [ ] **RET-01**: Transiente Netzwerk-Fehler werden automatisch 3x mit Exponential Backoff wiederholt (axios-retry)
+- [ ] **RET-02**: Alle Submit-Buttons haben Loading-State und sind waehrend Request disabled (Double-Submit-Schutz)
+- [ ] **RET-03**: Backend unterstuetzt Idempotency-Keys fuer Chat-Nachrichten und Aktivitaets-Antraege
 
-### Zertifikate (ZRT)
+### Schreib-Queue (QUE)
 
-- [x] **ZRT-01**: Admin kann Teamer Zertifikate zuweisen (JuLeiCa, Teamer-Card, etc.) mit Datum
-- [x] **ZRT-02**: Zertifikate werden im Dashboard prominent angezeigt (aehnlich Konfi-Level-Anzeige)
-- [x] **ZRT-03**: Zertifikat-Typen sind frei konfigurierbar durch Admin
+- [ ] **QUE-01**: Chat-Nachrichten koennen offline verfasst werden und werden bei Reconnect automatisch gesendet
+- [ ] **QUE-02**: Offline-Nachrichten zeigen Uhr-Icon (wie WhatsApp) bis sie zugestellt sind
+- [ ] **QUE-03**: Nach Zustellung wechselt das Icon zu Haekchen (gesendet)
+- [ ] **QUE-04**: Aktivitaets-Antraege koennen offline gestellt werden mit "Wird uebermittelt..." Status
+- [ ] **QUE-05**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
+- [ ] **QUE-06**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
 
-### Material (MAT)
+### Sync (SYN)
 
-- [x] **MAT-01**: Admin oder Teamer kann Dateien hochladen (PDF, Bilder, Dokumente)
-- [x] **MAT-02**: Material ist pro Jahrgang organisiert
-- [x] **MAT-03**: Teamer sieht sortierte Materialliste und kann Dateien herunterladen
+- [ ] **SYN-01**: Bei App-Start wird ein inkrementeller Sync durchgefuehrt (nur geaenderte Daten seit letztem Sync)
+- [ ] **SYN-02**: Im Hintergrund wird alle X Minuten aktualisiert (zusaetzlich zu WebSocket-Updates)
+- [ ] **SYN-03**: Backend bietet /sync/changes Endpoint mit Timestamp-basierter Delta-Abfrage
+- [ ] **SYN-04**: Nach laengerer Offline-Phase (>10 Min) wird bei Reconnect ein vollstaendiger Sync getriggert
 
-### Profil (PRF)
+## v3.0 Requirements
 
-- [ ] **PRF-01**: Teamer kann Aktivitaets-Antraege stellen (wie Konfis)
-- [x] **PRF-02**: Teamer sieht Badges-Uebersicht und Badge-Historie im Profil
-- [x] **PRF-03**: Teamer sieht eingefrorene Konfi-Badges als Historie
-
-### Chat (CHT)
-
-- [ ] **CHT-01**: Teamer kann Chat-Raeume und Gruppen erstellen
-- [ ] **CHT-02**: Teamer hat Zugriff auf bestehende Chat-Funktionalitaet (Nachrichten, Polls, Dateien)
-
-## v1.9 Requirements
-
-Requirements fuer Milestone v1.9 Bugfix + Polish. App produktionsreif machen.
-
-### Push (PUSH)
-
-- [x] **PUSH-01**: Admin erhaelt keine leeren Push-Benachrichtigungen mehr (Ghost-Push-Bug debuggen und fixen)
-
-### Events (EVT-v19)
-
-- [x] **EVT-v19-01**: Konfi sieht nur Events seines eigenen Jahrgangs (keine fremden Pflicht-Events, keine fremden Konfirmationen)
-- [x] **EVT-v19-02**: Abgesagte Events werden nicht mehr in der Konfi-Event-Liste angezeigt
-- [x] **EVT-v19-03**: Konfi kann sich nicht von Pflicht-Events abmelden bei denen er nicht angemeldet ist
-- [x] **EVT-v19-04**: Neue Konfis in einem Jahrgang werden automatisch zu bestehenden Pflicht-Events des Jahrgangs hinzugefuegt
-- [x] **EVT-v19-05**: Event absagen funktioniert aus der Admin-Ansicht
-- [x] **EVT-v19-06**: Teamer-only Events blenden Punkt-Typ, Teilnehmer-Limit, Warteliste und Jahrgangszuordnung aus
-- [x] **EVT-v19-07**: "Mitbringen" und "Pflicht" werden farbig hervorgehoben in Event-Liste und Details
-- [x] **EVT-v19-08**: Konfi-Events zeigen "Meine" als erstes Segment
-- [x] **EVT-v19-09**: Admin Event-Liste hat Jahrgangs-Filter und zeigt Jahrgang in den Listen-Details
-- [x] **EVT-v19-10**: Admin Event-Details: "Teamer gesucht"-Hinweis entfaellt wenn Teamer-Anzahl bereits angezeigt wird
-- [x] **EVT-v19-11**: Admin Event-Details: "Teamer hinzufuegen" zeigt nur Teamer, "Kind hinzufuegen" zeigt nur Konfis des Jahrgangs
-- [x] **EVT-v19-12**: Aus einem Event kann ein Chat mit allen angemeldeten Konfis und Teamer:innen erstellt werden
-
-### Punkte (PKT-v19)
-
-- [x] **PKT-v19-01**: Deaktivierter Punkt-Typ graut den anderen Toggle aus (mindestens ein Typ muss aktiv bleiben) mit Hinweis wie viele Konfis bereits Punkte haben
-- [x] **PKT-v19-02**: Admin-Konfi-Liste zeigt korrekte Gesamtpunkte (nur aktive Typen)
-- [x] **PKT-v19-03**: Bei nur einem aktiven Punkt-Typ wird ein breiter Statusbalken angezeigt (wie der Gesamtbalken bei zwei Typen)
-- [x] **PKT-v19-04**: Punkte-History Header zeigt korrekte Daten und besseres Layout fuer 6 Stats (Events, Bonus, Aktivitaeten, Gesamt, Gottesdienst, Gemeinde)
-
-### UI (UI)
-
-- [x] **UI-01**: Toggle-Switches stehen rechts aussen in Jahrgang-Modal und Dashboard-Einstellungen
-- [x] **UI-02**: QR-Scanner-Button oben rechts (Header-Position) statt unten rechts FAB
-- [x] **UI-03**: Badge-Fortschritt ohne Nachkommastellen
-- [x] **UI-04**: Chat-Tab-Badge wird nicht abgeschnitten (z-index/Overflow korrigieren)
-- [x] **UI-05**: Badge-Modal: Auswahl ohne Umrandung, mit backgroundColor-Change Pattern (wie ueberall sonst)
-- [x] **UI-06**: Badge-Segment (Konfi/Teamer) unter dem Header positioniert, "Teamer:innen" nicht lila/fett bei Auswahl
-- [x] **UI-07**: Teamer-Badge-Ansicht 1:1 wie Konfi-Badge-Ansicht mit Segment-Wechsel (Teamer vorausgewaehlt)
-- [x] **UI-08**: Befoerdern-Button: Info-Hinweistext steht ueber dem Button
-
-### Admin-Struktur (ADM)
-
-- [x] **ADM-01**: Zertifikat-Verwaltung als Unterseite im Inhalt-Bereich (nicht inline in Settings)
-- [x] **ADM-02**: Dashboard-Einstellungen als Unterseite im Inhalt-Bereich
-- [x] **ADM-03**: Badge-Verwaltung als Unterseite im Inhalt-Bereich, mit Typ-Abfrage (Konfi/Teamer) vor Badge-Erstellung
-- [x] **ADM-04**: Admin-Badge auf Events-Tab fuer Events die verbucht werden muessen
-- [x] **ADM-05**: Chat-Filter zeigt "Konfis" und "Team" statt "Admins"
-
-### Teamer (TMR)
-
-- [x] **TMR-01**: Teamer-Profil ordentlich gestalten (vollstaendige Profilansicht)
-
-## v2 Requirements
-
-Deferred. Nicht in aktuellem Roadmap.
-
-### Teamer-Erweiterungen
-
-- **TEX-01**: Teamer-Ranking untereinander (optional aktivierbar)
-- **TEX-02**: Automatische Konfi-zu-Teamer Transition nach Jahrgangs-Ende
-- **TEX-03**: Teamer-spezifische Push-Notification-Typen
+Deferred. Onboarding, Landing Website, Readme, Wiki.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Teamer vergibt Punkte | Teamer ist kein Mini-Admin, Punkte sind Admin-Aufgabe |
-| Teamer sieht Konfi-Uebersicht | Kein Zugriff auf Konfi-Management, nur eigene Events |
-| Teamer erstellt Events | Event-Erstellung ist Admin-Aufgabe |
-| Teamer verwaltet Kategorien/Jahrgaenge | Admin-Aufgabe, Teamer hat keinen Zugriff |
-| Teamer genehmigt Antraege | Admin-Aufgabe |
-| Eigenes Punkte-System fuer Teamer | Teamer sammeln Badges, keine Punkte |
+| Volle Offline-App mit lokaler DB | SQLite/PouchDB Overkill fuer Datenmenge (<200KB/User), Capacitor Preferences reicht |
+| Offline Event-Buchung | Braucht Server-Validierung (Plaetze, Warteliste), nicht sinnvoll offline |
+| Offline Admin-Operationen | Punkte vergeben, Konfis verwalten braucht Server-Autoritaet |
+| Service Worker / PWA | iOS WKWebView hat unreliable Service Worker Support, Capacitor-native ist besser |
+| Konflikt-Aufloesung UI | Last-Write-Wins + Idempotency-Keys reichen, kein manuelles Merge noetig |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROL-01 | Phase 38 | Complete |
-| ROL-02 | Phase 38 | Complete |
-| ROL-03 | Phase 38 | Complete |
-| ROL-04 | Phase 38 | Complete |
-| DSH-01 | Phase 41 | Complete |
-| DSH-02 | Phase 41 | Complete |
-| DSH-03 | Phase 41 | Complete |
-| DSH-04 | Phase 41 | Complete |
-| EVT-01 | Phase 39 | Complete |
-| EVT-02 | Phase 39 | Complete |
-| EVT-03 | Phase 39 | Complete |
-| EVT-04 | Phase 39 | Complete |
-| EVT-05 | Phase 39 | Complete |
-| EVT-06 | Phase 39 | Pending |
-| BDG-01 | Phase 40 | Complete |
-| BDG-02 | Phase 40 | Complete |
-| BDG-03 | Phase 40 | Complete |
-| BDG-04 | Phase 40 | Complete |
-| BDG-05 | Phase 40 | Complete |
-| BDG-06 | Phase 40 | Complete |
-| BDG-07 | Phase 40 | Complete |
-| ZRT-01 | Phase 41 | Complete |
-| ZRT-02 | Phase 41 | Complete |
-| ZRT-03 | Phase 41 | Complete |
-| MAT-01 | Phase 42 | Complete |
-| MAT-02 | Phase 42 | Complete |
-| MAT-03 | Phase 42 | Complete |
-| PRF-01 | Phase 43 | Pending |
-| PRF-02 | Phase 43 | Complete |
-| PRF-03 | Phase 43 | Complete |
-| CHT-01 | Phase 43 | Pending |
-| CHT-02 | Phase 43 | Pending |
+| STR-01 | TBD | Pending |
+| STR-02 | TBD | Pending |
+| STR-03 | TBD | Pending |
+| NET-01 | TBD | Pending |
+| NET-02 | TBD | Pending |
+| NET-03 | TBD | Pending |
+| CAC-01 | TBD | Pending |
+| CAC-02 | TBD | Pending |
+| CAC-03 | TBD | Pending |
+| CAC-04 | TBD | Pending |
+| CAC-05 | TBD | Pending |
+| CAC-06 | TBD | Pending |
+| CAC-07 | TBD | Pending |
+| CAC-08 | TBD | Pending |
+| RET-01 | TBD | Pending |
+| RET-02 | TBD | Pending |
+| RET-03 | TBD | Pending |
+| QUE-01 | TBD | Pending |
+| QUE-02 | TBD | Pending |
+| QUE-03 | TBD | Pending |
+| QUE-04 | TBD | Pending |
+| QUE-05 | TBD | Pending |
+| QUE-06 | TBD | Pending |
+| SYN-01 | TBD | Pending |
+| SYN-02 | TBD | Pending |
+| SYN-03 | TBD | Pending |
+| SYN-04 | TBD | Pending |
 
-**Coverage v1.8:**
-- v1.8 requirements: 32 total
-- Mapped to phases: 32
-- Unmapped: 0
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| PUSH-01 | Phase 44 | Complete |
-| EVT-v19-01 | Phase 45 | Complete |
-| EVT-v19-02 | Phase 45 | Complete |
-| EVT-v19-03 | Phase 45 | Complete |
-| EVT-v19-04 | Phase 45 | Complete |
-| EVT-v19-05 | Phase 46 | Complete |
-| EVT-v19-06 | Phase 46 | Complete |
-| EVT-v19-07 | Phase 46 | Complete |
-| EVT-v19-08 | Phase 45 | Complete |
-| EVT-v19-09 | Phase 45 | Complete |
-| EVT-v19-10 | Phase 46 | Complete |
-| EVT-v19-11 | Phase 46 | Complete |
-| EVT-v19-12 | Phase 46 | Complete |
-| PKT-v19-01 | Phase 47 | Complete |
-| PKT-v19-02 | Phase 47 | Complete |
-| PKT-v19-03 | Phase 47 | Complete |
-| PKT-v19-04 | Phase 47 | Complete |
-| UI-01 | Phase 50 | Complete |
-| UI-02 | Phase 50 | Complete |
-| UI-03 | Phase 50 | Complete |
-| UI-04 | Phase 50 | Complete |
-| UI-05 | Phase 49 | Complete |
-| UI-06 | Phase 49 | Complete |
-| UI-07 | Phase 49 | Complete |
-| UI-08 | Phase 50 | Complete |
-| ADM-01 | Phase 48 | Complete |
-| ADM-02 | Phase 48 | Complete |
-| ADM-03 | Phase 48 | Complete |
-| ADM-04 | Phase 48 | Complete |
-| ADM-05 | Phase 48 | Complete |
-| TMR-01 | Phase 51 | Complete |
-
-**Coverage v1.9:**
-- v1.9 requirements: 30 total
-- Mapped to phases: 30
-- Unmapped: 0
+**Coverage v2.1:**
+- v2.1 requirements: 27 total
+- Mapped to phases: 0
+- Unmapped: 27
 
 ---
-*Requirements defined: 2026-03-09*
-*Last updated: 2026-03-13 after v1.9 roadmap creation*
+*Requirements defined: 2026-03-19*
