@@ -1,5 +1,14 @@
 # Milestones
 
+## v1.9 Bugfix + Polish (Shipped: 2026-03-19)
+
+**Phases completed:** 10 phases, 13 plans, 0 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
 ## v1.7 Unterricht + Pflicht-Events (Shipped: 2026-03-09)
 
 **Phases completed:** 4 Phasen (34-37), 8 Plans

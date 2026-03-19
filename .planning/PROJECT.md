@@ -2,21 +2,17 @@
 
 ## What This Is
 
-Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Backend ist gegen Sicherheitsluecken gehaertet (v1.0). Admin- und Konfi-Bereiche haben ein konsistentes Design-System mit Shared Components, CSS-Klassen und einheitlichen Modalen (v1.1). Super-Admin UI eingeschraenkt, Dashboard poliert, Tech Debt bereinigt, Dokumentation aktualisiert (v1.2).
+Eine Ionic 8 Hybrid-App (iOS/Android) zur Verwaltung von Konfirmandenpunkten in Kirchengemeinden. Konfis sammeln Gottesdienst- und Gemeindepunkte durch Aktivitaeten, Events und Bonuspunkte. Admins und Teamer verwalten Konfis, vergeben Punkte, erstellen Events und kommunizieren ueber einen integrierten Chat. Das System unterstuetzt mehrere Organisationen (Multi-Tenancy) mit rollenbasierter Zugriffskontrolle (RBAC). Vollstaendig gehaertet (v1.0), konsistentes Design-System (v1.1), poliert (v1.2), Layout (v1.3), Logik debuggt (v1.4), Push-Notifications (v1.5), Dashboard-Konfig (v1.6), Unterricht/Pflicht-Events (v1.7), Teamer-Rolle (v1.8), produktionsreif (v1.9).
 
-## Current Milestone: v1.9 Bugfix + Polish
+## Shipped: v1.9 Bugfix + Polish (2026-03-19)
 
-**Goal:** Alle nach dem Grundaufbau gefundenen Bugs, UI-Inkonsistenzen und Logik-Luecken schliessen — App produktionsreif machen.
+Alle Bugs, UI-Inkonsistenzen und Logik-Luecken nach dem Grundaufbau geschlossen. App produktionsreif.
 
-**Target features:**
-- Ghost-Push-Bug fuer Admins debuggen und fixen
-- Event-Sichtbarkeit: Jahrgangs-Filter, abgesagte Events, Pflicht-Events korrekt filtern
-- Auto-Enrollment bei Jahrgangs-Beitritt fuer bestehende Pflicht-Events
-- Punkte-Logik: Toggle-Sperre, Admin-Listen-Korrektur, Ein-Typ-Statusbalken
-- UI-Polish: Toggle-Alignment, Badge-Rundung, Chat-Badge z-index, QR-Button-Position
-- Admin-Struktur: Zertifikate/Dashboard/Badges als Unterseiten im Inhalt-Bereich
-- Event-Chat-Erstellung aus Admin-Event-Details
-- Teamer-Profil und Badge-Ansicht ueberarbeiten
+**Geliefert:** Ghost-Push-Fix, Event-Jahrgangs-Filter, Event-Absagen/Chat-Erstellung, Punkte-Toggle-Sperre, Admin-Struktur (Chat-Filter Konfis/Team), Badge-UI-Polish, Chat-Verlassen, Zertifikat-2x2-Grid + Standard-Seed.
+
+## Geplant: v3.0 Onboarding + Landing
+
+**Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
 
 ## Core Value
 
