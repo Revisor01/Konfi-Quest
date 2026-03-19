@@ -10,6 +10,17 @@ Alle Bugs, UI-Inkonsistenzen und Logik-Luecken nach dem Grundaufbau geschlossen.
 
 **Geliefert:** Ghost-Push-Fix, Event-Jahrgangs-Filter, Event-Absagen/Chat-Erstellung, Punkte-Toggle-Sperre, Admin-Struktur (Chat-Filter Konfis/Team), Badge-UI-Polish, Chat-Verlassen, Zertifikat-2x2-Grid + Standard-Seed.
 
+## Current Milestone: v2.0 Ionic Update + Theme
+
+**Goal:** Ionic 8.6.4 auf 8.8.1 aktualisieren, rdlabo iOS26/MD3 Themes updaten, Ionicons 7 auf 8 migrieren (Breaking Changes bei Icon-Namen).
+
+**Target features:**
+- Ionic Framework von 8.6.4 auf 8.8.1 aktualisieren
+- rdlabo/ionic-theme-ios26 auf 2.3.0 aktualisieren (nutzt neue 8.8.1 Features)
+- rdlabo/ionic-theme-md3 auf neueste Version aktualisieren
+- Ionicons 7.4.0 auf 8.0.13 migrieren (Icon-Umbenennungen pruefen und fixen)
+- Theme-Konfiguration pruefen und anpassen (variables.css, App.tsx Transitions)
+
 ## Geplant: v3.0 Onboarding + Landing
 
 **Goal:** Onboarding-Flow, Landing Website mit Erklaerung, Github Readme, Wiki — letzter Schritt vor oeffentlichem Launch.
