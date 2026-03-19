@@ -10,16 +10,22 @@ Alle Bugs, UI-Inkonsistenzen und Logik-Luecken nach dem Grundaufbau geschlossen.
 
 **Geliefert:** Ghost-Push-Fix, Event-Jahrgangs-Filter, Event-Absagen/Chat-Erstellung, Punkte-Toggle-Sperre, Admin-Struktur (Chat-Filter Konfis/Team), Badge-UI-Polish, Chat-Verlassen, Zertifikat-2x2-Grid + Standard-Seed.
 
-## Current Milestone: v2.0 Ionic Update + Theme
+## Shipped: v2.0 Ionic Update + Theme (2026-03-19)
 
-**Goal:** Ionic 8.6.4 auf 8.8.1 aktualisieren, rdlabo iOS26/MD3 Themes updaten, Ionicons 7 auf 8 migrieren (Breaking Changes bei Icon-Namen).
+Ionic 8.8.1, Ionicons 8, rdlabo iOS26 2.3.0 + MD3 1.1.0, alle Capacitor Plugins auf neuestem v7 Stand.
+
+## Current Milestone: v2.1 App-Resilienz
+
+**Goal:** Offline-Lese-Cache fuer alle Daten, Schreib-Queue fuer Nachrichten/Antraege, Offline-Banner, Retry-Logik, Double-Submit-Schutz, inkrementeller Sync bei App-Start + Hintergrund.
 
 **Target features:**
-- Ionic Framework von 8.6.4 auf 8.8.1 aktualisieren
-- rdlabo/ionic-theme-ios26 auf 2.3.0 aktualisieren (nutzt neue 8.8.1 Features)
-- rdlabo/ionic-theme-md3 auf neueste Version aktualisieren
-- Ionicons 7.4.0 auf 8.0.13 migrieren (Icon-Umbenennungen pruefen und fixen)
-- Theme-Konfiguration pruefen und anpassen (variables.css, App.tsx Transitions)
+- Offline-Lese-Cache: Chats, Antraege, Dashboard, Events, Profil — fuer alle Rollen
+- Schreib-Queue: Chat-Nachrichten und Aktivitaets-Antraege offline erfassen, bei Reconnect senden
+- Offline-Banner: Klar kommunizieren wenn offline, was geht und was nicht
+- Retry-Logik: Automatischer Retry bei transienten Fehlern mit Exponential Backoff
+- Double-Submit-Schutz: Loading-States und Button-Disable konsistent ueberall
+- Inkrementeller Sync: App-Start + Hintergrund-Sync alle X Minuten + WebSocket-Updates
+- Stale-While-Revalidate: Gecachte Daten sofort anzeigen, im Hintergrund aktualisieren
 
 ## Geplant: v3.0 Onboarding + Landing
 
