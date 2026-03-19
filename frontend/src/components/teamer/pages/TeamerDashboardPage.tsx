@@ -362,13 +362,11 @@ const TeamerDashboardPage: React.FC = () => {
                 {dashboardData.certificates.filter(c => c.status === 'valid').length}/{dashboardData.certificates.length} ERHALTEN
               </div>
 
-              <div className="app-dashboard-section__content" style={{ padding: '60px 20px 24px 20px' }}>
+              <div className="app-dashboard-section__content" style={{ padding: '60px 16px 20px 16px' }}>
                 <div style={{
-                  display: 'flex',
-                  gap: '12px',
-                  overflowX: 'auto',
-                  paddingBottom: '8px',
-                  WebkitOverflowScrolling: 'touch'
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '10px'
                 }}>
                   {dashboardData.certificates.map((cert) => {
                     const isValid = cert.status === 'valid';
@@ -383,10 +381,8 @@ const TeamerDashboardPage: React.FC = () => {
                           presentCertPopover({ event: e as any });
                         }}
                         style={{
-                          minWidth: '120px',
-                          maxWidth: '120px',
-                          borderRadius: '16px',
-                          padding: '16px 12px',
+                          borderRadius: '12px',
+                          padding: '12px 10px',
                           background: isNotEarned
                             ? 'rgba(255, 255, 255, 0.1)'
                             : isValid
@@ -402,13 +398,12 @@ const TeamerDashboardPage: React.FC = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          gap: '8px',
-                          flexShrink: 0,
+                          gap: '6px',
                           transition: 'transform 0.2s ease'
                         }}
                       >
                         <div style={{
-                          width: '44px', height: '44px', borderRadius: '50%',
+                          width: '36px', height: '36px', borderRadius: '50%',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           background: isNotEarned
                             ? 'rgba(255, 255, 255, 0.15)'
@@ -419,16 +414,21 @@ const TeamerDashboardPage: React.FC = () => {
                         }}>
                           <IonIcon
                             icon={getIconFromString(cert.icon)}
-                            style={{ fontSize: '1.3rem', opacity: isNotEarned ? 0.5 : 1 }}
+                            style={{ fontSize: '1.1rem', opacity: isNotEarned ? 0.5 : 1 }}
                           />
                         </div>
                         <span style={{
-                          fontSize: '0.8rem',
+                          fontSize: '0.72rem',
                           fontWeight: '600',
                           color: 'white',
                           textAlign: 'center',
-                          lineHeight: '1.2',
-                          opacity: isNotEarned ? 0.6 : 1
+                          lineHeight: '1.15',
+                          opacity: isNotEarned ? 0.6 : 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical' as any
                         }}>
                           {cert.name}
                         </span>
