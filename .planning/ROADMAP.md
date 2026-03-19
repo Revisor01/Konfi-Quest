@@ -230,7 +230,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 49-01: TBD
+- [ ] 49-01-PLAN.md -- Badge-Modal backgroundColor-Change + Segment-Styling (UI-07 bereits erledigt durch Phase 52)
 
 ### Phase 50: UI-Polish
 **Goal**: Kleinere UI-Inkonsistenzen in verschiedenen Bereichen sind behoben
