@@ -288,7 +288,7 @@ Plans:
   2. Teamer kann einen Admin-Chat verlassen, Admins nicht
   3. Jahrgangschats und Direct-Chats haben keine Verlassen-Option
   4. Nach Verlassen verschwindet der Chat aus der eigenen Liste
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 53-01-PLAN.md -- Backend Self-Leave Endpoint + Frontend Drei-Punkte-Menu im Chat-Header
