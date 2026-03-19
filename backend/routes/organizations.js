@@ -255,11 +255,26 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
         ]);
       }
 
-      res.status(201).json({ 
-        id: organizationId, 
+      // 5. Create default certificate types for the organization
+      const defaultCertificates = [
+        { name: 'Teamer:innen Card', icon: 'card' },
+        { name: 'JuLeiCa', icon: 'ribbon' },
+        { name: 'Rettungsschwimmer', icon: 'water' },
+        { name: 'Erste Hilfe', icon: 'medkit' }
+      ];
+
+      const certQuery = `INSERT INTO certificate_types (name, icon, organization_id)
+                         VALUES ($1, $2, $3)`;
+      for (const cert of defaultCertificates) {
+        await db.query(certQuery, [cert.name, cert.icon, organizationId]);
+      }
+
+      res.status(201).json({
+        id: organizationId,
         admin_user_id: newAdmin.id,
         default_badges_created: defaultBadges.length,
-        message: `Organization created successfully with default roles, admin user, and ${defaultBadges.length} badges` 
+        default_certificates_created: defaultCertificates.length,
+        message: `Organization created successfully with default roles, admin user, ${defaultBadges.length} badges, and ${defaultCertificates.length} certificates`
       });
 
     } catch (err) {
@@ -572,6 +587,37 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
+  // Seed default certificates for existing organizations without any
+  const seedDefaultCertificates = async () => {
+    try {
+      const { rows: orgs } = await db.query(
+        `SELECT o.id FROM organizations o
+         WHERE NOT EXISTS (
+           SELECT 1 FROM certificate_types ct WHERE ct.organization_id = o.id
+         )`
+      );
+      if (orgs.length === 0) return;
+      const defaultCerts = [
+        { name: 'Teamer:innen Card', icon: 'card' },
+        { name: 'JuLeiCa', icon: 'ribbon' },
+        { name: 'Rettungsschwimmer', icon: 'water' },
+        { name: 'Erste Hilfe', icon: 'medkit' }
+      ];
+      for (const org of orgs) {
+        for (const cert of defaultCerts) {
+          await db.query(
+            'INSERT INTO certificate_types (name, icon, organization_id) VALUES ($1, $2, $3)',
+            [cert.name, cert.icon, org.id]
+          );
+        }
+      }
+      console.log(`Seeded default certificates for ${orgs.length} organization(s)`);
+    } catch (err) {
+      console.error('Error seeding default certificates:', err.message);
+    }
+  };
+  seedDefaultCertificates();
 
   return router;
 };
