@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: Bugfix + Polish
 status: completed
-stopped_at: Phase 50 context gathered
-last_updated: "2026-03-19T06:46:27.195Z"
+stopped_at: Completed 50-01-PLAN.md
+last_updated: "2026-03-19T08:38:40.840Z"
 last_activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
 progress:
   total_phases: 11
-  completed_phases: 7
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 8
+  total_plans: 11
+  completed_plans: 11
   percent: 75
 ---
 
@@ -55,6 +55,7 @@ All v1.0-v1.8 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 47]: CSS Grid statt Flexbox info-row fuer konsistentes 3-Spalten Stats-Layout
 - [Phase 48]: Team-Segment nur fuer Admins sichtbar, da Konfis/Teamer keine Admin-Chats haben
 - [Phase 49]: Task 2 keine Aenderung noetig - Segment war bereits korrekt positioniert und gestyled
+- [Phase 50]: QR-Scanner von EventsView (FAB) nach KonfiEventsPage (Header-Button) verschoben
 
 ### Roadmap Evolution
 
@@ -85,9 +86,10 @@ None.
 | Phase 47 P02 | 1min | 2 tasks | 2 files |
 | Phase 48 P01 | 1min | 1 tasks | 1 files |
 | Phase 49 P01 | 1min | 2 tasks | 1 files |
+| Phase 50 P01 | 4min | 2 tasks | 9 files |
 
 ## Session Continuity
 
-Last session: 2026-03-19T06:46:27.188Z
-Stopped at: Phase 50 context gathered
-Resume file: .planning/phases/50-ui-polish/50-CONTEXT.md
+Last session: 2026-03-19T08:38:40.838Z
+Stopped at: Completed 50-01-PLAN.md
+Resume file: None
