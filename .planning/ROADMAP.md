@@ -264,7 +264,7 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 | 46. Event-Admin + Teamer-Logik | 2/2 | Complete    | 2026-03-18 |
 | 47. Punkte-Logik | 2/2 | Complete    | 2026-03-18 |
 | 48. Admin-Struktur | 1/1 | Complete    | 2026-03-18 |
-| 49. Badge-UI | 1/1 | Complete   | 2026-03-19 |
+| 49. Badge-UI | 1/1 | Complete    | 2026-03-19 |
 | 50. UI-Polish | 0/1 | Not started | - |
 | 51. Teamer-Profil | 0/1 | Not started | - |
 
