@@ -22,7 +22,8 @@ import {
   barChart,
   people,
   returnUpBack,
-  closeCircle
+  closeCircle,
+  ellipsisVertical
 } from 'ionicons/icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
@@ -808,6 +809,35 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     }
   };
 
+  const canLeaveChat = (): boolean => {
+    if (!room) return false;
+    if (room.type === 'group') return true;
+    if (room.type === 'admin' && user?.type !== 'admin') return true;
+    return false;
+  };
+
+  const handleLeaveChat = () => {
+    presentAlert({
+      header: 'Chat verlassen',
+      message: 'Chat wirklich verlassen? Du erhältst keine Nachrichten mehr aus diesem Chat.',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Verlassen',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await api.delete(`/chat/rooms/${room?.id}/leave`);
+              onBack();
+            } catch {
+              setError('Fehler beim Verlassen des Chats');
+            }
+          }
+        }
+      ]
+    });
+  };
+
   return (
     <>
       <IonHeader translucent={true}>
@@ -818,16 +848,23 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
             </IonButton>
           </IonButtons>
           <IonTitle>{getDisplayRoomName()}</IonTitle>
-          {user?.type === 'admin' && (
-            <IonButtons slot="end">
-              <IonButton onClick={openMembersModal}>
-                <IonIcon icon={people} />
+          <IonButtons slot="end">
+            {user?.type === 'admin' && (
+              <>
+                <IonButton onClick={openMembersModal}>
+                  <IonIcon icon={people} />
+                </IonButton>
+                <IonButton onClick={openPollModal}>
+                  <IonIcon icon={barChart} />
+                </IonButton>
+              </>
+            )}
+            {canLeaveChat() && (
+              <IonButton onClick={handleLeaveChat}>
+                <IonIcon icon={ellipsisVertical} />
               </IonButton>
-              <IonButton onClick={openPollModal}>
-                <IonIcon icon={barChart} />
-              </IonButton>
-            </IonButtons>
-          )}
+            )}
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
