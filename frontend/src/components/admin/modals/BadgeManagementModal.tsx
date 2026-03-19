@@ -472,7 +472,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={activity.id}
-                          className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className="app-list-item app-list-item--info"
                           onClick={() => setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
                           style={{
                             cursor: 'pointer',
@@ -480,7 +480,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -540,14 +541,15 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={category.id}
-                          className={`app-list-item app-list-item--warning ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className="app-list-item app-list-item--warning"
                           onClick={() => setExtraCriteria({ ...extraCriteria, required_category: category.name })}
                           style={{
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            marginBottom: '0'
+                            marginBottom: '0',
+                            backgroundColor: isSelected ? 'rgba(255, 149, 0, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
@@ -647,7 +649,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                       return (
                         <div
                           key={activity.id}
-                          className={`app-list-item app-list-item--info ${isSelected ? 'app-list-item--selected' : ''}`}
+                          className="app-list-item app-list-item--info"
                           onClick={() => {
                             const currentIds = extraCriteria.activity_ids || [];
                             const newIds = isSelected
@@ -661,7 +663,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f'
+                            borderLeftColor: activity.type === 'gottesdienst' ? '#007aff' : '#2dd36f',
+                            backgroundColor: isSelected ? 'rgba(0, 122, 255, 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
