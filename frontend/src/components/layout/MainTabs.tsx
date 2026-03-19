@@ -42,6 +42,7 @@ import AdminProfilePage from '../admin/pages/AdminProfilePage';
 import AdminSettingsPage from '../admin/pages/AdminSettingsPage';
 import AdminMaterialPage from '../admin/pages/AdminMaterialPage';
 import AdminCertificatesPage from '../admin/pages/AdminCertificatesPage';
+import IonicShowcasePage from '../admin/pages/IonicShowcasePage';
 import AdminDashboardSettingsPage from '../admin/pages/AdminDashboardSettingsPage';
 import AdminLevelsPage from '../admin/pages/AdminLevelsPage';
 import AdminInvitePage from '../admin/pages/AdminInvitePage';
@@ -150,6 +151,7 @@ const MainTabs: React.FC = () => {
           <Route exact path="/admin/organizations" component={AdminOrganizationsPage} />
           <Route exact path="/admin/material" component={AdminMaterialPage} />
           <Route exact path="/admin/settings/certificates" component={AdminCertificatesPage} />
+          <Route exact path="/admin/settings/ionic-showcase" component={IonicShowcasePage} />
           <Route exact path="/admin/settings/dashboard" component={AdminDashboardSettingsPage} />
           <Route exact path="/admin/settings" component={AdminSettingsPage} />
           <Route exact path="/admin/profile" component={AdminProfilePage} />
