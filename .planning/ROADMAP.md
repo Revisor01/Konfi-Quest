@@ -295,10 +295,15 @@ Plans:
 
 ### Phase 54: Teamer Dashboard Zertifikat-Ansicht anpassen
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Zertifikat-Sektion im Teamer-Dashboard von horizontalem Scroll auf 2x2 Grid umstellen, kompaktere Karten, 4 Standard-Zertifikate bei Org-Erstellung automatisch anlegen
+**Requirements**: CERT-GRID-01, CERT-GRID-02, CERT-SEED-01, CERT-SEED-02
 **Depends on:** Phase 53
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. Teamer-Dashboard zeigt Zertifikate in einem 2x2 Grid statt horizontalem Scroll
+  2. Zertifikat-Karten sind kompakter mit weniger Padding und kleineren Icons
+  3. Neue Organisationen erhalten automatisch 4 Standard-Zertifikat-Typen
+  4. Bestehende Organisationen ohne Zertifikat-Typen erhalten die 4 Standards beim naechsten Deploy
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 54 to break down)
+- [ ] 54-01-PLAN.md -- 2x2 Grid Layout + kompakte Karten + Default-Zertifikat-Seed bei Org-Erstellung
