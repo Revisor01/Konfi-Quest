@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Ionic Update + Theme
-status: planning
-stopped_at: Milestone v2.0 started
-last_updated: "2026-03-19T15:45:17.731Z"
+milestone: v1.9
+milestone_name: Bugfix + Polish
+status: completed
+stopped_at: Completed 54-01-PLAN.md
+last_updated: "2026-03-19T16:34:49.347Z"
 last_activity: 2026-03-18 — EventModal Teamer-only Felder + Pflicht Hervorhebung
 progress:
   total_phases: 11
