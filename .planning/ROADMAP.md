@@ -246,7 +246,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 50-01: TBD
+- [ ] 50-01-PLAN.md -- Toggle-Position, QR-Header, Badge-Rundung, Chat-Badge-Overflow, Befoerdern-Hinweis, Beschreibungstexte
 
 ### Phase 51: Teamer-Profil -- COMPLETE (abgedeckt durch Phase 52)
 **Goal**: Teamer hat eine ordentliche, vollstaendige Profilseite
