@@ -36,14 +36,21 @@ Requirements fuer Milestone v2.1 App-Resilienz. Offline-Faehigkeit und Zuverlaes
 - [ ] **RET-02**: Alle Submit-Buttons haben Loading-State und sind waehrend Request disabled (Double-Submit-Schutz)
 - [ ] **RET-03**: Backend unterstuetzt Idempotency-Keys fuer Chat-Nachrichten und Aktivitaets-Antraege
 
+### Offline-UI (OUI)
+
+- [ ] **OUI-01**: Buttons die online brauchen zeigen "Du bist offline" als Text und sind disabled wenn offline
+- [ ] **OUI-02**: Queue-faehige Aktionen zeigen Uhr-Icon am Element bis zugestellt (Chat-Nachrichten wie WhatsApp)
+- [ ] **OUI-03**: Nach Zustellung wechselt das Icon zu Haekchen (gesendet)
+- [ ] **OUI-04**: Kein globales Offline-Banner — nur kontextbezogene Anzeigen an betroffenen Elementen
+
 ### Schreib-Queue (QUE)
 
 - [ ] **QUE-01**: Chat-Nachrichten koennen offline verfasst werden und werden bei Reconnect automatisch gesendet
-- [ ] **QUE-02**: Offline-Nachrichten zeigen Uhr-Icon (wie WhatsApp) bis sie zugestellt sind
-- [ ] **QUE-03**: Nach Zustellung wechselt das Icon zu Haekchen (gesendet)
-- [ ] **QUE-04**: Aktivitaets-Antraege koennen offline gestellt werden mit "Wird uebermittelt..." Status
-- [ ] **QUE-05**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
-- [ ] **QUE-06**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
+- [ ] **QUE-02**: Aktivitaets-Antraege koennen offline gestellt werden (Uhr-Icon bis uebermittelt)
+- [ ] **QUE-03**: Admin kann offline Jahrgang, Kategorie, Event, Material, Badge, Zertifikat anlegen (Uhr-Icon bis synchronisiert)
+- [ ] **QUE-04**: Queue wird beim App-Resume und bei Reconnect automatisch abgearbeitet
+- [ ] **QUE-05**: Queue ueberlebt App-Neustart (persistent in Capacitor Preferences)
+- [ ] **QUE-06**: Nicht-queue-faehige Aktionen (Punkte vergeben, Konfi befoerdern, Event buchen/absagen) zeigen "Du bist offline" Button
 
 ### Sync (SYN)
 
@@ -87,6 +94,10 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | RET-01 | TBD | Pending |
 | RET-02 | TBD | Pending |
 | RET-03 | TBD | Pending |
+| OUI-01 | TBD | Pending |
+| OUI-02 | TBD | Pending |
+| OUI-03 | TBD | Pending |
+| OUI-04 | TBD | Pending |
 | QUE-01 | TBD | Pending |
 | QUE-02 | TBD | Pending |
 | QUE-03 | TBD | Pending |
@@ -99,7 +110,7 @@ Deferred. Onboarding, Landing Website, Readme, Wiki.
 | SYN-04 | TBD | Pending |
 
 **Coverage v2.1:**
-- v2.1 requirements: 27 total
+- v2.1 requirements: 31 total
 - Mapped to phases: 0
 - Unmapped: 27
 
