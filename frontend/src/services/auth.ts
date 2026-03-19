@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core';
 
 interface User {
   id: number;
-  type: 'admin' | 'konfi' | 'user';
+  type: 'admin' | 'konfi' | 'teamer' | 'user';
   display_name: string;
   username?: string;
   email?: string;

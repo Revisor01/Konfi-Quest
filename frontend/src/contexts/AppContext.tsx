@@ -223,13 +223,17 @@ useEffect(() => {
   // falls er schon da ist (z.B. bei App-Start mit eingeloggtem User).
   // Deine AppDelegate-Logik sendet ihn bei App-Aktivierung ohnehin,
   // aber dies ist eine zusaetzliche Sicherheit.
-  if ((window as any).Capacitor?.Plugins?.App) {
+  if (Capacitor.isNativePlatform() && (window as any).Capacitor?.Plugins?.App) {
       const { App } = (window as any).Capacitor.Plugins;
       // Dies simuliert, dass die App aktiv wird und triggert den Token-Send in Swift
-      App.fireRestoredResult({
-          methodName: "getLaunchUrl",
-          data: {}
-      });
+      try {
+        App.fireRestoredResult({
+            methodName: "getLaunchUrl",
+            data: {}
+        });
+      } catch (e) {
+        // Ignore — nicht auf allen Plattformen verfuegbar
+      }
   }
 
 

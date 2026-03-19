@@ -51,6 +51,8 @@ const LoginView: React.FC = () => {
       // Explicit navigation based on user type
       if (user.type === 'admin') {
         history.replace('/admin/konfis');
+      } else if (user.type === 'teamer') {
+        history.replace('/teamer/dashboard');
       } else {
         history.replace('/konfi/dashboard');
       }
