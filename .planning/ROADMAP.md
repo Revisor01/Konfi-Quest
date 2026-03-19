@@ -278,15 +278,20 @@ Phases execute in numeric order: 44 -> 45 -> 46 -> 47 -> 48 -> 49 -> 50 -> 51
 Plans:
 - [ ] 52-01-PLAN.md -- Backend erweitern + TeamerProfilePage komplett ueberarbeiten
 
-### Phase 53: Chat verlassen — Gruppenchats (z.B. Event-Chats) verlassen, Jahrgangschat nicht verlassbar
+### Phase 53: Chat verlassen -- Gruppenchats (z.B. Event-Chats) verlassen, Jahrgangschat nicht verlassbar
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Konfis und Teamer:innen koennen Gruppenchats verlassen, Jahrgangschats und Direct-Chats bleiben unverlassbar
+**Requirements**: CHAT-LEAVE-01, CHAT-LEAVE-02
 **Depends on:** Phase 52
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. Konfi/Teamer kann einen Gruppenchat (type=group) ueber Drei-Punkte-Menu verlassen
+  2. Teamer kann einen Admin-Chat verlassen, Admins nicht
+  3. Jahrgangschats und Direct-Chats haben keine Verlassen-Option
+  4. Nach Verlassen verschwindet der Chat aus der eigenen Liste
+**Plans:** 1 plan
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 53 to break down)
+- [ ] 53-01-PLAN.md -- Backend Self-Leave Endpoint + Frontend Drei-Punkte-Menu im Chat-Header
 
 ### Phase 54: Teamer Dashboard Zertifikat-Ansicht anpassen
 
